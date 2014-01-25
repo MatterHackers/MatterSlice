@@ -29,7 +29,7 @@ namespace MatterHackers.MatterSlice
 {
     public class SliceItApp
     {
-        const string VERSION = ".0.1";
+        const string VERSION = "0.0.1";
 
         int verbose_level;
         int maxObjectHeight;
@@ -52,39 +52,42 @@ namespace MatterHackers.MatterSlice
                 return;
             }
             //loadedMesh.saveModelSTL("original after load.stl");
-            Utilities.log(string.Format("Loaded from disk in {0:.3}s\n", t.Elapsed.Seconds));
+            Utilities.log(string.Format("Loaded from disk in {0:0.000}s\n", t.Elapsed.Seconds));
             Utilities.log("Analyzing and optimizing model...\n");
-            OptimizedModel om = new OptimizedModel(loadedMesh, new Point3(config.objectPosition.X, config.objectPosition.Y, -config.objectSink));
+            OptimizedModel optomizedModel = new OptimizedModel(loadedMesh, new Point3(config.objectPosition.X, config.objectPosition.Y, -config.objectSink));
             for (int v = 0; v < loadedMesh.volumes.Count; v++)
             {
-                Utilities.log(string.Format("  Face counts: loaded:{0} after optomized:{1} {2:.1}%\n", loadedMesh.volumes[v].faces.Count, om.volumes[v].faces.Count, (float)(om.volumes[v].faces.Count) / (float)(loadedMesh.volumes[v].faces.Count) * 100));
-                Utilities.log(string.Format("  Vertex counts: loaded:{0} optomized:{1} {2:.1}%\n", (int)loadedMesh.volumes[v].faces.Count * 3, (int)om.volumes[v].points.Count, (float)(om.volumes[v].points.Count) / (float)(loadedMesh.volumes[v].faces.Count * 3) * 100));
+                Utilities.log(string.Format("  Face counts: loaded:{0} after optomized:{1} {2:0.0}%\n", loadedMesh.volumes[v].faces.Count, optomizedModel.volumes[v].faces.Count, (float)(optomizedModel.volumes[v].faces.Count) / (float)(loadedMesh.volumes[v].faces.Count) * 100));
+                Utilities.log(string.Format("  Vertex counts: loaded:{0} optomized:{1} {2:0.0}%\n", (int)loadedMesh.volumes[v].faces.Count * 3, (int)optomizedModel.volumes[v].points.Count, (float)(optomizedModel.volumes[v].points.Count) / (float)(loadedMesh.volumes[v].faces.Count * 3) * 100));
             }
+#if !DEBUG
+            // allow the memory to be freed
             loadedMesh = null;
-            Utilities.log(string.Format("Optimize model {0:.3}s \n", t.Elapsed.Seconds));
+#endif
+            Utilities.log(string.Format("Optimize model {0:0.000}s \n", t.Elapsed.Seconds));
             //om.saveDebugSTL("output.stl");
 
             Utilities.log("Slicing model...\n");
             List<Slicer> slicerList = new List<Slicer>();
-            for (int volumeIdx = 0; volumeIdx < om.volumes.Count; volumeIdx++)
+            for (int volumeIdx = 0; volumeIdx < optomizedModel.volumes.Count; volumeIdx++)
             {
                 bool extensiveStitching = (config.fixHorrible & ConfigSettings.CorrectionType.FIX_HORRIBLE_EXTENSIVE_STITCHING) == ConfigSettings.CorrectionType.FIX_HORRIBLE_EXTENSIVE_STITCHING;
                 bool keepNonClosed = (config.fixHorrible & ConfigSettings.CorrectionType.FIX_HORRIBLE_KEEP_NONE_CLOSED) == ConfigSettings.CorrectionType.FIX_HORRIBLE_KEEP_NONE_CLOSED;
-                slicerList.Add(new Slicer(om.volumes[volumeIdx], config.initialLayerThickness / 2, config.layerThickness, keepNonClosed, extensiveStitching));
+                slicerList.Add(new Slicer(optomizedModel.volumes[volumeIdx], config.initialLayerThickness / 2, config.layerThickness, keepNonClosed, extensiveStitching));
                 slicerList[volumeIdx].dumpSegments("segments_output.html");
             }
-            Utilities.log(string.Format("Sliced model in {0:.3}s\n", t.Elapsed.Seconds));
+            Utilities.log(string.Format("Sliced model in {0:0.000}s\n", t.Elapsed.Seconds));
 
             SliceDataStorage storage = new SliceDataStorage();
             if (config.supportAngle > -1)
             {
                 Console.WriteLine("Generating support map...\n");
-                SupportStorage.generateSupportGrid(storage.support, om);
+                SupportStorage.generateSupportGrid(storage.support, optomizedModel);
             }
-            storage.modelSize = om.modelSize;
-            storage.modelMin = om.vMin;
-            storage.modelMax = om.vMax;
-            om = null;
+            storage.modelSize = optomizedModel.modelSize;
+            storage.modelMin = optomizedModel.vMin;
+            storage.modelMax = optomizedModel.vMax;
+            optomizedModel = null;
 
             Utilities.log("Generating layer parts...\n");
             for (int volumeIdx = 0; volumeIdx < slicerList.Count; volumeIdx++)
@@ -107,7 +110,7 @@ namespace MatterHackers.MatterSlice
                 }
                 Utilities.logProgress("inset", layerNr + 1, totalLayers);
             }
-            Utilities.log(string.Format("Generated inset in {0:.3}s\n", t.Elapsed.Seconds));
+            Utilities.log(string.Format("Generated inset in {0:0.000}s\n", t.Elapsed.Seconds));
             SliceDataStorage.dumpLayerparts(storage, "insets .html");
 
             for (int layerNr = 0; layerNr < totalLayers; layerNr++)
@@ -119,7 +122,7 @@ namespace MatterHackers.MatterSlice
                 }
                 Utilities.logProgress("skin", layerNr + 1, totalLayers);
             }
-            Utilities.log(string.Format("Generated up/down skin in {0:.3}s\n", t.Elapsed.Seconds));
+            Utilities.log(string.Format("Generated up/down skin in {0:0.000}s\n", t.Elapsed.Seconds));
             Skirt.generateSkirt(storage, config.skirtDistance, config.extrusionWidth, config.skirtLineCount, config.skirtMinLength);
             Raft.generateRaft(storage, config.raftMargin, config.supportAngle, config.supportEverywhere > 0, config.supportXYDistance);
 
@@ -374,12 +377,12 @@ namespace MatterHackers.MatterSlice
             }
             //*/
 
-            Utilities.log(string.Format("Wrote layers in {0:.2}s.\n", t.Elapsed.Seconds));
+            Utilities.log(string.Format("Wrote layers in {0:0.00}s.\n", t.Elapsed.Seconds));
             gcode.tellFileSize();
             gcode.addFanCommand(0);
 
             Utilities.logProgress("process", 1, 1);
-            Utilities.log(string.Format("Total time elapsed {0:.2}s.\n", t.Elapsed.Seconds));
+            Utilities.log(string.Format("Total time elapsed {0:0.00}s.\n", t.Elapsed.Seconds));
 
             //Store the object height for when we are printing multiple objects, as we need to clear every one of them when moving to the next position.
             maxObjectHeight = Math.Max(maxObjectHeight, storage.modelSize.z);

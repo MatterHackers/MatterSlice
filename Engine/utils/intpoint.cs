@@ -117,7 +117,7 @@ namespace MatterHackers.MatterSlice
 
         public override string ToString()
         {
-            return string.Format("x:{0:.1}, y:{1:.1}, z:{2:.1}", x, y, z);
+            return string.Format("x:{0:0.0}, y:{1:0.0}, z:{2:0.0}", x, y, z);
         }
     }
 

@@ -190,7 +190,7 @@ namespace MatterHackers.MatterSlice
                     }
                     else
                     {
-                        gcodeFile.WriteLine(string.Format("G1 F{0} E{1:.5}\n", retractionSpeed * 60, extrusionAmount));
+                        gcodeFile.WriteLine(string.Format("G1 F{0} E{1:0.00000}\n", retractionSpeed * 60, extrusionAmount));
                         currentSpeed = retractionSpeed;
                     }
                     if (extrusionAmount > 1000.0)
@@ -214,14 +214,14 @@ namespace MatterHackers.MatterSlice
                 gcodeFile.Write(string.Format(" F{0}", speed * 60));
                 currentSpeed = speed;
             }
-            gcodeFile.Write(string.Format(" X{0:.2} Y{1:.2}", (p.X - extruderOffset[extruderNr].X) / 1000, (p.Y - extruderOffset[extruderNr].Y) / 1000));
+            gcodeFile.Write(string.Format(" X{0:0.00} Y{1:0.00}", (p.X - extruderOffset[extruderNr].X) / 1000, (p.Y - extruderOffset[extruderNr].Y) / 1000));
             if (zPos != currentPosition.z)
             {
-                gcodeFile.Write(string.Format(" Z{0:.2}", zPos / 1000));
+                gcodeFile.Write(string.Format(" Z{0:0.00}", zPos / 1000));
             }
             if (lineWidth != 0)
             {
-                gcodeFile.Write(string.Format(" E{0:.5}", extrusionAmount));
+                gcodeFile.Write(string.Format(" E{0:0.00000}", extrusionAmount));
             }
             gcodeFile.Write("\n");
 
@@ -238,7 +238,7 @@ namespace MatterHackers.MatterSlice
                 }
                 else
                 {
-                    gcodeFile.WriteLine(string.Format("G1 F{0} E{1:.5}", retractionSpeed * 60, extrusionAmount - retractionAmount));
+                    gcodeFile.WriteLine(string.Format("G1 F{0} E{1:0.00000}", retractionSpeed * 60, extrusionAmount - retractionAmount));
                     currentSpeed = retractionSpeed;
                 }
                 extrusionAmountAtPreviousRetraction = extrusionAmount;
@@ -260,7 +260,7 @@ namespace MatterHackers.MatterSlice
                     break;
 
                 case ConfigSettings.GCodeFlavor.GCODE_FLAVOR_REPRAP:
-                    gcodeFile.WriteLine(string.Format("G1 F{0} E{1:.4}", retractionSpeed * 60, extrusionAmount - extruderSwitchRetraction));
+                    gcodeFile.WriteLine(string.Format("G1 F{0} E{1:0.0000}", retractionSpeed * 60, extrusionAmount - extruderSwitchRetraction));
                     currentSpeed = retractionSpeed;
                     break;
 
@@ -306,12 +306,12 @@ namespace MatterHackers.MatterSlice
             if (fsize > 1024 * 1024)
             {
                 fsize /= 1024.0 * 1024.0;
-                Console.WriteLine(string.Format("Wrote {0:.1} MB.\n", fsize));
+                Console.WriteLine(string.Format("Wrote {0:0.0} MB.\n", fsize));
             }
             if (fsize > 1024)
             {
                 fsize /= 1024.0;
-                Utilities.Output(string.Format("Wrote {0:.1} kilobytes.\n", fsize));
+                Utilities.Output(string.Format("Wrote {0:0.0} kilobytes.\n", fsize));
             }
         }
     }

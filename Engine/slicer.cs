@@ -390,11 +390,11 @@ namespace MatterHackers.MatterSlice
                 if (openPolygonList[i].Count < 2) continue;
                 if (firstItem)
                 {
-                    Console.WriteLine("***");
+                    //Console.WriteLine("***");
                     firstItem = false;
                 }
-                Console.WriteLine(string.Format("S: {0} {1}", (float)(openPolygonList[i][0].X), (float)(openPolygonList[i][0].Y)));
-                Console.WriteLine(string.Format("E: {0} {1}", (float)(openPolygonList[i][openPolygonList[i].Count - 1].X), (float)(openPolygonList[i][openPolygonList[i].Count - 1].Y)));
+                //Console.WriteLine(string.Format("S: {0} {1}", (float)(openPolygonList[i][0].X), (float)(openPolygonList[i][0].Y)));
+                //Console.WriteLine(string.Format("E: {0} {1}", (float)(openPolygonList[i][openPolygonList[i].Count - 1].X), (float)(openPolygonList[i][openPolygonList[i].Count - 1].Y)));
             }
             //if (q) exit(1);
 
@@ -411,7 +411,9 @@ namespace MatterHackers.MatterSlice
             }
             
             //Clear the openPolygonList to save memory, the only reason to keep it after this is for debugging.
-            //openPolygonList.Clear();
+#if !DEBUG
+            openPolygonList.Clear();
+#endif
 
             //Remove all the tiny polygons, or polygons that are not closed. As they do not contribute to the actual print.
             int snapDistance = 1000;
@@ -626,7 +628,7 @@ namespace MatterHackers.MatterSlice
 
                 layers[layerNr].makePolygons(ov, keepNoneClosed, extensiveStitching);
             }
-            Utilities.Output(string.Format("\rProcessed all layers in {0:.1}s           \n", t.Elapsed.Seconds));
+            Utilities.Output(string.Format("\rProcessed all layers in {0:0.0}s           \n", t.Elapsed.Seconds));
         }
 
         SlicerSegment project2D(Point3 p0, Point3 p1, Point3 p2, int z)
