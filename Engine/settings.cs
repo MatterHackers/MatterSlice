@@ -28,9 +28,11 @@ namespace MatterHackers.MatterSlice
         [Flags]
         public enum CorrectionType
         {
+            NONE = 0x01,
             FIX_HORRIBLE_UNION_ALL_TYPE_A = 0x01,
             FIX_HORRIBLE_UNION_ALL_TYPE_B = 0x02,
             FIX_HORRIBLE_EXTENSIVE_STITCHING = 0x04,
+            FIX_HORRIBLE_UNION_ALL_TYPE_C = 0x08,
             FIX_HORRIBLE_KEEP_NONE_CLOSED = 0x10,
         };
 

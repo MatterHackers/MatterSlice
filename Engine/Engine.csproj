@@ -101,6 +101,7 @@
     <Compile Include="sliceDataStorage.cs" />
     <Compile Include="slicer.cs" />
     <Compile Include="support.cs" />
+    <Compile Include="timeEstimate.cs" />
     <Compile Include="Utilities.cs" />
     <Compile Include="utils\floatpoint.cs" />
     <Compile Include="utils\intpoint.cs" />

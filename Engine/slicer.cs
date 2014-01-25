@@ -132,7 +132,7 @@ namespace MatterHackers.MatterSlice
                     openPolygonList.Add(poly);
                 }
             }
-            
+
             //Clear the segmentList to save memory, it is no longer needed after this point.
             segmentList.Clear();
 
@@ -409,7 +409,7 @@ namespace MatterHackers.MatterSlice
                     openPolygonList.RemoveAt(0);
                 }
             }
-            
+
             //Clear the openPolygonList to save memory, the only reason to keep it after this is for debugging.
 #if !DEBUG
             openPolygonList.Clear();
@@ -646,43 +646,42 @@ namespace MatterHackers.MatterSlice
             float scale = Math.Max(modelSize.x, modelSize.y) / 500;
             using (StreamWriter f = new StreamWriter(filename))
             {
-                f.WriteLine("<!DOCTYPE html><html><body>");
+                f.Write("<!DOCTYPE html><html><body>\n");
                 for (int i = 0; i < layers.Count; i++)
                 {
-                    f.WriteLine(string.Format("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style='width:{0}px;height:{1}px'>", (modelSize.x / scale), (modelSize.y / scale)));
-                    f.WriteLine("<g fill-rule='evenodd' style=\"fill: gray; stroke:black;stroke-width:1\">");
-                    f.Write("<path d=\"");
+                    f.Write(string.Format("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style='width:{0};height:{1}'>\n", (int)(modelSize.x / scale), (int)(modelSize.y / scale)));
+                    f.Write("<marker id='MidMarker' viewBox='0 0 10 10' refX='5' refY='5' markerUnits='strokeWidth' markerWidth='10' markerHeight='10' stroke='lightblue' stroke-width='2' fill='none' orient='auto'>");
+                    f.Write("<path d='M 0 0 L 10 5 M 0 10 L 10 5'/>");
+                    f.Write("</marker>");
+                    f.Write("<g fill-rule='evenodd' style=\"fill: gray; stroke:black;stroke-width:1\">\n");
+                    f.Write("<path marker-mid='url(#MidMarker)' d=\"");
                     for (int j = 0; j < layers[i].polygonList.Count; j++)
                     {
                         Polygon p = layers[i].polygonList[j];
                         for (int n = 0; n < p.Count; n++)
                         {
                             if (n == 0)
-                            {
                                 f.Write("M");
-                            }
                             else
-                            {
                                 f.Write("L");
-                            }
-
-                            f.Write(string.Format("{0},{1} ", (p[n].X - modelMin.x) / scale, (p[n].Y - modelMin.y) / scale));
+                            f.Write(string.Format("{0},{1} ", (float)(p[n].X - modelMin.x) / scale, (float)(p[n].Y - modelMin.y) / scale));
                         }
-                        f.Write("Z");
+                        f.Write("Z\n");
                     }
-                    f.Write("\" />");
-                    f.WriteLine("</g>");
+                    f.Write("\"/>");
+                    f.Write("</g>\n");
                     for (int j = 0; j < layers[i].openPolygonList.Count; j++)
                     {
                         Polygon p = layers[i].openPolygonList[j];
-                        f.Write("<polyline points=\"");
+                        if (p.Count < 1) continue;
+                        f.Write("<polyline marker-mid='url(#MidMarker)' points=\"");
                         for (int n = 0; n < p.Count; n++)
                         {
-                            f.WriteLine(string.Format("{0},{1} ", (float)(p[n].X - modelMin.x) / scale, (float)(p[n].Y - modelMin.y) / scale));
+                            f.Write(string.Format("{0},{1} ", (float)(p[n].X - modelMin.x) / scale, (float)(p[n].Y - modelMin.y) / scale));
                         }
-                        f.WriteLine("\" style=\"fill: none; stroke:red;stroke-width:1\" />");
+                        f.Write("\" style=\"fill: none; stroke:red;stroke-width:1\" />\n");
                     }
-                    f.WriteLine("</svg>");
+                    f.Write("</svg>\n");
                 }
                 f.Write("</body></html>");
             }
