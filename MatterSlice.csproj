@@ -8,7 +8,7 @@
     <ProjectGuid>{C46CA728-DD2F-4DD1-971A-AAA89D9DFF95}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MatterHackers.MatterSlice</RootNamespace>
+    <RootNamespace>MatterSlice</RootNamespace>
     <AssemblyName>MatterSlice</AssemblyName>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -27,7 +27,6 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DocumentationFile>bin\Debug\MatterHackers.Csg.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -38,7 +37,6 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DocumentationFile>bin\Release\MatterHackers.Csg.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
@@ -47,21 +45,13 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MatterSlice.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="clipper_library\clipper_library.csproj">
       <Project>{9B062971-A88E-4A3D-B3C9-12B78D15FA66}</Project>
       <Name>clipper_library</Name>
     </ProjectReference>
-    <ProjectReference Include="Skirt\Skirt.csproj">
-      <Project>{7E61A5BD-E78F-4B80-88C9-3821B4FA062E}</Project>
-      <Name>Skirt</Name>
-    </ProjectReference>
-    <ProjectReference Include="Engine\Engine.csproj">
-      <Project>{E4A36D88-953C-4587-A445-B63F626BDC8A}</Project>
-      <Name>Engine</Name>
-    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="timeEstimate.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
