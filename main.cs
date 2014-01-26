@@ -28,10 +28,10 @@ void print_usage()
     Console.Write("usage: MatterSlice [-h] [-v] [-m 3x3matrix] [-s <settingkey>=<value>] -o <output.gcode> <model.stl>\n");
 }
 
-void main(char[] argv)
+void main(string[] arg)
 {
-    ConfigSettings config;
-    fffProcessor processor(config);
+    ConfigSettings config = new ConfigSettings();
+    fffProcessor processor = new fffProcessor(config);
 
     config.filamentDiameter = 2890;
     config.filamentFlow = 100;
@@ -86,33 +86,32 @@ void main(char[] argv)
 
     config.spiralizeMode = 0;
     config.fixHorrible = 0;
-    config.gcodeFlavor = GCODE_FLAVOR_REPRAP;
-    memset(config.extruderOffset, 0, sizeof(config.extruderOffset));
+    config.gcodeFlavor = ConfigSettings.GCODE_FLAVOR_REPRAP;
     
-    config.startCode =
-        "M109 S210     ;Heatup to 210C\n"
-        "G21           ;metric values\n"
-        "G90           ;absolute positioning\n"
-        "G28           ;Home\n"
-        "G1 Z15.0 F300 ;move the platform down 15mm\n"
-        "G92 E0        ;zero the extruded length\n"
-        "G1 F200 E5    ;extrude 5mm of feed stock\n"
-        "G92 E0        ;zero the extruded length again\n";
-    config.endCode = 
-        "M104 S0                     ;extruder heater off\n"
-        "M140 S0                     ;heated bed heater off (if you have it)\n"
-        "G91                            ;relative positioning\n"
-        "G1 E-1 F300                    ;retract the filament a bit before lifting the nozzle, to release some of the pressure\n"
-        "G1 Z+0.5 E-5 X-20 Y-20 F9000   ;move Z up a bit and retract filament even more\n"
-        "G28 X0 Y0                      ;move X/Y to min endstops, so the head is out of the way\n"
-        "M84                         ;steppers off\n"
-        "G90                         ;absolute positioning\n";
+config.startCode =
+                "M109 S210     ;Heatup to 210C\n" +
+                "G21           ;metric values\n" +
+                "G90           ;absolute positioning\n" +
+                "G28           ;Home\n" +
+                "G1 Z15.0 F300 ;move the platform down 15mm\n" +
+                "G92 E0        ;zero the extruded length\n" +
+                "G1 F200 E5    ;extrude 5mm of feed stock\n" +
+                "G92 E0        ;zero the extruded length again\n";
+            config.endCode =
+                "M104 S0                     ;extruder heater off\n" +
+                "M140 S0                     ;heated bed heater off (if you have it)\n" +
+                "G91                            ;relative positioning\n" +
+                "G1 E-1 F300                    ;retract the filament a bit before lifting the nozzle, to release some of the pressure\n" +
+                "G1 Z+0.5 E-5 X-20 Y-20 F9000   ;move Z up a bit and retract filament even more\n" +
+                "G28 X0 Y0                      ;move X/Y to min endstops, so the head is out of the way\n" +
+                "M84                         ;steppers off\n" +
+                "G90                         ;absolute positioning\n";
 
-    fprintf(stdout,"MatterSlice version %s\n", VERSION);
+    Console.WriteLine(string.Format("MatterSlice version {0}", ConfigSettings.VERSION));
 
-    for(int argn = 1; argn < argc; argn++)
+    for (int argn = 0; argn < args.Length; argn++)
     {
-        char* str = argv[argn];
+        string str = args[argn];
         if (str[0] == '-')
         {
             for(str++; *str; str++)
@@ -162,12 +161,17 @@ void main(char[] argv)
                     break;
                 }
             }
-        }else{
-            try {
+        }
+        else
+        {
+            try 
+            {
                 processor.processFile(argv[argn]);
-            }catch(...){
-                Console.Write("Unknown exception\n");
-                exit(1);
+            }
+            catch(Exception e)
+            {
+                Console.Write(string.Format("{0}", e));
+                Console.Write(string.Format("InnerException: {0}", e.InnerException));
             }
         }
     }

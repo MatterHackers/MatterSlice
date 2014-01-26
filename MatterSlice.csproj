@@ -57,5 +57,8 @@
     <Compile Include="timeEstimate.cs" />
     <Compile Include="utils\intpoint.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="fffProcessor.cs" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
