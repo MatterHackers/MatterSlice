@@ -49,7 +49,7 @@ namespace MatterHackers.MatterSlice
         {
             gcode.setFilename(filename);
             if (gcode.isValid())
-                gcode.addComment("Generated with Cura_SteamEngine %s", VERSION);
+                gcode.addComment(string.Format("Generated with MatterSlice {0}", ConfigSettings.VERSION));
             return gcode.isValid();
         }
 
@@ -83,18 +83,18 @@ namespace MatterHackers.MatterSlice
         gcode.setZ(maxObjectHeight + 5000);
         gcode.addMove(gcode.getPositionXY(), config.moveSpeed, 0);
         gcode.addCode(config.endCode);
-        log("Print time: %d\n", int(gcode.getTotalPrintTime()));
-        log("Filament: %d\n", int(gcode.getTotalFilamentUsed(0)));
-        log("Filament2: %d\n", int(gcode.getTotalFilamentUsed(1)));
+        log("Print time: %d\n", (int)(gcode.getTotalPrintTime()));
+        log("Filament: %d\n", (int)(gcode.getTotalFilamentUsed(0)));
+        log("Filament2: %d\n", (int)(gcode.getTotalFilamentUsed(1)));
         
         if (gcode.getFlavor() == GCODE_FLAVOR_ULTIGCODE)
         {
             char numberString[16];
-            sprintf(numberString, "%d", int(gcode.getTotalPrintTime()));
+            sprintf(numberString, "%d", (int)(gcode.getTotalPrintTime()));
             gcode.replaceTagInStart("<__TIME__>", numberString);
-            sprintf(numberString, "%d", int(gcode.getTotalFilamentUsed(0)));
+            sprintf(numberString, "%d", (int)(gcode.getTotalFilamentUsed(0)));
             gcode.replaceTagInStart("<FILAMENT>", numberString);
-            sprintf(numberString, "%d", int(gcode.getTotalFilamentUsed(1)));
+            sprintf(numberString, "%d", (int)(gcode.getTotalFilamentUsed(1)));
             gcode.replaceTagInStart("<FILAMEN2>", numberString);
         }
     }
@@ -128,8 +128,8 @@ namespace MatterHackers.MatterSlice
         OptimizedModel* om = new OptimizedModel(m, Point3(config.objectPosition.X, config.objectPosition.Y, -config.objectSink));
         for(int v = 0; v < m.volumes.size(); v++)
         {
-            log("  Face counts: %i . %i %0.1f%%\n", (int)m.volumes[v].faces.size(), (int)om.volumes[v].faces.size(), float(om.volumes[v].faces.size()) / float(m.volumes[v].faces.size()) * 100);
-            log("  Vertex counts: %i . %i %0.1f%%\n", (int)m.volumes[v].faces.size() * 3, (int)om.volumes[v].points.size(), float(om.volumes[v].points.size()) / float(m.volumes[v].faces.size() * 3) * 100);
+            log("  Face counts: %i . %i %0.1f%%\n", (int)m.volumes[v].faces.size(), (int)om.volumes[v].faces.size(), (float)(om.volumes[v].faces.size()) / (float)(m.volumes[v].faces.size()) * 100);
+            log("  Vertex counts: %i . %i %0.1f%%\n", (int)m.volumes[v].faces.size() * 3, (int)om.volumes[v].points.size(), (float)(om.volumes[v].points.size()) / (float)(m.volumes[v].faces.size() * 3) * 100);
         }
         delete m;
         log("Optimize model %5.3fs \n", timeKeeper.restart());
@@ -170,105 +170,105 @@ namespace MatterHackers.MatterSlice
     }
 
         void processSliceData(SliceDataStorage storage)
-    {
-        //carveMultipleVolumes(storage.volumes);
-        generateMultipleVolumesOverlap(storage.volumes, config.multiVolumeOverlap);
-        //dumpLayerparts(storage, "c:/models/output.html");
-        
-        int totalLayers = storage.volumes[0].layers.size();
-        for(int layerNr=0; layerNr<totalLayers; layerNr++)
         {
-            for(int volumeIdx=0; volumeIdx<storage.volumes.size(); volumeIdx++)
-            {
-                int insetCount = config.insetCount;
-                if (config.spiralizeMode && int(layerNr) < config.downSkinCount && layerNr % 2 == 1)//Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
-                    insetCount += 5;
-                SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
-                generateInsets(layer, config.extrusionWidth, insetCount);
+            //carveMultipleVolumes(storage.volumes);
+            generateMultipleVolumesOverlap(storage.volumes, config.multiVolumeOverlap);
+            //dumpLayerparts(storage, "c:/models/output.html");
 
-                for(int partNr=0; partNr<layer.parts.size(); partNr++)
-                {
-                    if (layer.parts[partNr].insets.size() > 0)
-                    {
-                        logPolygons("inset0", layerNr, layer.z, layer.parts[partNr].insets[0]);
-                        for(int inset=1; inset<layer.parts[partNr].insets.size(); inset++)
-                            logPolygons("insetx", layerNr, layer.z, layer.parts[partNr].insets[inset]);
-                    }
-                }
-            }
-            logProgress("inset",layerNr+1,totalLayers);
-        }
-        if (config.enableOozeShield)
-        {
-            for(int layerNr=0; layerNr<totalLayers; layerNr++)
+            int totalLayers = storage.volumes[0].layers.size();
+            for (int layerNr = 0; layerNr < totalLayers; layerNr++)
             {
-                Polygons oozeShield;
-                for(int volumeIdx=0; volumeIdx<storage.volumes.size(); volumeIdx++)
+                for (int volumeIdx = 0; volumeIdx < storage.volumes.size(); volumeIdx++)
                 {
-                    for(int partNr=0; partNr<storage.volumes[volumeIdx].layers[layerNr].parts.size(); partNr++)
-                    {
-                        oozeShield = oozeShield.unionPolygons(storage.volumes[volumeIdx].layers[layerNr].parts[partNr].outline.offset(2000));
-                    }
-                }
-                storage.oozeShield.push_back(oozeShield);
-            }
-            
-            for(int layerNr=0; layerNr<totalLayers; layerNr++)
-                storage.oozeShield[layerNr] = storage.oozeShield[layerNr].offset(-1000).offset(1000);
-            int offsetAngle = tan(60.0*M_PI/180) * config.layerThickness;//Allow for a 60deg angle in the oozeShield.
-            for(int layerNr=1; layerNr<totalLayers; layerNr++)
-                storage.oozeShield[layerNr] = storage.oozeShield[layerNr].unionPolygons(storage.oozeShield[layerNr-1].offset(-offsetAngle));
-            for(int layerNr=totalLayers-1; layerNr>0; layerNr--)
-                storage.oozeShield[layerNr-1] = storage.oozeShield[layerNr-1].unionPolygons(storage.oozeShield[layerNr].offset(-offsetAngle));
-        }
-        log("Generated inset in %5.3fs\n", timeKeeper.Restart());
-
-        for(int layerNr=0; layerNr<totalLayers; layerNr++)
-        {
-            if (!config.spiralizeMode || int(layerNr) < config.downSkinCount)    //Only generate up/downskin and infill for the first X layers when spiralize is choosen.
-            {
-                for(int volumeIdx=0; volumeIdx<storage.volumes.size(); volumeIdx++)
-                {
-                    generateSkins(layerNr, storage.volumes[volumeIdx], config.extrusionWidth, config.downSkinCount, config.upSkinCount, config.infillOverlap);
-                    generateSparse(layerNr, storage.volumes[volumeIdx], config.extrusionWidth, config.downSkinCount, config.upSkinCount);
-                    
+                    int insetCount = config.insetCount;
+                    if (config.spiralizeMode && (int)(layerNr) < config.downSkinCount && layerNr % 2 == 1)//Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
+                        insetCount += 5;
                     SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
-                    for(int partNr=0; partNr<layer.parts.size(); partNr++)
-                        logPolygons("skin", layerNr, layer.z, layer.parts[partNr].skinOutline);
+                    generateInsets(layer, config.extrusionWidth, insetCount);
+
+                    for (int partNr = 0; partNr < layer.parts.size(); partNr++)
+                    {
+                        if (layer.parts[partNr].insets.size() > 0)
+                        {
+                            logPolygons("inset0", layerNr, layer.z, layer.parts[partNr].insets[0]);
+                            for (int inset = 1; inset < layer.parts[partNr].insets.size(); inset++)
+                                logPolygons("insetx", layerNr, layer.z, layer.parts[partNr].insets[inset]);
+                        }
+                    }
                 }
+                logProgress("inset", layerNr + 1, totalLayers);
             }
-            logProgress("skin",layerNr+1,totalLayers);
-        }
-        log("Generated up/down skin in %5.3fs\n", timeKeeper.restart());
-
-        if (config.wipeTowerSize > 0)
-        {
-            PolygonRef p = storage.wipeTower.newPoly();
-            p.add(Point(storage.modelMin.x - 3000, storage.modelMax.y + 3000));
-            p.add(Point(storage.modelMin.x - 3000, storage.modelMax.y + 3000 + config.wipeTowerSize));
-            p.add(Point(storage.modelMin.x - 3000 - config.wipeTowerSize, storage.modelMax.y + 3000 + config.wipeTowerSize));
-            p.add(Point(storage.modelMin.x - 3000 - config.wipeTowerSize, storage.modelMax.y + 3000));
-            
-            storage.wipePoint = Point(storage.modelMin.x - 3000 - config.wipeTowerSize / 2, storage.modelMax.y + 3000 + config.wipeTowerSize / 2);
-        }
-
-        generateSkirt(storage, config.skirtDistance, config.extrusionWidth, config.skirtLineCount, config.skirtMinLength, config.initialLayerThickness);
-        generateRaft(storage, config.raftMargin);
-        
-        for(int volumeIdx=0; volumeIdx<storage.volumes.size(); volumeIdx++)
-        {
-            for(int layerNr=0; layerNr<totalLayers; layerNr++)
+            if (config.enableOozeShield)
             {
-                for(int partNr=0; partNr<storage.volumes[volumeIdx].layers[layerNr].parts.size(); partNr++)
+                for (int layerNr = 0; layerNr < totalLayers; layerNr++)
                 {
-                    if (layerNr > 0)
-                        storage.volumes[volumeIdx].layers[layerNr].parts[partNr].bridgeAngle = bridgeAngle(storage.volumes[volumeIdx].layers[layerNr].parts[partNr], storage.volumes[volumeIdx].layers[layerNr-1]);
-                    else
-                        storage.volumes[volumeIdx].layers[layerNr].parts[partNr].bridgeAngle = -1;
+                    Polygons oozeShield;
+                    for (int volumeIdx = 0; volumeIdx < storage.volumes.size(); volumeIdx++)
+                    {
+                        for (int partNr = 0; partNr < storage.volumes[volumeIdx].layers[layerNr].parts.size(); partNr++)
+                        {
+                            oozeShield = oozeShield.unionPolygons(storage.volumes[volumeIdx].layers[layerNr].parts[partNr].outline.offset(2000));
+                        }
+                    }
+                    storage.oozeShield.push_back(oozeShield);
+                }
+
+                for (int layerNr = 0; layerNr < totalLayers; layerNr++)
+                    storage.oozeShield[layerNr] = storage.oozeShield[layerNr].offset(-1000).offset(1000);
+                int offsetAngle = tan(60.0 * M_PI / 180) * config.layerThickness;//Allow for a 60deg angle in the oozeShield.
+                for (int layerNr = 1; layerNr < totalLayers; layerNr++)
+                    storage.oozeShield[layerNr] = storage.oozeShield[layerNr].unionPolygons(storage.oozeShield[layerNr - 1].offset(-offsetAngle));
+                for (int layerNr = totalLayers - 1; layerNr > 0; layerNr--)
+                    storage.oozeShield[layerNr - 1] = storage.oozeShield[layerNr - 1].unionPolygons(storage.oozeShield[layerNr].offset(-offsetAngle));
+            }
+            log("Generated inset in %5.3fs\n", timeKeeper.Restart());
+
+            for (int layerNr = 0; layerNr < totalLayers; layerNr++)
+            {
+                if (!config.spiralizeMode || (int)(layerNr) < config.downSkinCount)    //Only generate up/downskin and infill for the first X layers when spiralize is choosen.
+                {
+                    for (int volumeIdx = 0; volumeIdx < storage.volumes.size(); volumeIdx++)
+                    {
+                        generateSkins(layerNr, storage.volumes[volumeIdx], config.extrusionWidth, config.downSkinCount, config.upSkinCount, config.infillOverlap);
+                        generateSparse(layerNr, storage.volumes[volumeIdx], config.extrusionWidth, config.downSkinCount, config.upSkinCount);
+
+                        SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
+                        for (int partNr = 0; partNr < layer.parts.size(); partNr++)
+                            logPolygons("skin", layerNr, layer.z, layer.parts[partNr].skinOutline);
+                    }
+                }
+                logProgress("skin", layerNr + 1, totalLayers);
+            }
+            log("Generated up/down skin in %5.3fs\n", timeKeeper.restart());
+
+            if (config.wipeTowerSize > 0)
+            {
+                PolygonRef p = storage.wipeTower.newPoly();
+                p.add(Point(storage.modelMin.x - 3000, storage.modelMax.y + 3000));
+                p.add(Point(storage.modelMin.x - 3000, storage.modelMax.y + 3000 + config.wipeTowerSize));
+                p.add(Point(storage.modelMin.x - 3000 - config.wipeTowerSize, storage.modelMax.y + 3000 + config.wipeTowerSize));
+                p.add(Point(storage.modelMin.x - 3000 - config.wipeTowerSize, storage.modelMax.y + 3000));
+
+                storage.wipePoint = Point(storage.modelMin.x - 3000 - config.wipeTowerSize / 2, storage.modelMax.y + 3000 + config.wipeTowerSize / 2);
+            }
+
+            generateSkirt(storage, config.skirtDistance, config.extrusionWidth, config.skirtLineCount, config.skirtMinLength, config.initialLayerThickness);
+            generateRaft(storage, config.raftMargin);
+
+            for (int volumeIdx = 0; volumeIdx < storage.volumes.size(); volumeIdx++)
+            {
+                for (int layerNr = 0; layerNr < totalLayers; layerNr++)
+                {
+                    for (int partNr = 0; partNr < storage.volumes[volumeIdx].layers[layerNr].parts.size(); partNr++)
+                    {
+                        if (layerNr > 0)
+                            storage.volumes[volumeIdx].layers[layerNr].parts[partNr].bridgeAngle = bridgeAngle(storage.volumes[volumeIdx].layers[layerNr].parts[partNr], storage.volumes[volumeIdx].layers[layerNr - 1]);
+                        else
+                            storage.volumes[volumeIdx].layers[layerNr].parts[partNr].bridgeAngle = -1;
+                    }
                 }
             }
         }
-    }
 
         void writeGCode(SliceDataStorage storage)
     {
@@ -358,7 +358,7 @@ namespace MatterHackers.MatterSlice
                 addSupportToGCode(storage, gcodeLayer, layerNr);
             
             //Finish the layer by applying speed corrections for minimal layer times and slowdown for the initial layer.
-            if (int(layerNr) < config.initialSpeedupLayers)
+            if ((int)(layerNr) < config.initialSpeedupLayers)
             {
                 int n = config.initialSpeedupLayers;
                 int layer0Factor = config.initialLayerSpeed * 100 / config.printSpeed;
@@ -376,14 +376,14 @@ namespace MatterHackers.MatterSlice
                 int n = gcodeLayer.getExtrudeSpeedFactor() - 50;
                 fanSpeed = config.fanSpeedMin * n / 50 + config.fanSpeedMax * (50 - n) / 50;
             }
-            if (int(layerNr) < config.fanFullOnLayerNr)
+            if ((int)(layerNr) < config.fanFullOnLayerNr)
             {
                 //Slow down the fan on the layers below the [fanFullOnLayerNr], where layer 0 is speed 0.
                 fanSpeed = fanSpeed * layerNr / config.fanFullOnLayerNr;
             }
             gcode.addFanCommand(fanSpeed);
 
-            gcodeLayer.writeGCode(config.coolHeadLift > 0, int(layerNr) > 0 ? config.layerThickness : config.initialLayerThickness);
+            gcodeLayer.writeGCode(config.coolHeadLift > 0, (int)(layerNr) > 0 ? config.layerThickness : config.initialLayerThickness);
         }
 
         /* support debug
@@ -406,7 +406,7 @@ namespace MatterHackers.MatterSlice
         gcode.addFanCommand(0);
 
         //Store the object height for when we are printing multiple objects, as we need to clear every one of them when moving to the next position.
-        maxObjectHeight = std::max(maxObjectHeight, storage.modelSize.z);
+        maxObjectHeight = Math.Max(maxObjectHeight, storage.modelSize.z);
     }
 
         //Add a single layer from a single mesh-volume to the GCode
@@ -449,9 +449,9 @@ namespace MatterHackers.MatterSlice
             {
                 if (config.spiralizeMode)
                 {
-                    if (int(layerNr) >= config.downSkinCount)
+                    if ((int)(layerNr) >= config.downSkinCount)
                         inset0Config.spiralize = true;
-                    if (int(layerNr) == config.downSkinCount && part.insets.size() > 0)
+                    if ((int)(layerNr) == config.downSkinCount && part.insets.size() > 0)
                         gcodeLayer.addPolygonsByOptimizer(part.insets[0], &inset1Config);
                 }
                 for(int insetNr=part.insets.size()-1; insetNr>-1; insetNr--)
@@ -489,7 +489,7 @@ namespace MatterHackers.MatterSlice
             logPolygons("infill", layerNr, layer.z, fillPolygons);
             
             //After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
-            if (!config.spiralizeMode || int(layerNr) < config.downSkinCount)
+            if (!config.spiralizeMode || (int)(layerNr) < config.downSkinCount)
                 gcodeLayer.moveInsideCombBoundary(config.extrusionWidth * 2);
         }
         gcodeLayer.setCombBoundary(NULL);
