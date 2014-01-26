@@ -60,5 +60,8 @@
   <ItemGroup>
     <Compile Include="fffProcessor.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="gcodeExport.cs" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

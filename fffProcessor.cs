@@ -105,7 +105,7 @@ public class fffProcessor
         fillConfig.setData(config.infillSpeed, config.extrusionWidth, "FILL");
         supportConfig.setData(config.printSpeed, config.extrusionWidth, "SUPPORT");
 
-        for(unsigned int n=1; n<MAX_EXTRUDERS;n++)
+        for(int n=1; n<MAX_EXTRUDERS;n++)
             gcode.setExtruderOffset(n, config.extruderOffset[n].p());
         gcode.setFlavor(config.gcodeFlavor);
         gcode.setRetractionSettings(config.retractionAmount, config.retractionSpeed, config.retractionAmountExtruderSwitch, config.minimalExtrusionBeforeRetraction);
@@ -124,26 +124,26 @@ public class fffProcessor
         log("Loaded from disk in %5.3fs\n", timeKeeper.restart());
         log("Analyzing and optimizing model...\n");
         OptimizedModel* om = new OptimizedModel(m, Point3(config.objectPosition.X, config.objectPosition.Y, -config.objectSink));
-        for(unsigned int v = 0; v < m->volumes.size(); v++)
+        for(int v = 0; v < m.volumes.size(); v++)
         {
-            log("  Face counts: %i -> %i %0.1f%%\n", (int)m->volumes[v].faces.size(), (int)om->volumes[v].faces.size(), float(om->volumes[v].faces.size()) / float(m->volumes[v].faces.size()) * 100);
-            log("  Vertex counts: %i -> %i %0.1f%%\n", (int)m->volumes[v].faces.size() * 3, (int)om->volumes[v].points.size(), float(om->volumes[v].points.size()) / float(m->volumes[v].faces.size() * 3) * 100);
+            log("  Face counts: %i . %i %0.1f%%\n", (int)m.volumes[v].faces.size(), (int)om.volumes[v].faces.size(), float(om.volumes[v].faces.size()) / float(m.volumes[v].faces.size()) * 100);
+            log("  Vertex counts: %i . %i %0.1f%%\n", (int)m.volumes[v].faces.size() * 3, (int)om.volumes[v].points.size(), float(om.volumes[v].points.size()) / float(m.volumes[v].faces.size() * 3) * 100);
         }
         delete m;
         log("Optimize model %5.3fs \n", timeKeeper.restart());
-        //om->saveDebugSTL("c:\\models\\output.stl");
+        //om.saveDebugSTL("c:\\models\\output.stl");
         
         log("Slicing model...\n");
         vector<Slicer*> slicerList;
-        for(unsigned int volumeIdx=0; volumeIdx < om->volumes.size(); volumeIdx++)
+        for(int volumeIdx=0; volumeIdx < om.volumes.size(); volumeIdx++)
         {
-            Slicer* slicer = new Slicer(&om->volumes[volumeIdx], config.initialLayerThickness - config.layerThickness / 2, config.layerThickness, config.fixHorrible & FIX_HORRIBLE_KEEP_NONE_CLOSED, config.fixHorrible & FIX_HORRIBLE_EXTENSIVE_STITCHING);
+            Slicer* slicer = new Slicer(&om.volumes[volumeIdx], config.initialLayerThickness - config.layerThickness / 2, config.layerThickness, config.fixHorrible & FIX_HORRIBLE_KEEP_NONE_CLOSED, config.fixHorrible & FIX_HORRIBLE_EXTENSIVE_STITCHING);
             slicerList.push_back(slicer);
-            for(unsigned int layerNr=0; layerNr<slicer->layers.size(); layerNr++)
+            for(int layerNr=0; layerNr<slicer.layers.size(); layerNr++)
             {
                 //Reporting the outline here slows down the engine quite a bit, so only do so when debugging.
-                //logPolygons("outline", layerNr, slicer->layers[layerNr].z, slicer->layers[layerNr].polygonList);
-                logPolygons("openoutline", layerNr, slicer->layers[layerNr].z, slicer->layers[layerNr].openPolygonList);
+                //logPolygons("outline", layerNr, slicer.layers[layerNr].z, slicer.layers[layerNr].polygonList);
+                logPolygons("openoutline", layerNr, slicer.layers[layerNr].z, slicer.layers[layerNr].openPolygonList);
             }
         }
         log("Sliced model in %5.3fs\n", timeKeeper.restart());
@@ -151,13 +151,13 @@ public class fffProcessor
         log("Generating support map...\n");
         generateSupportGrid(storage.support, om, config.supportAngle, config.supportEverywhere > 0, config.supportXYDistance, config.supportZDistance);
         
-        storage.modelSize = om->modelSize;
-        storage.modelMin = om->vMin;
-        storage.modelMax = om->vMax;
+        storage.modelSize = om.modelSize;
+        storage.modelMin = om.vMin;
+        storage.modelMax = om.vMax;
         delete om;
 
         log("Generating layer parts...\n");
-        for(unsigned int volumeIdx=0; volumeIdx < slicerList.size(); volumeIdx++)
+        for(int volumeIdx=0; volumeIdx < slicerList.size(); volumeIdx++)
         {
             storage.volumes.push_back(SliceVolumeStorage());
             createLayerParts(storage.volumes[volumeIdx], slicerList[volumeIdx], config.fixHorrible & (FIX_HORRIBLE_UNION_ALL_TYPE_A | FIX_HORRIBLE_UNION_ALL_TYPE_B | FIX_HORRIBLE_UNION_ALL_TYPE_C));
@@ -173,10 +173,10 @@ public class fffProcessor
         generateMultipleVolumesOverlap(storage.volumes, config.multiVolumeOverlap);
         //dumpLayerparts(storage, "c:/models/output.html");
         
-        const unsigned int totalLayers = storage.volumes[0].layers.size();
-        for(unsigned int layerNr=0; layerNr<totalLayers; layerNr++)
+        const int totalLayers = storage.volumes[0].layers.size();
+        for(int layerNr=0; layerNr<totalLayers; layerNr++)
         {
-            for(unsigned int volumeIdx=0; volumeIdx<storage.volumes.size(); volumeIdx++)
+            for(int volumeIdx=0; volumeIdx<storage.volumes.size(); volumeIdx++)
             {
                 int insetCount = config.insetCount;
                 if (config.spiralizeMode && int(layerNr) < config.downSkinCount && layerNr % 2 == 1)//Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
@@ -184,13 +184,13 @@ public class fffProcessor
                 SliceLayer* layer = &storage.volumes[volumeIdx].layers[layerNr];
                 generateInsets(layer, config.extrusionWidth, insetCount);
 
-                for(unsigned int partNr=0; partNr<layer->parts.size(); partNr++)
+                for(int partNr=0; partNr<layer.parts.size(); partNr++)
                 {
-                    if (layer->parts[partNr].insets.size() > 0)
+                    if (layer.parts[partNr].insets.size() > 0)
                     {
-                        logPolygons("inset0", layerNr, layer->z, layer->parts[partNr].insets[0]);
-                        for(unsigned int inset=1; inset<layer->parts[partNr].insets.size(); inset++)
-                            logPolygons("insetx", layerNr, layer->z, layer->parts[partNr].insets[inset]);
+                        logPolygons("inset0", layerNr, layer.z, layer.parts[partNr].insets[0]);
+                        for(int inset=1; inset<layer.parts[partNr].insets.size(); inset++)
+                            logPolygons("insetx", layerNr, layer.z, layer.parts[partNr].insets[inset]);
                     }
                 }
             }
@@ -198,12 +198,12 @@ public class fffProcessor
         }
         if (config.enableOozeShield)
         {
-            for(unsigned int layerNr=0; layerNr<totalLayers; layerNr++)
+            for(int layerNr=0; layerNr<totalLayers; layerNr++)
             {
                 Polygons oozeShield;
-                for(unsigned int volumeIdx=0; volumeIdx<storage.volumes.size(); volumeIdx++)
+                for(int volumeIdx=0; volumeIdx<storage.volumes.size(); volumeIdx++)
                 {
-                    for(unsigned int partNr=0; partNr<storage.volumes[volumeIdx].layers[layerNr].parts.size(); partNr++)
+                    for(int partNr=0; partNr<storage.volumes[volumeIdx].layers[layerNr].parts.size(); partNr++)
                     {
                         oozeShield = oozeShield.unionPolygons(storage.volumes[volumeIdx].layers[layerNr].parts[partNr].outline.offset(2000));
                     }
@@ -211,28 +211,28 @@ public class fffProcessor
                 storage.oozeShield.push_back(oozeShield);
             }
             
-            for(unsigned int layerNr=0; layerNr<totalLayers; layerNr++)
+            for(int layerNr=0; layerNr<totalLayers; layerNr++)
                 storage.oozeShield[layerNr] = storage.oozeShield[layerNr].offset(-1000).offset(1000);
             int offsetAngle = tan(60.0*M_PI/180) * config.layerThickness;//Allow for a 60deg angle in the oozeShield.
-            for(unsigned int layerNr=1; layerNr<totalLayers; layerNr++)
+            for(int layerNr=1; layerNr<totalLayers; layerNr++)
                 storage.oozeShield[layerNr] = storage.oozeShield[layerNr].unionPolygons(storage.oozeShield[layerNr-1].offset(-offsetAngle));
-            for(unsigned int layerNr=totalLayers-1; layerNr>0; layerNr--)
+            for(int layerNr=totalLayers-1; layerNr>0; layerNr--)
                 storage.oozeShield[layerNr-1] = storage.oozeShield[layerNr-1].unionPolygons(storage.oozeShield[layerNr].offset(-offsetAngle));
         }
         log("Generated inset in %5.3fs\n", timeKeeper.restart());
 
-        for(unsigned int layerNr=0; layerNr<totalLayers; layerNr++)
+        for(int layerNr=0; layerNr<totalLayers; layerNr++)
         {
             if (!config.spiralizeMode || int(layerNr) < config.downSkinCount)    //Only generate up/downskin and infill for the first X layers when spiralize is choosen.
             {
-                for(unsigned int volumeIdx=0; volumeIdx<storage.volumes.size(); volumeIdx++)
+                for(int volumeIdx=0; volumeIdx<storage.volumes.size(); volumeIdx++)
                 {
                     generateSkins(layerNr, storage.volumes[volumeIdx], config.extrusionWidth, config.downSkinCount, config.upSkinCount, config.infillOverlap);
                     generateSparse(layerNr, storage.volumes[volumeIdx], config.extrusionWidth, config.downSkinCount, config.upSkinCount);
                     
                     SliceLayer* layer = &storage.volumes[volumeIdx].layers[layerNr];
-                    for(unsigned int partNr=0; partNr<layer->parts.size(); partNr++)
-                        logPolygons("skin", layerNr, layer->z, layer->parts[partNr].skinOutline);
+                    for(int partNr=0; partNr<layer.parts.size(); partNr++)
+                        logPolygons("skin", layerNr, layer.z, layer.parts[partNr].skinOutline);
                 }
             }
             logProgress("skin",layerNr+1,totalLayers);
@@ -253,11 +253,11 @@ public class fffProcessor
         generateSkirt(storage, config.skirtDistance, config.extrusionWidth, config.skirtLineCount, config.skirtMinLength, config.initialLayerThickness);
         generateRaft(storage, config.raftMargin);
         
-        for(unsigned int volumeIdx=0; volumeIdx<storage.volumes.size(); volumeIdx++)
+        for(int volumeIdx=0; volumeIdx<storage.volumes.size(); volumeIdx++)
         {
-            for(unsigned int layerNr=0; layerNr<totalLayers; layerNr++)
+            for(int layerNr=0; layerNr<totalLayers; layerNr++)
             {
-                for(unsigned int partNr=0; partNr<storage.volumes[volumeIdx].layers[layerNr].parts.size(); partNr++)
+                for(int partNr=0; partNr<storage.volumes[volumeIdx].layers[layerNr].parts.size(); partNr++)
                 {
                     if (layerNr > 0)
                         storage.volumes[volumeIdx].layers[layerNr].parts[partNr].bridgeAngle = bridgeAngle(&storage.volumes[volumeIdx].layers[layerNr].parts[partNr], &storage.volumes[volumeIdx].layers[layerNr-1]);
@@ -289,7 +289,7 @@ public class fffProcessor
         }
         fileNr++;
         
-        unsigned int totalLayers = storage.volumes[0].layers.size();
+        int totalLayers = storage.volumes[0].layers.size();
         gcode.addComment("Layer count: %d", totalLayers);
 
         if (config.raftBaseThickness > 0 && config.raftInterfaceThickness > 0)
@@ -327,7 +327,7 @@ public class fffProcessor
         }
 
         int volumeIdx = 0;
-        for(unsigned int layerNr=0; layerNr<totalLayers; layerNr++)
+        for(int layerNr=0; layerNr<totalLayers; layerNr++)
         {
             logProgress("export", layerNr+1, totalLayers);
             
@@ -346,7 +346,7 @@ public class fffProcessor
             if (printSupportFirst)
                 addSupportToGCode(storage, gcodeLayer, layerNr);
             
-            for(unsigned int volumeCnt = 0; volumeCnt < storage.volumes.size(); volumeCnt++)
+            for(int volumeCnt = 0; volumeCnt < storage.volumes.size(); volumeCnt++)
             {
                 if (volumeCnt > 0)
                     volumeIdx = (volumeIdx + 1) % storage.volumes.size();
@@ -389,7 +389,7 @@ public class fffProcessor
         {
             for(int32_t x=0; x<storage.support.gridWidth; x++)
             {
-                unsigned int n = x+y*storage.support.gridWidth;
+                int n = x+y*storage.support.gridWidth;
                 if (storage.support.grid[n].size() < 1) continue;
                 int32_t z = storage.support.grid[n][0].z;
                 gcode.addMove(Point3(x * storage.support.gridScale + storage.support.gridOffset.X, y * storage.support.gridScale + storage.support.gridOffset.Y, 0), 0);
@@ -423,23 +423,23 @@ public class fffProcessor
         {
             gcodeLayer.setAlwaysRetract(true);
             gcodeLayer.addPolygonsByOptimizer(storage.oozeShield[layerNr], &skirtConfig);
-            logPolygons("oozeshield", layerNr, layer->z, storage.oozeShield[layerNr]);
+            logPolygons("oozeshield", layerNr, layer.z, storage.oozeShield[layerNr]);
             gcodeLayer.setAlwaysRetract(!config.enableCombing);
         }
         
         PathOrderOptimizer partOrderOptimizer(gcode.getPositionXY());
-        for(unsigned int partNr=0; partNr<layer->parts.size(); partNr++)
+        for(int partNr=0; partNr<layer.parts.size(); partNr++)
         {
-            partOrderOptimizer.addPolygon(layer->parts[partNr].insets[0][0]);
+            partOrderOptimizer.addPolygon(layer.parts[partNr].insets[0][0]);
         }
         partOrderOptimizer.optimize();
         
-        for(unsigned int partCounter=0; partCounter<partOrderOptimizer.polyOrder.size(); partCounter++)
+        for(int partCounter=0; partCounter<partOrderOptimizer.polyOrder.size(); partCounter++)
         {
-            SliceLayerPart* part = &layer->parts[partOrderOptimizer.polyOrder[partCounter]];
+            SliceLayerPart* part = &layer.parts[partOrderOptimizer.polyOrder[partCounter]];
             
             if (config.enableCombing)
-                gcodeLayer.setCombBoundary(&part->combBoundery);
+                gcodeLayer.setCombBoundary(&part.combBoundery);
             else
                 gcodeLayer.setAlwaysRetract(true);
             
@@ -449,15 +449,15 @@ public class fffProcessor
                 {
                     if (int(layerNr) >= config.downSkinCount)
                         inset0Config.spiralize = true;
-                    if (int(layerNr) == config.downSkinCount && part->insets.size() > 0)
-                        gcodeLayer.addPolygonsByOptimizer(part->insets[0], &inset1Config);
+                    if (int(layerNr) == config.downSkinCount && part.insets.size() > 0)
+                        gcodeLayer.addPolygonsByOptimizer(part.insets[0], &inset1Config);
                 }
-                for(int insetNr=part->insets.size()-1; insetNr>-1; insetNr--)
+                for(int insetNr=part.insets.size()-1; insetNr>-1; insetNr--)
                 {
                     if (insetNr == 0)
-                        gcodeLayer.addPolygonsByOptimizer(part->insets[insetNr], &inset0Config);
+                        gcodeLayer.addPolygonsByOptimizer(part.insets[insetNr], &inset0Config);
                     else
-                        gcodeLayer.addPolygonsByOptimizer(part->insets[insetNr], &inset1Config);
+                        gcodeLayer.addPolygonsByOptimizer(part.insets[insetNr], &inset1Config);
                 }
             }
             
@@ -466,25 +466,25 @@ public class fffProcessor
             if (layerNr & 1) 
                 fillAngle += 90;
             //int sparseSteps[1] = {config.extrusionWidth};
-            //generateConcentricInfill(part->skinOutline, fillPolygons, sparseSteps, 1);
-            generateLineInfill(part->skinOutline, fillPolygons, config.extrusionWidth, config.extrusionWidth, config.infillOverlap, (part->bridgeAngle > -1) ? part->bridgeAngle : fillAngle);
+            //generateConcentricInfill(part.skinOutline, fillPolygons, sparseSteps, 1);
+            generateLineInfill(part.skinOutline, fillPolygons, config.extrusionWidth, config.extrusionWidth, config.infillOverlap, (part.bridgeAngle > -1) ? part.bridgeAngle : fillAngle);
             //int sparseSteps[2] = {config.extrusionWidth*5, config.extrusionWidth * 0.8};
-            //generateConcentricInfill(part->sparseOutline, fillPolygons, sparseSteps, 2);
+            //generateConcentricInfill(part.sparseOutline, fillPolygons, sparseSteps, 2);
             if (config.sparseInfillLineDistance > 0)
             {
                 if (config.sparseInfillLineDistance > config.extrusionWidth * 4)
                 {
-                    generateLineInfill(part->sparseOutline, fillPolygons, config.extrusionWidth, config.sparseInfillLineDistance * 2, config.infillOverlap, 45);
-                    generateLineInfill(part->sparseOutline, fillPolygons, config.extrusionWidth, config.sparseInfillLineDistance * 2, config.infillOverlap, 45 + 90);
+                    generateLineInfill(part.sparseOutline, fillPolygons, config.extrusionWidth, config.sparseInfillLineDistance * 2, config.infillOverlap, 45);
+                    generateLineInfill(part.sparseOutline, fillPolygons, config.extrusionWidth, config.sparseInfillLineDistance * 2, config.infillOverlap, 45 + 90);
                 }
                 else
                 {
-                    generateLineInfill(part->sparseOutline, fillPolygons, config.extrusionWidth, config.sparseInfillLineDistance, config.infillOverlap, fillAngle);
+                    generateLineInfill(part.sparseOutline, fillPolygons, config.extrusionWidth, config.sparseInfillLineDistance, config.infillOverlap, fillAngle);
                 }
             }
 
             gcodeLayer.addPolygonsByOptimizer(fillPolygons, &fillConfig);
-            logPolygons("infill", layerNr, layer->z, fillPolygons);
+            logPolygons("infill", layerNr, layer.z, fillPolygons);
             
             //After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
             if (!config.spiralizeMode || int(layerNr) < config.downSkinCount)
@@ -513,11 +513,11 @@ public class fffProcessor
         }
         int32_t z = config.initialLayerThickness + layerNr * config.layerThickness;
         SupportPolyGenerator supportGenerator(storage.support, z);
-        for(unsigned int volumeCnt = 0; volumeCnt < storage.volumes.size(); volumeCnt++)
+        for(int volumeCnt = 0; volumeCnt < storage.volumes.size(); volumeCnt++)
         {
             SliceLayer* layer = &storage.volumes[volumeCnt].layers[layerNr];
-            for(unsigned int n=0; n<layer->parts.size(); n++)
-                supportGenerator.polygons = supportGenerator.polygons.difference(layer->parts[n].outline.offset(config.supportXYDistance));
+            for(int n=0; n<layer.parts.size(); n++)
+                supportGenerator.polygons = supportGenerator.polygons.difference(layer.parts[n].outline.offset(config.supportXYDistance));
         }
         //Contract and expand the suppory polygons so small sections are removed and the final polygon is smoothed a bit.
         supportGenerator.polygons = supportGenerator.polygons.offset(-config.extrusionWidth * 3);
@@ -526,7 +526,7 @@ public class fffProcessor
         
         vector<Polygons> supportIslands = supportGenerator.polygons.splitIntoParts();
         
-        for(unsigned int n=0; n<supportIslands.size(); n++)
+        for(int n=0; n<supportIslands.size(); n++)
         {
             Polygons supportLines;
             if (config.supportLineDistance > 0)
