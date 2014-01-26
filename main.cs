@@ -1,3 +1,22 @@
+/*
+Copyright (c) 2013, Lars Brubaker
+
+This file is part of MatterSlice.
+
+MatterSlice is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MatterSlice is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with MatterSlice.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 using System;
 
 namespace MatterHackers.MatterSlice
@@ -9,7 +28,7 @@ void print_usage()
     Console.Write("usage: MatterSlice [-h] [-v] [-m 3x3matrix] [-s <settingkey>=<value>] -o <output.gcode> <model.stl>\n");
 }
 
-int main(int argc, char **argv)
+void main(char[] argv)
 {
     ConfigSettings config;
     fffProcessor processor(config);
