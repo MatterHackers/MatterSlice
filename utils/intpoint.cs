@@ -68,9 +68,9 @@ namespace MatterHackers.MatterSlice
         {
             return left.x != right.x || left.y != right.y || left.z != right.z;
         }
-    
-    int max()
-    {
+
+        int max()
+        {
             if (x > y && x > z)
             {
                 return x;
@@ -81,147 +81,177 @@ namespace MatterHackers.MatterSlice
             }
 
             return z;
+        }
+
+        bool testLength(int len)
+        {
+            if (x > len || x < -len)
+                return false;
+            if (y > len || y < -len)
+                return false;
+            if (z > len || z < -len)
+                return false;
+            return vSize2() <= len * len;
+        }
+
+        long vSize2()
+        {
+            return (long)x * (long)x + (long)y * (long)y + (long)z * (long)z;
+        }
+
+        int vSize()
+        {
+            return (int)Math.Sqrt(vSize2());
+        }
+
+        Point3 cross(Point3 p)
+        {
+            return new Point3(
+                y * p.z - z * p.y,
+                z * p.x - x * p.z,
+                x * p.y - y * p.x);
+        }
     }
-    
-    bool testLength(int len)
+
+
+    /* 64bit Points are used mostly troughout the code, these are the 2D points from ClipperLib */
+    public struct Point
     {
-        if (x > len || x < -len)
-            return false;
-        if (y > len || y < -len)
-            return false;
-        if (z > len || z < -len)
-            return false;
-        return vSize2() <= len*len;
+        public long X;
+        public long Y;
+        public Point(long x, long y)
+        {
+            this.X = x;
+            this.Y = y;
+        }
+
+        public Point(double x, double y)
+        {
+            this.X = (long)(x + .5);
+            this.Y = (long)(y + .5);
+        }
+
+        /* Extra operators to make it easier to do math with the 64bit Point objects */
+        public static Point operator +(Point left, Point right)
+        {
+            return new Point(left.X + right.X, left.Y + right.Y);
+        }
+
+        public static Point operator -(Point left, Point right)
+        {
+            return new Point(left.X - right.X, left.Y - right.Y);
+        }
+
+        public static Point operator *(Point point, int i)
+        {
+            return new Point(point.X * i, point.Y * i);
+        }
+
+        public static Point operator /(Point point, int i)
+        {
+            return new Point(point.X / i, point.Y / i);
+        }
+
+        public static bool operator ==(Point left, Point right)
+        {
+            return left.X == right.X && left.Y == right.Y;
+        }
+
+        public static bool operator !=(Point left, Point right)
+        {
+            return left.X != right.X || left.Y != right.Y;
+        }
+
+        long vSize2(Point p0)
+        {
+            return p0.X * p0.X + p0.Y * p0.Y;
+        }
+
+        float vSize2f(Point p0)
+        {
+            return (float)(p0.X) * (float)(p0.X) + (float)(p0.Y) * (float)(p0.Y);
+        }
+
+        bool shorterThen(Point p0, int len)
+        {
+            if (p0.X > len || p0.X < -len)
+                return false;
+            if (p0.Y > len || p0.Y < -len)
+                return false;
+            return vSize2(p0) <= len * len;
+        }
+
+        int vSize(Point p0)
+        {
+            return (int)Math.Sqrt(vSize2(p0));
+        }
+
+        double vSizeMM(Point p0)
+        {
+            double fx = (double)(p0.X) / 1000.0;
+            double fy = (double)(p0.Y) / 1000.0;
+            return Math.Sqrt(fx * fx + fy * fy);
+        }
+
+        Point normal(Point p0, int len)
+        {
+            int _len = vSize(p0);
+            if (_len < 1)
+                return new Point(len, 0);
+            return p0 * len / _len;
+        }
+
+        Point crossZ(Point p0)
+        {
+            return new Point(-p0.Y, p0.X);
+        }
+
+        long dot(Point p0, Point p1)
+        {
+            return p0.X * p1.X + p0.Y * p1.Y;
+        }
     }
-    
-    long vSize2()
+
+    public class PointMatrix
     {
-           return (long)x * (long)x + (long)y * (long)y + (long)z * (long)z;
-    }
-    
-    int vSize()
-    {
-         return (int)Math.Sqrt(vSize2());
-    }
-    
-    Point3 cross( Point3 p)
-    {
-        return new Point3(
-            y*p.z-z*p.y,
-            z*p.x-x*p.z,
-            x*p.y-y*p.x);
-    }
-    }
+        public double[] matrix = new double[4];
 
-/* 64bit Points are used mostly troughout the code, these are the 2D points from ClipperLib */
-typedef ClipperLib::IntPoint Point;
-class IntPoint {
-public:
-    int X, Y;
-    Point p() { return Point(X, Y); }
-};
+        public PointMatrix()
+        {
+            matrix[0] = 1;
+            matrix[1] = 0;
+            matrix[2] = 0;
+            matrix[3] = 1;
+        }
 
-/* Extra operators to make it easier to do math with the 64bit Point objects */
-INLINE Point operator+(const Point& p0, const Point& p1) { return Point(p0.X+p1.X, p0.Y+p1.Y); }
-INLINE Point operator-(const Point& p0, const Point& p1) { return Point(p0.X-p1.X, p0.Y-p1.Y); }
-INLINE Point operator*(const Point& p0, const int32_t i) { return Point(p0.X*i, p0.Y*i); }
-INLINE Point operator/(const Point& p0, const int32_t i) { return Point(p0.X/i, p0.Y/i); }
+        public PointMatrix(double rotation)
+        {
+            rotation = rotation / 180 * Math.PI;
+            matrix[0] = Math.Cos(rotation);
+            matrix[1] = -Math.Sin(rotation);
+            matrix[2] = -matrix[1];
+            matrix[3] = matrix[0];
+        }
 
-//Point& operator += (const Point& p) { x += p.x; y += p.y; return *this; }
-//Point& operator -= (const Point& p) { x -= p.x; y -= p.y; return *this; }
+        public PointMatrix(Point p)
+        {
+            matrix[0] = p.X;
+            matrix[1] = p.Y;
+            double f = Math.Sqrt((matrix[0] * matrix[0]) + (matrix[1] * matrix[1]));
+            matrix[0] /= f;
+            matrix[1] /= f;
+            matrix[2] = -matrix[1];
+            matrix[3] = matrix[0];
+        }
 
-INLINE bool operator==(const Point& p0, const Point& p1) { return p0.X==p1.X&&p0.Y==p1.Y; }
-INLINE bool operator!=(const Point& p0, const Point& p1) { return p0.X!=p1.X||p0.Y!=p1.Y; }
+        public Point apply(Point p)
+        {
+            return new Point(p.X * matrix[0] + p.Y * matrix[1], p.X * matrix[2] + p.Y * matrix[3]);
+        }
 
-INLINE int64_t vSize2(const Point& p0)
-{
-    return p0.X*p0.X+p0.Y*p0.Y;
-}
-INLINE float vSize2f(const Point& p0)
-{
-    return float(p0.X)*float(p0.X)+float(p0.Y)*float(p0.Y);
-}
-
-INLINE bool shorterThen(const Point& p0, int32_t len)
-{
-    if (p0.X > len || p0.X < -len)
-        return false;
-    if (p0.Y > len || p0.Y < -len)
-        return false;
-    return vSize2(p0) <= len*len;
-}
-
-INLINE int32_t vSize(const Point& p0)
-{
-    return sqrt(vSize2(p0));
-}
-
-INLINE double vSizeMM(const Point& p0)
-{
-    double fx = double(p0.X) / 1000.0;
-    double fy = double(p0.Y) / 1000.0;
-    return sqrt(fx*fx+fy*fy);
-}
-
-INLINE Point normal(const Point& p0, int32_t len)
-{
-    int32_t _len = vSize(p0);
-    if (_len < 1)
-        return Point(len, 0);
-    return p0 * len / _len;
-}
-
-INLINE Point crossZ(const Point& p0)
-{
-    return Point(-p0.Y, p0.X);
-}
-INLINE int64_t dot(const Point& p0, const Point& p1)
-{
-    return p0.X * p1.X + p0.Y * p1.Y;
-}
-
-class PointMatrix
-{
-public:
-    double matrix[4];
-
-    PointMatrix()
-    {
-        matrix[0] = 1;
-        matrix[1] = 0;
-        matrix[2] = 0;
-        matrix[3] = 1;
-    }
-    
-    PointMatrix(double rotation)
-    {
-        rotation = rotation / 180 * M_PI;
-        matrix[0] = cos(rotation);
-        matrix[1] = -sin(rotation);
-        matrix[2] = -matrix[1];
-        matrix[3] = matrix[0];
-    }
-    
-    PointMatrix(const Point p)
-    {
-        matrix[0] = p.X;
-        matrix[1] = p.Y;
-        double f = sqrt((matrix[0] * matrix[0]) + (matrix[1] * matrix[1]));
-        matrix[0] /= f;
-        matrix[1] /= f;
-        matrix[2] = -matrix[1];
-        matrix[3] = matrix[0];
-    }
-    
-    Point apply(const Point p) const
-    {
-        return Point(p.X * matrix[0] + p.Y * matrix[1], p.X * matrix[2] + p.Y * matrix[3]);
-    }
-
-    Point unapply(const Point p) const
-    {
-        return Point(p.X * matrix[0] + p.Y * matrix[2], p.X * matrix[1] + p.Y * matrix[3]);
-    }
-};
-
+        public Point unapply(Point p)
+        {
+            return new Point(p.X * matrix[0] + p.Y * matrix[2], p.X * matrix[1] + p.Y * matrix[3]);
+        }
+    };
 }

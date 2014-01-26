@@ -143,16 +143,20 @@ public const int MAX_EXTRUDERS =16;
     public int spiralizeMode;
     public int gcodeFlavor;
     
-    public IntPoint extruderOffset[MAX_EXTRUDERS];
+    public IntPoint[] extruderOffset = new IntPoint[MAX_EXTRUDERS];
     public string startCode;
     public string endCode;
-    
-#define STRINGIFY(_s) #_s
-#define SETTING(name) _index.push_back(_ConfigSettingIndex(STRINGIFY(name), &name))
-#define SETTING2(name, altName) _index.push_back(_ConfigSettingIndex(STRINGIFY(name), &name)); _index.push_back(_ConfigSettingIndex(STRINGIFY(altName), &name))
+
+#if false
+//#define STRINGIFY(_s) #_s
+//#define SETTING(name) _index.push_back(_ConfigSettingIndex(STRINGIFY(name), &name))
+//#define SETTING2(name, altName) _index.push_back(_ConfigSettingIndex(STRINGIFY(name), &name)); _index.push_back(_ConfigSettingIndex(STRINGIFY(altName), &name))
+#endif
 
 public ConfigSettings()
 {
+    throw new NotImplementedException();
+#if false
     SETTING(layerThickness);
     SETTING(initialLayerThickness);
     SETTING(filamentDiameter);
@@ -217,11 +221,14 @@ public ConfigSettings()
     SETTING(extruderOffset[2].Y);
     SETTING(extruderOffset[3].X);
     SETTING(extruderOffset[3].Y);
+#endif
 }
 
-public bool setSetting(const char* key, const char* value)
+public bool setSetting(string key, string value)
 {
-    for(unsigned int n=0; n < _index.size(); n++)
+    throw new NotImplementedException();
+#if false
+    for(int n=0; n < _index.size(); n++)
     {
         if (strcasecmp(key, _index[n].key) == 0)
         {
@@ -239,6 +246,7 @@ public bool setSetting(const char* key, const char* value)
         this->endCode = value;
         return true;
     }
+#endif
     return false;
 }
     }
