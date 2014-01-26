@@ -111,11 +111,11 @@ public class fffProcessor
         gcode.setRetractionSettings(config.retractionAmount, config.retractionSpeed, config.retractionAmountExtruderSwitch, config.minimalExtrusionBeforeRetraction);
     }
 
-    bool prepareModel(SliceDataStorage& storage, string input_filename)
+    bool prepareModel(SliceDataStorage storage, string input_filename)
     {
         timeKeeper.restart();
         log("Loading %s from disk...\n", input_filename);
-        SimpleModel* m = loadModel(input_filename, config.matrix);
+        SimpleModel m = loadModel(input_filename, config.matrix);
         if (!m)
         {
             logError("Failed to load model: %s\n", input_filename);
@@ -167,7 +167,7 @@ public class fffProcessor
         return true;
     }
     
-    void processSliceData(SliceDataStorage& storage)
+    void processSliceData(SliceDataStorage storage)
     {
         //carveMultipleVolumes(storage.volumes);
         generateMultipleVolumesOverlap(storage.volumes, config.multiVolumeOverlap);
@@ -268,7 +268,7 @@ public class fffProcessor
         }
     }
 
-    void writeGCode(SliceDataStorage& storage)
+    void writeGCode(SliceDataStorage storage)
     {
         if (fileNr == 1)
         {
@@ -408,7 +408,7 @@ public class fffProcessor
     }
     
     //Add a single layer from a single mesh-volume to the GCode
-    void addVolumeLayerToGCode(SliceDataStorage& storage, GCodePlanner& gcodeLayer, int volumeIdx, int layerNr)
+    void addVolumeLayerToGCode(SliceDataStorage storage, GCodePlanner& gcodeLayer, int volumeIdx, int layerNr)
     {
         int prevExtruder = gcodeLayer.getExtruder();
         bool extruderChanged = gcodeLayer.setExtruder(volumeIdx);
@@ -493,7 +493,7 @@ public class fffProcessor
         gcodeLayer.setCombBoundary(NULL);
     }
     
-    void addSupportToGCode(SliceDataStorage& storage, GCodePlanner& gcodeLayer, int layerNr)
+    void addSupportToGCode(SliceDataStorage storage, GCodePlanner& gcodeLayer, int layerNr)
     {
         if (!storage.support.generated)
             return;
@@ -549,7 +549,7 @@ public class fffProcessor
         }
     }
     
-    void addWipeTower(SliceDataStorage& storage, GCodePlanner& gcodeLayer, int layerNr, int prevExtruder)
+    void addWipeTower(SliceDataStorage storage, GCodePlanner& gcodeLayer, int layerNr, int prevExtruder)
     {
         if (config.wipeTowerSize < 1)
             return;

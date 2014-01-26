@@ -24,7 +24,7 @@ namespace MatterHackers.MatterSlice
 {
 public class GCodeExport
 {
-    FileStream f;
+    TextWriter f;
     double extrusionAmount;
     double extrusionPerMM;
     double retractionAmount;
@@ -43,101 +43,164 @@ public class GCodeExport
     double[] totalFilament = new double[ConfigSettings.MAX_EXTRUDERS];
     double totalPrintTime;
     TimeEstimateCalculator estimateCalculator;
-public:
     
-GCodePlanner(GCodeExport& gcode, int travelSpeed, int retractionMinimalDistance)
-: gcode(gcode), travelConfig(travelSpeed, 0, "travel")
+    
+public GCodeExport()
 {
-    lastPosition = gcode.getPositionXY();
-    comb = NULL;
-    extrudeSpeedFactor = 100;
-    travelSpeedFactor = 100;
-    extraTime = 0.0;
+    extrusionAmount = 0;
+    extrusionPerMM = 0;
+    retractionAmount = 4.5;
+    minimalExtrusionBeforeRetraction = 0.0;
+    extrusionAmountAtPreviousRetraction = -10000;
+    extruderSwitchRetraction = 14.5;
+    extruderNr = 0;
+    currentFanSpeed = -1;
+    
     totalPrintTime = 0.0;
-    forceRetraction = false;
-    alwaysRetract = false;
-    currentExtruder = gcode.getExtruderNr();
-    this.retractionMinimalDistance = retractionMinimalDistance;
+    for(int e=0; e<ConfigSettings.MAX_EXTRUDERS; e++)
+        totalFilament[e] = 0.0;
+    
+    currentSpeed = 0;
+    retractionSpeed = 45;
+    isRetracted = true;
+    f = stdout;
+}
+
+public ~GCodeExport()
+{
+    if (f)
+        fclose(f);
+}
+
+    public void replaceTagInStart(string tag, string replaceValue)
+{
+    long oldPos = ftello64(f);
+    
+    char buffer[1024];
+    fseeko64(f, 0, SEEK_SET);
+    fread(buffer, 1024, 1, f);
+    
+    char* c = strstr(buffer, tag);
+    memset(c, ' ', strlen(tag));
+    if (c) memcpy(c, replaceValue, strlen(replaceValue));
+    
+    fseeko64(f, 0, SEEK_SET);
+    fwrite(buffer, 1024, 1, f);
+    
+    fseeko64(f, oldPos, SEEK_SET);
 }
     
-    void replaceTagInStart(string tag, string replaceValue);
+public void setExtruderOffset(int id, Point p)
+{
+    extruderOffset[id] = p;
+}
     
-    void setExtruderOffset(int id, Point p);
-    
-    void setFlavor(int flavor);
-    int getFlavor();
-    
-    void setFilename(string filename);
-    
-    bool isValid();
-    
-    void setExtrusion(int layerThickness, int filamentDiameter, int flow);
-    
-    void setRetractionSettings(int retractionAmount, int retractionSpeed, int extruderSwitchRetraction, int minimalExtrusionBeforeRetraction);
-    
-    void setZ(int z);
-    
-    Point getPositionXY();
-    
-    int getPositionZ();
+public void setFlavor(int flavor)
+{
+    this.flavor = flavor;
+}
 
-    int getExtruderNr();
+    public int getFlavor()
+{
+    return this.flavor;
+}
     
-double GCodeExport::getTotalFilamentUsed(int e)
+public void setFilename(string filename)
+{
+    f = new FileStream(filename, FileMode.CreateNew);
+}
+    
+public bool isValid()
+{
+    return f != null;
+}
+    
+public void setExtrusion(int layerThickness, int filamentDiameter, int flow)
+{
+    double filamentArea = M_PI * (double(filamentDiameter) / 1000.0 / 2.0) * (double(filamentDiameter) / 1000.0 / 2.0);
+    if (flavor == GCODE_FLAVOR_ULTIGCODE)//UltiGCode uses volume extrusion as E value, and thus does not need the filamentArea in the mix.
+        extrusionPerMM = double(layerThickness) / 1000.0;
+    else
+        extrusionPerMM = double(layerThickness) / 1000.0 / filamentArea * double(flow) / 100.0;
+}
+    
+public void setRetractionSettings(int retractionAmount, int retractionSpeed, int extruderSwitchRetraction, int minimalExtrusionBeforeRetraction)
+{
+    this.retractionAmount = double(retractionAmount) / 1000.0;
+    this.retractionSpeed = retractionSpeed;
+    this.extruderSwitchRetraction = double(extruderSwitchRetraction) / 1000.0;
+    this.minimalExtrusionBeforeRetraction = double(minimalExtrusionBeforeRetraction) / 1000.0;
+}
+    
+public void setZ(int z)
+{
+    this.zPos = z;
+}
+    
+public Point getPositionXY()
+{
+    return Point(currentPosition.x, currentPosition.y);
+}
+    
+public int getPositionZ()
+{
+    return currentPosition.z;
+}
+
+public int getExtruderNr()
+{
+    return extruderNr;
+}
+    
+public double getTotalFilamentUsed(int e)
 {
     if (e == extruderNr)
+    {
         return totalFilament[e] + extrusionAmount;
+    }
+
     return totalFilament[e];
 }
 
-double GCodeExport::getTotalPrintTime()
+double getTotalPrintTime()
 {
     return totalPrintTime;
 }
 
-    void GCodeExport::updateTotalPrintTime()
+    void updateTotalPrintTime()
 {
     totalPrintTime += estimateCalculator.calculate();
     estimateCalculator.reset();
 }
 
-void GCodeExport::addComment(string comment, ...)
+public void addComment(string comment)
 {
-    va_list args;
-    va_start(args, comment);
-    fprintf(f, ";");
-    vfprintf(f, comment, args);
-    fprintf(f, "\n");
-    va_end(args);
+    f.Write(string.Format(";{0]\n", comment));
 }
 
-void GCodeExport::addLine(string line, ...)
+public void addLine(string line)
 {
-    va_list args;
-    va_start(args, line);
-    vfprintf(f, line, args);
-    fprintf(f, "\n");
-    va_end(args);
+    f.Write(string.Format(";{0]\n", line));
 }
     
-void GCodeExport::resetExtrusionValue()
+public void resetExtrusionValue()
 {
     if (extrusionAmount != 0.0)
     {
-        fprintf(f, "G92 E0\n");
+        f.Write("G92 E0\n");
         totalFilament[extruderNr] += extrusionAmount;
         extrusionAmountAtPreviousRetraction -= extrusionAmount;
         extrusionAmount = 0.0;
     }
 }
     
-void GCodeExport::addDelay(double timeAmount)
+public void addDelay(double timeAmount)
 {
-    fprintf(f, "G4 P%d\n", int(timeAmount * 1000));
+    f.Write("G4 P%d\n", int(timeAmount * 1000));
     totalPrintTime += timeAmount;
 }
     
-void GCodeExport::addMove(Point p, int speed, int lineWidth)
+public void addMove(Point p, int speed, int lineWidth)
 {
     if (lineWidth != 0)
     {
@@ -146,9 +209,9 @@ void GCodeExport::addMove(Point p, int speed, int lineWidth)
         {
             if (flavor == GCODE_FLAVOR_ULTIGCODE)
             {
-                fprintf(f, "G11\n");
+                f.Write("G11\n");
             }else{
-                fprintf(f, "G1 F%i E%0.5lf\n", retractionSpeed * 60, extrusionAmount);
+                f.Write("G1 F%i E%0.5lf\n", retractionSpeed * 60, extrusionAmount);
                 currentSpeed = retractionSpeed;
                 estimateCalculator.plan(TimeEstimateCalculator::Position(double(p.X) / 1000.0, (p.Y) / 1000.0, double(zPos) / 1000.0, extrusionAmount), currentSpeed);
             }
@@ -157,36 +220,36 @@ void GCodeExport::addMove(Point p, int speed, int lineWidth)
             isRetracted = false;
         }
         extrusionAmount += extrusionPerMM * double(lineWidth) / 1000.0 * vSizeMM(diff);
-        fprintf(f, "G1");
+        f.Write("G1");
     }else{
-        fprintf(f, "G0");
+        f.Write("G0");
     }
     
     if (currentSpeed != speed)
     {
-        fprintf(f, " F%i", speed * 60);
+        f.Write(" F%i", speed * 60);
         currentSpeed = speed;
     }
-    fprintf(f, " X%0.2f Y%0.2f", float(p.X - extruderOffset[extruderNr].X)/1000, float(p.Y - extruderOffset[extruderNr].Y)/1000);
+    f.Write(" X%0.2f Y%0.2f", float(p.X - extruderOffset[extruderNr].X)/1000, float(p.Y - extruderOffset[extruderNr].Y)/1000);
     if (zPos != currentPosition.z)
-        fprintf(f, " Z%0.2f", float(zPos)/1000);
+        f.Write(" Z%0.2f", float(zPos)/1000);
     if (lineWidth != 0)
-        fprintf(f, " E%0.5lf", extrusionAmount);
-    fprintf(f, "\n");
+        f.Write(" E%0.5lf", extrusionAmount);
+    f.Write("\n");
     
     currentPosition = Point3(p.X, p.Y, zPos);
     estimateCalculator.plan(TimeEstimateCalculator::Position(double(currentPosition.x) / 1000.0, (currentPosition.y) / 1000.0, double(currentPosition.z) / 1000.0, extrusionAmount), currentSpeed);
 }
     
-void GCodeExport::addRetraction()
+public void addRetraction()
 {
     if (retractionAmount > 0 && !isRetracted && extrusionAmountAtPreviousRetraction + minimalExtrusionBeforeRetraction < extrusionAmount)
     {
         if (flavor == GCODE_FLAVOR_ULTIGCODE)
         {
-            fprintf(f, "G10\n");
+            f.Write("G10\n");
         }else{
-            fprintf(f, "G1 F%i E%0.5lf\n", retractionSpeed * 60, extrusionAmount - retractionAmount);
+            f.Write("G1 F%i E%0.5lf\n", retractionSpeed * 60, extrusionAmount - retractionAmount);
             currentSpeed = retractionSpeed;
             estimateCalculator.plan(TimeEstimateCalculator::Position(double(currentPosition.x) / 1000.0, (currentPosition.y) / 1000.0, double(currentPosition.z) / 1000.0, extrusionAmount - retractionAmount), currentSpeed);
         }
@@ -195,7 +258,7 @@ void GCodeExport::addRetraction()
     }
 }
     
-void GCodeExport::switchExtruder(int newExtruder)
+public void switchExtruder(int newExtruder)
 {
     if (extruderNr == newExtruder)
         return;
@@ -205,49 +268,50 @@ void GCodeExport::switchExtruder(int newExtruder)
 
     if (flavor == GCODE_FLAVOR_ULTIGCODE)
     {
-        fprintf(f, "G10 S1\n");
+        f.Write("G10 S1\n");
     }else{
-        fprintf(f, "G1 F%i E%0.4lf\n", retractionSpeed * 60, extrusionAmount - extruderSwitchRetraction);
+        f.Write("G1 F%i E%0.4lf\n", retractionSpeed * 60, extrusionAmount - extruderSwitchRetraction);
         currentSpeed = retractionSpeed;
     }
     isRetracted = true;
     if (flavor == GCODE_FLAVOR_MAKERBOT)
-        fprintf(f, "M135 T%i\n", extruderNr);
+        f.Write("M135 T%i\n", extruderNr);
     else
-        fprintf(f, "T%i\n", extruderNr);
+        f.Write("T%i\n", extruderNr);
 }
     
-void GCodeExport::addCode(string str)
+public void addCode(string str)
 {
-    fprintf(f, "%s\n", str);
+    f.Write("%s\n", str);
 }
     
-void GCodeExport::addFanCommand(int speed)
+public void addFanCommand(int speed)
 {
     if (currentFanSpeed == speed)
         return;
     if (speed > 0)
     {
         if (flavor == GCODE_FLAVOR_MAKERBOT)
-            fprintf(f, "M126 T0 ; value = %d\n", speed * 255 / 100);
+            f.Write("M126 T0 ; value = %d\n", speed * 255 / 100);
         else
-            fprintf(f, "M106 S%d\n", speed * 255 / 100);
+            f.Write("M106 S%d\n", speed * 255 / 100);
     }
     else
     {
         if (flavor == GCODE_FLAVOR_MAKERBOT)
-            fprintf(f, "M127 T0\n");
+            f.Write("M127 T0\n");
         else
-            fprintf(f, "M107\n");
+            f.Write("M107\n");
     }
     currentFanSpeed = speed;
 }
 
-int getFileSize(){
+public int getFileSize()
+{
     return ftell(f);
 }
 
-    void GCodeExport::tellFileSize() {
+    void tellFileSize() {
     float fsize = (float) ftell(f);
     if(fsize > 1024*1024) {
         fsize /= 1024.0*1024.0;
@@ -261,43 +325,45 @@ int getFileSize(){
 
 };
 
-class GCodePathConfig
+public class GCodePathConfig
 {
-public:
-    int speed;
-    int lineWidth;
-    string name;
-    bool spiralize;
+    public int speed;
+    public int lineWidth;
+    public string name;
+    public bool spiralize;
     
-    GCodePathConfig() : speed(0), lineWidth(0), name(NULL), spiralize(false) {}
-    GCodePathConfig(int speed, int lineWidth, string name) : speed(speed), lineWidth(lineWidth), name(name), spiralize(false) {}
-    
-    void setData(int speed, int lineWidth, string name)
+    public GCodePathConfig() {}
+    public GCodePathConfig(int speed, int lineWidth, string name) 
     {
         this.speed = speed;
         this.lineWidth = lineWidth;
         this.name = name;
     }
-};
+    
+    public void setData(int speed, int lineWidth, string name)
+    {
+        this.speed = speed;
+        this.lineWidth = lineWidth;
+        this.name = name;
+    }
+}
 
-class GCodePath
+public class GCodePath
 {
-public:
-    GCodePathConfig* config;
-    bool retract;
-    int extruder;
-    vector<Point> points;
-    bool done;//Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
-};
+    public GCodePathConfig config;
+    public bool retract;
+    public int extruder;
+    public List<Point> points;
+    public bool done;//Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
+}
 
-class GCodePlanner
+public class GCodePlanner
 {
-private:
-    GCodeExport& gcode;
+    GCodeExport gcode;
     
     Point lastPosition;
-    vector<GCodePath> paths;
-    Comb* comb;
+    List<GCodePath> paths;
+    Comb comb;
     
     GCodePathConfig travelConfig;
     int extrudeSpeedFactor;
@@ -308,13 +374,30 @@ private:
     bool alwaysRetract;
     double extraTime;
     double totalPrintTime;
-private:
-GCodePath* getLatestPathWithConfig(GCodePathConfig* config)
+
+public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimalDistance)
 {
-    if (paths.size() > 0 && paths[paths.size()-1].config == config && !paths[paths.size()-1].done)
-        return &paths[paths.size()-1];
-    paths.push_back(GCodePath());
-    GCodePath* ret = &paths[paths.size()-1];
+    gcode = gcode;
+    travelConfig = new GCodePathConfig(travelSpeed, 0, "travel");
+
+    lastPosition = gcode.getPositionXY();
+    comb = NULL;
+    extrudeSpeedFactor = 100;
+    travelSpeedFactor = 100;
+    extraTime = 0.0;
+    totalPrintTime = 0.0;
+    forceRetraction = false;
+    alwaysRetract = false;
+    currentExtruder = gcode.getExtruderNr();
+    this.retractionMinimalDistance = retractionMinimalDistance;
+}
+
+GCodePath getLatestPathWithConfig(GCodePathConfig config)
+{
+    if (paths.Count > 0 && paths[paths.Count-1].config == config && !paths[paths.Count-1].done)
+        return &paths[paths.Count-1];
+    paths.Add(GCodePath());
+    GCodePath* ret = &paths[paths.Count-1];
     ret.retract = false;
     ret.config = config;
     ret.extruder = currentExtruder;
@@ -324,14 +407,11 @@ GCodePath* getLatestPathWithConfig(GCodePathConfig* config)
 
     void forceNewPathStart()
 {
-    if (paths.size() > 0)
-        paths[paths.size()-1].done = true;
+    if (paths.Count > 0)
+        paths[paths.Count-1].done = true;
 }
-public:
-    GCodePlanner(GCodeExport& gcode, int travelSpeed, int retractionMinimalDistance);
-    ~GCodePlanner();
-    
-    bool setExtruder(int extruder)
+
+    public bool setExtruder(int extruder)
     {
         if (extruder == currentExtruder)
             return false;
@@ -339,12 +419,12 @@ public:
         return true;
     }
     
-    int getExtruder()
+    public int getExtruder()
     {
         return currentExtruder;
     }
 
-    void setCombBoundary(Polygons* polygons)
+    public void setCombBoundary(Polygons* polygons)
     {
         if (comb)
             delete comb;
@@ -354,38 +434,41 @@ public:
             comb = NULL;
     }
     
-    void setAlwaysRetract(bool alwaysRetract)
+    public void setAlwaysRetract(bool alwaysRetract)
     {
         this.alwaysRetract = alwaysRetract;
     }
     
-    void forceRetract()
+    public void forceRetract()
     {
         forceRetraction = true;
     }
     
-    void setExtrudeSpeedFactor(int speedFactor)
+    public void setExtrudeSpeedFactor(int speedFactor)
     {
         if (speedFactor < 1) speedFactor = 1;
         this.extrudeSpeedFactor = speedFactor;
     }
-    int getExtrudeSpeedFactor()
+    
+public int getExtrudeSpeedFactor()
     {
         return this.extrudeSpeedFactor;
     }
-    void setTravelSpeedFactor(int speedFactor)
+    
+public void setTravelSpeedFactor(int speedFactor)
     {
         if (speedFactor < 1) speedFactor = 1;
         this.travelSpeedFactor = speedFactor;
     }
-    int getTravelSpeedFactor()
+    
+public int getTravelSpeedFactor()
     {
         return this.travelSpeedFactor;
     }
     
-void GCodePlanner::addTravel(Point p)
+public void GCodePlanner::addTravel(Point p)
 {
-    GCodePath* path = getLatestPathWithConfig(&travelConfig);
+    GCodePath path = getLatestPathWithConfig(travelConfig);
     if (forceRetraction)
     {
         if (!shorterThen(lastPosition - p, retractionMinimalDistance))
@@ -395,12 +478,12 @@ void GCodePlanner::addTravel(Point p)
         forceRetraction = false;
     }else if (comb != NULL)
     {
-        vector<Point> pointList;
+        List<Point> pointList;
         if (comb.calc(lastPosition, p, pointList))
         {
-            for(int n=0; n<pointList.size(); n++)
+            for(int n=0; n<pointList.Count; n++)
             {
-                path.points.push_back(pointList[n]);
+                path.points.Add(pointList[n]);
             }
         }else{
             if (!shorterThen(lastPosition - p, retractionMinimalDistance))
@@ -411,17 +494,17 @@ void GCodePlanner::addTravel(Point p)
         if (!shorterThen(lastPosition - p, retractionMinimalDistance))
             path.retract = true;
     }
-    path.points.push_back(p);
+    path.points.Add(p);
     lastPosition = p;
 }
     
-void addExtrusionMove(Point p, GCodePathConfig* config)
+public void addExtrusionMove(Point p, GCodePathConfig config)
 {
-    getLatestPathWithConfig(config).points.push_back(p);
+    getLatestPathWithConfig(config).points.Add(p);
     lastPosition = p;
 }
     
-void GCodePlanner::moveInsideCombBoundary(int distance)
+public void GCodePlanner::moveInsideCombBoundary(int distance)
 {
     if (!comb || comb.checkInside(lastPosition)) return;
     Point p = lastPosition;
@@ -438,42 +521,42 @@ void GCodePlanner::moveInsideCombBoundary(int distance)
     }
 }
 
-void addPolygon(PolygonRef polygon, int startIdx, GCodePathConfig* config)
+public void addPolygon(PolygonRef polygon, int startIdx, GCodePathConfig config)
 {
     Point p0 = polygon[startIdx];
     addTravel(p0);
-    for(int i=1; i<polygon.size(); i++)
+    for(int i=1; i<polygon.Count; i++)
     {
-        Point p1 = polygon[(startIdx + i) % polygon.size()];
+        Point p1 = polygon[(startIdx + i) % polygon.Count];
         addExtrusionMove(p1, config);
         p0 = p1;
     }
-    if (polygon.size() > 2)
+    if (polygon.Count > 2)
         addExtrusionMove(polygon[startIdx], config);
 }
 
-void addPolygonsByOptimizer(Polygons& polygons, GCodePathConfig* config)
+public void addPolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
 {
     PathOrderOptimizer orderOptimizer(lastPosition);
-    for(int i=0;i<polygons.size();i++)
+    for(int i=0;i<polygons.Count;i++)
         orderOptimizer.addPolygon(polygons[i]);
     orderOptimizer.optimize();
-    for(int i=0;i<orderOptimizer.polyOrder.size();i++)
+    for(int i=0;i<orderOptimizer.polyOrder.Count;i++)
     {
         int nr = orderOptimizer.polyOrder[i];
         addPolygon(polygons[nr], orderOptimizer.polyStart[nr], config);
     }
 }
     
-void forceMinimalLayerTime(double minTime, int minimalSpeed)
+public void forceMinimalLayerTime(double minTime, int minimalSpeed)
 {
     Point p0 = gcode.getPositionXY();
     double travelTime = 0.0;
     double extrudeTime = 0.0;
-    for(int n=0; n<paths.size(); n++)
+    for(int n=0; n<paths.Count; n++)
     {
-        GCodePath* path = &paths[n];
-        for(int i=0; i<path.points.size(); i++)
+        GCodePath path = &paths[n];
+        for(int i=0; i<path.points.Count; i++)
         {
             double thisTime = vSizeMM(p0 - path.points[i]) / double(path.config.speed);
             if (path.config.lineWidth != 0)
@@ -490,7 +573,7 @@ void forceMinimalLayerTime(double minTime, int minimalSpeed)
         if (minExtrudeTime < 1)
             minExtrudeTime = 1;
         double factor = extrudeTime / minExtrudeTime;
-        for(int n=0; n<paths.size(); n++)
+        for(int n=0; n<paths.Count; n++)
         {
             GCodePath* path = &paths[n];
             if (path.config.lineWidth == 0)
@@ -517,12 +600,12 @@ void forceMinimalLayerTime(double minTime, int minimalSpeed)
     }
 }
     
-void writeGCode(bool liftHeadIfNeeded, int layerThickness)
+public void writeGCode(bool liftHeadIfNeeded, int layerThickness)
 {
-    GCodePathConfig* lastConfig = NULL;
+    GCodePathConfig lastConfig = NULL;
     int extruder = gcode.getExtruderNr();
 
-    for(int n=0; n<paths.size(); n++)
+    for(int n=0; n<paths.Count; n++)
     {
         GCodePath path = paths[n];
         if (extruder != path.extruder)
@@ -545,12 +628,12 @@ void writeGCode(bool liftHeadIfNeeded, int layerThickness)
         else
             speed = speed * travelSpeedFactor / 100;
         
-        if (path.points.size() == 1 && path.config != &travelConfig && shorterThen(gcode.getPositionXY() - path.points[0], path.config.lineWidth * 2))
+        if (path.points.Count == 1 && path.config != &travelConfig && shorterThen(gcode.getPositionXY() - path.points[0], path.config.lineWidth * 2))
         {
             //Check for lots of small moves and combine them into one large line
             Point p0 = path.points[0];
             int i = n + 1;
-            while(i < paths.size() && paths[i].points.size() == 1 && shorterThen(p0 - paths[i].points[0], path.config.lineWidth * 2))
+            while(i < paths.Count && paths[i].points.Count == 1 && shorterThen(p0 - paths[i].points[0], path.config.lineWidth * 2))
             {
                 p0 = paths[i].points[0];
                 i ++;
@@ -580,7 +663,7 @@ void writeGCode(bool liftHeadIfNeeded, int layerThickness)
         if (spiralize)
         {
             //Check if we are the last spiralize path in the list, if not, do not spiralize.
-            for(int m=n+1; m<paths.size(); m++)
+            for(int m=n+1; m<paths.Count; m++)
             {
                 if (paths[m].config.spiralize)
                     spiralize = false;
@@ -592,7 +675,7 @@ void writeGCode(bool liftHeadIfNeeded, int layerThickness)
             float totalLength = 0.0;
             int z = gcode.getPositionZ();
             Point p0 = gcode.getPositionXY();
-            for(int i=0; i<path.points.size(); i++)
+            for(int i=0; i<path.points.Count; i++)
             {
                 Point p1 = path.points[i];
                 totalLength += vSizeMM(p0 - p1);
@@ -601,7 +684,7 @@ void writeGCode(bool liftHeadIfNeeded, int layerThickness)
             
             float length = 0.0;
             p0 = gcode.getPositionXY();
-            for(int i=0; i<path.points.size(); i++)
+            for(int i=0; i<path.points.Count; i++)
             {
                 Point p1 = path.points[i];
                 length += vSizeMM(p0 - p1);
@@ -610,7 +693,7 @@ void writeGCode(bool liftHeadIfNeeded, int layerThickness)
                 gcode.addMove(path.points[i], speed, path.config.lineWidth);
             }
         }else{
-            for(int i=0; i<path.points.size(); i++)
+            for(int i=0; i<path.points.Count; i++)
             {
                 gcode.addMove(path.points[i], speed, path.config.lineWidth);
             }
@@ -629,125 +712,5 @@ void writeGCode(bool liftHeadIfNeeded, int layerThickness)
     }
 }
 }
-
-GCodeExport::GCodeExport()
-: currentPosition(0,0,0)
-{
-    extrusionAmount = 0;
-    extrusionPerMM = 0;
-    retractionAmount = 4.5;
-    minimalExtrusionBeforeRetraction = 0.0;
-    extrusionAmountAtPreviousRetraction = -10000;
-    extruderSwitchRetraction = 14.5;
-    extruderNr = 0;
-    currentFanSpeed = -1;
-    
-    totalPrintTime = 0.0;
-    for(int e=0; e<MAX_EXTRUDERS; e++)
-        totalFilament[e] = 0.0;
-    
-    currentSpeed = 0;
-    retractionSpeed = 45;
-    isRetracted = true;
-    memset(extruderOffset, 0, sizeof(extruderOffset));
-    f = stdout;
-}
-
-GCodeExport::~GCodeExport()
-{
-    if (f)
-        fclose(f);
-}
-
-void GCodeExport::replaceTagInStart(string tag, string replaceValue)
-{
-    off64_t oldPos = ftello64(f);
-    
-    char buffer[1024];
-    fseeko64(f, 0, SEEK_SET);
-    fread(buffer, 1024, 1, f);
-    
-    char* c = strstr(buffer, tag);
-    memset(c, ' ', strlen(tag));
-    if (c) memcpy(c, replaceValue, strlen(replaceValue));
-    
-    fseeko64(f, 0, SEEK_SET);
-    fwrite(buffer, 1024, 1, f);
-    
-    fseeko64(f, oldPos, SEEK_SET);
-}
-
-void GCodeExport::setExtruderOffset(int id, Point p)
-{
-    extruderOffset[id] = p;
-}
-
-void GCodeExport::setFlavor(int flavor)
-{
-    this.flavor = flavor;
-}
-int GCodeExport::getFlavor()
-{
-    return this.flavor;
-}
-
-void GCodeExport::setFilename(string filename)
-{
-    f = fopen(filename, "w+");
-}
-
-bool GCodeExport::isValid()
-{
-    return f != NULL;
-}
-
-void GCodeExport::setExtrusion(int layerThickness, int filamentDiameter, int flow)
-{
-    double filamentArea = M_PI * (double(filamentDiameter) / 1000.0 / 2.0) * (double(filamentDiameter) / 1000.0 / 2.0);
-    if (flavor == GCODE_FLAVOR_ULTIGCODE)//UltiGCode uses volume extrusion as E value, and thus does not need the filamentArea in the mix.
-        extrusionPerMM = double(layerThickness) / 1000.0;
-    else
-        extrusionPerMM = double(layerThickness) / 1000.0 / filamentArea * double(flow) / 100.0;
-}
-
-void GCodeExport::setRetractionSettings(int retractionAmount, int retractionSpeed, int extruderSwitchRetraction, int minimalExtrusionBeforeRetraction)
-{
-    this.retractionAmount = double(retractionAmount) / 1000.0;
-    this.retractionSpeed = retractionSpeed;
-    this.extruderSwitchRetraction = double(extruderSwitchRetraction) / 1000.0;
-    this.minimalExtrusionBeforeRetraction = double(minimalExtrusionBeforeRetraction) / 1000.0;
-}
-
-void GCodeExport::setZ(int z)
-{
-    this.zPos = z;
-}
-
-Point GCodeExport::getPositionXY()
-{
-    return Point(currentPosition.x, currentPosition.y);
-}
-
-int GCodeExport::getPositionZ()
-{
-    return currentPosition.z;
-}
-
-int GCodeExport::getExtruderNr()
-{
-    return extruderNr;
-}
-
-
-
-
-
-
-
-
-
-
-
-
 
 }
