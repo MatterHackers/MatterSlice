@@ -18,60 +18,62 @@ along with MatterSlice.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace MatterHackers.MatterSlice
 {
-//FusedFilamentFabrication processor.
-public class fffProcessor
-{
-    int maxObjectHeight;
-    int fileNr;
-    GCodeExport gcode;
-    ConfigSettings config;
-    TimeKeeper timeKeeper;
-
-    GCodePathConfig skirtConfig;
-    GCodePathConfig inset0Config;
-    GCodePathConfig inset1Config;
-    GCodePathConfig fillConfig;
-    GCodePathConfig supportConfig;
-
-	public fffProcessor(ConfigSettings config)
+    //FusedFilamentFabrication processor.
+    public class fffProcessor
     {
-        this.config = config;
-        fileNr = 1;
-        maxObjectHeight = 0;
-    }
-    
-    public bool setTargetFile(string filename)
-    {
-        gcode.setFilename(filename);
-        if (gcode.isValid())
-            gcode.addComment("Generated with Cura_SteamEngine %s", VERSION);
-        return gcode.isValid();
-    }
-    
-    public bool processFile(string input_filename)
-    {
-        if (!gcode.isValid())
-            return false;
+        int maxObjectHeight;
+        int fileNr;
+        GCodeExport gcode;
+        ConfigSettings config;
+        Stopwatch timeKeeper;
 
-        TimeKeeper timeKeeperTotal;
-        SliceDataStorage storage;
-        preSetup();
-        if (!prepareModel(storage, input_filename))
-            return false;
-        
-        processSliceData(storage);
-        writeGCode(storage);
+        GCodePathConfig skirtConfig;
+        GCodePathConfig inset0Config;
+        GCodePathConfig inset1Config;
+        GCodePathConfig fillConfig;
+        GCodePathConfig supportConfig;
 
-        logProgress("process", 1, 1);
-        log("Total time elapsed %5.2fs.\n", timeKeeperTotal.restart());
+        public fffProcessor(ConfigSettings config)
+        {
+            this.config = config;
+            fileNr = 1;
+            maxObjectHeight = 0;
+        }
 
-        return true;
-    }
-    
-    public void finalize()
+        public bool setTargetFile(string filename)
+        {
+            gcode.setFilename(filename);
+            if (gcode.isValid())
+                gcode.addComment("Generated with Cura_SteamEngine %s", VERSION);
+            return gcode.isValid();
+        }
+
+        public bool processFile(string input_filename)
+        {
+            if (!gcode.isValid())
+                return false;
+
+            Stopwatch timeKeeperTotal;
+            SliceDataStorage storage;
+            preSetup();
+            if (!prepareModel(storage, input_filename))
+                return false;
+
+            processSliceData(storage);
+            writeGCode(storage);
+
+            logProgress("process", 1, 1);
+            log("Total time elapsed %5.2fs.\n", timeKeeperTotal.restart());
+
+            return true;
+        }
+
+        public void finalize()
     {
         if (!gcode.isValid())
             return;
@@ -97,21 +99,21 @@ public class fffProcessor
         }
     }
 
-    void preSetup()
-    {
-        skirtConfig.setData(config.printSpeed, config.extrusionWidth, "SKIRT");
-        inset0Config.setData(config.printSpeed, config.extrusionWidth, "WALL-OUTER");
-        inset1Config.setData(config.printSpeed, config.extrusionWidth, "WALL-INNER");
-        fillConfig.setData(config.infillSpeed, config.extrusionWidth, "FILL");
-        supportConfig.setData(config.printSpeed, config.extrusionWidth, "SUPPORT");
+        void preSetup()
+        {
+            skirtConfig.setData(config.printSpeed, config.extrusionWidth, "SKIRT");
+            inset0Config.setData(config.printSpeed, config.extrusionWidth, "WALL-OUTER");
+            inset1Config.setData(config.printSpeed, config.extrusionWidth, "WALL-INNER");
+            fillConfig.setData(config.infillSpeed, config.extrusionWidth, "FILL");
+            supportConfig.setData(config.printSpeed, config.extrusionWidth, "SUPPORT");
 
-        for(int n=1; n<MAX_EXTRUDERS;n++)
-            gcode.setExtruderOffset(n, config.extruderOffset[n].p());
-        gcode.setFlavor(config.gcodeFlavor);
-        gcode.setRetractionSettings(config.retractionAmount, config.retractionSpeed, config.retractionAmountExtruderSwitch, config.minimalExtrusionBeforeRetraction);
-    }
+            for (int n = 1; n < MAX_EXTRUDERS; n++)
+                gcode.setExtruderOffset(n, config.extruderOffset[n].p());
+            gcode.setFlavor(config.gcodeFlavor);
+            gcode.setRetractionSettings(config.retractionAmount, config.retractionSpeed, config.retractionAmountExtruderSwitch, config.minimalExtrusionBeforeRetraction);
+        }
 
-    bool prepareModel(SliceDataStorage storage, string input_filename)
+        bool prepareModel(SliceDataStorage storage, string input_filename)
     {
         timeKeeper.restart();
         log("Loading %s from disk...\n", input_filename);
@@ -134,10 +136,10 @@ public class fffProcessor
         //om.saveDebugSTL("c:\\models\\output.stl");
         
         log("Slicing model...\n");
-        vector<Slicer*> slicerList;
+        List<Slicer> slicerList;
         for(int volumeIdx=0; volumeIdx < om.volumes.size(); volumeIdx++)
         {
-            Slicer* slicer = new Slicer(&om.volumes[volumeIdx], config.initialLayerThickness - config.layerThickness / 2, config.layerThickness, config.fixHorrible & FIX_HORRIBLE_KEEP_NONE_CLOSED, config.fixHorrible & FIX_HORRIBLE_EXTENSIVE_STITCHING);
+            Slicer slicer = new Slicer(&om.volumes[volumeIdx], config.initialLayerThickness - config.layerThickness / 2, config.layerThickness, config.fixHorrible & FIX_HORRIBLE_KEEP_NONE_CLOSED, config.fixHorrible & FIX_HORRIBLE_EXTENSIVE_STITCHING);
             slicerList.push_back(slicer);
             for(int layerNr=0; layerNr<slicer.layers.size(); layerNr++)
             {
@@ -166,14 +168,14 @@ public class fffProcessor
         log("Generated layer parts in %5.3fs\n", timeKeeper.restart());
         return true;
     }
-    
-    void processSliceData(SliceDataStorage storage)
+
+        void processSliceData(SliceDataStorage storage)
     {
         //carveMultipleVolumes(storage.volumes);
         generateMultipleVolumesOverlap(storage.volumes, config.multiVolumeOverlap);
         //dumpLayerparts(storage, "c:/models/output.html");
         
-        const int totalLayers = storage.volumes[0].layers.size();
+        int totalLayers = storage.volumes[0].layers.size();
         for(int layerNr=0; layerNr<totalLayers; layerNr++)
         {
             for(int volumeIdx=0; volumeIdx<storage.volumes.size(); volumeIdx++)
@@ -181,7 +183,7 @@ public class fffProcessor
                 int insetCount = config.insetCount;
                 if (config.spiralizeMode && int(layerNr) < config.downSkinCount && layerNr % 2 == 1)//Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
                     insetCount += 5;
-                SliceLayer* layer = &storage.volumes[volumeIdx].layers[layerNr];
+                SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
                 generateInsets(layer, config.extrusionWidth, insetCount);
 
                 for(int partNr=0; partNr<layer.parts.size(); partNr++)
@@ -219,7 +221,7 @@ public class fffProcessor
             for(int layerNr=totalLayers-1; layerNr>0; layerNr--)
                 storage.oozeShield[layerNr-1] = storage.oozeShield[layerNr-1].unionPolygons(storage.oozeShield[layerNr].offset(-offsetAngle));
         }
-        log("Generated inset in %5.3fs\n", timeKeeper.restart());
+        log("Generated inset in %5.3fs\n", timeKeeper.Restart());
 
         for(int layerNr=0; layerNr<totalLayers; layerNr++)
         {
@@ -230,7 +232,7 @@ public class fffProcessor
                     generateSkins(layerNr, storage.volumes[volumeIdx], config.extrusionWidth, config.downSkinCount, config.upSkinCount, config.infillOverlap);
                     generateSparse(layerNr, storage.volumes[volumeIdx], config.extrusionWidth, config.downSkinCount, config.upSkinCount);
                     
-                    SliceLayer* layer = &storage.volumes[volumeIdx].layers[layerNr];
+                    SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
                     for(int partNr=0; partNr<layer.parts.size(); partNr++)
                         logPolygons("skin", layerNr, layer.z, layer.parts[partNr].skinOutline);
                 }
@@ -260,7 +262,7 @@ public class fffProcessor
                 for(int partNr=0; partNr<storage.volumes[volumeIdx].layers[layerNr].parts.size(); partNr++)
                 {
                     if (layerNr > 0)
-                        storage.volumes[volumeIdx].layers[layerNr].parts[partNr].bridgeAngle = bridgeAngle(&storage.volumes[volumeIdx].layers[layerNr].parts[partNr], &storage.volumes[volumeIdx].layers[layerNr-1]);
+                        storage.volumes[volumeIdx].layers[layerNr].parts[partNr].bridgeAngle = bridgeAngle(storage.volumes[volumeIdx].layers[layerNr].parts[partNr], storage.volumes[volumeIdx].layers[layerNr-1]);
                     else
                         storage.volumes[volumeIdx].layers[layerNr].parts[partNr].bridgeAngle = -1;
                 }
@@ -268,7 +270,7 @@ public class fffProcessor
         }
     }
 
-    void writeGCode(SliceDataStorage storage)
+        void writeGCode(SliceDataStorage storage)
     {
         if (fileNr == 1)
         {
@@ -406,16 +408,16 @@ public class fffProcessor
         //Store the object height for when we are printing multiple objects, as we need to clear every one of them when moving to the next position.
         maxObjectHeight = std::max(maxObjectHeight, storage.modelSize.z);
     }
-    
-    //Add a single layer from a single mesh-volume to the GCode
-    void addVolumeLayerToGCode(SliceDataStorage storage, GCodePlanner& gcodeLayer, int volumeIdx, int layerNr)
+
+        //Add a single layer from a single mesh-volume to the GCode
+        void addVolumeLayerToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int volumeIdx, int layerNr)
     {
         int prevExtruder = gcodeLayer.getExtruder();
         bool extruderChanged = gcodeLayer.setExtruder(volumeIdx);
         if (layerNr == 0 && volumeIdx == 0)
             gcodeLayer.addPolygonsByOptimizer(storage.skirt, &skirtConfig);
 
-        SliceLayer* layer = &storage.volumes[volumeIdx].layers[layerNr];
+        SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
         if (extruderChanged)
             addWipeTower(storage, gcodeLayer, layerNr, prevExtruder);
         
@@ -492,8 +494,8 @@ public class fffProcessor
         }
         gcodeLayer.setCombBoundary(NULL);
     }
-    
-    void addSupportToGCode(SliceDataStorage storage, GCodePlanner& gcodeLayer, int layerNr)
+
+        void addSupportToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerNr)
     {
         if (!storage.support.generated)
             return;
@@ -515,7 +517,7 @@ public class fffProcessor
         SupportPolyGenerator supportGenerator(storage.support, z);
         for(int volumeCnt = 0; volumeCnt < storage.volumes.size(); volumeCnt++)
         {
-            SliceLayer* layer = &storage.volumes[volumeCnt].layers[layerNr];
+            SliceLayer layer = storage.volumes[volumeCnt].layers[layerNr];
             for(int n=0; n<layer.parts.size(); n++)
                 supportGenerator.polygons = supportGenerator.polygons.difference(layer.parts[n].outline.offset(config.supportXYDistance));
         }
@@ -524,7 +526,7 @@ public class fffProcessor
         supportGenerator.polygons = supportGenerator.polygons.offset(config.extrusionWidth * 3);
         logPolygons("support", layerNr, z, supportGenerator.polygons);
         
-        vector<Polygons> supportIslands = supportGenerator.polygons.splitIntoParts();
+        List<Polygons> supportIslands = supportGenerator.polygons.splitIntoParts();
         
         for(int n=0; n<supportIslands.size(); n++)
         {
@@ -547,20 +549,20 @@ public class fffProcessor
             gcodeLayer.addPolygonsByOptimizer(supportLines, &supportConfig);
             gcodeLayer.setCombBoundary(NULL);
         }
+        }
+
+        void addWipeTower(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerNr, int prevExtruder)
+        {
+            if (config.wipeTowerSize < 1)
+                return;
+            //If we changed extruder, print the wipe/prime tower for this nozzle;
+            gcodeLayer.addPolygonsByOptimizer(storage.wipeTower, &supportConfig);
+            Polygons fillPolygons;
+            generateLineInfill(storage.wipeTower, fillPolygons, config.extrusionWidth, config.extrusionWidth, config.infillOverlap, 45 + 90 * (layerNr % 2));
+            gcodeLayer.addPolygonsByOptimizer(fillPolygons, &supportConfig);
+
+            //Make sure we wipe the old extruder on the wipe tower.
+            gcodeLayer.addTravel(storage.wipePoint - config.extruderOffset[prevExtruder].p() + config.extruderOffset[gcodeLayer.getExtruder()].p());
+        }
     }
-    
-    void addWipeTower(SliceDataStorage storage, GCodePlanner& gcodeLayer, int layerNr, int prevExtruder)
-    {
-        if (config.wipeTowerSize < 1)
-            return;
-        //If we changed extruder, print the wipe/prime tower for this nozzle;
-        gcodeLayer.addPolygonsByOptimizer(storage.wipeTower, &supportConfig);
-        Polygons fillPolygons;
-        generateLineInfill(storage.wipeTower, fillPolygons, config.extrusionWidth, config.extrusionWidth, config.infillOverlap, 45 + 90 * (layerNr % 2));
-        gcodeLayer.addPolygonsByOptimizer(fillPolygons, &supportConfig);
-        
-        //Make sure we wipe the old extruder on the wipe tower.
-        gcodeLayer.addTravel(storage.wipePoint - config.extruderOffset[prevExtruder].p() + config.extruderOffset[gcodeLayer.getExtruder()].p());
-    }
-}
 }

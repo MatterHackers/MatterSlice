@@ -24,7 +24,7 @@ namespace MatterHackers.MatterSlice
 {
 public class GCodeExport
 {
-    TextWriter f;
+    StreamWriter f;
     double extrusionAmount;
     double extrusionPerMM;
     double retractionAmount;
@@ -68,8 +68,8 @@ public GCodeExport()
 
 public ~GCodeExport()
 {
-    if (f)
-        fclose(f);
+    if (f != null)
+        f.Close();
 }
 
     public void replaceTagInStart(string tag, string replaceValue)
@@ -107,7 +107,7 @@ public void setFlavor(int flavor)
     
 public void setFilename(string filename)
 {
-    f = new FileStream(filename, FileMode.CreateNew);
+    f = new StreamWriter(filename);
 }
     
 public bool isValid()
@@ -274,7 +274,7 @@ public void switchExtruder(int newExtruder)
         currentSpeed = retractionSpeed;
     }
     isRetracted = true;
-    if (flavor == GCODE_FLAVOR_MAKERBOT)
+    if (flavor == ConfigSettings.GCODE_FLAVOR_MAKERBOT)
         f.Write("M135 T%i\n", extruderNr);
     else
         f.Write("T%i\n", extruderNr);
@@ -291,14 +291,14 @@ public void addFanCommand(int speed)
         return;
     if (speed > 0)
     {
-        if (flavor == GCODE_FLAVOR_MAKERBOT)
+        if (flavor == ConfigSettings.GCODE_FLAVOR_MAKERBOT)
             f.Write("M126 T0 ; value = %d\n", speed * 255 / 100);
         else
             f.Write("M106 S%d\n", speed * 255 / 100);
     }
     else
     {
-        if (flavor == GCODE_FLAVOR_MAKERBOT)
+        if (flavor == ConfigSettings.GCODE_FLAVOR_MAKERBOT)
             f.Write("M127 T0\n");
         else
             f.Write("M107\n");
@@ -466,7 +466,7 @@ public int getTravelSpeedFactor()
         return this.travelSpeedFactor;
     }
     
-public void GCodePlanner::addTravel(Point p)
+public void addTravel(Point p)
 {
     GCodePath path = getLatestPathWithConfig(travelConfig);
     if (forceRetraction)
@@ -504,7 +504,7 @@ public void addExtrusionMove(Point p, GCodePathConfig config)
     lastPosition = p;
 }
     
-public void GCodePlanner::moveInsideCombBoundary(int distance)
+public void moveInsideCombBoundary(int distance)
 {
     if (!comb || comb.checkInside(lastPosition)) return;
     Point p = lastPosition;
