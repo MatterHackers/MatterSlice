@@ -21,18 +21,16 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-using ClipperLib;
-
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
+    using Point = ClipperLib.IntPoint;
 class PolygonRef
 {
-    Path polygon;
+    ClipperLib.Polygon polygon;
     PolygonRef()
     {}
 
-    public PolygonRef(Path polygon)
+    public PolygonRef(ClipperLib.Polygon polygon)
     {
 this.polygon = polygon;
     }
@@ -70,14 +68,14 @@ this.polygon = polygon;
     
     public void reverse()
     {
-        ClipperLib.ReversePath(polygon);
+        ClipperLib.ReversePolygons(polygon);
     }
 
     public long polygonLength() 
     {
         long length = 0;
         Point p0 = polygon[polygon.Count-1];
-        for(unsigned int n=0; n<polygon.Count; n++)
+        for(int n=0; n<polygon.Count; n++)
         {
             Point p1 = polygon[n];
             length += vSize(p0 - p1);
@@ -88,14 +86,14 @@ this.polygon = polygon;
     
     public double area() 
     {
-        return ClipperLib::Area(polygon);
+        return ClipperLib.Area(polygon);
     }
 
     public Point centerOfMass() 
     {
         double x = 0, y = 0;
         Point p0 = (polygon)[polygon.Count-1];
-        for(unsigned int n=0; n<polygon.Count; n++)
+        for(int n=0; n<polygon.Count; n++)
         {
             Point p1 = (polygon)[n];
             double second_factor = (p0.X * p1.Y) - (p1.X * p0.Y);
@@ -114,13 +112,12 @@ this.polygon = polygon;
             x = -x;
             y = -y;
         }
-        return Point(x, y);
+        return new Point(x, y);
     }
-    
-    friend class Polygons;
 }
 
-public class _Polygon : public PolygonRef
+#if false
+public class _Polygon : PolygonRef
 {
     Path poly;
 
@@ -131,79 +128,93 @@ public _Polygon()
 }
 
 //#define Polygon _Polygon
+#endif
 
 public class Polygons
 {
-    ClipperLib.Paths polygons;
+    ClipperLib.Polygons polygons;
     public int size()
     {
         return polygons.Count;
     }
     
-    public PolygonRef operator[] (unsigned int index)
+            public PolygonRef this[int index]
     {
-        POLY_ASSERT(index < size());
-        return PolygonRef(polygons[index]);
+        return new PolygonRef(polygons[index]);
     }
-    public void remove(unsigned int index)
+    public void remove(int index)
     {
         POLY_ASSERT(index < size());
         polygons.erase(polygons.begin() + index);
     }
     public void clear()
     {
-        polygons.clear();
+        polygons.Clear();
     }
+
     public void add(PolygonRef poly)
     {
         polygons.Add(poly.polygon);
     }
+
     public void add(Polygons other)
     {
-        for(unsigned int n=0; n<other.polygons.Count; n++)
+        for(int n=0; n<other.polygons.Count; n++)
             polygons.Add(other.polygons[n]);
     }
+
     public PolygonRef newPoly()
     {
-        polygons.Add(ClipperLib::Path());
+        polygons.Add(new ClipperLib.Path());
         return PolygonRef(polygons[polygons.Count-1]);
     }
     
     public Polygons() {}
-    public Polygons(Polygons other) { polygons = other.polygons; }
-    public Polygons operator=( Polygons other) { polygons = other.polygons; return *this; }
+    
+    public Polygons(Polygons other) 
+    {
+        polygons = other.polygons; 
+    }
+    
+    public Polygons operator=( Polygons other) 
+    {
+        polygons = other.polygons; 
+        return *this; 
+    }
+
     public Polygons difference( Polygons other) 
     {
         Polygons ret;
-        ClipperLib::Clipper clipper;
-        clipper.AddPaths(polygons, ClipperLib::ptSubject, true);
-        clipper.AddPaths(other.polygons, ClipperLib::ptClip, true);
-        clipper.Execute(ClipperLib::ctDifference, ret.polygons);
+        ClipperLib.Clipper clipper;
+        clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
+        clipper.AddPaths(other.polygons, ClipperLib.ptClip, true);
+        clipper.Execute(ClipperLib.ctDifference, ret.polygons);
         return ret;
     }
+
     public Polygons unionPolygons( Polygons other) 
     {
         Polygons ret;
-        ClipperLib::Clipper clipper;
-        clipper.AddPaths(polygons, ClipperLib::ptSubject, true);
-        clipper.AddPaths(other.polygons, ClipperLib::ptSubject, true);
-        clipper.Execute(ClipperLib::ctUnion, ret.polygons, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
+        ClipperLib.Clipper clipper;
+        clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
+        clipper.AddPaths(other.polygons, ClipperLib.PolyType.ptSubject, true);
+        clipper.Execute(ClipperLib.ctUnion, ret.polygons, ClipperLib.pftNonZero, ClipperLib.pftNonZero);
         return ret;
     }
     public Polygons intersection( Polygons other) 
     {
         Polygons ret;
-        ClipperLib::Clipper clipper;
-        clipper.AddPaths(polygons, ClipperLib::ptSubject, true);
-        clipper.AddPaths(other.polygons, ClipperLib::ptClip, true);
-        clipper.Execute(ClipperLib::ctIntersection, ret.polygons);
+        ClipperLib.Clipper clipper;
+        clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
+        clipper.AddPaths(other.polygons, ClipperLib.ptClip, true);
+        clipper.Execute(ClipperLib.ctIntersection, ret.polygons);
         return ret;
     }
     public Polygons offset(int distance) 
     {
         Polygons ret;
-        ClipperLib::ClipperOffset clipper;
-        clipper.AddPaths(polygons, ClipperLib::jtMiter, ClipperLib::etClosedPolygon);
+        ClipperLib.ClipperOffset clipper;
+        clipper.AddPaths(polygons, ClipperLib.jtMiter, ClipperLib.etClosedPolygon);
         clipper.MiterLimit = 2.0;
         clipper.Execute(ret.polygons, distance);
         return ret;
@@ -211,13 +222,13 @@ public class Polygons
     public List<Polygons> splitIntoParts(bool unionAll = false) 
     {
         List<Polygons> ret;
-        ClipperLib::Clipper clipper;
-        ClipperLib::PolyTree resultPolyTree;
-        clipper.AddPaths(polygons, ClipperLib::ptSubject, true);
+        ClipperLib.Clipper clipper;
+        ClipperLib.PolyTree resultPolyTree;
+        clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
         if (unionAll)
-            clipper.Execute(ClipperLib::ctUnion, resultPolyTree, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
+            clipper.Execute(ClipperLib.ctUnion, resultPolyTree, ClipperLib.pftNonZero, ClipperLib.pftNonZero);
         else
-            clipper.Execute(ClipperLib::ctUnion, resultPolyTree);
+            clipper.Execute(ClipperLib.ctUnion, resultPolyTree);
         
         _processPolyTreeNode(&resultPolyTree, ret);
         return ret;
@@ -226,7 +237,7 @@ public class Polygons
     {
         for(int n=0; n<node.ChildCount(); n++)
         {
-            ClipperLib::PolyNode* child = node.Childs[n];
+            ClipperLib.PolyNode* child = node.Childs[n];
             Polygons polygons;
             polygons.add(child.Contour);
             for(int i=0; i<child.ChildCount(); i++)
@@ -240,19 +251,19 @@ public class Polygons
     public Polygons processEvenOdd() 
     {
         Polygons ret;
-        ClipperLib::Clipper clipper;
-        clipper.AddPaths(polygons, ClipperLib::ptSubject, true);
-        clipper.Execute(ClipperLib::ctUnion, ret.polygons);
+        ClipperLib.Clipper clipper;
+        clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
+        clipper.Execute(ClipperLib.ctUnion, ret.polygons);
         return ret;
     }
     
     public long polygonLength() 
     {
         long length = 0;
-        for(unsigned int i=0; i<polygons.Count; i++)
+        for(int i=0; i<polygons.Count; i++)
         {
             Point p0 = polygons[i][polygons[i].Count-1];
-            for(unsigned int n=0; n<polygons[i].Count; n++)
+            for(int n=0; n<polygons[i].Count; n++)
             {
                 Point p1 = polygons[i][n];
                 length += vSize(p0 - p1);
@@ -264,9 +275,9 @@ public class Polygons
 
     void applyMatrix( PointMatrix matrix)
     {
-        for(unsigned int i=0; i<polygons.Count; i++)
+        for(int i=0; i<polygons.Count; i++)
         {
-            for(unsigned int j=0; j<polygons[i].Count; j++)
+            for(int j=0; j<polygons[i].Count; j++)
             {
                 polygons[i][j] = matrix.apply(polygons[i][j]);
             }
@@ -293,9 +304,9 @@ public class AABB
     {
         min = Point(LLONG_MAX, LLONG_MAX);
         max = Point(LLONG_MIN, LLONG_MIN);
-        for(unsigned int i=0; i<polys.Count; i++)
+        for(int i=0; i<polys.Count; i++)
         {
-            for(unsigned int j=0; j<polys[i].Count; j++)
+            for(int j=0; j<polys[i].Count; j++)
             {
                 if (min.X > polys[i][j].X) min.X = polys[i][j].X;
                 if (min.Y > polys[i][j].Y) min.Y = polys[i][j].Y;
