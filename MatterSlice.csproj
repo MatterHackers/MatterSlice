@@ -65,5 +65,17 @@
   <ItemGroup>
     <Compile Include="gcodeExport.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="optimizedModel.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="modelFile.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="comb.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="utils\polygon.cs" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

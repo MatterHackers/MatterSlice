@@ -28,6 +28,7 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+    using Point = IntPoint;
     public struct Point3
     {
         public int x, y, z;
@@ -113,7 +114,7 @@ namespace MatterHackers.MatterSlice
         }
     }
 
-
+#if false
     /* 64bit Points are used mostly troughout the code, these are the 2D points from ClipperLib */
     public struct Point
     {
@@ -211,6 +212,7 @@ namespace MatterHackers.MatterSlice
             return p0.X * p1.X + p0.Y * p1.Y;
         }
     }
+#endif
 
     public class PointMatrix
     {

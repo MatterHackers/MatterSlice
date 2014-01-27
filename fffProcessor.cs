@@ -21,6 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using ClipperLib;
+
 namespace MatterHackers.MatterSlice
 {
     //FusedFilamentFabrication processor.
@@ -126,10 +128,10 @@ namespace MatterHackers.MatterSlice
         log("Loaded from disk in %5.3fs\n", timeKeeper.restart());
         log("Analyzing and optimizing model...\n");
         OptimizedModel* om = new OptimizedModel(m, Point3(config.objectPosition.X, config.objectPosition.Y, -config.objectSink));
-        for(int v = 0; v < m.volumes.size(); v++)
+        for(int v = 0; v < m.volumes.Count; v++)
         {
-            log("  Face counts: %i . %i %0.1f%%\n", (int)m.volumes[v].faces.size(), (int)om.volumes[v].faces.size(), (float)(om.volumes[v].faces.size()) / (float)(m.volumes[v].faces.size()) * 100);
-            log("  Vertex counts: %i . %i %0.1f%%\n", (int)m.volumes[v].faces.size() * 3, (int)om.volumes[v].points.size(), (float)(om.volumes[v].points.size()) / (float)(m.volumes[v].faces.size() * 3) * 100);
+            log("  Face counts: %i . %i %0.1f%%\n", (int)m.volumes[v].faces.Count, (int)om.volumes[v].faces.Count, (float)(om.volumes[v].faces.Count) / (float)(m.volumes[v].faces.Count) * 100);
+            log("  Vertex counts: %i . %i %0.1f%%\n", (int)m.volumes[v].faces.Count * 3, (int)om.volumes[v].points.Count, (float)(om.volumes[v].points.Count) / (float)(m.volumes[v].faces.Count * 3) * 100);
         }
         delete m;
         log("Optimize model %5.3fs \n", timeKeeper.restart());
@@ -137,11 +139,11 @@ namespace MatterHackers.MatterSlice
         
         log("Slicing model...\n");
         List<Slicer> slicerList;
-        for(int volumeIdx=0; volumeIdx < om.volumes.size(); volumeIdx++)
+        for(int volumeIdx=0; volumeIdx < om.volumes.Count; volumeIdx++)
         {
             Slicer slicer = new Slicer(&om.volumes[volumeIdx], config.initialLayerThickness - config.layerThickness / 2, config.layerThickness, config.fixHorrible & FIX_HORRIBLE_KEEP_NONE_CLOSED, config.fixHorrible & FIX_HORRIBLE_EXTENSIVE_STITCHING);
             slicerList.push_back(slicer);
-            for(int layerNr=0; layerNr<slicer.layers.size(); layerNr++)
+            for(int layerNr=0; layerNr<slicer.layers.Count; layerNr++)
             {
                 //Reporting the outline here slows down the engine quite a bit, so only do so when debugging.
                 //logPolygons("outline", layerNr, slicer.layers[layerNr].z, slicer.layers[layerNr].polygonList);
@@ -159,7 +161,7 @@ namespace MatterHackers.MatterSlice
         delete om;
 
         log("Generating layer parts...\n");
-        for(int volumeIdx=0; volumeIdx < slicerList.size(); volumeIdx++)
+        for(int volumeIdx=0; volumeIdx < slicerList.Count; volumeIdx++)
         {
             storage.volumes.push_back(SliceVolumeStorage());
             createLayerParts(storage.volumes[volumeIdx], slicerList[volumeIdx], config.fixHorrible & (FIX_HORRIBLE_UNION_ALL_TYPE_A | FIX_HORRIBLE_UNION_ALL_TYPE_B | FIX_HORRIBLE_UNION_ALL_TYPE_C));
@@ -175,10 +177,10 @@ namespace MatterHackers.MatterSlice
             generateMultipleVolumesOverlap(storage.volumes, config.multiVolumeOverlap);
             //dumpLayerparts(storage, "c:/models/output.html");
 
-            int totalLayers = storage.volumes[0].layers.size();
+            int totalLayers = storage.volumes[0].layers.Count;
             for (int layerNr = 0; layerNr < totalLayers; layerNr++)
             {
-                for (int volumeIdx = 0; volumeIdx < storage.volumes.size(); volumeIdx++)
+                for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
                 {
                     int insetCount = config.insetCount;
                     if (config.spiralizeMode && (int)(layerNr) < config.downSkinCount && layerNr % 2 == 1)//Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
@@ -186,12 +188,12 @@ namespace MatterHackers.MatterSlice
                     SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
                     generateInsets(layer, config.extrusionWidth, insetCount);
 
-                    for (int partNr = 0; partNr < layer.parts.size(); partNr++)
+                    for (int partNr = 0; partNr < layer.parts.Count; partNr++)
                     {
-                        if (layer.parts[partNr].insets.size() > 0)
+                        if (layer.parts[partNr].insets.Count > 0)
                         {
                             logPolygons("inset0", layerNr, layer.z, layer.parts[partNr].insets[0]);
-                            for (int inset = 1; inset < layer.parts[partNr].insets.size(); inset++)
+                            for (int inset = 1; inset < layer.parts[partNr].insets.Count; inset++)
                                 logPolygons("insetx", layerNr, layer.z, layer.parts[partNr].insets[inset]);
                         }
                     }
@@ -203,9 +205,9 @@ namespace MatterHackers.MatterSlice
                 for (int layerNr = 0; layerNr < totalLayers; layerNr++)
                 {
                     Polygons oozeShield;
-                    for (int volumeIdx = 0; volumeIdx < storage.volumes.size(); volumeIdx++)
+                    for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
                     {
-                        for (int partNr = 0; partNr < storage.volumes[volumeIdx].layers[layerNr].parts.size(); partNr++)
+                        for (int partNr = 0; partNr < storage.volumes[volumeIdx].layers[layerNr].parts.Count; partNr++)
                         {
                             oozeShield = oozeShield.unionPolygons(storage.volumes[volumeIdx].layers[layerNr].parts[partNr].outline.offset(2000));
                         }
@@ -227,13 +229,13 @@ namespace MatterHackers.MatterSlice
             {
                 if (!config.spiralizeMode || (int)(layerNr) < config.downSkinCount)    //Only generate up/downskin and infill for the first X layers when spiralize is choosen.
                 {
-                    for (int volumeIdx = 0; volumeIdx < storage.volumes.size(); volumeIdx++)
+                    for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
                     {
                         generateSkins(layerNr, storage.volumes[volumeIdx], config.extrusionWidth, config.downSkinCount, config.upSkinCount, config.infillOverlap);
                         generateSparse(layerNr, storage.volumes[volumeIdx], config.extrusionWidth, config.downSkinCount, config.upSkinCount);
 
                         SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
-                        for (int partNr = 0; partNr < layer.parts.size(); partNr++)
+                        for (int partNr = 0; partNr < layer.parts.Count; partNr++)
                             logPolygons("skin", layerNr, layer.z, layer.parts[partNr].skinOutline);
                     }
                 }
@@ -255,11 +257,11 @@ namespace MatterHackers.MatterSlice
             generateSkirt(storage, config.skirtDistance, config.extrusionWidth, config.skirtLineCount, config.skirtMinLength, config.initialLayerThickness);
             generateRaft(storage, config.raftMargin);
 
-            for (int volumeIdx = 0; volumeIdx < storage.volumes.size(); volumeIdx++)
+            for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
             {
                 for (int layerNr = 0; layerNr < totalLayers; layerNr++)
                 {
-                    for (int partNr = 0; partNr < storage.volumes[volumeIdx].layers[layerNr].parts.size(); partNr++)
+                    for (int partNr = 0; partNr < storage.volumes[volumeIdx].layers[layerNr].parts.Count; partNr++)
                     {
                         if (layerNr > 0)
                             storage.volumes[volumeIdx].layers[layerNr].parts[partNr].bridgeAngle = bridgeAngle(storage.volumes[volumeIdx].layers[layerNr].parts[partNr], storage.volumes[volumeIdx].layers[layerNr - 1]);
@@ -291,7 +293,7 @@ namespace MatterHackers.MatterSlice
         }
         fileNr++;
         
-        int totalLayers = storage.volumes[0].layers.size();
+        int totalLayers = storage.volumes[0].layers.Count;
         gcode.addComment("Layer count: %d", totalLayers);
 
         if (config.raftBaseThickness > 0 && config.raftInterfaceThickness > 0)
@@ -348,10 +350,10 @@ namespace MatterHackers.MatterSlice
             if (printSupportFirst)
                 addSupportToGCode(storage, gcodeLayer, layerNr);
             
-            for(int volumeCnt = 0; volumeCnt < storage.volumes.size(); volumeCnt++)
+            for(int volumeCnt = 0; volumeCnt < storage.volumes.Count; volumeCnt++)
             {
                 if (volumeCnt > 0)
-                    volumeIdx = (volumeIdx + 1) % storage.volumes.size();
+                    volumeIdx = (volumeIdx + 1) % storage.volumes.Count;
                 addVolumeLayerToGCode(storage, gcodeLayer, volumeIdx, layerNr);
             }
             if (!printSupportFirst)
@@ -392,7 +394,7 @@ namespace MatterHackers.MatterSlice
             for(int32_t x=0; x<storage.support.gridWidth; x++)
             {
                 int n = x+y*storage.support.gridWidth;
-                if (storage.support.grid[n].size() < 1) continue;
+                if (storage.support.grid[n].Count < 1) continue;
                 int32_t z = storage.support.grid[n][0].z;
                 gcode.addMove(Point3(x * storage.support.gridScale + storage.support.gridOffset.X, y * storage.support.gridScale + storage.support.gridOffset.Y, 0), 0);
                 gcode.addMove(Point3(x * storage.support.gridScale + storage.support.gridOffset.X, y * storage.support.gridScale + storage.support.gridOffset.Y, z), z);
@@ -421,7 +423,7 @@ namespace MatterHackers.MatterSlice
         if (extruderChanged)
             addWipeTower(storage, gcodeLayer, layerNr, prevExtruder);
         
-        if (storage.oozeShield.size() > 0 && storage.volumes.size() > 1)
+        if (storage.oozeShield.Count > 0 && storage.volumes.Count > 1)
         {
             gcodeLayer.setAlwaysRetract(true);
             gcodeLayer.addPolygonsByOptimizer(storage.oozeShield[layerNr], &skirtConfig);
@@ -430,13 +432,13 @@ namespace MatterHackers.MatterSlice
         }
         
         PathOrderOptimizer partOrderOptimizer(gcode.getPositionXY());
-        for(int partNr=0; partNr<layer.parts.size(); partNr++)
+        for(int partNr=0; partNr<layer.parts.Count; partNr++)
         {
             partOrderOptimizer.addPolygon(layer.parts[partNr].insets[0][0]);
         }
         partOrderOptimizer.optimize();
         
-        for(int partCounter=0; partCounter<partOrderOptimizer.polyOrder.size(); partCounter++)
+        for(int partCounter=0; partCounter<partOrderOptimizer.polyOrder.Count; partCounter++)
         {
             SliceLayerPart* part = &layer.parts[partOrderOptimizer.polyOrder[partCounter]];
             
@@ -451,10 +453,10 @@ namespace MatterHackers.MatterSlice
                 {
                     if ((int)(layerNr) >= config.downSkinCount)
                         inset0Config.spiralize = true;
-                    if ((int)(layerNr) == config.downSkinCount && part.insets.size() > 0)
+                    if ((int)(layerNr) == config.downSkinCount && part.insets.Count > 0)
                         gcodeLayer.addPolygonsByOptimizer(part.insets[0], &inset1Config);
                 }
-                for(int insetNr=part.insets.size()-1; insetNr>-1; insetNr--)
+                for(int insetNr=part.insets.Count-1; insetNr>-1; insetNr--)
                 {
                     if (insetNr == 0)
                         gcodeLayer.addPolygonsByOptimizer(part.insets[insetNr], &inset0Config);
@@ -506,7 +508,7 @@ namespace MatterHackers.MatterSlice
             if (gcodeLayer.setExtruder(config.supportExtruder))
                 addWipeTower(storage, gcodeLayer, layerNr, prevExtruder);
             
-            if (storage.oozeShield.size() > 0 && storage.volumes.size() == 1)
+            if (storage.oozeShield.Count > 0 && storage.volumes.Count == 1)
             {
                 gcodeLayer.setAlwaysRetract(true);
                 gcodeLayer.addPolygonsByOptimizer(storage.oozeShield[layerNr], &skirtConfig);
@@ -515,10 +517,10 @@ namespace MatterHackers.MatterSlice
         }
         int32_t z = config.initialLayerThickness + layerNr * config.layerThickness;
         SupportPolyGenerator supportGenerator(storage.support, z);
-        for(int volumeCnt = 0; volumeCnt < storage.volumes.size(); volumeCnt++)
+        for(int volumeCnt = 0; volumeCnt < storage.volumes.Count; volumeCnt++)
         {
             SliceLayer layer = storage.volumes[volumeCnt].layers[layerNr];
-            for(int n=0; n<layer.parts.size(); n++)
+            for(int n=0; n<layer.parts.Count; n++)
                 supportGenerator.polygons = supportGenerator.polygons.difference(layer.parts[n].outline.offset(config.supportXYDistance));
         }
         //Contract and expand the suppory polygons so small sections are removed and the final polygon is smoothed a bit.
@@ -528,7 +530,7 @@ namespace MatterHackers.MatterSlice
         
         List<Polygons> supportIslands = supportGenerator.polygons.splitIntoParts();
         
-        for(int n=0; n<supportIslands.size(); n++)
+        for(int n=0; n<supportIslands.Count; n++)
         {
             Polygons supportLines;
             if (config.supportLineDistance > 0)
