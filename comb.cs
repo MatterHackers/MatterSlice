@@ -48,7 +48,7 @@ namespace MatterHackers.MatterSlice
         {
             Point diff = endPoint - startPoint;
 
-            matrix = PointMatrix(diff);
+            matrix = new PointMatrix(diff);
             sp = matrix.apply(startPoint);
             ep = matrix.apply(endPoint);
 
@@ -119,9 +119,9 @@ namespace MatterHackers.MatterSlice
             Point p1 = boundery[polygonNr][idx];
             Point p2 = boundery[polygonNr][(idx < (boundery[polygonNr].Count - 1)) ? (idx + 1) : (0)];
 
-            Point off0 = crossZ(normal(p1 - p0, 1000));
-            Point off1 = crossZ(normal(p2 - p1, 1000));
-            Point n = normal(off0 + off1, 200);
+            Point off0 = ((p1 - p0).normal(1000)).crossZ();
+            Point off1 = ((p2 - p1).normal(1000)).crossZ();
+            Point n = (off0 + off1).normal(200);
 
             return p1 + n;
         }
@@ -219,7 +219,7 @@ namespace MatterHackers.MatterSlice
             }
             if (!checkInside(endPoint))
             {
-                if (!moveInside(&endPoint))    //If we fail to move the point inside the comb boundary we need to retract.
+                if (!moveInside(endPoint))    //If we fail to move the point inside the comb boundary we need to retract.
                     return false;
                 addEndpoint = true;
             }
@@ -236,7 +236,7 @@ namespace MatterHackers.MatterSlice
             calcMinMax();
 
             long x = sp.X;
-            List<Point> pointList;
+            List<Point> pointList = new List<Point>();
             //Now walk trough the crossings, for every boundary we cross, find the initial cross point and the exit point. Then add all the points in between
             // to the pointList and continue with the next boundary we will cross, until there are no more boundaries to cross.
             // This gives a path from the start to finish curved around the holes that it encounters.
@@ -245,7 +245,7 @@ namespace MatterHackers.MatterSlice
                 int n = getPolygonAbove(x);
                 if (n == int.MaxValue) break;
 
-                pointList.Add(matrix.unapply(Point(minX[n] - 200, sp.Y)));
+                pointList.Add(matrix.unapply(new Point(minX[n] - 200, sp.Y)));
                 if ((minIdx[n] - maxIdx[n] + boundery[n].Count) % boundery[n].Count > (maxIdx[n] - minIdx[n] + boundery[n].Count) % boundery[n].Count)
                 {
                     for (int i = minIdx[n]; i != maxIdx[n]; i = (i < boundery[n].Count - 1) ? (i + 1) : (0))

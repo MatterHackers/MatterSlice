@@ -71,10 +71,10 @@ namespace MatterHackers.MatterSlice
     storage.XYDistance = supportXYDistance;
     storage.ZDistance = supportZDistance;
 
-    for(int volumeIdx = 0; volumeIdx < om.volumes.size(); volumeIdx++)
+    for(int volumeIdx = 0; volumeIdx < om.volumes.Count; volumeIdx++)
     {
         OptimizedVolume* vol = &om.volumes[volumeIdx];
-        for(int faceIdx = 0; faceIdx < vol.faces.size(); faceIdx++)
+        for(int faceIdx = 0; faceIdx < vol.faces.Count; faceIdx++)
         {
             OptimizedFace* face = &vol.faces[faceIdx];
             Point3 v0 = vol.points[face.index[0]].p;
@@ -127,7 +127,7 @@ namespace MatterHackers.MatterSlice
         for(int y=0; y<storage.gridHeight; y++)
         {
             int n = x+y*storage.gridWidth;
-            qsort(storage.grid[n].data(), storage.grid[n].size(), sizeof(SupportPoint), cmp_SupportPoint);
+            qsort(storage.grid[n].data(), storage.grid[n].Count, sizeof(SupportPoint), cmp_SupportPoint);
         }
     }
     storage.gridOffset.X += storage.gridScale / 2;
@@ -147,7 +147,7 @@ namespace MatterHackers.MatterSlice
     if (everywhere)
     {
         bool ok = false;
-        for(int i=0; i<storage.grid[n].size(); i+=2)
+        for(int i=0; i<storage.grid[n].Count; i+=2)
         {
             if (storage.grid[n][i].cosAngle >= cosAngle && storage.grid[n][i].z - supportZDistance >= z && (i == 0 || storage.grid[n][i-1].z + supportZDistance < z))
             {
@@ -157,7 +157,7 @@ namespace MatterHackers.MatterSlice
         }
         if (!ok) return false;
     }else{
-        if (storage.grid[n].size() < 1) return false;
+        if (storage.grid[n].Count < 1) return false;
         if (storage.grid[n][0].cosAngle < cosAngle) return false;
         if (storage.grid[n][0].z - supportZDistance < z) return false;
     }
@@ -187,9 +187,9 @@ namespace MatterHackers.MatterSlice
             startPoint.X ++;
         if (startPoint.X > p.X)
         {
-            for(int n=0;n<tmpPoly.size();n++)
+            for(int n=0;n<tmpPoly.Count;n++)
             {
-                poly.add(tmpPoly[tmpPoly.size()-n-1]);
+                poly.add(tmpPoly[tmpPoly.Count-n-1]);
             }
             polygons.add(poly);
             return;
