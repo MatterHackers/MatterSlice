@@ -114,7 +114,7 @@ namespace MatterHackers.MatterSlice
             int openFacesCount = 0;
             for (int i = 0; i < faces.size(); i++)
             {
-                OptimizedFace* f = &faces[i];
+                OptimizedFace f = faces[i];
                 f.touching[0] = getFaceIdxWithPoints(f.index[0], f.index[1], i);
                 f.touching[1] = getFaceIdxWithPoints(f.index[1], f.index[2], i);
                 f.touching[2] = getFaceIdxWithPoints(f.index[2], f.index[0], i);

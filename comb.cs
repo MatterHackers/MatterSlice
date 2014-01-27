@@ -163,7 +163,7 @@ namespace MatterHackers.MatterSlice
             return true;
         }
 
-        public bool moveInside(Point p, int distance)
+        public bool moveInside(Point p, int distance = 100)
         {
             Point ret = p;
             long bestDist = 2000 * 2000;
@@ -206,7 +206,7 @@ namespace MatterHackers.MatterSlice
 
         public bool calc(Point startPoint, Point endPoint, List<Point> combPoints)
         {
-            if (shorterThen(endPoint - startPoint, 1500))
+            if ((endPoint - startPoint).shorterThen(1500))
                 return true;
 
             bool addEndpoint = false;

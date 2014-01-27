@@ -25,6 +25,7 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+    using Point = IntPoint;
     using Polygons = List<IntPoint>;
     using PolygonRef = Polygon;
 
@@ -42,6 +43,11 @@ namespace MatterHackers.MatterSlice
         GCodePathConfig inset1Config;
         GCodePathConfig fillConfig;
         GCodePathConfig supportConfig;
+
+        static void log(string output)
+        {
+            Console.Write(output);
+        }
 
         public fffProcessor(ConfigSettings config)
         {
@@ -88,11 +94,11 @@ namespace MatterHackers.MatterSlice
             gcode.setZ(maxObjectHeight + 5000);
             gcode.addMove(gcode.getPositionXY(), config.moveSpeed, 0);
             gcode.addCode(config.endCode);
-            log("Print time: %d\n", (int)(gcode.getTotalPrintTime()));
-            log("Filament: %d\n", (int)(gcode.getTotalFilamentUsed(0)));
-            log("Filament2: %d\n", (int)(gcode.getTotalFilamentUsed(1)));
+            log(string.Format("Print time: {0}\n", (int)(gcode.getTotalPrintTime()))));
+            log(string.Format("Filament: {0}\n", (int)(gcode.getTotalFilamentUsed(0))));
+            log(string.Format("Filament2: {0}\n", (int)(gcode.getTotalFilamentUsed(1))));
 
-            if (gcode.getFlavor() == GCODE_FLAVOR_ULTIGCODE)
+            if (gcode.getFlavor() == ConfigSettings.GCODE_FLAVOR_ULTIGCODE)
             {
                 char[] numberString = new char[16];
                 sprintf(numberString, "%d", (int)(gcode.getTotalPrintTime()));
@@ -128,9 +134,9 @@ namespace MatterHackers.MatterSlice
                 logError("Failed to load model: %s\n", input_filename);
                 return false;
             }
-            log("Loaded from disk in %5.3fs\n", timeKeeper.restart());
+            log("Loaded from disk in %5.3fs\n", timeKeeper.Restart());
             log("Analyzing and optimizing model...\n");
-            OptimizedModel om = new OptimizedModel(m, Point3(config.objectPosition.X, config.objectPosition.Y, -config.objectSink));
+            OptimizedModel om = new OptimizedModel(m, new Point3(config.objectPosition.X, config.objectPosition.Y, -config.objectSink));
             for (int v = 0; v < m.volumes.Count; v++)
             {
                 log("  Face counts: %i . %i %0.1f%%\n", (int)m.volumes[v].faces.Count, (int)om.volumes[v].faces.Count, (float)(om.volumes[v].faces.Count) / (float)(m.volumes[v].faces.Count) * 100);
@@ -255,12 +261,12 @@ namespace MatterHackers.MatterSlice
             if (config.wipeTowerSize > 0)
             {
                 PolygonRef p = storage.wipeTower.newPoly();
-                p.add(Point(storage.modelMin.x - 3000, storage.modelMax.y + 3000));
-                p.add(Point(storage.modelMin.x - 3000, storage.modelMax.y + 3000 + config.wipeTowerSize));
-                p.add(Point(storage.modelMin.x - 3000 - config.wipeTowerSize, storage.modelMax.y + 3000 + config.wipeTowerSize));
-                p.add(Point(storage.modelMin.x - 3000 - config.wipeTowerSize, storage.modelMax.y + 3000));
+                p.add(new Point(storage.modelMin.x - 3000, storage.modelMax.y + 3000));
+                p.add(new Point(storage.modelMin.x - 3000, storage.modelMax.y + 3000 + config.wipeTowerSize));
+                p.add(new Point(storage.modelMin.x - 3000 - config.wipeTowerSize, storage.modelMax.y + 3000 + config.wipeTowerSize));
+                p.add(new Point(storage.modelMin.x - 3000 - config.wipeTowerSize, storage.modelMax.y + 3000));
 
-                storage.wipePoint = Point(storage.modelMin.x - 3000 - config.wipeTowerSize / 2, storage.modelMax.y + 3000 + config.wipeTowerSize / 2);
+                storage.wipePoint = new Point(storage.modelMin.x - 3000 - config.wipeTowerSize / 2, storage.modelMax.y + 3000 + config.wipeTowerSize / 2);
             }
 
             generateSkirt(storage, config.skirtDistance, config.extrusionWidth, config.skirtLineCount, config.skirtMinLength, config.initialLayerThickness);
@@ -439,7 +445,7 @@ namespace MatterHackers.MatterSlice
             if (storage.oozeShield.Count > 0 && storage.volumes.Count > 1)
             {
                 gcodeLayer.setAlwaysRetract(true);
-                gcodeLayer.addPolygonsByOptimizer(storage.oozeShield[layerNr], &skirtConfig);
+                gcodeLayer.addPolygonsByOptimizer(storage.oozeShield[layerNr], skirtConfig);
                 logPolygons("oozeshield", layerNr, layer.z, storage.oozeShield[layerNr]);
                 gcodeLayer.setAlwaysRetract(!config.enableCombing);
             }
@@ -453,10 +459,10 @@ namespace MatterHackers.MatterSlice
 
             for (int partCounter = 0; partCounter < partOrderOptimizer.polyOrder.Count; partCounter++)
             {
-                SliceLayerPart* part = &layer.parts[partOrderOptimizer.polyOrder[partCounter]];
+                SliceLayerPart part = layer.parts[partOrderOptimizer.polyOrder[partCounter]];
 
                 if (config.enableCombing)
-                    gcodeLayer.setCombBoundary(&part.combBoundery);
+                    gcodeLayer.setCombBoundary(part.combBoundery);
                 else
                     gcodeLayer.setAlwaysRetract(true);
 
@@ -467,14 +473,14 @@ namespace MatterHackers.MatterSlice
                         if ((int)(layerNr) >= config.downSkinCount)
                             inset0Config.spiralize = true;
                         if ((int)(layerNr) == config.downSkinCount && part.insets.Count > 0)
-                            gcodeLayer.addPolygonsByOptimizer(part.insets[0], &inset1Config);
+                            gcodeLayer.addPolygonsByOptimizer(part.insets[0], inset1Config);
                     }
                     for (int insetNr = part.insets.Count - 1; insetNr > -1; insetNr--)
                     {
                         if (insetNr == 0)
-                            gcodeLayer.addPolygonsByOptimizer(part.insets[insetNr], &inset0Config);
+                            gcodeLayer.addPolygonsByOptimizer(part.insets[insetNr], inset0Config);
                         else
-                            gcodeLayer.addPolygonsByOptimizer(part.insets[insetNr], &inset1Config);
+                            gcodeLayer.addPolygonsByOptimizer(part.insets[insetNr], inset1Config);
                     }
                 }
 
@@ -500,14 +506,14 @@ namespace MatterHackers.MatterSlice
                     }
                 }
 
-                gcodeLayer.addPolygonsByOptimizer(fillPolygons, &fillConfig);
+                gcodeLayer.addPolygonsByOptimizer(fillPolygons, fillConfig);
                 logPolygons("infill", layerNr, layer.z, fillPolygons);
 
                 //After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
                 if (!config.spiralizeMode || (int)(layerNr) < config.downSkinCount)
                     gcodeLayer.moveInsideCombBoundary(config.extrusionWidth * 2);
             }
-            gcodeLayer.setCombBoundary(NULL);
+            gcodeLayer.setCombBoundary(null);
         }
 
         void addSupportToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerNr)
@@ -524,7 +530,7 @@ namespace MatterHackers.MatterSlice
                 if (storage.oozeShield.Count > 0 && storage.volumes.Count == 1)
                 {
                     gcodeLayer.setAlwaysRetract(true);
-                    gcodeLayer.addPolygonsByOptimizer(storage.oozeShield[layerNr], &skirtConfig);
+                    gcodeLayer.addPolygonsByOptimizer(storage.oozeShield[layerNr], skirtConfig);
                     gcodeLayer.setAlwaysRetract(!config.enableCombing);
                 }
             }
@@ -561,10 +567,10 @@ namespace MatterHackers.MatterSlice
 
                 gcodeLayer.forceRetract();
                 if (config.enableCombing)
-                    gcodeLayer.setCombBoundary(&supportIslands[n]);
-                gcodeLayer.addPolygonsByOptimizer(supportIslands[n], &supportConfig);
-                gcodeLayer.addPolygonsByOptimizer(supportLines, &supportConfig);
-                gcodeLayer.setCombBoundary(NULL);
+                    gcodeLayer.setCombBoundary(supportIslands[n]);
+                gcodeLayer.addPolygonsByOptimizer(supportIslands[n], supportConfig);
+                gcodeLayer.addPolygonsByOptimizer(supportLines, supportConfig);
+                gcodeLayer.setCombBoundary(null);
             }
         }
 
@@ -573,10 +579,10 @@ namespace MatterHackers.MatterSlice
             if (config.wipeTowerSize < 1)
                 return;
             //If we changed extruder, print the wipe/prime tower for this nozzle;
-            gcodeLayer.addPolygonsByOptimizer(storage.wipeTower, &supportConfig);
+            gcodeLayer.addPolygonsByOptimizer(storage.wipeTower, supportConfig);
             Polygons fillPolygons;
             generateLineInfill(storage.wipeTower, fillPolygons, config.extrusionWidth, config.extrusionWidth, config.infillOverlap, 45 + 90 * (layerNr % 2));
-            gcodeLayer.addPolygonsByOptimizer(fillPolygons, &supportConfig);
+            gcodeLayer.addPolygonsByOptimizer(fillPolygons, supportConfig);
 
             //Make sure we wipe the old extruder on the wipe tower.
             gcodeLayer.addTravel(storage.wipePoint - config.extruderOffset[prevExtruder].p() + config.extruderOffset[gcodeLayer.getExtruder()].p());

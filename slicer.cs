@@ -28,7 +28,7 @@ namespace MatterHackers.MatterSlice
 {
     using Point = IntPoint;
     using Polygons = List<IntPoint>;
-    using PolygonRef = Polygon;
+    using PolygonRef = Polygons;
 
     public class SlicerSegment
     {
@@ -72,7 +72,7 @@ namespace MatterHackers.MatterSlice
                     continue;
 
                 Polygon poly;
-                poly.add(segmentList[startSegment].start);
+                poly.Add(segmentList[startSegment].start);
 
                 int segmentIndex = startSegment;
                 bool canClose;
@@ -83,14 +83,14 @@ namespace MatterHackers.MatterSlice
                     Point p0 = segmentList[segmentIndex].end;
                     poly.add(p0);
                     int nextIndex = -1;
-                    OptimizedFace* face = &ov.faces[segmentList[segmentIndex].faceIndex];
+                    OptimizedFace face = ov.faces[segmentList[segmentIndex].faceIndex];
                     for (int i = 0; i < 3; i++)
                     {
                         if (face.touching[i] > -1 && faceToSegmentIndex.find(face.touching[i]) != faceToSegmentIndex.end())
                         {
                             Point p1 = segmentList[faceToSegmentIndex[face.touching[i]]].start;
                             Point diff = p0 - p1;
-                            if (shorterThen(diff, 10))
+                            if (diff.shorterThen(10))
                             {
                                 if (faceToSegmentIndex[face.touching[i]] == (int)startSegment)
                                     canClose = true;
@@ -170,7 +170,7 @@ namespace MatterHackers.MatterSlice
                         if (i != j)
                         {
                             Point diff = openPolygonList[i][openPolygonList[i].Count - 1] - openPolygonList[j][openPolygonList[j].Count - 1];
-                            long distSquared = vSize2(diff);
+                            long distSquared = (diff).vSize2();
                             if (distSquared < bestScore)
                             {
                                 bestScore = distSquared;
@@ -356,7 +356,7 @@ namespace MatterHackers.MatterSlice
 
                 for (int n = 1; n < polygonList[i].Count; n++)
                 {
-                    length += vSize(polygonList[i][n] - polygonList[i][n - 1]);
+                    length += (polygonList[i][n] - polygonList[i][n - 1]).vSize();
                     if (length > snapDistance)
                         break;
                 }
@@ -447,7 +447,7 @@ namespace MatterHackers.MatterSlice
                         if (distOnLine >= 0 && distOnLine <= lineLength)
                         {
                             Point q = p0 + pDiff * distOnLine / lineLength;
-                            if (shorterThen(q - input, 100))
+                            if ((q - input).shorterThen(100))
                             {
                                 ret.intersectionPoint = q;
                                 ret.polygonIdx = n;
@@ -548,7 +548,7 @@ namespace MatterHackers.MatterSlice
         void dumpSegmentsToHTML(string filename)
         {
             float scale = Math.Max(modelSize.x, modelSize.y) / 1500;
-            StreamwWriter f = fopen(filename, "w");
+            StreamwWriter f = new StreamwWriter(filename);
             f.Write("<!DOCTYPE html><html><body>\n");
             for (int i = 0; i < layers.Count; i++)
             {

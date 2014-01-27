@@ -70,10 +70,10 @@ namespace MatterHackers.MatterSlice
     storage.XYDistance = supportXYDistance;
     storage.ZDistance = supportZDistance;
 
-    for(unsigned int volumeIdx = 0; volumeIdx < om.volumes.size(); volumeIdx++)
+    for(int volumeIdx = 0; volumeIdx < om.volumes.size(); volumeIdx++)
     {
         OptimizedVolume* vol = &om.volumes[volumeIdx];
-        for(unsigned int faceIdx = 0; faceIdx < vol.faces.size(); faceIdx++)
+        for(int faceIdx = 0; faceIdx < vol.faces.size(); faceIdx++)
         {
             OptimizedFace* face = &vol.faces[faceIdx];
             Point3 v0 = vol.points[face.index[0]].p;
@@ -125,7 +125,7 @@ namespace MatterHackers.MatterSlice
     {
         for(int y=0; y<storage.gridHeight; y++)
         {
-            unsigned int n = x+y*storage.gridWidth;
+            int n = x+y*storage.gridWidth;
             qsort(storage.grid[n].data(), storage.grid[n].size(), sizeof(SupportPoint), cmp_SupportPoint);
         }
     }
@@ -141,12 +141,12 @@ namespace MatterHackers.MatterSlice
     if (p.Y >= storage.gridHeight - 1) return false;
     if (done[p.X + p.Y * storage.gridWidth]) return false;
     
-    unsigned int n = p.X+p.Y*storage.gridWidth;
+    int n = p.X+p.Y*storage.gridWidth;
     
     if (everywhere)
     {
         bool ok = false;
-        for(unsigned int i=0; i<storage.grid[n].size(); i+=2)
+        for(int i=0; i<storage.grid[n].size(); i+=2)
         {
             if (storage.grid[n][i].cosAngle >= cosAngle && storage.grid[n][i].z - supportZDistance >= z && (i == 0 || storage.grid[n][i-1].z + supportZDistance < z))
             {
@@ -186,7 +186,7 @@ namespace MatterHackers.MatterSlice
             startPoint.X ++;
         if (startPoint.X > p.X)
         {
-            for(unsigned int n=0;n<tmpPoly.size();n++)
+            for(int n=0;n<tmpPoly.size();n++)
             {
                 poly.add(tmpPoly[tmpPoly.size()-n-1]);
             }
