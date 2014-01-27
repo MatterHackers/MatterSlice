@@ -95,7 +95,7 @@ public class TimeEstimateCalculator
         currentPosition = newPos;
     }
 
-    void plan(Position newPos, double feedrate)
+    public void plan(Position newPos, double feedrate)
     {
         Block block = new Block();
 

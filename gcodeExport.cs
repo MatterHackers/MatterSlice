@@ -25,7 +25,9 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+    using Point = IntPoint;
     using Polygons = List<IntPoint>;
+    using PolygonRef = Polygon;
 
     public class GCodeExport
     {
@@ -71,7 +73,7 @@ namespace MatterHackers.MatterSlice
             f = stdout;
         }
 
-        public ~GCodeExport()
+        ~GCodeExport()
         {
             if (f != null)
                 f.Close();
@@ -81,7 +83,7 @@ namespace MatterHackers.MatterSlice
 {
     long oldPos = ftello64(f);
     
-    char buffer[1024];
+    char[] buffer = new char[1024];
     fseeko64(f, 0, SEEK_SET);
     fread(buffer, 1024, 1, f);
     
@@ -122,7 +124,7 @@ namespace MatterHackers.MatterSlice
 
         public void setExtrusion(int layerThickness, int filamentDiameter, int flow)
         {
-            double filamentArea = M_PI * ((double)(filamentDiameter) / 1000.0 / 2.0) * ((double)(filamentDiameter) / 1000.0 / 2.0);
+            double filamentArea = Math.PI * ((double)(filamentDiameter) / 1000.0 / 2.0) * ((double)(filamentDiameter) / 1000.0 / 2.0);
             if (flavor == GCODE_FLAVOR_ULTIGCODE)//UltiGCode uses volume extrusion as E value, and thus does not need the filamentArea in the mix.
                 extrusionPerMM = (double)(layerThickness) / 1000.0;
             else
@@ -212,7 +214,7 @@ namespace MatterHackers.MatterSlice
                 Point diff = p - getPositionXY();
                 if (isRetracted)
                 {
-                    if (flavor == GCODE_FLAVOR_ULTIGCODE)
+                    if (flavor == ConfigSettings.GCODE_FLAVOR_ULTIGCODE)
                     {
                         f.Write("G11\n");
                     }
@@ -226,7 +228,7 @@ namespace MatterHackers.MatterSlice
                         resetExtrusionValue();
                     isRetracted = false;
                 }
-                extrusionAmount += extrusionPerMM * (double)(lineWidth) / 1000.0 * vSizeMM(diff);
+                extrusionAmount += extrusionPerMM * (double)(lineWidth) / 1000.0 * diff.vSizeMM();
                 f.Write("G1");
             }
             else
@@ -442,12 +444,10 @@ namespace MatterHackers.MatterSlice
 
         public void setCombBoundary(Polygons polygons)
     {
-        if (comb)
-            delete comb;
-        if (polygons)
-            comb = new Comb(*polygons);
+        if (polygons != null)
+            comb = new Comb(polygons);
         else
-            comb = NULL;
+            comb = null;
     }
 
         public void setAlwaysRetract(bool alwaysRetract)
@@ -557,7 +557,7 @@ namespace MatterHackers.MatterSlice
 
         public void addPolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
 {
-    PathOrderOptimizer orderOptimizer(lastPosition);
+    PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(lastPosition);
     for(int i=0;i<polygons.Count;i++)
         orderOptimizer.addPolygon(polygons[i]);
     orderOptimizer.optimize();
@@ -578,7 +578,7 @@ namespace MatterHackers.MatterSlice
                 GCodePath path = &paths[n];
                 for (int i = 0; i < path.points.Count; i++)
                 {
-                    double thisTime = vSizeMM(p0 - path.points[i]) / (double)(path.config.speed);
+                    double thisTime = (p0 - path.points[i]).vSizeMM() / (double)(path.config.speed);
                     if (path.config.lineWidth != 0)
                         extrudeTime += thisTime;
                     else
@@ -668,9 +668,9 @@ namespace MatterHackers.MatterSlice
                         p0 = gcode.getPositionXY();
                         for (int x = n; x < i - 1; x += 2)
                         {
-                            long oldLen = vSize(p0 - paths[x].points[0]);
+                            long oldLen = (p0 - paths[x].points[0]).vSize();
                             Point newPoint = (paths[x].points[0] + paths[x + 1].points[0]) / 2;
-                            long newLen = vSize(gcode.getPositionXY() - newPoint);
+                            long newLen = (gcode.getPositionXY() - newPoint).vSize();
                             if (newLen > 0)
                                 gcode.addMove(newPoint, speed, path.config.lineWidth * oldLen / newLen);
 
@@ -701,16 +701,16 @@ namespace MatterHackers.MatterSlice
                     for (int i = 0; i < path.points.Count; i++)
                     {
                         Point p1 = path.points[i];
-                        totalLength += vSizeMM(p0 - p1);
+                        totalLength += (p0 - p1).vSizeMM();
                         p0 = p1;
                     }
 
-                    float length = 0.0;
+                    float length = 0.0f;
                     p0 = gcode.getPositionXY();
                     for (int i = 0; i < path.points.Count; i++)
                     {
                         Point p1 = path.points[i];
-                        length += vSizeMM(p0 - p1);
+                        length += (p0 - p1).vSizeMM();
                         p0 = p1;
                         gcode.setZ(z + layerThickness * length / totalLength);
                         gcode.addMove(path.points[i], speed, path.config.lineWidth);

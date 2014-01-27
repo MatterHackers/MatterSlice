@@ -77,5 +77,11 @@
   <ItemGroup>
     <Compile Include="utils\polygon.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="pathOrderOptimizer.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="support.cs" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

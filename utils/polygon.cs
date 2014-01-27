@@ -21,102 +21,109 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using ClipperLib;
+
 namespace MatterHackers.MatterSlice
 {
-    using Point = ClipperLib.IntPoint;
-class PolygonRef
-{
-    ClipperLib.Polygon polygon;
-    PolygonRef()
-    {}
-
-    public PolygonRef(ClipperLib.Polygon polygon)
-    {
-this.polygon = polygon;
-    }
-    
-    public int size()
-    {
-        return polygon.Count;
-    }
-    
-            public Point this[int index]
-            {
-                get { return polygon[index]; }
-            }
-    
-    public void add(Point p)
-    {
-        polygon.Add(p);
-    }
-
-    public void remove(int index)
-    {
-        POLY_ASSERT(index < size());
-        polygon.erase(polygon.begin() + index);
-    }
-    
-    public void clear()
-    {
-        polygon.clear();
-    }
-
-    public bool orientation()
-    {
-        return ClipperLib.Orientation(polygon);
-    }
-    
-    public void reverse()
-    {
-        ClipperLib.ReversePolygons(polygon);
-    }
-
-    public long polygonLength() 
-    {
-        long length = 0;
-        Point p0 = polygon[polygon.Count-1];
-        for(int n=0; n<polygon.Count; n++)
-        {
-            Point p1 = polygon[n];
-            length += vSize(p0 - p1);
-            p0 = p1;
-        }
-        return length;
-    }
-    
-    public double area() 
-    {
-        return ClipperLib.Area(polygon);
-    }
-
-    public Point centerOfMass() 
-    {
-        double x = 0, y = 0;
-        Point p0 = (polygon)[polygon.Count-1];
-        for(int n=0; n<polygon.Count; n++)
-        {
-            Point p1 = (polygon)[n];
-            double second_factor = (p0.X * p1.Y) - (p1.X * p0.Y);
-            
-            x += double(p0.X + p1.X) * second_factor;
-            y += double(p0.Y + p1.Y) * second_factor;
-            p0 = p1;
-        }
-
-        double area = Area(polygon);
-        x = x / 6 / area;
-        y = y / 6 / area;
-
-        if (x < 0)
-        {
-            x = -x;
-            y = -y;
-        }
-        return new Point(x, y);
-    }
-}
-
+    using Point = IntPoint;
+    using Polygons = List<IntPoint>;
+    using PolygonRef = Polygon;
 #if false
+    using Point = ClipperLib.IntPoint;
+    class PolygonRef
+    {
+        ClipperLib.Polygon polygon;
+        PolygonRef()
+        { }
+
+        public PolygonRef(ClipperLib.Polygon polygon)
+        {
+            this.polygon = polygon;
+        }
+
+        public int size()
+        {
+            return polygon.Count;
+        }
+
+        public Point this[int index]
+        {
+            get { return polygon[index]; }
+        }
+
+        public void add(Point p)
+        {
+            polygon.Add(p);
+        }
+
+        public void remove(int index)
+        {
+            throw new NotImplementedException();
+            //polygon.erase(polygon.begin() + index);
+        }
+
+        public void clear()
+        {
+            polygon.Clear();
+        }
+
+        public bool orientation()
+        {
+            throw new NotImplementedException();
+            //return ClipperLib.Orientation(polygon);
+        }
+
+        public void reverse()
+        {
+            throw new NotImplementedException();
+            //ClipperLib.ReversePolygons(polygon);
+        }
+
+        public long polygonLength()
+        {
+            long length = 0;
+            Point p0 = polygon[polygon.Count - 1];
+            for (int n = 0; n < polygon.Count; n++)
+            {
+                Point p1 = polygon[n];
+                length += vSize(p0 - p1);
+                p0 = p1;
+            }
+            return length;
+        }
+
+        public double area()
+        {
+            return ClipperLib.Area(polygon);
+        }
+
+        public Point centerOfMass()
+        {
+            double x = 0, y = 0;
+            Point p0 = (polygon)[polygon.Count - 1];
+            for (int n = 0; n < polygon.Count; n++)
+            {
+                Point p1 = (polygon)[n];
+                double second_factor = (p0.X * p1.Y) - (p1.X * p0.Y);
+
+                x += (double)(p0.X + p1.X) * second_factor;
+                y += (double)(p0.Y + p1.Y) * second_factor;
+                p0 = p1;
+            }
+
+            double area = Area(polygon);
+            x = x / 6 / area;
+            y = y / 6 / area;
+
+            if (x < 0)
+            {
+                x = -x;
+                y = -y;
+            }
+            return new Point(x, y);
+        }
+    }
+
 public class _Polygon : PolygonRef
 {
     Path poly;
@@ -130,6 +137,7 @@ public _Polygon()
 //#define Polygon _Polygon
 #endif
 
+#if false
 public class Polygons
 {
     ClipperLib.Polygons polygons;
@@ -284,45 +292,49 @@ public class Polygons
         }
     }
 };
+#endif
 
-/* Axis aligned boundary box */
-public class AABB
-{
-    public Point min, max;
-    
-    public AABB()
-    : min(LLONG_MIN, LLONG_MIN), max(LLONG_MIN, LLONG_MIN)
+    /* Axis aligned boundary box */
+    public class AABB
     {
-    }
-    public AABB(Polygons polys)
-    : min(LLONG_MIN, LLONG_MIN), max(LLONG_MIN, LLONG_MIN)
-    {
-        calculate(polys);
-    }
-    
-    public void calculate(Polygons polys)
-    {
-        min = Point(LLONG_MAX, LLONG_MAX);
-        max = Point(LLONG_MIN, LLONG_MIN);
-        for(int i=0; i<polys.Count; i++)
+        public Point min, max;
+
+        public AABB()
         {
-            for(int j=0; j<polys[i].Count; j++)
+            min = new Point(long.MinValue, long.MinValue);
+            max = new Point(long.MinValue, long.MinValue);
+        }
+
+        public AABB(Polygons polys)
+        {
+            min = new Point(long.MinValue, long.MinValue);
+            max = new Point(long.MinValue, long.MinValue);
+            calculate(polys);
+        }
+
+        public void calculate(Polygons polys)
+        {
+            min = new Point(long.MaxValue, long.MaxValue);
+            max = new Point(long.MinValue, long.MinValue);
+            for (int i = 0; i < polys.Count; i++)
             {
-                if (min.X > polys[i][j].X) min.X = polys[i][j].X;
-                if (min.Y > polys[i][j].Y) min.Y = polys[i][j].Y;
-                if (max.X < polys[i][j].X) max.X = polys[i][j].X;
-                if (max.Y < polys[i][j].Y) max.Y = polys[i][j].Y;
+                for (int j = 0; j < polys[i].Count; j++)
+                {
+                    if (min.X > polys[i][j].X) min.X = polys[i][j].X;
+                    if (min.Y > polys[i][j].Y) min.Y = polys[i][j].Y;
+                    if (max.X < polys[i][j].X) max.X = polys[i][j].X;
+                    if (max.Y < polys[i][j].Y) max.Y = polys[i][j].Y;
+                }
             }
         }
+
+        public bool hit(AABB other)
+        {
+            if (max.X < other.min.X) return false;
+            if (min.X > other.max.X) return false;
+            if (max.Y < other.min.Y) return false;
+            if (min.Y > other.max.Y) return false;
+            return true;
+        }
     }
-    
-    public bool hit(AABB other)
-    {
-        if (max.X < other.min.X) return false;
-        if (min.X > other.max.X) return false;
-        if (max.Y < other.min.Y) return false;
-        if (min.Y > other.max.Y) return false;
-        return true;
-    }
-}
 }

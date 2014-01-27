@@ -25,87 +25,84 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+    using Point = IntPoint;
     using Polygons = List<IntPoint>;
-/*
-SliceData
-+ Layers[]
-  + LayerParts[]
-    + OutlinePolygons[]
-    + Insets[]
-      + Polygons[]
-    + SkinPolygons[]
-*/
+    /*
+    SliceData
+    + Layers[]
+      + LayerParts[]
+        + OutlinePolygons[]
+        + Insets[]
+          + Polygons[]
+        + SkinPolygons[]
+    */
 
-public class SliceLayerPart
-{
-    public AABB boundaryBox;
-    public Polygons outline;
-    public Polygons combBoundery;
-    public List<Polygons> insets;
-    public Polygons skinOutline;
-    public Polygons sparseOutline;
-    public int bridgeAngle;
-};
-
-public class SliceLayer
-{
-    public int z;
-    public List<SliceLayerPart> parts;
-};
-
-/******************/
-public class SupportPoint
-{
-    public int z;
-    public double cosAngle;
-    
-    public SupportPoint(int z, double cosAngle)
+    public class SliceLayerPart
     {
-        this.z = z;
-        this.cosAngle = cosAngle;
-    }
-}
+        public AABB boundaryBox;
+        public Polygons outline;
+        public Polygons combBoundery;
+        public List<Polygons> insets;
+        public Polygons skinOutline;
+        public Polygons sparseOutline;
+        public int bridgeAngle;
+    };
 
-public class SupportStorage
-{
-    public bool generated;
-    public int angle;
-    public bool everywhere;
-    public int XYDistance;
-    public int ZDistance;
-    
-    public Point gridOffset;
-    public int gridScale;
-    public int gridWidth, gridHeight;
-    public List<SupportPoint> grid;
-   	public SupportStorage()
+    public class SliceLayer
     {
-        grid = null;
+        public int z;
+        public List<SliceLayerPart> parts;
+    };
+
+    /******************/
+    public class SupportPoint
+    {
+        public int z;
+        public double cosAngle;
+
+        public SupportPoint(int z, double cosAngle)
+        {
+            this.z = z;
+            this.cosAngle = cosAngle;
+        }
     }
 
-	  public ~SupportStorage()
-      {
-          if(grid) delete [] grid;
-      }
-}
+    public class SupportStorage
+    {
+        public bool generated;
+        public int angle;
+        public bool everywhere;
+        public int XYDistance;
+        public int ZDistance;
 
-/******************/
+        public Point gridOffset;
+        public int gridScale;
+        public int gridWidth, gridHeight;
+        public List<SupportPoint> grid;
+        
+        public SupportStorage()
+        {
+            grid = null;
+        }
+    }
 
-public class SliceVolumeStorage
-{
-    public List<SliceLayer> layers;
-}
+    /******************/
 
-public class SliceDataStorage
-{
-    public Point3 modelSize, modelMin, modelMax;
-    public Polygons skirt;
-    public Polygons raftOutline;
-    public List<Polygons> oozeShield;
-    public List<SliceVolumeStorage> volumes;
-    
-    public SupportStorage support;
-    public Polygons wipeTower;
-    public Point wipePoint;
-}
+    public class SliceVolumeStorage
+    {
+        public List<SliceLayer> layers;
+    }
+
+    public class SliceDataStorage
+    {
+        public Point3 modelSize, modelMin, modelMax;
+        public Polygons skirt;
+        public Polygons raftOutline;
+        public List<Polygons> oozeShield;
+        public List<SliceVolumeStorage> volumes;
+
+        public SupportStorage support;
+        public Polygons wipeTower;
+        public Point wipePoint;
+    }
 }

@@ -26,6 +26,7 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+    using Point = IntPoint;
     //#define SET_MIN(n, m) do { if ((m) < (n)) n = m; } while(0)
     //#define SET_MAX(n, m) do { if ((m) > (n)) n = m; } while(0)
 
@@ -140,8 +141,8 @@ namespace MatterHackers.MatterSlice
             throw new NotImplementedException();
 #if false
     SimpleModel m = new SimpleModel();
-    m->volumes.Add(SimpleVolume());
-    SimpleVolume* vol = &m->volumes[0];
+    m.volumes.Add(SimpleVolume());
+    SimpleVolume* vol = &m.volumes[0];
     FILE* f = fopen(filename, "rt");
     char buffer[1024];
     FPoint3 vertex;
@@ -162,7 +163,7 @@ namespace MatterHackers.MatterSlice
                 break;
             case 3:
                 v2 = matrix.apply(vertex);
-                vol->addFace(v0, v1, v2);
+                vol.addFace(v0, v1, v2);
                 n = 0;
                 break;
             }
@@ -195,8 +196,8 @@ namespace MatterHackers.MatterSlice
     //For each face read:
     //float(x,y,z) = normal, float(X,Y,Z)*3 = vertexes, uint16_t = flags
     SimpleModel m = new SimpleModel();
-    m->volumes.Add(SimpleVolume());
-    SimpleVolume* vol = &m->volumes[0];
+    m.volumes.Add(SimpleVolume());
+    SimpleVolume* vol = &m.volumes[0];
 	if(vol == NULL)
 	{
 		fclose(f);
@@ -219,7 +220,7 @@ namespace MatterHackers.MatterSlice
         Point3 v0 = matrix.apply(FPoint3(v[0], v[1], v[2]));
         Point3 v1 = matrix.apply(FPoint3(v[3], v[4], v[5]));
         Point3 v2 = matrix.apply(FPoint3(v[6], v[7], v[8]));
-        vol->addFace(v0, v1, v2);
+        vol.addFace(v0, v1, v2);
         if (fread(buffer, sizeof(uint16_t), 1, f) != 1)
         {
             fclose(f);
@@ -270,10 +271,10 @@ SimpleModel loadModel(string filename, FMatrix3x3 matrix)
         {
             filename++;
             
-            m->volumes.Add(SimpleVolume());
-            SimpleVolume* vol = &m->volumes[m->volumes.Count-1];
-            int32_t n, pNr = 0;
-            if (fread(&n, 1, sizeof(int32_t), binaryMeshBlob) < 1)
+            m.volumes.Add(SimpleVolume());
+            SimpleVolume* vol = &m.volumes[m.volumes.Count-1];
+            int n, pNr = 0;
+            if (fread(&n, 1, sizeof(int), binaryMeshBlob) < 1)
                 return NULL;
             log("Reading mesh from binary blob with %i vertexes\n", n);
             Point3 v[3];
@@ -286,7 +287,7 @@ SimpleModel loadModel(string filename, FMatrix3x3 matrix)
                 v[pNr++] = matrix.apply(fp);
                 if (pNr == 3)
                 {
-                    vol->addFace(v[0], v[1], v[2]);
+                    vol.addFace(v[0], v[1], v[2]);
                     pNr = 0;
                 }
                 n--;

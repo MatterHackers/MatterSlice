@@ -52,19 +52,19 @@ namespace MatterHackers.MatterSlice
         public OptimizedVolume(SimpleVolume volume, OptimizedModel model)
         {
             this.model = model;
-            points.reserve(volume->faces.size() * 3);
-            faces.reserve(volume->faces.size());
+            points.reserve(volume.faces.size() * 3);
+            faces.reserve(volume.faces.size());
 
             std::map<int, List<int>> indexMap;
 
             double t = getTime();
-            for (int i = 0; i < volume->faces.size(); i++)
+            for (int i = 0; i < volume.faces.size(); i++)
             {
                 OptimizedFace f;
-                if ((i % 1000 == 0) && (getTime() - t) > 2.0) logProgress("optimized", i + 1, volume->faces.size());
+                if ((i % 1000 == 0) && (getTime() - t) > 2.0) logProgress("optimized", i + 1, volume.faces.size());
                 for (int j = 0; j < 3; j++)
                 {
-                    Point3 p = volume->faces[i].v[j];
+                    Point3 p = volume.faces[i].v[j];
                     int hash = ((p.x + MELD_DIST / 2) / MELD_DIST) ^ (((p.y + MELD_DIST / 2) / MELD_DIST) << 10) ^ (((p.z + MELD_DIST / 2) / MELD_DIST) << 20);
                     int idx;
                     bool add = true;
@@ -115,14 +115,14 @@ namespace MatterHackers.MatterSlice
             for (int i = 0; i < faces.size(); i++)
             {
                 OptimizedFace* f = &faces[i];
-                f->touching[0] = getFaceIdxWithPoints(f->index[0], f->index[1], i);
-                f->touching[1] = getFaceIdxWithPoints(f->index[1], f->index[2], i);
-                f->touching[2] = getFaceIdxWithPoints(f->index[2], f->index[0], i);
-                if (f->touching[0] == -1)
+                f.touching[0] = getFaceIdxWithPoints(f.index[0], f.index[1], i);
+                f.touching[1] = getFaceIdxWithPoints(f.index[1], f.index[2], i);
+                f.touching[2] = getFaceIdxWithPoints(f.index[2], f.index[0], i);
+                if (f.touching[0] == -1)
                     openFacesCount++;
-                if (f->touching[1] == -1)
+                if (f.touching[1] == -1)
                     openFacesCount++;
-                if (f->touching[2] == -1)
+                if (f.touching[2] == -1)
                     openFacesCount++;
             }
             //fprintf(stdout, "  Number of open faces: %i\n", openFacesCount);
@@ -150,23 +150,23 @@ namespace MatterHackers.MatterSlice
         public Point3 modelSize;
         public Point3 vMin, vMax;
 
-        public OptimizedModel(SimpleModel* model, Point3 center)
-    {
-        for(int i=0; i<model->volumes.size(); i++)
-            volumes.push_back(OptimizedVolume(&model->volumes[i], this));
-        vMin = model->min();
-        vMax = model->max();
+        public OptimizedModel(SimpleModel model, Point3 center)
+        {
+            for (int i = 0; i < model.volumes.size(); i++)
+                volumes.push_back(OptimizedVolume(&model.volumes[i], this));
+            vMin = model.min();
+            vMax = model.max();
 
-        Point3 vOffset((vMin.x + vMax.x) / 2, (vMin.y + vMax.y) / 2, vMin.z);
-        vOffset -= center;
-        for(int i=0; i<volumes.size(); i++)
-            for(int n=0; n<volumes[i].points.size(); n++)
-                volumes[i].points[n].p -= vOffset;
-        
-        modelSize = vMax - vMin;
-        vMin -= vOffset;
-        vMax -= vOffset;
-    }
+            Point3 vOffset = new Point3((vMin.x + vMax.x) / 2, (vMin.y + vMax.y) / 2, vMin.z);
+            vOffset -= center;
+            for (int i = 0; i < volumes.size(); i++)
+                for (int n = 0; n < volumes[i].points.size(); n++)
+                    volumes[i].points[n].p -= vOffset;
+
+            modelSize = vMax - vMin;
+            vMin -= vOffset;
+            vMax -= vOffset;
+        }
 
         public void saveDebugSTL(string filename)
         {
@@ -179,9 +179,9 @@ namespace MatterHackers.MatterSlice
     OptimizedVolume* vol = &volumes[0];
     FILE* f = fopen(filename, "wb");
     fwrite(buffer, 80, 1, f);
-    n = vol->faces.size();
+    n = vol.faces.size();
     fwrite(&n, sizeof(n), 1, f);
-    for(int i=0;i<vol->faces.size();i++)
+    for(int i=0;i<vol.faces.size();i++)
     {
         flt = 0;
         s = 0;
@@ -189,15 +189,15 @@ namespace MatterHackers.MatterSlice
         fwrite(&flt, sizeof(flt), 1, f);
         fwrite(&flt, sizeof(flt), 1, f);
 
-        flt = vol->points[vol->faces[i].index[0]].p.x / 1000.0; fwrite(&flt, sizeof(flt), 1, f);
-        flt = vol->points[vol->faces[i].index[0]].p.y / 1000.0; fwrite(&flt, sizeof(flt), 1, f);
-        flt = vol->points[vol->faces[i].index[0]].p.z / 1000.0; fwrite(&flt, sizeof(flt), 1, f);
-        flt = vol->points[vol->faces[i].index[1]].p.x / 1000.0; fwrite(&flt, sizeof(flt), 1, f);
-        flt = vol->points[vol->faces[i].index[1]].p.y / 1000.0; fwrite(&flt, sizeof(flt), 1, f);
-        flt = vol->points[vol->faces[i].index[1]].p.z / 1000.0; fwrite(&flt, sizeof(flt), 1, f);
-        flt = vol->points[vol->faces[i].index[2]].p.x / 1000.0; fwrite(&flt, sizeof(flt), 1, f);
-        flt = vol->points[vol->faces[i].index[2]].p.y / 1000.0; fwrite(&flt, sizeof(flt), 1, f);
-        flt = vol->points[vol->faces[i].index[2]].p.z / 1000.0; fwrite(&flt, sizeof(flt), 1, f);
+        flt = vol.points[vol.faces[i].index[0]].p.x / 1000.0; fwrite(&flt, sizeof(flt), 1, f);
+        flt = vol.points[vol.faces[i].index[0]].p.y / 1000.0; fwrite(&flt, sizeof(flt), 1, f);
+        flt = vol.points[vol.faces[i].index[0]].p.z / 1000.0; fwrite(&flt, sizeof(flt), 1, f);
+        flt = vol.points[vol.faces[i].index[1]].p.x / 1000.0; fwrite(&flt, sizeof(flt), 1, f);
+        flt = vol.points[vol.faces[i].index[1]].p.y / 1000.0; fwrite(&flt, sizeof(flt), 1, f);
+        flt = vol.points[vol.faces[i].index[1]].p.z / 1000.0; fwrite(&flt, sizeof(flt), 1, f);
+        flt = vol.points[vol.faces[i].index[2]].p.x / 1000.0; fwrite(&flt, sizeof(flt), 1, f);
+        flt = vol.points[vol.faces[i].index[2]].p.y / 1000.0; fwrite(&flt, sizeof(flt), 1, f);
+        flt = vol.points[vol.faces[i].index[2]].p.z / 1000.0; fwrite(&flt, sizeof(flt), 1, f);
 
         fwrite(&s, sizeof(s), 1, f);
     }

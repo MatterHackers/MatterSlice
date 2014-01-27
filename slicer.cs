@@ -26,7 +26,9 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+    using Point = IntPoint;
     using Polygons = List<IntPoint>;
+    using PolygonRef = Polygon;
 
     public class SlicerSegment
     {
@@ -56,7 +58,7 @@ namespace MatterHackers.MatterSlice
     public class SlicerLayer
     {
         public List<SlicerSegment> segmentList;
-        public std::map<int, int> faceToSegmentIndex;
+        public SortedDictionary<int, int> faceToSegmentIndex;
 
         public int z;
         public Polygons polygonList;
@@ -81,20 +83,20 @@ namespace MatterHackers.MatterSlice
                     Point p0 = segmentList[segmentIndex].end;
                     poly.add(p0);
                     int nextIndex = -1;
-                    OptimizedFace* face = &ov->faces[segmentList[segmentIndex].faceIndex];
+                    OptimizedFace* face = &ov.faces[segmentList[segmentIndex].faceIndex];
                     for (int i = 0; i < 3; i++)
                     {
-                        if (face->touching[i] > -1 && faceToSegmentIndex.find(face->touching[i]) != faceToSegmentIndex.end())
+                        if (face.touching[i] > -1 && faceToSegmentIndex.find(face.touching[i]) != faceToSegmentIndex.end())
                         {
-                            Point p1 = segmentList[faceToSegmentIndex[face->touching[i]]].start;
+                            Point p1 = segmentList[faceToSegmentIndex[face.touching[i]]].start;
                             Point diff = p0 - p1;
                             if (shorterThen(diff, 10))
                             {
-                                if (faceToSegmentIndex[face->touching[i]] == (int)startSegment)
+                                if (faceToSegmentIndex[face.touching[i]] == (int)startSegment)
                                     canClose = true;
-                                if (segmentList[faceToSegmentIndex[face->touching[i]]].addedToPolygon)
+                                if (segmentList[faceToSegmentIndex[face.touching[i]]].addedToPolygon)
                                     continue;
-                                nextIndex = faceToSegmentIndex[face->touching[i]];
+                                nextIndex = faceToSegmentIndex[face.touching[i]];
                             }
                         }
                     }
@@ -120,7 +122,7 @@ namespace MatterHackers.MatterSlice
                     if (openPolygonList[j].Count < 1) continue;
 
                     Point diff = openPolygonList[i][openPolygonList[i].Count - 1] - openPolygonList[j][0];
-                    long distSquared = vSize2(diff);
+                    long distSquared = (diff).vSize2();
 
                     if (distSquared < 2 * 2)
                     {
@@ -156,7 +158,7 @@ namespace MatterHackers.MatterSlice
                         if (openPolygonList[j].Count < 1) continue;
 
                         Point diff = openPolygonList[i][openPolygonList[i].Count - 1] - openPolygonList[j][0];
-                        long distSquared = vSize2(diff);
+                        long distSquared = (diff).vSize2();
                         if (distSquared < bestScore)
                         {
                             bestScore = distSquared;
@@ -226,7 +228,7 @@ namespace MatterHackers.MatterSlice
                     int bestA = -1;
                     int bestB = -1;
                     gapCloserResult bestResult;
-                    bestResult.len = LLONG_MAX;
+                    bestResult.len = long.MaxValue;
                     bestResult.polygonIdx = -1;
                     bestResult.pointIdxA = -1;
                     bestResult.pointIdxB = -1;
@@ -259,14 +261,14 @@ namespace MatterHackers.MatterSlice
                         }
                     }
 
-                    if (bestResult.len < LLONG_MAX)
+                    if (bestResult.len < long.MaxValue)
                     {
                         if (bestA == bestB)
                         {
                             if (bestResult.pointIdxA == bestResult.pointIdxB)
                             {
-                                polygonList.add(openPolygonList[bestA]);
-                                openPolygonList[bestA].clear();
+                                polygonList.Add(openPolygonList[bestA]);
+                                openPolygonList[bestA].Clear();
                             }
                             else if (bestResult.AtoB)
                             {
@@ -387,30 +389,30 @@ namespace MatterHackers.MatterSlice
             if (ret.pointIdxA == ret.pointIdxB)
             {
                 //Connection points are on the same line segment.
-                ret.len = vSize(ip0 - ip1);
+                ret.len = (ip0 - ip1).vSize();
             }
             else
             {
                 //Find out if we have should go from A to B or the other way around.
                 Point p0 = polygonList[ret.polygonIdx][ret.pointIdxA];
-                long lenA = vSize(p0 - ip0);
+                long lenA = (p0 - ip0).vSize();
                 for (int i = ret.pointIdxA; i != ret.pointIdxB; i = (i + 1) % polygonList[ret.polygonIdx].Count)
                 {
                     Point p1 = polygonList[ret.polygonIdx][i];
-                    lenA += vSize(p0 - p1);
+                    lenA += (p0 - p1).vSize();
                     p0 = p1;
                 }
-                lenA += vSize(p0 - ip1);
+                lenA += (p0 - ip1).vSize();
 
                 p0 = polygonList[ret.polygonIdx][ret.pointIdxB];
-                long lenB = vSize(p0 - ip1);
+                long lenB = (p0 - ip1).vSize();
                 for (int i = ret.pointIdxB; i != ret.pointIdxA; i = (i + 1) % polygonList[ret.polygonIdx].Count)
                 {
                     Point p1 = polygonList[ret.polygonIdx][i];
-                    lenB += vSize(p0 - p1);
+                    lenB += (p0 - p1).vSize();
                     p0 = p1;
                 }
-                lenB += vSize(p0 - ip0);
+                lenB += (p0 - ip0).vSize();
 
                 if (lenA < lenB)
                 {
@@ -438,7 +440,7 @@ namespace MatterHackers.MatterSlice
 
                     //Q = A + Normal( B - A ) * ((( B - A ) dot ( P - A )) / VSize( A - B ));
                     Point pDiff = p1 - p0;
-                    long lineLength = vSize(pDiff);
+                    long lineLength = (pDiff).vSize();
                     if (lineLength > 1)
                     {
                         long distOnLine = dot(pDiff, input - p0) / lineLength;
@@ -469,8 +471,8 @@ namespace MatterHackers.MatterSlice
 
         public Slicer(OptimizedVolume ov, int initial, int thickness, bool keepNoneClosed, bool extensiveStitching)
         {
-            modelSize = ov->model->modelSize;
-            modelMin = ov->model->vMin;
+            modelSize = ov.model.modelSize;
+            modelMin = ov.model.vMin;
 
             int layerCount = (modelSize.z - initial) / thickness + 1;
             log("Layer count: %i\n", layerCount);
@@ -481,11 +483,11 @@ namespace MatterHackers.MatterSlice
                 layers[layerNr].z = initial + thickness * layerNr;
             }
 
-            for (int i = 0; i < ov->faces.Count; i++)
+            for (int i = 0; i < ov.faces.Count; i++)
             {
-                Point3 p0 = ov->points[ov->faces[i].index[0]].p;
-                Point3 p1 = ov->points[ov->faces[i].index[1]].p;
-                Point3 p2 = ov->points[ov->faces[i].index[2]].p;
+                Point3 p0 = ov.points[ov.faces[i].index[0]].p;
+                Point3 p1 = ov.points[ov.faces[i].index[1]].p;
+                Point3 p2 = ov.points[ov.faces[i].index[2]].p;
                 int minZ = p0.z;
                 int maxZ = p0.z;
                 if (p1.z < minZ) minZ = p1.z;
