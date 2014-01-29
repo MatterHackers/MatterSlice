@@ -27,7 +27,8 @@ using ClipperLib;
 namespace MatterHackers.MatterSlice
 {
     using Point = IntPoint;
-    using Polygons = List<IntPoint>;
+    using Polygon = List<IntPoint>;
+    using Polygons = List<Polygon>;
     using PolygonRef = Polygons;
 
     public class SlicerSegment

@@ -83,5 +83,8 @@
   <ItemGroup>
     <Compile Include="support.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="bridge.cs" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

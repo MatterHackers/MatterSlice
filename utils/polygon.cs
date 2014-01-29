@@ -26,60 +26,53 @@ using ClipperLib;
 namespace MatterHackers.MatterSlice
 {
     using Point = IntPoint;
-    using Polygons = List<IntPoint>;
+    using Polygon = List<IntPoint>;
+    using Polygons = List<Polygon>;
     using PolygonRef = Polygon;
-#if false
-    using Point = ClipperLib.IntPoint;
-    class PolygonRef
+
+    static class PolygonHelper
     {
-        ClipperLib.Polygon polygon;
-        PolygonRef()
-        { }
-
-        public PolygonRef(ClipperLib.Polygon polygon)
-        {
-            this.polygon = polygon;
-        }
-
-        public int size()
+        public static int size(this Polygon polygon)
         {
             return polygon.Count;
         }
 
-        public Point this[int index]
+#if false
+        public static Point this[int index]
         {
             get { return polygon[index]; }
         }
+#endif
 
-        public void add(Point p)
+        public static void add(this Polygon p0, Point p)
         {
             polygon.Add(p);
         }
 
-        public void remove(int index)
+        public static void remove(this Polygon polygon, int index)
         {
             throw new NotImplementedException();
             //polygon.erase(polygon.begin() + index);
         }
 
-        public void clear()
+        public static void clear(this Polygon polygon)
         {
             polygon.Clear();
         }
 
-        public bool orientation()
+        public static bool orientation(this Polygon polygon)
         {
             throw new NotImplementedException();
             //return ClipperLib.Orientation(polygon);
         }
 
-        public void reverse()
+        public static void reverse(this Polygon polygon)
         {
             throw new NotImplementedException();
             //ClipperLib.ReversePolygons(polygon);
         }
 
-        public long polygonLength()
+        public static long polygonLength(this Polygon polygon)
         {
             long length = 0;
             Point p0 = polygon[polygon.Count - 1];
@@ -92,12 +85,12 @@ namespace MatterHackers.MatterSlice
             return length;
         }
 
-        public double area()
+        public static double area(this Polygon polygon)
         {
             return ClipperLib.Area(polygon);
         }
 
-        public Point centerOfMass()
+        public static Point centerOfMass(this Polygon polygon)
         {
             double x = 0, y = 0;
             Point p0 = (polygon)[polygon.Count - 1];
@@ -123,6 +116,7 @@ namespace MatterHackers.MatterSlice
             return new Point(x, y);
         }
     }
+#if false
 
 public class _Polygon : PolygonRef
 {
@@ -137,79 +131,74 @@ public _Polygon()
 //#define Polygon _Polygon
 #endif
 
-#if false
-public class Polygons
-{
-    ClipperLib.Polygons polygons;
-    public int size()
+    static class PolygonsHelper
+    {
+    public static int size(this Polygons polygons)
     {
         return polygons.Count;
     }
-    
-            public PolygonRef this[int index]
+
+#if false
+            public static PolygonRef this[int index]
     {
         return new PolygonRef(polygons[index]);
     }
-    public void remove(int index)
+#endif
+    public static void remove(this Polygons polygons, int index)
     {
-        POLY_ASSERT(index < size());
-        polygons.erase(polygons.begin() + index);
+        polygons.RemoveAt(index);
     }
-    public void clear()
+    public static void clear(this Polygons polygons)
     {
         polygons.Clear();
     }
 
-    public void add(PolygonRef poly)
+    public static void add(this Polygons polygons, PolygonRef poly)
     {
         polygons.Add(poly.polygon);
     }
 
-    public void add(Polygons other)
+    public static void add(this Polygons polygons, Polygons other)
     {
         for(int n=0; n<other.polygons.Count; n++)
             polygons.Add(other.polygons[n]);
     }
 
-    public PolygonRef newPoly()
+    public static PolygonRef newPoly(this Polygons polygons)
     {
         polygons.Add(new ClipperLib.Path());
         return PolygonRef(polygons[polygons.Count-1]);
     }
     
-    public Polygons() {}
-    
-    public Polygons(Polygons other) 
-    {
-        polygons = other.polygons; 
-    }
-    
-    public Polygons operator=( Polygons other) 
+#if false
+    public static Polygons operator=( Polygons other) 
     {
         polygons = other.polygons; 
         return *this; 
     }
+#endif
 
-    public Polygons difference( Polygons other) 
+    public static Polygons difference(this Polygons polygons, Polygons other) 
     {
         Polygons ret;
         ClipperLib.Clipper clipper;
-        clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
+        clipper.AddPolygons(polygons, ClipperLib.PolyType.ptSubject, true);
         clipper.AddPaths(other.polygons, ClipperLib.ptClip, true);
         clipper.Execute(ClipperLib.ctDifference, ret.polygons);
         return ret;
     }
 
-    public Polygons unionPolygons( Polygons other) 
+    public static Polygons unionPolygons(this Polygons polygons, Polygons other) 
     {
         Polygons ret;
         ClipperLib.Clipper clipper;
         clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
         clipper.AddPaths(other.polygons, ClipperLib.PolyType.ptSubject, true);
-        clipper.Execute(ClipperLib.ctUnion, ret.polygons, ClipperLib.pftNonZero, ClipperLib.pftNonZero);
+        clipper.Execute(ClipType.ctUnion, ret.polygons, ClipperLib.pftNonZero, ClipperLib.pftNonZero);
         return ret;
     }
-    public Polygons intersection( Polygons other) 
+
+    public static Polygons intersection(this Polygons polygons, Polygons other) 
     {
         Polygons ret;
         ClipperLib.Clipper clipper;
@@ -218,54 +207,57 @@ public class Polygons
         clipper.Execute(ClipperLib.ctIntersection, ret.polygons);
         return ret;
     }
-    public Polygons offset(int distance) 
+
+    public static Polygons offset(this Polygons polygons, int distance) 
     {
         Polygons ret;
         ClipperLib.ClipperOffset clipper;
-        clipper.AddPaths(polygons, ClipperLib.jtMiter, ClipperLib.etClosedPolygon);
+        clipper.AddPaths(polygons, ClipperLib.JoinType.jtMiter, ClipperLib.EndType.etClosedPolygon);
         clipper.MiterLimit = 2.0;
         clipper.Execute(ret.polygons, distance);
         return ret;
     }
-    public List<Polygons> splitIntoParts(bool unionAll = false) 
+    public static List<Polygons> splitIntoParts(this Polygons polygons, bool unionAll = false) 
     {
         List<Polygons> ret;
         ClipperLib.Clipper clipper;
         ClipperLib.PolyTree resultPolyTree;
         clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
         if (unionAll)
-            clipper.Execute(ClipperLib.ctUnion, resultPolyTree, ClipperLib.pftNonZero, ClipperLib.pftNonZero);
+            clipper.Execute(ClipType.ctUnion, resultPolyTree, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
         else
-            clipper.Execute(ClipperLib.ctUnion, resultPolyTree);
+            clipper.Execute(ClipType.ctUnion, resultPolyTree);
         
-        _processPolyTreeNode(&resultPolyTree, ret);
+        polygons._processPolyTreeNode(resultPolyTree, ret);
         return ret;
     }
-    void _processPolyTreeNode(PolyNode node, List<Polygons> ret) 
+
+    static void _processPolyTreeNode(this Polygons polygonsIn, PolyNode node, List<Polygons> ret) 
     {
-        for(int n=0; n<node.ChildCount(); n++)
+        for(int n=0; n<node.ChildCount; n++)
         {
-            ClipperLib.PolyNode* child = node.Childs[n];
-            Polygons polygons;
+            ClipperLib.PolyNode child = node.Childs[n];
+            Polygons polygons = new Polygons();
             polygons.add(child.Contour);
-            for(int i=0; i<child.ChildCount(); i++)
+            for(int i=0; i<child.ChildCount; i++)
             {
                 polygons.add(child.Childs[i].Contour);
-                _processPolyTreeNode(child.Childs[i], ret);
+                polygonsIn._processPolyTreeNode(child.Childs[i], ret);
             }
             ret.Add(polygons);
         }
     }
-    public Polygons processEvenOdd() 
+
+    public static Polygons processEvenOdd(this Polygons polygons) 
     {
         Polygons ret;
         ClipperLib.Clipper clipper;
         clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
-        clipper.Execute(ClipperLib.ctUnion, ret.polygons);
+        clipper.Execute(ClipType.ctUnion, ret.polygons);
         return ret;
     }
     
-    public long polygonLength() 
+    public static long polygonLength(this Polygons polygons)
     {
         long length = 0;
         for(int i=0; i<polygons.Count; i++)
@@ -274,14 +266,14 @@ public class Polygons
             for(int n=0; n<polygons[i].Count; n++)
             {
                 Point p1 = polygons[i][n];
-                length += vSize(p0 - p1);
+                length += (p0 - p1).vSize();
                 p0 = p1;
             }
         }
         return length;
     }
 
-    void applyMatrix( PointMatrix matrix)
+    static void applyMatrix(this Polygons polygons, PointMatrix matrix)
     {
         for(int i=0; i<polygons.Count; i++)
         {
@@ -291,8 +283,7 @@ public class Polygons
             }
         }
     }
-};
-#endif
+}
 
     /* Axis aligned boundary box */
     public class AABB
