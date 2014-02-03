@@ -374,7 +374,7 @@ namespace MatterHackers.MatterSlice
 
         gapCloserResult findPolygonGapCloser(Point ip0, Point ip1)
         {
-            gapCloserResult ret;
+            gapCloserResult ret = new gapCloserResult();
             closePolygonResult c1 = findPolygonPointClosestTo(ip0);
             closePolygonResult c2 = findPolygonPointClosestTo(ip1);
             if (c1.polygonIdx < 0 || c1.polygonIdx != c2.polygonIdx)
@@ -549,7 +549,7 @@ namespace MatterHackers.MatterSlice
         void dumpSegmentsToHTML(string filename)
         {
             float scale = Math.Max(modelSize.x, modelSize.y) / 1500;
-            StreamwWriter f = new StreamwWriter(filename);
+            StreamWriter f = new StreamWriter(filename);
             f.Write("<!DOCTYPE html><html><body>\n");
             for (int i = 0; i < layers.Count; i++)
             {

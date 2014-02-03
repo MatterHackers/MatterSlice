@@ -27,8 +27,6 @@ using ClipperLib;
 namespace MatterHackers.MatterSlice
 {
     using Point = IntPoint;
-    //#define SET_MIN(n, m) do { if ((m) < (n)) n = m; } while(0)
-    //#define SET_MAX(n, m) do { if ((m) > (n)) n = m; } while(0)
 
     /* A SimpleFace is a 3 dimensional model triangle with 3 points. These points are already converted to integers */
     public class SimpleFace
@@ -43,6 +41,18 @@ namespace MatterHackers.MatterSlice
     {
         public List<SimpleFace> faces;
 
+        void SET_MIN(ref int n, int m)
+        {
+            if ((m) < (n))
+                n = m;
+        }
+
+        void SET_MAX(ref int n, int m)
+        {
+            if ((m) > (n))
+                n = m;
+        }
+
         public void addFace(Point3 v0, Point3 v1, Point3 v2)
         {
             faces.Add(SimpleFace(v0, v1, v2));
@@ -53,15 +63,15 @@ namespace MatterHackers.MatterSlice
             Point3 ret = faces[0].v[0];
             for (int i = 0; i < faces.Count; i++)
             {
-                SET_MIN(ret.x, faces[i].v[0].x);
-                SET_MIN(ret.y, faces[i].v[0].y);
-                SET_MIN(ret.z, faces[i].v[0].z);
-                SET_MIN(ret.x, faces[i].v[1].x);
-                SET_MIN(ret.y, faces[i].v[1].y);
-                SET_MIN(ret.z, faces[i].v[1].z);
-                SET_MIN(ret.x, faces[i].v[2].x);
-                SET_MIN(ret.y, faces[i].v[2].y);
-                SET_MIN(ret.z, faces[i].v[2].z);
+                SET_MIN(ref ret.x, faces[i].v[0].x);
+                SET_MIN(ref ret.y, faces[i].v[0].y);
+                SET_MIN(ref ret.z, faces[i].v[0].z);
+                SET_MIN(ref ret.x, faces[i].v[1].x);
+                SET_MIN(ref ret.y, faces[i].v[1].y);
+                SET_MIN(ref ret.z, faces[i].v[1].z);
+                SET_MIN(ref ret.x, faces[i].v[2].x);
+                SET_MIN(ref ret.y, faces[i].v[2].y);
+                SET_MIN(ref ret.z, faces[i].v[2].z);
             }
             return ret;
         }
@@ -71,15 +81,15 @@ namespace MatterHackers.MatterSlice
             Point3 ret = faces[0].v[0];
             for (int i = 0; i < faces.Count; i++)
             {
-                SET_MAX(ret.x, faces[i].v[0].x);
-                SET_MAX(ret.y, faces[i].v[0].y);
-                SET_MAX(ret.z, faces[i].v[0].z);
-                SET_MAX(ret.x, faces[i].v[1].x);
-                SET_MAX(ret.y, faces[i].v[1].y);
-                SET_MAX(ret.z, faces[i].v[1].z);
-                SET_MAX(ret.x, faces[i].v[2].x);
-                SET_MAX(ret.y, faces[i].v[2].y);
-                SET_MAX(ret.z, faces[i].v[2].z);
+                SET_MAX(ref ret.x, faces[i].v[0].x);
+                SET_MAX(ref ret.y, faces[i].v[0].y);
+                SET_MAX(ref ret.z, faces[i].v[0].z);
+                SET_MAX(ref ret.x, faces[i].v[1].x);
+                SET_MAX(ref ret.y, faces[i].v[1].y);
+                SET_MAX(ref ret.z, faces[i].v[1].z);
+                SET_MAX(ref ret.x, faces[i].v[2].x);
+                SET_MAX(ref ret.y, faces[i].v[2].y);
+                SET_MAX(ref ret.z, faces[i].v[2].z);
             }
             return ret;
         }
@@ -92,15 +102,27 @@ namespace MatterHackers.MatterSlice
 
         public List<SimpleVolume> volumes;
 
+        void SET_MIN(ref int n, int m)
+        {
+            if ((m) < (n))
+                n = m;
+        }
+
+        void SET_MAX(ref int n, int m)
+        {
+            if ((m) > (n))
+                n = m;
+        }
+
         public Point3 min()
         {
             Point3 ret = volumes[0].min();
             for (int i = 0; i < volumes.Count; i++)
             {
                 Point3 v = volumes[i].min();
-                SET_MIN(ret.x, v.x);
-                SET_MIN(ret.y, v.y);
-                SET_MIN(ret.z, v.z);
+                SET_MIN(ref ret.x, v.x);
+                SET_MIN(ref ret.y, v.y);
+                SET_MIN(ref ret.z, v.z);
             }
             return ret;
         }
@@ -111,9 +133,9 @@ namespace MatterHackers.MatterSlice
             for (int i = 0; i < volumes.Count; i++)
             {
                 Point3 v = volumes[i].max();
-                SET_MAX(ret.x, v.x);
-                SET_MAX(ret.y, v.y);
-                SET_MAX(ret.z, v.z);
+                SET_MAX(ref ret.x, v.x);
+                SET_MAX(ref ret.y, v.y);
+                SET_MAX(ref ret.z, v.z);
             }
             return ret;
         }

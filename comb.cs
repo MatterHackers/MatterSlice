@@ -119,9 +119,9 @@ namespace MatterHackers.MatterSlice
             Point p1 = boundery[polygonNr][idx];
             Point p2 = boundery[polygonNr][(idx < (boundery[polygonNr].Count - 1)) ? (idx + 1) : (0)];
 
-            Point off0 = crossZ(normal(p1 - p0, 1000));
-            Point off1 = crossZ(normal(p2 - p1, 1000));
-            Point n = normal(off0 + off1, 200);
+            Point off0 = ((p1 - p0).normal(1000)).crossZ();
+            Point off1 = ((p2 - p1).normal(1000)).crossZ();
+            Point n = (off0 + off1)normal(200);
 
             return p1 + n;
         }

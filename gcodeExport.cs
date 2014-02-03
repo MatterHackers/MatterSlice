@@ -404,7 +404,7 @@ namespace MatterHackers.MatterSlice
             travelConfig = new GCodePathConfig(travelSpeed, 0, "travel");
 
             lastPosition = gcode.getPositionXY();
-            comb = NULL;
+            comb = null;
             extrudeSpeedFactor = 100;
             travelSpeedFactor = 100;
             extraTime = 0.0;
@@ -629,7 +629,7 @@ namespace MatterHackers.MatterSlice
 
         public void writeGCode(bool liftHeadIfNeeded, int layerThickness)
         {
-            GCodePathConfig lastConfig = NULL;
+            GCodePathConfig lastConfig = null;
             int extruder = gcode.getExtruderNr();
 
             for (int n = 0; n < paths.Count; n++)
