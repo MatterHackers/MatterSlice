@@ -276,10 +276,13 @@ namespace MatterHackers.MatterSlice
         return loadModelSTL_ascii(filename, matrix);
     }
     return loadModelSTL_binary(filename, matrix);
+#endif
 }
 
-SimpleModel loadModel(string filename, FMatrix3x3 matrix)
+public SimpleModel loadModel(string filename, FMatrix3x3 matrix)
 {
+    throw new NotImplementedException();
+#if false
     string ext = strrchr(filename, '.');
     if (ext && strcasecmp(ext, ".stl") == 0)
     {

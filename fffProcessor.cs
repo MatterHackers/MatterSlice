@@ -45,11 +45,6 @@ namespace MatterHackers.MatterSlice
         GCodePathConfig fillConfig;
         GCodePathConfig supportConfig;
 
-        static void log(string output)
-        {
-            Console.Write(output);
-        }
-
         public fffProcessor(ConfigSettings config)
         {
             this.config = config;
@@ -70,8 +65,9 @@ namespace MatterHackers.MatterSlice
             if (!gcode.isValid())
                 return false;
 
-            Stopwatch timeKeeperTotal;
-            SliceDataStorage storage;
+            Stopwatch timeKeeperTotal = new Stopwatch();
+            timeKeeperTotal.Start();
+            SliceDataStorage storage = new SliceDataStorage();
             preSetup();
             if (!prepareModel(storage, input_filename))
                 return false;
@@ -79,8 +75,8 @@ namespace MatterHackers.MatterSlice
             processSliceData(storage);
             writeGCode(storage);
 
-            logProgress("process", 1, 1);
-            log("Total time elapsed %5.2fs.\n", timeKeeperTotal.restart());
+            LogOutput.logProgress("process", 1, 1);
+            LogOutput.log(string.Format("Total time elapsed {0:0.00}s.\n", timeKeeperTotal.Elapsed.Seconds));
 
             return true;
         }
@@ -95,18 +91,18 @@ namespace MatterHackers.MatterSlice
             gcode.setZ(maxObjectHeight + 5000);
             gcode.addMove(gcode.getPositionXY(), config.moveSpeed, 0);
             gcode.addCode(config.endCode);
-            log(string.Format("Print time: {0}\n", (int)(gcode.getTotalPrintTime()))));
-            log(string.Format("Filament: {0}\n", (int)(gcode.getTotalFilamentUsed(0))));
-            log(string.Format("Filament2: {0}\n", (int)(gcode.getTotalFilamentUsed(1))));
+            LogOutput.log(string.Format("Print time: {0}\n", (int)(gcode.getTotalPrintTime())));
+            LogOutput.log(string.Format("Filament: {0}\n", (int)(gcode.getTotalFilamentUsed(0))));
+            LogOutput.log(string.Format("Filament2: {0}\n", (int)(gcode.getTotalFilamentUsed(1))));
 
             if (gcode.getFlavor() == ConfigSettings.GCODE_FLAVOR_ULTIGCODE)
             {
-                char[] numberString = new char[16];
-                sprintf(numberString, "%d", (int)(gcode.getTotalPrintTime()));
+                string numberString;
+                numberString = string.Format("{0}", (int)(gcode.getTotalPrintTime()));
                 gcode.replaceTagInStart("<__TIME__>", numberString);
-                sprintf(numberString, "%d", (int)(gcode.getTotalFilamentUsed(0)));
+                numberString = string.Format("{0}", (int)(gcode.getTotalFilamentUsed(0)));
                 gcode.replaceTagInStart("<FILAMENT>", numberString);
-                sprintf(numberString, "%d", (int)(gcode.getTotalFilamentUsed(1)));
+                numberString = string.Format("{0}", (int)(gcode.getTotalFilamentUsed(1)));
                 gcode.replaceTagInStart("<FILAMEN2>", numberString);
             }
         }
@@ -127,10 +123,10 @@ namespace MatterHackers.MatterSlice
 
         bool prepareModel(SliceDataStorage storage, string input_filename)
         {
-            timeKeeper.restart();
-            log("Loading %s from disk...\n", input_filename);
-            SimpleModel m = loadModel(input_filename, config.matrix);
-            if (!m)
+            timeKeeper.Restart();
+            LogOutput.log(string.Format("Loading {0} from disk...\n", input_filename));
+            SimpleModel m = SimpleModel.loadModel(input_filename, config.matrix);
+            if (m == null)
             {
                 logError("Failed to load model: %s\n", input_filename);
                 return false;
@@ -437,7 +433,7 @@ namespace MatterHackers.MatterSlice
             int prevExtruder = gcodeLayer.getExtruder();
             bool extruderChanged = gcodeLayer.setExtruder(volumeIdx);
             if (layerNr == 0 && volumeIdx == 0)
-                gcodeLayer.addPolygonsByOptimizer(storage.skirt, &skirtConfig);
+                gcodeLayer.addPolygonsByOptimizer(storage.skirt, skirtConfig);
 
             SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
             if (extruderChanged)
@@ -447,7 +443,7 @@ namespace MatterHackers.MatterSlice
             {
                 gcodeLayer.setAlwaysRetract(true);
                 gcodeLayer.addPolygonsByOptimizer(storage.oozeShield[layerNr], skirtConfig);
-                logPolygons("oozeshield", layerNr, layer.z, storage.oozeShield[layerNr]);
+                LogOutput.logPolygons("oozeshield", layerNr, layer.z, storage.oozeShield[layerNr]);
                 gcodeLayer.setAlwaysRetract(!config.enableCombing);
             }
 
@@ -532,7 +528,7 @@ namespace MatterHackers.MatterSlice
                 {
                     gcodeLayer.setAlwaysRetract(true);
                     gcodeLayer.addPolygonsByOptimizer(storage.oozeShield[layerNr], skirtConfig);
-                    gcodeLayer.setAlwaysRetract(!config.enableCombing);
+                    gcodeLayer.setAlwaysRetract(config.enableCombing == 0);
                 }
             }
             int z = config.initialLayerThickness + layerNr * config.layerThickness;
@@ -546,7 +542,7 @@ namespace MatterHackers.MatterSlice
             //Contract and expand the suppory polygons so small sections are removed and the final polygon is smoothed a bit.
             supportGenerator.polygons = supportGenerator.polygons.offset(-config.extrusionWidth * 3);
             supportGenerator.polygons = supportGenerator.polygons.offset(config.extrusionWidth * 3);
-            logPolygons("support", layerNr, z, supportGenerator.polygons);
+            LogOutput.logPolygons("support", layerNr, z, supportGenerator.polygons);
 
             List<Polygons> supportIslands = supportGenerator.polygons.splitIntoParts();
 
@@ -567,7 +563,7 @@ namespace MatterHackers.MatterSlice
                 }
 
                 gcodeLayer.forceRetract();
-                if (config.enableCombing)
+                if (config.enableCombing != 0)
                     gcodeLayer.setCombBoundary(supportIslands[n]);
                 gcodeLayer.addPolygonsByOptimizer(supportIslands[n], supportConfig);
                 gcodeLayer.addPolygonsByOptimizer(supportLines, supportConfig);

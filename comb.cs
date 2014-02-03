@@ -48,7 +48,7 @@ namespace MatterHackers.MatterSlice
         {
             Point diff = endPoint - startPoint;
 
-            matrix = PointMatrix(diff);
+            matrix = new PointMatrix(diff);
             sp = matrix.apply(startPoint);
             ep = matrix.apply(endPoint);
 
@@ -219,7 +219,7 @@ namespace MatterHackers.MatterSlice
             }
             if (!checkInside(endPoint))
             {
-                if (!moveInside(&endPoint))    //If we fail to move the point inside the comb boundary we need to retract.
+                if (!moveInside(endPoint))    //If we fail to move the point inside the comb boundary we need to retract.
                     return false;
                 addEndpoint = true;
             }
@@ -236,7 +236,7 @@ namespace MatterHackers.MatterSlice
             calcMinMax();
 
             long x = sp.X;
-            List<Point> pointList;
+            List<Point> pointList = new List<Point>();
             //Now walk trough the crossings, for every boundary we cross, find the initial cross point and the exit point. Then add all the points in between
             // to the pointList and continue with the next boundary we will cross, until there are no more boundaries to cross.
             // This gives a path from the start to finish curved around the holes that it encounters.
@@ -245,7 +245,7 @@ namespace MatterHackers.MatterSlice
                 int n = getPolygonAbove(x);
                 if (n == int.MaxValue) break;
 
-                pointList.Add(matrix.unapply(Point(minX[n] - 200, sp.Y)));
+                pointList.Add(matrix.unapply(new Point(minX[n] - 200, sp.Y)));
                 if ((minIdx[n] - maxIdx[n] + boundery[n].Count) % boundery[n].Count > (maxIdx[n] - minIdx[n] + boundery[n].Count) % boundery[n].Count)
                 {
                     for (int i = minIdx[n]; i != maxIdx[n]; i = (i < boundery[n].Count - 1) ? (i + 1) : (0))
