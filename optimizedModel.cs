@@ -61,7 +61,7 @@ namespace MatterHackers.MatterSlice
             for (int i = 0; i < volume.faces.size(); i++)
             {
                 OptimizedFace f;
-                if ((i % 1000 == 0) && (getTime() - t) > 2.0) logProgress("optimized", i + 1, volume.faces.size());
+                if ((i % 1000 == 0) && (getTime() - t) > 2.0) LogOutput.logProgress("optimized", i + 1, volume.faces.size());
                 for (int j = 0; j < 3; j++)
                 {
                     Point3 p = volume.faces[i].v[j];

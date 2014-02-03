@@ -476,7 +476,7 @@ namespace MatterHackers.MatterSlice
             modelMin = ov.model.vMin;
 
             int layerCount = (modelSize.z - initial) / thickness + 1;
-            log("Layer count: %i\n", layerCount);
+            LogOutput.log("Layer count: %i\n", layerCount);
             layers.resize(layerCount);
 
             for (int layerNr = 0; layerNr < layerCount; layerNr++)

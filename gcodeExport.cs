@@ -333,16 +333,16 @@ namespace MatterHackers.MatterSlice
 
         void tellFileSize()
         {
-            float fsize = (float)ftell(f);
+            double fsize = f.BaseStream.Length;
             if (fsize > 1024 * 1024)
             {
                 fsize /= 1024.0 * 1024.0;
-                log("Wrote %5.1f MB.\n", fsize);
+                LogOutput.log(string.Format("Wrote {0:0.1} MB.\n", fsize));
             }
             if (fsize > 1024)
             {
                 fsize /= 1024.0;
-                log("Wrote %5.1f kilobytes.\n", fsize);
+                LogOutput.log(string.Format("Wrote {0:0.0} kilobytes.\n", fsize));
             }
         }
 

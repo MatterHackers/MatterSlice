@@ -121,7 +121,7 @@ namespace MatterHackers.MatterSlice
 
             Point off0 = ((p1 - p0).normal(1000)).crossZ();
             Point off1 = ((p2 - p1).normal(1000)).crossZ();
-            Point n = (off0 + off1)normal(200);
+            Point n = (off0 + off1).normal(200);
 
             return p1 + n;
         }

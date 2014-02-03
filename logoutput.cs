@@ -54,5 +54,10 @@ namespace MatterHackers.MatterSlice
 
             Console.Write(string.Format("Progress:{0}:{1}:{2}\n", type, value, maxValue));
         }
+
+        internal static void logPolygons(string p, int layerNr, int p_2, List<Polygon> list)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

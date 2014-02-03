@@ -128,26 +128,27 @@ namespace MatterHackers.MatterSlice
             SimpleModel m = SimpleModel.loadModel(input_filename, config.matrix);
             if (m == null)
             {
-                logError("Failed to load model: %s\n", input_filename);
+                LogOutput.logError(string.Format("Failed to load model: {0}\n", input_filename));
                 return false;
             }
-            log("Loaded from disk in %5.3fs\n", timeKeeper.Restart());
-            log("Analyzing and optimizing model...\n");
+            LogOutput.log(string.Format("Loaded from disk in {0:0.000}s\n", timeKeeper.Elapsed.Seconds));
+            timeKeeper.Restart()
+            LogOutput.log("Analyzing and optimizing model...\n");
             OptimizedModel om = new OptimizedModel(m, new Point3(config.objectPosition.X, config.objectPosition.Y, -config.objectSink));
             for (int v = 0; v < m.volumes.Count; v++)
             {
-                log("  Face counts: %i . %i %0.1f%%\n", (int)m.volumes[v].faces.Count, (int)om.volumes[v].faces.Count, (float)(om.volumes[v].faces.Count) / (float)(m.volumes[v].faces.Count) * 100);
-                log("  Vertex counts: %i . %i %0.1f%%\n", (int)m.volumes[v].faces.Count * 3, (int)om.volumes[v].points.Count, (float)(om.volumes[v].points.Count) / (float)(m.volumes[v].faces.Count * 3) * 100);
+                LogOutput.log("  Face counts: %i . %i %0.1f%%\n", (int)m.volumes[v].faces.Count, (int)om.volumes[v].faces.Count, (float)(om.volumes[v].faces.Count) / (float)(m.volumes[v].faces.Count) * 100);
+                LogOutput.log("  Vertex counts: %i . %i %0.1f%%\n", (int)m.volumes[v].faces.Count * 3, (int)om.volumes[v].points.Count, (float)(om.volumes[v].points.Count) / (float)(m.volumes[v].faces.Count * 3) * 100);
             }
 
 #if !DEBUG
             m = null;
 #endif
 
-            log("Optimize model %5.3fs \n", timeKeeper.restart());
+            LogOutput.log("Optimize model %5.3fs \n", timeKeeper.restart());
             //om.saveDebugSTL("c:\\models\\output.stl");
 
-            log("Slicing model...\n");
+            LogOutput.log("Slicing model...\n");
             List<Slicer> slicerList;
             for (int volumeIdx = 0; volumeIdx < om.volumes.Count; volumeIdx++)
             {
@@ -157,12 +158,12 @@ namespace MatterHackers.MatterSlice
                 {
                     //Reporting the outline here slows down the engine quite a bit, so only do so when debugging.
                     //logPolygons("outline", layerNr, slicer.layers[layerNr].z, slicer.layers[layerNr].polygonList);
-                    logPolygons("openoutline", layerNr, slicer.layers[layerNr].z, slicer.layers[layerNr].openPolygonList);
+                    LogOutput.logPolygons("openoutline", layerNr, slicer.layers[layerNr].z, slicer.layers[layerNr].openPolygonList);
                 }
             }
-            log("Sliced model in %5.3fs\n", timeKeeper.restart());
+            LogOutput.log("Sliced model in %5.3fs\n", timeKeeper.restart());
 
-            log("Generating support map...\n");
+            LogOutput.log("Generating support map...\n");
             generateSupportGrid(storage.support, om, config.supportAngle, config.supportEverywhere > 0, config.supportXYDistance, config.supportZDistance);
 
             storage.modelSize = om.modelSize;
@@ -172,14 +173,14 @@ namespace MatterHackers.MatterSlice
         om = null;
 #endif
 
-            log("Generating layer parts...\n");
+            LogOutput.log("Generating layer parts...\n");
             for (int volumeIdx = 0; volumeIdx < slicerList.Count; volumeIdx++)
             {
                 storage.volumes.push_back(SliceVolumeStorage());
                 createLayerParts(storage.volumes[volumeIdx], slicerList[volumeIdx], config.fixHorrible & (ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_A | ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_B | ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_C));
                 slicerList[volumeIdx] = null;
             }
-            log("Generated layer parts in %5.3fs\n", timeKeeper.restart());
+            LogOutput.log("Generated layer parts in %5.3fs\n", timeKeeper.restart());
             return true;
         }
 
@@ -204,13 +205,13 @@ namespace MatterHackers.MatterSlice
                     {
                         if (layer.parts[partNr].insets.Count > 0)
                         {
-                            logPolygons("inset0", layerNr, layer.z, layer.parts[partNr].insets[0]);
+                            LogOutput.logPolygons("inset0", layerNr, layer.z, layer.parts[partNr].insets[0]);
                             for (int inset = 1; inset < layer.parts[partNr].insets.Count; inset++)
-                                logPolygons("insetx", layerNr, layer.z, layer.parts[partNr].insets[inset]);
+                                LogOutput.logPolygons("insetx", layerNr, layer.z, layer.parts[partNr].insets[inset]);
                         }
                     }
                 }
-                logProgress("inset", layerNr + 1, totalLayers);
+                LogOutput.logProgress("inset", layerNr + 1, totalLayers);
             }
             if (config.enableOozeShield)
             {
@@ -235,7 +236,7 @@ namespace MatterHackers.MatterSlice
                 for (int layerNr = totalLayers - 1; layerNr > 0; layerNr--)
                     storage.oozeShield[layerNr - 1] = storage.oozeShield[layerNr - 1].unionPolygons(storage.oozeShield[layerNr].offset(-offsetAngle));
             }
-            log("Generated inset in %5.3fs\n", timeKeeper.Restart());
+            LogOutput.log("Generated inset in %5.3fs\n", timeKeeper.Restart());
 
             for (int layerNr = 0; layerNr < totalLayers; layerNr++)
             {
@@ -248,12 +249,12 @@ namespace MatterHackers.MatterSlice
 
                         SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
                         for (int partNr = 0; partNr < layer.parts.Count; partNr++)
-                            logPolygons("skin", layerNr, layer.z, layer.parts[partNr].skinOutline);
+                            LogOutput.logPolygons("skin", layerNr, layer.z, layer.parts[partNr].skinOutline);
                     }
                 }
-                logProgress("skin", layerNr + 1, totalLayers);
+                LogOutput.logProgress("skin", layerNr + 1, totalLayers);
             }
-            log("Generated up/down skin in %5.3fs\n", timeKeeper.restart());
+            LogOutput.log("Generated up/down skin in %5.3fs\n", timeKeeper.restart());
 
             if (config.wipeTowerSize > 0)
             {
@@ -419,7 +420,7 @@ namespace MatterHackers.MatterSlice
             }
             //*/
 
-            log("Wrote layers in %5.2fs.\n", timeKeeper.restart());
+            LogOutput.log("Wrote layers in %5.2fs.\n", timeKeeper.restart());
             gcode.tellFileSize();
             gcode.addFanCommand(0);
 
@@ -504,7 +505,7 @@ namespace MatterHackers.MatterSlice
                 }
 
                 gcodeLayer.addPolygonsByOptimizer(fillPolygons, fillConfig);
-                logPolygons("infill", layerNr, layer.z, fillPolygons);
+                LogOutput.logPolygons("infill", layerNr, layer.z, fillPolygons);
 
                 //After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
                 if (!config.spiralizeMode || (int)(layerNr) < config.downSkinCount)
