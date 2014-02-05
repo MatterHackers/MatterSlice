@@ -152,8 +152,8 @@ namespace MatterHackers.MatterSlice
             List<Slicer> slicerList;
             for (int volumeIdx = 0; volumeIdx < om.volumes.Count; volumeIdx++)
             {
-                Slicer slicer = new Slicer(&om.volumes[volumeIdx], config.initialLayerThickness - config.layerThickness / 2, config.layerThickness, config.fixHorrible & ConfigSettings.FIX_HORRIBLE_KEEP_NONE_CLOSED, config.fixHorrible & ConfigSettings.FIX_HORRIBLE_EXTENSIVE_STITCHING);
-                slicerList.push_back(slicer);
+                Slicer slicer = new Slicer(om.volumes[volumeIdx], config.initialLayerThickness - config.layerThickness / 2, config.layerThickness, config.fixHorrible & ConfigSettings.FIX_HORRIBLE_KEEP_NONE_CLOSED, config.fixHorrible & ConfigSettings.FIX_HORRIBLE_EXTENSIVE_STITCHING);
+                slicerList.Add(slicer);
                 for (int layerNr = 0; layerNr < slicer.layers.Count; layerNr++)
                 {
                     //Reporting the outline here slows down the engine quite a bit, so only do so when debugging.
@@ -176,7 +176,7 @@ namespace MatterHackers.MatterSlice
             LogOutput.log("Generating layer parts...\n");
             for (int volumeIdx = 0; volumeIdx < slicerList.Count; volumeIdx++)
             {
-                storage.volumes.push_back(SliceVolumeStorage());
+                storage.volumes.Add(SliceVolumeStorage());
                 createLayerParts(storage.volumes[volumeIdx], slicerList[volumeIdx], config.fixHorrible & (ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_A | ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_B | ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_C));
                 slicerList[volumeIdx] = null;
             }
@@ -225,18 +225,19 @@ namespace MatterHackers.MatterSlice
                             oozeShield = oozeShield.unionPolygons(storage.volumes[volumeIdx].layers[layerNr].parts[partNr].outline.offset(2000));
                         }
                     }
-                    storage.oozeShield.push_back(oozeShield);
+                    storage.oozeShield.Add(oozeShield);
                 }
 
                 for (int layerNr = 0; layerNr < totalLayers; layerNr++)
                     storage.oozeShield[layerNr] = storage.oozeShield[layerNr].offset(-1000).offset(1000);
-                int offsetAngle = Math.Tan(60.0 * Math.PI / 180) * config.layerThickness;//Allow for a 60deg angle in the oozeShield.
+                int offsetAngle = (int)Math.Tan(60.0 * Math.PI / 180) * config.layerThickness;//Allow for a 60deg angle in the oozeShield.
                 for (int layerNr = 1; layerNr < totalLayers; layerNr++)
                     storage.oozeShield[layerNr] = storage.oozeShield[layerNr].unionPolygons(storage.oozeShield[layerNr - 1].offset(-offsetAngle));
                 for (int layerNr = totalLayers - 1; layerNr > 0; layerNr--)
                     storage.oozeShield[layerNr - 1] = storage.oozeShield[layerNr - 1].unionPolygons(storage.oozeShield[layerNr].offset(-offsetAngle));
             }
-            LogOutput.log("Generated inset in %5.3fs\n", timeKeeper.Restart());
+            LogOutput.log(string.Format("Generated inset in {0:0.000}s\n", timeKeeper.Elapsed.Seconds));
+            timeKeeper.Restart();
 
             for (int layerNr = 0; layerNr < totalLayers; layerNr++)
             {
@@ -309,7 +310,7 @@ namespace MatterHackers.MatterSlice
             fileNr++;
 
             int totalLayers = storage.volumes[0].layers.Count;
-            gcode.addComment("Layer count: %d", totalLayers);
+            gcode.addComment(string.Format("Layer count: {0}", totalLayers));
 
             if (config.raftBaseThickness > 0 && config.raftInterfaceThickness > 0)
             {
@@ -321,11 +322,11 @@ namespace MatterHackers.MatterSlice
                     GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.moveSpeed, config.retractionMinimalDistance);
                     gcode.setZ(config.raftBaseThickness);
                     gcode.setExtrusion(config.raftBaseThickness, config.filamentDiameter, config.filamentFlow);
-                    gcodeLayer.addPolygonsByOptimizer(storage.raftOutline, &raftBaseConfig);
+                    gcodeLayer.addPolygonsByOptimizer(storage.raftOutline, raftBaseConfig);
 
                     Polygons raftLines;
                     generateLineInfill(storage.raftOutline, raftLines, config.raftBaseLinewidth, config.raftLineSpacing, config.infillOverlap, 0);
-                    gcodeLayer.addPolygonsByOptimizer(raftLines, &raftBaseConfig);
+                    gcodeLayer.addPolygonsByOptimizer(raftLines, raftBaseConfig);
 
                     gcodeLayer.writeGCode(false, config.raftBaseThickness);
                 }
@@ -339,7 +340,7 @@ namespace MatterHackers.MatterSlice
 
                     Polygons raftLines;
                     generateLineInfill(storage.raftOutline, raftLines, config.raftInterfaceLinewidth, config.raftLineSpacing, config.infillOverlap, 90);
-                    gcodeLayer.addPolygonsByOptimizer(raftLines, &raftInterfaceConfig);
+                    gcodeLayer.addPolygonsByOptimizer(raftLines, raftInterfaceConfig);
 
                     gcodeLayer.writeGCode(false, config.raftInterfaceThickness);
                 }
@@ -348,7 +349,7 @@ namespace MatterHackers.MatterSlice
             int volumeIdx = 0;
             for (int layerNr = 0; layerNr < totalLayers; layerNr++)
             {
-                logProgress("export", layerNr + 1, totalLayers);
+                LogOutput.logProgress("export", layerNr + 1, totalLayers);
 
                 gcode.addComment("LAYER:%d", layerNr);
                 if (layerNr == 0)

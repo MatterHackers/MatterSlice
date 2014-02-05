@@ -39,7 +39,7 @@ namespace MatterHackers.MatterSlice
         int z;
         int supportZDistance;
         bool everywhere;
-        int done;
+        int[] done;
 
         void swap(int p0, int p1)
         {
@@ -105,7 +105,7 @@ namespace MatterHackers.MatterSlice
 
                 if (y0 > y1) { swap(y0, y1); swap(z0, z1); }
                 for(int y=y0; y<y1; y++)
-                    storage.grid[x+y*storage.gridWidth].push_back(SupportPoint(z0 + (z1 - z0) * (y-y0) / (y1-y0), cosAngle));
+                    storage.grid[x+y*storage.gridWidth].Add(SupportPoint(z0 + (z1 - z0) * (y-y0) / (y1-y0), cosAngle));
             }
             
             for(int x=v1.x; x<v2.x; x++)
@@ -117,7 +117,7 @@ namespace MatterHackers.MatterSlice
 
                 if (y0 > y1) { swap(y0, y1); swap(z0, z1); }
                 for(int y=y0; y<y1; y++)
-                    storage.grid[x+y*storage.gridWidth].push_back(SupportPoint(z0 + (z1 - z0) * (y-y0) / (y1-y0), cosAngle));
+                    storage.grid[x+y*storage.gridWidth].Add(SupportPoint(z0 + (z1 - z0) * (y-y0) / (y1-y0), cosAngle));
             }
         }
     }
@@ -171,7 +171,7 @@ namespace MatterHackers.MatterSlice
     PolygonRef poly = polygons.newPoly();
     Polygon tmpPoly;
 
-    while(1)
+    while(true)
     {
         Point p = startPoint;
         done[p.X + p.Y * storage.gridWidth] = nr;
@@ -208,11 +208,10 @@ this.everywhere = storage.everywhere;
     if (!storage.generated)
         return;
     
-    cosAngle = cos(double(90 - storage.angle) / 180.0 * M_PI) - 0.01;
+    cosAngle = (double(90 - storage.angle) / 180.0 * Math.PI).cos() - 0.01;
     this.supportZDistance = storage.ZDistance;
 
     done = new int[storage.gridWidth*storage.gridHeight];
-    memset(done, 0, sizeof(int) * storage.gridWidth*storage.gridHeight);
     
     for(int y=1; y<storage.gridHeight; y++)
     {

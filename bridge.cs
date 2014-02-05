@@ -56,7 +56,7 @@ namespace MatterHackers.MatterSlice
                 //Skip internal holes
                 if (!islands[n].orientation())
                     continue;
-                double area = fabs(islands[n].area());
+                double area = Math.Abs(islands[n].area());
                 if (area > area1)
                 {
                     if (area1 > area2)

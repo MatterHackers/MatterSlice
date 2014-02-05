@@ -130,7 +130,7 @@ namespace MatterHackers.MatterSlice
         public void setExtrusion(int layerThickness, int filamentDiameter, int flow)
         {
             double filamentArea = Math.PI * ((double)(filamentDiameter) / 1000.0 / 2.0) * ((double)(filamentDiameter) / 1000.0 / 2.0);
-            if (flavor == GCODE_FLAVOR_ULTIGCODE)//UltiGCode uses volume extrusion as E value, and thus does not need the filamentArea in the mix.
+            if (flavor == ConfigSettings.GCODE_FLAVOR_ULTIGCODE)//UltiGCode uses volume extrusion as E value, and thus does not need the filamentArea in the mix.
                 extrusionPerMM = (double)(layerThickness) / 1000.0;
             else
                 extrusionPerMM = (double)(layerThickness) / 1000.0 / filamentArea * (double)(flow) / 100.0;
@@ -253,7 +253,7 @@ namespace MatterHackers.MatterSlice
                 f.Write(" E%0.5lf", extrusionAmount);
             f.Write("\n");
 
-            currentPosition = Point3(p.X, p.Y, zPos);
+            currentPosition = new Point3(p.X, p.Y, zPos);
             estimateCalculator.plan(TimeEstimateCalculator.Position((double)(currentPosition.x) / 1000.0, (currentPosition.y) / 1000.0, (double)(currentPosition.z) / 1000.0, extrusionAmount), currentSpeed);
         }
 
@@ -261,7 +261,7 @@ namespace MatterHackers.MatterSlice
         {
             if (retractionAmount > 0 && !isRetracted && extrusionAmountAtPreviousRetraction + minimalExtrusionBeforeRetraction < extrusionAmount)
             {
-                if (flavor == GCODE_FLAVOR_ULTIGCODE)
+                if (flavor == ConfigSettings.GCODE_FLAVOR_ULTIGCODE)
                 {
                     f.Write("G10\n");
                 }
@@ -284,7 +284,7 @@ namespace MatterHackers.MatterSlice
             resetExtrusionValue();
             extruderNr = newExtruder;
 
-            if (flavor == GCODE_FLAVOR_ULTIGCODE)
+            if (flavor == ConfigSettings.GCODE_FLAVOR_ULTIGCODE)
             {
                 f.Write("G10 S1\n");
             }
@@ -700,7 +700,7 @@ namespace MatterHackers.MatterSlice
                 if (spiralize)
                 {
                     //If we need to spiralize then raise the head slowly by 1 layer as this path progresses.
-                    float totalLength = 0.0;
+                    double totalLength = 0;
                     int z = gcode.getPositionZ();
                     Point p0 = gcode.getPositionXY();
                     for (int i = 0; i < path.points.Count; i++)

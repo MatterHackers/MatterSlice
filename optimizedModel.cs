@@ -45,6 +45,8 @@ namespace MatterHackers.MatterSlice
 
     public class OptimizedVolume
     {
+        const int MELD_DIST = 30;
+
         public OptimizedModel model;
         public List<OptimizedPoint3> points;
         public List<OptimizedFace> faces;
@@ -52,23 +54,23 @@ namespace MatterHackers.MatterSlice
         public OptimizedVolume(SimpleVolume volume, OptimizedModel model)
         {
             this.model = model;
-            points.reserve(volume.faces.size() * 3);
-            faces.reserve(volume.faces.size());
+            points.reserve(volume.faces.Count * 3);
+            faces.reserve(volume.faces.Count);
 
             std::map<int, List<int>> indexMap;
 
-            double t = getTime();
-            for (int i = 0; i < volume.faces.size(); i++)
+            double t = TimeKeeper.getTime();
+            for (int i = 0; i < volume.faces.Count; i++)
             {
                 OptimizedFace f;
-                if ((i % 1000 == 0) && (getTime() - t) > 2.0) LogOutput.logProgress("optimized", i + 1, volume.faces.size());
+                if ((i % 1000 == 0) && (TimeKeeper.getTime() - t) > 2.0) LogOutput.logProgress("optimized", i + 1, volume.faces.Count);
                 for (int j = 0; j < 3; j++)
                 {
                     Point3 p = volume.faces[i].v[j];
                     int hash = ((p.x + MELD_DIST / 2) / MELD_DIST) ^ (((p.y + MELD_DIST / 2) / MELD_DIST) << 10) ^ (((p.z + MELD_DIST / 2) / MELD_DIST) << 20);
                     int idx;
                     bool add = true;
-                    for (int n = 0; n < indexMap[hash].size(); n++)
+                    for (int n = 0; n < indexMap[hash].Count; n++)
                     {
                         if ((points[indexMap[hash][n]].p - p).testLength(MELD_DIST))
                         {
@@ -79,9 +81,9 @@ namespace MatterHackers.MatterSlice
                     }
                     if (add)
                     {
-                        indexMap[hash].push_back(points.size());
-                        idx = points.size();
-                        points.push_back(p);
+                        indexMap[hash].Add(points.Count);
+                        idx = points.Count;
+                        points.Add(p);
                     }
                     f.index[j] = idx;
                 }
@@ -89,11 +91,11 @@ namespace MatterHackers.MatterSlice
                 {
                     //Check if there is a face with the same points
                     bool duplicate = false;
-                    for (int _idx0 = 0; _idx0 < points[f.index[0]].faceIndexList.size(); _idx0++)
+                    for (int _idx0 = 0; _idx0 < points[f.index[0]].faceIndexList.Count; _idx0++)
                     {
-                        for (int _idx1 = 0; _idx1 < points[f.index[1]].faceIndexList.size(); _idx1++)
+                        for (int _idx1 = 0; _idx1 < points[f.index[1]].faceIndexList.Count; _idx1++)
                         {
-                            for (int _idx2 = 0; _idx2 < points[f.index[2]].faceIndexList.size(); _idx2++)
+                            for (int _idx2 = 0; _idx2 < points[f.index[2]].faceIndexList.Count; _idx2++)
                             {
                                 if (points[f.index[0]].faceIndexList[_idx0] == points[f.index[1]].faceIndexList[_idx1] && points[f.index[0]].faceIndexList[_idx0] == points[f.index[2]].faceIndexList[_idx2])
                                     duplicate = true;
@@ -102,17 +104,17 @@ namespace MatterHackers.MatterSlice
                     }
                     if (!duplicate)
                     {
-                        points[f.index[0]].faceIndexList.push_back(faces.size());
-                        points[f.index[1]].faceIndexList.push_back(faces.size());
-                        points[f.index[2]].faceIndexList.push_back(faces.size());
-                        faces.push_back(f);
+                        points[f.index[0]].faceIndexList.Add(faces.Count);
+                        points[f.index[1]].faceIndexList.Add(faces.Count);
+                        points[f.index[2]].faceIndexList.Add(faces.Count);
+                        faces.Add(f);
                     }
                 }
             }
             //fprintf(stdout, "\rAll faces are optimized in %5.1fs.\n",timeElapsed(t));
 
             int openFacesCount = 0;
-            for (int i = 0; i < faces.size(); i++)
+            for (int i = 0; i < faces.Count; i++)
             {
                 OptimizedFace f = faces[i];
                 f.touching[0] = getFaceIdxWithPoints(f.index[0], f.index[1], i);
@@ -130,11 +132,11 @@ namespace MatterHackers.MatterSlice
 
         public int getFaceIdxWithPoints(int idx0, int idx1, int notFaceIdx)
         {
-            for (int i = 0; i < points[idx0].faceIndexList.size(); i++)
+            for (int i = 0; i < points[idx0].faceIndexList.Count; i++)
             {
                 int f0 = points[idx0].faceIndexList[i];
                 if (f0 == notFaceIdx) continue;
-                for (int j = 0; j < points[idx1].faceIndexList.size(); j++)
+                for (int j = 0; j < points[idx1].faceIndexList.Count; j++)
                 {
                     int f1 = points[idx1].faceIndexList[j];
                     if (f1 == notFaceIdx) continue;
@@ -152,15 +154,15 @@ namespace MatterHackers.MatterSlice
 
         public OptimizedModel(SimpleModel model, Point3 center)
         {
-            for (int i = 0; i < model.volumes.size(); i++)
-                volumes.push_back(OptimizedVolume(&model.volumes[i], this));
+            for (int i = 0; i < model.volumes.Count; i++)
+                volumes.Add(OptimizedVolume(&model.volumes[i], this));
             vMin = model.min();
             vMax = model.max();
 
             Point3 vOffset = new Point3((vMin.x + vMax.x) / 2, (vMin.y + vMax.y) / 2, vMin.z);
             vOffset -= center;
-            for (int i = 0; i < volumes.size(); i++)
-                for (int n = 0; n < volumes[i].points.size(); n++)
+            for (int i = 0; i < volumes.Count; i++)
+                for (int n = 0; n < volumes[i].points.Count; n++)
                     volumes[i].points[n].p -= vOffset;
 
             modelSize = vMax - vMin;
@@ -179,9 +181,9 @@ namespace MatterHackers.MatterSlice
     OptimizedVolume* vol = &volumes[0];
     FILE* f = fopen(filename, "wb");
     fwrite(buffer, 80, 1, f);
-    n = vol.faces.size();
+    n = vol.faces.Count;
     fwrite(&n, sizeof(n), 1, f);
-    for(int i=0;i<vol.faces.size();i++)
+    for(int i=0;i<vol.faces.Count;i++)
     {
         flt = 0;
         s = 0;
@@ -208,7 +210,7 @@ namespace MatterHackers.MatterSlice
     strcpy(gcodeFilename, filename);
     strcpy(strchr(gcodeFilename, '.'), ".gcode");
     f = fopen(gcodeFilename, "w");
-    for(int i=0;i<faces.size();i++)
+    for(int i=0;i<faces.Count;i++)
     {
         for(int j=0;j<3;j++)
         {

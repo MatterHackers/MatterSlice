@@ -42,6 +42,9 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="C5">
+      <HintPath>.\C5.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
@@ -86,6 +89,9 @@
   <ItemGroup>
     <Compile Include="bridge.cs" />
     <Compile Include="logoutput.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="gettime.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

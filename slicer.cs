@@ -444,7 +444,7 @@ namespace MatterHackers.MatterSlice
                     long lineLength = (pDiff).vSize();
                     if (lineLength > 1)
                     {
-                        long distOnLine = dot(pDiff, input - p0) / lineLength;
+                        long distOnLine = (pDiff, input - p0).dot() / lineLength;
                         if (distOnLine >= 0 && distOnLine <= lineLength)
                         {
                             Point q = p0 + pDiff * distOnLine / lineLength;

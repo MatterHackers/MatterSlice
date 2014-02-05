@@ -140,7 +140,7 @@ namespace MatterHackers.MatterSlice
         public int objectSink;
 
         public int fixHorrible;
-        public int spiralizeMode;
+        public bool spiralizeMode;
         public int gcodeFlavor;
 
         public IntPoint[] extruderOffset = new IntPoint[MAX_EXTRUDERS];
