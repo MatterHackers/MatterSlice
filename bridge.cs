@@ -41,7 +41,7 @@ namespace MatterHackers.MatterSlice
             {
                 if (!part.boundaryBox.hit(prevLayer.parts[n].boundaryBox)) continue;
 
-                islands.Add(part.outline.intersection(prevLayer.parts[n].outline));
+                islands.AddRange(part.outline.intersection(prevLayer.parts[n].outline));
             }
             if (islands.Count > 5)
                 return -1;
@@ -82,7 +82,7 @@ namespace MatterHackers.MatterSlice
 
             double angle = Math.Atan2(center2.X - center1.X, center2.Y - center1.Y) / Math.PI * 180;
             if (angle < 0) angle += 360;
-            return angle;
+            return (int)angle;
         }
     }
 }

@@ -53,7 +53,7 @@ namespace MatterHackers.MatterSlice
             return a.z - b.z;
         }
 
-        public void generateSupportGrid(SupportStorage storage, OptimizedModel om, int supportAngle, bool supportEverywhere, int supportXYDistance, int supportZDistance)
+        public static void generateSupportGrid(SupportStorage storage, OptimizedModel om, int supportAngle, bool supportEverywhere, int supportXYDistance, int supportZDistance)
 {
     storage.generated = false;
     if (supportAngle < 0)

@@ -279,7 +279,7 @@ namespace MatterHackers.MatterSlice
 #endif
 }
 
-public SimpleModel loadModel(string filename, FMatrix3x3 matrix)
+public static SimpleModel loadModel(string filename, FMatrix3x3 matrix)
 {
     throw new NotImplementedException();
 #if false

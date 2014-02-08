@@ -54,6 +54,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="layerPart.cs" />
     <Compile Include="sliceDataStorage.cs" />
     <Compile Include="slicer.cs" />
     <Compile Include="utils\floatpoint.cs" />
@@ -91,7 +92,7 @@
     <Compile Include="logoutput.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="gettime.cs" />
+    <Compile Include="infill.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

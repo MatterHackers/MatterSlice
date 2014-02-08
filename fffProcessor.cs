@@ -132,27 +132,30 @@ namespace MatterHackers.MatterSlice
                 return false;
             }
             LogOutput.log(string.Format("Loaded from disk in {0:0.000}s\n", timeKeeper.Elapsed.Seconds));
-            timeKeeper.Restart()
+            timeKeeper.Restart();
             LogOutput.log("Analyzing and optimizing model...\n");
             OptimizedModel om = new OptimizedModel(m, new Point3(config.objectPosition.X, config.objectPosition.Y, -config.objectSink));
             for (int v = 0; v < m.volumes.Count; v++)
             {
-                LogOutput.log("  Face counts: %i . %i %0.1f%%\n", (int)m.volumes[v].faces.Count, (int)om.volumes[v].faces.Count, (float)(om.volumes[v].faces.Count) / (float)(m.volumes[v].faces.Count) * 100);
-                LogOutput.log("  Vertex counts: %i . %i %0.1f%%\n", (int)m.volumes[v].faces.Count * 3, (int)om.volumes[v].points.Count, (float)(om.volumes[v].points.Count) / (float)(m.volumes[v].faces.Count * 3) * 100);
+                LogOutput.log(string.Format("  Face counts: {0} . {1} {2:0.0}%\n", (int)m.volumes[v].faces.Count, (int)om.volumes[v].faces.Count, (double)(om.volumes[v].faces.Count) / (double)(m.volumes[v].faces.Count) * 100));
+                LogOutput.log(string.Format("  Vertex counts: {0} . {1} {2:0.0}%\n", (int)m.volumes[v].faces.Count * 3, (int)om.volumes[v].points.Count, (double)(om.volumes[v].points.Count) / (double)(m.volumes[v].faces.Count * 3) * 100));
             }
 
 #if !DEBUG
             m = null;
 #endif
 
-            LogOutput.log("Optimize model %5.3fs \n", timeKeeper.restart());
+            LogOutput.log(string.Format("Optimize model {0:0.000}s \n", timeKeeper.Elapsed.Seconds));
+            timeKeeper.Reset();
             //om.saveDebugSTL("c:\\models\\output.stl");
 
             LogOutput.log("Slicing model...\n");
             List<Slicer> slicerList;
             for (int volumeIdx = 0; volumeIdx < om.volumes.Count; volumeIdx++)
             {
-                Slicer slicer = new Slicer(om.volumes[volumeIdx], config.initialLayerThickness - config.layerThickness / 2, config.layerThickness, config.fixHorrible & ConfigSettings.FIX_HORRIBLE_KEEP_NONE_CLOSED, config.fixHorrible & ConfigSettings.FIX_HORRIBLE_EXTENSIVE_STITCHING);
+                Slicer slicer = new Slicer(om.volumes[volumeIdx], config.initialLayerThickness - config.layerThickness / 2, config.layerThickness,
+                    (config.fixHorrible & ConfigSettings.FIX_HORRIBLE_KEEP_NONE_CLOSED) == ConfigSettings.FIX_HORRIBLE_KEEP_NONE_CLOSED,
+                    (config.fixHorrible & ConfigSettings.FIX_HORRIBLE_EXTENSIVE_STITCHING) == ConfigSettings.FIX_HORRIBLE_EXTENSIVE_STITCHING);
                 slicerList.Add(slicer);
                 for (int layerNr = 0; layerNr < slicer.layers.Count; layerNr++)
                 {
@@ -161,10 +164,11 @@ namespace MatterHackers.MatterSlice
                     LogOutput.logPolygons("openoutline", layerNr, slicer.layers[layerNr].z, slicer.layers[layerNr].openPolygonList);
                 }
             }
-            LogOutput.log("Sliced model in %5.3fs\n", timeKeeper.restart());
+            LogOutput.log(string.Format("Sliced model in {0:0.000}s\n", timeKeeper.Elapsed.Seconds));
+            timeKeeper.Restart();
 
             LogOutput.log("Generating support map...\n");
-            generateSupportGrid(storage.support, om, config.supportAngle, config.supportEverywhere > 0, config.supportXYDistance, config.supportZDistance);
+            SupportPolyGenerator.generateSupportGrid(storage.support, om, config.supportAngle, config.supportEverywhere > 0, config.supportXYDistance, config.supportZDistance);
 
             storage.modelSize = om.modelSize;
             storage.modelMin = om.vMin;
@@ -176,11 +180,12 @@ namespace MatterHackers.MatterSlice
             LogOutput.log("Generating layer parts...\n");
             for (int volumeIdx = 0; volumeIdx < slicerList.Count; volumeIdx++)
             {
-                storage.volumes.Add(SliceVolumeStorage());
-                createLayerParts(storage.volumes[volumeIdx], slicerList[volumeIdx], config.fixHorrible & (ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_A | ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_B | ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_C));
+                storage.volumes.Add(new SliceVolumeStorage());
+                LayerPart.createLayerParts(storage.volumes[volumeIdx], slicerList[volumeIdx], config.fixHorrible & (ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_A | ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_B | ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_C));
                 slicerList[volumeIdx] = null;
             }
-            LogOutput.log("Generated layer parts in %5.3fs\n", timeKeeper.restart());
+            LogOutput.log("Generated layer parts in %5.3fs\n", timeKeeper.Elapsed.Seconds);
+            timeKeeper.Restart();
             return true;
         }
 
@@ -485,7 +490,7 @@ namespace MatterHackers.MatterSlice
 
                 Polygons fillPolygons;
                 int fillAngle = 45;
-                if (layerNr & 1)
+                if ((layerNr & 1) == 1)
                     fillAngle += 90;
                 //int sparseSteps[1] = {config.extrusionWidth};
                 //generateConcentricInfill(part.skinOutline, fillPolygons, sparseSteps, 1);
