@@ -27,8 +27,6 @@ using ClipperLib;
 namespace MatterHackers.MatterSlice
 {
     using Point = IntPoint;
-    using Polygon = List<IntPoint>;
-    using Polygons = List<Polygon>;
     using PolygonRef = Polygon;
 
     public class SlicerSegment
@@ -58,7 +56,7 @@ namespace MatterHackers.MatterSlice
 
     public class SlicerLayer
     {
-        public List<SlicerSegment> segmentList;
+        public List<SlicerSegment> segmentList = new List<SlicerSegment>();
         public SortedDictionary<int, int> faceToSegmentIndex;
 
         public int z;
@@ -111,7 +109,7 @@ namespace MatterHackers.MatterSlice
                     openPolygonList.add(poly);
             }
             //Clear the segmentList to save memory, it is no longer needed after this point.
-            segmentList.clear();
+            segmentList.Clear();
 
             //Connecting polygons that are not closed yet, as models are not always perfect manifold we need to join some stuff up to get proper polygons
             //First link up polygon ends that are within 2 microns.
@@ -145,7 +143,7 @@ namespace MatterHackers.MatterSlice
             }
 
             //Next link up all the missing ends, closing up the smallest gaps first. This is an inefficient implementation which can run in O(n*n*n) time.
-            while (1)
+            while (true)
             {
                 long bestScore = 10000 * 10000;
                 int bestA = -1;
@@ -224,7 +222,7 @@ namespace MatterHackers.MatterSlice
                 // And generate a path over this shortest bit to link up the 2 open polygons.
                 // (If these 2 open polygons are the same polygon, then the final result is a closed polyon)
 
-                while (1)
+                while (true)
                 {
                     int bestA = -1;
                     int bestB = -1;

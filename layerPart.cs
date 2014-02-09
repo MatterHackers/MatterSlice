@@ -27,8 +27,6 @@ using ClipperLib;
 namespace MatterHackers.MatterSlice
 {
     using Point = IntPoint;
-    using Polygon = List<IntPoint>;
-    using Polygons = List<Polygon>;
     using PolygonRef = Polygon;
 
     public static class LayerPart

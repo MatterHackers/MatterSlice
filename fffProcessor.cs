@@ -26,8 +26,6 @@ using ClipperLib;
 namespace MatterHackers.MatterSlice
 {
     using Point = IntPoint;
-    using Polygon = List<IntPoint>;
-    using Polygons = List<Polygon>;
     using PolygonRef = Polygon;
 
     //FusedFilamentFabrication processor.
@@ -357,7 +355,7 @@ namespace MatterHackers.MatterSlice
             {
                 LogOutput.logProgress("export", layerNr + 1, totalLayers);
 
-                gcode.addComment("LAYER:%d", layerNr);
+                gcode.addComment(string.Format("LAYER:{0}", layerNr));
                 if (layerNr == 0)
                     gcode.setExtrusion(config.initialLayerThickness, config.filamentDiameter, config.filamentFlow);
                 else

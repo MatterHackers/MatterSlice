@@ -26,8 +26,6 @@ using ClipperLib;
 namespace MatterHackers.MatterSlice
 {
     using Point = IntPoint;
-    using Polygon = List<IntPoint>;
-    using Polygons = List<Polygon>;
     using PolygonRef = Polygon;
 
     public class Skirt
@@ -38,7 +36,7 @@ namespace MatterHackers.MatterSlice
     {
         int offsetDistance = distance + extrusionWidth * skirtNr + extrusionWidth / 2;
         
-        Polygons skirtPolygons(storage.wipeTower.offset(offsetDistance));
+        Polygons skirtPolygons = new Polygons(storage.wipeTower.offset(offsetDistance));
         for(int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
         {
             if (storage.volumes[volumeIdx].layers.Count < 1) continue;
@@ -49,7 +47,7 @@ namespace MatterHackers.MatterSlice
             }
         }
         
-        SupportPolyGenerator supportGenerator(storage.support, initialLayerHeight);
+        SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, initialLayerHeight);
         skirtPolygons = skirtPolygons.unionPolygons(supportGenerator.polygons.offset(offsetDistance));
 
         //Remove small inner skirt holes. Holes have a negative area, remove anything smaller then 100x extrusion "area"

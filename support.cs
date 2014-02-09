@@ -26,8 +26,6 @@ using ClipperLib;
 namespace MatterHackers.MatterSlice
 {
     using Point = IntPoint;
-    using Polygon = List<IntPoint>;
-    using Polygons = List<Polygon>;
     using PolygonRef = Polygon;
 
     public class SupportPolyGenerator
@@ -79,7 +77,7 @@ namespace MatterHackers.MatterSlice
     storage.gridScale = 200;
     storage.gridWidth = (om.modelSize.x / storage.gridScale) + 1;
     storage.gridHeight = (om.modelSize.y / storage.gridScale) + 1;
-    storage.grid = new List<SupportPoint>[storage.gridWidth * storage.gridHeight];
+    storage.grid = new List<SupportPoint>(storage.gridWidth * storage.gridHeight);
     storage.angle = supportAngle;
     storage.everywhere = supportEverywhere;
     storage.XYDistance = supportXYDistance;
@@ -227,7 +225,7 @@ this.everywhere = storage.everywhere;
     if (!storage.generated)
         return;
     
-    cosAngle = (double(90 - storage.angle) / 180.0 * Math.PI).cos() - 0.01;
+    cosAngle = Math.Cos((double)(90 - storage.angle) / 180.0 * Math.PI) - 0.01;
     this.supportZDistance = storage.ZDistance;
 
     done = new int[storage.gridWidth*storage.gridHeight];

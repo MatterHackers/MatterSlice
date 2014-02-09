@@ -67,7 +67,7 @@ void main(string[] args)
     config.retractionMinimalDistance = 1500;
     config.minimalExtrusionBeforeRetraction = 100;
     config.enableOozeShield = 0;
-    config.enableCombing = 1;
+    config.enableCombing = true;
     config.wipeTowerSize = 0;
     config.multiVolumeOverlap = 0;
 
@@ -84,7 +84,7 @@ void main(string[] args)
     config.raftInterfaceThickness = 0;
     config.raftInterfaceLinewidth = 0;
 
-    config.spiralizeMode = 0;
+    config.spiralizeMode = false;
     config.fixHorrible = 0;
     config.gcodeFlavor = ConfigSettings.GCODE_FLAVOR_REPRAP;
     

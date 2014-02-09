@@ -26,8 +26,6 @@ using ClipperLib;
 namespace MatterHackers.MatterSlice
 {
     using Point = IntPoint;
-    using Polygon = List<IntPoint>;
-    using Polygons = List<Polygon>;
     using PolygonRef = Polygon;
 
     public static class Skin
@@ -59,7 +57,7 @@ namespace MatterHackers.MatterSlice
                     downskin = downskin.difference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 1]);
             }
         }
-        if (int(layerNr + upSkinCount) < (int)storage.layers.Count)
+        if ((int)(layerNr + upSkinCount) < (int)storage.layers.Count)
         {
             SliceLayer layer2 = storage.layers[layerNr + upSkinCount];
             for(int partNr2=0; partNr2<layer2.parts.Count; partNr2++)
@@ -71,7 +69,7 @@ namespace MatterHackers.MatterSlice
         
         part.skinOutline = upskin.unionPolygons(downskin);
 
-        double minAreaSize = (2 * Math.PI * ((double)(extrusionWidth) / 1000.0) * (((double))(extrusionWidth) / 1000.0)) * 0.3;
+        double minAreaSize = (2 * Math.PI * ((double)(extrusionWidth) / 1000.0) * ((double)(extrusionWidth) / 1000.0)) * 0.3;
         for(int i=0; i<part.skinOutline.Count; i++)
         {
             double area = Math.Abs(part.skinOutline[i].area()) / 1000.0 / 1000.0;
@@ -112,7 +110,7 @@ namespace MatterHackers.MatterSlice
                 }
             }
         }
-        if (int(layerNr + upSkinCount) < (int)storage.layers.Count)
+        if ((int)(layerNr + upSkinCount) < (int)storage.layers.Count)
         {
             SliceLayer layer2 = storage.layers[layerNr + upSkinCount];
             for(int partNr2=0; partNr2<layer2.parts.Count; partNr2++)

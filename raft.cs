@@ -26,8 +26,6 @@ using ClipperLib;
 namespace MatterHackers.MatterSlice
 {
     using Point = IntPoint;
-    using Polygon = List<IntPoint>;
-    using Polygons = List<Polygon>;
     using PolygonRef = Polygon;
 
     public static class Raft
@@ -44,7 +42,7 @@ namespace MatterHackers.MatterSlice
                 }
             }
 
-            SupportPolyGenerator supportGenerator(storage.support, 0);
+            SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, 0);
             storage.raftOutline = storage.raftOutline.unionPolygons(supportGenerator.polygons);
         }
     }

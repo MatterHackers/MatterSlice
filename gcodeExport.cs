@@ -26,8 +26,6 @@ using ClipperLib;
 namespace MatterHackers.MatterSlice
 {
     using Point = IntPoint;
-    using Polygon = List<IntPoint>;
-    using Polygons = List<Polygon>;
     using PolygonRef = Polygon;
 
     public class GCodeExport
@@ -450,7 +448,7 @@ namespace MatterHackers.MatterSlice
         public void setCombBoundary(Polygons polygons)
         {
             if (polygons != null)
-                comb = new Comb((ClipperLib.Polygons)polygons);
+                comb = new Comb(polygons);
             else
                 comb = null;
         }
@@ -646,7 +644,7 @@ namespace MatterHackers.MatterSlice
                 }
                 if (path.config != travelConfig && lastConfig != path.config)
                 {
-                    gcode.addComment("TYPE:%s", path.config.name);
+                    gcode.addComment(string.Format("TYPE:{0}", path.config.name));
                     lastConfig = path.config;
                 }
                 int speed = path.config.speed;

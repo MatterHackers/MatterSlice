@@ -26,8 +26,6 @@ using ClipperLib;
 namespace MatterHackers.MatterSlice
 {
     using Point = IntPoint;
-    using Polygon = List<IntPoint>;
-    using Polygons = List<Polygon>;
     using PolygonRef = Polygon;
 
     public static class Infill
@@ -35,7 +33,7 @@ namespace MatterHackers.MatterSlice
         public static void generateConcentricInfill(Polygons outline, Polygons result, int[] offsets, int offsetsSize)
         {
             int step = 0;
-            while (1)
+            while (true)
             {
                 for (int polygonNr = 0; polygonNr < outline.Count; polygonNr++)
                     result.add(outline[polygonNr]);
