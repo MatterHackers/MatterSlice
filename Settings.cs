@@ -100,7 +100,7 @@ namespace MatterHackers.MatterSlice
         public int retractionSpeed;
         public int retractionMinimalDistance;
         public int minimalExtrusionBeforeRetraction;
-        public int enableCombing;
+        public bool enableCombing;
         public int enableOozeShield;
         public int wipeTowerSize;
         public int multiVolumeOverlap;

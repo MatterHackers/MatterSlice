@@ -29,7 +29,7 @@ namespace MatterHackers.MatterSlice
     using Point = IntPoint;
     using Polygon = List<IntPoint>;
     using Polygons = List<Polygon>;
-    using PolygonRef = Polygons;
+    using PolygonRef = Polygon;
 
     public class SlicerSegment
     {
@@ -369,7 +369,7 @@ namespace MatterHackers.MatterSlice
             }
 
             //Finally optimize all the polygons. Every point removed saves time in the long run.
-            optimizePolygons(polygonList);
+            PolygonOptimizer.optimizePolygons(polygonList);
         }
 
         gapCloserResult findPolygonGapCloser(Point ip0, Point ip1)
@@ -431,7 +431,7 @@ namespace MatterHackers.MatterSlice
 
         closePolygonResult findPolygonPointClosestTo(Point input)
         {
-            closePolygonResult ret;
+            closePolygonResult ret = new closePolygonResult();
             for (int n = 0; n < polygonList.Count; n++)
             {
                 Point p0 = polygonList[n][polygonList[n].Count - 1];
@@ -444,7 +444,7 @@ namespace MatterHackers.MatterSlice
                     long lineLength = (pDiff).vSize();
                     if (lineLength > 1)
                     {
-                        long distOnLine = (pDiff, input - p0).dot() / lineLength;
+                        long distOnLine = (pDiff).dot(input - p0) / lineLength;
                         if (distOnLine >= 0 && distOnLine <= lineLength)
                         {
                             Point q = p0 + pDiff * distOnLine / lineLength;

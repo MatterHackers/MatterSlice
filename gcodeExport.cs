@@ -603,14 +603,14 @@ namespace MatterHackers.MatterSlice
                     GCodePath path = paths[n];
                     if (path.config.lineWidth == 0)
                         continue;
-                    int speed = path.config.speed * factor;
+                    int speed = (int)(path.config.speed * factor);
                     if (speed < minimalSpeed)
                         factor = (double)(minimalSpeed) / (double)(path.config.speed);
                 }
 
                 //Only slow down with the minimal time if that will be slower then a factor already set. First layer slowdown also sets the speed factor.
                 if (factor * 100 < getExtrudeSpeedFactor())
-                    setExtrudeSpeedFactor(factor * 100);
+                    setExtrudeSpeedFactor((int)(factor * 100));
                 else
                     factor = getExtrudeSpeedFactor() / 100.0;
 

@@ -73,10 +73,10 @@ namespace MatterHackers.MatterSlice
 
     for(int volumeIdx = 0; volumeIdx < om.volumes.Count; volumeIdx++)
     {
-        OptimizedVolume* vol = &om.volumes[volumeIdx];
+        OptimizedVolume vol = om.volumes[volumeIdx];
         for(int faceIdx = 0; faceIdx < vol.faces.Count; faceIdx++)
         {
-            OptimizedFace* face = &vol.faces[faceIdx];
+            OptimizedFace face = vol.faces[faceIdx];
             Point3 v0 = vol.points[face.index[0]].p;
             Point3 v1 = vol.points[face.index[1]].p;
             Point3 v2 = vol.points[face.index[2]].p;
@@ -84,7 +84,7 @@ namespace MatterHackers.MatterSlice
             Point3 normal = (v1 - v0).cross(v2 - v0);
             int normalSize = normal.vSize();
             
-            double cosAngle = fabs(double(normal.z) / double(normalSize));
+            double cosAngle = fabs(double(normal.z) / (double)(normalSize));
             
             v0.x = (v0.x - storage.gridOffset.X) / storage.gridScale;
             v0.y = (v0.y - storage.gridOffset.Y) / storage.gridScale;
@@ -127,7 +127,8 @@ namespace MatterHackers.MatterSlice
         for(int y=0; y<storage.gridHeight; y++)
         {
             int n = x+y*storage.gridWidth;
-            qsort(storage.grid[n].data(), storage.grid[n].Count, sizeof(SupportPoint), cmp_SupportPoint);
+            throw new NotImplementedException();
+            //qsort(storage.grid[n].data(), storage.grid[n].Count, sizeof(SupportPoint), cmp_SupportPoint);
         }
     }
     storage.gridOffset.X += storage.gridScale / 2;
@@ -135,69 +136,71 @@ namespace MatterHackers.MatterSlice
 }
 
         public bool needSupportAt(Point p)
-{
-    if (p.X < 1) return false;
-    if (p.Y < 1) return false;
-    if (p.X >= storage.gridWidth - 1) return false;
-    if (p.Y >= storage.gridHeight - 1) return false;
-    if (done[p.X + p.Y * storage.gridWidth]) return false;
-    
-    int n = p.X+p.Y*storage.gridWidth;
-    
-    if (everywhere)
-    {
-        bool ok = false;
-        for(int i=0; i<storage.grid[n].Count; i+=2)
         {
-            if (storage.grid[n][i].cosAngle >= cosAngle && storage.grid[n][i].z - supportZDistance >= z && (i == 0 || storage.grid[n][i-1].z + supportZDistance < z))
+            if (p.X < 1) return false;
+            if (p.Y < 1) return false;
+            if (p.X >= storage.gridWidth - 1) return false;
+            if (p.Y >= storage.gridHeight - 1) return false;
+            if (done[p.X + p.Y * storage.gridWidth] != 0) return false;
+
+            int n = p.X + p.Y * storage.gridWidth;
+
+            if (everywhere)
             {
-                ok = true;
-                break;
+                bool ok = false;
+                for (int i = 0; i < storage.grid[n].Count; i += 2)
+                {
+                    if (storage.grid[n][i].cosAngle >= cosAngle && storage.grid[n][i].z - supportZDistance >= z && (i == 0 || storage.grid[n][i - 1].z + supportZDistance < z))
+                    {
+                        ok = true;
+                        break;
+                    }
+                }
+                if (!ok) return false;
             }
+            else
+            {
+                if (storage.grid[n].Count < 1) return false;
+                if (storage.grid[n][0].cosAngle < cosAngle) return false;
+                if (storage.grid[n][0].z - supportZDistance < z) return false;
+            }
+            return true;
         }
-        if (!ok) return false;
-    }else{
-        if (storage.grid[n].Count < 1) return false;
-        if (storage.grid[n][0].cosAngle < cosAngle) return false;
-        if (storage.grid[n][0].z - supportZDistance < z) return false;
-    }
-    return true;
-}
 
         public void lazyFill(Point startPoint)
-{
-    static int nr = 0;
-    nr++;
-    PolygonRef poly = polygons.newPoly();
-    Polygon tmpPoly;
+        {
+            int nr = 0;
+            nr++;
+            PolygonRef poly = polygons.newPoly();
+            Polygon tmpPoly;
 
-    while(true)
-    {
-        Point p = startPoint;
-        done[p.X + p.Y * storage.gridWidth] = nr;
-        while(needSupportAt(p + Point(1, 0)))
-        {
-            p.X ++;
-            done[p.X + p.Y * storage.gridWidth] = nr;
-        }
-        tmpPoly.add(startPoint * storage.gridScale + storage.gridOffset - Point(storage.gridScale/2, 0));
-        poly.add(p * storage.gridScale + storage.gridOffset);
-        startPoint.Y++;
-        while(!needSupportAt(startPoint) && startPoint.X <= p.X)
-            startPoint.X ++;
-        if (startPoint.X > p.X)
-        {
-            for(int n=0;n<tmpPoly.Count;n++)
+            while (true)
             {
-                poly.add(tmpPoly[tmpPoly.Count-n-1]);
+                Point p = startPoint;
+                done[p.X + p.Y * storage.gridWidth] = nr;
+                while (needSupportAt(p + Point(1, 0)))
+                {
+                    p.X++;
+                    done[p.X + p.Y * storage.gridWidth] = nr;
+                }
+                tmpPoly.add(startPoint * storage.gridScale + storage.gridOffset - Point(storage.gridScale / 2, 0));
+                poly.add(p * storage.gridScale + storage.gridOffset);
+                startPoint.Y++;
+                while (!needSupportAt(startPoint) && startPoint.X <= p.X)
+                    startPoint.X++;
+                if (startPoint.X > p.X)
+                {
+                    for (int n = 0; n < tmpPoly.Count; n++)
+                    {
+                        poly.add(tmpPoly[tmpPoly.Count - n - 1]);
+                    }
+                    polygons.add(poly);
+                    return;
+                }
+                while (needSupportAt(startPoint - Point(1, 0)) && startPoint.X > 1)
+                    startPoint.X--;
             }
-            polygons.add(poly);
-            return;
         }
-        while(needSupportAt(startPoint - Point(1, 0)) && startPoint.X > 1)
-            startPoint.X --;
-    }
-}
 
         public SupportPolyGenerator(SupportStorage storage, int z)
 {
@@ -217,9 +220,9 @@ this.everywhere = storage.everywhere;
     {
         for(int x=1; x<storage.gridWidth; x++)
         {
-            if (!needSupportAt(Point(x, y)) || done[x + y * storage.gridWidth]) continue;
+            if (!needSupportAt(new Point(x, y)) || done[x + y * storage.gridWidth]) continue;
             
-            lazyFill(Point(x, y));
+            lazyFill(new Point(x, y));
         }
     }
 

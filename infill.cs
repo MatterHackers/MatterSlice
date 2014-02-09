@@ -30,49 +30,49 @@ namespace MatterHackers.MatterSlice
     using Polygons = List<Polygon>;
     using PolygonRef = Polygon;
 
-	public static class Infill
-	{
-public static void generateConcentricInfill(Polygons outline, Polygons result, int offsets[], int offsetsSize)
-{
-    int step = 0;
-    while(1)
+    public static class Infill
     {
-        for(int polygonNr=0; polygonNr<outline.size(); polygonNr++)
-            result.add(outline[polygonNr]);
-        outline = outline.offset(-offsets[step]);
-        if (outline.size() < 1)
-            break;
-        step = (step + 1) % offsetsSize;
-    }
-}
+        public static void generateConcentricInfill(Polygons outline, Polygons result, int[] offsets, int offsetsSize)
+        {
+            int step = 0;
+            while (1)
+            {
+                for (int polygonNr = 0; polygonNr < outline.Count; polygonNr++)
+                    result.add(outline[polygonNr]);
+                outline = outline.offset(-offsets[step]);
+                if (outline.Count < 1)
+                    break;
+                step = (step + 1) % offsetsSize;
+            }
+        }
 
-int compare_long(long a, long b)
-{
-    long n = a - long;
-    if (n < 0) return -1;
-    if (n > 0) return 1;
-    return 0;
-}
+        static int compare_long(long a, long b)
+        {
+            long n = a - b;
+            if (n < 0) return -1;
+            if (n > 0) return 1;
+            return 0;
+        }
 
-public static void generateLineInfill(const Polygons in_outline, Polygons result, int extrusionWidth, int lineSpacing, int infillOverlap, double rotation)
+        public static void generateLineInfill(Polygons in_outline, Polygons result, int extrusionWidth, int lineSpacing, int infillOverlap, double rotation)
 {
     Polygons outline = in_outline.offset(extrusionWidth * infillOverlap / 100);
-    PointMatrix matrix(rotation);
+    PointMatrix matrix = new PointMatrix(rotation);
     
     outline.applyMatrix(matrix);
     
-    AABB boundary(outline);
+    AABB boundary = new AABB(outline);
     
     boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing;
-    int lineCount = (boundary.max.X - boundary.min.X + (lineSpacing - 1)) / lineSpacing;
+    int lineCount = (int)((boundary.max.X - boundary.min.X + (lineSpacing - 1)) / lineSpacing);
     List<List<long> > cutList = new List<List<long>>();
     for(int n=0; n<lineCount; n++)
-        cutList.push_back(List<long>());
+        cutList.Add(new List<long>());
 
-    for(int polyNr=0; polyNr < outline.size(); polyNr++)
+    for(int polyNr=0; polyNr < outline.Count; polyNr++)
     {
-        Point p1 = outline[polyNr][outline[polyNr].size()-1];
-        for(int i=0; i < outline[polyNr].size(); i++)
+        Point p1 = outline[polyNr][outline[polyNr].Count-1];
+        for(int i=0; i < outline[polyNr].Count; i++)
         {
             Point p0 = outline[polyNr][i];
             int idx0 = (p0.X - boundary.min.X) / lineSpacing;
@@ -86,7 +86,7 @@ public static void generateLineInfill(const Polygons in_outline, Polygons result
                 if (x < xMin) continue;
                 if (x >= xMax) continue;
                 int y = p0.Y + (p1.Y - p0.Y) * (x - p0.X) / (p1.X - p0.X);
-                cutList[idx].push_back(y);
+                cutList[idx].Add(y);
             }
             p1 = p0;
         }
@@ -95,8 +95,9 @@ public static void generateLineInfill(const Polygons in_outline, Polygons result
     int idx = 0;
     for(long x = boundary.min.X + lineSpacing / 2; x < boundary.max.X; x += lineSpacing)
     {
-        qsort(cutList[idx].data(), cutList[idx].size(), sizeof(long), compare_long);
-        for(int i = 0; i + 1 < cutList[idx].size(); i+=2)
+        throw new NotImplementedException();
+        //qsort(cutList[idx].data(), cutList[idx].Count, sizeof(long), compare_long);
+        for(int i = 0; i + 1 < cutList[idx].Count; i+=2)
         {
             if (cutList[idx][i+1] - cutList[idx][i] < extrusionWidth / 5)
                 continue;
@@ -108,5 +109,5 @@ public static void generateLineInfill(const Polygons in_outline, Polygons result
     }
 }
 
-	}
+    }
 }

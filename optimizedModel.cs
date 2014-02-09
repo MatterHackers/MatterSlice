@@ -57,33 +57,44 @@ namespace MatterHackers.MatterSlice
             points.reserve(volume.faces.Count * 3);
             faces.reserve(volume.faces.Count);
 
-            std::map<int, List<int>> indexMap;
+            Dictionary<int, List<int>> indexMap = new Dictionary<int,List<int>>();
 
-            double t = TimeKeeper.getTime();
+            Stopwatch t = new Stopwatch();
+            t.Start();
             for (int i = 0; i < volume.faces.Count; i++)
             {
                 OptimizedFace f;
-                if ((i % 1000 == 0) && (TimeKeeper.getTime() - t) > 2.0) LogOutput.logProgress("optimized", i + 1, volume.faces.Count);
+                if ((i % 1000 == 0) && t.Elapsed.Seconds > 2)
+                {
+                    LogOutput.logProgress("optimized", i + 1, volume.faces.Count);
+                }
                 for (int j = 0; j < 3; j++)
                 {
                     Point3 p = volume.faces[i].v[j];
                     int hash = ((p.x + MELD_DIST / 2) / MELD_DIST) ^ (((p.y + MELD_DIST / 2) / MELD_DIST) << 10) ^ (((p.z + MELD_DIST / 2) / MELD_DIST) << 20);
-                    int idx;
+                    int idx = 0;
                     bool add = true;
-                    for (int n = 0; n < indexMap[hash].Count; n++)
+                    //if (indexMap.ContainsKey(hash))
                     {
-                        if ((points[indexMap[hash][n]].p - p).testLength(MELD_DIST))
+                        for (int n = 0; n < indexMap[hash].Count; n++)
                         {
-                            idx = indexMap[hash][n];
-                            add = false;
-                            break;
+                            if ((points[indexMap[hash][n]].p - p).testLength(MELD_DIST))
+                            {
+                                idx = indexMap[hash][n];
+                                add = false;
+                                break;
+                            }
                         }
                     }
                     if (add)
                     {
+                        if (!indexMap.ContainsKey(hash))
+                        {
+                            indexMap.Add(hash, new List<int>());
+                        }
                         indexMap[hash].Add(points.Count);
                         idx = points.Count;
-                        points.Add(p);
+                        points.Add(new OptimizedPoint3(p));
                     }
                     f.index[j] = idx;
                 }

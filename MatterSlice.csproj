@@ -94,5 +94,23 @@
   <ItemGroup>
     <Compile Include="infill.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="skin.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="polygonOptimizer.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="skirt.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="raft.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="multiVolumes.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="inset.cs" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

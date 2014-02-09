@@ -81,15 +81,15 @@ namespace MatterHackers.MatterSlice
         {
             for (int layerNr = 0; layerNr < slicer.layers.Count; layerNr++)
             {
-                storage.layers.Add(SliceLayer());
-                createLayerWithParts(storage.layers[layerNr], &slicer.layers[layerNr], unionAllType);
+                storage.layers.Add(new SliceLayer());
+                LayerPart.createLayerWithParts(storage.layers[layerNr], slicer.layers[layerNr], unionAllType);
             }
         }
 
         public static void dumpLayerparts(SliceDataStorage storage, string filename)
         {
-            StreamWriter f = fopen(filename, "w");
-            fprintf(f, "<!DOCTYPE html><html><body>");
+            StreamWriter f = new StreamWriter(filename);
+            f.Write("<!DOCTYPE html><html><body>");
             Point3 modelSize = storage.modelSize;
             Point3 modelMin = storage.modelMin;
 
@@ -97,26 +97,26 @@ namespace MatterHackers.MatterSlice
             {
                 for (int layerNr = 0; layerNr < storage.volumes[volumeIdx].layers.Count; layerNr++)
                 {
-                    fprintf(f, "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style=\"width: 500px; height:500px\">\n");
-                    SliceLayer* layer = &storage.volumes[volumeIdx].layers[layerNr];
+                    f.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style=\"width: 500px; height:500px\">\n");
+                    SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
                     for (int i = 0; i < layer.parts.Count; i++)
                     {
-                        SliceLayerPart* part = &layer.parts[i];
+                        SliceLayerPart part = layer.parts[i];
                         for (int j = 0; j < part.outline.Count; j++)
                         {
-                            fprintf(f, "<polygon points=\"");
+                            f.Write("<polygon points=\"");
                             for (int k = 0; k < part.outline[j].Count; k++)
-                                fprintf(f, "%f,%f ", (float)(part.outline[j][k].X - modelMin.x) / modelSize.x * 500, (float)(part.outline[j][k].Y - modelMin.y) / modelSize.y * 500);
+                                f.Write("%f,%f ", (float)(part.outline[j][k].X - modelMin.x) / modelSize.x * 500, (float)(part.outline[j][k].Y - modelMin.y) / modelSize.y * 500);
                             if (j == 0)
-                                fprintf(f, "\" style=\"fill:gray; stroke:black;stroke-width:1\" />\n");
+                                f.Write("\" style=\"fill:gray; stroke:black;stroke-width:1\" />\n");
                             else
-                                fprintf(f, "\" style=\"fill:red; stroke:black;stroke-width:1\" />\n");
+                                f.Write("\" style=\"fill:red; stroke:black;stroke-width:1\" />\n");
                         }
                     }
-                    fprintf(f, "</svg>\n");
+                    f.Write("</svg>\n");
                 }
             }
-            fprintf(f, "</body></html>");
+            f.Write("</body></html>");
             fclose(f);
         }
 
