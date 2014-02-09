@@ -28,7 +28,7 @@ void print_usage()
     Console.Write("usage: MatterSlice [-h] [-v] [-m 3x3matrix] [-s <settingkey>=<value>] -o <output.gcode> <model.stl>\n");
 }
 
-void main(string[] arg)
+void main(string[] args)
 {
     ConfigSettings config = new ConfigSettings();
     fffProcessor processor = new fffProcessor(config);
@@ -114,31 +114,36 @@ config.startCode =
         string str = args[argn];
         if (str[0] == '-')
         {
-            for(str++; *str; str++)
+            for (int stringIndex = 1; stringIndex < str.Length; stringIndex++)
             {
-                switch(*str)
+                switch (str[stringIndex])
                 {
                 case 'h':
                     print_usage();
-                    exit(1);
+                    return;
                 case 'v':
-                    verbose_level++;
+                    LogOutput.verbose_level++;
                     break;
                 case 'b':
                     argn++;
-                    binaryMeshBlob = fopen(argv[argn], "rb");
+                    throw new NotImplementedException();
+#if false
+                        binaryMeshBlob = fopen(args[argn], "rb");
+#endif
                     break;
                 case 'o':
                     argn++;
-                    if (!processor.setTargetFile(argv[argn]))
+                    if (!processor.setTargetFile(args[argn]))
                     {
-                        logError("Failed to open %s for output.\n", argv[argn]);
-                        exit(1);
+                        LogOutput.logError(string.Format("Failed to open {0} for output.\n", args[argn]));
+                        return;
                     }
                     break;
                 case 's':
                     {
                         argn++;
+                                    throw new NotImplementedException();
+#if false
                         char* valuePtr = strchr(argv[argn], '=');
                         if (valuePtr)
                         {
@@ -147,17 +152,21 @@ config.startCode =
                             if (!config.setSetting(argv[argn], valuePtr))
                                 Console.Write("Setting not found: %s %s\n", argv[argn], valuePtr);
                         }
+#endif
                     }
                     break;
                 case 'm':
                     argn++;
-                    sscanf(argv[argn], "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",
+                                    throw new NotImplementedException();
+#if false
+                        sscanf(argv[argn], "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",
                         &config.matrix.m[0][0], &config.matrix.m[0][1], &config.matrix.m[0][2],
                         &config.matrix.m[1][0], &config.matrix.m[1][1], &config.matrix.m[1][2],
                         &config.matrix.m[2][0], &config.matrix.m[2][1], &config.matrix.m[2][2]);
+#endif
                     break;
                 default:
-                    logError("Unknown option: %c\n", *str);
+                    LogOutput.logError(string.Format("Unknown option: {0}\n", str));
                     break;
                 }
             }
@@ -166,7 +175,7 @@ config.startCode =
         {
             try 
             {
-                processor.processFile(argv[argn]);
+                processor.processFile(args[argn]);
             }
             catch(Exception e)
             {

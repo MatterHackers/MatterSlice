@@ -227,7 +227,7 @@ namespace MatterHackers.MatterSlice
                     {
                         f.Write("G1 F%i E%0.5lf\n", retractionSpeed * 60, extrusionAmount);
                         currentSpeed = retractionSpeed;
-                        estimateCalculator.plan(TimeEstimateCalculator.Position((double)(p.X) / 1000.0, (p.Y) / 1000.0, (double)(zPos) / 1000.0, extrusionAmount), currentSpeed);
+                        estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(p.X) / 1000.0, (p.Y) / 1000.0, (double)(zPos) / 1000.0, extrusionAmount), currentSpeed);
                     }
                     if (extrusionAmount > 10000.0) // Having more then 21m of extrusion causes inaccuracies. So reset it every 10m, just to be sure.
                         resetExtrusionValue();
@@ -254,7 +254,7 @@ namespace MatterHackers.MatterSlice
             f.Write("\n");
 
             currentPosition = new Point3(p.X, p.Y, zPos);
-            estimateCalculator.plan(TimeEstimateCalculator.Position((double)(currentPosition.x) / 1000.0, (currentPosition.y) / 1000.0, (double)(currentPosition.z) / 1000.0, extrusionAmount), currentSpeed);
+            estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition.x) / 1000.0, (currentPosition.y) / 1000.0, (double)(currentPosition.z) / 1000.0, extrusionAmount), currentSpeed);
         }
 
         public void addRetraction()
@@ -269,7 +269,7 @@ namespace MatterHackers.MatterSlice
                 {
                     f.Write("G1 F%i E%0.5lf\n", retractionSpeed * 60, extrusionAmount - retractionAmount);
                     currentSpeed = retractionSpeed;
-                    estimateCalculator.plan(TimeEstimateCalculator.Position((double)(currentPosition.x) / 1000.0, (currentPosition.y) / 1000.0, (double)(currentPosition.z) / 1000.0, extrusionAmount - retractionAmount), currentSpeed);
+                    estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition.x) / 1000.0, (currentPosition.y) / 1000.0, (double)(currentPosition.z) / 1000.0, extrusionAmount - retractionAmount), currentSpeed);
                 }
                 extrusionAmountAtPreviousRetraction = extrusionAmount;
                 isRetracted = true;
@@ -326,9 +326,9 @@ namespace MatterHackers.MatterSlice
             currentFanSpeed = speed;
         }
 
-        public int getFileSize()
+        public long getFileSize()
         {
-            return ftell(f);
+            return f.BaseStream.Length;
         }
 
         void tellFileSize()
@@ -419,8 +419,8 @@ namespace MatterHackers.MatterSlice
         {
             if (paths.Count > 0 && paths[paths.Count - 1].config == config && !paths[paths.Count - 1].done)
                 return paths[paths.Count - 1];
-            paths.Add(GCodePath());
-            GCodePath ret = &paths[paths.Count - 1];
+            paths.Add(new GCodePath());
+            GCodePath ret = paths[paths.Count - 1];
             ret.retract = false;
             ret.config = config;
             ret.extruder = currentExtruder;
@@ -448,12 +448,12 @@ namespace MatterHackers.MatterSlice
         }
 
         public void setCombBoundary(Polygons polygons)
-    {
-        if (polygons != null)
-            comb = new Comb(polygons);
-        else
-            comb = null;
-    }
+        {
+            if (polygons != null)
+                comb = new Comb((ClipperLib.Polygons)polygons);
+            else
+                comb = null;
+        }
 
         public void setAlwaysRetract(bool alwaysRetract)
         {
@@ -531,7 +531,7 @@ namespace MatterHackers.MatterSlice
 
         public void moveInsideCombBoundary(int distance)
         {
-            if (!comb || comb.checkInside(lastPosition)) return;
+            if (comb == null || comb.checkInside(lastPosition)) return;
             Point p = lastPosition;
             if (comb.moveInside(p, distance))
             {
@@ -667,7 +667,10 @@ namespace MatterHackers.MatterSlice
                         i++;
                     }
                     if (paths[i - 1].config == travelConfig)
+                    {
                         i--;
+                    }
+
                     if (i > n + 2)
                     {
                         p0 = gcode.getPositionXY();
@@ -677,7 +680,9 @@ namespace MatterHackers.MatterSlice
                             Point newPoint = (paths[x].points[0] + paths[x + 1].points[0]) / 2;
                             long newLen = (gcode.getPositionXY() - newPoint).vSize();
                             if (newLen > 0)
-                                gcode.addMove(newPoint, speed, path.config.lineWidth * oldLen / newLen);
+                            {
+                                gcode.addMove(newPoint, speed, (int)(path.config.lineWidth * oldLen / newLen));
+                            }
 
                             p0 = paths[x + 1].points[0];
                         }
@@ -717,7 +722,7 @@ namespace MatterHackers.MatterSlice
                         Point p1 = path.points[i];
                         length += (p0 - p1).vSizeMM();
                         p0 = p1;
-                        gcode.setZ(z + layerThickness * length / totalLength);
+                        gcode.setZ((int)(z + layerThickness * length / totalLength));
                         gcode.addMove(path.points[i], speed, path.config.lineWidth);
                     }
                 }
@@ -733,11 +738,11 @@ namespace MatterHackers.MatterSlice
             gcode.updateTotalPrintTime();
             if (liftHeadIfNeeded && extraTime > 0.0)
             {
-                gcode.addComment("Small layer, adding delay of %f", extraTime);
+                gcode.addComment(string.Format("Small layer, adding delay of {0}", extraTime));
                 gcode.addRetraction();
                 gcode.setZ(gcode.getPositionZ() + 3000);
                 gcode.addMove(gcode.getPositionXY(), travelConfig.speed, 0);
-                gcode.addMove(gcode.getPositionXY() - Point(-20000, 0), travelConfig.speed, 0);
+                gcode.addMove(gcode.getPositionXY() - new Point(-20000, 0), travelConfig.speed, 0);
                 gcode.addDelay(extraTime);
             }
         }

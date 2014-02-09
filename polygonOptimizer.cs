@@ -53,8 +53,8 @@ namespace MatterHackers.MatterSlice
             Point diff0 = (p1 - p0).normal(1000000);
             Point diff2 = (p1 - p2).normal(1000000);
             
-            long d = dot(diff0, diff2);
-            if (d < -999999000000LL)
+            long d = diff0.dot(diff2);
+            if (d < long.MinValue)
             {
                 poly.remove(i);
                 i --;

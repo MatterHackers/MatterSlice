@@ -117,7 +117,7 @@ namespace MatterHackers.MatterSlice
                 }
             }
             f.Write("</body></html>");
-            fclose(f);
+            f.Close();
         }
 
     }

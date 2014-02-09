@@ -39,11 +39,25 @@ namespace MatterHackers.MatterSlice
         int z;
         int supportZDistance;
         bool everywhere;
-        int[] done;
+        bool[] done;
 
-        void swap(int p0, int p1)
+        static void swap(ref int p0, ref int p1)
         {
             int tmp = p0;
+            p0 = p1;
+            p1 = tmp;
+        }
+
+        static void swap(ref long p0, ref long p1)
+        {
+            long tmp = p0;
+            p0 = p1;
+            p1 = tmp;
+        }
+
+        static void swap(ref Point3 p0, ref Point3 p1)
+        {
+            Point3 tmp = p0;
             p0 = p1;
             p1 = tmp;
         }
@@ -84,7 +98,7 @@ namespace MatterHackers.MatterSlice
             Point3 normal = (v1 - v0).cross(v2 - v0);
             int normalSize = normal.vSize();
             
-            double cosAngle = fabs(double(normal.z) / (double)(normalSize));
+            double cosAngle = Math.Abs((double)(normal.z) / (double)(normalSize));
             
             v0.x = (v0.x - storage.gridOffset.X) / storage.gridScale;
             v0.y = (v0.y - storage.gridOffset.Y) / storage.gridScale;
@@ -93,9 +107,9 @@ namespace MatterHackers.MatterSlice
             v2.x = (v2.x - storage.gridOffset.X) / storage.gridScale;
             v2.y = (v2.y - storage.gridOffset.Y) / storage.gridScale;
 
-            if (v0.x > v1.x) swap(v0, v1);
-            if (v1.x > v2.x) swap(v1, v2);
-            if (v0.x > v1.x) swap(v0, v1);
+            if (v0.x > v1.x) swap(ref v0, ref v1);
+            if (v1.x > v2.x) swap(ref v1, ref v2);
+            if (v0.x > v1.x) swap(ref v0, ref v1);
             for(long x=v0.x; x<v1.x; x++)
             {
                 long y0 = v0.y + (v1.y - v0.y) * (x - v0.x) / (v1.x - v0.x);
@@ -103,9 +117,11 @@ namespace MatterHackers.MatterSlice
                 long z0 = v0.z + (v1.z - v0.z) * (x - v0.x) / (v1.x - v0.x);
                 long z1 = v0.z + (v2.z - v0.z) * (x - v0.x) / (v2.x - v0.x);
 
-                if (y0 > y1) { swap(y0, y1); swap(z0, z1); }
-                for(int y=y0; y<y1; y++)
-                    storage.grid[x+y*storage.gridWidth].Add(SupportPoint(z0 + (z1 - z0) * (y-y0) / (y1-y0), cosAngle));
+                if (y0 > y1) { swap(ref y0, ref y1); swap(ref z0, ref z1); }
+                for (long y = y0; y < y1; y++)
+                {
+                    storage.grid[(int)(x + y * storage.gridWidth)].Add(new SupportPoint((int)(z0 + (z1 - z0) * (y - y0) / (y1 - y0)), cosAngle));
+                }
             }
             
             for(int x=v1.x; x<v2.x; x++)
@@ -115,7 +131,7 @@ namespace MatterHackers.MatterSlice
                 long z0 = v1.z + (v2.z - v1.z) * (x - v1.x) / (v2.x - v1.x);
                 long z1 = v0.z + (v2.z - v0.z) * (x - v0.x) / (v2.x - v0.x);
 
-                if (y0 > y1) { swap(y0, y1); swap(z0, z1); }
+                if (y0 > y1) { swap(ref y0, ref y1); swap(ref z0, ref z1); }
                 for(int y=y0; y<y1; y++)
                     storage.grid[x+y*storage.gridWidth].Add(SupportPoint(z0 + (z1 - z0) * (y-y0) / (y1-y0), cosAngle));
             }
@@ -141,7 +157,7 @@ namespace MatterHackers.MatterSlice
             if (p.Y < 1) return false;
             if (p.X >= storage.gridWidth - 1) return false;
             if (p.Y >= storage.gridHeight - 1) return false;
-            if (done[p.X + p.Y * storage.gridWidth] != 0) return false;
+            if (done[p.X + p.Y * storage.gridWidth]) return false;
 
             int n = p.X + p.Y * storage.gridWidth;
 

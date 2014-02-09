@@ -536,7 +536,7 @@ namespace MatterHackers.MatterSlice
                 {
                     gcodeLayer.setAlwaysRetract(true);
                     gcodeLayer.addPolygonsByOptimizer(storage.oozeShield[layerNr], skirtConfig);
-                    gcodeLayer.setAlwaysRetract(config.enableCombing == 0);
+                    gcodeLayer.setAlwaysRetract(config.enableCombing);
                 }
             }
             int z = config.initialLayerThickness + layerNr * config.layerThickness;
@@ -571,8 +571,11 @@ namespace MatterHackers.MatterSlice
                 }
 
                 gcodeLayer.forceRetract();
-                if (config.enableCombing != 0)
+                if (config.enableCombing)
+                {
                     gcodeLayer.setCombBoundary(supportIslands[n]);
+                }
+
                 gcodeLayer.addPolygonsByOptimizer(supportIslands[n], supportConfig);
                 gcodeLayer.addPolygonsByOptimizer(supportLines, supportConfig);
                 gcodeLayer.setCombBoundary(null);

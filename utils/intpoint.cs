@@ -70,7 +70,7 @@ namespace MatterHackers.MatterSlice
             return left.x != right.x || left.y != right.y || left.z != right.z;
         }
 
-        int max()
+        public int max()
         {
             if (x > y && x > z)
             {
@@ -84,7 +84,7 @@ namespace MatterHackers.MatterSlice
             return z;
         }
 
-        bool testLength(int len)
+        public bool testLength(int len)
         {
             if (x > len || x < -len)
                 return false;
@@ -95,17 +95,17 @@ namespace MatterHackers.MatterSlice
             return vSize2() <= len * len;
         }
 
-        long vSize2()
+        public long vSize2()
         {
             return (long)x * (long)x + (long)y * (long)y + (long)z * (long)z;
         }
 
-        int vSize()
+        public int vSize()
         {
             return (int)Math.Sqrt(vSize2());
         }
 
-        Point3 cross(Point3 p)
+        public Point3 cross(Point3 p)
         {
             return new Point3(
                 y * p.z - z * p.y,

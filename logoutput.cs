@@ -27,7 +27,7 @@ namespace MatterHackers.MatterSlice
 {
     public static class LogOutput
     {
-        static int verbose_level;
+        public static int verbose_level;
 
         public static void logError(string message)
         {

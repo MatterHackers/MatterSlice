@@ -87,7 +87,7 @@ namespace MatterHackers.MatterSlice
 
         public static double area(this Polygon polygon)
         {
-            return ClipperLib.Area(polygon);
+            return Clipper.Area((ClipperLib.Polygon) polygon);
         }
 
         public static Point centerOfMass(this Polygon polygon)
@@ -104,7 +104,7 @@ namespace MatterHackers.MatterSlice
                 p0 = p1;
             }
 
-            double area = Area(polygon);
+            double area = Clipper.Area((ClipperLib.Polygon)polygon);
             x = x / 6 / area;
             y = y / 6 / area;
 
@@ -166,8 +166,8 @@ public _Polygon()
 
     public static PolygonRef newPoly(this Polygons polygons)
     {
-        polygons.Add(new ClipperLib.Path());
-        return PolygonRef(polygons[polygons.Count-1]);
+        polygons.Add(new ClipperLib.Polygon());
+        return new PolygonRef(polygons[polygons.Count-1]);
     }
     
 #if false
@@ -182,19 +182,19 @@ public _Polygon()
     {
         Polygons ret = new Polygons();
         ClipperLib.Clipper clipper = new Clipper();
-        clipper.AddPolygons(polygons, ClipperLib.PolyType.ptSubject, true);
-        clipper.AddPaths(other.polygons, ClipperLib.PolyType.ptClip, true);
-        clipper.Execute(ClipperLib.ClipType.ctDifference, ret.polygons);
+        clipper.AddPolygons((ClipperLib.Polygons)polygons, ClipperLib.PolyType.ptSubject);
+        clipper.AddPolygons((ClipperLib.Polygons)other, ClipperLib.PolyType.ptClip);
+        clipper.Execute(ClipperLib.ClipType.ctDifference, (ClipperLib.Polygons)ret);
         return ret;
     }
 
     public static Polygons unionPolygons(this Polygons polygons, Polygons other) 
     {
         Polygons ret = new Polygons();
-        ClipperLib.Clipper clipper;
-        clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
-        clipper.AddPaths(other.polygons, ClipperLib.PolyType.ptSubject, true);
-        clipper.Execute(ClipType.ctUnion, ret.polygons, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
+        ClipperLib.Clipper clipper = new Clipper();
+        clipper.AddPolygons((ClipperLib.Polygons)polygons, ClipperLib.PolyType.ptSubject);
+        clipper.AddPolygons((ClipperLib.Polygons)other, ClipperLib.PolyType.ptSubject);
+        clipper.Execute(ClipType.ctUnion, (ClipperLib.Polygons)ret, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
         return ret;
     }
 
@@ -202,17 +202,17 @@ public _Polygon()
     {
         Polygons ret = new Polygons();
         ClipperLib.Clipper clipper = new Clipper();
-        clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
-        clipper.AddPaths(other.polygons, ClipperLib.PolyType.ptClip, true);
-        clipper.Execute(ClipperLib.ClipType.ctIntersection, ret.polygons);
+        clipper.AddPolygons((ClipperLib.Polygons)polygons, ClipperLib.PolyType.ptSubject);
+        clipper.AddPolygons((ClipperLib.Polygons)other, ClipperLib.PolyType.ptClip);
+        clipper.Execute(ClipperLib.ClipType.ctIntersection, (ClipperLib.Polygons)ret);
         return ret;
     }
 
     public static Polygons offset(this Polygons polygons, int distance) 
     {
         Polygons ret = new Polygons();
-        ClipperLib.ClipperOffset clipper = new ClipperLib.ClipperOffset();
-        clipper.AddPaths(polygons, ClipperLib.JoinType.jtMiter, ClipperLib.EndType.etClosedPolygon);
+        ClipperLib.Clipper clipper = new ClipperLib.Clipper();
+        clipper.AddPolygons(polygons, ClipperLib.JoinType.jtMiter, ClipperLib.EndType.etClosed);
         clipper.MiterLimit = 2.0;
         clipper.Execute(ret.polygons, distance);
         return ret;

@@ -476,8 +476,8 @@ namespace MatterHackers.MatterSlice
             modelMin = ov.model.vMin;
 
             int layerCount = (modelSize.z - initial) / thickness + 1;
-            LogOutput.log("Layer count: %i\n", layerCount);
-            layers.resize(layerCount);
+            LogOutput.log(string.Format("Layer count: {0}\n", layerCount));
+            layers.Capacity = layerCount;
 
             for (int layerNr = 0; layerNr < layerCount; layerNr++)
             {
@@ -588,7 +588,7 @@ namespace MatterHackers.MatterSlice
                 f.Write("</svg>\n");
             }
             f.Write("</body></html>");
-            fclose(f);
+            f.Close();
         }
     }
 }
