@@ -31,7 +31,7 @@ namespace MatterHackers.MatterSlice
     /* A SimpleFace is a 3 dimensional model triangle with 3 points. These points are already converted to integers */
     public class SimpleFace
     {
-        public Point3[] v = new Point[3];
+        public Point3[] v = new Point3[3];
 
         public SimpleFace(Point3 v0, Point3 v1, Point3 v2) { v[0] = v0; v[1] = v1; v[2] = v2; }
     };
@@ -55,7 +55,7 @@ namespace MatterHackers.MatterSlice
 
         public void addFace(Point3 v0, Point3 v1, Point3 v2)
         {
-            faces.Add(SimpleFace(v0, v1, v2));
+            faces.Add(new SimpleFace(v0, v1, v2));
         }
 
         public Point3 min()

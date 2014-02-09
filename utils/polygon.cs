@@ -153,13 +153,13 @@ public _Polygon()
 
         public static void add(this Polygons polygons, PolygonRef poly)
         {
-            polygons.Add(poly.polygon);
+            polygons.Add(poly);
         }
 
         public static void add(this Polygons polygons, Polygons other)
         {
-            for (int n = 0; n < other.polygons.Count; n++)
-                polygons.Add(other.polygons[n]);
+            for (int n = 0; n < other.Count; n++)
+                polygons.Add(other[n]);
         }
 
         public static PolygonRef newPoly(this Polygons polygons)
@@ -171,7 +171,7 @@ public _Polygon()
 #if false
     public static Polygons operator=( Polygons other) 
     {
-        polygons = other.polygons; 
+        polygons = other; 
         return *this; 
     }
 #endif
@@ -274,7 +274,7 @@ public _Polygon()
             return length;
         }
 
-        static void applyMatrix(this Polygons polygons, PointMatrix matrix)
+        public static void applyMatrix(this Polygons polygons, PointMatrix matrix)
         {
             for (int i = 0; i < polygons.Count; i++)
             {

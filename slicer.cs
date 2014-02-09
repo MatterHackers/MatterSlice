@@ -156,11 +156,11 @@ namespace MatterHackers.MatterSlice
                     {
                         if (openPolygonList[j].Count < 1) continue;
 
-                        Point diff = openPolygonList[i][openPolygonList[i].Count - 1] - openPolygonList[j][0];
-                        long distSquared = (diff).vSize2();
-                        if (distSquared < bestScore)
+                        Point diff1 = openPolygonList[i][openPolygonList[i].Count - 1] - openPolygonList[j][0];
+                        long distSquared1 = (diff1).vSize2();
+                        if (distSquared1 < bestScore)
                         {
-                            bestScore = distSquared;
+                            bestScore = distSquared1;
                             bestA = i;
                             bestB = j;
                             reversed = false;
@@ -168,11 +168,11 @@ namespace MatterHackers.MatterSlice
 
                         if (i != j)
                         {
-                            Point diff = openPolygonList[i][openPolygonList[i].Count - 1] - openPolygonList[j][openPolygonList[j].Count - 1];
-                            long distSquared = (diff).vSize2();
-                            if (distSquared < bestScore)
+                            Point diff2 = openPolygonList[i][openPolygonList[i].Count - 1] - openPolygonList[j][openPolygonList[j].Count - 1];
+                            long distSquared2 = (diff2).vSize2();
+                            if (distSquared2 < bestScore)
                             {
-                                bestScore = distSquared;
+                                bestScore = distSquared2;
                                 bestA = i;
                                 bestB = j;
                                 reversed = true;

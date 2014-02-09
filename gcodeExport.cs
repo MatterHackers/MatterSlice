@@ -149,7 +149,7 @@ namespace MatterHackers.MatterSlice
 
         public Point getPositionXY()
         {
-            return Point(currentPosition.x, currentPosition.y);
+            return new Point(currentPosition.x, currentPosition.y);
         }
 
         public int getPositionZ()
@@ -329,7 +329,7 @@ namespace MatterHackers.MatterSlice
             return f.BaseStream.Length;
         }
 
-        void tellFileSize()
+        public void tellFileSize()
         {
             double fsize = f.BaseStream.Length;
             if (fsize > 1024 * 1024)
@@ -498,7 +498,7 @@ namespace MatterHackers.MatterSlice
             }
             else if (comb != null)
             {
-                List<Point> pointList = new Polygons();
+                List<Point> pointList = new List<Point>();
                 if (comb.calc(lastPosition, p, pointList))
                 {
                     for (int n = 0; n < pointList.Count; n++)

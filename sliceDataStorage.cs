@@ -77,7 +77,7 @@ namespace MatterHackers.MatterSlice
         public Point gridOffset;
         public int gridScale;
         public int gridWidth, gridHeight;
-        public List<SupportPoint> grid;
+        public List<List<SupportPoint>> grid;
         
         public SupportStorage()
         {

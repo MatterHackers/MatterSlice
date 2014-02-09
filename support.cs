@@ -37,7 +37,7 @@ namespace MatterHackers.MatterSlice
         int z;
         int supportZDistance;
         bool everywhere;
-        bool[] done;
+        int[] done;
 
         static void swap(ref int p0, ref int p1)
         {
@@ -77,7 +77,7 @@ namespace MatterHackers.MatterSlice
     storage.gridScale = 200;
     storage.gridWidth = (om.modelSize.x / storage.gridScale) + 1;
     storage.gridHeight = (om.modelSize.y / storage.gridScale) + 1;
-    storage.grid = new List<SupportPoint>(storage.gridWidth * storage.gridHeight);
+    storage.grid = new List<List<SupportPoint>>(storage.gridWidth * storage.gridHeight);
     storage.angle = supportAngle;
     storage.everywhere = supportEverywhere;
     storage.XYDistance = supportXYDistance;
@@ -98,12 +98,12 @@ namespace MatterHackers.MatterSlice
             
             double cosAngle = Math.Abs((double)(normal.z) / (double)(normalSize));
             
-            v0.x = (v0.x - storage.gridOffset.X) / storage.gridScale;
-            v0.y = (v0.y - storage.gridOffset.Y) / storage.gridScale;
-            v1.x = (v1.x - storage.gridOffset.X) / storage.gridScale;
-            v1.y = (v1.y - storage.gridOffset.Y) / storage.gridScale;
-            v2.x = (v2.x - storage.gridOffset.X) / storage.gridScale;
-            v2.y = (v2.y - storage.gridOffset.Y) / storage.gridScale;
+            v0.x = (int)((v0.x - storage.gridOffset.X) / storage.gridScale);
+            v0.y = (int)((v0.y - storage.gridOffset.Y) / storage.gridScale);
+            v1.x = (int)((v1.x - storage.gridOffset.X) / storage.gridScale);
+            v1.y = (int)((v1.y - storage.gridOffset.Y) / storage.gridScale);
+            v2.x = (int)((v2.x - storage.gridOffset.X) / storage.gridScale);
+            v2.y = (int)((v2.y - storage.gridOffset.Y) / storage.gridScale);
 
             if (v0.x > v1.x) swap(ref v0, ref v1);
             if (v1.x > v2.x) swap(ref v1, ref v2);
@@ -130,8 +130,8 @@ namespace MatterHackers.MatterSlice
                 long z1 = v0.z + (v2.z - v0.z) * (x - v0.x) / (v2.x - v0.x);
 
                 if (y0 > y1) { swap(ref y0, ref y1); swap(ref z0, ref z1); }
-                for(int y=y0; y<y1; y++)
-                    storage.grid[x+y*storage.gridWidth].Add(SupportPoint(z0 + (z1 - z0) * (y-y0) / (y1-y0), cosAngle));
+                for(int y=(int)y0; y<y1; y++)
+                    storage.grid[x+y*storage.gridWidth].Add(new SupportPoint((int)(z0 + (z1 - z0) * (y-y0) / (y1-y0)), cosAngle));
             }
         }
     }
@@ -155,9 +155,9 @@ namespace MatterHackers.MatterSlice
             if (p.Y < 1) return false;
             if (p.X >= storage.gridWidth - 1) return false;
             if (p.Y >= storage.gridHeight - 1) return false;
-            if (done[p.X + p.Y * storage.gridWidth]) return false;
+            if (done[p.X + p.Y * storage.gridWidth] != 0) return false;
 
-            int n = p.X + p.Y * storage.gridWidth;
+            int n = (int)(p.X + p.Y * storage.gridWidth);
 
             if (everywhere)
             {
@@ -186,18 +186,18 @@ namespace MatterHackers.MatterSlice
             int nr = 0;
             nr++;
             PolygonRef poly = polygons.newPoly();
-            Polygon tmpPoly;
+            Polygon tmpPoly = new Polygon();
 
             while (true)
             {
                 Point p = startPoint;
                 done[p.X + p.Y * storage.gridWidth] = nr;
-                while (needSupportAt(p + Point(1, 0)))
+                while (needSupportAt(p + new Point(1, 0)))
                 {
                     p.X++;
                     done[p.X + p.Y * storage.gridWidth] = nr;
                 }
-                tmpPoly.add(startPoint * storage.gridScale + storage.gridOffset - Point(storage.gridScale / 2, 0));
+                tmpPoly.add(startPoint * storage.gridScale + storage.gridOffset - new Point(storage.gridScale / 2, 0));
                 poly.add(p * storage.gridScale + storage.gridOffset);
                 startPoint.Y++;
                 while (!needSupportAt(startPoint) && startPoint.X <= p.X)
@@ -211,7 +211,7 @@ namespace MatterHackers.MatterSlice
                     polygons.add(poly);
                     return;
                 }
-                while (needSupportAt(startPoint - Point(1, 0)) && startPoint.X > 1)
+                while (needSupportAt(startPoint - new Point(1, 0)) && startPoint.X > 1)
                     startPoint.X--;
             }
         }
@@ -228,13 +228,13 @@ this.everywhere = storage.everywhere;
     cosAngle = Math.Cos((double)(90 - storage.angle) / 180.0 * Math.PI) - 0.01;
     this.supportZDistance = storage.ZDistance;
 
-    done = new int[storage.gridWidth*storage.gridHeight];
+    done = new int[(int)(storage.gridWidth*storage.gridHeight)];
     
     for(int y=1; y<storage.gridHeight; y++)
     {
         for(int x=1; x<storage.gridWidth; x++)
         {
-            if (!needSupportAt(new Point(x, y)) || done[x + y * storage.gridWidth]) continue;
+            if (!needSupportAt(new Point(x, y)) || done[x + y * storage.gridWidth] != 0) continue;
             
             lazyFill(new Point(x, y));
         }

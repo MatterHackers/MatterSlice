@@ -216,11 +216,11 @@ namespace MatterHackers.MatterSlice
                 }
                 LogOutput.logProgress("inset", layerNr + 1, totalLayers);
             }
-            if (config.enableOozeShield)
+            if (config.enableOozeShield != 0)
             {
                 for (int layerNr = 0; layerNr < totalLayers; layerNr++)
                 {
-                    Polygons oozeShield;
+                    Polygons oozeShield = new Polygons();
                     for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
                     {
                         for (int partNr = 0; partNr < storage.volumes[volumeIdx].layers[layerNr].parts.Count; partNr++)
@@ -309,7 +309,7 @@ namespace MatterHackers.MatterSlice
                 gcode.resetExtrusionValue();
                 gcode.addRetraction();
                 gcode.setZ(maxObjectHeight + 5000);
-                gcode.addMove(Point(storage.modelMin.x, storage.modelMin.y), config.moveSpeed, 0);
+                gcode.addMove(new Point(storage.modelMin.x, storage.modelMin.y), config.moveSpeed, 0);
             }
             fileNr++;
 
@@ -328,7 +328,7 @@ namespace MatterHackers.MatterSlice
                     gcode.setExtrusion(config.raftBaseThickness, config.filamentDiameter, config.filamentFlow);
                     gcodeLayer.addPolygonsByOptimizer(storage.raftOutline, raftBaseConfig);
 
-                    Polygons raftLines;
+                    Polygons raftLines = new Polygons();
                     Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftBaseLinewidth, config.raftLineSpacing, config.infillOverlap, 0);
                     gcodeLayer.addPolygonsByOptimizer(raftLines, raftBaseConfig);
 
@@ -342,7 +342,7 @@ namespace MatterHackers.MatterSlice
                     gcode.setZ(config.raftBaseThickness + config.raftInterfaceThickness);
                     gcode.setExtrusion(config.raftInterfaceThickness, config.filamentDiameter, config.filamentFlow);
 
-                    Polygons raftLines;
+                    Polygons raftLines = new Polygons();
                     Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftInterfaceLinewidth, config.raftLineSpacing, config.infillOverlap, 90);
                     gcodeLayer.addPolygonsByOptimizer(raftLines, raftInterfaceConfig);
 
@@ -425,7 +425,8 @@ namespace MatterHackers.MatterSlice
             }
             //*/
 
-            LogOutput.log("Wrote layers in %5.2fs.\n", timeKeeper.restart());
+            LogOutput.log(string.Format("Wrote layers in {0:0.00}s.\n", timeKeeper.Elapsed.Seconds));
+            timeKeeper.Restart();
             gcode.tellFileSize();
             gcode.addFanCommand(0);
 
@@ -554,7 +555,7 @@ namespace MatterHackers.MatterSlice
 
             for (int n = 0; n < supportIslands.Count; n++)
             {
-                Polygons supportLines;
+                Polygons supportLines = new Polygons();
                 if (config.supportLineDistance > 0)
                 {
                     if (config.supportLineDistance > config.extrusionWidth * 4)
@@ -564,7 +565,7 @@ namespace MatterHackers.MatterSlice
                     }
                     else
                     {
-                        Infill.generateLineInfill(supportIslands[n], supportLines, config.extrusionWidth, config.supportLineDistance, config.infillOverlap, (layerNr & 1) ? 0 : 90);
+                        Infill.generateLineInfill(supportIslands[n], supportLines, config.extrusionWidth, config.supportLineDistance, config.infillOverlap, ((layerNr & 1) == 1) ? 0 : 90);
                     }
                 }
 

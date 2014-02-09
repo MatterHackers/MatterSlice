@@ -57,9 +57,9 @@ namespace MatterHackers.MatterSlice
 
             List<Polygons> result;
             if ((unionAllType & ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_C) == ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_C)
-                result = layer.polygonList.offset(1000).splitIntoParts(unionAllType);
+                result = layer.polygonList.offset(1000).splitIntoParts(unionAllType != 0);
             else
-                result = layer.polygonList.splitIntoParts(unionAllType);
+                result = layer.polygonList.splitIntoParts(unionAllType != 0);
 
             for (int i = 0; i < result.Count; i++)
             {

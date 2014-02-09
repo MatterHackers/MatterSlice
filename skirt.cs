@@ -60,7 +60,7 @@ namespace MatterHackers.MatterSlice
 
         storage.skirt.add(skirtPolygons);
         
-        int lenght = storage.skirt.polygonLength();
+        int lenght = (int)storage.skirt.polygonLength();
         if (skirtNr + 1 >= count && lenght > 0 && lenght < minLength)
             count++;
     }
