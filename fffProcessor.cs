@@ -35,13 +35,13 @@ namespace MatterHackers.MatterSlice
         int fileNr;
         GCodeExport gcode = new GCodeExport();
         ConfigSettings config;
-        Stopwatch timeKeeper;
+        Stopwatch timeKeeper = new Stopwatch();
 
-        GCodePathConfig skirtConfig;
-        GCodePathConfig inset0Config;
-        GCodePathConfig inset1Config;
-        GCodePathConfig fillConfig;
-        GCodePathConfig supportConfig;
+        GCodePathConfig skirtConfig = new GCodePathConfig();
+        GCodePathConfig inset0Config = new GCodePathConfig();
+        GCodePathConfig inset1Config = new GCodePathConfig();
+        GCodePathConfig fillConfig = new GCodePathConfig();
+        GCodePathConfig supportConfig = new GCodePathConfig();
 
         public fffProcessor(ConfigSettings config)
         {

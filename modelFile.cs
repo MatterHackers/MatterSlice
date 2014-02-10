@@ -39,7 +39,7 @@ namespace MatterHackers.MatterSlice
     /* A SimpleVolume is the most basic reprisentation of a 3D model. It contains all the faces as SimpleTriangles, with nothing fancy. */
     public class SimpleVolume
     {
-        public List<SimpleFace> faces;
+        public List<SimpleFace> faces = new List<SimpleFace>();
 
         void SET_MIN(ref int n, int m)
         {
@@ -100,7 +100,7 @@ namespace MatterHackers.MatterSlice
     {
         public static StreamWriter binaryMeshBlob;
 
-        public List<SimpleVolume> volumes;
+        public List<SimpleVolume> volumes = new List<SimpleVolume>();
 
         void SET_MIN(ref int n, int m)
         {
@@ -158,10 +158,59 @@ namespace MatterHackers.MatterSlice
         }
 #endif
 
+#if true
+        public static SimpleModel loadModelSTL_ascii(string filename, FMatrix3x3 matrix)
+        {
+            SimpleModel m = new SimpleModel();
+            m.volumes.Add(new SimpleVolume());
+            SimpleVolume vol = m.volumes[0];
+            using (StreamReader f = new StreamReader(filename))
+            {
+                // check for "SOLID"
+
+                FPoint3 vertex = new FPoint3();
+                int n = 0;
+                Point3 v0 = new Point3(0, 0, 0);
+                Point3 v1 = new Point3(0, 0, 0);
+                Point3 v2 = new Point3(0, 0, 0);
+                string line = f.ReadLine();
+                while (line != null)
+                {
+                    var parts = line.Trim().Split(' ');
+                    if (parts[0].Trim() == "vertex")
+                    {
+                        vertex.x = Convert.ToDouble(parts[1]);
+                        vertex.y = Convert.ToDouble(parts[2]);
+                        vertex.z = Convert.ToDouble(parts[3]);
+
+                        // change the scale from mm to micrometers
+                        vertex *= 1000.0;
+
+                        n++;
+                        switch (n)
+                        {
+                            case 1:
+                                v0 = matrix.apply(vertex);
+                                break;
+                            case 2:
+                                v1 = matrix.apply(vertex);
+                                break;
+                            case 3:
+                                v2 = matrix.apply(vertex);
+                                vol.addFace(v0, v1, v2);
+                                n = 0;
+                                break;
+                        }
+                    }
+                    line = f.ReadLine();
+                }
+
+                return m;
+            }
+        }
+#else
         SimpleModel loadModelSTL_ascii(string filename, FMatrix3x3 matrix)
         {
-            throw new NotImplementedException();
-#if false
     SimpleModel m = new SimpleModel();
     m.volumes.Add(SimpleVolume());
     SimpleVolume* vol = &m.volumes[0];
@@ -193,10 +242,10 @@ namespace MatterHackers.MatterSlice
     }
     fclose(f);
     return m;
-#endif
         }
+#endif
 
-        SimpleModel loadModelSTL_binary(string filename, FMatrix3x3 matrix)
+        static SimpleModel loadModelSTL_binary(string filename, FMatrix3x3 matrix)
         {
             throw new NotImplementedException();
 #if false
@@ -254,74 +303,15 @@ namespace MatterHackers.MatterSlice
 #endif
         }
 
-        SimpleModel loadModelSTL(string filename, FMatrix3x3 matrix)
+        public static SimpleModel loadModel(string filename, FMatrix3x3 matrix)
         {
-            throw new NotImplementedException();
-#if false
-    FILE* f = fopen(filename, "r");
-    char buffer[6];
-    if (f == NULL)
-        return NULL;
-    
-    if (fread(buffer, 5, 1, f) != 1)
-    {
-        fclose(f);
-        return NULL;
-    }
-    fclose(f);
-
-    buffer[5] = '\0';
-    if (strcasecmp(buffer, "SOLID") == 0)
-    {
-        return loadModelSTL_ascii(filename, matrix);
-    }
-    return loadModelSTL_binary(filename, matrix);
-#endif
-}
-
-public static SimpleModel loadModel(string filename, FMatrix3x3 matrix)
-{
-    throw new NotImplementedException();
-#if false
-    string ext = strrchr(filename, '.');
-    if (ext && strcasecmp(ext, ".stl") == 0)
-    {
-        return loadModelSTL(filename, matrix);
-    }
-    if (filename[0] == '#' && binaryMeshBlob != NULL)
-    {
-        SimpleModel m = new SimpleModel();
-        
-        while(*filename == '#')
-        {
-            filename++;
-            
-            m.volumes.Add(SimpleVolume());
-            SimpleVolume* vol = &m.volumes[m.volumes.Count-1];
-            int n, pNr = 0;
-            if (fread(&n, 1, sizeof(int), binaryMeshBlob) < 1)
-                return NULL;
-            log("Reading mesh from binary blob with %i vertexes\n", n);
-            Point3 v[3];
-            while(n)
+            SimpleModel fromAsciiModel = loadModelSTL_ascii(filename, matrix);
+            if (fromAsciiModel == null)
             {
-                float f[3];
-                if (fread(f, 3, sizeof(float), binaryMeshBlob) < 1)
-                    return NULL;
-                FPoint3 fp(f[0], f[1], f[2]);
-                v[pNr++] = matrix.apply(fp);
-                if (pNr == 3)
-                {
-                    vol.addFace(v[0], v[1], v[2]);
-                    pNr = 0;
-                }
-                n--;
+                return loadModelSTL_binary(filename, matrix);
             }
-        }
-        return m;
-    }
-    return NULL;
-#endif
+
+            return fromAsciiModel;
         }
     }
 }

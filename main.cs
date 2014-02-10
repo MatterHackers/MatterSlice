@@ -179,16 +179,20 @@ namespace MatterHackers.MatterSlice
                 }
                 else
                 {
+#if !DEBUG
                     try
+#endif
                     {
                         processor.processFile(args[argn]);
                     }
+#if !DEBUG
                     catch (Exception e)
                     {
                         Console.Write(string.Format("{0}", e));
                         Console.Write(string.Format("InnerException: {0}", e.InnerException));
                         return 1;
                     }
+#endif
                 }
             }
 

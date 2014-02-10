@@ -48,8 +48,8 @@ namespace MatterHackers.MatterSlice
         const int MELD_DIST = 30;
 
         public OptimizedModel model;
-        public List<OptimizedPoint3> points;
-        public List<OptimizedFace> faces;
+        public List<OptimizedPoint3> points = new List<OptimizedPoint3>();
+        public List<OptimizedFace> faces = new List<OptimizedFace>();
 
         public OptimizedVolume(SimpleVolume volume, OptimizedModel model)
         {
@@ -159,7 +159,7 @@ namespace MatterHackers.MatterSlice
     };
     public class OptimizedModel
     {
-        public List<OptimizedVolume> volumes;
+        public List<OptimizedVolume> volumes = new List<OptimizedVolume>();
         public Point3 modelSize;
         public Point3 vMin, vMax;
 
