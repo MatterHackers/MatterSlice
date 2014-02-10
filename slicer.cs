@@ -23,6 +23,7 @@ using System.Diagnostics;
 using System.IO;
 
 using ClipperLib;
+using C5;
 
 namespace MatterHackers.MatterSlice
 {
@@ -57,7 +58,7 @@ namespace MatterHackers.MatterSlice
     public class SlicerLayer
     {
         public List<SlicerSegment> segmentList = new List<SlicerSegment>();
-        public SortedDictionary<int, int> faceToSegmentIndex;
+        public TreeDictionary<int, int> faceToSegmentIndex = new TreeDictionary<int,int>();
 
         public int z;
         public Polygons polygonList;
@@ -70,7 +71,7 @@ namespace MatterHackers.MatterSlice
                 if (segmentList[startSegment].addedToPolygon)
                     continue;
 
-                Polygon poly;
+                Polygon poly = new Polygon();
                 poly.Add(segmentList[startSegment].start);
 
                 int segmentIndex = startSegment;
@@ -85,17 +86,28 @@ namespace MatterHackers.MatterSlice
                     OptimizedFace face = ov.faces[segmentList[segmentIndex].faceIndex];
                     for (int i = 0; i < 3; i++)
                     {
-                        if (face.touching[i] > -1 && faceToSegmentIndex.find(face.touching[i]) != faceToSegmentIndex.end())
+                        if (face.touching[i] > -1)
                         {
-                            Point p1 = segmentList[faceToSegmentIndex[face.touching[i]]].start;
-                            Point diff = p0 - p1;
-                            if (diff.shorterThen(10))
+                            int foundIndex = 0;
+                            bool found = faceToSegmentIndex.Find(face.touching[i], out foundIndex);
+                            if (found && foundIndex != faceToSegmentIndex.FindMax().Value)
                             {
-                                if (faceToSegmentIndex[face.touching[i]] == (int)startSegment)
-                                    canClose = true;
-                                if (segmentList[faceToSegmentIndex[face.touching[i]]].addedToPolygon)
-                                    continue;
-                                nextIndex = faceToSegmentIndex[face.touching[i]];
+                                IntPoint p1 = segmentList[faceToSegmentIndex[face.touching[i]]].start;
+                                IntPoint diff = p0 - p1;
+                                if (diff.IsShorterThen(10))
+                                {
+                                    if (faceToSegmentIndex[face.touching[i]] == (int)startSegment)
+                                    {
+                                        canClose = true;
+                                    }
+
+                                    if (segmentList[faceToSegmentIndex[face.touching[i]]].addedToPolygon)
+                                    {
+                                        continue;
+                                    }
+
+                                    nextIndex = faceToSegmentIndex[face.touching[i]];
+                                }
                             }
                         }
                     }
@@ -226,7 +238,7 @@ namespace MatterHackers.MatterSlice
                 {
                     int bestA = -1;
                     int bestB = -1;
-                    gapCloserResult bestResult;
+                    gapCloserResult bestResult = new gapCloserResult();
                     bestResult.len = long.MaxValue;
                     bestResult.polygonIdx = -1;
                     bestResult.pointIdxA = -1;
@@ -297,7 +309,7 @@ namespace MatterHackers.MatterSlice
                             }
                             else if (bestResult.AtoB)
                             {
-                                Polygon poly;
+                                Polygon poly = new Polygon();
                                 for (int n = bestResult.pointIdxA; n != bestResult.pointIdxB; n = (n + 1) % polygonList[bestResult.polygonIdx].Count)
                                     poly.add(polygonList[bestResult.polygonIdx][n]);
                                 for (int n = poly.Count - 1; (int)(n) >= 0; n--)

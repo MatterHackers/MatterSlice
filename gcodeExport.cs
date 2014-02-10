@@ -69,19 +69,12 @@ namespace MatterHackers.MatterSlice
             currentSpeed = 0;
             retractionSpeed = 45;
             isRetracted = true;
-            throw new NotImplementedException();
-            //f = stdout;
-        }
-
-        ~GCodeExport()
-        {
-            if (f != null)
-                f.Close();
+            f = new StreamWriter(Console.OpenStandardOutput());
         }
 
         public void replaceTagInStart(string tag, string replaceValue)
-{
-    throw new NotImplementedException();
+        {
+            throw new NotImplementedException();
 #if false
     long oldPos = ftello64(f);
     
@@ -98,7 +91,7 @@ namespace MatterHackers.MatterSlice
     
     fseeko64(f, oldPos, SEEK_SET);
 #endif
-}
+        }
 
         public void setExtruderOffset(int id, Point p)
         {
@@ -185,7 +178,7 @@ namespace MatterHackers.MatterSlice
 
         public void addComment(string comment)
         {
-            f.Write(string.Format(";{0]\n", comment));
+            f.Write(string.Format(";{0}\n", comment));
         }
 
         public void addLine(string line)
@@ -559,17 +552,17 @@ namespace MatterHackers.MatterSlice
         }
 
         public void addPolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
-{
-    PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(lastPosition);
-    for(int i=0;i<polygons.Count;i++)
-        orderOptimizer.addPolygon(polygons[i]);
-    orderOptimizer.optimize();
-    for(int i=0;i<orderOptimizer.polyOrder.Count;i++)
-    {
-        int nr = orderOptimizer.polyOrder[i];
-        addPolygon(polygons[nr], orderOptimizer.polyStart[nr], config);
-    }
-}
+        {
+            PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(lastPosition);
+            for (int i = 0; i < polygons.Count; i++)
+                orderOptimizer.addPolygon(polygons[i]);
+            orderOptimizer.optimize();
+            for (int i = 0; i < orderOptimizer.polyOrder.Count; i++)
+            {
+                int nr = orderOptimizer.polyOrder[i];
+                addPolygon(polygons[nr], orderOptimizer.polyStart[nr], config);
+            }
+        }
 
         public void forceMinimalLayerTime(double minTime, int minimalSpeed)
         {

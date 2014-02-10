@@ -33,7 +33,7 @@ namespace MatterHackers.MatterSlice
     {
         int maxObjectHeight;
         int fileNr;
-        GCodeExport gcode;
+        GCodeExport gcode = new GCodeExport();
         ConfigSettings config;
         Stopwatch timeKeeper;
 
@@ -114,7 +114,7 @@ namespace MatterHackers.MatterSlice
             supportConfig.setData(config.printSpeed, config.extrusionWidth, "SUPPORT");
 
             for (int n = 1; n < ConfigSettings.MAX_EXTRUDERS; n++)
-                gcode.setExtruderOffset(n, config.extruderOffset[n].p());
+                gcode.setExtruderOffset(n, config.extruderOffset[n]);
             gcode.setFlavor(config.gcodeFlavor);
             gcode.setRetractionSettings(config.retractionAmount, config.retractionSpeed, config.retractionAmountExtruderSwitch, config.minimalExtrusionBeforeRetraction);
         }
@@ -587,12 +587,12 @@ namespace MatterHackers.MatterSlice
                 return;
             //If we changed extruder, print the wipe/prime tower for this nozzle;
             gcodeLayer.addPolygonsByOptimizer(storage.wipeTower, supportConfig);
-            Polygons fillPolygons;
+            Polygons fillPolygons = new Polygons();
             Infill.generateLineInfill(storage.wipeTower, fillPolygons, config.extrusionWidth, config.extrusionWidth, config.infillOverlap, 45 + 90 * (layerNr % 2));
             gcodeLayer.addPolygonsByOptimizer(fillPolygons, supportConfig);
 
             //Make sure we wipe the old extruder on the wipe tower.
-            gcodeLayer.addTravel(storage.wipePoint - config.extruderOffset[prevExtruder].p() + config.extruderOffset[gcodeLayer.getExtruder()].p());
+            gcodeLayer.addTravel(storage.wipePoint - config.extruderOffset[prevExtruder] + config.extruderOffset[gcodeLayer.getExtruder()]);
         }
     }
 }

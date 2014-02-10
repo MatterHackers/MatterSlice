@@ -41,7 +41,7 @@ namespace MatterHackers.MatterSlice
 
     public class ConfigSettings
     {
-        public const string VERSION = "13.12";
+        public const string VERSION = "1.0";
 
         public const int FIX_HORRIBLE_UNION_ALL_TYPE_A = 0x01;
         public const int FIX_HORRIBLE_UNION_ALL_TYPE_B = 0x02;
@@ -155,7 +155,6 @@ namespace MatterHackers.MatterSlice
 
         public ConfigSettings()
         {
-            throw new NotImplementedException();
 #if false
     SETTING(layerThickness);
     SETTING(initialLayerThickness);

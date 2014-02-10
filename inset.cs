@@ -30,45 +30,46 @@ namespace MatterHackers.MatterSlice
 
     public static class Inset
     {
-public static void generateInsets(SliceLayerPart part, int offset, int insetCount)
-{
-    part.combBoundery = part.outline.offset(-offset);
-    if (insetCount == 0)
-    {
-        part.insets.Add(part.outline);
-        return;
-    }
-    
-    for(int i=0; i<insetCount; i++)
-    {
-        part.insets.Add(new Polygons());
-        part.insets[i] = part.outline.offset(-offset * i - offset/2);
-        PolygonOptimizer.optimizePolygons(part.insets[i]);
-        if (part.insets[i].Count < 1)
+        public static void generateInsets(SliceLayerPart part, int offset, int insetCount)
         {
-            part.insets.pop_back();
-            break;
-        }
-    }
-}
+            part.combBoundery = part.outline.offset(-offset);
+            if (insetCount == 0)
+            {
+                part.insets.Add(part.outline);
+                return;
+            }
 
-public static void generateInsets(SliceLayer layer, int offset, int insetCount)
-{
-    for(int partNr = 0; partNr < layer.parts.Count; partNr++)
-    {
-        generateInsets(layer.parts[partNr], offset, insetCount);
-    }
-    
-    //Remove the parts which did not generate an inset. As these parts are too small to print,
-    // and later code can now assume that there is always minimal 1 inset line.
-    for(int partNr = 0; partNr < layer.parts.Count; partNr++)
-    {
-        if (layer.parts[partNr].insets.Count < 1)
-        {
-            layer.parts.erase(layer.parts.begin() + partNr);
-            partNr -= 1;
+            for (int i = 0; i < insetCount; i++)
+            {
+                part.insets.Add(new Polygons());
+                part.insets[i] = part.outline.offset(-offset * i - offset / 2);
+                PolygonOptimizer.optimizePolygons(part.insets[i]);
+                if (part.insets[i].Count < 1)
+                {
+                    part.insets.RemoveAt(part.insets.Count - 1);
+                    break;
+                }
+            }
         }
-    }
-}
+
+        public static void generateInsets(SliceLayer layer, int offset, int insetCount)
+        {
+            for (int partNr = 0; partNr < layer.parts.Count; partNr++)
+            {
+                generateInsets(layer.parts[partNr], offset, insetCount);
+            }
+
+            //Remove the parts which did not generate an inset. As these parts are too small to print,
+            // and later code can now assume that there is always minimal 1 inset line.
+            for (int partNr = 0; partNr < layer.parts.Count; partNr++)
+            {
+                if (layer.parts[partNr].insets.Count < 1)
+                {
+                    throw new NotImplementedException();
+                    //layer.parts.erase(layer.parts.begin() + partNr);
+                    partNr -= 1;
+                }
+            }
+        }
     }
 }

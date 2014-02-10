@@ -54,8 +54,8 @@ namespace MatterHackers.MatterSlice
         public OptimizedVolume(SimpleVolume volume, OptimizedModel model)
         {
             this.model = model;
-            points.reserve(volume.faces.Count * 3);
-            faces.reserve(volume.faces.Count);
+            points.Capacity = volume.faces.Count * 3;
+            faces.Capacity = volume.faces.Count;
 
             Dictionary<int, List<int>> indexMap = new Dictionary<int,List<int>>();
 
@@ -63,7 +63,7 @@ namespace MatterHackers.MatterSlice
             t.Start();
             for (int i = 0; i < volume.faces.Count; i++)
             {
-                OptimizedFace f;
+                OptimizedFace f = new OptimizedFace();
                 if ((i % 1000 == 0) && t.Elapsed.Seconds > 2)
                 {
                     LogOutput.logProgress("optimized", i + 1, volume.faces.Count);
