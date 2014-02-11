@@ -50,7 +50,6 @@ namespace MatterHackers.MatterSlice
         double totalPrintTime;
         TimeEstimateCalculator estimateCalculator = new TimeEstimateCalculator();
 
-
         public GCodeExport()
         {
             extrusionAmount = 0;
@@ -70,6 +69,11 @@ namespace MatterHackers.MatterSlice
             retractionSpeed = 45;
             isRetracted = true;
             f = new StreamWriter(Console.OpenStandardOutput());
+        }
+
+        public void Close()
+        {
+            f.Close();
         }
 
         public void replaceTagInStart(string tag, string replaceValue)
@@ -183,7 +187,7 @@ namespace MatterHackers.MatterSlice
 
         public void addLine(string line)
         {
-            f.Write(string.Format(";{0]\n", line));
+            f.Write(string.Format(";{0}\n", line));
         }
 
         public void resetExtrusionValue()
@@ -199,7 +203,7 @@ namespace MatterHackers.MatterSlice
 
         public void addDelay(double timeAmount)
         {
-            f.Write("G4 P%d\n", (int)(timeAmount * 1000));
+            f.Write(string.Format("G4 P{0}\n", (int)(timeAmount * 1000)));
             totalPrintTime += timeAmount;
         }
 
@@ -216,7 +220,7 @@ namespace MatterHackers.MatterSlice
                     }
                     else
                     {
-                        f.Write("G1 F%i E%0.5lf\n", retractionSpeed * 60, extrusionAmount);
+                        f.Write(string.Format("G1 F{0} E{0:0.00000}\n", retractionSpeed * 60, extrusionAmount));
                         currentSpeed = retractionSpeed;
                         estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(p.X) / 1000.0, (p.Y) / 1000.0, (double)(zPos) / 1000.0, extrusionAmount), currentSpeed);
                     }
@@ -234,7 +238,7 @@ namespace MatterHackers.MatterSlice
 
             if (currentSpeed != speed)
             {
-                f.Write(" F%i", speed * 60);
+                f.Write(string.Format(" F{0}", speed * 60));
                 currentSpeed = speed;
             }
             f.Write(string.Format(" X{0:0.00} Y{1:0.00}", (float)(p.X - extruderOffset[extruderNr].X) / 1000, (float)(p.Y - extruderOffset[extruderNr].Y) / 1000));

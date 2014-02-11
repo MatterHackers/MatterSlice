@@ -103,6 +103,8 @@ namespace MatterHackers.MatterSlice
                 numberString = string.Format("{0}", (int)(gcode.getTotalFilamentUsed(1)));
                 gcode.replaceTagInStart("<FILAMEN2>", numberString);
             }
+
+            gcode.Close();
         }
 
         void preSetup()
