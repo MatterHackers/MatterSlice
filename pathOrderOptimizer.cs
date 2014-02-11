@@ -31,9 +31,9 @@ namespace MatterHackers.MatterSlice
     public class PathOrderOptimizer
     {
         public Point startPoint;
-        public List<PolygonRef> polygons;
-        public List<int> polyStart;
-        public List<int> polyOrder;
+        public List<PolygonRef> polygons = new List<PolygonRef>();
+        public List<int> polyStart = new List<int>();
+        public List<int> polyOrder = new List<int>();
 
         public PathOrderOptimizer(Point startPoint)
         {
@@ -52,96 +52,102 @@ namespace MatterHackers.MatterSlice
         }
 
         public void optimize()
-{
-    List<bool> picked = new List<bool>();
-    for(int i=0;i<polygons.Count; i++)
-    {
-        int best = -1;
-        float bestDist = float.MaxValue;
-        PolygonRef poly = polygons[i];
-        for( int j=0; j<poly.Count; j++)
         {
-            float dist = (poly[j] - startPoint).vSize2f();
-            if (dist < bestDist)
+            List<bool> picked = new List<bool>();
+            for (int i = 0; i < polygons.Count; i++)
             {
-                best = j;
-                bestDist = dist;
+                int best = -1;
+                float bestDist = float.MaxValue;
+                PolygonRef poly = polygons[i];
+                for (int j = 0; j < poly.Count; j++)
+                {
+                    float dist = (poly[j] - startPoint).vSize2f();
+                    if (dist < bestDist)
+                    {
+                        best = j;
+                        bestDist = dist;
+                    }
+                }
+                polyStart.Add(best);
+                picked.Add(false);
             }
-        }
-        polyStart.Add(best);
-        picked.Add(false);
-    }
 
-    Point p0 = startPoint;
-    for( int n=0; n<polygons.Count; n++)
-    {
-        int best = -1;
-        float bestDist = float.MaxValue;
-        for( int i=0;i<polygons.Count; i++)
-        {
-            if (picked[i] || polygons[i].Count < 1)
-                continue;
-            if (polygons[i].Count == 2)
+            Point p0 = startPoint;
+            for (int n = 0; n < polygons.Count; n++)
             {
-                float dist = (polygons[i][0] - p0).vSize2f();
-                if (dist < bestDist)
+                int best = -1;
+                float bestDist = float.MaxValue;
+                for (int i = 0; i < polygons.Count; i++)
                 {
-                    best = i;
-                    bestDist = dist;
-                    polyStart[i] = 0;
+                    if (picked[i] || polygons[i].Count < 1)
+                        continue;
+                    if (polygons[i].Count == 2)
+                    {
+                        float dist = (polygons[i][0] - p0).vSize2f();
+                        if (dist < bestDist)
+                        {
+                            best = i;
+                            bestDist = dist;
+                            polyStart[i] = 0;
+                        }
+                        dist = (polygons[i][1] - p0).vSize2f();
+                        if (dist < bestDist)
+                        {
+                            best = i;
+                            bestDist = dist;
+                            polyStart[i] = 1;
+                        }
+                    }
+                    else
+                    {
+                        float dist = (polygons[i][polyStart[i]] - p0).vSize2f();
+                        if (dist < bestDist)
+                        {
+                            best = i;
+                            bestDist = dist;
+                        }
+                    }
                 }
-                dist = (polygons[i][1] - p0).vSize2f();
-                if (dist < bestDist)
+                if (best > -1)
                 {
-                    best = i;
-                    bestDist = dist;
-                    polyStart[i] = 1;
-                }
-            }else{
-                float dist = (polygons[i][polyStart[i]] - p0).vSize2f();
-                if (dist < bestDist)
-                {
-                    best = i;
-                    bestDist = dist;
+                    if (polygons[best].Count == 2)
+                    {
+                        p0 = polygons[best][(polyStart[best] + 1) % 2];
+                    }
+                    else
+                    {
+                        p0 = polygons[best][polyStart[best]];
+                    }
+                    picked[best] = true;
+                    polyOrder.Add(best);
                 }
             }
-        }
-        if (best > -1)
-        {
-            if (polygons[best].Count == 2)
+
+            p0 = startPoint;
+            for (int n = 0; n < polyOrder.Count; n++)
             {
-                p0 = polygons[best][(polyStart[best] + 1) % 2];
-            }else{
-                p0 = polygons[best][polyStart[best]];
+                int nr = polyOrder[n];
+                int best = -1;
+                float bestDist = float.MaxValue;
+                for (int i = 0; i < polygons[nr].Count; i++)
+                {
+                    float dist = (polygons[nr][i] - p0).vSize2f();
+                    if (dist < bestDist)
+                    {
+                        best = i;
+                        bestDist = dist;
+                    }
+                }
+                polyStart[nr] = best;
+                if (polygons[nr].Count <= 2)
+                {
+                    p0 = polygons[nr][(best + 1) % 2];
+                }
+                else
+                {
+                    p0 = polygons[nr][best];
+                }
             }
-            picked[best] = true;
-            polyOrder.Add(best);
-        }
-    }
-    
-    p0 = startPoint;
-    for( int n=0; n<polyOrder.Count; n++)
-    {
-        int nr = polyOrder[n];
-        int best = -1;
-        float bestDist = float.MaxValue;
-        for( int i=0;i<polygons[nr].Count; i++)
-        {
-            float dist = (polygons[nr][i] - p0).vSize2f();
-            if (dist < bestDist)
-            {
-                best = i;
-                bestDist = dist;
-            }
-        }
-        polyStart[nr] = best;
-        if (polygons[nr].Count <= 2)
-        {
-            p0 = polygons[nr][(best + 1) % 2];
-        }else{
-            p0 = polygons[nr][best];
-        }
-    }
         }
     }
 }

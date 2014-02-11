@@ -61,8 +61,8 @@ namespace MatterHackers.MatterSlice
         public TreeDictionary<int, int> faceToSegmentIndex = new TreeDictionary<int,int>();
 
         public int z;
-        public Polygons polygonList;
-        public Polygons openPolygonList;
+        public Polygons polygonList = new Polygons();
+        public Polygons openPolygonList = new Polygons();
 
         public void makePolygons(OptimizedVolume ov, bool keepNoneClosed, bool extensiveStitching)
         {
@@ -477,7 +477,7 @@ namespace MatterHackers.MatterSlice
 
     public class Slicer
     {
-        public List<SlicerLayer> layers;
+        public List<SlicerLayer> layers = new List<SlicerLayer>();
         public Point3 modelSize, modelMin;
 
         public Slicer(OptimizedVolume ov, int initial, int thickness, bool keepNoneClosed, bool extensiveStitching)
@@ -488,6 +488,10 @@ namespace MatterHackers.MatterSlice
             int layerCount = (modelSize.z - initial) / thickness + 1;
             LogOutput.log(string.Format("Layer count: {0}\n", layerCount));
             layers.Capacity = layerCount;
+            for (int i = 0; i < layerCount; i++)
+            {
+                layers.Add(new SlicerLayer());
+            }
 
             for (int layerNr = 0; layerNr < layerCount; layerNr++)
             {

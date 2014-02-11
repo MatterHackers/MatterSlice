@@ -38,19 +38,19 @@ namespace MatterHackers.MatterSlice
 
     public class SliceLayerPart
     {
-        public AABB boundaryBox;
-        public Polygons outline;
-        public Polygons combBoundery;
-        public List<Polygons> insets;
-        public Polygons skinOutline;
-        public Polygons sparseOutline;
+        public AABB boundaryBox = new AABB();
+        public Polygons outline = new Polygons();
+        public Polygons combBoundery = new Polygons();
+        public List<Polygons> insets = new List<Polygons>();
+        public Polygons skinOutline = new Polygons();
+        public Polygons sparseOutline = new Polygons();
         public int bridgeAngle;
     };
 
     public class SliceLayer
     {
         public int z;
-        public List<SliceLayerPart> parts;
+        public List<SliceLayerPart> parts = new List<SliceLayerPart>();
     };
 
     /******************/
@@ -77,7 +77,7 @@ namespace MatterHackers.MatterSlice
         public Point gridOffset;
         public int gridScale;
         public int gridWidth, gridHeight;
-        public List<List<SupportPoint>> grid;
+        public List<List<SupportPoint>> grid = new List<List<SupportPoint>>();
         
         public SupportStorage()
         {
@@ -89,19 +89,19 @@ namespace MatterHackers.MatterSlice
 
     public class SliceVolumeStorage
     {
-        public List<SliceLayer> layers;
+        public List<SliceLayer> layers = new List<SliceLayer>();
     }
 
     public class SliceDataStorage
     {
         public Point3 modelSize, modelMin, modelMax;
-        public Polygons skirt;
-        public Polygons raftOutline;
-        public List<Polygons> oozeShield;
-        public List<SliceVolumeStorage> volumes;
+        public Polygons skirt = new Polygons();
+        public Polygons raftOutline = new Polygons();
+        public List<Polygons> oozeShield = new List<Polygons>();
+        public List<SliceVolumeStorage> volumes = new List<SliceVolumeStorage>();
 
-        public SupportStorage support;
-        public Polygons wipeTower;
+        public SupportStorage support = new SupportStorage();
+        public Polygons wipeTower = new Polygons();
         public Point wipePoint;
     }
 }

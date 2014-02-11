@@ -135,7 +135,7 @@ namespace MatterHackers.MatterSlice
         public int raftInterfaceThickness;
         public int raftInterfaceLinewidth;
 
-        public FMatrix3x3 matrix;
+        public FMatrix3x3 matrix = new FMatrix3x3();
         public IntPoint objectPosition;
         public int objectSink;
 

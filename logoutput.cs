@@ -57,7 +57,20 @@ namespace MatterHackers.MatterSlice
 
         internal static void logPolygons(string p, int layerNr, int p_2, List<Polygon> list)
         {
-            throw new NotImplementedException();
+#if false
+ guiSocket.sendNr(GUI_CMD_SEND_POLYGONS);
+        guiSocket.sendNr(polygons.size());
+        guiSocket.sendNr(layerNr);
+        guiSocket.sendNr(z);
+        guiSocket.sendNr(strlen(name));
+        guiSocket.sendAll(name, strlen(name));
+        for(unsigned int n=0; n<polygons.size(); n++)
+        {
+            PolygonRef polygon = polygons[n];
+            guiSocket.sendNr(polygon.size());
+            guiSocket.sendAll(polygon.data(), polygon.size() * sizeof(Point));
+        }
+#endif
         }
     }
 }

@@ -48,7 +48,7 @@ namespace MatterHackers.MatterSlice
 
         double[] totalFilament = new double[ConfigSettings.MAX_EXTRUDERS];
         double totalPrintTime;
-        TimeEstimateCalculator estimateCalculator;
+        TimeEstimateCalculator estimateCalculator = new TimeEstimateCalculator();
 
 
         public GCodeExport()
@@ -286,14 +286,14 @@ namespace MatterHackers.MatterSlice
             }
             isRetracted = true;
             if (flavor == ConfigSettings.GCODE_FLAVOR_MAKERBOT)
-                f.Write("M135 T%i\n", extruderNr);
+                f.Write(string.Format("M135 T{0}\n", extruderNr));
             else
-                f.Write("T%i\n", extruderNr);
+                f.Write(string.Format("T{0}\n", extruderNr));
         }
 
         public void addCode(string str)
         {
-            f.Write("%s\n", str);
+            f.Write(string.Format("{0}\n", str));
         }
 
         public void addFanCommand(int speed)
@@ -303,9 +303,9 @@ namespace MatterHackers.MatterSlice
             if (speed > 0)
             {
                 if (flavor == ConfigSettings.GCODE_FLAVOR_MAKERBOT)
-                    f.Write("M126 T0 ; value = %d\n", speed * 255 / 100);
+                    f.Write(string.Format("M126 T0 ; value = {0}\n", speed * 255 / 100));
                 else
-                    f.Write("M106 S%d\n", speed * 255 / 100);
+                    f.Write(string.Format("M106 S{0}\n", speed * 255 / 100));
             }
             else
             {
@@ -328,7 +328,7 @@ namespace MatterHackers.MatterSlice
             if (fsize > 1024 * 1024)
             {
                 fsize /= 1024.0 * 1024.0;
-                LogOutput.log(string.Format("Wrote {0:0.1} MB.\n", fsize));
+                LogOutput.log(string.Format("Wrote {0:0.0} MB.\n", fsize));
             }
             if (fsize > 1024)
             {
@@ -373,13 +373,13 @@ namespace MatterHackers.MatterSlice
 
     public class GCodePlanner
     {
-        GCodeExport gcode;
+        GCodeExport gcode = new GCodeExport();
 
         Point lastPosition;
-        List<GCodePath> paths;
+        List<GCodePath> paths = new List<GCodePath>();
         Comb comb;
 
-        GCodePathConfig travelConfig;
+        GCodePathConfig travelConfig = new GCodePathConfig();
         int extrudeSpeedFactor;
         int travelSpeedFactor;
         int currentExtruder;
@@ -391,7 +391,7 @@ namespace MatterHackers.MatterSlice
 
         public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimalDistance)
         {
-            gcode = gcode;
+            this.gcode = gcode;
             travelConfig = new GCodePathConfig(travelSpeed, 0, "travel");
 
             lastPosition = gcode.getPositionXY();

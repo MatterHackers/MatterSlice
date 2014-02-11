@@ -35,7 +35,7 @@ namespace MatterHackers.MatterSlice
     public class OptimizedPoint3
     {
         public Point3 p;
-        public List<int> faceIndexList;
+        public List<int> faceIndexList = new List<int>();
 
         public OptimizedPoint3(Point3 p)
         {
@@ -74,7 +74,7 @@ namespace MatterHackers.MatterSlice
                     int hash = ((p.x + MELD_DIST / 2) / MELD_DIST) ^ (((p.y + MELD_DIST / 2) / MELD_DIST) << 10) ^ (((p.z + MELD_DIST / 2) / MELD_DIST) << 20);
                     int idx = 0;
                     bool add = true;
-                    //if (indexMap.ContainsKey(hash))
+                    if (indexMap.ContainsKey(hash))
                     {
                         for (int n = 0; n < indexMap[hash].Count; n++)
                         {

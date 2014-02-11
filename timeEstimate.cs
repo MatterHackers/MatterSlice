@@ -79,14 +79,14 @@ public class TimeEstimateCalculator
         public double maxTravel;
         public double distance;
         public double acceleration;
-        public Position delta;
-        public Position absDelta;
+        public Position delta = new Position();
+        public Position absDelta = new Position();
     };
 
     Position previous_feedrate;
     double previous_nominal_feedrate;
 
-    Position currentPosition;
+    Position currentPosition = new Position();
 
     List<Block> blocks = new List<Block>();
 
@@ -384,6 +384,3 @@ public class TimeEstimateCalculator
         }
     }
 }
-
-
-

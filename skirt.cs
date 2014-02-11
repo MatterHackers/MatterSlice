@@ -31,39 +31,39 @@ namespace MatterHackers.MatterSlice
     public class Skirt
     {
         public static void generateSkirt(SliceDataStorage storage, int distance, int extrusionWidth, int count, int minLength, int initialLayerHeight)
-{
-    for(int skirtNr=0; skirtNr<count;skirtNr++)
-    {
-        int offsetDistance = distance + extrusionWidth * skirtNr + extrusionWidth / 2;
-        
-        Polygons skirtPolygons = new Polygons(storage.wipeTower.offset(offsetDistance));
-        for(int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
         {
-            if (storage.volumes[volumeIdx].layers.Count < 1) continue;
-            SliceLayer layer = storage.volumes[volumeIdx].layers[0];
-            for(int i=0; i<layer.parts.Count; i++)
+            for (int skirtNr = 0; skirtNr < count; skirtNr++)
             {
-                skirtPolygons = skirtPolygons.unionPolygons(layer.parts[i].outline.offset(offsetDistance));
+                int offsetDistance = distance + extrusionWidth * skirtNr + extrusionWidth / 2;
+
+                Polygons skirtPolygons = new Polygons(storage.wipeTower.offset(offsetDistance));
+                for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
+                {
+                    if (storage.volumes[volumeIdx].layers.Count < 1) continue;
+                    SliceLayer layer = storage.volumes[volumeIdx].layers[0];
+                    for (int i = 0; i < layer.parts.Count; i++)
+                    {
+                        skirtPolygons = skirtPolygons.unionPolygons(layer.parts[i].outline.offset(offsetDistance));
+                    }
+                }
+
+                SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, initialLayerHeight);
+                skirtPolygons = skirtPolygons.unionPolygons(supportGenerator.polygons.offset(offsetDistance));
+
+                //Remove small inner skirt holes. Holes have a negative area, remove anything smaller then 100x extrusion "area"
+                for (int n = 0; n < skirtPolygons.Count; n++)
+                {
+                    double area = skirtPolygons[n].area();
+                    if (area < 0 && area > -extrusionWidth * extrusionWidth * 100)
+                        skirtPolygons.remove(n--);
+                }
+
+                storage.skirt.add(skirtPolygons);
+
+                int lenght = (int)storage.skirt.polygonLength();
+                if (skirtNr + 1 >= count && lenght > 0 && lenght < minLength)
+                    count++;
             }
         }
-        
-        SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, initialLayerHeight);
-        skirtPolygons = skirtPolygons.unionPolygons(supportGenerator.polygons.offset(offsetDistance));
-
-        //Remove small inner skirt holes. Holes have a negative area, remove anything smaller then 100x extrusion "area"
-        for(int n=0; n<skirtPolygons.Count; n++)
-        {
-            double area = skirtPolygons[n].area();
-            if (area < 0 && area > -extrusionWidth * extrusionWidth * 100)
-                skirtPolygons.remove(n--);
-        }
-
-        storage.skirt.add(skirtPolygons);
-        
-        int lenght = (int)storage.skirt.polygonLength();
-        if (skirtNr + 1 >= count && lenght > 0 && lenght < minLength)
-            count++;
-    }
-}
     }
 }
