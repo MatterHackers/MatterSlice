@@ -371,7 +371,7 @@ namespace MatterHackers.MatterSlice
         public GCodePathConfig config;
         public bool retract;
         public int extruder;
-        public List<Point> points;
+        public List<Point> points = new List<Point>();
         public bool done;//Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
     }
 

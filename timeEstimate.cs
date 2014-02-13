@@ -280,7 +280,7 @@ public class TimeEstimateCalculator
         Block current;
         Block next = null;
 
-        for (int n = 0; n < blocks.Count; n--)
+        for (int n = 0; n < blocks.Count; n++)
         {
             current = next;
             next = blocks[n];

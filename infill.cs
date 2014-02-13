@@ -93,8 +93,7 @@ namespace MatterHackers.MatterSlice
             int idx2 = 0;
             for (long x = boundary.min.X + lineSpacing / 2; x < boundary.max.X; x += lineSpacing)
             {
-                throw new NotImplementedException();
-                //qsort(cutList[idx].data(), cutList[idx2].Count, sizeof(long), compare_long);
+                cutList[idx2].Sort();
                 for (int i = 0; i + 1 < cutList[idx2].Count; i += 2)
                 {
                     if (cutList[idx2][i + 1] - cutList[idx2][i] < extrusionWidth / 5)

@@ -49,8 +49,7 @@ namespace MatterHackers.MatterSlice
 
         public static void remove(this Polygon polygon, int index)
         {
-            throw new NotImplementedException();
-            //polygon.erase(polygon.begin() + index);
+            polygon.RemoveAt(index);
         }
 
         public static void clear(this Polygon polygon)
@@ -60,14 +59,12 @@ namespace MatterHackers.MatterSlice
 
         public static bool orientation(this Polygon polygon)
         {
-            throw new NotImplementedException();
-            //return ClipperLib.Orientation(polygon);
+            return Clipper.Orientation(polygon);
         }
 
         public static void reverse(this Polygon polygon)
         {
-            throw new NotImplementedException();
-            //ClipperLib.ReversePolygons(polygon);
+            polygon.Reverse();
         }
 
         public static long polygonLength(this Polygon polygon)
