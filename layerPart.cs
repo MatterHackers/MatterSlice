@@ -104,7 +104,7 @@ namespace MatterHackers.MatterSlice
                         {
                             f.Write("<polygon points=\"");
                             for (int k = 0; k < part.outline[j].Count; k++)
-                                f.Write("%f,%f ", (float)(part.outline[j][k].X - modelMin.x) / modelSize.x * 500, (float)(part.outline[j][k].Y - modelMin.y) / modelSize.y * 500);
+                                f.Write(string.Format("{0},{1} ", (float)(part.outline[j][k].X - modelMin.x) / modelSize.x * 500, (float)(part.outline[j][k].Y - modelMin.y) / modelSize.y * 500));
                             if (j == 0)
                                 f.Write("\" style=\"fill:gray; stroke:black;stroke-width:1\" />\n");
                             else

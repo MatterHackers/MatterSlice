@@ -193,7 +193,9 @@ namespace MatterHackers.MatterSlice
         {
             //carveMultipleVolumes(storage.volumes);
             MultiVolumes.generateMultipleVolumesOverlap(storage.volumes, config.multiVolumeOverlap);
-            //dumpLayerparts(storage, "c:/models/output.html");
+#if DEBUG
+            LayerPart.dumpLayerparts(storage, "output.html");
+#endif
 
             int totalLayers = storage.volumes[0].layers.Count;
             for (int layerNr = 0; layerNr < totalLayers; layerNr++)
