@@ -57,7 +57,7 @@ namespace MatterHackers.MatterSlice
             points.Capacity = volume.faces.Count * 3;
             faces.Capacity = volume.faces.Count;
 
-            Dictionary<int, List<int>> indexMap = new Dictionary<int,List<int>>();
+            Dictionary<int, List<int>> indexMap = new Dictionary<int, List<int>>();
 
             Stopwatch t = new Stopwatch();
             t.Start();
@@ -183,8 +183,38 @@ namespace MatterHackers.MatterSlice
 
         public void saveDebugSTL(string filename)
         {
-            throw new NotImplementedException();
-#if false
+#if true
+            OptimizedVolume vol = volumes[0];
+
+            using (StreamWriter stream = new StreamWriter(filename))
+            {
+                BinaryWriter f = new BinaryWriter(stream.BaseStream);
+                Byte[] header = new Byte[80];
+
+                f.Write(header);
+
+                int n = vol.faces.Count;
+
+                f.Write(n);
+
+                for (int i = 0; i < vol.faces.Count; i++)
+                {
+                    // stl expects a normal (we don't care about it's data)
+                    f.Write((float)1);
+                    f.Write((float)1);
+                    f.Write((float)1);
+
+                    for (int vert = 0; vert < 3; vert++)
+                    {
+                        f.Write((float)(vol.points[vol.faces[i].index[vert]].p.x / 1000.0));
+                        f.Write((float)(vol.points[vol.faces[i].index[vert]].p.y / 1000.0));
+                        f.Write((float)(vol.points[vol.faces[i].index[vert]].p.z / 1000.0));
+                    }
+
+                    f.Write((short)0);
+                }
+            }
+#else
     char buffer[80] = "MatterSlice_STL_export";
     int n;
     uint16_t s;

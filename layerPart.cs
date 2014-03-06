@@ -57,9 +57,13 @@ namespace MatterHackers.MatterSlice
 
             List<Polygons> result;
             if ((unionAllType & ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_C) == ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_C)
+            {
                 result = layer.polygonList.offset(1000).splitIntoParts(unionAllType != 0);
+            }
             else
+            {
                 result = layer.polygonList.splitIntoParts(unionAllType != 0);
+            }
 
             for (int i = 0; i < result.Count; i++)
             {
@@ -70,7 +74,10 @@ namespace MatterHackers.MatterSlice
                     storageLayer.parts[i].outline = storageLayer.parts[i].outline.offset(-1000);
                 }
                 else
+                {
                     storageLayer.parts[i].outline = result[i];
+                }
+
                 storageLayer.parts[i].boundaryBox.calculate(storageLayer.parts[i].outline);
             }
         }
@@ -80,6 +87,8 @@ namespace MatterHackers.MatterSlice
             for (int layerNr = 0; layerNr < slicer.layers.Count; layerNr++)
             {
                 storage.layers.Add(new SliceLayer());
+                //storage.layers[layerNr].sliceZ = slicer.layers[layerNr].z;
+                //storage.layers[layerNr].printZ = slicer.layers[layerNr].z;
                 LayerPart.createLayerWithParts(storage.layers[layerNr], slicer.layers[layerNr], unionAllType);
             }
         }

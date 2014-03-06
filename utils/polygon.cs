@@ -222,9 +222,13 @@ public _Polygon()
             ClipperLib.PolyTree resultPolyTree = new PolyTree();
             clipper.AddPolygons(polygons, ClipperLib.PolyType.ptSubject);
             if (unionAll)
+            {
                 clipper.Execute(ClipType.ctUnion, resultPolyTree, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
+            }
             else
+            {
                 clipper.Execute(ClipType.ctUnion, resultPolyTree);
+            }
 
             polygons._processPolyTreeNode(resultPolyTree, ret);
             return ret;

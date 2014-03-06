@@ -54,21 +54,28 @@ namespace MatterHackers.MatterSlice
         {
             gcode.setFilename(filename);
             if (gcode.isValid())
+            {
                 gcode.addComment(string.Format("Generated with MatterSlice {0}", ConfigSettings.VERSION));
+            }
+
             return gcode.isValid();
         }
 
         public bool processFile(string input_filename)
         {
             if (!gcode.isValid())
+            {
                 return false;
+            }
 
             Stopwatch timeKeeperTotal = new Stopwatch();
             timeKeeperTotal.Start();
             SliceDataStorage storage = new SliceDataStorage();
             preSetup();
             if (!prepareModel(storage, input_filename))
+            {
                 return false;
+            }
 
             processSliceData(storage);
             writeGCode(storage);
@@ -82,7 +89,9 @@ namespace MatterHackers.MatterSlice
         public void finalize()
         {
             if (!gcode.isValid())
+            {
                 return;
+            }
 
             gcode.addFanCommand(0);
             gcode.addRetraction();
@@ -147,7 +156,9 @@ namespace MatterHackers.MatterSlice
 
             LogOutput.log(string.Format("Optimize model {0:0.000}s \n", timeKeeper.Elapsed.Seconds));
             timeKeeper.Reset();
-            //om.saveDebugSTL("c:\\models\\output.stl");
+#if DEBUG
+            om.saveDebugSTL("debug_output.stl");
+#endif
 
             LogOutput.log("Slicing model...\n");
             List<Slicer> slicerList = new List<Slicer>();
@@ -220,6 +231,7 @@ namespace MatterHackers.MatterSlice
                 }
                 LogOutput.logProgress("inset", layerNr + 1, totalLayers);
             }
+
             if (config.enableOozeShield != 0)
             {
                 for (int layerNr = 0; layerNr < totalLayers; layerNr++)
@@ -236,12 +248,20 @@ namespace MatterHackers.MatterSlice
                 }
 
                 for (int layerNr = 0; layerNr < totalLayers; layerNr++)
+                {
                     storage.oozeShield[layerNr] = storage.oozeShield[layerNr].offset(-1000).offset(1000);
+                }
+
                 int offsetAngle = (int)Math.Tan(60.0 * Math.PI / 180) * config.layerThickness;//Allow for a 60deg angle in the oozeShield.
                 for (int layerNr = 1; layerNr < totalLayers; layerNr++)
+                {
                     storage.oozeShield[layerNr] = storage.oozeShield[layerNr].unionPolygons(storage.oozeShield[layerNr - 1].offset(-offsetAngle));
+                }
+
                 for (int layerNr = totalLayers - 1; layerNr > 0; layerNr--)
+                {
                     storage.oozeShield[layerNr - 1] = storage.oozeShield[layerNr - 1].unionPolygons(storage.oozeShield[layerNr].offset(-offsetAngle));
+                }
             }
             LogOutput.log(string.Format("Generated inset in {0:0.000}s\n", timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();

@@ -69,7 +69,10 @@ namespace MatterHackers.MatterSlice
         {
             storage.generated = false;
             if (supportAngle < 0)
+            {
                 return;
+            }
+
             storage.generated = true;
 
             storage.gridOffset.X = om.vMin.x;
