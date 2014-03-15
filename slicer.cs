@@ -59,57 +59,65 @@ namespace MatterHackers.MatterSlice
     public class SlicerLayer
     {
         public List<SlicerSegment> segmentList = new List<SlicerSegment>();
-        public TreeDictionary<int, int> faceToSegmentIndex = new TreeDictionary<int,int>();
+        public TreeDictionary<int, int> faceTo2DSegmentIndex = new TreeDictionary<int,int>();
 
         public int z;
         public Polygons polygonList = new Polygons();
         public Polygons openPolygonList = new Polygons();
 
-        public void makePolygons(OptimizedVolume ov, bool keepNoneClosed, bool extensiveStitching)
+        public void makePolygons(OptimizedVolume optomizedMesh, bool keepNoneClosed, bool extensiveStitching)
         {
-            for (int currentSegment = 0; currentSegment < segmentList.Count; currentSegment++)
+            for (int segmentIndexTryingToAdd = 0; segmentIndexTryingToAdd < segmentList.Count; segmentIndexTryingToAdd++)
             {
-                if (segmentList[currentSegment].addedToPolygon)
+                if (segmentList[segmentIndexTryingToAdd].addedToPolygon)
                 {
                     continue;
                 }
 
                 Polygon poly = new Polygon();
-                poly.Add(segmentList[currentSegment].start);
+                // We start by adding the start, as we will add ends from now on.
+                poly.Add(segmentList[segmentIndexTryingToAdd].start);
 
-                int currentSegmentToCheck = currentSegment;
+                int segmentIndexBeingAdded = segmentIndexTryingToAdd;
                 bool canClose;
+
+                int lastSegmentIndex = faceTo2DSegmentIndex.FindMax().Value;
+
                 while (true)
                 {
                     canClose = false;
-                    segmentList[currentSegmentToCheck].addedToPolygon = true;
-                    Point currentSegmentEndPoint = segmentList[currentSegmentToCheck].end;
-                    poly.add(currentSegmentEndPoint);
+                    segmentList[segmentIndexBeingAdded].addedToPolygon = true;
+                    Point addedSegmentEndPoint = segmentList[segmentIndexBeingAdded].end;
+                    poly.add(addedSegmentEndPoint);
                     int nextSegmentToCheck = -1;
-                    OptimizedFace face = ov.faces[segmentList[currentSegmentToCheck].faceIndex];
-                    for (int i = 0; i < 3; i++)
+                    OptimizedFace face = optomizedMesh.faces[segmentList[segmentIndexBeingAdded].faceIndex];
+                    for (int connectedFaceIndex = 0; connectedFaceIndex < 3; connectedFaceIndex++)
                     {
-                        if (face.touching[i] > -1)
+                        int touchingFaceIndex = face.touching[connectedFaceIndex];
+                        if (touchingFaceIndex > -1)
                         {
-                            int touchingSegmentIndex = 0;
-                            bool foundTouchingSegment = faceToSegmentIndex.Find(face.touching[i], out touchingSegmentIndex);
-                            if (foundTouchingSegment && touchingSegmentIndex != faceToSegmentIndex.FindMax().Value)
+                            int foundTouching2DSegmentIndex = 0;
+                            bool foundTouching2DSegment = faceTo2DSegmentIndex.Find(touchingFaceIndex, out foundTouching2DSegmentIndex);
+                            // If the connected face has an edge that is in the segment list
+                            if (foundTouching2DSegment && foundTouching2DSegmentIndex != lastSegmentIndex)
                             {
-                                IntPoint p1 = segmentList[faceToSegmentIndex[face.touching[i]]].start;
-                                IntPoint diff = currentSegmentEndPoint - p1;
+                                IntPoint foundSegmentStart = segmentList[faceTo2DSegmentIndex[touchingFaceIndex]].start;
+                                IntPoint diff = addedSegmentEndPoint - foundSegmentStart;
                                 if (diff.IsShorterThen(10))
                                 {
-                                    if (faceToSegmentIndex[face.touching[i]] == (int)currentSegment)
+                                    // if we have looped back around to where we started
+                                    if (faceTo2DSegmentIndex[touchingFaceIndex] == segmentIndexTryingToAdd)
                                     {
                                         canClose = true;
                                     }
 
-                                    if (segmentList[faceToSegmentIndex[face.touching[i]]].addedToPolygon)
+                                    // If this segment has already been added
+                                    if (segmentList[faceTo2DSegmentIndex[touchingFaceIndex]].addedToPolygon)
                                     {
                                         continue;
                                     }
 
-                                    nextSegmentToCheck = faceToSegmentIndex[face.touching[i]];
+                                    nextSegmentToCheck = faceTo2DSegmentIndex[touchingFaceIndex];
                                 }
                             }
                         }
@@ -120,7 +128,7 @@ namespace MatterHackers.MatterSlice
                         break;
                     }
 
-                    currentSegmentToCheck = nextSegmentToCheck;
+                    segmentIndexBeingAdded = nextSegmentToCheck;
                 }
                 if (canClose)
                 {
@@ -206,7 +214,9 @@ namespace MatterHackers.MatterSlice
                 }
 
                 if (bestScore >= 10000 * 10000)
+                {
                     break;
+                }
 
                 if (bestA == bestB)
                 {
@@ -492,7 +502,8 @@ namespace MatterHackers.MatterSlice
     public class Slicer
     {
         public List<SlicerLayer> layers = new List<SlicerLayer>();
-        public Point3 modelSize, modelMin;
+        public Point3 modelSize;
+        public Point3 modelMin;
 
         public Slicer(OptimizedVolume ov, int initial, int thickness, bool keepNoneClosed, bool extensiveStitching)
         {
@@ -512,11 +523,11 @@ namespace MatterHackers.MatterSlice
                 layers[layerNr].z = initial + thickness * layerNr;
             }
 
-            for (int i = 0; i < ov.faces.Count; i++)
+            for (int faceIndex = 0; faceIndex < ov.faces.Count; faceIndex++)
             {
-                Point3 p0 = ov.points[ov.faces[i].index[0]].p;
-                Point3 p1 = ov.points[ov.faces[i].index[1]].p;
-                Point3 p2 = ov.points[ov.faces[i].index[2]].p;
+                Point3 p0 = ov.points[ov.faces[faceIndex].index[0]].p;
+                Point3 p1 = ov.points[ov.faces[faceIndex].index[1]].p;
+                Point3 p2 = ov.points[ov.faces[faceIndex].index[2]].p;
                 int minZ = p0.z;
                 int maxZ = p0.z;
                 if (p1.z < minZ) minZ = p1.z;
@@ -530,31 +541,59 @@ namespace MatterHackers.MatterSlice
                     if (z < minZ) continue;
                     if (layerNr < 0) continue;
 
-                    SlicerSegment s;
+                    SlicerSegment polyCrossingAtThisZ;
                     if (p0.z < z && p1.z >= z && p2.z >= z)
-                        s = project2D(p0, p2, p1, z);
-                    else if (p0.z > z && p1.z < z && p2.z < z)
-                        s = project2D(p0, p1, p2, z);
-
+                    {
+                        // p1   p2
+                        // --------
+                        //   p0
+                        polyCrossingAtThisZ = getCrossingAtZ(p0, p2, p1, z);
+                    }
+                    else if (p0.z >= z && p1.z < z && p2.z < z)
+                    {
+                        //   p0
+                        // --------
+                        // p1  p2
+                        polyCrossingAtThisZ = getCrossingAtZ(p0, p1, p2, z);
+                    }
                     else if (p1.z < z && p0.z >= z && p2.z >= z)
-                        s = project2D(p1, p0, p2, z);
-                    else if (p1.z > z && p0.z < z && p2.z < z)
-                        s = project2D(p1, p2, p0, z);
-
+                    {
+                        // p0   p2
+                        // --------
+                        //   p1
+                        polyCrossingAtThisZ = getCrossingAtZ(p1, p0, p2, z);
+                    }
+                    else if (p1.z >= z && p0.z < z && p2.z < z)
+                    {
+                        //   p1
+                        // --------
+                        // p0  p2
+                        polyCrossingAtThisZ = getCrossingAtZ(p1, p2, p0, z);
+                    }
                     else if (p2.z < z && p1.z >= z && p0.z >= z)
-                        s = project2D(p2, p1, p0, z);
-                    else if (p2.z > z && p1.z < z && p0.z < z)
-                        s = project2D(p2, p0, p1, z);
+                    {
+                        // p1   p0
+                        // --------
+                        //   p2
+                        polyCrossingAtThisZ = getCrossingAtZ(p2, p1, p0, z);
+                    }
+                    else if (p2.z >= z && p1.z < z && p0.z < z)
+                    {
+                        //   p2
+                        // --------
+                        // p1  p0
+                        polyCrossingAtThisZ = getCrossingAtZ(p2, p0, p1, z);
+                    }
                     else
                     {
                         //Not all cases create a segment, because a point of a face could create just a dot, and two touching faces
                         //  on the slice would create two segments
                         continue;
                     }
-                    layers[layerNr].faceToSegmentIndex[i] = layers[layerNr].segmentList.Count;
-                    s.faceIndex = i;
-                    s.addedToPolygon = false;
-                    layers[layerNr].segmentList.Add(s);
+                    layers[layerNr].faceTo2DSegmentIndex[faceIndex] = layers[layerNr].segmentList.Count;
+                    polyCrossingAtThisZ.faceIndex = faceIndex;
+                    polyCrossingAtThisZ.addedToPolygon = false;
+                    layers[layerNr].segmentList.Add(polyCrossingAtThisZ);
                 }
             }
 
@@ -564,13 +603,13 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        public SlicerSegment project2D(Point3 p0, Point3 p1, Point3 p2, int z)
+        public SlicerSegment getCrossingAtZ(Point3 singlePointOnSide, Point3 otherSide1, Point3 otherSide2, int z)
         {
             SlicerSegment seg = new SlicerSegment();
-            seg.start.X = p0.x + (long)(p1.x - p0.x) * (long)(z - p0.z) / (long)(p1.z - p0.z);
-            seg.start.Y = p0.y + (long)(p1.y - p0.y) * (long)(z - p0.z) / (long)(p1.z - p0.z);
-            seg.end.X = p0.x + (long)(p2.x - p0.x) * (long)(z - p0.z) / (long)(p2.z - p0.z);
-            seg.end.Y = p0.y + (long)(p2.y - p0.y) * (long)(z - p0.z) / (long)(p2.z - p0.z);
+            seg.start.X = singlePointOnSide.x + (long)(otherSide1.x - singlePointOnSide.x) * (long)(z - singlePointOnSide.z) / (long)(otherSide1.z - singlePointOnSide.z);
+            seg.start.Y = singlePointOnSide.y + (long)(otherSide1.y - singlePointOnSide.y) * (long)(z - singlePointOnSide.z) / (long)(otherSide1.z - singlePointOnSide.z);
+            seg.end.X = singlePointOnSide.x + (long)(otherSide2.x - singlePointOnSide.x) * (long)(z - singlePointOnSide.z) / (long)(otherSide2.z - singlePointOnSide.z);
+            seg.end.Y = singlePointOnSide.y + (long)(otherSide2.y - singlePointOnSide.y) * (long)(z - singlePointOnSide.z) / (long)(otherSide2.z - singlePointOnSide.z);
             return seg;
         }
 
