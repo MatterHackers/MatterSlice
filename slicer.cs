@@ -67,18 +67,18 @@ namespace MatterHackers.MatterSlice
 
         public void makePolygons(OptimizedVolume optomizedMesh, bool keepNoneClosed, bool extensiveStitching)
         {
-            for (int segmentIndexTryingToAdd = 0; segmentIndexTryingToAdd < segmentList.Count; segmentIndexTryingToAdd++)
+            for (int startingSegmentIndex = 0; startingSegmentIndex < segmentList.Count; startingSegmentIndex++)
             {
-                if (segmentList[segmentIndexTryingToAdd].addedToPolygon)
+                if (segmentList[startingSegmentIndex].addedToPolygon)
                 {
                     continue;
                 }
 
                 Polygon poly = new Polygon();
                 // We start by adding the start, as we will add ends from now on.
-                poly.Add(segmentList[segmentIndexTryingToAdd].start);
+                poly.Add(segmentList[startingSegmentIndex].start);
 
-                int segmentIndexBeingAdded = segmentIndexTryingToAdd;
+                int segmentIndexBeingAdded = startingSegmentIndex;
                 bool canClose;
 
                 int lastSegmentIndex = faceTo2DSegmentIndex.FindMax().Value;
@@ -106,7 +106,7 @@ namespace MatterHackers.MatterSlice
                                 if (diff.IsShorterThen(10))
                                 {
                                     // if we have looped back around to where we started
-                                    if (faceTo2DSegmentIndex[touchingFaceIndex] == segmentIndexTryingToAdd)
+                                    if (faceTo2DSegmentIndex[touchingFaceIndex] == startingSegmentIndex)
                                     {
                                         canClose = true;
                                     }
