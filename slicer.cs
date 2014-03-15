@@ -32,7 +32,8 @@ namespace MatterHackers.MatterSlice
 
     public class SlicerSegment
     {
-        public Point start, end;
+        public Point start;
+        public Point end;
         public int faceIndex;
         public bool addedToPolygon;
     }
@@ -66,37 +67,39 @@ namespace MatterHackers.MatterSlice
 
         public void makePolygons(OptimizedVolume ov, bool keepNoneClosed, bool extensiveStitching)
         {
-            for (int startSegment = 0; startSegment < segmentList.Count; startSegment++)
+            for (int currentSegment = 0; currentSegment < segmentList.Count; currentSegment++)
             {
-                if (segmentList[startSegment].addedToPolygon)
+                if (segmentList[currentSegment].addedToPolygon)
+                {
                     continue;
+                }
 
                 Polygon poly = new Polygon();
-                poly.Add(segmentList[startSegment].start);
+                poly.Add(segmentList[currentSegment].start);
 
-                int segmentIndex = startSegment;
+                int currentSegmentToCheck = currentSegment;
                 bool canClose;
                 while (true)
                 {
                     canClose = false;
-                    segmentList[segmentIndex].addedToPolygon = true;
-                    Point p0 = segmentList[segmentIndex].end;
-                    poly.add(p0);
-                    int nextIndex = -1;
-                    OptimizedFace face = ov.faces[segmentList[segmentIndex].faceIndex];
+                    segmentList[currentSegmentToCheck].addedToPolygon = true;
+                    Point currentSegmentEndPoint = segmentList[currentSegmentToCheck].end;
+                    poly.add(currentSegmentEndPoint);
+                    int nextSegmentToCheck = -1;
+                    OptimizedFace face = ov.faces[segmentList[currentSegmentToCheck].faceIndex];
                     for (int i = 0; i < 3; i++)
                     {
                         if (face.touching[i] > -1)
                         {
-                            int foundIndex = 0;
-                            bool found = faceToSegmentIndex.Find(face.touching[i], out foundIndex);
-                            if (found && foundIndex != faceToSegmentIndex.FindMax().Value)
+                            int touchingSegmentIndex = 0;
+                            bool foundTouchingSegment = faceToSegmentIndex.Find(face.touching[i], out touchingSegmentIndex);
+                            if (foundTouchingSegment && touchingSegmentIndex != faceToSegmentIndex.FindMax().Value)
                             {
                                 IntPoint p1 = segmentList[faceToSegmentIndex[face.touching[i]]].start;
-                                IntPoint diff = p0 - p1;
+                                IntPoint diff = currentSegmentEndPoint - p1;
                                 if (diff.IsShorterThen(10))
                                 {
-                                    if (faceToSegmentIndex[face.touching[i]] == (int)startSegment)
+                                    if (faceToSegmentIndex[face.touching[i]] == (int)currentSegment)
                                     {
                                         canClose = true;
                                     }
@@ -106,20 +109,29 @@ namespace MatterHackers.MatterSlice
                                         continue;
                                     }
 
-                                    nextIndex = faceToSegmentIndex[face.touching[i]];
+                                    nextSegmentToCheck = faceToSegmentIndex[face.touching[i]];
                                 }
                             }
                         }
                     }
-                    if (nextIndex == -1)
+
+                    if (nextSegmentToCheck == -1)
+                    {
                         break;
-                    segmentIndex = nextIndex;
+                    }
+
+                    currentSegmentToCheck = nextSegmentToCheck;
                 }
                 if (canClose)
+                {
                     polygonList.add(poly);
+                }
                 else
+                {
                     openPolygonList.add(poly);
+                }
             }
+
             //Clear the segmentList to save memory, it is no longer needed after this point.
             segmentList.Clear();
 
@@ -369,7 +381,9 @@ namespace MatterHackers.MatterSlice
                 {
                     length += (polygonList[i][n] - polygonList[i][n - 1]).vSize();
                     if (length > snapDistance)
+                    {
                         break;
+                    }
                 }
                 if (length < snapDistance)
                 {
