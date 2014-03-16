@@ -52,7 +52,7 @@ namespace MatterHackers.MatterSlice
             if (verbose_level < 2)
                 return;
 
-            Console.Write(string.Format("Progress:{0}:{1}:{2}\n", type, value, maxValue));
+            Console.Write("Progress:{0}:{1}:{2}\n".FormatWith(type, value, maxValue));
         }
 
         internal static void logPolygons(string p, int layerNr, int p_2, List<Polygon> list)

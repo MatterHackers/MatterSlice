@@ -55,7 +55,7 @@ namespace MatterHackers.MatterSlice
             gcode.setFilename(filename);
             if (gcode.isValid())
             {
-                gcode.addComment("Generated with MatterSlice {0}".FormatWith(ConfigSettings.VERSION)));
+                gcode.addComment("Generated with MatterSlice {0}".FormatWith(ConfigSettings.VERSION));
             }
 
             return gcode.isValid();
@@ -81,7 +81,7 @@ namespace MatterHackers.MatterSlice
             writeGCode(storage);
 
             LogOutput.logProgress("process", 1, 1);
-            LogOutput.log(string.Format("Total time elapsed {0:0.00}s.\n", timeKeeperTotal.Elapsed.Seconds));
+            LogOutput.log("Total time elapsed {0:0.00}s.\n".FormatWith(timeKeeperTotal.Elapsed.Seconds));
 
             return true;
         }
@@ -98,18 +98,18 @@ namespace MatterHackers.MatterSlice
             gcode.setZ(maxObjectHeight + 5000);
             gcode.addMove(gcode.getPositionXY(), config.moveSpeed, 0);
             gcode.addCode(config.endCode);
-            LogOutput.log(string.Format("Print time: {0}\n", (int)(gcode.getTotalPrintTime())));
-            LogOutput.log(string.Format("Filament: {0}\n", (int)(gcode.getTotalFilamentUsed(0))));
-            LogOutput.log(string.Format("Filament2: {0}\n", (int)(gcode.getTotalFilamentUsed(1))));
+            LogOutput.log("Print time: {0}\n".FormatWith((int)(gcode.getTotalPrintTime())));
+            LogOutput.log("Filament: {0}\n".FormatWith((int)(gcode.getTotalFilamentUsed(0))));
+            LogOutput.log("Filament2: {0}\n".FormatWith((int)(gcode.getTotalFilamentUsed(1))));
 
             if (gcode.getFlavor() == ConfigSettings.GCODE_FLAVOR_ULTIGCODE)
             {
                 string numberString;
-                numberString = string.Format("{0}", (int)(gcode.getTotalPrintTime()));
+                numberString = "{0}".FormatWith((int)(gcode.getTotalPrintTime()));
                 gcode.replaceTagInStart("<__TIME__>", numberString);
-                numberString = string.Format("{0}", (int)(gcode.getTotalFilamentUsed(0)));
+                numberString = "{0}".FormatWith((int)(gcode.getTotalFilamentUsed(0)));
                 gcode.replaceTagInStart("<FILAMENT>", numberString);
-                numberString = string.Format("{0}", (int)(gcode.getTotalFilamentUsed(1)));
+                numberString = "{0}".FormatWith((int)(gcode.getTotalFilamentUsed(1)));
                 gcode.replaceTagInStart("<FILAMEN2>", numberString);
             }
 
@@ -133,28 +133,28 @@ namespace MatterHackers.MatterSlice
         bool prepareModel(SliceDataStorage storage, string input_filename)
         {
             timeKeeper.Restart();
-            LogOutput.log(string.Format("Loading {0} from disk...\n", input_filename));
+            LogOutput.log("Loading {0} from disk...\n".FormatWith(input_filename));
             SimpleModel m = SimpleModel.loadModel(input_filename, config.matrix);
             if (m == null)
             {
-                LogOutput.logError(string.Format("Failed to load model: {0}\n", input_filename));
+                LogOutput.logError("Failed to load model: {0}\n".FormatWith(input_filename));
                 return false;
             }
-            LogOutput.log(string.Format("Loaded from disk in {0:0.000}s\n", timeKeeper.Elapsed.Seconds));
+            LogOutput.log("Loaded from disk in {0:0.000}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();
             LogOutput.log("Analyzing and optimizing model...\n");
             OptimizedModel om = new OptimizedModel(m, new Point3(config.objectPosition.X, config.objectPosition.Y, -config.objectSink));
             for (int v = 0; v < m.volumes.Count; v++)
             {
-                LogOutput.log(string.Format("  Face counts: {0} . {1} {2:0.0}%\n", (int)m.volumes[v].faces.Count, (int)om.volumes[v].faces.Count, (double)(om.volumes[v].faces.Count) / (double)(m.volumes[v].faces.Count) * 100));
-                LogOutput.log(string.Format("  Vertex counts: {0} . {1} {2:0.0}%\n", (int)m.volumes[v].faces.Count * 3, (int)om.volumes[v].points.Count, (double)(om.volumes[v].points.Count) / (double)(m.volumes[v].faces.Count * 3) * 100));
+                LogOutput.log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)m.volumes[v].faces.Count, (int)om.volumes[v].faces.Count, (double)(om.volumes[v].faces.Count) / (double)(m.volumes[v].faces.Count) * 100));
+                LogOutput.log("  Vertex counts: {0} . {1} {2:0.0}%\n".FormatWith((int)m.volumes[v].faces.Count * 3, (int)om.volumes[v].points.Count, (double)(om.volumes[v].points.Count) / (double)(m.volumes[v].faces.Count * 3) * 100));
             }
 
 #if !DEBUG
             m = null;
 #endif
 
-            LogOutput.log(string.Format("Optimize model {0:0.000}s \n", timeKeeper.Elapsed.Seconds));
+            LogOutput.log("Optimize model {0:0.000}s \n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Reset();
 #if DEBUG
             om.saveDebugSTL("debug_output.stl");
@@ -175,7 +175,7 @@ namespace MatterHackers.MatterSlice
                     LogOutput.logPolygons("openoutline", layerNr, slicer.layers[layerNr].z, slicer.layers[layerNr].openPolygonList);
                 }
             }
-            LogOutput.log(string.Format("Sliced model in {0:0.000}s\n", timeKeeper.Elapsed.Seconds));
+            LogOutput.log("Sliced model in {0:0.000}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();
 
             LogOutput.log("Generating support map...\n");
@@ -195,7 +195,7 @@ namespace MatterHackers.MatterSlice
                 LayerPart.createLayerParts(storage.volumes[volumeIdx], slicerList[volumeIdx], config.fixHorrible & (ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_A | ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_B | ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_C));
                 slicerList[volumeIdx] = null;
             }
-            LogOutput.log(string.Format("Generated layer parts in {0:0.000}s\n", timeKeeper.Elapsed.Seconds));
+            LogOutput.log("Generated layer parts in {0:0.000}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();
             return true;
         }
@@ -263,7 +263,7 @@ namespace MatterHackers.MatterSlice
                     storage.oozeShield[layerNr - 1] = storage.oozeShield[layerNr - 1].unionPolygons(storage.oozeShield[layerNr].offset(-offsetAngle));
                 }
             }
-            LogOutput.log(string.Format("Generated inset in {0:0.000}s\n", timeKeeper.Elapsed.Seconds));
+            LogOutput.log("Generated inset in {0:0.000}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();
 
             for (int layerNr = 0; layerNr < totalLayers; layerNr++)
@@ -282,7 +282,7 @@ namespace MatterHackers.MatterSlice
                 }
                 LogOutput.logProgress("skin", layerNr + 1, totalLayers);
             }
-            LogOutput.log(string.Format("Generated up/down skin in {0:0.000}s\n", timeKeeper.Elapsed.Seconds));
+            LogOutput.log("Generated up/down skin in {0:0.000}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();
 
             if (config.wipeTowerSize > 0)
@@ -338,7 +338,7 @@ namespace MatterHackers.MatterSlice
             fileNr++;
 
             int totalLayers = storage.volumes[0].layers.Count;
-            gcode.addComment(string.Format("Layer count: {0}", totalLayers));
+            gcode.addComment("Layer count: {0}".FormatWith(totalLayers));
 
             if (config.raftBaseThickness > 0 && config.raftInterfaceThickness > 0)
             {
@@ -379,7 +379,7 @@ namespace MatterHackers.MatterSlice
             {
                 LogOutput.logProgress("export", layerNr + 1, totalLayers);
 
-                gcode.addComment(string.Format("LAYER:{0}", layerNr));
+                gcode.addComment("LAYER:{0}".FormatWith(layerNr));
                 if (layerNr == 0)
                     gcode.setExtrusion(config.initialLayerThickness, config.filamentDiameter, config.filamentFlow);
                 else
@@ -449,7 +449,7 @@ namespace MatterHackers.MatterSlice
             }
             //*/
 
-            LogOutput.log(string.Format("Wrote layers in {0:0.00}s.\n", timeKeeper.Elapsed.Seconds));
+            LogOutput.log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();
             gcode.tellFileSize();
             gcode.addFanCommand(0);

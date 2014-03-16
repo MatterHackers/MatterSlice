@@ -182,12 +182,12 @@ namespace MatterHackers.MatterSlice
 
         public void addComment(string comment)
         {
-            f.Write(string.Format(";{0}\n", comment));
+            f.Write(";{0}\n".FormatWith(comment));
         }
 
         public void addLine(string line)
         {
-            f.Write(string.Format(";{0}\n", line));
+            f.Write(";{0}\n".FormatWith(line));
         }
 
         public void resetExtrusionValue()
@@ -203,7 +203,7 @@ namespace MatterHackers.MatterSlice
 
         public void addDelay(double timeAmount)
         {
-            f.Write(string.Format("G4 P{0}\n", (int)(timeAmount * 1000)));
+            f.Write("G4 P{0}\n".FormatWith((int)(timeAmount * 1000)));
             totalPrintTime += timeAmount;
         }
 
@@ -220,7 +220,7 @@ namespace MatterHackers.MatterSlice
                     }
                     else
                     {
-                        f.Write(string.Format("G1 F{0} E{0:0.00000}\n", retractionSpeed * 60, extrusionAmount));
+                        f.Write("G1 F{0} E{0:0.00000}\n".FormatWith(retractionSpeed * 60, extrusionAmount));
                         currentSpeed = retractionSpeed;
                         estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(p.X) / 1000.0, (p.Y) / 1000.0, (double)(zPos) / 1000.0, extrusionAmount), currentSpeed);
                     }
@@ -238,14 +238,14 @@ namespace MatterHackers.MatterSlice
 
             if (currentSpeed != speed)
             {
-                f.Write(string.Format(" F{0}", speed * 60));
+                f.Write(" F{0}".FormatWith(speed * 60));
                 currentSpeed = speed;
             }
-            f.Write(string.Format(" X{0:0.00} Y{1:0.00}", (float)(p.X - extruderOffset[extruderNr].X) / 1000, (float)(p.Y - extruderOffset[extruderNr].Y) / 1000));
+            f.Write(" X{0:0.00} Y{1:0.00}".FormatWith((float)(p.X - extruderOffset[extruderNr].X) / 1000, (float)(p.Y - extruderOffset[extruderNr].Y) / 1000));
             if (zPos != currentPosition.z)
-                f.Write(string.Format(" Z{0:0.00}", (float)(zPos) / 1000));
+                f.Write(" Z{0:0.00}".FormatWith((float)(zPos) / 1000));
             if (lineWidth != 0)
-                f.Write(string.Format(" E{0:0.00000}", extrusionAmount));
+                f.Write(" E{0:0.00000}".FormatWith(extrusionAmount));
             f.Write("\n");
 
             currentPosition = new Point3(p.X, p.Y, zPos);
@@ -262,7 +262,7 @@ namespace MatterHackers.MatterSlice
                 }
                 else
                 {
-                    f.Write(string.Format("G1 F{0} E{1:0.00000}\n", retractionSpeed * 60, extrusionAmount - retractionAmount));
+                    f.Write("G1 F{0} E{1:0.00000}\n".FormatWith(retractionSpeed * 60, extrusionAmount - retractionAmount));
                     currentSpeed = retractionSpeed;
                     estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition.x) / 1000.0, (currentPosition.y) / 1000.0, (double)(currentPosition.z) / 1000.0, extrusionAmount - retractionAmount), currentSpeed);
                 }
@@ -290,14 +290,14 @@ namespace MatterHackers.MatterSlice
             }
             isRetracted = true;
             if (flavor == ConfigSettings.GCODE_FLAVOR_MAKERBOT)
-                f.Write(string.Format("M135 T{0}\n", extruderNr));
+                f.Write("M135 T{0}\n".FormatWith(extruderNr));
             else
-                f.Write(string.Format("T{0}\n", extruderNr));
+                f.Write("T{0}\n".FormatWith(extruderNr));
         }
 
         public void addCode(string str)
         {
-            f.Write(string.Format("{0}\n", str));
+            f.Write("{0}\n".FormatWith(str));
         }
 
         public void addFanCommand(int speed)
@@ -307,9 +307,9 @@ namespace MatterHackers.MatterSlice
             if (speed > 0)
             {
                 if (flavor == ConfigSettings.GCODE_FLAVOR_MAKERBOT)
-                    f.Write(string.Format("M126 T0 ; value = {0}\n", speed * 255 / 100));
+                    f.Write("M126 T0 ; value = {0}\n".FormatWith(speed * 255 / 100));
                 else
-                    f.Write(string.Format("M106 S{0}\n", speed * 255 / 100));
+                    f.Write("M106 S{0}\n".FormatWith(speed * 255 / 100));
             }
             else
             {
@@ -332,12 +332,12 @@ namespace MatterHackers.MatterSlice
             if (fsize > 1024 * 1024)
             {
                 fsize /= 1024.0 * 1024.0;
-                LogOutput.log(string.Format("Wrote {0:0.0} MB.\n", fsize));
+                LogOutput.log("Wrote {0:0.0} MB.\n".FormatWith(fsize));
             }
             if (fsize > 1024)
             {
                 fsize /= 1024.0;
-                LogOutput.log(string.Format("Wrote {0:0.0} kilobytes.\n", fsize));
+                LogOutput.log("Wrote {0:0.0} kilobytes.\n".FormatWith(fsize));
             }
         }
 
@@ -641,7 +641,7 @@ namespace MatterHackers.MatterSlice
                 }
                 if (path.config != travelConfig && lastConfig != path.config)
                 {
-                    gcode.addComment(string.Format("TYPE:{0}", path.config.name));
+                    gcode.addComment("TYPE:{0}".FormatWith(path.config.name));
                     lastConfig = path.config;
                 }
                 int speed = path.config.speed;
@@ -733,7 +733,7 @@ namespace MatterHackers.MatterSlice
             gcode.updateTotalPrintTime();
             if (liftHeadIfNeeded && extraTime > 0.0)
             {
-                gcode.addComment(string.Format("Small layer, adding delay of {0}", extraTime));
+                gcode.addComment("Small layer, adding delay of {0}".FormatWith(extraTime));
                 gcode.addRetraction();
                 gcode.setZ(gcode.getPositionZ() + 3000);
                 gcode.addMove(gcode.getPositionXY(), travelConfig.speed, 0);

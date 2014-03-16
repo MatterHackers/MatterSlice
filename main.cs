@@ -113,7 +113,7 @@ namespace MatterHackers.MatterSlice
                 "M84                         ;steppers off\n" +
                 "G90                         ;absolute positioning\n";
 
-            Console.WriteLine(string.Format("MatterSlice version {0}", ConfigSettings.VERSION));
+            Console.WriteLine("MatterSlice version {0}".FormatWith(ConfigSettings.VERSION));
 
             for (int argn = 0; argn < args.Length; argn++)
             {
@@ -141,7 +141,7 @@ namespace MatterHackers.MatterSlice
                                 argn++;
                                 if (!processor.setTargetFile(args[argn]))
                                 {
-                                    LogOutput.logError(string.Format("Failed to open {0} for output.\n", args[argn]));
+                                    LogOutput.logError("Failed to open {0} for output.\n".FormatWith(args[argn]));
                                     return 1;
                                 }
                                 break;
@@ -172,7 +172,7 @@ namespace MatterHackers.MatterSlice
 #endif
                                 break;
                             default:
-                                LogOutput.logError(string.Format("Unknown option: {0}\n", str));
+                                LogOutput.logError("Unknown option: {0}\n".FormatWith(str));
                                 break;
                         }
                     }
@@ -188,8 +188,8 @@ namespace MatterHackers.MatterSlice
 #if !DEBUG
                     catch (Exception e)
                     {
-                        Console.Write(string.Format("{0}", e));
-                        Console.Write(string.Format("InnerException: {0}", e.InnerException));
+                        Console.Write("{0}".FormatWith( e));
+                        Console.Write("InnerException: {0}".FormatWith( e.InnerException));
                         return 1;
                     }
 #endif
