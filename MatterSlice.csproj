@@ -62,6 +62,7 @@
     <Compile Include="Settings.cs" />
     <Compile Include="timeEstimate.cs" />
     <Compile Include="utils\intpoint.cs" />
+    <Compile Include="utils\StringHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="fffProcessor.cs" />

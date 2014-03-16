@@ -55,7 +55,7 @@ namespace MatterHackers.MatterSlice
             gcode.setFilename(filename);
             if (gcode.isValid())
             {
-                gcode.addComment(string.Format("Generated with MatterSlice {0}", ConfigSettings.VERSION));
+                gcode.addComment("Generated with MatterSlice {0}".FormatWith(ConfigSettings.VERSION)));
             }
 
             return gcode.isValid();
