@@ -23,7 +23,6 @@ using System.Diagnostics;
 using System.IO;
 
 using ClipperLib;
-using C5;
 
 namespace MatterHackers.MatterSlice
 {
@@ -59,7 +58,7 @@ namespace MatterHackers.MatterSlice
     public class SlicerLayer
     {
         public List<SlicerSegment> segmentList = new List<SlicerSegment>();
-        public TreeDictionary<int, int> faceTo2DSegmentIndex = new TreeDictionary<int,int>();
+        public Dictionary<int, int> faceTo2DSegmentIndex = new Dictionary<int, int>();
 
         public int z;
         public Polygons polygonList = new Polygons();
@@ -94,11 +93,11 @@ namespace MatterHackers.MatterSlice
                         int touchingFaceIndex = face.touching[connectedFaceIndex];
                         if (touchingFaceIndex > -1)
                         {
-                            int foundTouching2DSegmentIndex = 0;
-                            bool foundTouching2DSegment = faceTo2DSegmentIndex.Find(touchingFaceIndex, out foundTouching2DSegmentIndex);
+                            
                             // If the connected face has an edge that is in the segment list
-                            if (foundTouching2DSegment)
+                            if (faceTo2DSegmentIndex.ContainsKey(touchingFaceIndex))
                             {
+                                int foundTouching2DSegmentIndex = faceTo2DSegmentIndex[touchingFaceIndex];
                                 IntPoint foundSegmentStart = segmentList[faceTo2DSegmentIndex[touchingFaceIndex]].start;
                                 IntPoint diff = addedSegmentEndPoint - foundSegmentStart;
                                 if (diff.IsShorterThen(10))
