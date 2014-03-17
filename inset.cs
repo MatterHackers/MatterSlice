@@ -25,14 +25,11 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
-    using PolygonRef = Polygon;
-
     public static class Inset
     {
         public static void generateInsets(SliceLayerPart part, int offset, int insetCount)
         {
-            part.combBoundery = part.outline.offset(-offset);
+            part.combBoundery = part.outline.Offset(-offset);
             if (insetCount == 0)
             {
                 part.insets.Add(part.outline);
@@ -42,7 +39,7 @@ namespace MatterHackers.MatterSlice
             for (int i = 0; i < insetCount; i++)
             {
                 part.insets.Add(new Polygons());
-                part.insets[i] = part.outline.offset(-offset * i - offset / 2);
+                part.insets[i] = part.outline.Offset(-offset * i - offset / 2);
                 PolygonOptimizer.optimizePolygons(part.insets[i]);
                 if (part.insets[i].Count < 1)
                 {

@@ -25,9 +25,6 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
-    using PolygonRef = Polygon;
-
     public class Skirt
     {
         public static void generateSkirt(SliceDataStorage storage, int distance, int extrusionWidth, int count, int minLength, int initialLayerHeight)
@@ -36,29 +33,29 @@ namespace MatterHackers.MatterSlice
             {
                 int offsetDistance = distance + extrusionWidth * skirtNr + extrusionWidth / 2;
 
-                Polygons skirtPolygons = new Polygons(storage.wipeTower.offset(offsetDistance));
+                Polygons skirtPolygons = new Polygons(storage.wipeTower.Offset(offsetDistance));
                 for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
                 {
                     if (storage.volumes[volumeIdx].layers.Count < 1) continue;
                     SliceLayer layer = storage.volumes[volumeIdx].layers[0];
                     for (int i = 0; i < layer.parts.Count; i++)
                     {
-                        skirtPolygons = skirtPolygons.unionPolygons(layer.parts[i].outline.offset(offsetDistance));
+                        skirtPolygons = skirtPolygons.CreateUnion(layer.parts[i].outline.Offset(offsetDistance));
                     }
                 }
 
                 SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, initialLayerHeight);
-                skirtPolygons = skirtPolygons.unionPolygons(supportGenerator.polygons.offset(offsetDistance));
+                skirtPolygons = skirtPolygons.CreateUnion(supportGenerator.polygons.Offset(offsetDistance));
 
                 //Remove small inner skirt holes. Holes have a negative area, remove anything smaller then 100x extrusion "area"
                 for (int n = 0; n < skirtPolygons.Count; n++)
                 {
-                    double area = skirtPolygons[n].area();
+                    double area = skirtPolygons[n].Area();
                     if (area < 0 && area > -extrusionWidth * extrusionWidth * 100)
-                        skirtPolygons.remove(n--);
+                        skirtPolygons.RemoveAt(n--);
                 }
 
-                storage.skirt.add(skirtPolygons);
+                storage.skirt.AddAll(skirtPolygons);
 
                 int lenght = (int)storage.skirt.polygonLength();
                 if (skirtNr + 1 >= count && lenght > 0 && lenght < minLength)

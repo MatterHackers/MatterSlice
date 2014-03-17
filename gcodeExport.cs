@@ -25,9 +25,6 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
-    using PolygonRef = Polygon;
-
     public class GCodeExport
     {
         StreamWriter f;
@@ -38,7 +35,7 @@ namespace MatterHackers.MatterSlice
         double minimalExtrusionBeforeRetraction;
         double extrusionAmountAtPreviousRetraction;
         Point3 currentPosition;
-        Point[] extruderOffset = new Point[ConfigSettings.MAX_EXTRUDERS];
+        IntPoint[] extruderOffset = new IntPoint[ConfigSettings.MAX_EXTRUDERS];
         int currentSpeed, retractionSpeed;
         int zPos;
         bool isRetracted;
@@ -97,7 +94,7 @@ namespace MatterHackers.MatterSlice
 #endif
         }
 
-        public void setExtruderOffset(int id, Point p)
+        public void setExtruderOffset(int id, IntPoint p)
         {
             extruderOffset[id] = p;
         }
@@ -144,9 +141,9 @@ namespace MatterHackers.MatterSlice
             this.zPos = z;
         }
 
-        public Point getPositionXY()
+        public IntPoint getPositionXY()
         {
-            return new Point(currentPosition.x, currentPosition.y);
+            return new IntPoint(currentPosition.x, currentPosition.y);
         }
 
         public int getPositionZ()
@@ -207,11 +204,11 @@ namespace MatterHackers.MatterSlice
             totalPrintTime += timeAmount;
         }
 
-        public void addMove(Point p, int speed, int lineWidth)
+        public void addMove(IntPoint p, int speed, int lineWidth)
         {
             if (lineWidth != 0)
             {
-                Point diff = p - getPositionXY();
+                IntPoint diff = p - getPositionXY();
                 if (isRetracted)
                 {
                     if (flavor == ConfigSettings.GCODE_FLAVOR_ULTIGCODE)
@@ -371,7 +368,7 @@ namespace MatterHackers.MatterSlice
         public GCodePathConfig config;
         public bool retract;
         public int extruder;
-        public List<Point> points = new List<Point>();
+        public List<IntPoint> points = new List<IntPoint>();
         public bool done;//Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
     }
 
@@ -379,7 +376,7 @@ namespace MatterHackers.MatterSlice
     {
         GCodeExport gcode = new GCodeExport();
 
-        Point lastPosition;
+        IntPoint lastPosition;
         List<GCodePath> paths = new List<GCodePath>();
         Comb comb;
 
@@ -482,7 +479,7 @@ namespace MatterHackers.MatterSlice
             return this.travelSpeedFactor;
         }
 
-        public void addTravel(Point p)
+        public void addTravel(IntPoint p)
         {
             GCodePath path = getLatestPathWithConfig(travelConfig);
             if (forceRetraction)
@@ -495,7 +492,7 @@ namespace MatterHackers.MatterSlice
             }
             else if (comb != null)
             {
-                List<Point> pointList = new List<Point>();
+                List<IntPoint> pointList = new List<IntPoint>();
                 if (comb.calc(lastPosition, p, pointList))
                 {
                     for (int n = 0; n < pointList.Count; n++)
@@ -518,7 +515,7 @@ namespace MatterHackers.MatterSlice
             lastPosition = p;
         }
 
-        public void addExtrusionMove(Point p, GCodePathConfig config)
+        public void addExtrusionMove(IntPoint p, GCodePathConfig config)
         {
             getLatestPathWithConfig(config).points.Add(p);
             lastPosition = p;
@@ -527,7 +524,7 @@ namespace MatterHackers.MatterSlice
         public void moveInsideCombBoundary(int distance)
         {
             if (comb == null || comb.checkInside(lastPosition)) return;
-            Point p = lastPosition;
+            IntPoint p = lastPosition;
             if (comb.moveInside(p, distance))
             {
                 //Move inside again, so we move out of tight 90deg corners
@@ -541,13 +538,13 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        public void addPolygon(PolygonRef polygon, int startIdx, GCodePathConfig config)
+        public void addPolygon(Polygon polygon, int startIdx, GCodePathConfig config)
         {
-            Point p0 = polygon[startIdx];
+            IntPoint p0 = polygon[startIdx];
             addTravel(p0);
             for (int i = 1; i < polygon.Count; i++)
             {
-                Point p1 = polygon[(startIdx + i) % polygon.Count];
+                IntPoint p1 = polygon[(startIdx + i) % polygon.Count];
                 addExtrusionMove(p1, config);
                 p0 = p1;
             }
@@ -574,7 +571,7 @@ namespace MatterHackers.MatterSlice
 
         public void forceMinimalLayerTime(double minTime, int minimalSpeed)
         {
-            Point p0 = gcode.getPositionXY();
+            IntPoint p0 = gcode.getPositionXY();
             double travelTime = 0.0;
             double extrudeTime = 0.0;
             for (int n = 0; n < paths.Count; n++)
@@ -658,7 +655,7 @@ namespace MatterHackers.MatterSlice
                 if (path.points.Count == 1 && path.config != travelConfig && (gcode.getPositionXY() - path.points[0]).shorterThen(path.config.lineWidth * 2))
                 {
                     //Check for lots of small moves and combine them into one large line
-                    Point p0 = path.points[0];
+                    IntPoint p0 = path.points[0];
                     int i = n + 1;
                     while (i < paths.Count && paths[i].points.Count == 1 && (p0 - paths[i].points[0]).shorterThen(path.config.lineWidth * 2))
                     {
@@ -676,7 +673,7 @@ namespace MatterHackers.MatterSlice
                         for (int x = n; x < i - 1; x += 2)
                         {
                             long oldLen = (p0 - paths[x].points[0]).vSize();
-                            Point newPoint = (paths[x].points[0] + paths[x + 1].points[0]) / 2;
+                            IntPoint newPoint = (paths[x].points[0] + paths[x + 1].points[0]) / 2;
                             long newLen = (gcode.getPositionXY() - newPoint).vSize();
                             if (newLen > 0)
                             {
@@ -706,10 +703,10 @@ namespace MatterHackers.MatterSlice
                     //If we need to spiralize then raise the head slowly by 1 layer as this path progresses.
                     double totalLength = 0;
                     int z = gcode.getPositionZ();
-                    Point p0 = gcode.getPositionXY();
+                    IntPoint p0 = gcode.getPositionXY();
                     for (int i = 0; i < path.points.Count; i++)
                     {
-                        Point p1 = path.points[i];
+                        IntPoint p1 = path.points[i];
                         totalLength += (p0 - p1).vSizeMM();
                         p0 = p1;
                     }
@@ -718,7 +715,7 @@ namespace MatterHackers.MatterSlice
                     p0 = gcode.getPositionXY();
                     for (int i = 0; i < path.points.Count; i++)
                     {
-                        Point p1 = path.points[i];
+                        IntPoint p1 = path.points[i];
                         length += (p0 - p1).vSizeMM();
                         p0 = p1;
                         gcode.setZ((int)(z + layerThickness * length / totalLength));
@@ -741,7 +738,7 @@ namespace MatterHackers.MatterSlice
                 gcode.addRetraction();
                 gcode.setZ(gcode.getPositionZ() + 3000);
                 gcode.addMove(gcode.getPositionXY(), travelConfig.speed, 0);
-                gcode.addMove(gcode.getPositionXY() - new Point(-20000, 0), travelConfig.speed, 0);
+                gcode.addMove(gcode.getPositionXY() - new IntPoint(-20000, 0), travelConfig.speed, 0);
                 gcode.addDelay(extraTime);
             }
         }

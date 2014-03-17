@@ -25,25 +25,22 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
-    using PolygonRef = Polygon;
-
     public static class Raft
     {
         public static void generateRaft(SliceDataStorage storage, int distance)
         {
-            for(int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
+            for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
             {
                 if (storage.volumes[volumeIdx].layers.Count < 1) continue;
                 SliceLayer layer = storage.volumes[volumeIdx].layers[0];
-                for(int i=0; i<layer.parts.Count; i++)
+                for (int i = 0; i < layer.parts.Count; i++)
                 {
-                    storage.raftOutline = storage.raftOutline.unionPolygons(layer.parts[i].outline.offset(distance));
+                    storage.raftOutline = storage.raftOutline.CreateUnion(layer.parts[i].outline.Offset(distance));
                 }
             }
 
             SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, 0);
-            storage.raftOutline = storage.raftOutline.unionPolygons(supportGenerator.polygons);
+            storage.raftOutline = storage.raftOutline.CreateUnion(supportGenerator.polygons);
         }
     }
 }

@@ -25,22 +25,19 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
-    using PolygonRef = Polygon;
-
     public class PathOrderOptimizer
     {
-        public Point startPoint;
-        public List<PolygonRef> polygons = new List<PolygonRef>();
+        public IntPoint startPoint;
+        public List<Polygon> polygons = new List<Polygon>();
         public List<int> polyStart = new List<int>();
         public List<int> polyOrder = new List<int>();
 
-        public PathOrderOptimizer(Point startPoint)
+        public PathOrderOptimizer(IntPoint startPoint)
         {
             this.startPoint = startPoint;
         }
 
-        public void addPolygon(PolygonRef polygon)
+        public void addPolygon(Polygon polygon)
         {
             this.polygons.Add(polygon);
         }
@@ -58,7 +55,7 @@ namespace MatterHackers.MatterSlice
             {
                 int bestPoint = -1;
                 float closestDist = float.MaxValue;
-                PolygonRef poly = polygons[polygonIndex];
+                Polygon poly = polygons[polygonIndex];
                 for (int pointIndex = 0; pointIndex < poly.Count; pointIndex++)
                 {
                     float dist = (poly[pointIndex] - startPoint).vSize2f();
@@ -72,7 +69,7 @@ namespace MatterHackers.MatterSlice
                 picked.Add(false);
             }
 
-            Point p0 = startPoint;
+            IntPoint p0 = startPoint;
             for (int n = 0; n < polygons.Count; n++)
             {
                 int best = -1;

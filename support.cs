@@ -25,9 +25,6 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
-    using PolygonRef = Polygon;
-
     public class SupportPolyGenerator
     {
         public Polygons polygons = new Polygons();
@@ -152,7 +149,7 @@ namespace MatterHackers.MatterSlice
             storage.gridOffset.Y += storage.gridScale / 2;
         }
 
-        public bool needSupportAt(Point p)
+        public bool needSupportAt(IntPoint p)
         {
             if (p.X < 1) return false;
             if (p.Y < 1) return false;
@@ -184,7 +181,7 @@ namespace MatterHackers.MatterSlice
             return true;
         }
 
-        public void lazyFill(Point startPoint)
+        public void lazyFill(IntPoint startPoint)
         {
             int nr = 0;
             nr++;
@@ -195,15 +192,15 @@ namespace MatterHackers.MatterSlice
 
             while (true)
             {
-                Point p = startPoint;
+                IntPoint p = startPoint;
                 done[p.X + p.Y * storage.gridWidth] = nr;
-                while (needSupportAt(p + new Point(1, 0)))
+                while (needSupportAt(p + new IntPoint(1, 0)))
                 {
                     p.X++;
                     done[p.X + p.Y * storage.gridWidth] = nr;
                 }
-                tmpPoly.add(startPoint * storage.gridScale + storage.gridOffset - new Point(storage.gridScale / 2, 0));
-                poly.add(p * storage.gridScale + storage.gridOffset);
+                tmpPoly.Add(startPoint * storage.gridScale + storage.gridOffset - new IntPoint(storage.gridScale / 2, 0));
+                poly.Add(p * storage.gridScale + storage.gridOffset);
                 startPoint.Y++;
                 while (!needSupportAt(startPoint) && startPoint.X <= p.X)
                     startPoint.X++;
@@ -211,12 +208,12 @@ namespace MatterHackers.MatterSlice
                 {
                     for (int n = 0; n < tmpPoly.Count; n++)
                     {
-                        poly.add(tmpPoly[tmpPoly.Count - n - 1]);
+                        poly.Add(tmpPoly[tmpPoly.Count - n - 1]);
                     }
-                    polygons.add(poly);
+                    polygons.Add(poly);
                     return;
                 }
-                while (needSupportAt(startPoint - new Point(1, 0)) && startPoint.X > 1)
+                while (needSupportAt(startPoint - new IntPoint(1, 0)) && startPoint.X > 1)
                     startPoint.X--;
             }
         }
@@ -239,15 +236,15 @@ namespace MatterHackers.MatterSlice
             {
                 for (int x = 1; x < storage.gridWidth; x++)
                 {
-                    if (!needSupportAt(new Point(x, y)) || done[x + y * storage.gridWidth] != 0) continue;
+                    if (!needSupportAt(new IntPoint(x, y)) || done[x + y * storage.gridWidth] != 0) continue;
 
-                    lazyFill(new Point(x, y));
+                    lazyFill(new IntPoint(x, y));
                 }
             }
 
             done = null;
 
-            polygons = polygons.offset(storage.XYDistance);
+            polygons = polygons.Offset(storage.XYDistance);
         }
     }
 }

@@ -25,9 +25,6 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
-    using PolygonRef = Polygon;
-
     public static class Bridge
     {
         public static int bridgeAngle(SliceLayerPart part, SliceLayer prevLayer)
@@ -37,12 +34,18 @@ namespace MatterHackers.MatterSlice
             Polygons islands = new Polygons();
             for (int n = 0; n < prevLayer.parts.Count; n++)
             {
-                if (!part.boundaryBox.hit(prevLayer.parts[n].boundaryBox)) continue;
+                if (!part.boundaryBox.hit(prevLayer.parts[n].boundaryBox))
+                {
+                    continue;
+                }
 
-                islands.AddRange(part.outline.intersection(prevLayer.parts[n].outline));
+                islands.AddRange(part.outline.CreateIntersection(prevLayer.parts[n].outline));
             }
+
             if (islands.Count > 5)
+            {
                 return -1;
+            }
 
             //Next find the 2 largest islands that we rest on.
             double area1 = 0;
@@ -52,9 +55,12 @@ namespace MatterHackers.MatterSlice
             for (int n = 0; n < islands.Count; n++)
             {
                 //Skip internal holes
-                if (!islands[n].orientation())
+                if (!islands[n].Orientation())
+                {
                     continue;
-                double area = Math.Abs(islands[n].area());
+                }
+
+                double area = Math.Abs(islands[n].Area());
                 if (area > area1)
                 {
                     if (area1 > area2)
@@ -73,13 +79,19 @@ namespace MatterHackers.MatterSlice
             }
 
             if (idx1 < 0 || idx2 < 0)
+            {
                 return -1;
+            }
 
-            Point center1 = islands[idx1].centerOfMass();
-            Point center2 = islands[idx2].centerOfMass();
+            IntPoint center1 = islands[idx1].centerOfMass();
+            IntPoint center2 = islands[idx2].centerOfMass();
 
             double angle = Math.Atan2(center2.X - center1.X, center2.Y - center1.Y) / Math.PI * 180;
-            if (angle < 0) angle += 360;
+            if (angle < 0)
+            {
+                angle += 360;
+            }
+
             return (int)angle;
         }
     }

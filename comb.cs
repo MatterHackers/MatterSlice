@@ -25,7 +25,6 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
     public class Comb
     {
         Polygons boundery;
@@ -36,17 +35,17 @@ namespace MatterHackers.MatterSlice
         int[] maxIdx;
 
         PointMatrix matrix;
-        Point sp;
-        Point ep;
+        IntPoint sp;
+        IntPoint ep;
 
-        bool preTest(Point startPoint, Point endPoint)
+        bool preTest(IntPoint startPoint, IntPoint endPoint)
         {
             return collisionTest(startPoint, endPoint);
         }
 
-        bool collisionTest(Point startPoint, Point endPoint)
+        bool collisionTest(IntPoint startPoint, IntPoint endPoint)
         {
-            Point diff = endPoint - startPoint;
+            IntPoint diff = endPoint - startPoint;
 
             matrix = new PointMatrix(diff);
             sp = matrix.apply(startPoint);
@@ -56,10 +55,10 @@ namespace MatterHackers.MatterSlice
             {
                 if (boundery[n].Count < 1)
                     continue;
-                Point p0 = matrix.apply(boundery[n][boundery[n].Count - 1]);
+                IntPoint p0 = matrix.apply(boundery[n][boundery[n].Count - 1]);
                 for (int i = 0; i < boundery[n].Count; i++)
                 {
-                    Point p1 = matrix.apply(boundery[n][i]);
+                    IntPoint p1 = matrix.apply(boundery[n][i]);
                     if ((p0.Y > sp.Y && p1.Y < sp.Y) || (p1.Y > sp.Y && p0.Y < sp.Y))
                     {
                         long x = p0.X + (p1.X - p0.X) * (sp.Y - p0.Y) / (p1.Y - p0.Y);
@@ -79,10 +78,10 @@ namespace MatterHackers.MatterSlice
             {
                 minX[n] = long.MaxValue;
                 maxX[n] = long.MinValue;
-                Point p0 = matrix.apply(boundery[n][boundery[n].Count - 1]);
+                IntPoint p0 = matrix.apply(boundery[n][boundery[n].Count - 1]);
                 for (int i = 0; i < boundery[n].Count; i++)
                 {
-                    Point p1 = matrix.apply(boundery[n][i]);
+                    IntPoint p1 = matrix.apply(boundery[n][i]);
                     if ((p0.Y > sp.Y && p1.Y < sp.Y) || (p1.Y > sp.Y && p0.Y < sp.Y))
                     {
                         long x = p0.X + (p1.X - p0.X) * (sp.Y - p0.Y) / (p1.Y - p0.Y);
@@ -113,15 +112,15 @@ namespace MatterHackers.MatterSlice
             return ret;
         }
 
-        Point getBounderyPointWithOffset(int polygonNr, int idx)
+        IntPoint getBounderyPointWithOffset(int polygonNr, int idx)
         {
-            Point p0 = boundery[polygonNr][(idx > 0) ? (idx - 1) : (boundery[polygonNr].Count - 1)];
-            Point p1 = boundery[polygonNr][idx];
-            Point p2 = boundery[polygonNr][(idx < (boundery[polygonNr].Count - 1)) ? (idx + 1) : (0)];
+            IntPoint p0 = boundery[polygonNr][(idx > 0) ? (idx - 1) : (boundery[polygonNr].Count - 1)];
+            IntPoint p1 = boundery[polygonNr][idx];
+            IntPoint p2 = boundery[polygonNr][(idx < (boundery[polygonNr].Count - 1)) ? (idx + 1) : (0)];
 
-            Point off0 = ((p1 - p0).normal(1000)).crossZ();
-            Point off1 = ((p2 - p1).normal(1000)).crossZ();
-            Point n = (off0 + off1).normal(200);
+            IntPoint off0 = ((p1 - p0).normal(1000)).crossZ();
+            IntPoint off1 = ((p2 - p1).normal(1000)).crossZ();
+            IntPoint n = (off0 + off1).normal(200);
 
             return p1 + n;
         }
@@ -135,7 +134,7 @@ namespace MatterHackers.MatterSlice
             maxIdx = new int[boundery.Count];
         }
 
-        public bool checkInside(Point p)
+        public bool checkInside(IntPoint p)
         {
             //Check if we are inside the comb boundary. We do this by tracing from the point towards the negative X direction,
             //  every boundary we cross increments the crossings counter. If we have an even number of crossings then we are not inside the boundary
@@ -144,10 +143,10 @@ namespace MatterHackers.MatterSlice
             {
                 if (boundery[n].Count < 1)
                     continue;
-                Point p0 = boundery[n][boundery[n].Count - 1];
+                IntPoint p0 = boundery[n][boundery[n].Count - 1];
                 for (int i = 0; i < boundery[n].Count; i++)
                 {
-                    Point p1 = boundery[n][i];
+                    IntPoint p1 = boundery[n][i];
 
                     if ((p0.Y >= p.Y && p1.Y < p.Y) || (p1.Y > p.Y && p0.Y <= p.Y))
                     {
@@ -163,28 +162,28 @@ namespace MatterHackers.MatterSlice
             return true;
         }
 
-        public bool moveInside(Point p, int distance = 100)
+        public bool moveInside(IntPoint p, int distance = 100)
         {
-            Point ret = p;
+            IntPoint ret = p;
             long bestDist = 2000 * 2000;
             for (int n = 0; n < boundery.Count; n++)
             {
                 if (boundery[n].Count < 1)
                     continue;
-                Point p0 = boundery[n][boundery[n].Count - 1];
+                IntPoint p0 = boundery[n][boundery[n].Count - 1];
                 for (int i = 0; i < boundery[n].Count; i++)
                 {
-                    Point p1 = boundery[n][i];
+                    IntPoint p1 = boundery[n][i];
 
                     //Q = A + Normal( B - A ) * ((( B - A ) dot ( P - A )) / VSize( A - B ));
-                    Point pDiff = p1 - p0;
+                    IntPoint pDiff = p1 - p0;
                     long lineLength = (pDiff).vSize();
                     long distOnLine = (pDiff).dot(p - p0) / lineLength;
                     if (distOnLine < 10)
                         distOnLine = 10;
                     if (distOnLine > lineLength - 10)
                         distOnLine = lineLength - 10;
-                    Point q = p0 + pDiff * distOnLine / lineLength;
+                    IntPoint q = p0 + pDiff * distOnLine / lineLength;
 
                     long dist = (q - p).vSize2();
                     if (dist < bestDist)
@@ -204,7 +203,7 @@ namespace MatterHackers.MatterSlice
             return false;
         }
 
-        public bool calc(Point startPoint, Point endPoint, List<Point> combPoints)
+        public bool calc(IntPoint startPoint, IntPoint endPoint, List<IntPoint> combPoints)
         {
             if ((endPoint - startPoint).shorterThen(1500))
                 return true;
@@ -236,7 +235,7 @@ namespace MatterHackers.MatterSlice
             calcMinMax();
 
             long x = sp.X;
-            List<Point> pointList = new List<Point>();
+            List<IntPoint> pointList = new List<IntPoint>();
             //Now walk trough the crossings, for every boundary we cross, find the initial cross point and the exit point. Then add all the points in between
             // to the pointList and continue with the next boundary we will cross, until there are no more boundaries to cross.
             // This gives a path from the start to finish curved around the holes that it encounters.
@@ -245,7 +244,7 @@ namespace MatterHackers.MatterSlice
                 int n = getPolygonAbove(x);
                 if (n == int.MaxValue) break;
 
-                pointList.Add(matrix.unapply(new Point(minX[n] - 200, sp.Y)));
+                pointList.Add(matrix.unapply(new IntPoint(minX[n] - 200, sp.Y)));
                 if ((minIdx[n] - maxIdx[n] + boundery[n].Count) % boundery[n].Count > (maxIdx[n] - minIdx[n] + boundery[n].Count) % boundery[n].Count)
                 {
                     for (int i = minIdx[n]; i != maxIdx[n]; i = (i < boundery[n].Count - 1) ? (i + 1) : (0))
@@ -264,14 +263,14 @@ namespace MatterHackers.MatterSlice
                         pointList.Add(getBounderyPointWithOffset(n, i));
                     }
                 }
-                pointList.Add(matrix.unapply(new Point(maxX[n] + 200, sp.Y)));
+                pointList.Add(matrix.unapply(new IntPoint(maxX[n] + 200, sp.Y)));
 
                 x = maxX[n];
             }
             pointList.Add(endPoint);
 
             //Optimize the pointList, skip each point we could already reach by not crossing a boundary. This smooths out the path and makes it skip any unneeded corners.
-            Point p0 = startPoint;
+            IntPoint p0 = startPoint;
             for (int n = 1; n < pointList.Count; n++)
             {
                 if (collisionTest(p0, pointList[n]))

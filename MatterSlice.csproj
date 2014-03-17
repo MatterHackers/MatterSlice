@@ -77,7 +77,7 @@
     <Compile Include="comb.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="utils\polygon.cs" />
+    <Compile Include="utils\PolygonHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="pathOrderOptimizer.cs" />

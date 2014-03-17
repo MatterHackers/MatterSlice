@@ -25,9 +25,6 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
-    using PolygonRef = Polygon;
-
     public static class MultiVolumes
     {
         public static void carveMultipleVolumes(List<SliceVolumeStorage> volumes)
@@ -45,7 +42,7 @@ namespace MatterHackers.MatterSlice
                         {
                             for (int p2 = 0; p2 < layer2.parts.Count; p2++)
                             {
-                                layer1.parts[p1].outline = layer1.parts[p1].outline.difference(layer2.parts[p2].outline);
+                                layer1.parts[p1].outline = layer1.parts[p1].outline.CreateDifference(layer2.parts[p2].outline);
                             }
                         }
                     }
@@ -67,17 +64,17 @@ namespace MatterHackers.MatterSlice
                     SliceLayer layer1 = volumes[volIdx].layers[layerNr];
                     for (int p1 = 0; p1 < layer1.parts.Count; p1++)
                     {
-                        fullLayer = fullLayer.unionPolygons(layer1.parts[p1].outline.offset(20));
+                        fullLayer = fullLayer.CreateUnion(layer1.parts[p1].outline.Offset(20));
                     }
                 }
-                fullLayer = fullLayer.offset(-20);
+                fullLayer = fullLayer.Offset(-20);
 
                 for (int volIdx = 0; volIdx < volumes.Count; volIdx++)
                 {
                     SliceLayer layer1 = volumes[volIdx].layers[layerNr];
                     for (int p1 = 0; p1 < layer1.parts.Count; p1++)
                     {
-                        layer1.parts[p1].outline = fullLayer.intersection(layer1.parts[p1].outline.offset(overlap / 2));
+                        layer1.parts[p1].outline = fullLayer.CreateIntersection(layer1.parts[p1].outline.Offset(overlap / 2));
                     }
                 }
             }

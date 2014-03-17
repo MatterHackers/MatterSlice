@@ -28,7 +28,6 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
     public struct Point3
     {
         public int x, y, z;
@@ -116,12 +115,12 @@ namespace MatterHackers.MatterSlice
 
     static class IntPointHelper
     {
-        public static long vSize2(this Point p0)
+        public static long vSize2(this IntPoint p0)
         {
             return p0.X * p0.X + p0.Y * p0.Y;
         }
 
-        public static float vSize2f(this Point p0)
+        public static float vSize2f(this IntPoint p0)
         {
             return (float)(p0.X) * (float)(p0.X) + (float)(p0.Y) * (float)(p0.Y);
         }
@@ -135,7 +134,7 @@ namespace MatterHackers.MatterSlice
             return p0.vSize2() <= len * len;
         }
 
-        public static int vSize(this Point p0)
+        public static int vSize(this IntPoint p0)
         {
             return (int)Math.Sqrt(p0.vSize2());
         }
@@ -147,17 +146,17 @@ namespace MatterHackers.MatterSlice
             return Math.Sqrt(fx * fx + fy * fy);
         }
 
-        public static Point normal(this IntPoint p0, int len)
+        public static IntPoint normal(this IntPoint p0, int len)
         {
             int _len = p0.vSize();
             if (_len < 1)
-                return new Point(len, 0);
+                return new IntPoint(len, 0);
             return p0 * len / _len;
         }
 
-        public static Point crossZ(this IntPoint p0)
+        public static IntPoint crossZ(this IntPoint p0)
         {
-            return new Point(-p0.Y, p0.X);
+            return new IntPoint(-p0.Y, p0.X);
         }
 
         public static long dot(this IntPoint p0, IntPoint p1)
@@ -286,7 +285,7 @@ namespace MatterHackers.MatterSlice
             matrix[3] = matrix[0];
         }
 
-        public PointMatrix(Point p)
+        public PointMatrix(IntPoint p)
         {
             matrix[0] = p.X;
             matrix[1] = p.Y;
@@ -297,14 +296,14 @@ namespace MatterHackers.MatterSlice
             matrix[3] = matrix[0];
         }
 
-        public Point apply(Point p)
+        public IntPoint apply(IntPoint p)
         {
-            return new Point(p.X * matrix[0] + p.Y * matrix[1], p.X * matrix[2] + p.Y * matrix[3]);
+            return new IntPoint(p.X * matrix[0] + p.Y * matrix[1], p.X * matrix[2] + p.Y * matrix[3]);
         }
 
-        public Point unapply(Point p)
+        public IntPoint unapply(IntPoint p)
         {
-            return new Point(p.X * matrix[0] + p.Y * matrix[2], p.X * matrix[1] + p.Y * matrix[3]);
+            return new IntPoint(p.X * matrix[0] + p.Y * matrix[2], p.X * matrix[1] + p.Y * matrix[3]);
         }
     };
 }

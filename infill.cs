@@ -25,9 +25,6 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
-    using PolygonRef = Polygon;
-
     public static class Infill
     {
         public static void generateConcentricInfill(Polygons outline, Polygons result, int[] offsets, int offsetsSize)
@@ -37,10 +34,10 @@ namespace MatterHackers.MatterSlice
             {
                 for (int polygonNr = 0; polygonNr < outline.Count; polygonNr++)
                 {
-                    result.add(outline[polygonNr]);
+                    result.Add(outline[polygonNr]);
                 }
 
-                outline = outline.offset(-offsets[step]);
+                outline = outline.Offset(-offsets[step]);
                 if (outline.Count < 1)
                 {
                     break;
@@ -68,7 +65,7 @@ namespace MatterHackers.MatterSlice
 
         public static void generateLineInfill(Polygons in_outline, Polygons result, int extrusionWidth, int lineSpacing, int infillOverlap, double rotation)
         {
-            Polygons outlines = in_outline.offset(extrusionWidth * infillOverlap / 100);
+            Polygons outlines = in_outline.Offset(extrusionWidth * infillOverlap / 100);
             PointMatrix matrix = new PointMatrix(rotation);
 
             outlines.applyMatrix(matrix);
@@ -86,10 +83,10 @@ namespace MatterHackers.MatterSlice
             for (int outlineIndex = 0; outlineIndex < outlines.Count; outlineIndex++)
             {
                 Polygon currentOutline = outlines[outlineIndex];
-                Point lastPoint = currentOutline[currentOutline.Count - 1];
+                IntPoint lastPoint = currentOutline[currentOutline.Count - 1];
                 for (int pointIndex = 0; pointIndex < currentOutline.Count; pointIndex++)
                 {
-                    Point currentPoint = currentOutline[pointIndex];
+                    IntPoint currentPoint = currentOutline[pointIndex];
                     int idx0 = (int)((currentPoint.X - boundary.min.X) / lineSpacing);
                     int idx1 = (int)((lastPoint.X - boundary.min.X) / lineSpacing);
                     
@@ -135,8 +132,8 @@ namespace MatterHackers.MatterSlice
 
                     Polygon p = new Polygon();
                     result.Add(p);
-                    p.add(matrix.unapply(new Point(x, cutList[idx2][i])));
-                    p.add(matrix.unapply(new Point(x, cutList[idx2][i + 1])));
+                    p.Add(matrix.unapply(new IntPoint(x, cutList[idx2][i])));
+                    p.Add(matrix.unapply(new IntPoint(x, cutList[idx2][i + 1])));
                 }
 
                 idx2 += 1;

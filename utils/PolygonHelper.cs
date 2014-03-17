@@ -25,44 +25,14 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
-    using PolygonRef = Polygon;
-
     static class PolygonHelper
     {
-        public static int size(this Polygon polygon)
-        {
-            return polygon.Count;
-        }
-
-#if false
-        public static Point this[int index]
-        {
-            get { return polygon[index]; }
-        }
-#endif
-
-        public static void add(this Polygon polygon, Point p)
-        {
-            polygon.Add(p);
-        }
-
-        public static void remove(this Polygon polygon, int index)
-        {
-            polygon.RemoveAt(index);
-        }
-
-        public static void clear(this Polygon polygon)
-        {
-            polygon.Clear();
-        }
-
-        public static bool orientation(this Polygon polygon)
+        public static bool Orientation(this Polygon polygon)
         {
             return Clipper.Orientation(polygon);
         }
 
-        public static void reverse(this Polygon polygon)
+        public static void Reverse(this Polygon polygon)
         {
             polygon.Reverse();
         }
@@ -70,28 +40,28 @@ namespace MatterHackers.MatterSlice
         public static long polygonLength(this Polygon polygon)
         {
             long length = 0;
-            Point p0 = polygon[polygon.Count - 1];
+            IntPoint p0 = polygon[polygon.Count - 1];
             for (int n = 0; n < polygon.Count; n++)
             {
-                Point p1 = polygon[n];
+                IntPoint p1 = polygon[n];
                 length += (p0 - p1).vSize();
                 p0 = p1;
             }
             return length;
         }
 
-        public static double area(this Polygon polygon)
+        public static double Area(this Polygon polygon)
         {
             return Clipper.Area(polygon);
         }
 
-        public static Point centerOfMass(this Polygon polygon)
+        public static IntPoint CenterOfMass(this Polygon polygon)
         {
             double x = 0, y = 0;
-            Point p0 = (polygon)[polygon.Count - 1];
+            IntPoint p0 = (polygon)[polygon.Count - 1];
             for (int n = 0; n < polygon.Count; n++)
             {
-                Point p1 = (polygon)[n];
+                IntPoint p1 = (polygon)[n];
                 double second_factor = (p0.X * p1.Y) - (p1.X * p0.Y);
 
                 x += (double)(p0.X + p1.X) * second_factor;
@@ -108,66 +78,21 @@ namespace MatterHackers.MatterSlice
                 x = -x;
                 y = -y;
             }
-            return new Point(x, y);
+            return new IntPoint(x, y);
         }
     }
-#if false
-
-public class _Polygon : PolygonRef
-{
-    Path poly;
-
-public _Polygon()
-    : PolygonRef(poly)
-    {
-    }
-}
-
-//#define Polygon _Polygon
-#endif
 
     static class PolygonsHelper
     {
-        public static int size(this Polygons polygons)
-        {
-            return polygons.Count;
-        }
-
-#if false
-            public static PolygonRef this[int index]
-    {
-        return new PolygonRef(polygons[index]);
-    }
-#endif
-        public static void remove(this Polygons polygons, int index)
-        {
-            polygons.RemoveAt(index);
-        }
-        public static void clear(this Polygons polygons)
-        {
-            polygons.Clear();
-        }
-
-        public static void add(this Polygons polygons, PolygonRef poly)
-        {
-            polygons.Add(poly);
-        }
-
-        public static void add(this Polygons polygons, Polygons other)
+        public static void AddAll(this Polygons polygons, Polygons other)
         {
             for (int n = 0; n < other.Count; n++)
+            {
                 polygons.Add(other[n]);
+            }
         }
 
-#if false
-    public static Polygons operator=( Polygons other) 
-    {
-        polygons = other; 
-        return *this; 
-    }
-#endif
-
-        public static Polygons difference(this Polygons polygons, Polygons other)
+        public static Polygons CreateDifference(this Polygons polygons, Polygons other)
         {
             Polygons ret = new Polygons();
             ClipperLib.Clipper clipper = new Clipper();
@@ -177,7 +102,7 @@ public _Polygon()
             return ret;
         }
 
-        public static Polygons unionPolygons(this Polygons polygons, Polygons other)
+        public static Polygons CreateUnion(this Polygons polygons, Polygons other)
         {
             Polygons ret = new Polygons();
             ClipperLib.Clipper clipper = new Clipper();
@@ -187,7 +112,7 @@ public _Polygon()
             return ret;
         }
 
-        public static Polygons intersection(this Polygons polygons, Polygons other)
+        public static Polygons CreateIntersection(this Polygons polygons, Polygons other)
         {
             Polygons ret = new Polygons();
             ClipperLib.Clipper clipper = new Clipper();
@@ -197,7 +122,7 @@ public _Polygon()
             return ret;
         }
 
-        public static Polygons offset(this Polygons polygons, int distance)
+        public static Polygons Offset(this Polygons polygons, int distance)
         {
 #if false
         Polygons ret = new Polygons();
@@ -209,7 +134,7 @@ public _Polygon()
             return ClipperLib.Clipper.OffsetPolygons(polygons, distance, JoinType.jtMiter, 2.0);
         }
 
-        public static List<Polygons> splitIntoParts(this Polygons polygons, bool unionAll = false)
+        public static List<Polygons> SplitIntoParts(this Polygons polygons, bool unionAll = false)
         {
             List<Polygons> ret = new List<Polygons>();
             ClipperLib.Clipper clipper = new Clipper();
@@ -234,10 +159,10 @@ public _Polygon()
             {
                 PolyNode child = node.Childs[n];
                 Polygons polygons = new Polygons();
-                polygons.add(child.Contour);
+                polygons.Add(child.Contour);
                 for (int i = 0; i < child.ChildCount; i++)
                 {
-                    polygons.add(child.Childs[i].Contour);
+                    polygons.Add(child.Childs[i].Contour);
                     polygonsIn._processPolyTreeNode(child.Childs[i], ret);
                 }
                 ret.Add(polygons);
@@ -258,10 +183,10 @@ public _Polygon()
             long length = 0;
             for (int i = 0; i < polygons.Count; i++)
             {
-                Point p0 = polygons[i][polygons[i].Count - 1];
+                IntPoint p0 = polygons[i][polygons[i].Count - 1];
                 for (int n = 0; n < polygons[i].Count; n++)
                 {
-                    Point p1 = polygons[i][n];
+                    IntPoint p1 = polygons[i][n];
                     length += (p0 - p1).vSize();
                     p0 = p1;
                 }
@@ -281,28 +206,28 @@ public _Polygon()
         }
     }
 
-    /* Axis aligned boundary box */
+    // Axis aligned boundary box
     public class AABB
     {
-        public Point min, max;
+        public IntPoint min, max;
 
         public AABB()
         {
-            min = new Point(long.MinValue, long.MinValue);
-            max = new Point(long.MinValue, long.MinValue);
+            min = new IntPoint(long.MinValue, long.MinValue);
+            max = new IntPoint(long.MinValue, long.MinValue);
         }
 
         public AABB(Polygons polys)
         {
-            min = new Point(long.MinValue, long.MinValue);
-            max = new Point(long.MinValue, long.MinValue);
+            min = new IntPoint(long.MinValue, long.MinValue);
+            max = new IntPoint(long.MinValue, long.MinValue);
             calculate(polys);
         }
 
         public void calculate(Polygons polys)
         {
-            min = new Point(long.MaxValue, long.MaxValue);
-            max = new Point(long.MinValue, long.MinValue);
+            min = new IntPoint(long.MaxValue, long.MaxValue);
+            max = new IntPoint(long.MinValue, long.MinValue);
             for (int i = 0; i < polys.Count; i++)
             {
                 for (int j = 0; j < polys[i].Count; j++)

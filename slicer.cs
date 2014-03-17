@@ -26,13 +26,10 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
-    using PolygonRef = Polygon;
-
     public class SlicerSegment
     {
-        public Point start;
-        public Point end;
+        public IntPoint start;
+        public IntPoint end;
         public int faceIndex;
         public bool addedToPolygon;
     }
@@ -41,7 +38,7 @@ namespace MatterHackers.MatterSlice
     {
         //The result of trying to find a point on a closed polygon line. This gives back the point index, the polygon index, and the point of the connection.
         //The line on which the point lays is between pointIdx-1 and pointIdx
-        public Point intersectionPoint;
+        public IntPoint intersectionPoint;
         public int polygonIdx;
         public int pointIdx;
     }
@@ -84,8 +81,8 @@ namespace MatterHackers.MatterSlice
                 {
                     canClose = false;
                     segmentList[segmentIndexBeingAdded].addedToPolygon = true;
-                    Point addedSegmentEndPoint = segmentList[segmentIndexBeingAdded].end;
-                    poly.add(addedSegmentEndPoint);
+                    IntPoint addedSegmentEndPoint = segmentList[segmentIndexBeingAdded].end;
+                    poly.Add(addedSegmentEndPoint);
                     int nextSegmentToCheck = -1;
                     OptimizedFace face = optomizedMesh.faces[segmentList[segmentIndexBeingAdded].faceIndex];
                     for (int connectedFaceIndex = 0; connectedFaceIndex < 3; connectedFaceIndex++)
@@ -129,11 +126,11 @@ namespace MatterHackers.MatterSlice
                 }
                 if (canClose)
                 {
-                    polygonList.add(poly);
+                    polygonList.Add(poly);
                 }
                 else
                 {
-                    openPolygonList.add(poly);
+                    openPolygonList.Add(poly);
                 }
             }
 
@@ -149,23 +146,23 @@ namespace MatterHackers.MatterSlice
                 {
                     if (openPolygonList[j].Count < 1) continue;
 
-                    Point diff = openPolygonList[i][openPolygonList[i].Count - 1] - openPolygonList[j][0];
+                    IntPoint diff = openPolygonList[i][openPolygonList[i].Count - 1] - openPolygonList[j][0];
                     long distSquared = (diff).vSize2();
 
                     if (distSquared < 2 * 2)
                     {
                         if (i == j)
                         {
-                            polygonList.add(openPolygonList[i]);
-                            openPolygonList[i].clear();
+                            polygonList.Add(openPolygonList[i]);
+                            openPolygonList[i].Clear();
                             break;
                         }
                         else
                         {
                             for (int n = 0; n < openPolygonList[j].Count; n++)
-                                openPolygonList[i].add(openPolygonList[j][n]);
+                                openPolygonList[i].Add(openPolygonList[j][n]);
 
-                            openPolygonList[j].clear();
+                            openPolygonList[j].Clear();
                         }
                     }
                 }
@@ -185,7 +182,7 @@ namespace MatterHackers.MatterSlice
                     {
                         if (openPolygonList[j].Count < 1) continue;
 
-                        Point diff1 = openPolygonList[i][openPolygonList[i].Count - 1] - openPolygonList[j][0];
+                        IntPoint diff1 = openPolygonList[i][openPolygonList[i].Count - 1] - openPolygonList[j][0];
                         long distSquared1 = (diff1).vSize2();
                         if (distSquared1 < bestScore)
                         {
@@ -197,7 +194,7 @@ namespace MatterHackers.MatterSlice
 
                         if (i != j)
                         {
-                            Point diff2 = openPolygonList[i][openPolygonList[i].Count - 1] - openPolygonList[j][openPolygonList[j].Count - 1];
+                            IntPoint diff2 = openPolygonList[i][openPolygonList[i].Count - 1] - openPolygonList[j][openPolygonList[j].Count - 1];
                             long distSquared2 = (diff2).vSize2();
                             if (distSquared2 < bestScore)
                             {
@@ -217,8 +214,8 @@ namespace MatterHackers.MatterSlice
 
                 if (bestA == bestB)
                 {
-                    polygonList.add(openPolygonList[bestA]);
-                    openPolygonList[bestA].clear();
+                    polygonList.Add(openPolygonList[bestA]);
+                    openPolygonList[bestA].Clear();
                 }
                 else
                 {
@@ -227,21 +224,21 @@ namespace MatterHackers.MatterSlice
                         if (openPolygonList[bestA].polygonLength() > openPolygonList[bestB].polygonLength())
                         {
                             for (int n = openPolygonList[bestB].Count - 1; n >= 0; n--)
-                                openPolygonList[bestA].add(openPolygonList[bestB][n]);
-                            openPolygonList[bestB].clear();
+                                openPolygonList[bestA].Add(openPolygonList[bestB][n]);
+                            openPolygonList[bestB].Clear();
                         }
                         else
                         {
                             for (int n = openPolygonList[bestA].Count - 1; n >= 0; n--)
-                                openPolygonList[bestB].add(openPolygonList[bestA][n]);
-                            openPolygonList[bestA].clear();
+                                openPolygonList[bestB].Add(openPolygonList[bestA][n]);
+                            openPolygonList[bestA].Clear();
                         }
                     }
                     else
                     {
                         for (int n = 0; n < openPolygonList[bestB].Count; n++)
-                            openPolygonList[bestA].add(openPolygonList[bestB][n]);
-                        openPolygonList[bestB].clear();
+                            openPolygonList[bestA].Add(openPolygonList[bestB][n]);
+                        openPolygonList[bestB].Clear();
                     }
                 }
             }
@@ -306,25 +303,25 @@ namespace MatterHackers.MatterSlice
                                 polygonList.Add(poly);
                                 for (int j = bestResult.pointIdxA; j != bestResult.pointIdxB; j = (j + 1) % polygonList[bestResult.polygonIdx].Count)
                                 {
-                                    poly.add(polygonList[bestResult.polygonIdx][j]);
+                                    poly.Add(polygonList[bestResult.polygonIdx][j]);
                                 }
 
                                 for (int j = openPolygonList[bestA].Count - 1; (int)(j) >= 0; j--)
                                 {
-                                    poly.add(openPolygonList[bestA][j]);
+                                    poly.Add(openPolygonList[bestA][j]);
                                 }
 
-                                openPolygonList[bestA].clear();
+                                openPolygonList[bestA].Clear();
                             }
                             else
                             {
                                 int n = polygonList.Count;
-                                polygonList.add(openPolygonList[bestA]);
+                                polygonList.Add(openPolygonList[bestA]);
                                 for (int j = bestResult.pointIdxB; j != bestResult.pointIdxA; j = (j + 1) % polygonList[bestResult.polygonIdx].Count)
                                 {
-                                    polygonList[n].add(polygonList[bestResult.polygonIdx][j]);
+                                    polygonList[n].Add(polygonList[bestResult.polygonIdx][j]);
                                 }
-                                openPolygonList[bestA].clear();
+                                openPolygonList[bestA].Clear();
                             }
                         }
                         else
@@ -333,44 +330,44 @@ namespace MatterHackers.MatterSlice
                             {
                                 for (int n = 0; n < openPolygonList[bestA].Count; n++)
                                 {
-                                    openPolygonList[bestB].add(openPolygonList[bestA][n]);
+                                    openPolygonList[bestB].Add(openPolygonList[bestA][n]);
                                 }
 
-                                openPolygonList[bestA].clear();
+                                openPolygonList[bestA].Clear();
                             }
                             else if (bestResult.AtoB)
                             {
                                 Polygon poly = new Polygon();
                                 for (int n = bestResult.pointIdxA; n != bestResult.pointIdxB; n = (n + 1) % polygonList[bestResult.polygonIdx].Count)
                                 {
-                                    poly.add(polygonList[bestResult.polygonIdx][n]);
+                                    poly.Add(polygonList[bestResult.polygonIdx][n]);
                                 }
 
                                 for (int n = poly.Count - 1; (int)(n) >= 0; n--)
                                 {
-                                    openPolygonList[bestB].add(poly[n]);
+                                    openPolygonList[bestB].Add(poly[n]);
                                 }
 
                                 for (int n = 0; n < openPolygonList[bestA].Count; n++)
                                 {
-                                    openPolygonList[bestB].add(openPolygonList[bestA][n]);
+                                    openPolygonList[bestB].Add(openPolygonList[bestA][n]);
                                 }
 
-                                openPolygonList[bestA].clear();
+                                openPolygonList[bestA].Clear();
                             }
                             else
                             {
                                 for (int n = bestResult.pointIdxB; n != bestResult.pointIdxA; n = (n + 1) % polygonList[bestResult.polygonIdx].Count)
                                 {
-                                    openPolygonList[bestB].add(polygonList[bestResult.polygonIdx][n]);
+                                    openPolygonList[bestB].Add(polygonList[bestResult.polygonIdx][n]);
                                 }
 
                                 for (int n = openPolygonList[bestA].Count - 1; n >= 0; n--)
                                 {
-                                    openPolygonList[bestB].add(openPolygonList[bestA][n]);
+                                    openPolygonList[bestB].Add(openPolygonList[bestA][n]);
                                 }
 
-                                openPolygonList[bestA].clear();
+                                openPolygonList[bestA].Clear();
                             }
                         }
                     }
@@ -399,7 +396,9 @@ namespace MatterHackers.MatterSlice
                 for (int n = 0; n < openPolygonList.Count; n++)
                 {
                     if (openPolygonList[n].Count > 0)
-                        polygonList.add(openPolygonList[n]);
+                    {
+                        polygonList.Add(openPolygonList[n]);
+                    }
                 }
             }
             //Clear the openPolygonList to save memory, the only reason to keep it after this is for debugging.
@@ -421,7 +420,7 @@ namespace MatterHackers.MatterSlice
                 }
                 if (length < snapDistance)
                 {
-                    polygonList.remove(i);
+                    polygonList.RemoveAt(i);
                     i--;
                 }
             }
@@ -430,7 +429,7 @@ namespace MatterHackers.MatterSlice
             PolygonOptimizer.optimizePolygons(polygonList);
         }
 
-        gapCloserResult findPolygonGapCloser(Point ip0, Point ip1)
+        gapCloserResult findPolygonGapCloser(IntPoint ip0, IntPoint ip1)
         {
             gapCloserResult ret = new gapCloserResult();
             closePolygonResult c1 = findPolygonPointClosestTo(ip0);
@@ -453,11 +452,11 @@ namespace MatterHackers.MatterSlice
             else
             {
                 //Find out if we have should go from A to B or the other way around.
-                Point p0 = polygonList[ret.polygonIdx][ret.pointIdxA];
+                IntPoint p0 = polygonList[ret.polygonIdx][ret.pointIdxA];
                 long lenA = (p0 - ip0).vSize();
                 for (int i = ret.pointIdxA; i != ret.pointIdxB; i = (i + 1) % polygonList[ret.polygonIdx].Count)
                 {
-                    Point p1 = polygonList[ret.polygonIdx][i];
+                    IntPoint p1 = polygonList[ret.polygonIdx][i];
                     lenA += (p0 - p1).vSize();
                     p0 = p1;
                 }
@@ -467,7 +466,7 @@ namespace MatterHackers.MatterSlice
                 long lenB = (p0 - ip1).vSize();
                 for (int i = ret.pointIdxB; i != ret.pointIdxA; i = (i + 1) % polygonList[ret.polygonIdx].Count)
                 {
-                    Point p1 = polygonList[ret.polygonIdx][i];
+                    IntPoint p1 = polygonList[ret.polygonIdx][i];
                     lenB += (p0 - p1).vSize();
                     p0 = p1;
                 }
@@ -487,25 +486,25 @@ namespace MatterHackers.MatterSlice
             return ret;
         }
 
-        closePolygonResult findPolygonPointClosestTo(Point input)
+        closePolygonResult findPolygonPointClosestTo(IntPoint input)
         {
             closePolygonResult ret = new closePolygonResult();
             for (int n = 0; n < polygonList.Count; n++)
             {
-                Point p0 = polygonList[n][polygonList[n].Count - 1];
+                IntPoint p0 = polygonList[n][polygonList[n].Count - 1];
                 for (int i = 0; i < polygonList[n].Count; i++)
                 {
-                    Point p1 = polygonList[n][i];
+                    IntPoint p1 = polygonList[n][i];
 
                     //Q = A + Normal( B - A ) * ((( B - A ) dot ( P - A )) / VSize( A - B ));
-                    Point pDiff = p1 - p0;
+                    IntPoint pDiff = p1 - p0;
                     long lineLength = (pDiff).vSize();
                     if (lineLength > 1)
                     {
                         long distOnLine = (pDiff).dot(input - p0) / lineLength;
                         if (distOnLine >= 0 && distOnLine <= lineLength)
                         {
-                            Point q = p0 + pDiff * distOnLine / lineLength;
+                            IntPoint q = p0 + pDiff * distOnLine / lineLength;
                             if ((q - input).shorterThen(100))
                             {
                                 ret.intersectionPoint = q;
@@ -652,7 +651,7 @@ namespace MatterHackers.MatterSlice
                 f.Write("<path marker-mid='url(#MidMarker)' d=\"");
                 for (int j = 0; j < layers[i].polygonList.Count; j++)
                 {
-                    PolygonRef p = layers[i].polygonList[j];
+                    Polygon p = layers[i].polygonList[j];
                     for (int n = 0; n < p.Count; n++)
                     {
                         if (n == 0)
@@ -667,7 +666,7 @@ namespace MatterHackers.MatterSlice
                 f.Write("</g>\n");
                 for (int j = 0; j < layers[i].openPolygonList.Count; j++)
                 {
-                    PolygonRef p = layers[i].openPolygonList[j];
+                    Polygon p = layers[i].openPolygonList[j];
                     if (p.Count < 1) continue;
                     f.Write("<polyline marker-mid='url(#MidMarker)' points=\"");
                     for (int n = 0; n < p.Count; n++)

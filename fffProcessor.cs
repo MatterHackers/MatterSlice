@@ -25,9 +25,6 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
-    using PolygonRef = Polygon;
-
     //FusedFilamentFabrication processor.
     public class fffProcessor
     {
@@ -247,7 +244,7 @@ namespace MatterHackers.MatterSlice
                     {
                         for (int partNr = 0; partNr < storage.volumes[volumeIdx].layers[layerNr].parts.Count; partNr++)
                         {
-                            oozeShield = oozeShield.unionPolygons(storage.volumes[volumeIdx].layers[layerNr].parts[partNr].outline.offset(2000));
+                            oozeShield = oozeShield.CreateUnion(storage.volumes[volumeIdx].layers[layerNr].parts[partNr].outline.Offset(2000));
                         }
                     }
                     storage.oozeShield.Add(oozeShield);
@@ -255,18 +252,18 @@ namespace MatterHackers.MatterSlice
 
                 for (int layerNr = 0; layerNr < totalLayers; layerNr++)
                 {
-                    storage.oozeShield[layerNr] = storage.oozeShield[layerNr].offset(-1000).offset(1000);
+                    storage.oozeShield[layerNr] = storage.oozeShield[layerNr].Offset(-1000).Offset(1000);
                 }
 
                 int offsetAngle = (int)Math.Tan(60.0 * Math.PI / 180) * config.layerThickness;//Allow for a 60deg angle in the oozeShield.
                 for (int layerNr = 1; layerNr < totalLayers; layerNr++)
                 {
-                    storage.oozeShield[layerNr] = storage.oozeShield[layerNr].unionPolygons(storage.oozeShield[layerNr - 1].offset(-offsetAngle));
+                    storage.oozeShield[layerNr] = storage.oozeShield[layerNr].CreateUnion(storage.oozeShield[layerNr - 1].Offset(-offsetAngle));
                 }
 
                 for (int layerNr = totalLayers - 1; layerNr > 0; layerNr--)
                 {
-                    storage.oozeShield[layerNr - 1] = storage.oozeShield[layerNr - 1].unionPolygons(storage.oozeShield[layerNr].offset(-offsetAngle));
+                    storage.oozeShield[layerNr - 1] = storage.oozeShield[layerNr - 1].CreateUnion(storage.oozeShield[layerNr].Offset(-offsetAngle));
                 }
             }
             LogOutput.log("Generated inset in {0:0.000}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
@@ -296,12 +293,12 @@ namespace MatterHackers.MatterSlice
             {
                 Polygon p = new Polygon();
                 storage.wipeTower.Add(p);
-                p.add(new Point(storage.modelMin.x - 3000, storage.modelMax.y + 3000));
-                p.add(new Point(storage.modelMin.x - 3000, storage.modelMax.y + 3000 + config.wipeTowerSize));
-                p.add(new Point(storage.modelMin.x - 3000 - config.wipeTowerSize, storage.modelMax.y + 3000 + config.wipeTowerSize));
-                p.add(new Point(storage.modelMin.x - 3000 - config.wipeTowerSize, storage.modelMax.y + 3000));
+                p.Add(new IntPoint(storage.modelMin.x - 3000, storage.modelMax.y + 3000));
+                p.Add(new IntPoint(storage.modelMin.x - 3000, storage.modelMax.y + 3000 + config.wipeTowerSize));
+                p.Add(new IntPoint(storage.modelMin.x - 3000 - config.wipeTowerSize, storage.modelMax.y + 3000 + config.wipeTowerSize));
+                p.Add(new IntPoint(storage.modelMin.x - 3000 - config.wipeTowerSize, storage.modelMax.y + 3000));
 
-                storage.wipePoint = new Point(storage.modelMin.x - 3000 - config.wipeTowerSize / 2, storage.modelMax.y + 3000 + config.wipeTowerSize / 2);
+                storage.wipePoint = new IntPoint(storage.modelMin.x - 3000 - config.wipeTowerSize / 2, storage.modelMax.y + 3000 + config.wipeTowerSize / 2);
             }
 
             Skirt.generateSkirt(storage, config.skirtDistance, config.extrusionWidth, config.skirtLineCount, config.skirtMinLength, config.initialLayerThickness);
@@ -345,7 +342,7 @@ namespace MatterHackers.MatterSlice
                 gcode.resetExtrusionValue();
                 gcode.addRetraction();
                 gcode.setZ(maxObjectHeight + 5000);
-                gcode.addMove(new Point(storage.modelMin.x, storage.modelMin.y), config.moveSpeed, 0);
+                gcode.addMove(new IntPoint(storage.modelMin.x, storage.modelMin.y), config.moveSpeed, 0);
             }
             fileNr++;
 
@@ -624,15 +621,15 @@ namespace MatterHackers.MatterSlice
                 SliceLayer layer = storage.volumes[volumeCnt].layers[layerNr];
                 for (int n = 0; n < layer.parts.Count; n++)
                 {
-                    supportGenerator.polygons = supportGenerator.polygons.difference(layer.parts[n].outline.offset(config.supportXYDistance));
+                    supportGenerator.polygons = supportGenerator.polygons.CreateDifference(layer.parts[n].outline.Offset(config.supportXYDistance));
                 }
             }
             //Contract and expand the suppory polygons so small sections are removed and the final polygon is smoothed a bit.
-            supportGenerator.polygons = supportGenerator.polygons.offset(-config.extrusionWidth * 3);
-            supportGenerator.polygons = supportGenerator.polygons.offset(config.extrusionWidth * 3);
+            supportGenerator.polygons = supportGenerator.polygons.Offset(-config.extrusionWidth * 3);
+            supportGenerator.polygons = supportGenerator.polygons.Offset(config.extrusionWidth * 3);
             LogOutput.logPolygons("support", layerNr, z, supportGenerator.polygons);
 
-            List<Polygons> supportIslands = supportGenerator.polygons.splitIntoParts();
+            List<Polygons> supportIslands = supportGenerator.polygons.SplitIntoParts();
 
             for (int n = 0; n < supportIslands.Count; n++)
             {

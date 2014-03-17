@@ -66,7 +66,7 @@ namespace MatterHackers.MatterSlice
         guiSocket.sendAll(name, strlen(name));
         for(unsigned int n=0; n<polygons.size(); n++)
         {
-            PolygonRef polygon = polygons[n];
+            Polygon polygon = polygons[n];
             guiSocket.sendNr(polygon.size());
             guiSocket.sendAll(polygon.data(), polygon.size() * sizeof(Point));
         }

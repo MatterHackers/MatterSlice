@@ -25,7 +25,6 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
     /*
     SliceData
     + Layers[]
@@ -74,7 +73,7 @@ namespace MatterHackers.MatterSlice
         public int XYDistance;
         public int ZDistance;
 
-        public Point gridOffset;
+        public IntPoint gridOffset;
         public int gridScale;
         public int gridWidth, gridHeight;
         public List<List<SupportPoint>> grid = new List<List<SupportPoint>>();
@@ -102,6 +101,6 @@ namespace MatterHackers.MatterSlice
 
         public SupportStorage support = new SupportStorage();
         public Polygons wipeTower = new Polygons();
-        public Point wipePoint;
+        public IntPoint wipePoint;
     }
 }

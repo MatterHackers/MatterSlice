@@ -25,123 +25,124 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
-    using PolygonRef = Polygon;
-
     public static class Skin
     {
         public static void generateSkins(int layerNr, SliceVolumeStorage storage, int extrusionWidth, int downSkinCount, int upSkinCount, int infillOverlap)
-{
-    SliceLayer layer = storage.layers[layerNr];
+        {
+            SliceLayer layer = storage.layers[layerNr];
 
-    for(int partNr=0; partNr<layer.parts.Count; partNr++)
-    {
-        SliceLayerPart part = layer.parts[partNr];
-        
-        Polygons upskin = part.insets[part.insets.Count - 1].offset(-extrusionWidth/2);
-        Polygons downskin = upskin;
-        
-        if (part.insets.Count > 1)
-        {
-            //Add thin wall filling by taking the area between the insets.
-            Polygons thinWalls = part.insets[0].offset(-extrusionWidth / 2 - extrusionWidth * infillOverlap / 100).difference(part.insets[1].offset(extrusionWidth * 6 / 10));
-            upskin.add(thinWalls);
-            downskin.add(thinWalls);
-        }
-        if ((int)(layerNr - downSkinCount) >= 0)
-        {
-            SliceLayer layer2 = storage.layers[layerNr - downSkinCount];
-            for(int partNr2=0; partNr2<layer2.parts.Count; partNr2++)
+            for (int partNr = 0; partNr < layer.parts.Count; partNr++)
             {
-                if (part.boundaryBox.hit(layer2.parts[partNr2].boundaryBox))
-                    downskin = downskin.difference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 1]);
-            }
-        }
-        if ((int)(layerNr + upSkinCount) < (int)storage.layers.Count)
-        {
-            SliceLayer layer2 = storage.layers[layerNr + upSkinCount];
-            for(int partNr2=0; partNr2<layer2.parts.Count; partNr2++)
-            {
-                if (part.boundaryBox.hit(layer2.parts[partNr2].boundaryBox))
-                    upskin = upskin.difference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 1]);
-            }
-        }
-        
-        part.skinOutline = upskin.unionPolygons(downskin);
+                SliceLayerPart part = layer.parts[partNr];
 
-        double minAreaSize = (2 * Math.PI * ((double)(extrusionWidth) / 1000.0) * ((double)(extrusionWidth) / 1000.0)) * 0.3;
-        for(int i=0; i<part.skinOutline.Count; i++)
-        {
-            double area = Math.Abs(part.skinOutline[i].area()) / 1000.0 / 1000.0;
-            if (area < minAreaSize) // Only create an up/down skin if the area is large enough. So you do not create tiny blobs of "trying to fill"
-            {
-                part.skinOutline.remove(i);
-                i -= 1;
+                Polygons upskin = part.insets[part.insets.Count - 1].Offset(-extrusionWidth / 2);
+                Polygons downskin = upskin;
+
+                if (part.insets.Count > 1)
+                {
+                    //Add thin wall filling by taking the area between the insets.
+                    Polygons thinWalls = part.insets[0].Offset(-extrusionWidth / 2 - extrusionWidth * infillOverlap / 100).CreateDifference(part.insets[1].Offset(extrusionWidth * 6 / 10));
+                    upskin.AddAll(thinWalls);
+                    downskin.AddAll(thinWalls);
+                }
+                if ((int)(layerNr - downSkinCount) >= 0)
+                {
+                    SliceLayer layer2 = storage.layers[layerNr - downSkinCount];
+                    for (int partNr2 = 0; partNr2 < layer2.parts.Count; partNr2++)
+                    {
+                        if (part.boundaryBox.hit(layer2.parts[partNr2].boundaryBox))
+                            downskin = downskin.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 1]);
+                    }
+                }
+                if ((int)(layerNr + upSkinCount) < (int)storage.layers.Count)
+                {
+                    SliceLayer layer2 = storage.layers[layerNr + upSkinCount];
+                    for (int partNr2 = 0; partNr2 < layer2.parts.Count; partNr2++)
+                    {
+                        if (part.boundaryBox.hit(layer2.parts[partNr2].boundaryBox))
+                            upskin = upskin.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 1]);
+                    }
+                }
+
+                part.skinOutline = upskin.CreateUnion(downskin);
+
+                double minAreaSize = (2 * Math.PI * ((double)(extrusionWidth) / 1000.0) * ((double)(extrusionWidth) / 1000.0)) * 0.3;
+                for (int i = 0; i < part.skinOutline.Count; i++)
+                {
+                    double area = Math.Abs(part.skinOutline[i].Area()) / 1000.0 / 1000.0;
+                    if (area < minAreaSize) // Only create an up/down skin if the area is large enough. So you do not create tiny blobs of "trying to fill"
+                    {
+                        part.skinOutline.RemoveAt(i);
+                        i -= 1;
+                    }
+                }
             }
         }
-    }
-}
 
         public static void generateSparse(int layerNr, SliceVolumeStorage storage, int extrusionWidth, int downSkinCount, int upSkinCount)
-{
-    SliceLayer layer = storage.layers[layerNr];
-
-    for(int partNr=0; partNr<layer.parts.Count; partNr++)
-    {
-        SliceLayerPart part = layer.parts[partNr];
-
-        Polygons sparse = part.insets[part.insets.Count - 1].offset(-extrusionWidth/2);
-        Polygons downskin = sparse;
-        Polygons upskin = sparse;
-        
-        if ((int)(layerNr - downSkinCount) >= 0)
         {
-            SliceLayer layer2 = storage.layers[layerNr - downSkinCount];
-            for(int partNr2=0; partNr2<layer2.parts.Count; partNr2++)
+            SliceLayer layer = storage.layers[layerNr];
+
+            for (int partNr = 0; partNr < layer.parts.Count; partNr++)
             {
-                if (part.boundaryBox.hit(layer2.parts[partNr2].boundaryBox))
+                SliceLayerPart part = layer.parts[partNr];
+
+                Polygons sparse = part.insets[part.insets.Count - 1].Offset(-extrusionWidth / 2);
+                Polygons downskin = sparse;
+                Polygons upskin = sparse;
+
+                if ((int)(layerNr - downSkinCount) >= 0)
                 {
-                    if (layer2.parts[partNr2].insets.Count > 1)
+                    SliceLayer layer2 = storage.layers[layerNr - downSkinCount];
+                    for (int partNr2 = 0; partNr2 < layer2.parts.Count; partNr2++)
                     {
-                        downskin = downskin.difference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 2]);
-                    }else{
-                        downskin = downskin.difference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 1]);
+                        if (part.boundaryBox.hit(layer2.parts[partNr2].boundaryBox))
+                        {
+                            if (layer2.parts[partNr2].insets.Count > 1)
+                            {
+                                downskin = downskin.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 2]);
+                            }
+                            else
+                            {
+                                downskin = downskin.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 1]);
+                            }
+                        }
                     }
                 }
-            }
-        }
-        if ((int)(layerNr + upSkinCount) < (int)storage.layers.Count)
-        {
-            SliceLayer layer2 = storage.layers[layerNr + upSkinCount];
-            for(int partNr2=0; partNr2<layer2.parts.Count; partNr2++)
-            {
-                if (part.boundaryBox.hit(layer2.parts[partNr2].boundaryBox))
+                if ((int)(layerNr + upSkinCount) < (int)storage.layers.Count)
                 {
-                    if (layer2.parts[partNr2].insets.Count > 1)
+                    SliceLayer layer2 = storage.layers[layerNr + upSkinCount];
+                    for (int partNr2 = 0; partNr2 < layer2.parts.Count; partNr2++)
                     {
-                        upskin = upskin.difference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 2]);
-                    }else{
-                        upskin = upskin.difference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 1]);
+                        if (part.boundaryBox.hit(layer2.parts[partNr2].boundaryBox))
+                        {
+                            if (layer2.parts[partNr2].insets.Count > 1)
+                            {
+                                upskin = upskin.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 2]);
+                            }
+                            else
+                            {
+                                upskin = upskin.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 1]);
+                            }
+                        }
                     }
                 }
-            }
-        }
-        
-        Polygons result = upskin.unionPolygons(downskin);
 
-        double minAreaSize = 3.0;//(2 * M_PI * ((double)(config.extrusionWidth) / 1000.0) * ((double)(config.extrusionWidth) / 1000.0)) * 3;
-        for(int i=0; i<result.Count; i++)
-        {
-            double area = Math.Abs(result[i].area()) / 1000.0 / 1000.0;
-            if (area < minAreaSize) /* Only create an up/down skin if the area is large enough. So you do not create tiny blobs of "trying to fill" */
-            {
-                result.remove(i);
-                i -= 1;
+                Polygons result = upskin.CreateUnion(downskin);
+
+                double minAreaSize = 3.0;//(2 * M_PI * ((double)(config.extrusionWidth) / 1000.0) * ((double)(config.extrusionWidth) / 1000.0)) * 3;
+                for (int i = 0; i < result.Count; i++)
+                {
+                    double area = Math.Abs(result[i].Area()) / 1000.0 / 1000.0;
+                    if (area < minAreaSize) /* Only create an up/down skin if the area is large enough. So you do not create tiny blobs of "trying to fill" */
+                    {
+                        result.RemoveAt(i);
+                        i -= 1;
+                    }
+                }
+
+                part.sparseOutline = sparse.CreateDifference(result);
             }
-        }
-        
-        part.sparseOutline = sparse.difference(result);
-    }
         }
     }
 }

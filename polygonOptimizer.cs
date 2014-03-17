@@ -26,41 +26,46 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
-    using PolygonRef = Polygon;
-
     public static class PolygonOptimizer
     {
-        public static void optimizePolygon(PolygonRef poly)
-{
-    Point p0 = poly[poly.Count-1];
-    for(int i=0;i<poly.Count;i++)
-    {
-        Point p1 = poly[i];
-        if ((p0 - p1).shorterThen(10))
+        public static void optimizePolygon(Polygon poly)
         {
-            poly.remove(i);
-            i --;
-        }else{
-            Point p2;
-            if (i < poly.Count - 1)
-                p2 = poly[i+1];
-            else
-                p2 = poly[0];
-            
-            Point diff0 = (p1 - p0).normal(1000000);
-            Point diff2 = (p1 - p2).normal(1000000);
-            
-            long d = diff0.dot(diff2);
-            if (d < long.MinValue)
+            IntPoint p0 = poly[poly.Count - 1];
+            for (int i = 0; i < poly.Count; i++)
             {
-                poly.remove(i);
-                i --;
-            }else{
-                p0 = p1;
+                IntPoint p1 = poly[i];
+                if ((p0 - p1).shorterThen(10))
+                {
+                    poly.RemoveAt(i);
+                    i--;
+                }
+                else
+                {
+                    IntPoint p2;
+                    if (i < poly.Count - 1)
+                    {
+                        p2 = poly[i + 1];
+                    }
+                    else
+                    {
+                        p2 = poly[0];
+                    }
+
+                    IntPoint diff0 = (p1 - p0).normal(1000000);
+                    IntPoint diff2 = (p1 - p2).normal(1000000);
+
+                    long d = diff0.dot(diff2);
+                    if (d < long.MinValue)
+                    {
+                        poly.RemoveAt(i);
+                        i--;
+                    }
+                    else
+                    {
+                        p0 = p1;
+                    }
+                }
             }
-        }
-    }
         }
 
         public static void optimizePolygons(Polygons polys)
@@ -70,7 +75,7 @@ namespace MatterHackers.MatterSlice
                 optimizePolygon(polys[n]);
                 if (polys[n].Count < 3)
                 {
-                    polys.remove(n);
+                    polys.RemoveAt(n);
                     n--;
                 }
             }

@@ -26,9 +26,7 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
-
-    /* A SimpleFace is a 3 dimensional model triangle with 3 points. These points are already converted to integers */
+    // A SimpleFace is a 3 dimensional model triangle with 3 points. These points are already converted to integers
     public class SimpleFace
     {
         public Point3[] v = new Point3[3];
@@ -36,7 +34,7 @@ namespace MatterHackers.MatterSlice
         public SimpleFace(Point3 v0, Point3 v1, Point3 v2) { v[0] = v0; v[1] = v1; v[2] = v2; }
     };
 
-    /* A SimpleVolume is the most basic reprisentation of a 3D model. It contains all the faces as SimpleTriangles, with nothing fancy. */
+    // A SimpleVolume is the most basic reprisentation of a 3D model. It contains all the faces as SimpleTriangles, with nothing fancy.
     public class SimpleVolume
     {
         public List<SimpleFace> faces = new List<SimpleFace>();

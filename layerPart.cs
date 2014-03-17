@@ -26,9 +26,6 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Point = IntPoint;
-    using PolygonRef = Polygon;
-
     public static class LayerPart
     {
         /*
@@ -50,19 +47,19 @@ namespace MatterHackers.MatterSlice
             {
                 for (int i = 0; i < layer.polygonList.Count; i++)
                 {
-                    if (layer.polygonList[i].orientation())
-                        layer.polygonList[i].reverse();
+                    if (layer.polygonList[i].Orientation())
+                        layer.polygonList[i].Reverse();
                 }
             }
 
             List<Polygons> result;
             if ((unionAllType & ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_C) == ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_C)
             {
-                result = layer.polygonList.offset(1000).splitIntoParts(unionAllType != 0);
+                result = layer.polygonList.Offset(1000).SplitIntoParts(unionAllType != 0);
             }
             else
             {
-                result = layer.polygonList.splitIntoParts(unionAllType != 0);
+                result = layer.polygonList.SplitIntoParts(unionAllType != 0);
             }
 
             for (int i = 0; i < result.Count; i++)
@@ -70,8 +67,8 @@ namespace MatterHackers.MatterSlice
                 storageLayer.parts.Add(new SliceLayerPart());
                 if ((unionAllType & ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_C) == ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_C)
                 {
-                    storageLayer.parts[i].outline.add(result[i][0]);
-                    storageLayer.parts[i].outline = storageLayer.parts[i].outline.offset(-1000);
+                    storageLayer.parts[i].outline.Add(result[i][0]);
+                    storageLayer.parts[i].outline = storageLayer.parts[i].outline.Offset(-1000);
                 }
                 else
                 {
