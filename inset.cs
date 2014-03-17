@@ -65,8 +65,7 @@ namespace MatterHackers.MatterSlice
             {
                 if (layer.parts[partNr].insets.Count < 1)
                 {
-                    throw new NotImplementedException();
-                    //layer.parts.erase(layer.parts.begin() + partNr);
+                    layer.parts.RemoveAt(partNr);
                     partNr -= 1;
                 }
             }

@@ -81,8 +81,6 @@ namespace MatterHackers.MatterSlice
                 int segmentIndexBeingAdded = startingSegmentIndex;
                 bool canClose;
 
-                int lastSegmentIndex = faceTo2DSegmentIndex.FindMax().Value;
-
                 while (true)
                 {
                     canClose = false;
@@ -99,7 +97,7 @@ namespace MatterHackers.MatterSlice
                             int foundTouching2DSegmentIndex = 0;
                             bool foundTouching2DSegment = faceTo2DSegmentIndex.Find(touchingFaceIndex, out foundTouching2DSegmentIndex);
                             // If the connected face has an edge that is in the segment list
-                            if (foundTouching2DSegment && foundTouching2DSegmentIndex != lastSegmentIndex)
+                            if (foundTouching2DSegment)
                             {
                                 IntPoint foundSegmentStart = segmentList[faceTo2DSegmentIndex[touchingFaceIndex]].start;
                                 IntPoint diff = addedSegmentEndPoint - foundSegmentStart;
