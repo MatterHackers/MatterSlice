@@ -294,7 +294,8 @@ namespace MatterHackers.MatterSlice
 
             if (config.wipeTowerSize > 0)
             {
-                PolygonRef p = storage.wipeTower.newPoly();
+                Polygon p = new Polygon();
+                storage.wipeTower.Add(p);
                 p.add(new Point(storage.modelMin.x - 3000, storage.modelMax.y + 3000));
                 p.add(new Point(storage.modelMin.x - 3000, storage.modelMax.y + 3000 + config.wipeTowerSize));
                 p.add(new Point(storage.modelMin.x - 3000 - config.wipeTowerSize, storage.modelMax.y + 3000 + config.wipeTowerSize));

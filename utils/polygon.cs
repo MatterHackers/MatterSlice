@@ -159,12 +159,6 @@ public _Polygon()
                 polygons.Add(other[n]);
         }
 
-        public static PolygonRef newPoly(this Polygons polygons)
-        {
-            polygons.Add(new ClipperLib.Polygon());
-            return new PolygonRef(polygons[polygons.Count - 1]);
-        }
-
 #if false
     public static Polygons operator=( Polygons other) 
     {

@@ -302,11 +302,18 @@ namespace MatterHackers.MatterSlice
                             }
                             else if (bestResult.AtoB)
                             {
-                                PolygonRef poly = polygonList.newPoly();
+                                Polygon poly = new Polygon();
+                                polygonList.Add(poly);
                                 for (int j = bestResult.pointIdxA; j != bestResult.pointIdxB; j = (j + 1) % polygonList[bestResult.polygonIdx].Count)
+                                {
                                     poly.add(polygonList[bestResult.polygonIdx][j]);
+                                }
+
                                 for (int j = openPolygonList[bestA].Count - 1; (int)(j) >= 0; j--)
+                                {
                                     poly.add(openPolygonList[bestA][j]);
+                                }
+
                                 openPolygonList[bestA].clear();
                             }
                             else
@@ -314,7 +321,9 @@ namespace MatterHackers.MatterSlice
                                 int n = polygonList.Count;
                                 polygonList.add(openPolygonList[bestA]);
                                 for (int j = bestResult.pointIdxB; j != bestResult.pointIdxA; j = (j + 1) % polygonList[bestResult.polygonIdx].Count)
+                                {
                                     polygonList[n].add(polygonList[bestResult.polygonIdx][j]);
+                                }
                                 openPolygonList[bestA].clear();
                             }
                         }
@@ -323,26 +332,44 @@ namespace MatterHackers.MatterSlice
                             if (bestResult.pointIdxA == bestResult.pointIdxB)
                             {
                                 for (int n = 0; n < openPolygonList[bestA].Count; n++)
+                                {
                                     openPolygonList[bestB].add(openPolygonList[bestA][n]);
+                                }
+
                                 openPolygonList[bestA].clear();
                             }
                             else if (bestResult.AtoB)
                             {
                                 Polygon poly = new Polygon();
                                 for (int n = bestResult.pointIdxA; n != bestResult.pointIdxB; n = (n + 1) % polygonList[bestResult.polygonIdx].Count)
+                                {
                                     poly.add(polygonList[bestResult.polygonIdx][n]);
+                                }
+
                                 for (int n = poly.Count - 1; (int)(n) >= 0; n--)
+                                {
                                     openPolygonList[bestB].add(poly[n]);
+                                }
+
                                 for (int n = 0; n < openPolygonList[bestA].Count; n++)
+                                {
                                     openPolygonList[bestB].add(openPolygonList[bestA][n]);
+                                }
+
                                 openPolygonList[bestA].clear();
                             }
                             else
                             {
                                 for (int n = bestResult.pointIdxB; n != bestResult.pointIdxA; n = (n + 1) % polygonList[bestResult.polygonIdx].Count)
+                                {
                                     openPolygonList[bestB].add(polygonList[bestResult.polygonIdx][n]);
+                                }
+
                                 for (int n = openPolygonList[bestA].Count - 1; n >= 0; n--)
+                                {
                                     openPolygonList[bestB].add(openPolygonList[bestA][n]);
+                                }
+
                                 openPolygonList[bestA].clear();
                             }
                         }

@@ -93,8 +93,8 @@ namespace MatterHackers.MatterSlice
                     int idx0 = (int)((currentPoint.X - boundary.min.X) / lineSpacing);
                     int idx1 = (int)((lastPoint.X - boundary.min.X) / lineSpacing);
                     
-                    long xMin = currentPoint.X;
-                    long xMax = lastPoint.X;
+                    long xMin = Math.Min(currentPoint.X, lastPoint.X);
+                    long xMax = Math.Max(currentPoint.X, lastPoint.X);
 
                     if (currentPoint.X > lastPoint.X)
                     {
@@ -133,7 +133,8 @@ namespace MatterHackers.MatterSlice
                         continue;
                     }
 
-                    PolygonRef p = result.newPoly();
+                    Polygon p = new Polygon();
+                    result.Add(p);
                     p.add(matrix.unapply(new Point(x, cutList[idx2][i])));
                     p.add(matrix.unapply(new Point(x, cutList[idx2][i + 1])));
                 }

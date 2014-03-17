@@ -188,7 +188,9 @@ namespace MatterHackers.MatterSlice
         {
             int nr = 0;
             nr++;
-            PolygonRef poly = polygons.newPoly();
+            Polygon poly = new Polygon();
+            polygons.Add(poly);
+
             Polygon tmpPoly = new Polygon();
 
             while (true)
