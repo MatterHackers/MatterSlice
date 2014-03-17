@@ -559,8 +559,12 @@ namespace MatterHackers.MatterSlice
         {
             PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(lastPosition);
             for (int i = 0; i < polygons.Count; i++)
+            {
                 orderOptimizer.addPolygon(polygons[i]);
+            }
+
             orderOptimizer.optimize();
+            
             for (int i = 0; i < orderOptimizer.polyOrder.Count; i++)
             {
                 int nr = orderOptimizer.polyOrder[i];

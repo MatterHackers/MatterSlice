@@ -72,14 +72,14 @@ namespace MatterHackers.MatterSlice
             config.retractionAmountExtruderSwitch = 14500;
             config.retractionMinimalDistance = 1500;
             config.minimalExtrusionBeforeRetraction = 100;
-            config.enableOozeShield = 0;
+            config.enableOozeShield = false;
             config.enableCombing = true;
             config.wipeTowerSize = 0;
             config.multiVolumeOverlap = 0;
 
             config.minimalLayerTime = 5;
             config.minimalFeedrate = 10;
-            config.coolHeadLift = 1;
+            config.coolHeadLift = false;
             config.fanSpeedMin = 100;
             config.fanSpeedMax = 100;
 

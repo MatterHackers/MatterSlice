@@ -101,7 +101,7 @@ namespace MatterHackers.MatterSlice
         public int retractionMinimalDistance;
         public int minimalExtrusionBeforeRetraction;
         public bool enableCombing;
-        public int enableOozeShield;
+        public bool enableOozeShield;
         public int wipeTowerSize;
         public int multiVolumeOverlap;
 
@@ -123,7 +123,7 @@ namespace MatterHackers.MatterSlice
         //Cool settings
         public int minimalLayerTime;
         public int minimalFeedrate;
-        public int coolHeadLift;
+        public bool coolHeadLift;
         public int fanSpeedMin;
         public int fanSpeedMax;
 

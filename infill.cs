@@ -36,10 +36,16 @@ namespace MatterHackers.MatterSlice
             while (true)
             {
                 for (int polygonNr = 0; polygonNr < outline.Count; polygonNr++)
+                {
                     result.add(outline[polygonNr]);
+                }
+
                 outline = outline.offset(-offsets[step]);
                 if (outline.Count < 1)
+                {
                     break;
+                }
+
                 step = (step + 1) % offsetsSize;
             }
         }
@@ -47,46 +53,72 @@ namespace MatterHackers.MatterSlice
         static int compare_long(long a, long b)
         {
             long n = a - b;
-            if (n < 0) return -1;
-            if (n > 0) return 1;
+            if (n < 0)
+            {
+                return -1;
+            }
+
+            if (n > 0)
+            {
+                return 1;
+            }
+
             return 0;
         }
 
         public static void generateLineInfill(Polygons in_outline, Polygons result, int extrusionWidth, int lineSpacing, int infillOverlap, double rotation)
         {
-            Polygons outline = in_outline.offset(extrusionWidth * infillOverlap / 100);
+            Polygons outlines = in_outline.offset(extrusionWidth * infillOverlap / 100);
             PointMatrix matrix = new PointMatrix(rotation);
 
-            outline.applyMatrix(matrix);
+            outlines.applyMatrix(matrix);
 
-            AABB boundary = new AABB(outline);
+            AABB boundary = new AABB(outlines);
 
             boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing;
             int lineCount = (int)((boundary.max.X - boundary.min.X + (lineSpacing - 1)) / lineSpacing);
             List<List<long>> cutList = new List<List<long>>();
             for (int n = 0; n < lineCount; n++)
-                cutList.Add(new List<long>());
-
-            for (int polyNr = 0; polyNr < outline.Count; polyNr++)
             {
-                Point p1 = outline[polyNr][outline[polyNr].Count - 1];
-                for (int i = 0; i < outline[polyNr].Count; i++)
+                cutList.Add(new List<long>());
+            }
+
+            for (int outlineIndex = 0; outlineIndex < outlines.Count; outlineIndex++)
+            {
+                Polygon currentOutline = outlines[outlineIndex];
+                Point lastPoint = currentOutline[currentOutline.Count - 1];
+                for (int pointIndex = 0; pointIndex < currentOutline.Count; pointIndex++)
                 {
-                    Point p0 = outline[polyNr][i];
-                    int idx0 = (int)((p0.X - boundary.min.X) / lineSpacing);
-                    int idx1 = (int)((p1.X - boundary.min.X) / lineSpacing);
-                    long xMin = p0.X, xMax = p1.X;
-                    if (p0.X > p1.X) { xMin = p1.X; xMax = p0.X; }
-                    if (idx0 > idx1) { int tmp = idx0; idx0 = idx1; idx1 = tmp; }
+                    Point currentPoint = currentOutline[pointIndex];
+                    int idx0 = (int)((currentPoint.X - boundary.min.X) / lineSpacing);
+                    int idx1 = (int)((lastPoint.X - boundary.min.X) / lineSpacing);
+                    
+                    long xMin = currentPoint.X;
+                    long xMax = lastPoint.X;
+
+                    if (currentPoint.X > lastPoint.X)
+                    {
+                        xMin = lastPoint.X; 
+                        xMax = currentPoint.X; 
+                    }
+
+                    if (idx0 > idx1) 
+                    {
+                        int tmp = idx0; 
+                        idx0 = idx1; 
+                        idx1 = tmp; 
+                    }
+
                     for (int idx = idx0; idx <= idx1; idx++)
                     {
                         int x = (int)((idx * lineSpacing) + boundary.min.X + lineSpacing / 2);
                         if (x < xMin) continue;
                         if (x >= xMax) continue;
-                        int y = (int)(p0.Y + (p1.Y - p0.Y) * (x - p0.X) / (p1.X - p0.X));
+                        int y = (int)(currentPoint.Y + (lastPoint.Y - currentPoint.Y) * (x - currentPoint.X) / (lastPoint.X - currentPoint.X));
                         cutList[idx].Add(y);
                     }
-                    p1 = p0;
+
+                    lastPoint = currentPoint;
                 }
             }
 
@@ -97,11 +129,15 @@ namespace MatterHackers.MatterSlice
                 for (int i = 0; i + 1 < cutList[idx2].Count; i += 2)
                 {
                     if (cutList[idx2][i + 1] - cutList[idx2][i] < extrusionWidth / 5)
+                    {
                         continue;
+                    }
+
                     PolygonRef p = result.newPoly();
                     p.add(matrix.unapply(new Point(x, cutList[idx2][i])));
                     p.add(matrix.unapply(new Point(x, cutList[idx2][i + 1])));
                 }
+
                 idx2 += 1;
             }
         }

@@ -214,8 +214,12 @@ namespace MatterHackers.MatterSlice
                 for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
                 {
                     int insetCount = config.insetCount;
-                    if (config.spiralizeMode && (int)(layerNr) < config.downSkinCount && layerNr % 2 == 1)//Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
+                    if (config.spiralizeMode && (int)(layerNr) < config.downSkinCount && layerNr % 2 == 1)
+                    {
+                        //Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
                         insetCount += 5;
+                    }
+
                     SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
                     Inset.generateInsets(layer, config.extrusionWidth, insetCount);
 
@@ -225,14 +229,16 @@ namespace MatterHackers.MatterSlice
                         {
                             LogOutput.logPolygons("inset0", layerNr, layer.z, layer.parts[partNr].insets[0]);
                             for (int inset = 1; inset < layer.parts[partNr].insets.Count; inset++)
+                            {
                                 LogOutput.logPolygons("insetx", layerNr, layer.z, layer.parts[partNr].insets[inset]);
+                            }
                         }
                     }
                 }
                 LogOutput.logProgress("inset", layerNr + 1, totalLayers);
             }
 
-            if (config.enableOozeShield != 0)
+            if (config.enableOozeShield)
             {
                 for (int layerNr = 0; layerNr < totalLayers; layerNr++)
                 {
@@ -268,7 +274,8 @@ namespace MatterHackers.MatterSlice
 
             for (int layerNr = 0; layerNr < totalLayers; layerNr++)
             {
-                if (!config.spiralizeMode || (int)(layerNr) < config.downSkinCount)    //Only generate up/downskin and infill for the first X layers when spiralize is choosen.
+                //Only generate up/downskin and infill for the first X layers when spiralize is choosen.
+                if (!config.spiralizeMode || (int)(layerNr) < config.downSkinCount)
                 {
                     for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
                     {
@@ -306,9 +313,13 @@ namespace MatterHackers.MatterSlice
                     for (int partNr = 0; partNr < storage.volumes[volumeIdx].layers[layerNr].parts.Count; partNr++)
                     {
                         if (layerNr > 0)
+                        {
                             storage.volumes[volumeIdx].layers[layerNr].parts[partNr].bridgeAngle = Bridge.bridgeAngle(storage.volumes[volumeIdx].layers[layerNr].parts[partNr], storage.volumes[volumeIdx].layers[layerNr - 1]);
+                        }
                         else
+                        {
                             storage.volumes[volumeIdx].layers[layerNr].parts[partNr].bridgeAngle = -1;
+                        }
                     }
                 }
             }
@@ -381,9 +392,13 @@ namespace MatterHackers.MatterSlice
 
                 gcode.addComment("LAYER:{0}".FormatWith(layerNr));
                 if (layerNr == 0)
+                {
                     gcode.setExtrusion(config.initialLayerThickness, config.filamentDiameter, config.filamentFlow);
+                }
                 else
+                {
                     gcode.setExtrusion(config.layerThickness, config.filamentDiameter, config.filamentFlow);
+                }
 
                 GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.moveSpeed, config.retractionMinimalDistance);
                 int z = config.initialLayerThickness + layerNr * config.layerThickness;
@@ -392,16 +407,24 @@ namespace MatterHackers.MatterSlice
 
                 bool printSupportFirst = (storage.support.generated && config.supportExtruder > 0 && config.supportExtruder == gcodeLayer.getExtruder());
                 if (printSupportFirst)
+                {
                     addSupportToGCode(storage, gcodeLayer, layerNr);
+                }
 
                 for (int volumeCnt = 0; volumeCnt < storage.volumes.Count; volumeCnt++)
                 {
                     if (volumeCnt > 0)
+                    {
                         volumeIdx = (volumeIdx + 1) % storage.volumes.Count;
+                    }
+
                     addVolumeLayerToGCode(storage, gcodeLayer, volumeIdx, layerNr);
                 }
+
                 if (!printSupportFirst)
+                {
                     addSupportToGCode(storage, gcodeLayer, layerNr);
+                }
 
                 //Finish the layer by applying speed corrections for minimal layer times and slowdown for the initial layer.
                 if ((int)(layerNr) < config.initialSpeedupLayers)
@@ -409,8 +432,12 @@ namespace MatterHackers.MatterSlice
                     int n = config.initialSpeedupLayers;
                     int layer0Factor = config.initialLayerSpeed * 100 / config.printSpeed;
                     gcodeLayer.setExtrudeSpeedFactor((layer0Factor * (n - layerNr) + 100 * (layerNr)) / n);
-                    if (layerNr == 0)//On the first layer, also slow down the travel
+                    
+                    if (layerNr == 0)
+                    {
+                        //On the first layer, also slow down the travel
                         gcodeLayer.setTravelSpeedFactor(layer0Factor);
+                    }
                 }
                 gcodeLayer.forceMinimalLayerTime(config.minimalLayerTime, config.minimalFeedrate);
 
@@ -431,7 +458,7 @@ namespace MatterHackers.MatterSlice
                 }
                 gcode.addFanCommand(fanSpeed);
 
-                gcodeLayer.writeGCode(config.coolHeadLift > 0, (int)(layerNr) > 0 ? config.layerThickness : config.initialLayerThickness);
+                gcodeLayer.writeGCode(config.coolHeadLift, (int)(layerNr) > 0 ? config.layerThickness : config.initialLayerThickness);
             }
 
             /* support debug
@@ -464,11 +491,15 @@ namespace MatterHackers.MatterSlice
             int prevExtruder = gcodeLayer.getExtruder();
             bool extruderChanged = gcodeLayer.setExtruder(volumeIdx);
             if (layerNr == 0 && volumeIdx == 0)
+            {
                 gcodeLayer.addPolygonsByOptimizer(storage.skirt, skirtConfig);
+            }
 
             SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
             if (extruderChanged)
+            {
                 addWipeTower(storage, gcodeLayer, layerNr, prevExtruder);
+            }
 
             if (storage.oozeShield.Count > 0 && storage.volumes.Count > 1)
             {
@@ -490,32 +521,48 @@ namespace MatterHackers.MatterSlice
                 SliceLayerPart part = layer.parts[partOrderOptimizer.polyOrder[partCounter]];
 
                 if (config.enableCombing)
+                {
                     gcodeLayer.setCombBoundary(part.combBoundery);
+                }
                 else
+                {
                     gcodeLayer.setAlwaysRetract(true);
+                }
 
                 if (config.insetCount > 0)
                 {
                     if (config.spiralizeMode)
                     {
                         if ((int)(layerNr) >= config.downSkinCount)
+                        {
                             inset0Config.spiralize = true;
+                        }
+
                         if ((int)(layerNr) == config.downSkinCount && part.insets.Count > 0)
+                        {
                             gcodeLayer.addPolygonsByOptimizer(part.insets[0], inset1Config);
+                        }
                     }
+
                     for (int insetNr = part.insets.Count - 1; insetNr > -1; insetNr--)
                     {
                         if (insetNr == 0)
+                        {
                             gcodeLayer.addPolygonsByOptimizer(part.insets[insetNr], inset0Config);
+                        }
                         else
+                        {
                             gcodeLayer.addPolygonsByOptimizer(part.insets[insetNr], inset1Config);
+                        }
                     }
                 }
 
                 Polygons fillPolygons = new Polygons();
                 int fillAngle = 45;
                 if ((layerNr & 1) == 1)
+                {
                     fillAngle += 90;
+                }
                 //int sparseSteps[1] = {config.extrusionWidth};
                 //generateConcentricInfill(part.skinOutline, fillPolygons, sparseSteps, 1);
                 Infill.generateLineInfill(part.skinOutline, fillPolygons, config.extrusionWidth, config.extrusionWidth, config.infillOverlap, (part.bridgeAngle > -1) ? part.bridgeAngle : fillAngle);
@@ -539,7 +586,9 @@ namespace MatterHackers.MatterSlice
 
                 //After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
                 if (!config.spiralizeMode || (int)(layerNr) < config.downSkinCount)
+                {
                     gcodeLayer.moveInsideCombBoundary(config.extrusionWidth * 2);
+                }
             }
             gcodeLayer.setCombBoundary(null);
         }
@@ -547,13 +596,17 @@ namespace MatterHackers.MatterSlice
         void addSupportToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerNr)
         {
             if (!storage.support.generated)
+            {
                 return;
+            }
 
             if (config.supportExtruder > -1)
             {
                 int prevExtruder = gcodeLayer.getExtruder();
                 if (gcodeLayer.setExtruder(config.supportExtruder))
+                {
                     addWipeTower(storage, gcodeLayer, layerNr, prevExtruder);
+                }
 
                 if (storage.oozeShield.Count > 0 && storage.volumes.Count == 1)
                 {
@@ -562,13 +615,16 @@ namespace MatterHackers.MatterSlice
                     gcodeLayer.setAlwaysRetract(config.enableCombing);
                 }
             }
+
             int z = config.initialLayerThickness + layerNr * config.layerThickness;
             SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, z);
             for (int volumeCnt = 0; volumeCnt < storage.volumes.Count; volumeCnt++)
             {
                 SliceLayer layer = storage.volumes[volumeCnt].layers[layerNr];
                 for (int n = 0; n < layer.parts.Count; n++)
+                {
                     supportGenerator.polygons = supportGenerator.polygons.difference(layer.parts[n].outline.offset(config.supportXYDistance));
+                }
             }
             //Contract and expand the suppory polygons so small sections are removed and the final polygon is smoothed a bit.
             supportGenerator.polygons = supportGenerator.polygons.offset(-config.extrusionWidth * 3);
@@ -608,7 +664,10 @@ namespace MatterHackers.MatterSlice
         void addWipeTower(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerNr, int prevExtruder)
         {
             if (config.wipeTowerSize < 1)
+            {
                 return;
+            }
+
             //If we changed extruder, print the wipe/prime tower for this nozzle;
             gcodeLayer.addPolygonsByOptimizer(storage.wipeTower, supportConfig);
             Polygons fillPolygons = new Polygons();
