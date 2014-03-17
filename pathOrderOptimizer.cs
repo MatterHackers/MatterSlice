@@ -54,21 +54,21 @@ namespace MatterHackers.MatterSlice
         public void optimize()
         {
             List<bool> picked = new List<bool>();
-            for (int i = 0; i < polygons.Count; i++)
+            for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
             {
-                int best = -1;
-                float bestDist = float.MaxValue;
-                PolygonRef poly = polygons[i];
-                for (int j = 0; j < poly.Count; j++)
+                int bestPoint = -1;
+                float closestDist = float.MaxValue;
+                PolygonRef poly = polygons[polygonIndex];
+                for (int pointIndex = 0; pointIndex < poly.Count; pointIndex++)
                 {
-                    float dist = (poly[j] - startPoint).vSize2f();
-                    if (dist < bestDist)
+                    float dist = (poly[pointIndex] - startPoint).vSize2f();
+                    if (dist < closestDist)
                     {
-                        best = j;
-                        bestDist = dist;
+                        bestPoint = pointIndex;
+                        closestDist = dist;
                     }
                 }
-                polyStart.Add(best);
+                polyStart.Add(bestPoint);
                 picked.Add(false);
             }
 
