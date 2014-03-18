@@ -53,6 +53,7 @@ namespace MatterHackers.MatterSlice
         }
     }
 
+    // all the variables in this class will be saved and loaded from settings files
     public class ConfigSettings
     {
         // if you were to change the layerThickness variable you would add a legacy name so that we can still use old settings
@@ -127,52 +128,59 @@ namespace MatterHackers.MatterSlice
 
         public void DumpSettings(string fileName)
         {
+            List<string> lines = new List<string>();
+            FieldInfo[] fields;
+            fields = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
+            foreach (FieldInfo field in fields)
+            {
+                System.Attribute[] attributes = System.Attribute.GetCustomAttributes(field);
+                foreach (Attribute attribute in attributes)
+                {
+                    LegacyName legacyName = attribute as LegacyName;
+                    if (legacyName != null)
+                    {
+                        string Name = legacyName.Name;
+                    }
+                }
+                string name = field.Name;
+                object value = field.GetValue(this);
+                switch (field.FieldType.Name)
+                {
+                    case "Int32":
+                        lines.Add("{0}={1}".FormatWith(name, value));
+                        break;
+
+                    case "Boolean":
+                        lines.Add("{0}={1}".FormatWith(name, value));
+                        break;
+
+                    case "FMatrix3x3":
+                        lines.Add("{0}={1}".FormatWith(name, value));
+                        break;
+
+                    case "IntPoint":
+                        lines.Add("{0}={1}".FormatWith(name, value));
+                        break;
+
+                    case "IntPoint[]":
+                        lines.Add("{0}={1}".FormatWith(name, value));
+                        break;
+
+                    case "String":
+                        lines.Add("{0}={1}".FormatWith(name, value).Replace("\n", "\\n"));
+                        break;
+
+                    default:
+                        throw new NotImplementedException("unknown type");
+                }
+            }
+
+            lines.Sort();
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(fileName))
             {
-                FieldInfo[] fields;
-                fields = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
-                foreach (FieldInfo field in fields)
+                foreach (string line in lines)
                 {
-                    System.Attribute[] attributes = System.Attribute.GetCustomAttributes(field);
-                    foreach (Attribute attribute in attributes)
-                    {
-                        LegacyName legacyName = attribute as LegacyName;
-                        if (legacyName != null)
-                        {
-                            string Name = legacyName.Name;
-                        }
-                    }
-                    string name = field.Name;
-                    object value = field.GetValue(this);
-                    switch (field.FieldType.Name)
-                    {
-                        case "Int32":
-                            file.WriteLine("{0}={1}".FormatWith(name, value));
-                            break;
-
-                        case "Boolean":
-                            file.WriteLine("{0}={1}".FormatWith(name, value));
-                            break;
-
-                        case "FMatrix3x3":
-                            file.WriteLine("{0}={1}".FormatWith(name, value));
-                            break;
-
-                        case "IntPoint":
-                            file.WriteLine("{0}={1}".FormatWith(name, value));
-                            break;
-
-                        case "IntPoint[]":
-                            file.WriteLine("{0}={1}".FormatWith(name, value));
-                            break;
-
-                        case "String":
-                            file.WriteLine("{0}={1}".FormatWith(name, value).Replace("\n", "\\n"));
-                            break;
-
-                        default:
-                            throw new NotImplementedException("unknown type");
-                    }
+                    file.WriteLine(line);
                 }
             }
         }
