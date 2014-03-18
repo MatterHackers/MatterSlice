@@ -34,22 +34,46 @@ using System.Text;
 
 namespace MatterHackers.MatterSlice
 {
-    public static class StringHelper
+    public static class SplitCommandLine
     {
-        public static string FormatWith(this string format, params object[] args)
+        public static IEnumerable<string> DoSplit(string commandLine)
         {
-            if (format == null)
-                throw new ArgumentNullException("format");
+            bool inQuotes = false;
 
-            return string.Format(format, args);
+            return commandLine.Split(c =>
+            {
+                if (c == '\"')
+                    inQuotes = !inQuotes;
+
+                return !inQuotes && c == ' ';
+            })
+            .Select(arg => arg.Trim().TrimMatchingQuotes('\"'))
+            .Where(arg => !string.IsNullOrEmpty(arg));
         }
 
-        public static string FormatWith(this string format, IFormatProvider provider, params object[] args)
+        public static IEnumerable<string> Split(this string str, Func<char, bool> controller)
         {
-            if (format == null)
-                throw new ArgumentNullException("format");
+            int nextPiece = 0;
 
-            return string.Format(provider, format, args);
+            for (int c = 0; c < str.Length; c++)
+            {
+                if (controller(str[c]))
+                {
+                    yield return str.Substring(nextPiece, c - nextPiece);
+                    nextPiece = c + 1;
+                }
+            }
+
+            yield return str.Substring(nextPiece);
+        }
+
+        public static string TrimMatchingQuotes(this string input, char quote)
+        {
+            if ((input.Length >= 2) &&
+                (input[0] == quote) && (input[input.Length - 1] == quote))
+                return input.Substring(1, input.Length - 2);
+
+            return input;
         }
     }
 }

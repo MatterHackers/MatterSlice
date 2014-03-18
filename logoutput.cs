@@ -40,7 +40,9 @@ namespace MatterHackers.MatterSlice
         public static void _log(string message)
         {
             if (verbose_level < 1)
+            {
                 return;
+            }
 
             Console.Write(message);
         }
@@ -53,7 +55,9 @@ namespace MatterHackers.MatterSlice
         public static void logProgress(string type, int value, int maxValue)
         {
             if (verbose_level < 2)
+            {
                 return;
+            }
 
             Console.Write("Progress:{0}:{1}:{2}\n".FormatWith(type, value, maxValue));
         }

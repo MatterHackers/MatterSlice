@@ -45,12 +45,6 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="clipper_library\clipper_library.csproj">
-      <Project>{9B062971-A88E-4A3D-B3C9-12B78D15FA66}</Project>
-      <Name>clipper_library</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="layerPart.cs" />
     <Compile Include="sliceDataStorage.cs" />
     <Compile Include="slicer.cs" />
@@ -59,6 +53,7 @@
     <Compile Include="Settings.cs" />
     <Compile Include="timeEstimate.cs" />
     <Compile Include="utils\IntpointHelper.cs" />
+    <Compile Include="utils\SplitCommandLine.cs" />
     <Compile Include="utils\StringHelper.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -109,6 +104,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="inset.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="clipper_library\clipper_library.csproj">
+      <Project>{9B062971-A88E-4A3D-B3C9-12B78D15FA66}</Project>
+      <Name>clipper_library</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

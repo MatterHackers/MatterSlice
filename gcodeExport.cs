@@ -114,6 +114,7 @@ namespace MatterHackers.MatterSlice
 
         public void setFilename(string filename)
         {
+            filename = filename.Replace("\"", "");
             f = new StreamWriter(filename);
         }
 

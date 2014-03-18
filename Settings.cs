@@ -149,12 +149,6 @@ namespace MatterHackers.MatterSlice
         public string startCode;
         public string endCode;
 
-#if false
-//#define STRINGIFY(_s) #_s
-//#define SETTING(name) _index.push_back(_ConfigSettingIndex(STRINGIFY(name), &name))
-//#define SETTING2(name, altName) _index.push_back(_ConfigSettingIndex(STRINGIFY(name), &name)); _index.push_back(_ConfigSettingIndex(STRINGIFY(altName), &name))
-#endif
-
         public ConfigSettings()
         {
 #if false
@@ -227,30 +221,257 @@ namespace MatterHackers.MatterSlice
 #endif
         }
 
-        public bool setSetting(string key, string value)
+        public bool SetSetting(string key, string value)
         {
-            throw new NotImplementedException();
-#if false
-    for(int n=0; n < _index.size(); n++)
-    {
-        if (strcasecmp(key, _index[n].key) == 0)
-        {
-            *_index[n].ptr = atoi(value);
-            return true;
-        }
-    }
-    if (strcasecmp(key, "startCode") == 0)
-    {
-        this.startCode = value;
-        return true;
-    }
-    if (strcasecmp(key, "endCode") == 0)
-    {
-        this.endCode = value;
-        return true;
-    }
-#endif
+            value = value.Replace("\"", "");
+            switch (key)
+            {
+                case "layerThickness":
+                    layerThickness = int.Parse(value);
+                    return true;
+
+                case "initialLayerThickness":
+                    initialLayerThickness = int.Parse(value);
+                    return true;
+
+                case "filamentDiameter":
+                    filamentDiameter = int.Parse(value);
+                    return true;
+
+                case "filamentFlow":
+                    filamentFlow = int.Parse(value);
+                    return true;
+
+                case "extrusionWidth":
+                    extrusionWidth = int.Parse(value);
+                    return true;
+
+                case "insetCount":
+                    insetCount = int.Parse(value);
+                    return true;
+
+                case "downSkinCount":
+                    downSkinCount = int.Parse(value);
+                    return true;
+
+                case "upSkinCount":
+                    upSkinCount = int.Parse(value);
+                    return true;
+
+                case "sparseInfillLineDistance":
+                    sparseInfillLineDistance = int.Parse(value);
+                    return true;
+
+                case "infillOverlap":
+                    infillOverlap = int.Parse(value);
+                    return true;
+
+                case "skirtDistance":
+                    skirtDistance = int.Parse(value);
+                    return true;
+
+                case "skirtLineCount":
+                    skirtLineCount = int.Parse(value);
+                    return true;
+
+                case "skirtMinLength":
+                    skirtMinLength = (int)double.Parse(value);
+                    return true;
+
+                case "initialSpeedupLayers":
+                    initialSpeedupLayers = int.Parse(value);
+                    return true;
+
+                case "initialLayerSpeed":
+                    initialLayerSpeed = int.Parse(value);
+                    return true;
+
+                case "printSpeed":
+                    printSpeed = int.Parse(value);
+                    return true;
+
+                case "infillSpeed":
+                    infillSpeed = int.Parse(value);
+                    return true;
+
+                case "inset0Speed":
+                    inset0Speed = int.Parse(value);
+                    return true;
+
+                case "insetXSpeed":
+                    insetXSpeed = int.Parse(value);
+                    return true;
+
+                case "moveSpeed":
+                    moveSpeed = int.Parse(value);
+                    return true;
+
+                case "fanFullOnLayerNr":
+                    fanFullOnLayerNr = int.Parse(value);
+                    return true;
+
+                case "supportAngle":
+                    supportAngle = int.Parse(value);
+                    return true;
+
+                case "supportEverywhere":
+                    supportEverywhere = int.Parse(value);
+                    return true;
+
+                case "supportLineDistance":
+                    supportLineDistance = int.Parse(value);
+                    return true;
+
+                case "supportXYDistance":
+                    supportXYDistance = int.Parse(value);
+                    return true;
+
+                case "supportZDistance":
+                    supportZDistance = int.Parse(value);
+                    return true;
+
+                case "supportExtruder":
+                    supportExtruder = int.Parse(value);
+                    return true;
+
+                case "retractionAmount":
+                    retractionAmount = int.Parse(value);
+                    return true;
+
+                case "retractionSpeed":
+                    retractionSpeed = int.Parse(value);
+                    return true;
+
+                case "retractionAmountExtruderSwitch":
+                    retractionAmountExtruderSwitch = int.Parse(value);
+                    return true;
+
+                case "retractionMinimalDistance":
+                    retractionMinimalDistance = int.Parse(value);
+                    return true;
+
+                case "minimalExtrusionBeforeRetraction":
+                    minimalExtrusionBeforeRetraction = int.Parse(value);
+                    return true;
+
+                case "enableCombing":
+                    enableCombing = value == "1";
+                    return true;
+
+                case "enableOozeShield":
+                    enableOozeShield = value == "1";
+                    return true;
+
+                case "wipeTowerSize":
+                    wipeTowerSize = int.Parse(value);
+                    return true;
+
+                case "multiVolumeOverlap":
+                    multiVolumeOverlap = int.Parse(value);
+                    return true;
+
+                case "objectPosition.X":
+                    objectPosition.X = int.Parse(value);
+                    return true;
+
+                case "objectPosition.Y":
+                    objectPosition.Y = int.Parse(value);
+                    return true;
+
+                case "objectSink":
+                    objectSink = int.Parse(value);
+                    return true;
+
+                case "raftMargin":
+                    raftMargin = int.Parse(value);
+                    return true;
+
+                case "raftLineSpacing":
+                    raftLineSpacing = int.Parse(value);
+                    return true;
+
+                case "raftBaseThickness":
+                    raftBaseThickness = int.Parse(value);
+                    return true;
+
+                case "raftBaseLinewidth":
+                    raftBaseLinewidth = int.Parse(value);
+                    return true;
+
+                case "raftInterfaceThickness":
+                    raftInterfaceThickness = int.Parse(value);
+                    return true;
+
+                case "raftInterfaceLinewidth":
+                    raftInterfaceLinewidth = int.Parse(value);
+                    return true;
+
+                case "minimalLayerTime":
+                    minimalLayerTime = int.Parse(value);
+                    return true;
+
+                case "minimalFeedrate":
+                    minimalFeedrate = int.Parse(value);
+                    return true;
+
+                case "coolHeadLift":
+                    coolHeadLift = value == "1";
+                    return true;
+
+                case "fanSpeedMin":
+                    fanSpeedMin = int.Parse(value);
+                    return true;
+
+                case "fanSpeedMax":
+                    fanSpeedMax = int.Parse(value);
+                    return true;
+
+                case "fixHorrible":
+                    fixHorrible = int.Parse(value);
+                    return true;
+
+                case "spiralizeMode":
+                    sparseInfillLineDistance = int.Parse(value);
+                    return true;
+
+                case "gcodeFlavor":
+                    gcodeFlavor = int.Parse(value);
+                    return true;
+
+                case "extruderOffset[1].X":
+                    extruderOffset[1].X = int.Parse(value);
+                    return true;
+
+                case "extruderOffset[1].Y":
+                    extruderOffset[1].Y = int.Parse(value);
+                    return true;
+
+                case "extruderOffset[2].X":
+                    extruderOffset[2].X = int.Parse(value);
+                    return true;
+
+                case "extruderOffset[2].Y":
+                    extruderOffset[2].Y = int.Parse(value);
+                    return true;
+
+                case "extruderOffset[3].X":
+                    extruderOffset[3].X = int.Parse(value);
+                    return true;
+
+                case "extruderOffset[3].Y":
+                    extruderOffset[3].Y = int.Parse(value);
+                    return true;
+
+                case "startCode":
+                    this.startCode = value;
+                    return true;
+
+                case "endCode":
+                    this.endCode = value;
+                    return true;
+            }
             return false;
         }
     }
 }
+

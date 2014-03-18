@@ -18,23 +18,35 @@ along with MatterSlice.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
-    public class MatterSlice
+    public static class MatterSlice
     {
-        void print_usage()
+        static void print_usage()
         {
             Console.Write("usage: MatterSlice [-h] [-v] [-m 3x3matrix] [-s <settingkey>=<value>] -o <output.gcode> <model.stl>\n");
         }
 
         static int Main(string[] args)
         {
-            MatterSlice matterSlice = new MatterSlice();
-            return matterSlice.main(args);
+            return ProcessArgs(args);
         }
 
-        int main(string[] args)
+        public static int ProcessArgs(string argsInString)
+        {
+            List<string> commands = new List<string>();
+            foreach (string command in SplitCommandLine.DoSplit(argsInString))
+            {
+                commands.Add(command);
+            }
+            string[] args = commands.ToArray();
+            return ProcessArgs(args);
+        }
+
+        public static int ProcessArgs(string[] args)
         {
             ConfigSettings config = new ConfigSettings();
             fffProcessor processor = new fffProcessor(config);
@@ -150,22 +162,20 @@ namespace MatterHackers.MatterSlice
                             case 's':
                                 {
                                     argn++;
-                                    throw new NotImplementedException();
-#if false
-                        char* valuePtr = strchr(argv[argn], '=');
-                        if (valuePtr)
-                        {
-                            *valuePtr++ = '\0';
-                            
-                            if (!config.setSetting(argv[argn], valuePtr))
-                                Console.Write("Setting not found: %s %s\n", argv[argn], valuePtr);
-                        }
-#endif
+                                    string[] keyValue = args[argn].Split('=');
+                                    if (keyValue.Length > 1)
+                                    {
+                                        if (!config.SetSetting(keyValue[0], keyValue[1]))
+                                        {
+                                            Console.Write("Setting not found: %s %s\n", keyValue[0], keyValue[1]);
+                                        }
+                                    }
                                 }
                                 break;
+
                             case 'm':
                                 argn++;
-                                throw new NotImplementedException();
+                                throw new NotImplementedException("m");
 #if false
                         sscanf(argv[argn], "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",
                         &config.matrix.m[0][0], &config.matrix.m[0][1], &config.matrix.m[0][2],
@@ -173,6 +183,7 @@ namespace MatterHackers.MatterSlice
                         &config.matrix.m[2][0], &config.matrix.m[2][1], &config.matrix.m[2][2]);
 #endif
                                 break;
+
                             default:
                                 LogOutput.logError("Unknown option: {0}\n".FormatWith(str));
                                 break;
