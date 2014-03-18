@@ -624,30 +624,38 @@ namespace MatterHackers.MatterSlice
             LogOutput.logPolygons("support", layerNr, z, supportGenerator.polygons);
 
             List<Polygons> supportIslands = supportGenerator.polygons.SplitIntoParts();
+            PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(gcode.getPositionXY());
 
             for (int n = 0; n < supportIslands.Count; n++)
             {
+                islandOrderOptimizer.addPolygon(supportIslands[n][0]);
+            }
+            islandOrderOptimizer.optimize();
+         
+            for(int n=0; n<supportIslands.Count; n++)
+            {
+                Polygons island = supportIslands[islandOrderOptimizer.polyOrder[n]];
                 Polygons supportLines = new Polygons();
                 if (config.supportLineDistance > 0)
                 {
                     if (config.supportLineDistance > config.extrusionWidth * 4)
                     {
-                        Infill.generateLineInfill(supportIslands[n], supportLines, config.extrusionWidth, config.supportLineDistance * 2, config.infillOverlap, 0);
-                        Infill.generateLineInfill(supportIslands[n], supportLines, config.extrusionWidth, config.supportLineDistance * 2, config.infillOverlap, 90);
+                        Infill.generateLineInfill(island, supportLines, config.extrusionWidth, config.supportLineDistance * 2, config.infillOverlap, 0);
+                        Infill.generateLineInfill(island, supportLines, config.extrusionWidth, config.supportLineDistance * 2, config.infillOverlap, 90);
                     }
                     else
                     {
-                        Infill.generateLineInfill(supportIslands[n], supportLines, config.extrusionWidth, config.supportLineDistance, config.infillOverlap, ((layerNr & 1) == 1) ? 0 : 90);
+                        Infill.generateLineInfill(island, supportLines, config.extrusionWidth, config.supportLineDistance, config.infillOverlap, ((layerNr & 1) == 1) ? 0 : 90);
                     }
                 }
 
                 gcodeLayer.forceRetract();
                 if (config.enableCombing)
                 {
-                    gcodeLayer.setCombBoundary(supportIslands[n]);
+                    gcodeLayer.setCombBoundary(island);
                 }
 
-                gcodeLayer.addPolygonsByOptimizer(supportIslands[n], supportConfig);
+                gcodeLayer.addPolygonsByOptimizer(island, supportConfig);
                 gcodeLayer.addPolygonsByOptimizer(supportLines, supportConfig);
                 gcodeLayer.setCombBoundary(null);
             }
