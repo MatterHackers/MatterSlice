@@ -109,6 +109,8 @@ namespace MatterHackers.MatterSlice
         public int initialLayerSpeed;
         public int printSpeed;
         public int infillSpeed;
+        public int inset0Speed;
+        public int insetXSpeed;
         public int moveSpeed;
         public int fanFullOnLayerNr;
 
@@ -174,6 +176,8 @@ namespace MatterHackers.MatterSlice
     SETTING(initialLayerSpeed);
     SETTING(printSpeed);
     SETTING(infillSpeed);
+    SETTING(inset0Speed);
+    SETTING(insetXSpeed);
     SETTING(moveSpeed);
     SETTING(fanFullOnLayerNr);
     

@@ -51,6 +51,8 @@ namespace MatterHackers.MatterSlice
             config.initialLayerSpeed = 20;
             config.printSpeed = 50;
             config.infillSpeed = 50;
+            config.inset0Speed = 50;
+            config.insetXSpeed = 50;
             config.moveSpeed = 200;
             config.fanFullOnLayerNr = 2;
             config.skirtDistance = 6000;

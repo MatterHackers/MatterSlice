@@ -39,7 +39,7 @@ namespace MatterHackers.MatterSlice
 
         GCodePathConfig skirtConfig = new GCodePathConfig();
         GCodePathConfig inset0Config = new GCodePathConfig();
-        GCodePathConfig inset1Config = new GCodePathConfig();
+        GCodePathConfig insetXConfig = new GCodePathConfig();
         GCodePathConfig fillConfig = new GCodePathConfig();
         GCodePathConfig supportConfig = new GCodePathConfig();
 
@@ -119,8 +119,8 @@ namespace MatterHackers.MatterSlice
         void preSetup()
         {
             skirtConfig.setData(config.printSpeed, config.extrusionWidth, "SKIRT");
-            inset0Config.setData(config.printSpeed, config.extrusionWidth, "WALL-OUTER");
-            inset1Config.setData(config.printSpeed, config.extrusionWidth, "WALL-INNER");
+            inset0Config.setData(config.inset0Speed, config.extrusionWidth, "WALL-OUTER");
+            insetXConfig.setData(config.insetXSpeed, config.extrusionWidth, "WALL-INNER");
             fillConfig.setData(config.infillSpeed, config.extrusionWidth, "FILL");
             supportConfig.setData(config.printSpeed, config.extrusionWidth, "SUPPORT");
 
@@ -391,6 +391,24 @@ namespace MatterHackers.MatterSlice
             {
                 LogOutput.logProgress("export", layerNr + 1, totalLayers);
 
+                if (layerNr < config.initialSpeedupLayers)
+                {
+                    int n = config.initialSpeedupLayers;
+                    skirtConfig.setData(config.printSpeed * layerNr / n + config.initialLayerSpeed * (n - layerNr) / n, config.extrusionWidth, "SKIRT");
+                    inset0Config.setData(config.inset0Speed * layerNr / n + config.initialLayerSpeed * (n - layerNr) / n, config.extrusionWidth, "WALL-OUTER");
+                    insetXConfig.setData(config.insetXSpeed * layerNr / n + config.initialLayerSpeed * (n - layerNr) / n, config.extrusionWidth, "WALL-INNER");
+                    fillConfig.setData(config.infillSpeed * layerNr / n + config.initialLayerSpeed * (n - layerNr) / n, config.extrusionWidth, "FILL");
+                    supportConfig.setData(config.printSpeed * layerNr / n + config.initialLayerSpeed * (n - layerNr) / n, config.extrusionWidth, "SUPPORT");
+                }
+                else
+                {
+                    skirtConfig.setData(config.printSpeed, config.extrusionWidth, "SKIRT");
+                    inset0Config.setData(config.inset0Speed, config.extrusionWidth, "WALL-OUTER");
+                    insetXConfig.setData(config.insetXSpeed, config.extrusionWidth, "WALL-INNER");
+                    fillConfig.setData(config.infillSpeed, config.extrusionWidth, "FILL");
+                    supportConfig.setData(config.printSpeed, config.extrusionWidth, "SUPPORT");
+                }
+
                 gcode.addComment("LAYER:{0}".FormatWith(layerNr));
                 if (layerNr == 0)
                 {
@@ -427,19 +445,7 @@ namespace MatterHackers.MatterSlice
                     addSupportToGCode(storage, gcodeLayer, layerNr);
                 }
 
-                //Finish the layer by applying speed corrections for minimal layer times and slowdown for the initial layer.
-                if ((int)(layerNr) < config.initialSpeedupLayers)
-                {
-                    int n = config.initialSpeedupLayers;
-                    int layer0Factor = config.initialLayerSpeed * 100 / config.printSpeed;
-                    gcodeLayer.setExtrudeSpeedFactor((layer0Factor * (n - layerNr) + 100 * (layerNr)) / n);
-                    
-                    if (layerNr == 0)
-                    {
-                        //On the first layer, also slow down the travel
-                        gcodeLayer.setTravelSpeedFactor(layer0Factor);
-                    }
-                }
+                //Finish the layer by applying speed corrections for minimal layer times.
                 gcodeLayer.forceMinimalLayerTime(config.minimalLayerTime, config.minimalFeedrate);
 
                 int fanSpeed = config.fanSpeedMin;
@@ -461,21 +467,6 @@ namespace MatterHackers.MatterSlice
 
                 gcodeLayer.writeGCode(config.coolHeadLift, (int)(layerNr) > 0 ? config.layerThickness : config.initialLayerThickness);
             }
-
-            /* support debug
-            for(int y=0; y<storage.support.gridHeight; y++)
-            {
-                for(int x=0; x<storage.support.gridWidth; x++)
-                {
-                    int n = x+y*storage.support.gridWidth;
-                    if (storage.support.grid[n].Count < 1) continue;
-                    int z = storage.support.grid[n][0].z;
-                    gcode.addMove(Point3(x * storage.support.gridScale + storage.support.gridOffset.X, y * storage.support.gridScale + storage.support.gridOffset.Y, 0), 0);
-                    gcode.addMove(Point3(x * storage.support.gridScale + storage.support.gridOffset.X, y * storage.support.gridScale + storage.support.gridOffset.Y, z), z);
-                    gcode.addMove(Point3(x * storage.support.gridScale + storage.support.gridOffset.X, y * storage.support.gridScale + storage.support.gridOffset.Y, 0), 0);
-                }
-            }
-            //*/
 
             LogOutput.log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();
@@ -541,7 +532,7 @@ namespace MatterHackers.MatterSlice
 
                         if ((int)(layerNr) == config.downSkinCount && part.insets.Count > 0)
                         {
-                            gcodeLayer.addPolygonsByOptimizer(part.insets[0], inset1Config);
+                            gcodeLayer.addPolygonsByOptimizer(part.insets[0], insetXConfig);
                         }
                     }
 
@@ -553,7 +544,7 @@ namespace MatterHackers.MatterSlice
                         }
                         else
                         {
-                            gcodeLayer.addPolygonsByOptimizer(part.insets[insetNr], inset1Config);
+                            gcodeLayer.addPolygonsByOptimizer(part.insets[insetNr], insetXConfig);
                         }
                     }
                 }
