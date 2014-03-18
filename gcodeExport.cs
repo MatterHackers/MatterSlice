@@ -38,7 +38,7 @@ namespace MatterHackers.MatterSlice
         double minimalExtrusionBeforeRetraction;
         double extrusionAmountAtPreviousRetraction;
         Point3 currentPosition;
-        IntPoint[] extruderOffset = new IntPoint[ConfigSettings.MAX_EXTRUDERS];
+        IntPoint[] extruderOffset = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
         int currentSpeed, retractionSpeed;
         int zPos;
         bool isRetracted;
@@ -46,7 +46,7 @@ namespace MatterHackers.MatterSlice
         int currentFanSpeed;
         int flavor;
 
-        double[] totalFilament = new double[ConfigSettings.MAX_EXTRUDERS];
+        double[] totalFilament = new double[ConfigConstants.MAX_EXTRUDERS];
         double totalPrintTime;
         TimeEstimateCalculator estimateCalculator = new TimeEstimateCalculator();
 
@@ -62,7 +62,7 @@ namespace MatterHackers.MatterSlice
             currentFanSpeed = -1;
 
             totalPrintTime = 0.0;
-            for (int e = 0; e < ConfigSettings.MAX_EXTRUDERS; e++)
+            for (int e = 0; e < ConfigConstants.MAX_EXTRUDERS; e++)
                 totalFilament[e] = 0.0;
 
             currentSpeed = 0;
@@ -126,7 +126,7 @@ namespace MatterHackers.MatterSlice
         public void setExtrusion(int layerThickness, int filamentDiameter, int flow)
         {
             double filamentArea = Math.PI * ((double)(filamentDiameter) / 1000.0 / 2.0) * ((double)(filamentDiameter) / 1000.0 / 2.0);
-            if (flavor == ConfigSettings.GCODE_FLAVOR_ULTIGCODE)//UltiGCode uses volume extrusion as E value, and thus does not need the filamentArea in the mix.
+            if (flavor == ConfigConstants.GCODE_FLAVOR_ULTIGCODE)//UltiGCode uses volume extrusion as E value, and thus does not need the filamentArea in the mix.
                 extrusionPerMM = (double)(layerThickness) / 1000.0;
             else
                 extrusionPerMM = (double)(layerThickness) / 1000.0 / filamentArea * (double)(flow) / 100.0;
@@ -215,7 +215,7 @@ namespace MatterHackers.MatterSlice
                 IntPoint diff = p - getPositionXY();
                 if (isRetracted)
                 {
-                    if (flavor == ConfigSettings.GCODE_FLAVOR_ULTIGCODE)
+                    if (flavor == ConfigConstants.GCODE_FLAVOR_ULTIGCODE)
                     {
                         f.Write("G11\n");
                     }
@@ -257,7 +257,7 @@ namespace MatterHackers.MatterSlice
         {
             if (retractionAmount > 0 && !isRetracted && extrusionAmountAtPreviousRetraction + minimalExtrusionBeforeRetraction < extrusionAmount)
             {
-                if (flavor == ConfigSettings.GCODE_FLAVOR_ULTIGCODE)
+                if (flavor == ConfigConstants.GCODE_FLAVOR_ULTIGCODE)
                 {
                     f.Write("G10\n");
                 }
@@ -280,7 +280,7 @@ namespace MatterHackers.MatterSlice
             resetExtrusionValue();
             extruderNr = newExtruder;
 
-            if (flavor == ConfigSettings.GCODE_FLAVOR_ULTIGCODE)
+            if (flavor == ConfigConstants.GCODE_FLAVOR_ULTIGCODE)
             {
                 f.Write("G10 S1\n");
             }
@@ -290,7 +290,7 @@ namespace MatterHackers.MatterSlice
                 currentSpeed = retractionSpeed;
             }
             isRetracted = true;
-            if (flavor == ConfigSettings.GCODE_FLAVOR_MAKERBOT)
+            if (flavor == ConfigConstants.GCODE_FLAVOR_MAKERBOT)
                 f.Write("M135 T{0}\n".FormatWith(extruderNr));
             else
                 f.Write("T{0}\n".FormatWith(extruderNr));
@@ -307,14 +307,14 @@ namespace MatterHackers.MatterSlice
                 return;
             if (speed > 0)
             {
-                if (flavor == ConfigSettings.GCODE_FLAVOR_MAKERBOT)
+                if (flavor == ConfigConstants.GCODE_FLAVOR_MAKERBOT)
                     f.Write("M126 T0 ; value = {0}\n".FormatWith(speed * 255 / 100));
                 else
                     f.Write("M106 S{0}\n".FormatWith(speed * 255 / 100));
             }
             else
             {
-                if (flavor == ConfigSettings.GCODE_FLAVOR_MAKERBOT)
+                if (flavor == ConfigConstants.GCODE_FLAVOR_MAKERBOT)
                     f.Write("M127 T0\n");
                 else
                     f.Write("M107\n");

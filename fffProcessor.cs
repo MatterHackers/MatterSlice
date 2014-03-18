@@ -55,7 +55,7 @@ namespace MatterHackers.MatterSlice
             gcode.setFilename(filename);
             if (gcode.isValid())
             {
-                gcode.addComment("Generated with MatterSlice {0}".FormatWith(ConfigSettings.VERSION));
+                gcode.addComment("Generated with MatterSlice {0}".FormatWith(ConfigConstants.VERSION));
             }
 
             return gcode.isValid();
@@ -102,7 +102,7 @@ namespace MatterHackers.MatterSlice
             LogOutput.log("Filament: {0}\n".FormatWith((int)(gcode.getTotalFilamentUsed(0))));
             LogOutput.log("Filament2: {0}\n".FormatWith((int)(gcode.getTotalFilamentUsed(1))));
 
-            if (gcode.getFlavor() == ConfigSettings.GCODE_FLAVOR_ULTIGCODE)
+            if (gcode.getFlavor() == ConfigConstants.GCODE_FLAVOR_ULTIGCODE)
             {
                 string numberString;
                 numberString = "{0}".FormatWith((int)(gcode.getTotalPrintTime()));
@@ -124,7 +124,7 @@ namespace MatterHackers.MatterSlice
             fillConfig.setData(config.infillSpeed, config.extrusionWidth, "FILL");
             supportConfig.setData(config.printSpeed, config.extrusionWidth, "SUPPORT");
 
-            for (int n = 1; n < ConfigSettings.MAX_EXTRUDERS; n++)
+            for (int n = 1; n < ConfigConstants.MAX_EXTRUDERS; n++)
                 gcode.setExtruderOffset(n, config.extruderOffset[n]);
             gcode.setFlavor(config.gcodeFlavor);
             gcode.setRetractionSettings(config.retractionAmount, config.retractionSpeed, config.retractionAmountExtruderSwitch, config.minimalExtrusionBeforeRetraction);
@@ -165,8 +165,8 @@ namespace MatterHackers.MatterSlice
             for (int volumeIdx = 0; volumeIdx < om.volumes.Count; volumeIdx++)
             {
                 Slicer slicer = new Slicer(om.volumes[volumeIdx], config.initialLayerThickness - config.layerThickness / 2, config.layerThickness,
-                    (config.fixHorrible & ConfigSettings.FIX_HORRIBLE_KEEP_NONE_CLOSED) == ConfigSettings.FIX_HORRIBLE_KEEP_NONE_CLOSED,
-                    (config.fixHorrible & ConfigSettings.FIX_HORRIBLE_EXTENSIVE_STITCHING) == ConfigSettings.FIX_HORRIBLE_EXTENSIVE_STITCHING);
+                    (config.fixHorrible & ConfigConstants.FIX_HORRIBLE_KEEP_NONE_CLOSED) == ConfigConstants.FIX_HORRIBLE_KEEP_NONE_CLOSED,
+                    (config.fixHorrible & ConfigConstants.FIX_HORRIBLE_EXTENSIVE_STITCHING) == ConfigConstants.FIX_HORRIBLE_EXTENSIVE_STITCHING);
                 slicerList.Add(slicer);
                 for (int layerNr = 0; layerNr < slicer.layers.Count; layerNr++)
                 {
@@ -192,7 +192,7 @@ namespace MatterHackers.MatterSlice
             for (int volumeIdx = 0; volumeIdx < slicerList.Count; volumeIdx++)
             {
                 storage.volumes.Add(new SliceVolumeStorage());
-                LayerPart.createLayerParts(storage.volumes[volumeIdx], slicerList[volumeIdx], config.fixHorrible & (ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_A | ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_B | ConfigSettings.FIX_HORRIBLE_UNION_ALL_TYPE_C));
+                LayerPart.createLayerParts(storage.volumes[volumeIdx], slicerList[volumeIdx], config.fixHorrible & (ConfigConstants.FIX_HORRIBLE_UNION_ALL_TYPE_A | ConfigConstants.FIX_HORRIBLE_UNION_ALL_TYPE_B | ConfigConstants.FIX_HORRIBLE_UNION_ALL_TYPE_C));
                 slicerList[volumeIdx] = null;
             }
             LogOutput.log("Generated layer parts in {0:0.000}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
@@ -330,7 +330,7 @@ namespace MatterHackers.MatterSlice
         {
             if (fileNr == 1)
             {
-                if (gcode.getFlavor() == ConfigSettings.GCODE_FLAVOR_ULTIGCODE)
+                if (gcode.getFlavor() == ConfigConstants.GCODE_FLAVOR_ULTIGCODE)
                 {
                     gcode.addCode(";FLAVOR:UltiGCode");
                     gcode.addCode(";TIME:<__TIME__>");

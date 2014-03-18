@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Reflection;
 
 using ClipperLib;
 
@@ -39,50 +40,25 @@ namespace MatterHackers.MatterSlice
         }
     }
 
+    // this class is so that we can change the name of a variable and not break old settings files
+    [System.AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Field, AllowMultiple=true)]
+    public class LegacyName : System.Attribute
+    {
+        private string name;
+        public string Name { get { return name; } }
+
+        public LegacyName(string name)
+        {
+            this.name = name;
+        }
+    }
+
     public class ConfigSettings
     {
-        public const string VERSION = "1.0";
-
-        public const int FIX_HORRIBLE_UNION_ALL_TYPE_A = 0x01;
-        public const int FIX_HORRIBLE_UNION_ALL_TYPE_B = 0x02;
-        public const int FIX_HORRIBLE_EXTENSIVE_STITCHING = 0x04;
-        public const int FIX_HORRIBLE_UNION_ALL_TYPE_C = 0x08;
-        public const int FIX_HORRIBLE_KEEP_NONE_CLOSED = 0x10;
-
-        /**
-         * RepRap flavored GCode is Marlin/Sprinter/Repetier based GCode. 
-         *  This is the most commonly used GCode set.
-         *  G0 for moves, G1 for extrusion.
-         *  E values give mm of filament extrusion.
-         *  Retraction is done on E values with G1. Start/end code is added.
-         *  M106 Sxxx and M107 are used to turn the fan on/off.
-         **/
-        public const int GCODE_FLAVOR_REPRAP = 0;
-        /**
-         * UltiGCode flavored is Marlin based GCode. 
-         *  UltiGCode uses less settings on the slicer and puts more settings in the firmware. This makes for more hardware/material independed GCode.
-         *  G0 for moves, G1 for extrusion.
-         *  E values give mm^3 of filament extrusion. Ignores the filament diameter setting.
-         *  Retraction is done with G10 and G11. Retraction settings are ignored. G10 S1 is used for multi-extruder switch retraction.
-         *  Start/end code is not added.
-         *  M106 Sxxx and M107 are used to turn the fan on/off.
-         **/
-        public const int GCODE_FLAVOR_ULTIGCODE = 1;
-        /**
-         * Makerbot flavored GCode.
-         *  Looks a lot like RepRap GCode with a few changes. Requires MakerWare to convert to X3G files.
-         *   Heating needs to be done with M104 Sxxx T0
-         *   No G21 or G90
-         *   Fan ON is M126 T0 (No fan strength control?)
-         *   Fan OFF is M127 T0
-         *   Homing is done with G162 X Y F2000
-         **/
-        public const int GCODE_FLAVOR_MAKERBOT = 2;
-
-        public const int MAX_EXTRUDERS = 16;
-
-        List<_ConfigSettingIndex> _index;
+        // if you were to change the layerThickness variable you would add a legacy name so that we can still use old settings
+        //[LegacyName("exampleLegacyLayerThickness")]
         public int layerThickness;
+
         public int initialLayerThickness;
         public int filamentDiameter;
         public int filamentFlow;
@@ -145,80 +121,60 @@ namespace MatterHackers.MatterSlice
         public bool spiralizeMode;
         public int gcodeFlavor;
 
-        public IntPoint[] extruderOffset = new IntPoint[MAX_EXTRUDERS];
+        public IntPoint[] extruderOffset = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
         public string startCode;
         public string endCode;
 
-        public ConfigSettings()
+        public void DumpSettings(string fileName)
         {
-#if false
-    SETTING(layerThickness);
-    SETTING(initialLayerThickness);
-    SETTING(filamentDiameter);
-    SETTING(filamentFlow);
-    SETTING(extrusionWidth);
-    SETTING(insetCount);
-    SETTING(downSkinCount);
-    SETTING(upSkinCount);
-    SETTING(sparseInfillLineDistance);
-    SETTING(infillOverlap);
-    SETTING(skirtDistance);
-    SETTING(skirtLineCount);
-    SETTING(skirtMinLength);
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(fileName))
+            {
+                FieldInfo[] fields;
+                fields = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
+                foreach (FieldInfo field in fields)
+                {
+                    System.Attribute[] attributes = System.Attribute.GetCustomAttributes(field);
+                    foreach (Attribute attribute in attributes)
+                    {
+                        LegacyName legacyName = attribute as LegacyName;
+                        if (legacyName != null)
+                        {
+                            string Name = legacyName.Name;
+                        }
+                    }
+                    string name = field.Name;
+                    object value = field.GetValue(this);
+                    switch (field.FieldType.Name)
+                    {
+                        case "Int32":
+                            file.WriteLine("{0}={1}".FormatWith(name, value));
+                            break;
 
-    SETTING(initialSpeedupLayers);
-    SETTING(initialLayerSpeed);
-    SETTING(printSpeed);
-    SETTING(infillSpeed);
-    SETTING(inset0Speed);
-    SETTING(insetXSpeed);
-    SETTING(moveSpeed);
-    SETTING(fanFullOnLayerNr);
-    
-    SETTING(supportAngle);
-    SETTING(supportEverywhere);
-    SETTING(supportLineDistance);
-    SETTING(supportXYDistance);
-    SETTING(supportZDistance);
-    SETTING(supportExtruder);
-    
-    SETTING(retractionAmount);
-    SETTING(retractionSpeed);
-    SETTING(retractionAmountExtruderSwitch);
-    SETTING(retractionMinimalDistance);
-    SETTING(minimalExtrusionBeforeRetraction);
-    SETTING(enableCombing);
-    SETTING(enableOozeShield);
-    SETTING(wipeTowerSize);
-    SETTING(multiVolumeOverlap);
-    SETTING2(objectPosition.X, posx);
-    SETTING2(objectPosition.Y, posy);
-    SETTING(objectSink);
+                        case "Boolean":
+                            file.WriteLine("{0}={1}".FormatWith(name, value));
+                            break;
 
-    SETTING(raftMargin);
-    SETTING(raftLineSpacing);
-    SETTING(raftBaseThickness);
-    SETTING(raftBaseLinewidth);
-    SETTING(raftInterfaceThickness);
-    SETTING(raftInterfaceLinewidth);
-    
-    SETTING(minimalLayerTime);
-    SETTING(minimalFeedrate);
-    SETTING(coolHeadLift);
-    SETTING(fanSpeedMin);
-    SETTING(fanSpeedMax);
-    
-    SETTING(fixHorrible);
-    SETTING(spiralizeMode);
-    SETTING(gcodeFlavor);
-    
-    SETTING(extruderOffset[1].X);
-    SETTING(extruderOffset[1].Y);
-    SETTING(extruderOffset[2].X);
-    SETTING(extruderOffset[2].Y);
-    SETTING(extruderOffset[3].X);
-    SETTING(extruderOffset[3].Y);
-#endif
+                        case "FMatrix3x3":
+                            file.WriteLine("{0}={1}".FormatWith(name, value));
+                            break;
+
+                        case "IntPoint":
+                            file.WriteLine("{0}={1}".FormatWith(name, value));
+                            break;
+
+                        case "IntPoint[]":
+                            file.WriteLine("{0}={1}".FormatWith(name, value));
+                            break;
+
+                        case "String":
+                            file.WriteLine("{0}={1}".FormatWith(name, value).Replace("\n", "\\n"));
+                            break;
+
+                        default:
+                            throw new NotImplementedException("unknown type");
+                    }
+                }
+            }
         }
 
         public bool SetSetting(string key, string value)
@@ -472,6 +428,49 @@ namespace MatterHackers.MatterSlice
             }
             return false;
         }
+    }
+
+    public class ConfigConstants
+    {
+        public const string VERSION = "1.0";
+
+        public const int FIX_HORRIBLE_UNION_ALL_TYPE_A = 0x01;
+        public const int FIX_HORRIBLE_UNION_ALL_TYPE_B = 0x02;
+        public const int FIX_HORRIBLE_EXTENSIVE_STITCHING = 0x04;
+        public const int FIX_HORRIBLE_UNION_ALL_TYPE_C = 0x08;
+        public const int FIX_HORRIBLE_KEEP_NONE_CLOSED = 0x10;
+
+        /**
+         * RepRap flavored GCode is Marlin/Sprinter/Repetier based GCode. 
+         *  This is the most commonly used GCode set.
+         *  G0 for moves, G1 for extrusion.
+         *  E values give mm of filament extrusion.
+         *  Retraction is done on E values with G1. Start/end code is added.
+         *  M106 Sxxx and M107 are used to turn the fan on/off.
+         **/
+        public const int GCODE_FLAVOR_REPRAP = 0;
+        /**
+         * UltiGCode flavored is Marlin based GCode. 
+         *  UltiGCode uses less settings on the slicer and puts more settings in the firmware. This makes for more hardware/material independed GCode.
+         *  G0 for moves, G1 for extrusion.
+         *  E values give mm^3 of filament extrusion. Ignores the filament diameter setting.
+         *  Retraction is done with G10 and G11. Retraction settings are ignored. G10 S1 is used for multi-extruder switch retraction.
+         *  Start/end code is not added.
+         *  M106 Sxxx and M107 are used to turn the fan on/off.
+         **/
+        public const int GCODE_FLAVOR_ULTIGCODE = 1;
+        /**
+         * Makerbot flavored GCode.
+         *  Looks a lot like RepRap GCode with a few changes. Requires MakerWare to convert to X3G files.
+         *   Heating needs to be done with M104 Sxxx T0
+         *   No G21 or G90
+         *   Fan ON is M126 T0 (No fan strength control?)
+         *   Fan OFF is M127 T0
+         *   Homing is done with G162 X Y F2000
+         **/
+        public const int GCODE_FLAVOR_MAKERBOT = 2;
+
+        public const int MAX_EXTRUDERS = 16;
     }
 }
 

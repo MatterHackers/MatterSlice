@@ -106,7 +106,7 @@ namespace MatterHackers.MatterSlice
 
             config.spiralizeMode = false;
             config.fixHorrible = 0;
-            config.gcodeFlavor = ConfigSettings.GCODE_FLAVOR_REPRAP;
+            config.gcodeFlavor = ConfigConstants.GCODE_FLAVOR_REPRAP;
 
             config.startCode =
                             "M109 S210     ;Heatup to 210C\n" +
@@ -127,8 +127,9 @@ namespace MatterHackers.MatterSlice
                 "M84                         ;steppers off\n" +
                 "G90                         ;absolute positioning\n";
 
-            Console.WriteLine("MatterSlice version {0}".FormatWith(ConfigSettings.VERSION));
+            Console.WriteLine("MatterSlice version {0}".FormatWith(ConfigConstants.VERSION));
 
+            config.DumpSettings("settings.ini");
             for (int argn = 0; argn < args.Length; argn++)
             {
                 string str = args[argn];
