@@ -221,7 +221,7 @@ namespace MatterHackers.MatterSlice
                 {
                     if (reversed)
                     {
-                        if (openPolygonList[bestA].polygonLength() > openPolygonList[bestB].polygonLength())
+                        if (openPolygonList[bestA].PolygonLength() > openPolygonList[bestB].PolygonLength())
                         {
                             for (int n = openPolygonList[bestB].Count - 1; n >= 0; n--)
                                 openPolygonList[bestA].Add(openPolygonList[bestB][n]);

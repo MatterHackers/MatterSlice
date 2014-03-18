@@ -83,8 +83,8 @@ namespace MatterHackers.MatterSlice
                 return -1;
             }
 
-            IntPoint center1 = islands[idx1].centerOfMass();
-            IntPoint center2 = islands[idx2].centerOfMass();
+            IntPoint center1 = islands[idx1].CenterOfMass();
+            IntPoint center2 = islands[idx2].CenterOfMass();
 
             double angle = Math.Atan2(center2.X - center1.X, center2.Y - center1.Y) / Math.PI * 180;
             if (angle < 0)

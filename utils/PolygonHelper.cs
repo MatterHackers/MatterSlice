@@ -37,14 +37,14 @@ namespace MatterHackers.MatterSlice
             polygon.Reverse();
         }
 
-        public static long polygonLength(this Polygon polygon)
+        public static long PolygonLength(this Polygon polygon)
         {
             long length = 0;
             IntPoint p0 = polygon[polygon.Count - 1];
             for (int n = 0; n < polygon.Count; n++)
             {
                 IntPoint p1 = polygon[n];
-                length += (p0 - p1).vSize();
+                length += (p0 - p1).Length();
                 p0 = p1;
             }
             return length;
@@ -53,6 +53,46 @@ namespace MatterHackers.MatterSlice
         public static double Area(this Polygon polygon)
         {
             return Clipper.Area(polygon);
+        }
+
+        public static void optimizePolygon(this Polygon polygon)
+        {
+            IntPoint p0 = polygon[polygon.Count - 1];
+            for (int i = 0; i < polygon.Count; i++)
+            {
+                IntPoint p1 = polygon[i];
+                if ((p0 - p1).IsShorterThen(10))
+                {
+                    polygon.RemoveAt(i);
+                    i--;
+                }
+                else
+                {
+                    IntPoint p2;
+                    if (i < polygon.Count - 1)
+                    {
+                        p2 = polygon[i + 1];
+                    }
+                    else
+                    {
+                        p2 = polygon[0];
+                    }
+
+                    IntPoint diff0 = (p1 - p0).SetLength(1000000);
+                    IntPoint diff2 = (p1 - p2).SetLength(1000000);
+
+                    long d = IntPoint.Dot(diff0, diff2);
+                    if (d < -999999000000)
+                    {
+                        polygon.RemoveAt(i);
+                        i--;
+                    }
+                    else
+                    {
+                        p0 = p1;
+                    }
+                }
+            }
         }
 
         public static IntPoint CenterOfMass(this Polygon polygon)
@@ -122,6 +162,19 @@ namespace MatterHackers.MatterSlice
             return ret;
         }
 
+        public static void optimizePolygons(this Polygons polygons)
+        {
+            for (int n = 0; n < polygons.Count; n++)
+            {
+                polygons[n].optimizePolygon();
+                if (polygons[n].Count < 3)
+                {
+                    polygons.RemoveAt(n);
+                    n--;
+                }
+            }
+        }
+        
         public static Polygons Offset(this Polygons polygons, int distance)
         {
 #if false

@@ -59,90 +59,6 @@ namespace ClipperLib
             : base(capacity)
         {
         }
-
-        public void erase(int index) { RemoveAt(index); }
-
-        public IntPoint centerOfMass()
-        {
-            double x = 0;
-            double y = 0;
-            IntPoint lastPoint = this[Count - 1];
-            for (int n = 0; n < Count; n++)
-            {
-                IntPoint p1 = this[n];
-                double second_factor = (lastPoint.X * p1.Y) - (p1.X * lastPoint.Y);
-
-                x += (double)(lastPoint.X + p1.X) * second_factor;
-                y += (double)(lastPoint.Y + p1.Y) * second_factor;
-                lastPoint = p1;
-            }
-
-            double area = Clipper.Area(this);
-            x = x / 6 / area;
-            y = y / 6 / area;
-
-            if (x < 0)
-            {
-                x = -x;
-                y = -y;
-            }
-
-            return new IntPoint(x, y);
-        }
-
-        public long polygonLength()
-        {
-            long length = 0;
-            IntPoint p0 = this[Count - 1];
-            for (int n = 0; n < Count; n++)
-            {
-                IntPoint p1 = this[n];
-                length += (p0 - p1).Length();
-                p0 = p1;
-            }
-
-            return length;
-        }
-
-        public void optimizePolygon()
-        {
-            IntPoint p0 = this[Count - 1];
-            for (int i = 0; i < Count; i++)
-            {
-                IntPoint p1 = this[i];
-                if ((p0 - p1).IsShorterThen(10))
-                {
-                    erase(i);
-                    i--;
-                }
-                else
-                {
-                    IntPoint p2;
-                    if (i < Count - 1)
-                    {
-                        p2 = this[i + 1];
-                    }
-                    else
-                    {
-                        p2 = this[0];
-                    }
-
-                    IntPoint diff0 = (p1 - p0).SetLength(1000000);
-                    IntPoint diff2 = (p1 - p2).SetLength(1000000);
-
-                    long d = IntPoint.Dot(diff0, diff2);
-                    if (d < -999999000000)
-                    {
-                        erase(i);
-                        i--;
-                    }
-                    else
-                    {
-                        p0 = p1;
-                    }
-                }
-            }
-        }
     }
 
 
@@ -160,24 +76,6 @@ namespace ClipperLib
         public Polygons(Polygons copy)
             : base(copy)
         {
-        }
-
-        public void optimizePolygons()
-        {
-            for (int n = 0; n < Count; n++)
-            {
-                this[n].optimizePolygon();
-                if (this[n].Count < 3)
-                {
-                    RemoveAt(n);
-                    n--;
-                }
-            }
-        }
-
-        public void erase(int p)
-        {
-            RemoveAt(p);
         }
     }
 
