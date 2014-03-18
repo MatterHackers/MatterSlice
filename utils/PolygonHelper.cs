@@ -25,6 +25,11 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+    using Path = List<IntPoint>;
+    using Paths = List<List<IntPoint>>;
+    using Polygon = List<IntPoint>;
+    using Polygons = List<List<IntPoint>>;
+
     static class PolygonHelper
     {
         public static bool Orientation(this Polygon polygon)
@@ -81,7 +86,7 @@ namespace MatterHackers.MatterSlice
                     IntPoint diff0 = (p1 - p0).SetLength(1000000);
                     IntPoint diff2 = (p1 - p2).SetLength(1000000);
 
-                    long d = IntPoint.Dot(diff0, diff2);
+                    long d = diff0.Dot(diff2);
                     if (d < -999999000000)
                     {
                         polygon.RemoveAt(i);
@@ -136,8 +141,8 @@ namespace MatterHackers.MatterSlice
         {
             Polygons ret = new Polygons();
             ClipperLib.Clipper clipper = new Clipper();
-            clipper.AddPolygons(polygons, ClipperLib.PolyType.ptSubject);
-            clipper.AddPolygons(other, ClipperLib.PolyType.ptClip);
+            clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
+            clipper.AddPaths(other, ClipperLib.PolyType.ptClip, true);
             clipper.Execute(ClipperLib.ClipType.ctDifference, ret);
             return ret;
         }
@@ -146,8 +151,8 @@ namespace MatterHackers.MatterSlice
         {
             Polygons ret = new Polygons();
             ClipperLib.Clipper clipper = new Clipper();
-            clipper.AddPolygons(polygons, ClipperLib.PolyType.ptSubject);
-            clipper.AddPolygons(other, ClipperLib.PolyType.ptSubject);
+            clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
+            clipper.AddPaths(other, ClipperLib.PolyType.ptSubject, true);
             clipper.Execute(ClipType.ctUnion, ret, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
             return ret;
         }
@@ -156,8 +161,8 @@ namespace MatterHackers.MatterSlice
         {
             Polygons ret = new Polygons();
             ClipperLib.Clipper clipper = new Clipper();
-            clipper.AddPolygons(polygons, ClipperLib.PolyType.ptSubject);
-            clipper.AddPolygons(other, ClipperLib.PolyType.ptClip);
+            clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
+            clipper.AddPaths(other, ClipperLib.PolyType.ptClip, true);
             clipper.Execute(ClipperLib.ClipType.ctIntersection, ret);
             return ret;
         }
@@ -180,11 +185,11 @@ namespace MatterHackers.MatterSlice
 #if false
         Polygons ret = new Polygons();
         ClipperLib.Clipper clipper = new ClipperLib.Clipper();
-        clipper.AddPolygons(polygons, ClipperLib.JoinType.jtMiter, ClipperLib.EndType.etClosed);
+        clipper.AddPaths(polygons, ClipperLib.JoinType.jtMiter, ClipperLib.EndType.etClosed);
         clipper.MiterLimit = 2.0;
         clipper.Execute(ret, distance);
 #endif
-            return ClipperLib.Clipper.OffsetPolygons(polygons, distance, JoinType.jtMiter, 2.0);
+            return ClipperLib.Clipper.OffsetPaths(polygons, distance, JoinType.jtMiter, EndType_.etClosed, 2.0);
         }
 
         public static List<Polygons> SplitIntoParts(this Polygons polygons, bool unionAll = false)
@@ -192,7 +197,7 @@ namespace MatterHackers.MatterSlice
             List<Polygons> ret = new List<Polygons>();
             ClipperLib.Clipper clipper = new Clipper();
             ClipperLib.PolyTree resultPolyTree = new PolyTree();
-            clipper.AddPolygons(polygons, ClipperLib.PolyType.ptSubject);
+            clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
             if (unionAll)
             {
                 clipper.Execute(ClipType.ctUnion, resultPolyTree, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
@@ -226,7 +231,7 @@ namespace MatterHackers.MatterSlice
         {
             Polygons ret = new Polygons();
             Clipper clipper = new Clipper();
-            clipper.AddPolygons(polygons, PolyType.ptSubject);
+            clipper.AddPaths(polygons, PolyType.ptSubject, true);
             clipper.Execute(ClipType.ctUnion, ret);
             return ret;
         }

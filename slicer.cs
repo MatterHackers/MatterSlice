@@ -26,6 +26,9 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+    using Polygon = List<IntPoint>;
+    using Polygons = List<List<IntPoint>>;
+
     public class SlicerSegment
     {
         public IntPoint start;
@@ -501,7 +504,7 @@ namespace MatterHackers.MatterSlice
                     long lineLength = (pDiff).vSize();
                     if (lineLength > 1)
                     {
-                        long distOnLine = (pDiff).dot(input - p0) / lineLength;
+                        long distOnLine = (pDiff).Dot(input - p0) / lineLength;
                         if (distOnLine >= 0 && distOnLine <= lineLength)
                         {
                             IntPoint q = p0 + pDiff * distOnLine / lineLength;

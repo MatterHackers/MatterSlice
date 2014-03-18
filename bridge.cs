@@ -25,6 +25,9 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+    using Polygon = List<IntPoint>;
+    using Polygons = List<List<IntPoint>>;
+
     public static class Bridge
     {
         public static int bridgeAngle(SliceLayerPart part, SliceLayer prevLayer)

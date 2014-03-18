@@ -25,6 +25,9 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+    using Polygon = List<IntPoint>;
+    using Polygons = List<List<IntPoint>>;
+
     public static class Skin
     {
         public static void generateSkins(int layerNr, SliceVolumeStorage storage, int extrusionWidth, int downSkinCount, int upSkinCount, int infillOverlap)

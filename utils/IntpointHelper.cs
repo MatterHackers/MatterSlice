@@ -115,9 +115,45 @@ namespace MatterHackers.MatterSlice
 
     static class IntPointHelper
     {
+        public static bool IsShorterThen(this IntPoint p0, int len)
+        {
+            if (p0.X > len || p0.X < -len)
+            {
+                return false;
+            }
+
+            if (p0.Y > len || p0.Y < -len)
+            {
+                return false;
+            }
+
+            return p0.LengthSquared() <= len * len;
+        }
+
+        public static long Length(this IntPoint p0)
+        {
+            return (long)Math.Sqrt(p0.LengthSquared());
+        }
+        
+        public static long LengthSquared(this IntPoint p0)
+        {
+            return p0.X * p0.X + p0.Y * p0.Y;
+        }
+        
         public static long vSize2(this IntPoint p0)
         {
             return p0.X * p0.X + p0.Y * p0.Y;
+        }
+
+        public static IntPoint SetLength(this IntPoint p0, int len)
+        {
+            long _len = p0.Length();
+            if (_len < 1)
+            {
+                return new IntPoint(len, 0);
+            }
+
+            return p0 * len / _len;
         }
 
         public static float vSize2f(this IntPoint p0)
@@ -159,7 +195,7 @@ namespace MatterHackers.MatterSlice
             return new IntPoint(-p0.Y, p0.X);
         }
 
-        public static long dot(this IntPoint p0, IntPoint p1)
+        public static long Dot(this IntPoint p0, IntPoint p1)
         {
             return p0.X * p1.X + p0.Y * p1.Y;
         }

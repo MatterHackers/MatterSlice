@@ -25,6 +25,9 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+    using Polygon = List<IntPoint>;
+    using Polygons = List<List<IntPoint>>;
+
     public class Comb
     {
         Polygons boundery;
@@ -178,7 +181,7 @@ namespace MatterHackers.MatterSlice
                     //Q = A + Normal( B - A ) * ((( B - A ) dot ( P - A )) / VSize( A - B ));
                     IntPoint pDiff = p1 - p0;
                     long lineLength = (pDiff).vSize();
-                    long distOnLine = (pDiff).dot(p - p0) / lineLength;
+                    long distOnLine = (pDiff).Dot(p - p0) / lineLength;
                     if (distOnLine < 10)
                         distOnLine = 10;
                     if (distOnLine > lineLength - 10)

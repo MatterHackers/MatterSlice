@@ -26,6 +26,9 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+    using Polygon = List<IntPoint>;
+    using Polygons = List<List<IntPoint>>;
+
     public static class PolygonOptimizer
     {
         public static void optimizePolygon(Polygon poly)
@@ -54,7 +57,7 @@ namespace MatterHackers.MatterSlice
                     IntPoint diff0 = (p1 - p0).normal(1000000);
                     IntPoint diff2 = (p1 - p2).normal(1000000);
 
-                    long d = diff0.dot(diff2);
+                    long d = diff0.Dot(diff2);
                     if (d < long.MinValue)
                     {
                         poly.RemoveAt(i);

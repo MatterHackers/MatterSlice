@@ -25,6 +25,9 @@ using ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+    using Polygon = List<IntPoint>;
+    using Polygons = List<List<IntPoint>>;
+
     public class Skirt
     {
         public static void generateSkirt(SliceDataStorage storage, int distance, int extrusionWidth, int count, int minLength, int initialLayerHeight)
