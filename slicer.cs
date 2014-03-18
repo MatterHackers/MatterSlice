@@ -226,15 +226,24 @@ namespace MatterHackers.MatterSlice
                     {
                         if (openPolygonList[bestA].PolygonLength() > openPolygonList[bestB].PolygonLength())
                         {
-                            for (int n = openPolygonList[bestB].Count - 1; n >= 0; n--)
-                                openPolygonList[bestA].Add(openPolygonList[bestB][n]);
-                            openPolygonList[bestB].Clear();
+                            if (openPolygonList[bestA].PolygonLength() > openPolygonList[bestB].PolygonLength())
+                            {
+                                for (int n = openPolygonList[bestB].Count - 1; n >= 0; n--)
+                                    openPolygonList[bestA].Add(openPolygonList[bestB][n]);
+                                openPolygonList[bestB].Clear();
+                            }
+                            else
+                            {
+                                for (int n = openPolygonList[bestA].Count - 1; n >= 0; n--)
+                                    openPolygonList[bestB].Add(openPolygonList[bestA][n]);
+                                openPolygonList[bestA].Clear();
+                            }
                         }
                         else
                         {
                             for (int n = openPolygonList[bestA].Count - 1; n >= 0; n--)
                                 openPolygonList[bestB].Add(openPolygonList[bestA][n]);
-                            openPolygonList[bestA].Clear();
+                            openPolygonList[bestB].Clear();
                         }
                     }
                     else
@@ -245,6 +254,7 @@ namespace MatterHackers.MatterSlice
                     }
                 }
             }
+            
 
             if (extensiveStitching)
             {
