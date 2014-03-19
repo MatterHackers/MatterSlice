@@ -34,6 +34,7 @@ namespace MatterHackers.MatterSlice
         double extrusionAmount;
         double extrusionPerMM;
         double retractionAmount;
+        int retractionZHop;
         double extruderSwitchRetraction;
         double minimalExtrusionBeforeRetraction;
         double extrusionAmountAtPreviousRetraction;
@@ -132,12 +133,13 @@ namespace MatterHackers.MatterSlice
                 extrusionPerMM = (double)(layerThickness) / 1000.0 / filamentArea * (double)(flow) / 100.0;
         }
 
-        public void setRetractionSettings(int retractionAmount, int retractionSpeed, int extruderSwitchRetraction, int minimalExtrusionBeforeRetraction)
+        public void setRetractionSettings(int retractionAmount, int retractionSpeed, int extruderSwitchRetraction, int minimalExtrusionBeforeRetraction, int zHop)
         {
             this.retractionAmount = (double)(retractionAmount) / 1000.0;
             this.retractionSpeed = retractionSpeed;
             this.extruderSwitchRetraction = (double)(extruderSwitchRetraction) / 1000.0;
             this.minimalExtrusionBeforeRetraction = (double)(minimalExtrusionBeforeRetraction) / 1000.0;
+            this.retractionZHop = zHop;
         }
 
         public void setZ(int z)
@@ -215,6 +217,11 @@ namespace MatterHackers.MatterSlice
                 IntPoint diff = p - getPositionXY();
                 if (isRetracted)
                 {
+                    if (retractionZHop > 0)
+                    {
+                        f.Write("G1 Z{0:0.00}\n".FormatWith(currentPosition.z / 1000));
+                    }
+
                     if (flavor == ConfigConstants.GCODE_FLAVOR_ULTIGCODE)
                     {
                         f.Write("G11\n");
@@ -225,8 +232,12 @@ namespace MatterHackers.MatterSlice
                         currentSpeed = retractionSpeed;
                         estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(p.X) / 1000.0, (p.Y) / 1000.0, (double)(zPos) / 1000.0, extrusionAmount), currentSpeed);
                     }
-                    if (extrusionAmount > 10000.0) // Having more then 21m of extrusion causes inaccuracies. So reset it every 10m, just to be sure.
+                    if (extrusionAmount > 10000.0)
+                    {
+                        // Having more then 21m of extrusion causes inaccuracies. So reset it every 10m, just to be sure.
                         resetExtrusionValue();
+                    }
+
                     isRetracted = false;
                 }
                 extrusionAmount += extrusionPerMM * (double)(lineWidth) / 1000.0 * diff.vSizeMM();
@@ -267,6 +278,11 @@ namespace MatterHackers.MatterSlice
                     currentSpeed = retractionSpeed;
                     estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition.x) / 1000.0, (currentPosition.y) / 1000.0, (double)(currentPosition.z) / 1000.0, extrusionAmount - retractionAmount), currentSpeed);
                 }
+                if (retractionZHop > 0)
+                {
+                    f.Write("G1 Z{0:0.00}\n".FormatWith((currentPosition.z + retractionZHop) / 1000));
+                } 
+                
                 extrusionAmountAtPreviousRetraction = extrusionAmount;
                 isRetracted = true;
             }

@@ -108,7 +108,7 @@ namespace MatterHackers.MatterSlice
             for (int n = 1; n < ConfigConstants.MAX_EXTRUDERS; n++)
                 gcode.setExtruderOffset(n, config.extruderOffset[n]);
             gcode.setFlavor(config.gcodeFlavor);
-            gcode.setRetractionSettings(config.retractionAmount, config.retractionSpeed, config.retractionAmountExtruderSwitch, config.minimalExtrusionBeforeRetraction);
+            gcode.setRetractionSettings(config.retractionAmount, config.retractionSpeed, config.retractionAmountExtruderSwitch, config.minimalExtrusionBeforeRetraction, config.retractionZHop);
         }
 
         bool prepareModel(SliceDataStorage storage, string input_filename)

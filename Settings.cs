@@ -77,6 +77,7 @@ namespace MatterHackers.MatterSlice
         public int retractionSpeed;
         public int retractionMinimalDistance;
         public int minimalExtrusionBeforeRetraction;
+        public int retractionZHop;
         public bool enableCombing;
         public bool enableOozeShield;
         public int wipeTowerSize;
@@ -125,6 +126,90 @@ namespace MatterHackers.MatterSlice
         public IntPoint[] extruderOffset = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
         public string startCode;
         public string endCode;
+
+        public ConfigSettings()
+        {
+            SetToDefault();
+        }
+
+        public void SetToDefault()
+        {
+            filamentDiameter = 2890;
+            filamentFlow = 100;
+            initialLayerThickness = 300;
+            layerThickness = 100;
+            extrusionWidth = 400;
+            insetCount = 2;
+            downSkinCount = 6;
+            upSkinCount = 6;
+            initialSpeedupLayers = 4;
+            initialLayerSpeed = 20;
+            printSpeed = 50;
+            infillSpeed = 50;
+            inset0Speed = 50;
+            insetXSpeed = 50;
+            moveSpeed = 200;
+            fanFullOnLayerNr = 2;
+            skirtDistance = 6000;
+            skirtLineCount = 1;
+            skirtMinLength = 0;
+            sparseInfillLineDistance = 100 * extrusionWidth / 20;
+            infillOverlap = 15;
+            objectPosition.X = 102500;
+            objectPosition.Y = 102500;
+            objectSink = 0;
+            supportAngle = -1;
+            supportEverywhere = 0;
+            supportLineDistance = sparseInfillLineDistance;
+            supportExtruder = -1;
+            supportXYDistance = 700;
+            supportZDistance = 150;
+            retractionAmount = 4500;
+            retractionSpeed = 45;
+            retractionAmountExtruderSwitch = 14500;
+            retractionMinimalDistance = 1500;
+            minimalExtrusionBeforeRetraction = 100;
+            enableOozeShield = false;
+            enableCombing = true;
+            wipeTowerSize = 0;
+            multiVolumeOverlap = 0;
+
+            minimalLayerTime = 5;
+            minimalFeedrate = 10;
+            coolHeadLift = false;
+            fanSpeedMin = 100;
+            fanSpeedMax = 100;
+
+            raftMargin = 5000;
+            raftLineSpacing = 1000;
+            raftBaseThickness = 0;
+            raftBaseLinewidth = 0;
+            raftInterfaceThickness = 0;
+            raftInterfaceLinewidth = 0;
+
+            spiralizeMode = false;
+            fixHorrible = 0;
+            gcodeFlavor = ConfigConstants.GCODE_FLAVOR_REPRAP;
+
+            startCode =
+                            "M109 S210     ;Heatup to 210C\n" +
+                            "G21           ;metric values\n" +
+                            "G90           ;absolute positioning\n" +
+                            "G28           ;Home\n" +
+                            "G1 Z15.0 F300 ;move the platform down 15mm\n" +
+                            "G92 E0        ;zero the extruded length\n" +
+                            "G1 F200 E5    ;extrude 5mm of feed stock\n" +
+                            "G92 E0        ;zero the extruded length again\n";
+            endCode =
+                "M104 S0                     ;extruder heater off\n" +
+                "M140 S0                     ;heated bed heater off (if you have it)\n" +
+                "G91                            ;relative positioning\n" +
+                "G1 E-1 F300                    ;retract the filament a bit before lifting the nozzle, to release some of the pressure\n" +
+                "G1 Z+0.5 E-5 X-20 Y-20 F9000   ;move Z up a bit and retract filament even more\n" +
+                "G28 X0 Y0                      ;move X/Y to min endstops, so the head is out of the way\n" +
+                "M84                         ;steppers off\n" +
+                "G90                         ;absolute positioning\n";
+        }
 
         public void DumpSettings(string fileName)
         {
