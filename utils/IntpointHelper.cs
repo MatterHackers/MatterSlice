@@ -1,5 +1,6 @@
 /*
-Copyright (c) 2013, Lars Brubaker
+Copyright (c) 2013 David Braam
+Copyright (c) 2014, Lars Brubaker
 
 This file is part of MatterSlice.
 
