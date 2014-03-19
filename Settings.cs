@@ -577,7 +577,16 @@ namespace MatterHackers.MatterSlice
          *   Homing is done with G162 X Y F2000
          **/
         public const int GCODE_FLAVOR_MAKERBOT = 2;
-
+        
+        /**
+         * Bits From Bytes GCode.
+         *  BFB machines use RPM instead of E. Which is coupled to the F instead of independed. (M108 S[deciRPM])
+         *  Need X,Y,Z,F on every line.
+         *  Needs extruder ON/OFF (M101, M103), has auto-retrection (M227 S[2560*mm] P[2560*mm])
+         **/
+        public const int GCODE_FLAVOR_BFB = 3;
+ 
+        
         public const int MAX_EXTRUDERS = 16;
     }
 }

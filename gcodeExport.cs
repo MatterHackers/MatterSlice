@@ -211,62 +211,109 @@ namespace MatterHackers.MatterSlice
             totalPrintTime += timeAmount;
         }
 
+        internal static int Round(double value)
+        {
+            return value < 0 ? (int)(value - 0.5) : (int)(value + 0.5);
+        }
+
         public void writeMove(IntPoint p, int speed, int lineWidth)
         {
-            if (lineWidth != 0)
+            if (flavor == ConfigConstants.GCODE_FLAVOR_BFB)
             {
-                IntPoint diff = p - getPositionXY();
-                if (isRetracted)
+                //For Bits From Bytes machines, we need to handle this completely differently. As they do not use E values.
+                double fspeed = speed * 60;
+                double rpm = (extrusionPerMM * (double)(lineWidth) / 1000.0) * speed * 60;
+                //rpm /= mm_per_rpm;
+                if (rpm > 0)
                 {
-                    if (retractionZHop > 0)
+                    if (isRetracted)
                     {
-                        f.Write("G1 Z{0:0.00}\n".FormatWith(currentPosition.z / 1000));
+                        if (currentSpeed != (int)(rpm * 10))
+                        {
+                            //f.Write("; %f e-per-mm %d mm-width %d mm/s\n", extrusionPerMM, lineWidth, speed);
+                            f.Write("M108 S{0:0.000}\n".FormatWith(rpm * 10));
+                            f.Write("M108 S{0:0.0}\n".FormatWith(rpm * 10));
+                            currentSpeed = (int)(rpm * 10);
+                        }
+                        f.Write("M101\n");
+                        isRetracted = false;
                     }
-
-                    if (flavor == ConfigConstants.GCODE_FLAVOR_ULTIGCODE)
-                    {
-                        f.Write("G11\n");
-                    }
-                    else
-                    {
-                        f.Write("G1 F{0} E{0:0.00000}\n".FormatWith(retractionSpeed * 60, extrusionAmount));
-                        currentSpeed = retractionSpeed;
-                        estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(p.X) / 1000.0, (p.Y) / 1000.0, (double)(zPos) / 1000.0, extrusionAmount), currentSpeed);
-                    }
-                    if (extrusionAmount > 10000.0)
-                    {
-                        // Having more then 21m of extrusion causes inaccuracies. So reset it every 10m, just to be sure.
-                        resetExtrusionValue();
-                    }
-
-                    isRetracted = false;
+                    fspeed *= (rpm / (Round(rpm * 100) / 100));
                 }
-                extrusionAmount += extrusionPerMM * (double)(lineWidth) / 1000.0 * diff.vSizeMM();
-                f.Write("G1");
+                else
+                {
+                    if (!isRetracted)
+                    {
+                        f.Write("M103\n");
+                        isRetracted = true;
+                    }
+                }
+                f.Write("G1 X{0:0.00} Y{1:0.00} Z{0:0.00} F{0:0.0}\n".FormatWith((double)(p.X - extruderOffset[extruderNr].X) / 1000, (double)(p.Y - extruderOffset[extruderNr].Y) / 1000, (double)(zPos) / 1000, fspeed));
             }
             else
             {
-                f.Write("G0");
-            }
+                //Normal E handling.
+                if (lineWidth != 0)
+                {
+                    IntPoint diff = p - getPositionXY();
+                    if (isRetracted)
+                    {
+                        if (retractionZHop > 0)
+                            f.Write("G1 Z{0:0.00}\n".FormatWith((double)(currentPosition.z) / 1000));
+                        if (flavor == ConfigConstants.GCODE_FLAVOR_ULTIGCODE)
+                        {
+                            f.Write("G11\n");
+                        }
+                        else
+                        {
+                            f.Write("G1 F{0} E{0:0.00000}\n".FormatWith(retractionSpeed * 60, extrusionAmount));
+                            currentSpeed = retractionSpeed;
+                            estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(p.X) / 1000.0, (p.Y) / 1000.0, (double)(zPos) / 1000.0, extrusionAmount), currentSpeed);
+                        }
 
-            if (currentSpeed != speed)
-            {
-                f.Write(" F{0}".FormatWith(speed * 60));
-                currentSpeed = speed;
+                        if (extrusionAmount > 10000.0)
+                        {
+                            //According to https://github.com/Ultimaker/CuraEngine/issues/14 having more then 21m of extrusion causes inaccuracies. So reset it every 10m, just to be sure.
+                            resetExtrusionValue();
+                        }
+                        isRetracted = false;
+                    }
+                    extrusionAmount += extrusionPerMM * (double)(lineWidth) / 1000.0 * diff.vSizeMM();
+                    f.Write("G1");
+                }
+                else
+                {
+                    f.Write("G0");
+                }
+
+                if (currentSpeed != speed)
+                {
+                    f.Write(" F{0}".FormatWith(speed * 60));
+                    currentSpeed = speed;
+                }
+                f.Write(" X{0:0.00} Y{1:0.00}".FormatWith((double)(p.X - extruderOffset[extruderNr].X) / 1000, (double)(p.Y - extruderOffset[extruderNr].Y) / 1000));
+                if (zPos != currentPosition.z)
+                {
+                    f.Write(" Z{0:0.00}".FormatWith((double)(zPos) / 1000));
+                }
+                if (lineWidth != 0)
+                {
+                    f.Write(" E{0:0.00000}".FormatWith(extrusionAmount));
+                }
+                f.Write("\n");
             }
-            f.Write(" X{0:0.00} Y{1:0.00}".FormatWith((float)(p.X - extruderOffset[extruderNr].X) / 1000, (float)(p.Y - extruderOffset[extruderNr].Y) / 1000));
-            if (zPos != currentPosition.z)
-                f.Write(" Z{0:0.00}".FormatWith((float)(zPos) / 1000));
-            if (lineWidth != 0)
-                f.Write(" E{0:0.00000}".FormatWith(extrusionAmount));
-            f.Write("\n");
 
             currentPosition = new Point3(p.X, p.Y, zPos);
-            estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition.x) / 1000.0, (currentPosition.y) / 1000.0, (double)(currentPosition.z) / 1000.0, extrusionAmount), currentSpeed);
+            estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition.x) / 1000.0, (currentPosition.y) / 1000.0, (double)(currentPosition.z) / 1000.0, extrusionAmount), speed);
         }
 
         public void writeRetraction()
         {
+            if (flavor == ConfigConstants.GCODE_FLAVOR_BFB)//BitsFromBytes does automatic retraction.
+            {
+                return;
+            }
+
             if (retractionAmount > 0 && !isRetracted && extrusionAmountAtPreviousRetraction + minimalExtrusionBeforeRetraction < extrusionAmount)
             {
                 if (flavor == ConfigConstants.GCODE_FLAVOR_ULTIGCODE)
@@ -275,20 +322,18 @@ namespace MatterHackers.MatterSlice
                 }
                 else
                 {
-                    f.Write("G1 F{0} E{1:0.00000}\n".FormatWith(retractionSpeed * 60, extrusionAmount - retractionAmount));
+                    f.Write("G1 F{0} E{0:0.00000}\n".FormatWith(retractionSpeed * 60, extrusionAmount - retractionAmount));
                     currentSpeed = retractionSpeed;
                     estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition.x) / 1000.0, (currentPosition.y) / 1000.0, (double)(currentPosition.z) / 1000.0, extrusionAmount - retractionAmount), currentSpeed);
                 }
                 if (retractionZHop > 0)
                 {
-                    f.Write("G1 Z{0:0.00}\n".FormatWith((currentPosition.z + retractionZHop) / 1000));
-                } 
-                
+                    f.Write("G1 Z{0:0.00}\n".FormatWith((double)(currentPosition.z + retractionZHop) / 1000));
+                }
                 extrusionAmountAtPreviousRetraction = extrusionAmount;
                 isRetracted = true;
             }
         }
-
         public void switchExtruder(int newExtruder)
         {
             if (extruderNr == newExtruder)
@@ -416,7 +461,7 @@ namespace MatterHackers.MatterSlice
         public List<IntPoint> points = new List<IntPoint>();
         public bool done;//Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
     }
-    
+
     //The GCodePlanner class stores multiple moves that are planned.
     // It facilitates the combing to keep the head inside the print.
     // It also keeps track of the print time estimate for this planning so speed adjustments can be made for the minimal-layer-time.
@@ -609,7 +654,7 @@ namespace MatterHackers.MatterSlice
             }
 
             orderOptimizer.optimize();
-            
+
             for (int i = 0; i < orderOptimizer.polyOrder.Count; i++)
             {
                 int nr = orderOptimizer.polyOrder[i];
