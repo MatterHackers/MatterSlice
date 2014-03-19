@@ -301,7 +301,7 @@ namespace MatterHackers.MatterSlice
 #endif
         }
 
-        public static SimpleModel loadModel(string filename, FMatrix3x3 matrix)
+        public static SimpleModel loadModelFromFile(string filename, FMatrix3x3 matrix)
         {
             SimpleModel fromAsciiModel = loadModelSTL_ascii(filename, matrix);
             if (fromAsciiModel == null)

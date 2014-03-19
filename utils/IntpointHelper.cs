@@ -186,11 +186,14 @@ namespace MatterHackers.MatterSlice
         {
             int _len = p0.vSize();
             if (_len < 1)
+            {
                 return new IntPoint(len, 0);
+            }
+
             return p0 * len / _len;
         }
 
-        public static IntPoint crossZ(this IntPoint p0)
+        public static IntPoint GetPerpendicularLeft(this IntPoint p0)
         {
             return new IntPoint(-p0.Y, p0.X);
         }

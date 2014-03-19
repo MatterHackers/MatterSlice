@@ -90,17 +90,26 @@ namespace MatterHackers.MatterSlice
                 minX[bounderyIndex] = long.MaxValue;
                 maxX[bounderyIndex] = long.MinValue;
                 IntPoint p0 = matrix.apply(boundryPolygon[boundryPolygon.Count - 1]);
-                for (int i = 0; i < boundryPolygon.Count; i++)
+                for (int pointIndex = 0; pointIndex < boundryPolygon.Count; pointIndex++)
                 {
-                    IntPoint p1 = matrix.apply(boundryPolygon[i]);
+                    IntPoint p1 = matrix.apply(boundryPolygon[pointIndex]);
                     if ((p0.Y > startPoint.Y && p1.Y < startPoint.Y) || (p1.Y > startPoint.Y && p0.Y < startPoint.Y))
                     {
                         long x = p0.X + (p1.X - p0.X) * (startPoint.Y - p0.Y) / (p1.Y - p0.Y);
 
                         if (x >= startPoint.X && x <= endPoint.X)
                         {
-                            if (x < minX[bounderyIndex]) { minX[bounderyIndex] = x; minIdx[bounderyIndex] = i; }
-                            if (x > maxX[bounderyIndex]) { maxX[bounderyIndex] = x; maxIdx[bounderyIndex] = i; }
+                            if (x < minX[bounderyIndex]) 
+                            { 
+                                minX[bounderyIndex] = x; 
+                                minIdx[bounderyIndex] = pointIndex; 
+                            }
+
+                            if (x > maxX[bounderyIndex]) 
+                            { 
+                                maxX[bounderyIndex] = x; 
+                                maxIdx[bounderyIndex] = pointIndex; 
+                            }
                         }
                     }
                     p0 = p1;
@@ -108,32 +117,34 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        int getPolygonAbove(long x)
+        int getPolygonIndexAbove(long startingPolygonIndex)
         {
             long min = long.MaxValue;
             int ret = int.MaxValue;
-            for (int n = 0; n < bounderyPolygons.Count; n++)
+            
+            for (int polygonIndex = 0; polygonIndex < bounderyPolygons.Count; polygonIndex++)
             {
-                if (minX[n] > x && minX[n] < min)
+                if (minX[polygonIndex] > startingPolygonIndex && minX[polygonIndex] < min)
                 {
-                    min = minX[n];
-                    ret = n;
+                    min = minX[polygonIndex];
+                    ret = polygonIndex;
                 }
             }
+            
             return ret;
         }
 
-        IntPoint getBounderyPointWithOffset(int polygonNr, int idx)
+        IntPoint getBounderyPointWithOffset(int polygonIndex, int pointIndex)
         {
-            IntPoint p0 = bounderyPolygons[polygonNr][(idx > 0) ? (idx - 1) : (bounderyPolygons[polygonNr].Count - 1)];
-            IntPoint p1 = bounderyPolygons[polygonNr][idx];
-            IntPoint p2 = bounderyPolygons[polygonNr][(idx < (bounderyPolygons[polygonNr].Count - 1)) ? (idx + 1) : (0)];
+            IntPoint previousPoint = bounderyPolygons[polygonIndex][(pointIndex > 0) ? (pointIndex - 1) : (bounderyPolygons[polygonIndex].Count - 1)];
+            IntPoint currentPoint = bounderyPolygons[polygonIndex][pointIndex];
+            IntPoint nextPoint = bounderyPolygons[polygonIndex][(pointIndex < (bounderyPolygons[polygonIndex].Count - 1)) ? (pointIndex + 1) : (0)];
 
-            IntPoint off0 = ((p1 - p0).normal(1000)).crossZ();
-            IntPoint off1 = ((p2 - p1).normal(1000)).crossZ();
+            IntPoint off0 = ((currentPoint - previousPoint).normal(1000)).GetPerpendicularLeft();
+            IntPoint off1 = ((nextPoint - currentPoint).normal(1000)).GetPerpendicularLeft();
             IntPoint n = (off0 + off1).normal(200);
 
-            return p1 + n;
+            return currentPoint + n;
         }
 
         public Comb(Polygons _boundery)
@@ -147,8 +158,8 @@ namespace MatterHackers.MatterSlice
 
         public bool checkInside(IntPoint p)
         {
-            //Check if we are inside the comb boundary. We do this by tracing from the point towards the negative X direction,
-            //  every boundary we cross increments the crossings counter. If we have an even number of crossings then we are not inside the boundary
+            // Check if we are inside the comb boundary. We do this by tracing from the point towards the negative X direction,
+            // every boundary we cross increments the crossings counter. If we have an even number of crossings then we are not inside the boundary
             int crossings = 0;
             for (int bounderyIndex = 0; bounderyIndex < bounderyPolygons.Count; bounderyIndex++)
             {
@@ -216,7 +227,7 @@ namespace MatterHackers.MatterSlice
                     if (dist < bestDist)
                     {
                         bestDist = dist;
-                        ret = q + ((p1 - p0).normal(distance)).crossZ();
+                        ret = q + ((p1 - p0).normal(distance)).GetPerpendicularLeft();
                     }
 
                     p0 = p1;
@@ -233,20 +244,30 @@ namespace MatterHackers.MatterSlice
         public bool calc(IntPoint startPoint, IntPoint endPoint, List<IntPoint> combPoints)
         {
             if ((endPoint - startPoint).shorterThen(1500))
+            {
                 return true;
+            }
 
             bool addEndpoint = false;
             //Check if we are inside the comb boundaries
             if (!checkInside(startPoint))
             {
-                if (!moveInside(startPoint))    //If we fail to move the point inside the comb boundary we need to retract.
+                if (!moveInside(startPoint))
+                {
+                    //If we fail to move the point inside the comb boundary we need to retract.
                     return false;
+                }
+
                 combPoints.Add(startPoint);
             }
             if (!checkInside(endPoint))
             {
-                if (!moveInside(endPoint))    //If we fail to move the point inside the comb boundary we need to retract.
+                if (!moveInside(endPoint))
+                {
+                    //If we fail to move the point inside the comb boundary we need to retract.
                     return false;
+                }
+
                 addEndpoint = true;
             }
 
@@ -254,8 +275,11 @@ namespace MatterHackers.MatterSlice
             if (!preTest(startPoint, endPoint))
             {
                 //We're not crossing any boundaries. So skip the comb generation.
-                if (!addEndpoint && combPoints.Count == 0) //Only skip if we didn't move the start and end point.
+                if (!addEndpoint && combPoints.Count == 0)
+                {
+                    //Only skip if we didn't move the start and end point.
                     return true;
+                }
             }
 
             //Calculate the minimum and maximum positions where we cross the comb boundary
@@ -268,8 +292,11 @@ namespace MatterHackers.MatterSlice
             // This gives a path from the start to finish curved around the holes that it encounters.
             while (true)
             {
-                int n = getPolygonAbove(x);
-                if (n == int.MaxValue) break;
+                int n = getPolygonIndexAbove(x);
+                if (n == int.MaxValue)
+                {
+                    break;
+                }
 
                 pointList.Add(matrix.unapply(new IntPoint(minX[n] - 200, startPoint.Y)));
                 if ((minIdx[n] - maxIdx[n] + bounderyPolygons[n].Count) % bounderyPolygons[n].Count > (maxIdx[n] - minIdx[n] + bounderyPolygons[n].Count) % bounderyPolygons[n].Count)

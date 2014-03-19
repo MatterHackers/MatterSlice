@@ -118,7 +118,7 @@ namespace MatterHackers.MatterSlice
             f = new StreamWriter(filename);
         }
 
-        public bool isValid()
+        public bool isOpened()
         {
             return f != null;
         }
@@ -181,12 +181,12 @@ namespace MatterHackers.MatterSlice
             estimateCalculator.reset();
         }
 
-        public void addComment(string comment)
+        public void writeComment(string comment)
         {
             f.Write(";{0}\n".FormatWith(comment));
         }
 
-        public void addLine(string line)
+        public void writeLine(string line)
         {
             f.Write(";{0}\n".FormatWith(line));
         }
@@ -202,13 +202,13 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        public void addDelay(double timeAmount)
+        public void writeDelay(double timeAmount)
         {
             f.Write("G4 P{0}\n".FormatWith((int)(timeAmount * 1000)));
             totalPrintTime += timeAmount;
         }
 
-        public void addMove(IntPoint p, int speed, int lineWidth)
+        public void writeMove(IntPoint p, int speed, int lineWidth)
         {
             if (lineWidth != 0)
             {
@@ -253,7 +253,7 @@ namespace MatterHackers.MatterSlice
             estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition.x) / 1000.0, (currentPosition.y) / 1000.0, (double)(currentPosition.z) / 1000.0, extrusionAmount), currentSpeed);
         }
 
-        public void addRetraction()
+        public void writeRetraction()
         {
             if (retractionAmount > 0 && !isRetracted && extrusionAmountAtPreviousRetraction + minimalExtrusionBeforeRetraction < extrusionAmount)
             {
@@ -296,12 +296,12 @@ namespace MatterHackers.MatterSlice
                 f.Write("T{0}\n".FormatWith(extruderNr));
         }
 
-        public void addCode(string str)
+        public void writeCode(string str)
         {
             f.Write("{0}\n".FormatWith(str));
         }
 
-        public void addFanCommand(int speed)
+        public void writeFanCommand(int speed)
         {
             if (currentFanSpeed == speed)
                 return;
@@ -342,8 +342,32 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-    };
 
+        public void finalize(int maxObjectHeight, int moveSpeed, string endCode)
+        {
+            writeFanCommand(0);
+            writeRetraction();
+            setZ(maxObjectHeight + 5000);
+            writeMove(getPositionXY(), moveSpeed, 0);
+            writeCode(endCode);
+            LogOutput.log("Print time: {0}\n".FormatWith((int)(getTotalPrintTime())));
+            LogOutput.log("Filament: {0}\n".FormatWith((int)(getTotalFilamentUsed(0))));
+            LogOutput.log("Filament2: {0}\n".FormatWith((int)(getTotalFilamentUsed(1))));
+
+            if (getFlavor() == ConfigConstants.GCODE_FLAVOR_ULTIGCODE)
+            {
+                string numberString;
+                numberString = "{0}".FormatWith((int)(getTotalPrintTime()));
+                replaceTagInStart("<__TIME__>", numberString);
+                numberString = "{0}".FormatWith((int)(getTotalFilamentUsed(0)));
+                replaceTagInStart("<FILAMENT>", numberString);
+                numberString = "{0}".FormatWith((int)(getTotalFilamentUsed(1)));
+                replaceTagInStart("<FILAMEN2>", numberString);
+            }
+        }
+    }
+
+    //The GCodePathConfig is the configuration for moves/extrusion actions. This defines at which width the line is printed and at which speed.
     public class GCodePathConfig
     {
         public int speed;
@@ -375,7 +399,10 @@ namespace MatterHackers.MatterSlice
         public List<IntPoint> points = new List<IntPoint>();
         public bool done;//Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
     }
-
+    
+    //The GCodePlanner class stores multiple moves that are planned.
+    // It facilitates the combing to keep the head inside the print.
+    // It also keeps track of the print time estimate for this planning so speed adjustments can be made for the minimal-layer-time.
     public class GCodePlanner
     {
         GCodeExport gcode = new GCodeExport();
@@ -483,7 +510,7 @@ namespace MatterHackers.MatterSlice
             return this.travelSpeedFactor;
         }
 
-        public void addTravel(IntPoint p)
+        public void writeTravel(IntPoint p)
         {
             GCodePath path = getLatestPathWithConfig(travelConfig);
             if (forceRetraction)
@@ -519,7 +546,7 @@ namespace MatterHackers.MatterSlice
             lastPosition = p;
         }
 
-        public void addExtrusionMove(IntPoint p, GCodePathConfig config)
+        public void writeExtrusionMove(IntPoint p, GCodePathConfig config)
         {
             getLatestPathWithConfig(config).points.Add(p);
             lastPosition = p;
@@ -535,28 +562,28 @@ namespace MatterHackers.MatterSlice
                 comb.moveInside(p, distance);
                 if (comb.checkInside(p))
                 {
-                    addTravel(p);
+                    writeTravel(p);
                     //Make sure the that any retraction happens after this move, not before it by starting a new move path.
                     forceNewPathStart();
                 }
             }
         }
 
-        public void addPolygon(Polygon polygon, int startIdx, GCodePathConfig config)
+        public void writePolygon(Polygon polygon, int startIdx, GCodePathConfig config)
         {
             IntPoint p0 = polygon[startIdx];
-            addTravel(p0);
+            writeTravel(p0);
             for (int i = 1; i < polygon.Count; i++)
             {
                 IntPoint p1 = polygon[(startIdx + i) % polygon.Count];
-                addExtrusionMove(p1, config);
+                writeExtrusionMove(p1, config);
                 p0 = p1;
             }
             if (polygon.Count > 2)
-                addExtrusionMove(polygon[startIdx], config);
+                writeExtrusionMove(polygon[startIdx], config);
         }
 
-        public void addPolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
+        public void writePolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
         {
             PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(lastPosition);
             for (int i = 0; i < polygons.Count; i++)
@@ -569,7 +596,7 @@ namespace MatterHackers.MatterSlice
             for (int i = 0; i < orderOptimizer.polyOrder.Count; i++)
             {
                 int nr = orderOptimizer.polyOrder[i];
-                addPolygon(polygons[nr], orderOptimizer.polyStart[nr], config);
+                writePolygon(polygons[nr], orderOptimizer.polyStart[nr], config);
             }
         }
 
@@ -642,11 +669,11 @@ namespace MatterHackers.MatterSlice
                 }
                 else if (path.retract)
                 {
-                    gcode.addRetraction();
+                    gcode.writeRetraction();
                 }
                 if (path.config != travelConfig && lastConfig != path.config)
                 {
-                    gcode.addComment("TYPE:{0}".FormatWith(path.config.name));
+                    gcode.writeComment("TYPE:{0}".FormatWith(path.config.name));
                     lastConfig = path.config;
                 }
                 int speed = path.config.speed;
@@ -681,12 +708,12 @@ namespace MatterHackers.MatterSlice
                             long newLen = (gcode.getPositionXY() - newPoint).vSize();
                             if (newLen > 0)
                             {
-                                gcode.addMove(newPoint, speed, (int)(path.config.lineWidth * oldLen / newLen));
+                                gcode.writeMove(newPoint, speed, (int)(path.config.lineWidth * oldLen / newLen));
                             }
 
                             p0 = paths[x + 1].points[0];
                         }
-                        gcode.addMove(paths[i - 1].points[0], speed, path.config.lineWidth);
+                        gcode.writeMove(paths[i - 1].points[0], speed, path.config.lineWidth);
                         n = i - 1;
                         continue;
                     }
@@ -723,14 +750,14 @@ namespace MatterHackers.MatterSlice
                         length += (p0 - p1).vSizeMM();
                         p0 = p1;
                         gcode.setZ((int)(z + layerThickness * length / totalLength));
-                        gcode.addMove(path.points[i], speed, path.config.lineWidth);
+                        gcode.writeMove(path.points[i], speed, path.config.lineWidth);
                     }
                 }
                 else
                 {
                     for (int i = 0; i < path.points.Count; i++)
                     {
-                        gcode.addMove(path.points[i], speed, path.config.lineWidth);
+                        gcode.writeMove(path.points[i], speed, path.config.lineWidth);
                     }
                 }
             }
@@ -738,12 +765,12 @@ namespace MatterHackers.MatterSlice
             gcode.updateTotalPrintTime();
             if (liftHeadIfNeeded && extraTime > 0.0)
             {
-                gcode.addComment("Small layer, adding delay of {0}".FormatWith(extraTime));
-                gcode.addRetraction();
+                gcode.writeComment("Small layer, adding delay of {0}".FormatWith(extraTime));
+                gcode.writeRetraction();
                 gcode.setZ(gcode.getPositionZ() + 3000);
-                gcode.addMove(gcode.getPositionXY(), travelConfig.speed, 0);
-                gcode.addMove(gcode.getPositionXY() - new IntPoint(-20000, 0), travelConfig.speed, 0);
-                gcode.addDelay(extraTime);
+                gcode.writeMove(gcode.getPositionXY(), travelConfig.speed, 0);
+                gcode.writeMove(gcode.getPositionXY() - new IntPoint(-20000, 0), travelConfig.speed, 0);
+                gcode.writeDelay(extraTime);
             }
         }
     }
