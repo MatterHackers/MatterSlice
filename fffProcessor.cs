@@ -176,6 +176,12 @@ namespace MatterHackers.MatterSlice
                 storage.volumes.Add(new SliceVolumeStorage());
                 LayerPart.createLayerParts(storage.volumes[volumeIdx], slicerList[volumeIdx], config.fixHorrible & (ConfigConstants.FIX_HORRIBLE_UNION_ALL_TYPE_A | ConfigConstants.FIX_HORRIBLE_UNION_ALL_TYPE_B | ConfigConstants.FIX_HORRIBLE_UNION_ALL_TYPE_C));
                 slicerList[volumeIdx] = null;
+
+                //Add the raft offset to each layer.
+                for (int layerNr = 0; layerNr < storage.volumes[volumeIdx].layers.Count; layerNr++)
+                {
+                    storage.volumes[volumeIdx].layers[layerNr].printZ += config.raftBaseThickness + config.raftInterfaceThickness;
+                }          
             }
             LogOutput.log("Generated layer parts in {0:0.000}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();
@@ -209,10 +215,10 @@ namespace MatterHackers.MatterSlice
                     {
                         if (layer.parts[partNr].insets.Count > 0)
                         {
-                            LogOutput.logPolygons("inset0", layerNr, layer.z, layer.parts[partNr].insets[0]);
+                            LogOutput.logPolygons("inset0", layerNr, layer.printZ, layer.parts[partNr].insets[0]);
                             for (int inset = 1; inset < layer.parts[partNr].insets.Count; inset++)
                             {
-                                LogOutput.logPolygons("insetx", layerNr, layer.z, layer.parts[partNr].insets[inset]);
+                                LogOutput.logPolygons("insetx", layerNr, layer.printZ, layer.parts[partNr].insets[inset]);
                             }
                         }
                     }
@@ -266,7 +272,7 @@ namespace MatterHackers.MatterSlice
 
                         SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
                         for (int partNr = 0; partNr < layer.parts.Count; partNr++)
-                            LogOutput.logPolygons("skin", layerNr, layer.z, layer.parts[partNr].skinOutline);
+                            LogOutput.logPolygons("skin", layerNr, layer.printZ, layer.parts[partNr].skinOutline);
                     }
                 }
                 LogOutput.logProgress("skin", layerNr + 1, totalLayers);
@@ -479,7 +485,7 @@ namespace MatterHackers.MatterSlice
             {
                 gcodeLayer.setAlwaysRetract(true);
                 gcodeLayer.writePolygonsByOptimizer(storage.oozeShield[layerNr], skirtConfig);
-                LogOutput.logPolygons("oozeshield", layerNr, layer.z, storage.oozeShield[layerNr]);
+                LogOutput.logPolygons("oozeshield", layerNr, layer.printZ, storage.oozeShield[layerNr]);
                 gcodeLayer.setAlwaysRetract(!config.enableCombing);
             }
 
@@ -556,7 +562,7 @@ namespace MatterHackers.MatterSlice
                 }
 
                 gcodeLayer.writePolygonsByOptimizer(fillPolygons, fillConfig);
-                LogOutput.logPolygons("infill", layerNr, layer.z, fillPolygons);
+                LogOutput.logPolygons("infill", layerNr, layer.printZ, fillPolygons);
 
                 //After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
                 if (!config.spiralizeMode || (int)(layerNr) < config.downSkinCount)

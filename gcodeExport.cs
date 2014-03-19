@@ -196,7 +196,7 @@ namespace MatterHackers.MatterSlice
 
         public void resetExtrusionValue()
         {
-            if (extrusionAmount != 0.0)
+            if (extrusionAmount != 0.0 && flavor != ConfigConstants.GCODE_FLAVOR_MAKERBOT)
             {
                 f.Write("G92 E0\n");
                 totalFilament[extruderNr] += extrusionAmount;

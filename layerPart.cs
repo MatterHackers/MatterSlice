@@ -87,9 +87,7 @@ namespace MatterHackers.MatterSlice
         {
             for (int layerNr = 0; layerNr < slicer.layers.Count; layerNr++)
             {
-                storage.layers.Add(new SliceLayer());
-                //storage.layers[layerNr].sliceZ = slicer.layers[layerNr].z;
-                //storage.layers[layerNr].printZ = slicer.layers[layerNr].z;
+                storage.layers[layerNr].printZ = slicer.layers[layerNr].z;
                 LayerPart.createLayerWithParts(storage.layers[layerNr], slicer.layers[layerNr], unionAllType);
             }
         }
