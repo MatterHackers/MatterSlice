@@ -33,6 +33,7 @@ namespace MatterHackers.MatterSlice
     {
         public static void generateSkirt(SliceDataStorage storage, int distance, int extrusionWidth, int count, int minLength, int initialLayerHeight)
         {
+            bool externalOnly = (distance > 0);
             for (int skirtNr = 0; skirtNr < count; skirtNr++)
             {
                 int offsetDistance = distance + extrusionWidth * skirtNr + extrusionWidth / 2;
@@ -40,11 +41,26 @@ namespace MatterHackers.MatterSlice
                 Polygons skirtPolygons = new Polygons(storage.wipeTower.Offset(offsetDistance));
                 for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
                 {
-                    if (storage.volumes[volumeIdx].layers.Count < 1) continue;
+                    if (storage.volumes[volumeIdx].layers.Count < 1)
+                    {
+                        continue;
+                    }
+
                     SliceLayer layer = storage.volumes[volumeIdx].layers[0];
                     for (int i = 0; i < layer.parts.Count; i++)
                     {
                         skirtPolygons = skirtPolygons.CreateUnion(layer.parts[i].outline.Offset(offsetDistance));
+
+                        if (externalOnly)
+                        {
+                            Polygons p = new Polygons();
+                            p.Add(layer.parts[i].outline[0]);
+                            skirtPolygons = skirtPolygons.CreateUnion(p.Offset(offsetDistance));
+                        }
+                        else
+                        {
+                            skirtPolygons = skirtPolygons.CreateUnion(layer.parts[i].outline.Offset(offsetDistance));
+                        }
                     }
                 }
 
@@ -56,14 +72,18 @@ namespace MatterHackers.MatterSlice
                 {
                     double area = skirtPolygons[n].Area();
                     if (area < 0 && area > -extrusionWidth * extrusionWidth * 100)
+                    {
                         skirtPolygons.RemoveAt(n--);
+                    }
                 }
 
                 storage.skirt.AddAll(skirtPolygons);
 
                 int lenght = (int)storage.skirt.polygonLength();
                 if (skirtNr + 1 >= count && lenght > 0 && lenght < minLength)
+                {
                     count++;
+                }
             }
         }
     }
