@@ -354,6 +354,7 @@ namespace MatterHackers.MatterSlice
                     gcode.writeComment("LAYER:-2");
                     gcode.writeComment("RAFT");
                     GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.moveSpeed, config.retractionMinimalDistance);
+                    gcodeLayer.setAlwaysRetract(true);
                     gcode.setZ(config.raftBaseThickness);
                     gcode.setExtrusion(config.raftBaseThickness, config.filamentDiameter, config.filamentFlow);
                     gcodeLayer.writePolygonsByOptimizer(storage.raftOutline, raftBaseConfig);
@@ -369,6 +370,7 @@ namespace MatterHackers.MatterSlice
                     gcode.writeComment("LAYER:-1");
                     gcode.writeComment("RAFT");
                     GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.moveSpeed, config.retractionMinimalDistance);
+                    gcodeLayer.setAlwaysRetract(true);
                     gcode.setZ(config.raftBaseThickness + config.raftInterfaceThickness);
                     gcode.setExtrusion(config.raftInterfaceThickness, config.filamentDiameter, config.filamentFlow);
 
