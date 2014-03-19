@@ -32,17 +32,21 @@ namespace MatterHackers.MatterSlice
         {
             for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
             {
-                if (storage.volumes[volumeIdx].layers.Count < 1) continue;
+                if (storage.volumes[volumeIdx].layers.Count < 1)
+                {
+                    continue;
+                }
+
                 SliceLayer layer = storage.volumes[volumeIdx].layers[0];
                 for (int i = 0; i < layer.parts.Count; i++)
                 {
                     storage.raftOutline = storage.raftOutline.CreateUnion(layer.parts[i].outline.Offset(distance));
-                    storage.raftOutline = storage.raftOutline.CreateUnion(storage.wipeTower);
                 }
             }
 
             SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, 0);
-            storage.raftOutline = storage.raftOutline.CreateUnion(supportGenerator.polygons);
+            storage.raftOutline = storage.raftOutline.CreateUnion(storage.wipeTower.Offset(distance));
+            storage.raftOutline = storage.raftOutline.CreateUnion(supportGenerator.polygons.Offset(distance));
         }
     }
 }
