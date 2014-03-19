@@ -521,6 +521,11 @@ namespace MatterHackers.MatterSlice
             }
             return false;
         }
+
+        public bool ReadSettings(string fileName)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class ConfigConstants

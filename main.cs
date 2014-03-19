@@ -27,7 +27,7 @@ namespace MatterHackers.MatterSlice
     {
         static void print_usage()
         {
-            Console.Write("usage: MatterSlice [-h] [-v] [-m 3x3matrix] [-s <settingkey>=<value>] -o <output.gcode> <model.stl>\n");
+            Console.Write("usage: MatterSlice [-h] [-v] [-m 3x3matrix] [-c <config file>] [-s <settingkey>=<value>] -o <output.gcode> <model.stl>\n");
         }
 
         static int Main(string[] args)
@@ -84,6 +84,18 @@ namespace MatterHackers.MatterSlice
                                     return 1;
                                 }
                                 break;
+
+                            case 'c':
+                                {
+                                    // Read a config file from the given path
+                                    argn++;
+                                    if (!config.ReadSettings(args[argn]))
+                                    {
+                                        LogOutput.logError("Failed to read config '{0}'\n".FormatWith(args[argn]));
+                                    }
+                                }
+                                break;
+
                             case 's':
                                 {
                                     argn++;
@@ -92,7 +104,7 @@ namespace MatterHackers.MatterSlice
                                     {
                                         if (!config.SetSetting(keyValue[0], keyValue[1]))
                                         {
-                                            Console.Write("Setting not found: %s %s\n", keyValue[0], keyValue[1]);
+                                            Console.Write("Setting not found: {0} {1}\n".FormatWith(keyValue[0], keyValue[1]));
                                         }
                                     }
                                 }
