@@ -620,15 +620,24 @@ namespace MatterHackers.MatterSlice
                 Polygons supportLines = new Polygons();
                 if (config.supportLineDistance > 0)
                 {
-                    if (config.supportLineDistance > config.extrusionWidth * 4)
+                    switch(config.supportType)
                     {
-                        Infill.generateLineInfill(island, supportLines, config.extrusionWidth, config.supportLineDistance * 2, config.infillOverlap, 0);
-                        Infill.generateLineInfill(island, supportLines, config.extrusionWidth, config.supportLineDistance * 2, config.infillOverlap, 90);
-                    }
-                    else
-                    {
-                        Infill.generateLineInfill(island, supportLines, config.extrusionWidth, config.supportLineDistance, config.infillOverlap, ((layerNr & 1) == 1) ? 0 : 90);
-                    }
+                        case ConfigConstants.SUPPORT_TYPE_GRID:
+                            if (config.supportLineDistance > config.extrusionWidth * 4)
+                            {
+                                Infill.generateLineInfill(island, supportLines, config.extrusionWidth, config.supportLineDistance*2, config.infillOverlap, 0);
+                                Infill.generateLineInfill(island, supportLines, config.extrusionWidth, config.supportLineDistance*2, config.infillOverlap, 90);
+                            }
+                            else
+                            {
+                                Infill.generateLineInfill(island, supportLines, config.extrusionWidth, config.supportLineDistance, config.infillOverlap, (layerNr & 1) == 1 ? 0 : 90);
+                            }
+                            break;
+
+                        case ConfigConstants.SUPPORT_TYPE_LINES:
+                            Infill.generateLineInfill(island, supportLines, config.extrusionWidth, config.supportLineDistance, config.infillOverlap, 0);
+                            break;
+                    }                    
                 }
 
                 gcodeLayer.forceRetract();
