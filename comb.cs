@@ -30,7 +30,7 @@ namespace MatterHackers.MatterSlice
 
     public class Comb
     {
-        Polygons boundery;
+        Polygons bounderyPolygons;
 
         long[] minX;
         long[] maxX;
@@ -38,8 +38,8 @@ namespace MatterHackers.MatterSlice
         int[] maxIdx;
 
         PointMatrix matrix;
-        IntPoint sp;
-        IntPoint ep;
+        IntPoint startPoint;
+        IntPoint endPoint;
 
         bool preTest(IntPoint startPoint, IntPoint endPoint)
         {
@@ -51,23 +51,29 @@ namespace MatterHackers.MatterSlice
             IntPoint diff = endPoint - startPoint;
 
             matrix = new PointMatrix(diff);
-            sp = matrix.apply(startPoint);
-            ep = matrix.apply(endPoint);
+            this.startPoint = matrix.apply(startPoint);
+            this.endPoint = matrix.apply(endPoint);
 
-            for (int n = 0; n < boundery.Count; n++)
+            for (int bounderyIndex = 0; bounderyIndex < bounderyPolygons.Count; bounderyIndex++)
             {
-                if (boundery[n].Count < 1)
-                    continue;
-                IntPoint p0 = matrix.apply(boundery[n][boundery[n].Count - 1]);
-                for (int i = 0; i < boundery[n].Count; i++)
+                Polygon boundryPolygon = bounderyPolygons[bounderyIndex];
+                if (boundryPolygon.Count < 1)
                 {
-                    IntPoint p1 = matrix.apply(boundery[n][i]);
-                    if ((p0.Y > sp.Y && p1.Y < sp.Y) || (p1.Y > sp.Y && p0.Y < sp.Y))
-                    {
-                        long x = p0.X + (p1.X - p0.X) * (sp.Y - p0.Y) / (p1.Y - p0.Y);
+                    continue;
+                }
 
-                        if (x > sp.X && x < ep.X)
+                IntPoint p0 = matrix.apply(boundryPolygon[boundryPolygon.Count - 1]);
+                for (int pointIndex = 0; pointIndex < boundryPolygon.Count; pointIndex++)
+                {
+                    IntPoint p1 = matrix.apply(boundryPolygon[pointIndex]);
+                    if ((p0.Y > startPoint.Y && p1.Y < startPoint.Y) || (p1.Y > startPoint.Y && p0.Y < startPoint.Y))
+                    {
+                        long x = p0.X + (p1.X - p0.X) * (startPoint.Y - p0.Y) / (p1.Y - p0.Y);
+
+                        if (x > startPoint.X && x < endPoint.X)
+                        {
                             return true;
+                        }
                     }
                     p0 = p1;
                 }
@@ -77,22 +83,24 @@ namespace MatterHackers.MatterSlice
 
         void calcMinMax()
         {
-            for (int n = 0; n < boundery.Count; n++)
+            for (int bounderyIndex = 0; bounderyIndex < bounderyPolygons.Count; bounderyIndex++)
             {
-                minX[n] = long.MaxValue;
-                maxX[n] = long.MinValue;
-                IntPoint p0 = matrix.apply(boundery[n][boundery[n].Count - 1]);
-                for (int i = 0; i < boundery[n].Count; i++)
-                {
-                    IntPoint p1 = matrix.apply(boundery[n][i]);
-                    if ((p0.Y > sp.Y && p1.Y < sp.Y) || (p1.Y > sp.Y && p0.Y < sp.Y))
-                    {
-                        long x = p0.X + (p1.X - p0.X) * (sp.Y - p0.Y) / (p1.Y - p0.Y);
+                Polygon boundryPolygon = bounderyPolygons[bounderyIndex];
 
-                        if (x >= sp.X && x <= ep.X)
+                minX[bounderyIndex] = long.MaxValue;
+                maxX[bounderyIndex] = long.MinValue;
+                IntPoint p0 = matrix.apply(boundryPolygon[boundryPolygon.Count - 1]);
+                for (int i = 0; i < boundryPolygon.Count; i++)
+                {
+                    IntPoint p1 = matrix.apply(boundryPolygon[i]);
+                    if ((p0.Y > startPoint.Y && p1.Y < startPoint.Y) || (p1.Y > startPoint.Y && p0.Y < startPoint.Y))
+                    {
+                        long x = p0.X + (p1.X - p0.X) * (startPoint.Y - p0.Y) / (p1.Y - p0.Y);
+
+                        if (x >= startPoint.X && x <= endPoint.X)
                         {
-                            if (x < minX[n]) { minX[n] = x; minIdx[n] = i; }
-                            if (x > maxX[n]) { maxX[n] = x; maxIdx[n] = i; }
+                            if (x < minX[bounderyIndex]) { minX[bounderyIndex] = x; minIdx[bounderyIndex] = i; }
+                            if (x > maxX[bounderyIndex]) { maxX[bounderyIndex] = x; maxIdx[bounderyIndex] = i; }
                         }
                     }
                     p0 = p1;
@@ -104,7 +112,7 @@ namespace MatterHackers.MatterSlice
         {
             long min = long.MaxValue;
             int ret = int.MaxValue;
-            for (int n = 0; n < boundery.Count; n++)
+            for (int n = 0; n < bounderyPolygons.Count; n++)
             {
                 if (minX[n] > x && minX[n] < min)
                 {
@@ -117,9 +125,9 @@ namespace MatterHackers.MatterSlice
 
         IntPoint getBounderyPointWithOffset(int polygonNr, int idx)
         {
-            IntPoint p0 = boundery[polygonNr][(idx > 0) ? (idx - 1) : (boundery[polygonNr].Count - 1)];
-            IntPoint p1 = boundery[polygonNr][idx];
-            IntPoint p2 = boundery[polygonNr][(idx < (boundery[polygonNr].Count - 1)) ? (idx + 1) : (0)];
+            IntPoint p0 = bounderyPolygons[polygonNr][(idx > 0) ? (idx - 1) : (bounderyPolygons[polygonNr].Count - 1)];
+            IntPoint p1 = bounderyPolygons[polygonNr][idx];
+            IntPoint p2 = bounderyPolygons[polygonNr][(idx < (bounderyPolygons[polygonNr].Count - 1)) ? (idx + 1) : (0)];
 
             IntPoint off0 = ((p1 - p0).normal(1000)).crossZ();
             IntPoint off1 = ((p2 - p1).normal(1000)).crossZ();
@@ -130,11 +138,11 @@ namespace MatterHackers.MatterSlice
 
         public Comb(Polygons _boundery)
         {
-            this.boundery = _boundery;
-            minX = new long[boundery.Count];
-            maxX = new long[boundery.Count];
-            minIdx = new int[boundery.Count];
-            maxIdx = new int[boundery.Count];
+            this.bounderyPolygons = _boundery;
+            minX = new long[bounderyPolygons.Count];
+            maxX = new long[bounderyPolygons.Count];
+            minIdx = new int[bounderyPolygons.Count];
+            maxIdx = new int[bounderyPolygons.Count];
         }
 
         public bool checkInside(IntPoint p)
@@ -142,26 +150,37 @@ namespace MatterHackers.MatterSlice
             //Check if we are inside the comb boundary. We do this by tracing from the point towards the negative X direction,
             //  every boundary we cross increments the crossings counter. If we have an even number of crossings then we are not inside the boundary
             int crossings = 0;
-            for (int n = 0; n < boundery.Count; n++)
+            for (int bounderyIndex = 0; bounderyIndex < bounderyPolygons.Count; bounderyIndex++)
             {
-                if (boundery[n].Count < 1)
-                    continue;
-                IntPoint p0 = boundery[n][boundery[n].Count - 1];
-                for (int i = 0; i < boundery[n].Count; i++)
+                Polygon boundryPolygon = bounderyPolygons[bounderyIndex];
+
+                if (boundryPolygon.Count < 1)
                 {
-                    IntPoint p1 = boundery[n][i];
+                    continue;
+                }
+
+                IntPoint p0 = boundryPolygon[boundryPolygon.Count - 1];
+                for (int i = 0; i < boundryPolygon.Count; i++)
+                {
+                    IntPoint p1 = boundryPolygon[i];
 
                     if ((p0.Y >= p.Y && p1.Y < p.Y) || (p1.Y > p.Y && p0.Y <= p.Y))
                     {
                         long x = p0.X + (p1.X - p0.X) * (p.Y - p0.Y) / (p1.Y - p0.Y);
                         if (x >= p.X)
+                        {
                             crossings++;
+                        }
                     }
                     p0 = p1;
                 }
             }
+
             if ((crossings % 2) == 0)
+            {
                 return false;
+            }
+
             return true;
         }
 
@@ -169,14 +188,19 @@ namespace MatterHackers.MatterSlice
         {
             IntPoint ret = p;
             long bestDist = 2000 * 2000;
-            for (int n = 0; n < boundery.Count; n++)
+            for (int bounderyIndex = 0; bounderyIndex < bounderyPolygons.Count; bounderyIndex++)
             {
-                if (boundery[n].Count < 1)
-                    continue;
-                IntPoint p0 = boundery[n][boundery[n].Count - 1];
-                for (int i = 0; i < boundery[n].Count; i++)
+                Polygon boundryPolygon = bounderyPolygons[bounderyIndex];
+
+                if (boundryPolygon.Count < 1)
                 {
-                    IntPoint p1 = boundery[n][i];
+                    continue;
+                }
+
+                IntPoint p0 = boundryPolygon[boundryPolygon.Count - 1];
+                for (int i = 0; i < boundryPolygon.Count; i++)
+                {
+                    IntPoint p1 = boundryPolygon[i];
 
                     //Q = A + Normal( B - A ) * ((( B - A ) dot ( P - A )) / VSize( A - B ));
                     IntPoint pDiff = p1 - p0;
@@ -237,9 +261,9 @@ namespace MatterHackers.MatterSlice
             //Calculate the minimum and maximum positions where we cross the comb boundary
             calcMinMax();
 
-            long x = sp.X;
+            long x = startPoint.X;
             List<IntPoint> pointList = new List<IntPoint>();
-            //Now walk trough the crossings, for every boundary we cross, find the initial cross point and the exit point. Then add all the points in between
+            // Now walk trough the crossings, for every boundary we cross, find the initial cross point and the exit point. Then add all the points in between
             // to the pointList and continue with the next boundary we will cross, until there are no more boundaries to cross.
             // This gives a path from the start to finish curved around the holes that it encounters.
             while (true)
@@ -247,10 +271,10 @@ namespace MatterHackers.MatterSlice
                 int n = getPolygonAbove(x);
                 if (n == int.MaxValue) break;
 
-                pointList.Add(matrix.unapply(new IntPoint(minX[n] - 200, sp.Y)));
-                if ((minIdx[n] - maxIdx[n] + boundery[n].Count) % boundery[n].Count > (maxIdx[n] - minIdx[n] + boundery[n].Count) % boundery[n].Count)
+                pointList.Add(matrix.unapply(new IntPoint(minX[n] - 200, startPoint.Y)));
+                if ((minIdx[n] - maxIdx[n] + bounderyPolygons[n].Count) % bounderyPolygons[n].Count > (maxIdx[n] - minIdx[n] + bounderyPolygons[n].Count) % bounderyPolygons[n].Count)
                 {
-                    for (int i = minIdx[n]; i != maxIdx[n]; i = (i < boundery[n].Count - 1) ? (i + 1) : (0))
+                    for (int i = minIdx[n]; i != maxIdx[n]; i = (i < bounderyPolygons[n].Count - 1) ? (i + 1) : (0))
                     {
                         pointList.Add(getBounderyPointWithOffset(n, i));
                     }
@@ -258,15 +282,23 @@ namespace MatterHackers.MatterSlice
                 else
                 {
                     minIdx[n]--;
-                    if (minIdx[n] == int.MaxValue) minIdx[n] = boundery[n].Count - 1;
+                    if (minIdx[n] == int.MaxValue)
+                    {
+                        minIdx[n] = bounderyPolygons[n].Count - 1;
+                    }
+
                     maxIdx[n]--;
-                    if (maxIdx[n] == int.MaxValue) maxIdx[n] = boundery[n].Count - 1;
-                    for (int i = minIdx[n]; i != maxIdx[n]; i = (i > 0) ? (i - 1) : (boundery[n].Count - 1))
+                    if (maxIdx[n] == int.MaxValue)
+                    {
+                        maxIdx[n] = bounderyPolygons[n].Count - 1;
+                    }
+
+                    for (int i = minIdx[n]; i != maxIdx[n]; i = (i > 0) ? (i - 1) : (bounderyPolygons[n].Count - 1))
                     {
                         pointList.Add(getBounderyPointWithOffset(n, i));
                     }
                 }
-                pointList.Add(matrix.unapply(new IntPoint(maxX[n] + 200, sp.Y)));
+                pointList.Add(matrix.unapply(new IntPoint(maxX[n] + 200, startPoint.Y)));
 
                 x = maxX[n];
             }
@@ -279,13 +311,20 @@ namespace MatterHackers.MatterSlice
                 if (collisionTest(p0, pointList[n]))
                 {
                     if (collisionTest(p0, pointList[n - 1]))
+                    {
                         return false;
+                    }
+
                     p0 = pointList[n - 1];
                     combPoints.Add(p0);
                 }
             }
+            
             if (addEndpoint)
+            {
                 combPoints.Add(endPoint);
+            }
+
             return true;
         }
     }
