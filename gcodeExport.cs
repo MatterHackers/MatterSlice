@@ -41,6 +41,7 @@ namespace MatterHackers.MatterSlice
         double extrusionAmountAtPreviousRetraction;
         Point3 currentPosition;
         IntPoint[] extruderOffset = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
+        char[] extruderCharacter = new char[ConfigConstants.MAX_EXTRUDERS];
         int currentSpeed, retractionSpeed;
         int zPos;
         bool isRetracted;
@@ -65,11 +66,14 @@ namespace MatterHackers.MatterSlice
 
             totalPrintTime = 0.0;
             for (int e = 0; e < ConfigConstants.MAX_EXTRUDERS; e++)
+            {
                 totalFilament[e] = 0.0;
+            }
 
             currentSpeed = 0;
             retractionSpeed = 45;
             isRetracted = true;
+            setFlavor(ConfigConstants.GCODE_FLAVOR_REPRAP);
             f = new StreamWriter(Console.OpenStandardOutput());
         }
 
@@ -107,6 +111,20 @@ namespace MatterHackers.MatterSlice
         public void setFlavor(int flavor)
         {
             this.flavor = flavor;
+            if (flavor == ConfigConstants.GCODE_FLAVOR_MACH3)
+            {
+                for (int n = 0; n < ConfigConstants.MAX_EXTRUDERS; n++)
+                {
+                    extruderCharacter[n] = (char)('A' + n);
+                }
+            }
+            else
+            {
+                for (int n = 0; n < ConfigConstants.MAX_EXTRUDERS; n++)
+                {
+                    extruderCharacter[n] = 'E';
+                }
+            }
         }
 
         public int getFlavor()
@@ -198,7 +216,7 @@ namespace MatterHackers.MatterSlice
         {
             if (extrusionAmount != 0.0 && flavor != ConfigConstants.GCODE_FLAVOR_MAKERBOT)
             {
-                f.Write("G92 E0\n");
+                f.Write("G92 {0}0\n".FormatWith(extruderCharacter[extruderNr]));
                 totalFilament[extruderNr] += extrusionAmount;
                 extrusionAmountAtPreviousRetraction -= extrusionAmount;
                 extrusionAmount = 0.0;
@@ -266,7 +284,7 @@ namespace MatterHackers.MatterSlice
                         }
                         else
                         {
-                            f.Write("G1 F{0} E{0:0.00000}\n".FormatWith(retractionSpeed * 60, extrusionAmount));
+                            f.Write("G1 F{0} {1}{2:0.00000}\n".FormatWith(retractionSpeed * 60, extruderCharacter[extruderNr], extrusionAmount));
                             currentSpeed = retractionSpeed;
                             estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(p.X) / 1000.0, (p.Y) / 1000.0, (double)(zPos) / 1000.0, extrusionAmount), currentSpeed);
                         }
@@ -298,7 +316,7 @@ namespace MatterHackers.MatterSlice
                 }
                 if (lineWidth != 0)
                 {
-                    f.Write(" E{0:0.00000}".FormatWith(extrusionAmount));
+                    f.Write(" {0}{1:0.00000}".FormatWith(extruderCharacter[extruderNr], extrusionAmount));
                 }
                 f.Write("\n");
             }
@@ -322,7 +340,7 @@ namespace MatterHackers.MatterSlice
                 }
                 else
                 {
-                    f.Write("G1 F{0} E{0:0.00000}\n".FormatWith(retractionSpeed * 60, extrusionAmount - retractionAmount));
+                    f.Write("G1 F{0} {1}{2:0.00000}\n".FormatWith(retractionSpeed * 60, extruderCharacter[extruderNr], extrusionAmount - retractionAmount));
                     currentSpeed = retractionSpeed;
                     estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition.x) / 1000.0, (currentPosition.y) / 1000.0, (double)(currentPosition.z) / 1000.0, extrusionAmount - retractionAmount), currentSpeed);
                 }
@@ -334,13 +352,13 @@ namespace MatterHackers.MatterSlice
                 isRetracted = true;
             }
         }
+
         public void switchExtruder(int newExtruder)
         {
             if (extruderNr == newExtruder)
+            {
                 return;
-
-            resetExtrusionValue();
-            extruderNr = newExtruder;
+            }
 
             if (flavor == ConfigConstants.GCODE_FLAVOR_ULTIGCODE)
             {
@@ -348,14 +366,26 @@ namespace MatterHackers.MatterSlice
             }
             else
             {
-                f.Write("G1 F{0} E{1:0.0000}\n", retractionSpeed * 60, extrusionAmount - extruderSwitchRetraction);
+                f.Write("G1 F{0} {1}{2:0.0000}\n", retractionSpeed * 60, extruderCharacter[extruderNr], extrusionAmount - extruderSwitchRetraction);
                 currentSpeed = retractionSpeed;
             }
+
+            resetExtrusionValue();
+            extruderNr = newExtruder;
+            if (flavor == ConfigConstants.GCODE_FLAVOR_MACH3)
+            {
+                resetExtrusionValue();
+            }
+
             isRetracted = true;
             if (flavor == ConfigConstants.GCODE_FLAVOR_MAKERBOT)
+            {
                 f.Write("M135 T{0}\n".FormatWith(extruderNr));
+            }
             else
+            {
                 f.Write("T{0}\n".FormatWith(extruderNr));
+            }
         }
 
         public void writeCode(string str)

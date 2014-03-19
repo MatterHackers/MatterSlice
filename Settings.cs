@@ -42,7 +42,7 @@ namespace MatterHackers.MatterSlice
     }
 
     // this class is so that we can change the name of a variable and not break old settings files
-    [System.AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Field, AllowMultiple=true)]
+    [System.AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Field, AllowMultiple = true)]
     public class LegacyName : System.Attribute
     {
         private string name;
@@ -539,7 +539,7 @@ namespace MatterHackers.MatterSlice
         public const int FIX_HORRIBLE_EXTENSIVE_STITCHING = 0x04;
         public const int FIX_HORRIBLE_UNION_ALL_TYPE_C = 0x08;
         public const int FIX_HORRIBLE_KEEP_NONE_CLOSED = 0x10;
-        
+
         /**
          * * Type of support material.
          * * Grid is a X/Y grid with an outline, which is very strong, provides good support. But in some cases is hard to remove.
@@ -547,7 +547,7 @@ namespace MatterHackers.MatterSlice
          * */
         public const int SUPPORT_TYPE_GRID = 0;
         public const int SUPPORT_TYPE_LINES = 1;
-       
+
         /**
          * RepRap flavored GCode is Marlin/Sprinter/Repetier based GCode. 
          *  This is the most commonly used GCode set.
@@ -577,7 +577,7 @@ namespace MatterHackers.MatterSlice
          *   Homing is done with G162 X Y F2000
          **/
         public const int GCODE_FLAVOR_MAKERBOT = 2;
-        
+
         /**
          * Bits From Bytes GCode.
          *  BFB machines use RPM instead of E. Which is coupled to the F instead of independed. (M108 S[deciRPM])
@@ -585,8 +585,15 @@ namespace MatterHackers.MatterSlice
          *  Needs extruder ON/OFF (M101, M103), has auto-retrection (M227 S[2560*mm] P[2560*mm])
          **/
         public const int GCODE_FLAVOR_BFB = 3;
- 
-        
+
+
+        /**
+          * MACH3 GCode
+          *  MACH3 is CNC control software, which expects A/B/C/D for extruders, instead of E.
+          **/
+        public const int GCODE_FLAVOR_MACH3 = 4;
+
+
         public const int MAX_EXTRUDERS = 16;
     }
 }
