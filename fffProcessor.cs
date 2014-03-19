@@ -370,6 +370,11 @@ namespace MatterHackers.MatterSlice
                     gcode.writeComment("LAYER:-1");
                     gcode.writeComment("RAFT");
                     GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.moveSpeed, config.retractionMinimalDistance);
+                    if (config.supportExtruder > 0)
+                    {
+                        gcodeLayer.setExtruder(config.supportExtruder);
+                    }
+
                     gcodeLayer.setAlwaysRetract(true);
                     gcode.setZ(config.raftBaseThickness + config.raftInterfaceThickness);
                     gcode.setExtrusion(config.raftInterfaceThickness, config.filamentDiameter, config.filamentFlow);
