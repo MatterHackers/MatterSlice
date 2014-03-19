@@ -36,6 +36,7 @@ namespace MatterHackers.MatterSlice
                 for (int i = 0; i < layer.parts.Count; i++)
                 {
                     storage.raftOutline = storage.raftOutline.CreateUnion(layer.parts[i].outline.Offset(distance));
+                    storage.raftOutline = storage.raftOutline.CreateUnion(storage.wipeTower);
                 }
             }
 
