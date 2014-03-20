@@ -45,29 +45,7 @@ namespace MatterHackers.MatterSlice
                 }
                 else
                 {
-                    IntPoint p2;
-                    if (i < poly.Count - 1)
-                    {
-                        p2 = poly[i + 1];
-                    }
-                    else
-                    {
-                        p2 = poly[0];
-                    }
-
-                    IntPoint diff0 = (p1 - p0).normal(1000000);
-                    IntPoint diff2 = (p1 - p2).normal(1000000);
-
-                    long d = diff0.Dot(diff2);
-                    if (d < long.MinValue)
-                    {
-                        poly.RemoveAt(i);
-                        i--;
-                    }
-                    else
-                    {
-                        p0 = p1;
-                    }
+                    p0 = p1;
                 }
             }
         }
