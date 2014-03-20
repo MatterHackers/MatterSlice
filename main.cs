@@ -109,12 +109,17 @@ namespace MatterHackers.MatterSlice
                             case 's':
                                 {
                                     argn++;
-                                    string[] keyValue = args[argn].Split('=');
-                                    if (keyValue.Length > 1)
+                                    int equalsPos = args[argn].IndexOf('=');
+                                    if (equalsPos != -1)
                                     {
-                                        if (!config.SetSetting(keyValue[0], keyValue[1]))
+                                        string key = args[argn].Substring(0, equalsPos);
+                                        string value = args[argn].Substring(equalsPos+1);
+                                        if (key.Length > 1)
                                         {
-                                            LogOutput.logError("Setting not found: {0} {1}\n".FormatWith(keyValue[0], keyValue[1]));
+                                            if (!config.SetSetting(key, value))
+                                            {
+                                                LogOutput.logError("Setting not found: {0} {1}\n".FormatWith(key, value));
+                                            }
                                         }
                                     }
                                 }

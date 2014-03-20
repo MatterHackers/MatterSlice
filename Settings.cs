@@ -62,8 +62,8 @@ namespace MatterHackers.MatterSlice
         public double layerThickness;
         public int layerThickness_µm { get { return (int)(layerThickness * 1000); } }
 
-        public double initialLayerThickness;
-        public int initialLayerThickness_µm { get { return (int)(initialLayerThickness * 1000); } }
+        public double initialLayerThicknessMm;
+        public int initialLayerThickness_µm { get { return (int)(initialLayerThicknessMm * 1000); } }
 
         public int filamentDiameter;
         public int filamentFlow;
@@ -109,8 +109,8 @@ namespace MatterHackers.MatterSlice
         public int minimalLayerTime;
         public int minimalFeedrate;
         public bool coolHeadLift;
-        public int fanSpeedMin;
-        public int fanSpeedMax;
+        public int fanSpeedMinPercent;
+        public int fanSpeedMaxPercent;
 
         //Raft settings
         public int raftMargin;
@@ -141,7 +141,7 @@ namespace MatterHackers.MatterSlice
         {
             filamentDiameter = 2890;
             filamentFlow = 100;
-            initialLayerThickness = .3;
+            initialLayerThicknessMm = .3;
             layerThickness = .1;
             extrusionWidth = 400;
             insetCount = 2;
@@ -183,8 +183,8 @@ namespace MatterHackers.MatterSlice
             minimalLayerTime = 5;
             minimalFeedrate = 10;
             coolHeadLift = false;
-            fanSpeedMin = 100;
-            fanSpeedMax = 100;
+            fanSpeedMinPercent = 100;
+            fanSpeedMaxPercent = 100;
 
             raftMargin = 5000;
             raftLineSpacing = 1000;
@@ -266,15 +266,17 @@ namespace MatterHackers.MatterSlice
                         break;
 
                     case "FIX_HORRIBLE":
-                        lines.Add("{0}={1}".FormatWith(name, value));
+                        {
+                            lines.Add("{0}={1} # {2}".FormatWith(name, value, GetEnumHelpText(field.FieldType, field.FieldType.Name)));
+                        }
                         break;
 
                     case "SUPPORT_TYPE":
-                        lines.Add("{0}={1}".FormatWith(name, value));
+                            lines.Add("{0}={1} # {2}".FormatWith(name, value, GetEnumHelpText(field.FieldType, field.FieldType.Name)));
                         break;
 
                     case "GCODE_FLAVOR":
-                        lines.Add("{0}={1}".FormatWith(name, value));
+                            lines.Add("{0}={1} # {2}".FormatWith(name, value, GetEnumHelpText(field.FieldType, field.FieldType.Name)));
                         break;
 
                     default:
@@ -292,17 +294,39 @@ namespace MatterHackers.MatterSlice
             }
         }
 
+        private static string GetEnumHelpText(Type type, string enumName)
+        {
+            bool first = true;
+            string helpLine = "Available Values: ";
+            FieldInfo[] fields = type.GetFields();
+            foreach (FieldInfo field in fields)
+            {
+                string[] names = field.ToString().Split(' ');
+                if (names.Length == 2 && names[0] == enumName)
+                {
+                    if (!first)
+                    {
+                        helpLine += ", ";
+                    }
+                    helpLine += names[1];
+                    first = false;
+                }
+            }
+
+            return helpLine;
+        }
+
         public bool SetSetting(string key, string value)
         {
             value = value.Replace("\"", "");
             switch (key)
             {
                 case "layerThickness":
-                    layerThickness = double.Parse(value);
+                    layerThickness = double.Parse(value) / 1000.0;
                     return true;
 
                 case "initialLayerThickness":
-                    initialLayerThickness = double.Parse(value);
+                    initialLayerThicknessMm = double.Parse(value) / 1000.0;
                     return true;
 
                 case "filamentDiameter":
@@ -490,11 +514,11 @@ namespace MatterHackers.MatterSlice
                     return true;
 
                 case "fanSpeedMin":
-                    fanSpeedMin = int.Parse(value);
+                    fanSpeedMinPercent = int.Parse(value);
                     return true;
 
                 case "fanSpeedMax":
-                    fanSpeedMax = int.Parse(value);
+                    fanSpeedMaxPercent = int.Parse(value);
                     return true;
 
                 case "fixHorrible":

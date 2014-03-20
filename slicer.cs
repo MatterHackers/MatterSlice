@@ -542,12 +542,15 @@ namespace MatterHackers.MatterSlice
         public Point3 modelSize;
         public Point3 modelMin;
 
-        public Slicer(OptimizedVolume ov, int initial, int thickness, bool keepNoneClosed, bool extensiveStitching)
+        public Slicer(OptimizedVolume ov, int initialLayerThickness, int layerThickness, bool keepNoneClosed, bool extensiveStitching)
         {
             modelSize = ov.model.modelSize;
             modelMin = ov.model.vMin;
 
-            int layerCount = (modelSize.z - initial) / thickness + 1;
+            int heightWithoutFirstLayer = modelSize.z - initialLayerThickness;
+            int countOfNormalThicknessLayers = heightWithoutFirstLayer / layerThickness;
+            
+            int layerCount = countOfNormalThicknessLayers + 1; // we have to add in the first layer (that is a differnt size)
             LogOutput.log(string.Format("Layer count: {0}\n", layerCount));
             layers.Capacity = layerCount;
             for (int i = 0; i < layerCount; i++)
@@ -555,9 +558,16 @@ namespace MatterHackers.MatterSlice
                 layers.Add(new SlicerLayer());
             }
 
-            for (int layerNr = 0; layerNr < layerCount; layerNr++)
+            for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
             {
-                layers[layerNr].z = initial + thickness * layerNr;
+                if (layerIndex == 0)
+                {
+                    layers[layerIndex].z = initialLayerThickness / 2;
+                }
+                else
+                {
+                    layers[layerIndex].z = initialLayerThickness + layerThickness / 2 + layerThickness * layerIndex;
+                }
             }
 
             for (int faceIndex = 0; faceIndex < ov.faces.Count; faceIndex++)
@@ -572,11 +582,13 @@ namespace MatterHackers.MatterSlice
                 if (p1.z > maxZ) maxZ = p1.z;
                 if (p2.z > maxZ) maxZ = p2.z;
 
-                for (int layerNr = (minZ - initial) / thickness; layerNr <= (maxZ - initial) / thickness; layerNr++)
+                for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
                 {
-                    int z = layerNr * thickness + initial;
-                    if (z < minZ) continue;
-                    if (layerNr < 0) continue;
+                    int z = layers[layerIndex].z;
+                    if (z < minZ || layerIndex < 0)
+                    {
+                        continue;
+                    }
 
                     SlicerSegment polyCrossingAtThisZ;
                     if (p0.z < z && p1.z >= z && p2.z >= z)
@@ -627,10 +639,10 @@ namespace MatterHackers.MatterSlice
                         //  on the slice would create two segments
                         continue;
                     }
-                    layers[layerNr].faceTo2DSegmentIndex[faceIndex] = layers[layerNr].segmentList.Count;
+                    layers[layerIndex].faceTo2DSegmentIndex[faceIndex] = layers[layerIndex].segmentList.Count;
                     polyCrossingAtThisZ.faceIndex = faceIndex;
                     polyCrossingAtThisZ.addedToPolygon = false;
-                    layers[layerNr].segmentList.Add(polyCrossingAtThisZ);
+                    layers[layerIndex].segmentList.Add(polyCrossingAtThisZ);
                 }
             }
 

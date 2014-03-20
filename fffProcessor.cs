@@ -146,7 +146,7 @@ namespace MatterHackers.MatterSlice
             List<Slicer> slicerList = new List<Slicer>();
             for (int volumeIdx = 0; volumeIdx < optomizedModel.volumes.Count; volumeIdx++)
             {
-                Slicer slicer = new Slicer(optomizedModel.volumes[volumeIdx], config.initialLayerThickness_µm - config.layerThickness_µm / 2, config.layerThickness_µm,
+                Slicer slicer = new Slicer(optomizedModel.volumes[volumeIdx], config.initialLayerThickness_µm, config.layerThickness_µm,
                     (config.fixHorrible & ConfigConstants.FIX_HORRIBLE.KEEP_NONE_CLOSED) == ConfigConstants.FIX_HORRIBLE.KEEP_NONE_CLOSED,
                     (config.fixHorrible & ConfigConstants.FIX_HORRIBLE.EXTENSIVE_STITCHING) == ConfigConstants.FIX_HORRIBLE.EXTENSIVE_STITCHING);
                 slicerList.Add(slicer);
@@ -450,15 +450,15 @@ namespace MatterHackers.MatterSlice
                 //Finish the layer by applying speed corrections for minimal layer times.
                 gcodeLayer.forceMinimalLayerTime(config.minimalLayerTime, config.minimalFeedrate);
 
-                int fanSpeed = config.fanSpeedMin;
+                int fanSpeed = config.fanSpeedMinPercent;
                 if (gcodeLayer.getExtrudeSpeedFactor() <= 50)
                 {
-                    fanSpeed = config.fanSpeedMax;
+                    fanSpeed = config.fanSpeedMaxPercent;
                 }
                 else
                 {
                     int n = gcodeLayer.getExtrudeSpeedFactor() - 50;
-                    fanSpeed = config.fanSpeedMin * n / 50 + config.fanSpeedMax * (50 - n) / 50;
+                    fanSpeed = config.fanSpeedMinPercent * n / 50 + config.fanSpeedMaxPercent * (50 - n) / 50;
                 }
                 if ((int)(layerNr) < config.fanFullOnLayerNr)
                 {
