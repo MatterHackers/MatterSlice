@@ -282,7 +282,10 @@ namespace MatterHackers.MatterSlice
                     if (isRetracted)
                     {
                         if (retractionZHop > 0)
+                        {
                             f.Write("G1 Z{0:0.00}\n".FormatWith((double)(currentPosition.z) / 1000));
+                        }
+
                         if (flavor == ConfigConstants.GCODE_FLAVOR.ULTIGCODE)
                         {
                             f.Write("G11\n");
@@ -290,6 +293,7 @@ namespace MatterHackers.MatterSlice
                         else
                         {
                             f.Write("G1 F{0} {1}{2:0.00000}\n".FormatWith(retractionSpeed * 60, extruderCharacter[extruderNr], extrusionAmount));
+                      
                             currentSpeed = retractionSpeed;
                             estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(p.X) / 1000.0, (p.Y) / 1000.0, (double)(zPos) / 1000.0, extrusionAmount), currentSpeed);
                         }

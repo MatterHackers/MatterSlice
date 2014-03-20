@@ -67,6 +67,7 @@ namespace MatterHackers.MatterSlice
 
         public int filamentDiameter;
         public int filamentFlow;
+        public int firstLayerExtrusionWidth;
         public int extrusionWidth;
         public int insetCount;
         public int downSkinCount;
@@ -143,6 +144,7 @@ namespace MatterHackers.MatterSlice
             filamentFlow = 100;
             initialLayerThicknessMm = .3;
             layerThickness = .1;
+            firstLayerExtrusionWidth = 800;
             extrusionWidth = 400;
             insetCount = 2;
             downSkinCount = 6;
@@ -254,7 +256,7 @@ namespace MatterHackers.MatterSlice
                         break;
 
                     case "IntPoint":
-                        lines.Add("{0}={1}".FormatWith(name, value));
+                        lines.Add("{0}={1}".FormatWith(name, ((IntPoint)value).OutputInMm()));
                         break;
 
                     case "IntPoint[]":
