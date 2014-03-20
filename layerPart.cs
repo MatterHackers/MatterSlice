@@ -45,9 +45,9 @@ namespace MatterHackers.MatterSlice
         */
 
 
-        public static void createLayerWithParts(SliceLayer storageLayer, SlicerLayer layer, int unionAllType)
+        public static void createLayerWithParts(SliceLayer storageLayer, SlicerLayer layer, ConfigConstants.FIX_HORRIBLE unionAllType)
         {
-            if ((unionAllType & ConfigConstants.FIX_HORRIBLE_UNION_ALL_TYPE_B) == ConfigConstants.FIX_HORRIBLE_UNION_ALL_TYPE_B)
+            if ((unionAllType & ConfigConstants.FIX_HORRIBLE.UNION_ALL_TYPE_B) == ConfigConstants.FIX_HORRIBLE.UNION_ALL_TYPE_B)
             {
                 for (int i = 0; i < layer.polygonList.Count; i++)
                 {
@@ -57,7 +57,7 @@ namespace MatterHackers.MatterSlice
             }
 
             List<Polygons> result;
-            if ((unionAllType & ConfigConstants.FIX_HORRIBLE_UNION_ALL_TYPE_C) == ConfigConstants.FIX_HORRIBLE_UNION_ALL_TYPE_C)
+            if ((unionAllType & ConfigConstants.FIX_HORRIBLE.UNION_ALL_TYPE_C) == ConfigConstants.FIX_HORRIBLE.UNION_ALL_TYPE_C)
             {
                 result = layer.polygonList.Offset(1000).SplitIntoParts(unionAllType != 0);
             }
@@ -69,7 +69,7 @@ namespace MatterHackers.MatterSlice
             for (int i = 0; i < result.Count; i++)
             {
                 storageLayer.parts.Add(new SliceLayerPart());
-                if ((unionAllType & ConfigConstants.FIX_HORRIBLE_UNION_ALL_TYPE_C) == ConfigConstants.FIX_HORRIBLE_UNION_ALL_TYPE_C)
+                if ((unionAllType & ConfigConstants.FIX_HORRIBLE.UNION_ALL_TYPE_C) == ConfigConstants.FIX_HORRIBLE.UNION_ALL_TYPE_C)
                 {
                     storageLayer.parts[i].outline.Add(result[i][0]);
                     storageLayer.parts[i].outline = storageLayer.parts[i].outline.Offset(-1000);
@@ -83,7 +83,7 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        public static void createLayerParts(SliceVolumeStorage storage, Slicer slicer, int unionAllType)
+        public static void createLayerParts(SliceVolumeStorage storage, Slicer slicer, ConfigConstants.FIX_HORRIBLE unionAllType)
         {
             for (int layerNr = 0; layerNr < slicer.layers.Count; layerNr++)
             {

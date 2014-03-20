@@ -147,8 +147,8 @@ namespace MatterHackers.MatterSlice
             for (int volumeIdx = 0; volumeIdx < optomizedModel.volumes.Count; volumeIdx++)
             {
                 Slicer slicer = new Slicer(optomizedModel.volumes[volumeIdx], config.initialLayerThickness - config.layerThickness / 2, config.layerThickness,
-                    (config.fixHorrible & ConfigConstants.FIX_HORRIBLE_KEEP_NONE_CLOSED) == ConfigConstants.FIX_HORRIBLE_KEEP_NONE_CLOSED,
-                    (config.fixHorrible & ConfigConstants.FIX_HORRIBLE_EXTENSIVE_STITCHING) == ConfigConstants.FIX_HORRIBLE_EXTENSIVE_STITCHING);
+                    (config.fixHorrible & ConfigConstants.FIX_HORRIBLE.KEEP_NONE_CLOSED) == ConfigConstants.FIX_HORRIBLE.KEEP_NONE_CLOSED,
+                    (config.fixHorrible & ConfigConstants.FIX_HORRIBLE.EXTENSIVE_STITCHING) == ConfigConstants.FIX_HORRIBLE.EXTENSIVE_STITCHING);
                 slicerList.Add(slicer);
                 for (int layerNr = 0; layerNr < slicer.layers.Count; layerNr++)
                 {
@@ -174,7 +174,7 @@ namespace MatterHackers.MatterSlice
             for (int volumeIdx = 0; volumeIdx < slicerList.Count; volumeIdx++)
             {
                 storage.volumes.Add(new SliceVolumeStorage());
-                LayerPart.createLayerParts(storage.volumes[volumeIdx], slicerList[volumeIdx], config.fixHorrible & (ConfigConstants.FIX_HORRIBLE_UNION_ALL_TYPE_A | ConfigConstants.FIX_HORRIBLE_UNION_ALL_TYPE_B | ConfigConstants.FIX_HORRIBLE_UNION_ALL_TYPE_C));
+                LayerPart.createLayerParts(storage.volumes[volumeIdx], slicerList[volumeIdx], config.fixHorrible & (ConfigConstants.FIX_HORRIBLE.UNION_ALL_TYPE_A | ConfigConstants.FIX_HORRIBLE.UNION_ALL_TYPE_B | ConfigConstants.FIX_HORRIBLE.UNION_ALL_TYPE_C));
                 slicerList[volumeIdx] = null;
 
                 //Add the raft offset to each layer.
@@ -642,7 +642,7 @@ namespace MatterHackers.MatterSlice
                 {
                     switch(config.supportType)
                     {
-                        case ConfigConstants.SUPPORT_TYPE_GRID:
+                        case ConfigConstants.SUPPORT_TYPE.GRID:
                             if (config.supportLineDistance > config.extrusionWidth * 4)
                             {
                                 Infill.generateLineInfill(island, supportLines, config.extrusionWidth, config.supportLineDistance*2, config.infillOverlap, 0);
@@ -654,7 +654,7 @@ namespace MatterHackers.MatterSlice
                             }
                             break;
 
-                        case ConfigConstants.SUPPORT_TYPE_LINES:
+                        case ConfigConstants.SUPPORT_TYPE.LINES:
                             Infill.generateLineInfill(island, supportLines, config.extrusionWidth, config.supportLineDistance, config.infillOverlap, 0);
                             break;
                     }                    

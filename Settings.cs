@@ -94,7 +94,7 @@ namespace MatterHackers.MatterSlice
         public int fanFullOnLayerNr;
 
         //Support material
-        public int supportType;
+        public ConfigConstants.SUPPORT_TYPE supportType;
         public int supportAngle;
         public int supportEverywhere;
         public int supportLineDistance;
@@ -121,7 +121,7 @@ namespace MatterHackers.MatterSlice
         public IntPoint objectPosition;
         public int objectSink;
 
-        public int fixHorrible;
+        public ConfigConstants.FIX_HORRIBLE fixHorrible;
         public bool spiralizeMode;
         public int gcodeFlavor;
 
@@ -160,6 +160,7 @@ namespace MatterHackers.MatterSlice
             objectPosition.X = 102500;
             objectPosition.Y = 102500;
             objectSink = 0;
+            supportType = ConfigConstants.SUPPORT_TYPE.GRID;
             supportAngle = -1;
             supportEverywhere = 0;
             supportLineDistance = sparseInfillLineDistance;
@@ -255,6 +256,14 @@ namespace MatterHackers.MatterSlice
 
                     case "String":
                         lines.Add("{0}={1}".FormatWith(name, value).Replace("\n", "\\n"));
+                        break;
+
+                    case "FIX_HORRIBLE":
+                        lines.Add("{0}={1}".FormatWith(name, value));
+                        break;
+
+                    case "SUPPORT_TYPE":
+                        lines.Add("{0}={1}".FormatWith(name, value));
                         break;
 
                     default:
@@ -478,7 +487,8 @@ namespace MatterHackers.MatterSlice
                     return true;
 
                 case "fixHorrible":
-                    fixHorrible = int.Parse(value);
+                    throw new NotImplementedException();
+                    //fixHorrible = int.Parse(value);
                     return true;
 
                 case "spiralizeMode":
@@ -534,19 +544,27 @@ namespace MatterHackers.MatterSlice
     {
         public const string VERSION = "1.0";
 
-        public const int FIX_HORRIBLE_UNION_ALL_TYPE_A = 0x01;
-        public const int FIX_HORRIBLE_UNION_ALL_TYPE_B = 0x02;
-        public const int FIX_HORRIBLE_EXTENSIVE_STITCHING = 0x04;
-        public const int FIX_HORRIBLE_UNION_ALL_TYPE_C = 0x08;
-        public const int FIX_HORRIBLE_KEEP_NONE_CLOSED = 0x10;
+        [Flags]
+        public enum FIX_HORRIBLE
+        {
+            NONE,
+            UNION_ALL_TYPE_A = 0x01,
+            UNION_ALL_TYPE_B = 0x02,
+            EXTENSIVE_STITCHING = 0x04,
+            UNION_ALL_TYPE_C = 0x08,
+            KEEP_NONE_CLOSED = 0x10,
+        }
 
         /**
          * * Type of support material.
          * * Grid is a X/Y grid with an outline, which is very strong, provides good support. But in some cases is hard to remove.
          * * Lines give a row of lines which break off one at a time, making them easier to remove, but they do not support as good as the grid support.
          * */
-        public const int SUPPORT_TYPE_GRID = 0;
-        public const int SUPPORT_TYPE_LINES = 1;
+        public enum SUPPORT_TYPE
+        {
+            GRID,
+            LINES
+        }
 
         /**
          * RepRap flavored GCode is Marlin/Sprinter/Repetier based GCode. 
