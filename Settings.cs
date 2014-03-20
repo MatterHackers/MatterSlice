@@ -59,9 +59,12 @@ namespace MatterHackers.MatterSlice
     {
         // if you were to change the layerThickness variable you would add a legacy name so that we can still use old settings
         //[LegacyName("exampleLegacyLayerThickness")]
-        public int layerThickness;
+        public double layerThickness;
+        public int layerThickness_µm { get { return (int)(layerThickness * 1000); } }
 
-        public int initialLayerThickness;
+        public double initialLayerThickness;
+        public int initialLayerThickness_µm { get { return (int)(initialLayerThickness * 1000); } }
+
         public int filamentDiameter;
         public int filamentFlow;
         public int extrusionWidth;
@@ -123,7 +126,7 @@ namespace MatterHackers.MatterSlice
 
         public ConfigConstants.FIX_HORRIBLE fixHorrible;
         public bool spiralizeMode;
-        public int gcodeFlavor;
+        public ConfigConstants.GCODE_FLAVOR gcodeFlavor;
 
         public IntPoint[] extruderOffset = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
         public string startCode;
@@ -138,8 +141,8 @@ namespace MatterHackers.MatterSlice
         {
             filamentDiameter = 2890;
             filamentFlow = 100;
-            initialLayerThickness = 300;
-            layerThickness = 100;
+            initialLayerThickness = .3;
+            layerThickness = .1;
             extrusionWidth = 400;
             insetCount = 2;
             downSkinCount = 6;
@@ -192,7 +195,7 @@ namespace MatterHackers.MatterSlice
 
             spiralizeMode = false;
             fixHorrible = 0;
-            gcodeFlavor = ConfigConstants.GCODE_FLAVOR_REPRAP;
+            gcodeFlavor = ConfigConstants.GCODE_FLAVOR.REPRAP;
 
             startCode =
                             "M109 S210     ;Heatup to 210C\n" +
@@ -238,6 +241,10 @@ namespace MatterHackers.MatterSlice
                         lines.Add("{0}={1}".FormatWith(name, value));
                         break;
 
+                    case "Double":
+                        lines.Add("{0}={1}".FormatWith(name, value));
+                        break;
+
                     case "Boolean":
                         lines.Add("{0}={1}".FormatWith(name, value));
                         break;
@@ -266,6 +273,10 @@ namespace MatterHackers.MatterSlice
                         lines.Add("{0}={1}".FormatWith(name, value));
                         break;
 
+                    case "GCODE_FLAVOR":
+                        lines.Add("{0}={1}".FormatWith(name, value));
+                        break;
+
                     default:
                         throw new NotImplementedException("unknown type");
                 }
@@ -287,11 +298,11 @@ namespace MatterHackers.MatterSlice
             switch (key)
             {
                 case "layerThickness":
-                    layerThickness = int.Parse(value);
+                    layerThickness = double.Parse(value);
                     return true;
 
                 case "initialLayerThickness":
-                    initialLayerThickness = int.Parse(value);
+                    initialLayerThickness = double.Parse(value);
                     return true;
 
                 case "filamentDiameter":
@@ -496,7 +507,8 @@ namespace MatterHackers.MatterSlice
                     return true;
 
                 case "gcodeFlavor":
-                    gcodeFlavor = int.Parse(value);
+                    throw new NotImplementedException();
+                    //gcodeFlavor = int.Parse(value);
                     return true;
 
                 case "extruderOffset[1].X":
@@ -566,50 +578,52 @@ namespace MatterHackers.MatterSlice
             LINES
         }
 
-        /**
-         * RepRap flavored GCode is Marlin/Sprinter/Repetier based GCode. 
-         *  This is the most commonly used GCode set.
-         *  G0 for moves, G1 for extrusion.
-         *  E values give mm of filament extrusion.
-         *  Retraction is done on E values with G1. Start/end code is added.
-         *  M106 Sxxx and M107 are used to turn the fan on/off.
-         **/
-        public const int GCODE_FLAVOR_REPRAP = 0;
-        /**
-         * UltiGCode flavored is Marlin based GCode. 
-         *  UltiGCode uses less settings on the slicer and puts more settings in the firmware. This makes for more hardware/material independed GCode.
-         *  G0 for moves, G1 for extrusion.
-         *  E values give mm^3 of filament extrusion. Ignores the filament diameter setting.
-         *  Retraction is done with G10 and G11. Retraction settings are ignored. G10 S1 is used for multi-extruder switch retraction.
-         *  Start/end code is not added.
-         *  M106 Sxxx and M107 are used to turn the fan on/off.
-         **/
-        public const int GCODE_FLAVOR_ULTIGCODE = 1;
-        /**
-         * Makerbot flavored GCode.
-         *  Looks a lot like RepRap GCode with a few changes. Requires MakerWare to convert to X3G files.
-         *   Heating needs to be done with M104 Sxxx T0
-         *   No G21 or G90
-         *   Fan ON is M126 T0 (No fan strength control?)
-         *   Fan OFF is M127 T0
-         *   Homing is done with G162 X Y F2000
-         **/
-        public const int GCODE_FLAVOR_MAKERBOT = 2;
+        public enum GCODE_FLAVOR
+        {
+            /**
+             * RepRap flavored GCode is Marlin/Sprinter/Repetier based GCode. 
+             *  This is the most commonly used GCode set.
+             *  G0 for moves, G1 for extrusion.
+             *  E values give mm of filament extrusion.
+             *  Retraction is done on E values with G1. Start/end code is added.
+             *  M106 Sxxx and M107 are used to turn the fan on/off.
+             **/
+            REPRAP,
+            /**
+             * UltiGCode flavored is Marlin based GCode. 
+             *  UltiGCode uses less settings on the slicer and puts more settings in the firmware. This makes for more hardware/material independed GCode.
+             *  G0 for moves, G1 for extrusion.
+             *  E values give mm^3 of filament extrusion. Ignores the filament diameter setting.
+             *  Retraction is done with G10 and G11. Retraction settings are ignored. G10 S1 is used for multi-extruder switch retraction.
+             *  Start/end code is not added.
+             *  M106 Sxxx and M107 are used to turn the fan on/off.
+             **/
+            ULTIGCODE,
+            /**
+             * Makerbot flavored GCode.
+             *  Looks a lot like RepRap GCode with a few changes. Requires MakerWare to convert to X3G files.
+             *   Heating needs to be done with M104 Sxxx T0
+             *   No G21 or G90
+             *   Fan ON is M126 T0 (No fan strength control?)
+             *   Fan OFF is M127 T0
+             *   Homing is done with G162 X Y F2000
+             **/
+            MAKERBOT,
 
-        /**
-         * Bits From Bytes GCode.
-         *  BFB machines use RPM instead of E. Which is coupled to the F instead of independed. (M108 S[deciRPM])
-         *  Need X,Y,Z,F on every line.
-         *  Needs extruder ON/OFF (M101, M103), has auto-retrection (M227 S[2560*mm] P[2560*mm])
-         **/
-        public const int GCODE_FLAVOR_BFB = 3;
+            /**
+             * Bits From Bytes GCode.
+             *  BFB machines use RPM instead of E. Which is coupled to the F instead of independed. (M108 S[deciRPM])
+             *  Need X,Y,Z,F on every line.
+             *  Needs extruder ON/OFF (M101, M103), has auto-retrection (M227 S[2560*mm] P[2560*mm])
+             **/
+            BFB,
 
-
-        /**
-          * MACH3 GCode
-          *  MACH3 is CNC control software, which expects A/B/C/D for extruders, instead of E.
-          **/
-        public const int GCODE_FLAVOR_MACH3 = 4;
+            /**
+              * MACH3 GCode
+              *  MACH3 is CNC control software, which expects A/B/C/D for extruders, instead of E.
+              **/
+            MACH3,
+        }
 
 
         public const int MAX_EXTRUDERS = 16;

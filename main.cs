@@ -28,7 +28,16 @@ namespace MatterHackers.MatterSlice
     {
         static void print_usage()
         {
-            LogOutput.logError("usage: MatterSlice [-h] [-v] [-m 3x3matrix] [-c <config file>] [-s <settingkey>=<value>] -o <output.gcode> <model.stl>\n");
+            LogOutput.logError("usage: MatterSlice [-h] [-d] [-v] [-m 3x3matrix] [-c <config file>]\n       [-s <settingkey>=<value>] -o <output.gcode> <model.stl>\n\n");
+            LogOutput.logError("    [] enclose optional settings, <> are required.\n\n");
+            LogOutput.logError("    -h Show this message.\n");
+            LogOutput.logError("    -d Save a default.ini (usefull to see all settings).\n");
+            LogOutput.logError("    -v Increment verbose level.\n");
+            LogOutput.logError("    -m A 3x3 matrix for translating and rotating the layers.\n");
+            LogOutput.logError("    -c A config file to apply to the current settings.\n       Can be applyed multiple times.\n       Formated like the default.ini (partial settings are fine).\n");
+            LogOutput.logError("    -s Specify a setting on the command line.\n       Uses the same names and values as default.ini.\n");
+            LogOutput.logError("    -o Specify the path and filename to save 'output.gcode'.\n");
+            LogOutput.logError("    model.stl, the file that will be loaded and sliced.\n");
         }
 
         static int Main(string[] args)
@@ -52,7 +61,7 @@ namespace MatterHackers.MatterSlice
             ConfigSettings config = new ConfigSettings();
             fffProcessor processor = new fffProcessor(config);
 
-            LogOutput.log("MatterSlice version {0}\n".FormatWith(ConfigConstants.VERSION));
+            LogOutput.log("\nMatterSlice version {0}\n\n".FormatWith(ConfigConstants.VERSION));
 
             config.DumpSettings("settings.ini");
             for (int argn = 0; argn < args.Length; argn++)

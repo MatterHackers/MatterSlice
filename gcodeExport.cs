@@ -47,7 +47,7 @@ namespace MatterHackers.MatterSlice
         bool isRetracted;
         int extruderNr;
         int currentFanSpeed;
-        int flavor;
+        ConfigConstants.GCODE_FLAVOR flavor;
 
         double[] totalFilament = new double[ConfigConstants.MAX_EXTRUDERS];
         double totalPrintTime;
@@ -73,7 +73,7 @@ namespace MatterHackers.MatterSlice
             currentSpeed = 0;
             retractionSpeed = 45;
             isRetracted = true;
-            setFlavor(ConfigConstants.GCODE_FLAVOR_REPRAP);
+            setFlavor(ConfigConstants.GCODE_FLAVOR.REPRAP);
             f = new StreamWriter(Console.OpenStandardOutput());
         }
 
@@ -108,10 +108,10 @@ namespace MatterHackers.MatterSlice
             extruderOffset[id] = p;
         }
 
-        public void setFlavor(int flavor)
+        public void setFlavor(ConfigConstants.GCODE_FLAVOR flavor)
         {
             this.flavor = flavor;
-            if (flavor == ConfigConstants.GCODE_FLAVOR_MACH3)
+            if (flavor == ConfigConstants.GCODE_FLAVOR.MACH3)
             {
                 for (int n = 0; n < ConfigConstants.MAX_EXTRUDERS; n++)
                 {
@@ -127,7 +127,7 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        public int getFlavor()
+        public ConfigConstants.GCODE_FLAVOR getFlavor()
         {
             return this.flavor;
         }
@@ -146,7 +146,7 @@ namespace MatterHackers.MatterSlice
         public void setExtrusion(int layerThickness, int filamentDiameter, int flow)
         {
             double filamentArea = Math.PI * ((double)(filamentDiameter) / 1000.0 / 2.0) * ((double)(filamentDiameter) / 1000.0 / 2.0);
-            if (flavor == ConfigConstants.GCODE_FLAVOR_ULTIGCODE)//UltiGCode uses volume extrusion as E value, and thus does not need the filamentArea in the mix.
+            if (flavor == ConfigConstants.GCODE_FLAVOR.ULTIGCODE)//UltiGCode uses volume extrusion as E value, and thus does not need the filamentArea in the mix.
                 extrusionPerMM = (double)(layerThickness) / 1000.0;
             else
                 extrusionPerMM = (double)(layerThickness) / 1000.0 / filamentArea * (double)(flow) / 100.0;
@@ -214,7 +214,7 @@ namespace MatterHackers.MatterSlice
 
         public void resetExtrusionValue()
         {
-            if (extrusionAmount != 0.0 && flavor != ConfigConstants.GCODE_FLAVOR_MAKERBOT)
+            if (extrusionAmount != 0.0 && flavor != ConfigConstants.GCODE_FLAVOR.MAKERBOT)
             {
                 f.Write("G92 {0}0\n".FormatWith(extruderCharacter[extruderNr]));
                 totalFilament[extruderNr] += extrusionAmount;
@@ -236,7 +236,7 @@ namespace MatterHackers.MatterSlice
 
         public void writeMove(IntPoint p, int speed, int lineWidth)
         {
-            if (flavor == ConfigConstants.GCODE_FLAVOR_BFB)
+            if (flavor == ConfigConstants.GCODE_FLAVOR.BFB)
             {
                 //For Bits From Bytes machines, we need to handle this completely differently. As they do not use E values, they use RPM values
                 double fspeed = speed * 60;
@@ -283,7 +283,7 @@ namespace MatterHackers.MatterSlice
                     {
                         if (retractionZHop > 0)
                             f.Write("G1 Z{0:0.00}\n".FormatWith((double)(currentPosition.z) / 1000));
-                        if (flavor == ConfigConstants.GCODE_FLAVOR_ULTIGCODE)
+                        if (flavor == ConfigConstants.GCODE_FLAVOR.ULTIGCODE)
                         {
                             f.Write("G11\n");
                         }
@@ -332,14 +332,14 @@ namespace MatterHackers.MatterSlice
 
         public void writeRetraction()
         {
-            if (flavor == ConfigConstants.GCODE_FLAVOR_BFB)//BitsFromBytes does automatic retraction.
+            if (flavor == ConfigConstants.GCODE_FLAVOR.BFB)//BitsFromBytes does automatic retraction.
             {
                 return;
             }
 
             if (retractionAmount > 0 && !isRetracted && extrusionAmountAtPreviousRetraction + minimalExtrusionBeforeRetraction < extrusionAmount)
             {
-                if (flavor == ConfigConstants.GCODE_FLAVOR_ULTIGCODE)
+                if (flavor == ConfigConstants.GCODE_FLAVOR.ULTIGCODE)
                 {
                     f.Write("G10\n");
                 }
@@ -365,7 +365,7 @@ namespace MatterHackers.MatterSlice
                 return;
             }
 
-            if (flavor == ConfigConstants.GCODE_FLAVOR_ULTIGCODE)
+            if (flavor == ConfigConstants.GCODE_FLAVOR.ULTIGCODE)
             {
                 f.Write("G10 S1\n");
             }
@@ -377,13 +377,13 @@ namespace MatterHackers.MatterSlice
 
             resetExtrusionValue();
             extruderNr = newExtruder;
-            if (flavor == ConfigConstants.GCODE_FLAVOR_MACH3)
+            if (flavor == ConfigConstants.GCODE_FLAVOR.MACH3)
             {
                 resetExtrusionValue();
             }
 
             isRetracted = true;
-            if (flavor == ConfigConstants.GCODE_FLAVOR_MAKERBOT)
+            if (flavor == ConfigConstants.GCODE_FLAVOR.MAKERBOT)
             {
                 f.Write("M135 T{0}\n".FormatWith(extruderNr));
             }
@@ -404,14 +404,14 @@ namespace MatterHackers.MatterSlice
                 return;
             if (speed > 0)
             {
-                if (flavor == ConfigConstants.GCODE_FLAVOR_MAKERBOT)
+                if (flavor == ConfigConstants.GCODE_FLAVOR.MAKERBOT)
                     f.Write("M126 T0 ; value = {0}\n".FormatWith(speed * 255 / 100));
                 else
                     f.Write("M106 S{0}\n".FormatWith(speed * 255 / 100));
             }
             else
             {
-                if (flavor == ConfigConstants.GCODE_FLAVOR_MAKERBOT)
+                if (flavor == ConfigConstants.GCODE_FLAVOR.MAKERBOT)
                     f.Write("M127 T0\n");
                 else
                     f.Write("M107\n");
@@ -451,7 +451,7 @@ namespace MatterHackers.MatterSlice
             LogOutput.log("Filament: {0}\n".FormatWith((int)(getTotalFilamentUsed(0))));
             LogOutput.log("Filament2: {0}\n".FormatWith((int)(getTotalFilamentUsed(1))));
 
-            if (getFlavor() == ConfigConstants.GCODE_FLAVOR_ULTIGCODE)
+            if (getFlavor() == ConfigConstants.GCODE_FLAVOR.ULTIGCODE)
             {
                 string numberString;
                 numberString = "{0}".FormatWith((int)(getTotalPrintTime()));

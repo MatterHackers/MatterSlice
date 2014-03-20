@@ -29,7 +29,7 @@ namespace MatterHackers.MatterSlice
     using Polygon = List<IntPoint>;
     using Polygons = List<List<IntPoint>>;
 
-    //FusedFilamentFabrication processor.
+    // Fused Filament Fabrication processor.
     public class fffProcessor
     {
         int maxObjectHeight;
@@ -146,7 +146,7 @@ namespace MatterHackers.MatterSlice
             List<Slicer> slicerList = new List<Slicer>();
             for (int volumeIdx = 0; volumeIdx < optomizedModel.volumes.Count; volumeIdx++)
             {
-                Slicer slicer = new Slicer(optomizedModel.volumes[volumeIdx], config.initialLayerThickness - config.layerThickness / 2, config.layerThickness,
+                Slicer slicer = new Slicer(optomizedModel.volumes[volumeIdx], config.initialLayerThickness_µm - config.layerThickness_µm / 2, config.layerThickness_µm,
                     (config.fixHorrible & ConfigConstants.FIX_HORRIBLE.KEEP_NONE_CLOSED) == ConfigConstants.FIX_HORRIBLE.KEEP_NONE_CLOSED,
                     (config.fixHorrible & ConfigConstants.FIX_HORRIBLE.EXTENSIVE_STITCHING) == ConfigConstants.FIX_HORRIBLE.EXTENSIVE_STITCHING);
                 slicerList.Add(slicer);
@@ -246,7 +246,7 @@ namespace MatterHackers.MatterSlice
                     storage.oozeShield[layerNr] = storage.oozeShield[layerNr].Offset(-1000).Offset(1000);
                 }
 
-                int offsetAngle = (int)Math.Tan(60.0 * Math.PI / 180) * config.layerThickness;//Allow for a 60deg angle in the oozeShield.
+                int offsetAngle = (int)Math.Tan(60.0 * Math.PI / 180) * config.layerThickness_µm;//Allow for a 60deg angle in the oozeShield.
                 for (int layerNr = 1; layerNr < totalLayers; layerNr++)
                 {
                     storage.oozeShield[layerNr] = storage.oozeShield[layerNr].CreateUnion(storage.oozeShield[layerNr - 1].Offset(-offsetAngle));
@@ -292,7 +292,7 @@ namespace MatterHackers.MatterSlice
                 storage.wipePoint = new IntPoint(storage.modelMin.x - 3000 - config.wipeTowerSize / 2, storage.modelMax.y + 3000 + config.wipeTowerSize / 2);
             }
 
-            Skirt.generateSkirt(storage, config.skirtDistance, config.extrusionWidth, config.skirtLineCount, config.skirtMinLength, config.initialLayerThickness);
+            Skirt.generateSkirt(storage, config.skirtDistance, config.extrusionWidth, config.skirtLineCount, config.skirtMinLength, config.initialLayerThickness_µm);
             Raft.generateRaft(storage, config.raftMargin);
 
             for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
@@ -318,7 +318,7 @@ namespace MatterHackers.MatterSlice
         {
             if (fileNr == 1)
             {
-                if (gcode.getFlavor() == ConfigConstants.GCODE_FLAVOR_ULTIGCODE)
+                if (gcode.getFlavor() == ConfigConstants.GCODE_FLAVOR.ULTIGCODE)
                 {
                     gcode.writeComment("FLAVOR:UltiGCode");
                     gcode.writeComment("TIME:<__TIME__>");
@@ -326,7 +326,7 @@ namespace MatterHackers.MatterSlice
                     gcode.writeComment("MATERIAL2:<FILAMEN2>");
                 }
                 gcode.writeCode(config.startCode);
-                if (gcode.getFlavor() == ConfigConstants.GCODE_FLAVOR_BFB)
+                if (gcode.getFlavor() == ConfigConstants.GCODE_FLAVOR.BFB)
                 {
                     gcode.writeComment("enable auto-retraction");
                     gcode.writeLine("M227 S{0} P{1}".FormatWith(config.retractionAmount * 2560 / 1000, config.retractionAmount * 2560 / 1000));
@@ -414,15 +414,15 @@ namespace MatterHackers.MatterSlice
                 gcode.writeComment("LAYER:{0}".FormatWith(layerNr));
                 if (layerNr == 0)
                 {
-                    gcode.setExtrusion(config.initialLayerThickness, config.filamentDiameter, config.filamentFlow);
+                    gcode.setExtrusion(config.initialLayerThickness_µm, config.filamentDiameter, config.filamentFlow);
                 }
                 else
                 {
-                    gcode.setExtrusion(config.layerThickness, config.filamentDiameter, config.filamentFlow);
+                    gcode.setExtrusion(config.layerThickness_µm, config.filamentDiameter, config.filamentFlow);
                 }
 
                 GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.moveSpeed, config.retractionMinimalDistance);
-                int z = config.initialLayerThickness + layerNr * config.layerThickness;
+                int z = config.initialLayerThickness_µm + layerNr * config.layerThickness_µm;
                 z += config.raftBaseThickness + config.raftInterfaceThickness;
                 gcode.setZ(z);
 
@@ -467,7 +467,7 @@ namespace MatterHackers.MatterSlice
                 }
                 gcode.writeFanCommand(fanSpeed);
 
-                gcodeLayer.writeGCode(config.coolHeadLift, (int)(layerNr) > 0 ? config.layerThickness : config.initialLayerThickness);
+                gcodeLayer.writeGCode(config.coolHeadLift, (int)(layerNr) > 0 ? config.layerThickness_µm : config.initialLayerThickness_µm);
             }
 
             LogOutput.log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.Seconds));
@@ -610,7 +610,7 @@ namespace MatterHackers.MatterSlice
                 }
             }
 
-            int z = config.initialLayerThickness + layerNr * config.layerThickness;
+            int z = config.initialLayerThickness_µm + layerNr * config.layerThickness_µm;
             SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, z);
             for (int volumeCnt = 0; volumeCnt < storage.volumes.Count; volumeCnt++)
             {
