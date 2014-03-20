@@ -322,11 +322,11 @@ namespace MatterHackers.MatterSlice
             switch (key)
             {
                 case "layerThickness":
-                    layerThickness = double.Parse(value) / 1000.0;
+                    layerThickness = double.Parse(value);
                     return true;
 
                 case "initialLayerThickness":
-                    initialLayerThicknessMm = double.Parse(value) / 1000.0;
+                    initialLayerThicknessMm = double.Parse(value);
                     return true;
 
                 case "filamentDiameter":

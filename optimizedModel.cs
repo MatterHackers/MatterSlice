@@ -167,15 +167,22 @@ namespace MatterHackers.MatterSlice
         public OptimizedModel(SimpleModel model, Point3 center)
         {
             for (int i = 0; i < model.volumes.Count; i++)
+            {
                 volumes.Add(new OptimizedVolume(model.volumes[i], this));
+            }
+
             vMin = model.min();
             vMax = model.max();
 
             Point3 vOffset = new Point3((vMin.x + vMax.x) / 2, (vMin.y + vMax.y) / 2, vMin.z);
             vOffset -= center;
             for (int i = 0; i < volumes.Count; i++)
+            {
                 for (int n = 0; n < volumes[i].points.Count; n++)
+                {
                     volumes[i].points[n].p -= vOffset;
+                }
+            }
 
             modelSize = vMax - vMin;
             vMin -= vOffset;
