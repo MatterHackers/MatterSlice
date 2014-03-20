@@ -339,6 +339,7 @@ namespace MatterHackers.MatterSlice
                 gcode.resetExtrusionValue();
                 gcode.writeRetraction();
                 gcode.setZ(maxObjectHeight + 5000);
+                gcode.writeMove(gcode.getPositionXY(), config.moveSpeed, 0);
                 gcode.writeMove(new IntPoint(storage.modelMin.x, storage.modelMin.y), config.moveSpeed, 0);
             }
             fileNr++;
