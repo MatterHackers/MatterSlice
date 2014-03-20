@@ -59,6 +59,11 @@ namespace MatterHackers.MatterSlice
 
         public Point3 min()
         {
+            if (faces.Count < 1)
+            {
+                return new Point3(0, 0, 0);
+            }
+
             Point3 ret = faces[0].v[0];
             for (int i = 0; i < faces.Count; i++)
             {
@@ -77,6 +82,11 @@ namespace MatterHackers.MatterSlice
 
         public Point3 max()
         {
+            if (faces.Count < 1)
+            {
+                return new Point3(0, 0, 0);
+            }
+
             Point3 ret = faces[0].v[0];
             for (int i = 0; i < faces.Count; i++)
             {
@@ -115,6 +125,11 @@ namespace MatterHackers.MatterSlice
 
         public Point3 min()
         {
+            if (volumes.Count < 1)
+            {
+                return new Point3(0, 0, 0);
+            }
+
             Point3 ret = volumes[0].min();
             for (int i = 0; i < volumes.Count; i++)
             {
@@ -128,6 +143,11 @@ namespace MatterHackers.MatterSlice
 
         public Point3 max()
         {
+            if (volumes.Count < 1)
+            {
+                return new Point3(0, 0, 0);
+            }
+
             Point3 ret = volumes[0].max();
             for (int i = 0; i < volumes.Count; i++)
             {

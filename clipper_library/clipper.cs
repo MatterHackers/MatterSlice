@@ -4763,9 +4763,18 @@ namespace ClipperLib
       {
         m_destPoly.Add(new IntPoint(Round(m_srcPoly[j].X + m_normals[k].X * m_delta),
           Round(m_srcPoly[j].Y + m_normals[k].Y * m_delta)));
+#if false
         m_destPoly.Add(m_srcPoly[j]);
         m_destPoly.Add(new IntPoint(Round(m_srcPoly[j].X + m_normals[j].X * m_delta),
           Round(m_srcPoly[j].Y + m_normals[j].Y * m_delta)));
+#else // this code was added to a problem with nipples on offsets
+        if (Math.Abs(m_normals[j].X - m_normals[k].X) + Math.Abs(m_normals[j].Y - m_normals[k].Y) > 1.0)
+        {
+            m_destPoly.Add(m_srcPoly[j]);
+            m_destPoly.Add(new IntPoint(Round(m_srcPoly[j].X + m_normals[j].X * m_delta),
+                Round(m_srcPoly[j].Y + m_normals[j].Y * m_delta)));
+        }
+#endif
       }
       else
         switch (jointype)
