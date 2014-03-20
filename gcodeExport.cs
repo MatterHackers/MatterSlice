@@ -238,10 +238,13 @@ namespace MatterHackers.MatterSlice
         {
             if (flavor == ConfigConstants.GCODE_FLAVOR_BFB)
             {
-                //For Bits From Bytes machines, we need to handle this completely differently. As they do not use E values.
+                //For Bits From Bytes machines, we need to handle this completely differently. As they do not use E values, they use RPM values
                 double fspeed = speed * 60;
                 double rpm = (extrusionPerMM * (double)(lineWidth) / 1000.0) * speed * 60;
-                //rpm /= mm_per_rpm;
+                
+                //All BFB machines have 4mm per RPM extrusion.
+                const double mm_per_rpm = 4.0; 
+                rpm /= mm_per_rpm;
                 if (rpm > 0)
                 {
                     if (isRetracted)
@@ -249,17 +252,19 @@ namespace MatterHackers.MatterSlice
                         if (currentSpeed != (int)(rpm * 10))
                         {
                             //f.Write("; %f e-per-mm %d mm-width %d mm/s\n", extrusionPerMM, lineWidth, speed);
-                            f.Write("M108 S{0:0.000}\n".FormatWith(rpm * 10));
                             f.Write("M108 S{0:0.0}\n".FormatWith(rpm * 10));
                             currentSpeed = (int)(rpm * 10);
                         }
                         f.Write("M101\n");
                         isRetracted = false;
                     }
+                    // Fix the speed by the actual RPM we are asking, because of rounding errors we cannot get all RPM values, but we have a lot more resolution in the feedrate value.
+                    // (Trick copied from KISSlicer, thanks Jonathan)
                     fspeed *= (rpm / (Round(rpm * 100) / 100));
                 }
                 else
                 {
+                    //If we are not extruding, check if we still need to disable the extruder. This causes a retraction due to auto-retraction.
                     if (!isRetracted)
                     {
                         f.Write("M103\n");

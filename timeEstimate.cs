@@ -32,7 +32,7 @@ public class TimeEstimateCalculator
 
     double[] max_feedrate = new double[] { 600, 600, 40, 25 };
     double minimumfeedrate = 0.01;
-    double acceleration = 5000;
+    double acceleration = 3000;
     double[] max_acceleration = new double[] { 9000, 9000, 100, 10000 };
     double max_xy_jerk = 20.0;
     double max_z_jerk = 0.4;

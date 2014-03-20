@@ -28,7 +28,7 @@ namespace MatterHackers.MatterSlice
     {
         static void print_usage()
         {
-            Console.Write("usage: MatterSlice [-h] [-v] [-m 3x3matrix] [-c <config file>] [-s <settingkey>=<value>] -o <output.gcode> <model.stl>\n");
+            LogOutput.logError("usage: MatterSlice [-h] [-v] [-m 3x3matrix] [-c <config file>] [-s <settingkey>=<value>] -o <output.gcode> <model.stl>\n");
         }
 
         static int Main(string[] args)
@@ -52,7 +52,7 @@ namespace MatterHackers.MatterSlice
             ConfigSettings config = new ConfigSettings();
             fffProcessor processor = new fffProcessor(config);
 
-            Console.WriteLine("MatterSlice version {0}".FormatWith(ConfigConstants.VERSION));
+            LogOutput.log("MatterSlice version {0}\n".FormatWith(ConfigConstants.VERSION));
 
             config.DumpSettings("settings.ini");
             for (int argn = 0; argn < args.Length; argn++)
@@ -105,7 +105,7 @@ namespace MatterHackers.MatterSlice
                                     {
                                         if (!config.SetSetting(keyValue[0], keyValue[1]))
                                         {
-                                            Console.Write("Setting not found: {0} {1}\n".FormatWith(keyValue[0], keyValue[1]));
+                                            LogOutput.logError("Setting not found: {0} {1}\n".FormatWith(keyValue[0], keyValue[1]));
                                         }
                                     }
                                 }
@@ -139,8 +139,8 @@ namespace MatterHackers.MatterSlice
 #if !DEBUG
                     catch (Exception e)
                     {
-                        Console.Write("{0}".FormatWith( e));
-                        Console.Write("InnerException: {0}".FormatWith( e.InnerException));
+                        LogOutput.logError("{0}".FormatWith( e));
+                        LogOutput.logError("InnerException: {0}".FormatWith( e.InnerException));
                         return 1;
                     }
 #endif

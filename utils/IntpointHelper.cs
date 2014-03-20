@@ -84,7 +84,7 @@ namespace MatterHackers.MatterSlice
             return z;
         }
 
-        public bool testLength(int len)
+        public bool testLength(long len)
         {
             if (x > len || x < -len)
                 return false;
@@ -116,7 +116,7 @@ namespace MatterHackers.MatterSlice
 
     static class IntPointHelper
     {
-        public static bool IsShorterThen(this IntPoint p0, int len)
+        public static bool IsShorterThen(this IntPoint p0, long len)
         {
             if (p0.X > len || p0.X < -len)
             {
@@ -146,7 +146,7 @@ namespace MatterHackers.MatterSlice
             return p0.X * p0.X + p0.Y * p0.Y;
         }
 
-        public static IntPoint SetLength(this IntPoint p0, int len)
+        public static IntPoint SetLength(this IntPoint p0, long len)
         {
             long _len = p0.Length();
             if (_len < 1)
@@ -162,7 +162,7 @@ namespace MatterHackers.MatterSlice
             return (float)(p0.X) * (float)(p0.X) + (float)(p0.Y) * (float)(p0.Y);
         }
 
-        public static bool shorterThen(this IntPoint p0, int len)
+        public static bool shorterThen(this IntPoint p0, long len)
         {
             if (p0.X > len || p0.X < -len)
                 return false;
@@ -204,105 +204,6 @@ namespace MatterHackers.MatterSlice
             return p0.X * p1.X + p0.Y * p1.Y;
         }
     }
-#if false
-    /* 64bit Points are used mostly troughout the code, these are the 2D points from ClipperLib */
-    public struct Point
-    {
-        public long X;
-        public long Y;
-        public Point(long x, long y)
-        {
-            this.X = x;
-            this.Y = y;
-        }
-
-        public Point(double x, double y)
-        {
-            this.X = (long)(x + .5);
-            this.Y = (long)(y + .5);
-        }
-
-        /* Extra operators to make it easier to do math with the 64bit Point objects */
-        public static Point operator +(Point left, Point right)
-        {
-            return new Point(left.X + right.X, left.Y + right.Y);
-        }
-
-        public static Point operator -(Point left, Point right)
-        {
-            return new Point(left.X - right.X, left.Y - right.Y);
-        }
-
-        public static Point operator *(Point point, int i)
-        {
-            return new Point(point.X * i, point.Y * i);
-        }
-
-        public static Point operator /(Point point, int i)
-        {
-            return new Point(point.X / i, point.Y / i);
-        }
-
-        public static bool operator ==(Point left, Point right)
-        {
-            return left.X == right.X && left.Y == right.Y;
-        }
-
-        public static bool operator !=(Point left, Point right)
-        {
-            return left.X != right.X || left.Y != right.Y;
-        }
-
-        long vSize2(Point p0)
-        {
-            return p0.X * p0.X + p0.Y * p0.Y;
-        }
-
-        float vSize2f(Point p0)
-        {
-            return (float)(p0.X) * (float)(p0.X) + (float)(p0.Y) * (float)(p0.Y);
-        }
-
-        bool shorterThen(Point p0, int len)
-        {
-            if (p0.X > len || p0.X < -len)
-                return false;
-            if (p0.Y > len || p0.Y < -len)
-                return false;
-            return vSize2(p0) <= len * len;
-        }
-
-        int vSize(Point p0)
-        {
-            return (int)Math.Sqrt(vSize2(p0));
-        }
-
-        double vSizeMM(Point p0)
-        {
-            double fx = (double)(p0.X) / 1000.0;
-            double fy = (double)(p0.Y) / 1000.0;
-            return Math.Sqrt(fx * fx + fy * fy);
-        }
-
-        Point normal(Point p0, int len)
-        {
-            int _len = vSize(p0);
-            if (_len < 1)
-                return new Point(len, 0);
-            return p0 * len / _len;
-        }
-
-        Point crossZ(Point p0)
-        {
-            return new Point(-p0.Y, p0.X);
-        }
-
-        long dot(Point p0, Point p1)
-        {
-            return p0.X * p1.X + p0.Y * p1.Y;
-        }
-    }
-#endif
 
     public class PointMatrix
     {

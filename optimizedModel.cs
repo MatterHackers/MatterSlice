@@ -72,7 +72,7 @@ namespace MatterHackers.MatterSlice
                 for (int j = 0; j < 3; j++)
                 {
                     Point3 p = volume.faces[i].v[j];
-                    int hash = ((p.x + MELD_DIST / 2) / MELD_DIST) ^ (((p.y + MELD_DIST / 2) / MELD_DIST) << 10) ^ (((p.z + MELD_DIST / 2) / MELD_DIST) << 20);
+                    int hash = (int)(((p.x + MELD_DIST / 2) / MELD_DIST) ^ (((p.y + MELD_DIST / 2) / MELD_DIST) << 10) ^ (((p.z + MELD_DIST / 2) / MELD_DIST) << 20));
                     int idx = 0;
                     bool add = true;
                     if (indexMap.ContainsKey(hash))
@@ -246,26 +246,6 @@ namespace MatterHackers.MatterSlice
         fwrite(&s, sizeof(s), 1, f);
     }
     fclose(f);
-    //Export the open faces so you can view the with MatterControl (hacky)
-    /*
-    char gcodeFilename[1024];
-    strcpy(gcodeFilename, filename);
-    strcpy(strchr(gcodeFilename, '.'), ".gcode");
-    f = fopen(gcodeFilename, "w");
-    for(int i=0;i<faces.Count;i++)
-    {
-        for(int j=0;j<3;j++)
-        {
-            if (faces[i].touching[j] == -1)
-            {
-                Point3 p0 = points[faces[i].index[j]].p;
-                Point3 p1 = points[faces[i].index[(j+1)%3]].p;
-                fprintf(f, ";Model error(open face): (%f, %f, %f) (%f, %f, %f)\n", p0.x / 1000.0, p0.y / 1000.0, p0.z / 1000.0, p1.x / 1000.0, p1.y / 1000.0, p1.z / 1000.0);
-            }
-        }
-    }
-    fclose(f);
-    */
 #endif
         }
     }
