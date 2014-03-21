@@ -160,7 +160,7 @@ namespace MatterHackers.MatterSlice
             timeKeeper.Restart();
 
             LogOutput.log("Generating support map...\n");
-            SupportPolyGenerator.generateSupportGrid(storage.support, optomizedModel, config.supportAngle, config.supportEverywhere > 0, config.supportXYDistance, config.supportZDistance);
+            SupportPolyGenerator.generateSupportGrid(storage.support, optomizedModel, config.supportAngleDegrees, config.supportEverywhere > 0, config.supportXYDistance, config.supportZDistance);
 
             storage.modelSize = optomizedModel.modelSize;
             storage.modelMin = optomizedModel.vMin;
@@ -567,7 +567,7 @@ namespace MatterHackers.MatterSlice
                 }
 
                 Polygons fillPolygons = new Polygons();
-                int fillAngle = 45;
+                int fillAngle = config.infillAngleDegrees;
                 if ((layerNr & 1) == 1)
                 {
                     fillAngle += 90;
@@ -581,8 +581,14 @@ namespace MatterHackers.MatterSlice
                 {
                     if (config.sparseInfillLineDistance > extrusionWidth * 4)
                     {
-                        Infill.generateLineInfill(part.sparseOutline, fillPolygons, extrusionWidth, config.sparseInfillLineDistance * 2, config.infillOverlap, 45);
-                        Infill.generateLineInfill(part.sparseOutline, fillPolygons, extrusionWidth, config.sparseInfillLineDistance * 2, config.infillOverlap, 45 + 90);
+                        Infill.generateLineInfill(part.sparseOutline, fillPolygons, extrusionWidth, config.sparseInfillLineDistance * 2, config.infillOverlap, fillAngle);
+                        int fillAngle90 = fillAngle + 90;
+                        if (fillAngle90 > 360)
+                        {
+                            fillAngle90 -= 360;
+                        }
+
+                        Infill.generateLineInfill(part.sparseOutline, fillPolygons, extrusionWidth, config.sparseInfillLineDistance * 2, config.infillOverlap, fillAngle90);
                     }
                     else
                     {

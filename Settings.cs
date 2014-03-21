@@ -74,6 +74,7 @@ namespace MatterHackers.MatterSlice
         public int upSkinCount;
         public int sparseInfillLineDistance;
         public int infillOverlap;
+        public int infillAngleDegrees;
         public int skirtDistance;
         public int skirtLineCount;
         public int skirtMinLength;
@@ -88,6 +89,7 @@ namespace MatterHackers.MatterSlice
         public int wipeTowerSize;
         public int multiVolumeOverlap;
 
+        // speed settings
         public int initialSpeedupLayers;
         public int initialLayerSpeed;
         public int printSpeed;
@@ -99,7 +101,7 @@ namespace MatterHackers.MatterSlice
 
         //Support material
         public ConfigConstants.SUPPORT_TYPE supportType;
-        public int supportAngle;
+        public int supportAngleDegrees;
         public int supportEverywhere;
         public int supportLineDistance;
         public int supportXYDistance;
@@ -162,11 +164,12 @@ namespace MatterHackers.MatterSlice
             skirtMinLength = 0;
             sparseInfillLineDistance = 100 * extrusionWidth / 20;
             infillOverlap = 15;
+            infillAngleDegrees = 45;
             objectPosition.X = 102500;
             objectPosition.Y = 102500;
             objectSink = 0;
             supportType = ConfigConstants.SUPPORT_TYPE.GRID;
-            supportAngle = -1;
+            supportAngleDegrees = -1;
             supportEverywhere = 0;
             supportLineDistance = sparseInfillLineDistance;
             supportExtruder = -1;
@@ -318,256 +321,79 @@ namespace MatterHackers.MatterSlice
             return helpLine;
         }
 
-        public bool SetSetting(string key, string value)
+        public bool SetSetting(string keyToSet, string valueToSetTo)
         {
-            value = value.Replace("\"", "");
-            switch (key)
+            valueToSetTo = valueToSetTo.Replace("\"", "").Trim();
+
+            List<string> lines = new List<string>();
+            FieldInfo[] fields;
+            fields = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
+            foreach (FieldInfo field in fields)
             {
-                case "layerThickness":
-                    layerThickness = double.Parse(value);
-                    return true;
+                System.Attribute[] attributes = System.Attribute.GetCustomAttributes(field);
+                List<string> possibleNames = new List<string>();
+                possibleNames.Add(field.Name);
+                foreach (Attribute attribute in attributes)
+                {
+                    LegacyName legacyName = attribute as LegacyName;
+                    if (legacyName != null)
+                    {
+                        possibleNames.Add(legacyName.Name);
+                    }
+                }
 
-                case "initialLayerThickness":
-                    initialLayerThicknessMm = double.Parse(value);
-                    return true;
+                if (possibleNames.Contains(keyToSet))
+                {
+                    string name = field.Name;
+                    object value = field.GetValue(this);
+                    switch (field.FieldType.Name)
+                    {
+                        case "Int32":
+                            field.SetValue(this, (int)double.Parse(valueToSetTo));
+                            break;
 
-                case "filamentDiameter":
-                    filamentDiameter = int.Parse(value);
-                    return true;
+                        case "Double":
+                            field.SetValue(this, double.Parse(valueToSetTo));
+                            break;
 
-                case "filamentFlow":
-                    filamentFlow = int.Parse(value);
-                    return true;
+                        case "Boolean":
+                            field.SetValue(this, bool.Parse(valueToSetTo));
+                            break;
 
-                case "extrusionWidth":
-                    extrusionWidth = int.Parse(value);
-                    return true;
+                        case "FMatrix3x3":
+                            throw new NotImplementedException();
+                            break;
 
-                case "insetCount":
-                    insetCount = int.Parse(value);
-                    return true;
+                        case "IntPoint":
+                            throw new NotImplementedException();
+                            break;
 
-                case "downSkinCount":
-                    downSkinCount = int.Parse(value);
-                    return true;
+                        case "IntPoint[]":
+                            throw new NotImplementedException();
+                            break;
 
-                case "upSkinCount":
-                    upSkinCount = int.Parse(value);
-                    return true;
+                        case "String":
+                            field.SetValue(this, valueToSetTo);
+                            break;
 
-                case "sparseInfillLineDistance":
-                    sparseInfillLineDistance = int.Parse(value);
-                    return true;
+                        case "FIX_HORRIBLE":
+                            throw new NotImplementedException();
+                            break;
 
-                case "infillOverlap":
-                    infillOverlap = int.Parse(value);
-                    return true;
+                        case "SUPPORT_TYPE":
+                            throw new NotImplementedException();
+                            break;
 
-                case "skirtDistance":
-                    skirtDistance = int.Parse(value);
-                    return true;
+                        case "GCODE_FLAVOR":
+                            throw new NotImplementedException();
+                            break;
 
-                case "skirtLineCount":
-                    skirtLineCount = int.Parse(value);
-                    return true;
+                        default:
+                            throw new NotImplementedException("unknown type");
+                    }
 
-                case "skirtMinLength":
-                    skirtMinLength = (int)double.Parse(value);
                     return true;
-
-                case "initialSpeedupLayers":
-                    initialSpeedupLayers = int.Parse(value);
-                    return true;
-
-                case "initialLayerSpeed":
-                    initialLayerSpeed = int.Parse(value);
-                    return true;
-
-                case "printSpeed":
-                    printSpeed = int.Parse(value);
-                    return true;
-
-                case "infillSpeed":
-                    infillSpeed = int.Parse(value);
-                    return true;
-
-                case "inset0Speed":
-                    inset0Speed = int.Parse(value);
-                    return true;
-
-                case "insetXSpeed":
-                    insetXSpeed = int.Parse(value);
-                    return true;
-
-                case "moveSpeed":
-                    moveSpeed = int.Parse(value);
-                    return true;
-
-                case "fanFullOnLayerNr":
-                    fanFullOnLayerNr = int.Parse(value);
-                    return true;
-
-                case "supportAngle":
-                    supportAngle = int.Parse(value);
-                    return true;
-
-                case "supportEverywhere":
-                    supportEverywhere = int.Parse(value);
-                    return true;
-
-                case "supportLineDistance":
-                    supportLineDistance = int.Parse(value);
-                    return true;
-
-                case "supportXYDistance":
-                    supportXYDistance = int.Parse(value);
-                    return true;
-
-                case "supportZDistance":
-                    supportZDistance = int.Parse(value);
-                    return true;
-
-                case "supportExtruder":
-                    supportExtruder = int.Parse(value);
-                    return true;
-
-                case "retractionAmount":
-                    retractionAmount = int.Parse(value);
-                    return true;
-
-                case "retractionSpeed":
-                    retractionSpeed = int.Parse(value);
-                    return true;
-
-                case "retractionAmountExtruderSwitch":
-                    retractionAmountExtruderSwitch = int.Parse(value);
-                    return true;
-
-                case "retractionMinimalDistance":
-                    retractionMinimalDistance = int.Parse(value);
-                    return true;
-
-                case "minimalExtrusionBeforeRetraction":
-                    minimalExtrusionBeforeRetraction = int.Parse(value);
-                    return true;
-
-                case "enableCombing":
-                    enableCombing = value == "1";
-                    return true;
-
-                case "enableOozeShield":
-                    enableOozeShield = value == "1";
-                    return true;
-
-                case "wipeTowerSize":
-                    wipeTowerSize = int.Parse(value);
-                    return true;
-
-                case "multiVolumeOverlap":
-                    multiVolumeOverlap = int.Parse(value);
-                    return true;
-
-                case "objectPosition.X":
-                    objectPosition.X = int.Parse(value);
-                    return true;
-
-                case "objectPosition.Y":
-                    objectPosition.Y = int.Parse(value);
-                    return true;
-
-                case "objectSink":
-                    objectSink = int.Parse(value);
-                    return true;
-
-                case "raftMargin":
-                    raftMargin = int.Parse(value);
-                    return true;
-
-                case "raftLineSpacing":
-                    raftLineSpacing = int.Parse(value);
-                    return true;
-
-                case "raftBaseThickness":
-                    raftBaseThickness = int.Parse(value);
-                    return true;
-
-                case "raftBaseLinewidth":
-                    raftBaseLinewidth = int.Parse(value);
-                    return true;
-
-                case "raftInterfaceThickness":
-                    raftInterfaceThickness = int.Parse(value);
-                    return true;
-
-                case "raftInterfaceLinewidth":
-                    raftInterfaceLinewidth = int.Parse(value);
-                    return true;
-
-                case "minimalLayerTime":
-                    minimalLayerTime = int.Parse(value);
-                    return true;
-
-                case "minimalFeedrate":
-                    minimalFeedrate = int.Parse(value);
-                    return true;
-
-                case "coolHeadLift":
-                    coolHeadLift = value == "1";
-                    return true;
-
-                case "fanSpeedMin":
-                    fanSpeedMinPercent = int.Parse(value);
-                    return true;
-
-                case "fanSpeedMax":
-                    fanSpeedMaxPercent = int.Parse(value);
-                    return true;
-
-                case "fixHorrible":
-                    throw new NotImplementedException();
-                    //fixHorrible = int.Parse(value);
-                    return true;
-
-                case "spiralizeMode":
-                    sparseInfillLineDistance = int.Parse(value);
-                    return true;
-
-                case "gcodeFlavor":
-                    throw new NotImplementedException();
-                    //gcodeFlavor = int.Parse(value);
-                    return true;
-
-                case "extruderOffset[1].X":
-                    extruderOffset[1].X = int.Parse(value);
-                    return true;
-
-                case "extruderOffset[1].Y":
-                    extruderOffset[1].Y = int.Parse(value);
-                    return true;
-
-                case "extruderOffset[2].X":
-                    extruderOffset[2].X = int.Parse(value);
-                    return true;
-
-                case "extruderOffset[2].Y":
-                    extruderOffset[2].Y = int.Parse(value);
-                    return true;
-
-                case "extruderOffset[3].X":
-                    extruderOffset[3].X = int.Parse(value);
-                    return true;
-
-                case "extruderOffset[3].Y":
-                    extruderOffset[3].Y = int.Parse(value);
-                    return true;
-
-                case "startCode":
-                    this.startCode = value;
-                    return true;
-
-                case "endCode":
-                    this.endCode = value;
-                    return true;
+                }
             }
             return false;
         }
