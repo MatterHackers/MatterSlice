@@ -135,10 +135,6 @@ namespace MatterHackers.MatterSlice
                 LogOutput.log("  Vertex counts: {0} . {1} {2:0.0}%\n".FormatWith((int)model.volumes[volumeIndex].faces.Count * 3, (int)optomizedModel.volumes[volumeIndex].points.Count, (double)(optomizedModel.volumes[volumeIndex].points.Count) / (double)(model.volumes[volumeIndex].faces.Count * 3) * 100));
             }
 
-#if !DEBUG
-            m = null;
-#endif
-
             LogOutput.log("Optimize model {0:0.000}s \n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Reset();
 #if DEBUG
@@ -169,9 +165,6 @@ namespace MatterHackers.MatterSlice
             storage.modelSize = optomizedModel.modelSize;
             storage.modelMin = optomizedModel.vMin;
             storage.modelMax = optomizedModel.vMax;
-#if !DEBUG
-        om = null;
-#endif
 
             LogOutput.log("Generating layer parts...\n");
             for (int volumeIdx = 0; volumeIdx < slicerList.Count; volumeIdx++)
