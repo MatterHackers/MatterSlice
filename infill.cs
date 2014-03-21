@@ -67,9 +67,9 @@ namespace MatterHackers.MatterSlice
             return 0;
         }
 
-        public static void generateLineInfill(Polygons in_outline, Polygons result, int extrusionWidth, int lineSpacing, int infillOverlap, double rotation)
+        public static void generateLineInfill(Polygons in_outline, Polygons result, int extrusionWidth, int lineSpacing, int infillOverlapPercent, double rotation)
         {
-            Polygons outlines = in_outline.Offset(extrusionWidth * infillOverlap / 100);
+            Polygons outlines = in_outline.Offset(extrusionWidth * infillOverlapPercent / 100);
             PointMatrix matrix = new PointMatrix(rotation);
 
             outlines.applyMatrix(matrix);

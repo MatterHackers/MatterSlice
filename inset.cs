@@ -61,13 +61,13 @@ namespace MatterHackers.MatterSlice
             }
 
             //Remove the parts which did not generate an inset. As these parts are too small to print,
-            // and later code can now assume that there is always minimal 1 inset line.
-            for (int partNr = 0; partNr < layer.parts.Count; partNr++)
+            // and later code can now assume that there is always minimum 1 inset line.
+            for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
             {
-                if (layer.parts[partNr].insets.Count < 1)
+                if (layer.parts[partIndex].insets.Count < 1)
                 {
-                    layer.parts.RemoveAt(partNr);
-                    partNr -= 1;
+                    layer.parts.RemoveAt(partIndex);
+                    partIndex -= 1;
                 }
             }
         }

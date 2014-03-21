@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Reflection;
+using System.IO;
 
 using ClipperLib;
 
@@ -57,47 +58,62 @@ namespace MatterHackers.MatterSlice
     // all the variables in this class will be saved and loaded from settings files
     public class ConfigSettings
     {
-        // if you were to change the layerThickness variable you would add a legacy name so that we can still use old settings
-        //[LegacyName("exampleLegacyLayerThickness")]
-        public double layerThickness;
-        public int layerThickness_µm { get { return (int)(layerThickness * 1000); } }
+        // if you were to change the layerThicknessMm variable you would add a legacy name so that we can still use old settings
+        //[LegacyName("layerThickness")] // the name before we added Mm
+        public double layerThicknessMm;
+        public int layerThickness_µm { get { return (int)(layerThicknessMm * 1000); } }
 
         public double initialLayerThicknessMm;
         public int initialLayerThickness_µm { get { return (int)(initialLayerThicknessMm * 1000); } }
 
-        public int filamentDiameter;
-        public int filamentFlow;
-        public int firstLayerExtrusionWidth;
-        public int extrusionWidth;
-        public int insetCount;
+        public double filamentDiameterMm;
+        public int filamentDiameter_µm { get { return (int)(filamentDiameterMm * 1000); } }
+
+        public int filamentFlowPercent;
+        
+        public double firstLayerExtrusionWidthMm;
+        public int firstLayerExtrusionWidth_µm { get { return (int)(firstLayerExtrusionWidthMm * 1000); } }
+
+        public double extrusionWidthMm;
+        public int extrusionWidth_µm { get { return (int)(extrusionWidthMm * 1000); } }
+
+        public int perimeterCount;
         public int downSkinCount;
         public int upSkinCount;
         public int sparseInfillLineDistance;
-        public int infillOverlap;
+        public int infillOverlapPercent;
         public int infillAngleDegrees;
-        public int skirtDistance;
+
+        public int skirtDistanceMm;
+        public int skirtDistance_µm { get { return (int)(skirtDistanceMm * 1000); } }
+        
         public int skirtLineCount;
-        public int skirtMinLength;
+
+        public int skirtMinLengthMm;
+        public int skirtMinLength_µm { get { return (int)(skirtMinLengthMm * 1000); } }
+
         public int retractionAmount;
         public int retractionAmountExtruderSwitch;
-        public int retractionSpeed;
-        public int retractionMinimalDistance;
-        public int minimalExtrusionBeforeRetraction;
-        public int retractionZHop;
+        public int retractionSpeedMmPerS;
+        public int retractionMinimumDistance;
+
+        public double minimumExtrusionBeforeRetractionMm;
+        public int minimumExtrusionBeforeRetraction_µm { get { return (int)(minimumExtrusionBeforeRetractionMm * 1000); } }
+        
+        public double retractionZHopMm;
         public bool enableCombing;
         public bool enableOozeShield;
         public int wipeTowerSize;
         public int multiVolumeOverlap;
 
         // speed settings
-        public int initialSpeedupLayers;
-        public int initialLayerSpeed;
+        public int firstLayerSpeedMmPerS;
         public int printSpeed;
-        public int infillSpeed;
-        public int inset0Speed;
-        public int insetXSpeed;
-        public int moveSpeed;
-        public int fanFullOnLayerNr;
+        public int infillSpeedMmPerS;
+        public int outsidePerimeterSpeedMmPerS;
+        public int insidePerimeterSpeedsMmPerS;
+        public int moveSpeedMmPerS;
+        public int firstLayerToAllowFan;
 
         //Support material
         public ConfigConstants.SUPPORT_TYPE supportType;
@@ -109,8 +125,8 @@ namespace MatterHackers.MatterSlice
         public int supportExtruder;
 
         //Cool settings
-        public int minimalLayerTime;
-        public int minimalFeedrate;
+        public int minimumLayerTime;
+        public int minimumFeedrate;
         public bool coolHeadLift;
         public int fanSpeedMinPercent;
         public int fanSpeedMaxPercent;
@@ -123,15 +139,18 @@ namespace MatterHackers.MatterSlice
         public int raftInterfaceThickness;
         public int raftInterfaceLinewidth;
 
-        public FMatrix3x3 matrix = new FMatrix3x3();
-        public IntPoint objectPosition;
+        public FMatrix3x3 modelRotationMatrix = new FMatrix3x3();
+
+        public DoublePoint objectCenterPositionMm;
+        public IntPoint objectCenterPosition_µm { get { return new IntPoint(objectCenterPositionMm.X * 1000, objectCenterPositionMm.Y * 1000); } }
+
         public int objectSink;
 
         public ConfigConstants.FIX_HORRIBLE fixHorrible;
         public bool spiralizeMode;
         public ConfigConstants.GCODE_FLAVOR gcodeFlavor;
 
-        public IntPoint[] extruderOffset = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
+        public IntPoint[] extruderOffsets = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
         public string startCode;
         public string endCode;
 
@@ -142,31 +161,30 @@ namespace MatterHackers.MatterSlice
 
         public void SetToDefault()
         {
-            filamentDiameter = 2890;
-            filamentFlow = 100;
+            filamentDiameterMm = 2.89;
+            filamentFlowPercent = 100;
             initialLayerThicknessMm = .3;
-            layerThickness = .1;
-            firstLayerExtrusionWidth = 800;
-            extrusionWidth = 400;
-            insetCount = 2;
+            layerThicknessMm = .1;
+            firstLayerExtrusionWidthMm = .8;
+            extrusionWidthMm = .4;
+            perimeterCount = 2;
             downSkinCount = 6;
             upSkinCount = 6;
-            initialSpeedupLayers = 4;
-            initialLayerSpeed = 20;
+            firstLayerSpeedMmPerS = 20;
             printSpeed = 50;
-            infillSpeed = 50;
-            inset0Speed = 50;
-            insetXSpeed = 50;
-            moveSpeed = 200;
-            fanFullOnLayerNr = 2;
-            skirtDistance = 6000;
+            infillSpeedMmPerS = 50;
+            outsidePerimeterSpeedMmPerS = 50;
+            insidePerimeterSpeedsMmPerS = 50;
+            moveSpeedMmPerS = 200;
+            firstLayerToAllowFan = 2;
+            skirtDistanceMm = 6;
             skirtLineCount = 1;
-            skirtMinLength = 0;
-            sparseInfillLineDistance = 100 * extrusionWidth / 20;
-            infillOverlap = 15;
+            skirtMinLengthMm = 0;
+            sparseInfillLineDistance = 100 * extrusionWidth_µm / 20;
+            infillOverlapPercent = 15;
             infillAngleDegrees = 45;
-            objectPosition.X = 102500;
-            objectPosition.Y = 102500;
+            objectCenterPositionMm.X = 102.5;
+            objectCenterPositionMm.Y = 102.5;
             objectSink = 0;
             supportType = ConfigConstants.SUPPORT_TYPE.GRID;
             supportAngleDegrees = -1;
@@ -176,17 +194,17 @@ namespace MatterHackers.MatterSlice
             supportXYDistance = 700;
             supportZDistance = 150;
             retractionAmount = 4500;
-            retractionSpeed = 45;
+            retractionSpeedMmPerS = 45;
             retractionAmountExtruderSwitch = 14500;
-            retractionMinimalDistance = 1500;
-            minimalExtrusionBeforeRetraction = 100;
+            retractionMinimumDistance = 1500;
+            minimumExtrusionBeforeRetractionMm = .1;
             enableOozeShield = false;
             enableCombing = true;
             wipeTowerSize = 0;
             multiVolumeOverlap = 0;
 
-            minimalLayerTime = 5;
-            minimalFeedrate = 10;
+            minimumLayerTime = 5;
+            minimumFeedrate = 10;
             coolHeadLift = false;
             fanSpeedMinPercent = 100;
             fanSpeedMaxPercent = 100;
@@ -243,18 +261,10 @@ namespace MatterHackers.MatterSlice
                 switch (field.FieldType.Name)
                 {
                     case "Int32":
-                        lines.Add("{0}={1}".FormatWith(name, value));
-                        break;
-
                     case "Double":
-                        lines.Add("{0}={1}".FormatWith(name, value));
-                        break;
-
                     case "Boolean":
-                        lines.Add("{0}={1}".FormatWith(name, value));
-                        break;
-
                     case "FMatrix3x3":
+                        // all these setting just output correctly with ToString() so we don't have to do anything special.
                         lines.Add("{0}={1}".FormatWith(name, value));
                         break;
 
@@ -262,30 +272,42 @@ namespace MatterHackers.MatterSlice
                         lines.Add("{0}={1}".FormatWith(name, ((IntPoint)value).OutputInMm()));
                         break;
 
+                    case "DoublePoint":
+                        lines.Add("{0}=[{1},{2}]".FormatWith(name, ((DoublePoint)value).X, ((DoublePoint)value).Y));
+                        break;
+
                     case "IntPoint[]":
-                        lines.Add("{0}={1}".FormatWith(name, value));
+                        {
+                            IntPoint[] valueIntArray = value as IntPoint[];
+                            string values = "[";
+                            bool first = true;
+                            foreach(IntPoint intPoint in valueIntArray)
+                            {
+                                if (!first)
+                                {
+                                    values += ",";
+                                }
+                                values = values + intPoint.OutputInMm();
+                                first = false;
+                            }
+                            lines.Add("{0}={1}]".FormatWith(name, values));
+                        }
                         break;
 
                     case "String":
+                        // change the cariage returns to '\n's in the file
                         lines.Add("{0}={1}".FormatWith(name, value).Replace("\n", "\\n"));
                         break;
 
                     case "FIX_HORRIBLE":
-                        {
-                            lines.Add("{0}={1} # {2}".FormatWith(name, value, GetEnumHelpText(field.FieldType, field.FieldType.Name)));
-                        }
-                        break;
-
                     case "SUPPORT_TYPE":
-                            lines.Add("{0}={1} # {2}".FormatWith(name, value, GetEnumHelpText(field.FieldType, field.FieldType.Name)));
-                        break;
-
                     case "GCODE_FLAVOR":
-                            lines.Add("{0}={1} # {2}".FormatWith(name, value, GetEnumHelpText(field.FieldType, field.FieldType.Name)));
+                        // all the enums can be output by this function
+                        lines.Add("{0}={1} # {2}".FormatWith(name, value, GetEnumHelpText(field.FieldType, field.FieldType.Name)));
                         break;
 
                     default:
-                        throw new NotImplementedException("unknown type");
+                        throw new NotImplementedException("unknown type '{0}'".FormatWith(field.FieldType.Name));
                 }
             }
 
@@ -361,15 +383,43 @@ namespace MatterHackers.MatterSlice
                             break;
 
                         case "FMatrix3x3":
-                            throw new NotImplementedException();
+                            {
+                                field.SetValue(this, new FMatrix3x3(valueToSetTo));
+                            }
+                            break;
+
+                        case "DoublePoint":
+                            {
+                                string bracketContents = GetInsides(valueToSetTo, '[', ']');
+                                string[] xyValues = bracketContents.Split(',');
+                                field.SetValue(this, new DoublePoint(double.Parse(xyValues[0]), double.Parse(xyValues[1])));
+                            }
                             break;
 
                         case "IntPoint":
-                            throw new NotImplementedException();
+                            {
+                                string bracketContents = GetInsides(valueToSetTo, '[', ']');
+                                string[] xyValues = bracketContents.Split(',');
+                                field.SetValue(this, new IntPoint(double.Parse(xyValues[0]), double.Parse(xyValues[1])));
+                            }
                             break;
 
                         case "IntPoint[]":
-                            throw new NotImplementedException();
+                            {
+                                string bracketContents = GetInsides(valueToSetTo, '[', ']');
+                                List<IntPoint> points = new List<IntPoint>();
+
+                                string intPointString;
+                                int nextIndex = GetInsides(out intPointString, bracketContents, '[', ']', 0);
+                                do
+                                {
+                                    string[] xyValues = intPointString.Split(',');
+                                    points.Add(new IntPoint(double.Parse(xyValues[0]), double.Parse(xyValues[1])));
+
+                                    nextIndex = GetInsides(out intPointString, bracketContents, '[', ']', nextIndex);
+                                } while (nextIndex != -1);
+                                field.SetValue(this, points.ToArray());
+                            }
                             break;
 
                         case "String":
@@ -377,15 +427,9 @@ namespace MatterHackers.MatterSlice
                             break;
 
                         case "FIX_HORRIBLE":
-                            throw new NotImplementedException();
-                            break;
-
                         case "SUPPORT_TYPE":
-                            throw new NotImplementedException();
-                            break;
-
                         case "GCODE_FLAVOR":
-                            throw new NotImplementedException();
+                            field.SetValue(this, Enum.Parse(field.FieldType, valueToSetTo));
                             break;
 
                         default:
@@ -398,9 +442,78 @@ namespace MatterHackers.MatterSlice
             return false;
         }
 
+        private string GetInsides(string content, char startingChar, char endingChar)
+        {
+            string insides;
+            GetInsides(out insides, content, startingChar, endingChar, 0);
+            return insides;
+        }
+
+        private int GetInsides(out string insides, string content, char startingChar, char endingChar, int startIndex, int endIndex = -1)
+        {
+            if (endIndex == -1)
+            {
+                endIndex = content.Length;
+            }
+            insides = "";
+            int firstOpen = -1;
+            int openCount = 0;
+            int endPosition = -1;
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                if (content[i] == startingChar)
+                {
+                    if (firstOpen == -1)
+                    {
+                        firstOpen = i;
+                    }
+                    openCount++;
+                }
+                else if (openCount > 0 && content[i] == endingChar)
+                {
+                    openCount--;
+                    if (openCount == 0)
+                    {
+                        endPosition = i;
+                        insides = content.Substring(firstOpen+1, i-(firstOpen+1));
+                        break;
+                    }
+                }
+            }
+
+            return endPosition;
+        }
+
         public bool ReadSettings(string fileName)
         {
-            throw new NotImplementedException();
+            if (File.Exists(fileName))
+            {
+                string[] lines = File.ReadAllLines(fileName);
+                for(int i=0; i< lines.Length; i++)
+                {
+                    string line = lines[i];
+                    int commentStart = line.IndexOf("#");
+                    if(commentStart >= 0)
+                    {
+                        line = line.Substring(0, commentStart);
+                    }
+
+                    int equalsPos = line.IndexOf('=');
+                    if (equalsPos > 0)
+                    {
+                        string key = line.Substring(0, equalsPos).Trim();
+                        string value = line.Substring(equalsPos + 1).Trim();
+                        if (key.Length > 0 && value.Length > 0)
+                        {
+                            SetSetting(key, value);
+                        }
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
         }
     }
 
