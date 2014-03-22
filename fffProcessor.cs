@@ -100,11 +100,11 @@ namespace MatterHackers.MatterSlice
 
         void preSetup(int extrusionWidth)
         {
-            skirtConfig.setData(config.printSpeed, extrusionWidth, "SKIRT");
+            skirtConfig.setData(config.printSpeedMmPerS, extrusionWidth, "SKIRT");
             inset0Config.setData(config.outsidePerimeterSpeedMmPerS, extrusionWidth, "WALL-OUTER");
             insetXConfig.setData(config.insidePerimeterSpeedsMmPerS, extrusionWidth, "WALL-INNER");
             fillConfig.setData(config.infillSpeedMmPerS, extrusionWidth, "FILL");
-            supportConfig.setData(config.printSpeed, extrusionWidth, "SUPPORT");
+            supportConfig.setData(config.printSpeedMmPerS, extrusionWidth, "SUPPORT");
 
             for (int n = 1; n < ConfigConstants.MAX_EXTRUDERS; n++)
             {
@@ -128,7 +128,7 @@ namespace MatterHackers.MatterSlice
             LogOutput.log("Loaded from disk in {0:0.000}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();
             LogOutput.log("Analyzing and optimizing model...\n");
-            OptimizedModel optomizedModel = new OptimizedModel(model, new Point3(config.objectCenterPosition_µm.X, config.objectCenterPosition_µm.Y, -config.objectSink));
+            OptimizedModel optomizedModel = new OptimizedModel(model, new Point3(config.objectCenterPosition_µm.X, config.objectCenterPosition_µm.Y, -config.objectSink_µm));
             for (int volumeIndex = 0; volumeIndex < model.volumes.Count; volumeIndex++)
             {
                 LogOutput.log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)model.volumes[volumeIndex].faces.Count, (int)optomizedModel.volumes[volumeIndex].faces.Count, (double)(optomizedModel.volumes[volumeIndex].faces.Count) / (double)(model.volumes[volumeIndex].faces.Count) * 100));
@@ -187,7 +187,7 @@ namespace MatterHackers.MatterSlice
         void processSliceData(SliceDataStorage storage)
         {
             //carveMultipleVolumes(storage.volumes);
-            MultiVolumes.generateMultipleVolumesOverlap(storage.volumes, config.multiVolumeOverlap);
+            MultiVolumes.generateMultipleVolumesOverlap(storage.volumes, config.multiVolumeOverlapPercent);
 #if DEBUG
             LayerPart.dumpLayerparts(storage, "output.html");
 #endif
@@ -418,11 +418,11 @@ namespace MatterHackers.MatterSlice
                 }
                 else
                 {
-                    skirtConfig.setData(config.printSpeed, extrusionWidth, "SKIRT");
+                    skirtConfig.setData(config.printSpeedMmPerS, extrusionWidth, "SKIRT");
                     inset0Config.setData(config.outsidePerimeterSpeedMmPerS, extrusionWidth, "WALL-OUTER");
                     insetXConfig.setData(config.insidePerimeterSpeedsMmPerS, extrusionWidth, "WALL-INNER");
                     fillConfig.setData(config.infillSpeedMmPerS, extrusionWidth, "FILL");
-                    supportConfig.setData(config.printSpeed, extrusionWidth, "SUPPORT");
+                    supportConfig.setData(config.printSpeedMmPerS, extrusionWidth, "SUPPORT");
                 }
 
                 gcode.writeComment("LAYER:{0}".FormatWith(layerNr));
@@ -462,7 +462,7 @@ namespace MatterHackers.MatterSlice
                 }
 
                 //Finish the layer by applying speed corrections for minimum layer times.
-                gcodeLayer.forceMinimumLayerTime(config.minimumLayerTime, config.minimumFeedrate);
+                gcodeLayer.forceMinimumLayerTime(config.minimumLayerTimeSeconds, config.minimumFeedrateMmPerS);
 
                 int fanSpeed = config.fanSpeedMinPercent;
                 if (gcodeLayer.getExtrudeSpeedFactor() <= 50)

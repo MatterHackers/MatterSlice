@@ -104,11 +104,11 @@ namespace MatterHackers.MatterSlice
         public bool enableCombing;
         public bool enableOozeShield;
         public int wipeTowerSize;
-        public int multiVolumeOverlap;
+        public int multiVolumeOverlapPercent;
 
         // speed settings
         public int firstLayerSpeedMmPerS;
-        public int printSpeed;
+        public int printSpeedMmPerS;
         public int infillSpeedMmPerS;
         public int outsidePerimeterSpeedMmPerS;
         public int insidePerimeterSpeedsMmPerS;
@@ -125,8 +125,8 @@ namespace MatterHackers.MatterSlice
         public int supportExtruder;
 
         //Cool settings
-        public int minimumLayerTime;
-        public int minimumFeedrate;
+        public int minimumLayerTimeSeconds;
+        public int minimumFeedrateMmPerS;
         public bool coolHeadLift;
         public int fanSpeedMinPercent;
         public int fanSpeedMaxPercent;
@@ -144,7 +144,8 @@ namespace MatterHackers.MatterSlice
         public DoublePoint objectCenterPositionMm;
         public IntPoint objectCenterPosition_µm { get { return new IntPoint(objectCenterPositionMm.X * 1000, objectCenterPositionMm.Y * 1000); } }
 
-        public int objectSink;
+        public double objectSinkMm;
+        public int objectSink_µm { get { return (int)(objectSinkMm * 1000); } }
 
         public ConfigConstants.FIX_HORRIBLE fixHorrible;
         public bool spiralizeMode;
@@ -171,7 +172,7 @@ namespace MatterHackers.MatterSlice
             downSkinCount = 6;
             upSkinCount = 6;
             firstLayerSpeedMmPerS = 20;
-            printSpeed = 50;
+            printSpeedMmPerS = 50;
             infillSpeedMmPerS = 50;
             outsidePerimeterSpeedMmPerS = 50;
             insidePerimeterSpeedsMmPerS = 50;
@@ -185,7 +186,7 @@ namespace MatterHackers.MatterSlice
             infillAngleDegrees = 45;
             objectCenterPositionMm.X = 102.5;
             objectCenterPositionMm.Y = 102.5;
-            objectSink = 0;
+            objectSinkMm = 0;
             supportType = ConfigConstants.SUPPORT_TYPE.GRID;
             supportAngleDegrees = -1;
             supportEverywhere = 0;
@@ -201,10 +202,10 @@ namespace MatterHackers.MatterSlice
             enableOozeShield = false;
             enableCombing = true;
             wipeTowerSize = 0;
-            multiVolumeOverlap = 0;
+            multiVolumeOverlapPercent = 0;
 
-            minimumLayerTime = 5;
-            minimumFeedrate = 10;
+            minimumLayerTimeSeconds = 5;
+            minimumFeedrateMmPerS = 10;
             coolHeadLift = false;
             fanSpeedMinPercent = 100;
             fanSpeedMaxPercent = 100;
