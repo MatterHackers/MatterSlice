@@ -55,6 +55,19 @@ namespace MatterHackers.MatterSlice
         }
     }
 
+    // this class is so that we can add a help text to variables in the config file
+    [System.AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Field)]
+    public class SettingDescription : System.Attribute
+    {
+        private string description;
+        public string Description { get { return description; } }
+
+        public SettingDescription(string description)
+        {
+            this.description = description;
+        }
+    }
+
     // all the variables in this class will be saved and loaded from settings files
     public class ConfigSettings
     {
@@ -108,12 +121,11 @@ namespace MatterHackers.MatterSlice
 
         // speed settings
         public int firstLayerSpeedMmPerS;
-        public int printSpeedMmPerS;
+        public int normalPrintSpeedMmPerS;
         public int infillSpeedMmPerS;
         public int outsidePerimeterSpeedMmPerS;
-        public int insidePerimeterSpeedsMmPerS;
-        public int moveSpeedMmPerS;
-        public int firstLayerToAllowFan;
+        public int insidePerimeterSpeedMmPerS;
+        public int travelSpeedMmPerS;
 
         //Support material
         public ConfigConstants.SUPPORT_TYPE supportType;
@@ -127,22 +139,31 @@ namespace MatterHackers.MatterSlice
         //Cool settings
         public int minimumLayerTimeSeconds;
         public int minimumFeedrateMmPerS;
-        public bool coolHeadLift;
+        [SettingDescription("Will cause the head to be raised in z until min layer time is reached.")]
+        public bool doCoolHeadLift;
         public int fanSpeedMinPercent;
         public int fanSpeedMaxPercent;
+        public int firstLayerToAllowFan;
 
         //Raft settings
-        public int raftMargin;
+        public double raftExtraDistanceAroundPartMm;
+        public int raftExtraDistanceAroundPart_µm { get { return (int)(raftExtraDistanceAroundPartMm * 1000); } }
         public int raftLineSpacing;
+
         public int raftBaseThickness;
+        
         public int raftBaseLinewidth;
+        
         public int raftInterfaceThickness;
+        
         public int raftInterfaceLinewidth;
 
         public FMatrix3x3 modelRotationMatrix = new FMatrix3x3();
 
-        public DoublePoint objectCenterPositionMm;
-        public IntPoint objectCenterPosition_µm { get { return new IntPoint(objectCenterPositionMm.X * 1000, objectCenterPositionMm.Y * 1000); } }
+        [SettingDescription("Describes if 'positionToPlaceObjectCenterMm' should be used.")]
+        public bool centerObjectInXy;
+        public DoublePoint positionToPlaceObjectCenterMm;
+        public IntPoint objectCenterPosition_µm { get { return new IntPoint(positionToPlaceObjectCenterMm.X * 1000, positionToPlaceObjectCenterMm.Y * 1000); } }
 
         public double objectSinkMm;
         public int objectSink_µm { get { return (int)(objectSinkMm * 1000); } }
@@ -172,11 +193,11 @@ namespace MatterHackers.MatterSlice
             downSkinCount = 6;
             upSkinCount = 6;
             firstLayerSpeedMmPerS = 20;
-            printSpeedMmPerS = 50;
+            normalPrintSpeedMmPerS = 50;
             infillSpeedMmPerS = 50;
             outsidePerimeterSpeedMmPerS = 50;
-            insidePerimeterSpeedsMmPerS = 50;
-            moveSpeedMmPerS = 200;
+            insidePerimeterSpeedMmPerS = 50;
+            travelSpeedMmPerS = 200;
             firstLayerToAllowFan = 2;
             skirtDistanceMm = 6;
             skirtLineCount = 1;
@@ -184,8 +205,9 @@ namespace MatterHackers.MatterSlice
             sparseInfillLineDistance = 100 * extrusionWidth_µm / 20;
             infillOverlapPercent = 15;
             infillAngleDegrees = 45;
-            objectCenterPositionMm.X = 102.5;
-            objectCenterPositionMm.Y = 102.5;
+            centerObjectInXy = true;
+            positionToPlaceObjectCenterMm.X = 102.5;
+            positionToPlaceObjectCenterMm.Y = 102.5;
             objectSinkMm = 0;
             supportType = ConfigConstants.SUPPORT_TYPE.GRID;
             supportAngleDegrees = -1;
@@ -206,11 +228,11 @@ namespace MatterHackers.MatterSlice
 
             minimumLayerTimeSeconds = 5;
             minimumFeedrateMmPerS = 10;
-            coolHeadLift = false;
+            doCoolHeadLift = false;
             fanSpeedMinPercent = 100;
             fanSpeedMaxPercent = 100;
 
-            raftMargin = 5000;
+            raftExtraDistanceAroundPartMm = 5;
             raftLineSpacing = 1000;
             raftBaseThickness = 0;
             raftBaseLinewidth = 0;
@@ -248,6 +270,7 @@ namespace MatterHackers.MatterSlice
             fields = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
             foreach (FieldInfo field in fields)
             {
+                string fieldDescription = "";
                 System.Attribute[] attributes = System.Attribute.GetCustomAttributes(field);
                 foreach (Attribute attribute in attributes)
                 {
@@ -255,6 +278,12 @@ namespace MatterHackers.MatterSlice
                     if (legacyName != null)
                     {
                         string Name = legacyName.Name;
+                    }
+
+                    SettingDescription description = attribute as SettingDescription;
+                    if (description != null)
+                    {
+                        fieldDescription = " # {0}".FormatWith(description.Description);
                     }
                 }
                 string name = field.Name;
@@ -266,15 +295,15 @@ namespace MatterHackers.MatterSlice
                     case "Boolean":
                     case "FMatrix3x3":
                         // all these setting just output correctly with ToString() so we don't have to do anything special.
-                        lines.Add("{0}={1}".FormatWith(name, value));
+                        lines.Add("{0}={1}{2}".FormatWith(name, value, fieldDescription));
                         break;
 
                     case "IntPoint":
-                        lines.Add("{0}={1}".FormatWith(name, ((IntPoint)value).OutputInMm()));
+                        lines.Add("{0}={1}{2}".FormatWith(name, ((IntPoint)value).OutputInMm(), fieldDescription));
                         break;
 
                     case "DoublePoint":
-                        lines.Add("{0}=[{1},{2}]".FormatWith(name, ((DoublePoint)value).X, ((DoublePoint)value).Y));
+                        lines.Add("{0}=[{1},{2}]{3}".FormatWith(name, ((DoublePoint)value).X, ((DoublePoint)value).Y, fieldDescription));
                         break;
 
                     case "IntPoint[]":
@@ -291,11 +320,15 @@ namespace MatterHackers.MatterSlice
                                 values = values + intPoint.OutputInMm();
                                 first = false;
                             }
-                            lines.Add("{0}={1}]".FormatWith(name, values));
+                            lines.Add("{0}={1}]{2}".FormatWith(name, values, fieldDescription));
                         }
                         break;
 
                     case "String":
+                        if(fieldDescription != "")
+                        {
+                            throw new Exception("We can't output a description on a string as we need to write whatever the string says.");
+                        }
                         // change the cariage returns to '\n's in the file
                         lines.Add("{0}={1}".FormatWith(name, value).Replace("\n", "\\n"));
                         break;
@@ -303,6 +336,10 @@ namespace MatterHackers.MatterSlice
                     case "FIX_HORRIBLE":
                     case "SUPPORT_TYPE":
                     case "GCODE_FLAVOR":
+                        if(fieldDescription != "")
+                        {
+                            throw new Exception("We can't output a description on an enum as they already have one.");
+                        }
                         // all the enums can be output by this function
                         lines.Add("{0}={1} # {2}".FormatWith(name, value, GetEnumHelpText(field.FieldType, field.FieldType.Name)));
                         break;

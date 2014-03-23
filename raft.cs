@@ -28,7 +28,7 @@ namespace MatterHackers.MatterSlice
 {
     public static class Raft
     {
-        public static void generateRaft(SliceDataStorage storage, int distance)
+        public static void generateRaft(SliceDataStorage storage, int extraDistanceAroundPart_µm)
         {
             for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
             {
@@ -40,13 +40,13 @@ namespace MatterHackers.MatterSlice
                 SliceLayer layer = storage.volumes[volumeIdx].layers[0];
                 for (int i = 0; i < layer.parts.Count; i++)
                 {
-                    storage.raftOutline = storage.raftOutline.CreateUnion(layer.parts[i].outline.Offset(distance));
+                    storage.raftOutline = storage.raftOutline.CreateUnion(layer.parts[i].outline.Offset(extraDistanceAroundPart_µm));
                 }
             }
 
             SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, 0);
-            storage.raftOutline = storage.raftOutline.CreateUnion(storage.wipeTower.Offset(distance));
-            storage.raftOutline = storage.raftOutline.CreateUnion(supportGenerator.polygons.Offset(distance));
+            storage.raftOutline = storage.raftOutline.CreateUnion(storage.wipeTower.Offset(extraDistanceAroundPart_µm));
+            storage.raftOutline = storage.raftOutline.CreateUnion(supportGenerator.polygons.Offset(extraDistanceAroundPart_µm));
         }
     }
 }
