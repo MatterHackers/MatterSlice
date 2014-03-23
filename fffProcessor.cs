@@ -145,9 +145,7 @@ namespace MatterHackers.MatterSlice
             List<Slicer> slicerList = new List<Slicer>();
             for (int volumeIdx = 0; volumeIdx < optomizedModel.volumes.Count; volumeIdx++)
             {
-                Slicer slicer = new Slicer(optomizedModel.volumes[volumeIdx], config.initialLayerThickness_µm, config.layerThickness_µm,
-                    (config.fixHorrible & ConfigConstants.FIX_HORRIBLE.KEEP_NONE_CLOSED) == ConfigConstants.FIX_HORRIBLE.KEEP_NONE_CLOSED,
-                    (config.fixHorrible & ConfigConstants.FIX_HORRIBLE.EXTENSIVE_STITCHING) == ConfigConstants.FIX_HORRIBLE.EXTENSIVE_STITCHING);
+                Slicer slicer = new Slicer(optomizedModel.volumes[volumeIdx], config.initialLayerThickness_µm, config.layerThickness_µm, config.repairOutlines);
                 slicerList.Add(slicer);
                 for (int layerNr = 0; layerNr < slicer.layers.Count; layerNr++)
                 {
@@ -170,7 +168,7 @@ namespace MatterHackers.MatterSlice
             for (int volumeIdx = 0; volumeIdx < slicerList.Count; volumeIdx++)
             {
                 storage.volumes.Add(new SliceVolumeStorage());
-                LayerPart.createLayerParts(storage.volumes[volumeIdx], slicerList[volumeIdx], config.fixHorrible & (ConfigConstants.FIX_HORRIBLE.UNION_ALL_TYPE_A | ConfigConstants.FIX_HORRIBLE.UNION_ALL_TYPE_B | ConfigConstants.FIX_HORRIBLE.UNION_ALL_TYPE_C));
+                LayerPart.createLayerParts(storage.volumes[volumeIdx], slicerList[volumeIdx], config.repairOverlaps);
                 slicerList[volumeIdx] = null;
 
                 //Add the raft offset to each layer.
@@ -198,7 +196,7 @@ namespace MatterHackers.MatterSlice
                 for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
                 {
                     int insetCount = config.perimeterCount;
-                    if (config.spiralizeMode && (int)(layerNr) < config.downSkinCount && layerNr % 2 == 1)
+                    if (config.spiralizeMode && (int)(layerNr) < config.numberOfBottomLayers && layerNr % 2 == 1)
                     {
                         //Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
                         insetCount += 5;
@@ -227,7 +225,7 @@ namespace MatterHackers.MatterSlice
                 LogOutput.logProgress("inset", layerNr + 1, totalLayers);
             }
 
-            if (config.enableOozeShield)
+            if (config.createWipeShield)
             {
                 for (int layerNr = 0; layerNr < totalLayers; layerNr++)
                 {
@@ -236,7 +234,7 @@ namespace MatterHackers.MatterSlice
                     {
                         for (int partNr = 0; partNr < storage.volumes[volumeIdx].layers[layerNr].parts.Count; partNr++)
                         {
-                            oozeShield = oozeShield.CreateUnion(storage.volumes[volumeIdx].layers[layerNr].parts[partNr].outline.Offset(2000));
+                            oozeShield = oozeShield.CreateUnion(storage.volumes[volumeIdx].layers[layerNr].parts[partNr].outline.Offset(config.wipeShieldDistance_µm));
                         }
                     }
                     storage.oozeShield.Add(oozeShield);
@@ -264,7 +262,7 @@ namespace MatterHackers.MatterSlice
             for (int layerNr = 0; layerNr < totalLayers; layerNr++)
             {
                 //Only generate up/downskin and infill for the first X layers when spiralize is choosen.
-                if (!config.spiralizeMode || (int)(layerNr) < config.downSkinCount)
+                if (!config.spiralizeMode || (int)(layerNr) < config.numberOfBottomLayers)
                 {
                     for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
                     {
@@ -274,8 +272,8 @@ namespace MatterHackers.MatterSlice
                             extrusionWidth = config.firstLayerExtrusionWidth_µm;
                         }
 
-                        Skin.generateSkins(layerNr, storage.volumes[volumeIdx], extrusionWidth, config.downSkinCount, config.upSkinCount, config.infillOverlapPercent);
-                        Skin.generateSparse(layerNr, storage.volumes[volumeIdx], extrusionWidth, config.downSkinCount, config.upSkinCount);
+                        Skin.generateSkins(layerNr, storage.volumes[volumeIdx], extrusionWidth, config.numberOfBottomLayers, config.numberOfTopLayers, config.infillOverlapPercent);
+                        Skin.generateSparse(layerNr, storage.volumes[volumeIdx], extrusionWidth, config.numberOfBottomLayers, config.numberOfTopLayers);
 
                         SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
                         for (int partNr = 0; partNr < layer.parts.Count; partNr++)
@@ -514,7 +512,7 @@ namespace MatterHackers.MatterSlice
                 gcodeLayer.setAlwaysRetract(true);
                 gcodeLayer.writePolygonsByOptimizer(storage.oozeShield[layerNr], skirtConfig);
                 LogOutput.logPolygons("oozeshield", layerNr, layer.printZ, storage.oozeShield[layerNr]);
-                gcodeLayer.setAlwaysRetract(!config.enableCombing);
+                gcodeLayer.setAlwaysRetract(!config.avoidCrossingPerimeters);
             }
 
             PathOrderOptimizer partOrderOptimizer = new PathOrderOptimizer(gcode.getPositionXY());
@@ -528,7 +526,7 @@ namespace MatterHackers.MatterSlice
             {
                 SliceLayerPart part = layer.parts[partOrderOptimizer.polyOrder[partCounter]];
 
-                if (config.enableCombing)
+                if (config.avoidCrossingPerimeters)
                 {
                     gcodeLayer.setCombBoundary(part.combBoundery);
                 }
@@ -541,12 +539,12 @@ namespace MatterHackers.MatterSlice
                 {
                     if (config.spiralizeMode)
                     {
-                        if ((int)(layerNr) >= config.downSkinCount)
+                        if ((int)(layerNr) >= config.numberOfBottomLayers)
                         {
                             inset0Config.spiralize = true;
                         }
 
-                        if ((int)(layerNr) == config.downSkinCount && part.insets.Count > 0)
+                        if ((int)(layerNr) == config.numberOfBottomLayers && part.insets.Count > 0)
                         {
                             gcodeLayer.writePolygonsByOptimizer(part.insets[0], insetXConfig);
                         }
@@ -599,7 +597,7 @@ namespace MatterHackers.MatterSlice
                 LogOutput.logPolygons("infill", layerNr, layer.printZ, fillPolygons);
 
                 //After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
-                if (!config.spiralizeMode || (int)(layerNr) < config.downSkinCount)
+                if (!config.spiralizeMode || (int)(layerNr) < config.numberOfBottomLayers)
                 {
                     gcodeLayer.moveInsideCombBoundary(extrusionWidth * 2);
                 }
@@ -626,7 +624,7 @@ namespace MatterHackers.MatterSlice
                 {
                     gcodeLayer.setAlwaysRetract(true);
                     gcodeLayer.writePolygonsByOptimizer(storage.oozeShield[layerNr], skirtConfig);
-                    gcodeLayer.setAlwaysRetract(config.enableCombing);
+                    gcodeLayer.setAlwaysRetract(config.avoidCrossingPerimeters);
                 }
             }
 
@@ -681,7 +679,7 @@ namespace MatterHackers.MatterSlice
                 }
 
                 gcodeLayer.forceRetract();
-                if (config.enableCombing)
+                if (config.avoidCrossingPerimeters)
                 {
                     gcodeLayer.setCombBoundary(island);
                 }

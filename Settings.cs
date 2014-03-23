@@ -91,8 +91,8 @@ namespace MatterHackers.MatterSlice
         public int extrusionWidth_µm { get { return (int)(extrusionWidthMm * 1000); } }
 
         public int perimeterCount;
-        public int downSkinCount;
-        public int upSkinCount;
+        public int numberOfBottomLayers;
+        public int numberOfTopLayers;
         public int sparseInfillLineDistance;
         public int infillOverlapPercent;
         public int infillAngleDegrees;
@@ -114,8 +114,16 @@ namespace MatterHackers.MatterSlice
         public int minimumExtrusionBeforeRetraction_µm { get { return (int)(minimumExtrusionBeforeRetractionMm * 1000); } }
         
         public double retractionZHopMm;
-        public bool enableCombing;
-        public bool enableOozeShield;
+        
+        [SettingDescription("Try to avoid crossing out of the perimeter of a shape while printing its parts.")]
+        public bool avoidCrossingPerimeters;
+        
+        [SettingDescription("Create an outline around shapes so the extrude will be wiped when entering.")]
+        public bool createWipeShield;
+        
+        public double wipeShieldDistanceMm;
+        public int wipeShieldDistance_µm { get { return (int)(wipeShieldDistanceMm * 1000); } }
+        
         public int wipeTowerSize;
         public int multiVolumeOverlapPercent;
 
@@ -168,7 +176,12 @@ namespace MatterHackers.MatterSlice
         public double objectSinkMm;
         public int objectSink_µm { get { return (int)(objectSinkMm * 1000); } }
 
-        public ConfigConstants.FIX_HORRIBLE fixHorrible;
+        [SettingDescription("You can or them together using '|'.")]
+        public ConfigConstants.REPAIR_OUTLINES repairOutlines;
+
+        [SettingDescription("You can or them together using '|'.")]
+        public ConfigConstants.REPAIR_OVERLAPS repairOverlaps;
+        
         public bool spiralizeMode;
         public ConfigConstants.GCODE_FLAVOR gcodeFlavor;
 
@@ -190,8 +203,8 @@ namespace MatterHackers.MatterSlice
             firstLayerExtrusionWidthMm = .8;
             extrusionWidthMm = .4;
             perimeterCount = 2;
-            downSkinCount = 6;
-            upSkinCount = 6;
+            numberOfBottomLayers = 6;
+            numberOfTopLayers = 6;
             firstLayerSpeedMmPerS = 20;
             normalPrintSpeedMmPerS = 50;
             infillSpeedMmPerS = 50;
@@ -221,8 +234,9 @@ namespace MatterHackers.MatterSlice
             retractionAmountExtruderSwitch = 14500;
             retractionMinimumDistance = 1500;
             minimumExtrusionBeforeRetractionMm = .1;
-            enableOozeShield = false;
-            enableCombing = true;
+            createWipeShield = false;
+            wipeShieldDistanceMm = 2;
+            avoidCrossingPerimeters = true;
             wipeTowerSize = 0;
             multiVolumeOverlapPercent = 0;
 
@@ -240,7 +254,6 @@ namespace MatterHackers.MatterSlice
             raftInterfaceLinewidth = 0;
 
             spiralizeMode = false;
-            fixHorrible = 0;
             gcodeFlavor = ConfigConstants.GCODE_FLAVOR.REPRAP;
 
             startCode =
@@ -333,15 +346,12 @@ namespace MatterHackers.MatterSlice
                         lines.Add("{0}={1}".FormatWith(name, value).Replace("\n", "\\n"));
                         break;
 
-                    case "FIX_HORRIBLE":
+                    case "REPAIR_OUTLINES":
+                    case "REPAIR_OVERLAPS":
                     case "SUPPORT_TYPE":
                     case "GCODE_FLAVOR":
-                        if(fieldDescription != "")
-                        {
-                            throw new Exception("We can't output a description on an enum as they already have one.");
-                        }
                         // all the enums can be output by this function
-                        lines.Add("{0}={1} # {2}".FormatWith(name, value, GetEnumHelpText(field.FieldType, field.FieldType.Name)));
+                        lines.Add("{0}={1} # {2}{3}".FormatWith(name, value, GetEnumHelpText(field.FieldType, field.FieldType.Name), fieldDescription));
                         break;
 
                     default:
@@ -560,14 +570,19 @@ namespace MatterHackers.MatterSlice
         public const string VERSION = "1.0";
 
         [Flags]
-        public enum FIX_HORRIBLE
+        public enum REPAIR_OVERLAPS
         {
             NONE,
-            UNION_ALL_TYPE_A = 0x01,
-            UNION_ALL_TYPE_B = 0x02,
-            EXTENSIVE_STITCHING = 0x04,
-            UNION_ALL_TYPE_C = 0x08,
-            KEEP_NONE_CLOSED = 0x10,
+            REVERSE_ORIENTATION = 0x01,
+            UNION_ALL_TOGETHER = 0x02,
+        }
+
+        [Flags]
+        public enum REPAIR_OUTLINES
+        {
+            NONE,
+            EXTENSIVE_STITCHING = 0x01,
+            KEEP_NON_CLOSED = 0x02,
         }
 
         /**

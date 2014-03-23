@@ -65,7 +65,7 @@ namespace MatterHackers.MatterSlice
         public Polygons polygonList = new Polygons();
         public Polygons openPolygonList = new Polygons();
 
-        public void makePolygons(OptimizedVolume optomizedMesh, bool keepNoneClosed, bool extensiveStitching)
+        public void makePolygons(OptimizedVolume optomizedMesh, ConfigConstants.REPAIR_OUTLINES outlineRepairTypes)
         {
             for (int startingSegmentIndex = 0; startingSegmentIndex < segmentList.Count; startingSegmentIndex++)
             {
@@ -255,9 +255,9 @@ namespace MatterHackers.MatterSlice
                     }
                 }
             }
-            
 
-            if (extensiveStitching)
+
+            if ((outlineRepairTypes & ConfigConstants.REPAIR_OUTLINES.EXTENSIVE_STITCHING) == ConfigConstants.REPAIR_OUTLINES.EXTENSIVE_STITCHING)
             {
                 //For extensive stitching find 2 open polygons that are touching 2 closed polygons.
                 // Then find the sortest path over this polygon that can be used to connect the open polygons,
@@ -405,7 +405,7 @@ namespace MatterHackers.MatterSlice
             */
             //if (q) exit(1);
 
-            if (keepNoneClosed)
+            if ((outlineRepairTypes & ConfigConstants.REPAIR_OUTLINES.KEEP_NON_CLOSED) == ConfigConstants.REPAIR_OUTLINES.KEEP_NON_CLOSED)
             {
                 for (int n = 0; n < openPolygonList.Count; n++)
                 {
@@ -542,7 +542,7 @@ namespace MatterHackers.MatterSlice
         public Point3 modelSize;
         public Point3 modelMin;
 
-        public Slicer(OptimizedVolume ov, int initialLayerThickness, int layerThickness, bool keepNoneClosed, bool extensiveStitching)
+        public Slicer(OptimizedVolume ov, int initialLayerThickness, int layerThickness, ConfigConstants.REPAIR_OUTLINES outlineRepairTypes)
         {
             modelSize = ov.model.modelSize;
             modelMin = ov.model.vMin;
@@ -648,7 +648,7 @@ namespace MatterHackers.MatterSlice
 
             for (int layerNr = 0; layerNr < layers.Count; layerNr++)
             {
-                layers[layerNr].makePolygons(ov, keepNoneClosed, extensiveStitching);
+                layers[layerNr].makePolygons(ov, outlineRepairTypes);
             }
         }
 
