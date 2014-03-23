@@ -639,13 +639,17 @@ namespace MatterHackers.MatterSlice
                 else
                 {
                     if (!(lastPosition - p).shorterThen(retractionMinimumDistance))
+                    {
                         path.retract = true;
+                    }
                 }
             }
             else if (alwaysRetract)
             {
                 if (!(lastPosition - p).shorterThen(retractionMinimumDistance))
+                {
                     path.retract = true;
+                }
             }
             path.points.Add(p);
             lastPosition = p;

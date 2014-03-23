@@ -86,7 +86,8 @@ namespace MatterHackers.MatterSlice
 
         [SettingDescription("Lets you adjust how much material to extrude.")]
         public int filamentFlowPercent;
-        
+
+        [SettingDescription("The width of the line to extrude for the first layer.")]
         public double firstLayerExtrusionWidth;
         public int firstLayerExtrusionWidth_µm { get { return (int)(firstLayerExtrusionWidth * 1000); } }
 
@@ -101,7 +102,7 @@ namespace MatterHackers.MatterSlice
         [SettingDescription("The percent of filled space to open space while infilling.")]
         public double infillPercent;
 
-        public int infillLineDistance_µm 
+        public int infillLineDistance_µm
         { 
             get 
             {
@@ -116,7 +117,9 @@ namespace MatterHackers.MatterSlice
             } 
         }
 
-        public int infillOverlapPercent;
+        [SettingDescription("The amount the infill extends into the perimeter in millimeters.")]
+        public double infillExtendIntoPerimeter;
+        public int infillExtendIntoPerimeter_µm { get { return (int)(infillExtendIntoPerimeter * 1000); } }
 
         public int infillStartingAngle;
 
@@ -139,8 +142,9 @@ namespace MatterHackers.MatterSlice
         [SettingDescription("mm/s.")]
         public int retractionSpeed;
 
-        public double retractionMinimumDistance;
-        public int retractionMinimumDistance_µm { get { return (int)(retractionMinimumDistance * 1000); } }
+        [SettingDescription("The minimum travel distance that will require a retraction")]
+        public double minimumTravelToCauseRetraction;
+        public int minimumTravelToCauseRetraction_µm { get { return (int)(minimumTravelToCauseRetraction * 1000); } }
 
         [SettingDescription("mm.")]
         public double minimumExtrusionBeforeRetraction;
@@ -149,7 +153,7 @@ namespace MatterHackers.MatterSlice
         [SettingDescription("The amount to move the extruder up in z after retracting (before a move). mm.")]
         public double retractionZHop;
         
-        [SettingDescription("Try to avoid crossing out of the perimeter of a shape while printing its parts.")]
+        [SettingDescription("Avoid crossing any of the perimeters of a shape while printing its parts.")]
         public bool avoidCrossingPerimeters;
         
         [SettingDescription("Create an outline around shapes so the extrude will be wiped when entering.")]
@@ -199,7 +203,7 @@ namespace MatterHackers.MatterSlice
         public int minimumLayerTimeSeconds;
         [SettingDescription("mm/s.")]
         public int minimumFeedrate;
-        [SettingDescription("Will cause the head to be raised in z until min layer time is reached.")]
+        [SettingDescription("Will cause the head to be raised in z until the min layer time is reached.")]
         public bool doCoolHeadLift;
         public int fanSpeedMinPercent;
         public int fanSpeedMaxPercent;
@@ -277,7 +281,7 @@ namespace MatterHackers.MatterSlice
             skirtLoopCount = 1;
             skirtMinLength = 0;
             infillPercent = 20;
-            infillOverlapPercent = 15;
+            infillExtendIntoPerimeter = .06;
             infillStartingAngle = 45;
             centerObjectInXy = true;
             positionToPlaceObjectCenter.X = 102.5;
@@ -293,7 +297,7 @@ namespace MatterHackers.MatterSlice
             retractionAmount = 4.5;
             retractionSpeed = 45;
             retractionAmountOnExtruderSwitch = 14.5;
-            retractionMinimumDistance = 1.5;
+            minimumTravelToCauseRetraction = 1.5;
             minimumExtrusionBeforeRetraction = .1;
             createWipeShield = false;
             wipeShieldDistance = 2;

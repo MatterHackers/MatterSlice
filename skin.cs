@@ -31,7 +31,7 @@ namespace MatterHackers.MatterSlice
 
     public static class Skin
     {
-        public static void generateTopAndBottomLayers(int layerNr, SliceVolumeStorage storage, int extrusionWidth, int downSkinCount, int upSkinCount, int infillOverlap)
+        public static void generateTopAndBottomLayers(int layerNr, SliceVolumeStorage storage, int extrusionWidth, int downSkinCount, int upSkinCount)
         {
             SliceLayer layer = storage.layers[layerNr];
 
@@ -44,8 +44,8 @@ namespace MatterHackers.MatterSlice
 
                 if (part.insets.Count > 1)
                 {
-                    //Add thin wall filling by taking the area between the insets.
-                    Polygons thinWalls = part.insets[0].Offset(-extrusionWidth / 2 - extrusionWidth * infillOverlap / 100).CreateDifference(part.insets[1].Offset(extrusionWidth * 6 / 10));
+                    // Add thin wall filling by taking the area between the insets.
+                    Polygons thinWalls = part.insets[0].Offset(-extrusionWidth / 2).CreateDifference(part.insets[1].Offset(extrusionWidth / 2));
                     upskin.AddAll(thinWalls);
                     downskin.AddAll(thinWalls);
                 }
