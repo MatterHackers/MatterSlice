@@ -179,16 +179,19 @@ namespace MatterHackers.MatterSlice
         //Support material
         public ConfigConstants.SUPPORT_TYPE supportType;
         public int supportStartingAngleDegrees;
-        public int supportEverywhere;
+        [SettingDescription("If True, support will be generated within the part as well as from the bed.")]
+        public bool generateInternalSupport;
         
         public double supportLineDistance;
         public int supportLineDistance_µm { get { return (int)(supportLineDistance * 1000); } }
 
-        public double supportXYDistance;
-        public int supportXYDistance_µm { get { return (int)(supportXYDistance * 1000); } }
+        [SettingDescription("The closest xy distance that support will be to the object. mm/s.")]
+        public double supportXYDistanceFromObject;
+        public int supportXYDistance_µm { get { return (int)(supportXYDistanceFromObject * 1000); } }
 
-        public double supportZDistance;
-        public int supportZDistance_µm { get { return (int)(supportZDistance * 1000); } }
+        [SettingDescription("The closest z distance that support will be to the object. mm/s.")]
+        public double supportZDistanceFromObject;
+        public int supportZDistance_µm { get { return (int)(supportZDistanceFromObject * 1000); } }
         
         public int supportExtruder;
 
@@ -280,13 +283,13 @@ namespace MatterHackers.MatterSlice
             positionToPlaceObjectCenter.X = 102.5;
             positionToPlaceObjectCenter.Y = 102.5;
             bottomClipAmount = 0;
-            supportType = ConfigConstants.SUPPORT_TYPE.GRID;
-            supportStartingAngleDegrees = -1;
-            supportEverywhere = 0;
+            supportType = ConfigConstants.SUPPORT_TYPE.NONE;
+            supportStartingAngleDegrees = 0;
+            generateInternalSupport = true;
             supportLineDistance = extrusionWidth * 5;
             supportExtruder = -1;
-            supportXYDistance = .7;
-            supportZDistance = .15;
+            supportXYDistanceFromObject = .7;
+            supportZDistanceFromObject = .15;
             retractionAmount = 4.5;
             retractionSpeed = 45;
             retractionAmountOnExtruderSwitch = 14.5;
@@ -650,6 +653,7 @@ namespace MatterHackers.MatterSlice
          * */
         public enum SUPPORT_TYPE
         {
+            NONE,
             GRID,
             LINES
         }

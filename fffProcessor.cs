@@ -131,8 +131,8 @@ namespace MatterHackers.MatterSlice
             OptimizedModel optomizedModel = new OptimizedModel(model, new Point3(config.objectCenterPosition_µm.X, config.objectCenterPosition_µm.Y, -config.bottomClipAmount_µm));
             for (int volumeIndex = 0; volumeIndex < model.volumes.Count; volumeIndex++)
             {
-                LogOutput.log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)model.volumes[volumeIndex].faces.Count, (int)optomizedModel.volumes[volumeIndex].faces.Count, (double)(optomizedModel.volumes[volumeIndex].faces.Count) / (double)(model.volumes[volumeIndex].faces.Count) * 100));
-                LogOutput.log("  Vertex counts: {0} . {1} {2:0.0}%\n".FormatWith((int)model.volumes[volumeIndex].faces.Count * 3, (int)optomizedModel.volumes[volumeIndex].points.Count, (double)(optomizedModel.volumes[volumeIndex].points.Count) / (double)(model.volumes[volumeIndex].faces.Count * 3) * 100));
+                LogOutput.log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)model.volumes[volumeIndex].faceTriangles.Count, (int)optomizedModel.volumes[volumeIndex].facesTriangle.Count, (double)(optomizedModel.volumes[volumeIndex].facesTriangle.Count) / (double)(model.volumes[volumeIndex].faceTriangles.Count) * 100));
+                LogOutput.log("  Vertex counts: {0} . {1} {2:0.0}%\n".FormatWith((int)model.volumes[volumeIndex].faceTriangles.Count * 3, (int)optomizedModel.volumes[volumeIndex].vertices.Count, (double)(optomizedModel.volumes[volumeIndex].vertices.Count) / (double)(model.volumes[volumeIndex].faceTriangles.Count * 3) * 100));
             }
 
             LogOutput.log("Optimize model {0:0.000}s \n".FormatWith(timeKeeper.Elapsed.Seconds));
@@ -158,11 +158,11 @@ namespace MatterHackers.MatterSlice
             timeKeeper.Restart();
 
             LogOutput.log("Generating support map...\n");
-            SupportPolyGenerator.generateSupportGrid(storage.support, optomizedModel, config.supportStartingAngleDegrees, config.supportEverywhere > 0, config.supportXYDistance_µm, config.supportZDistance_µm);
+            SupportPolyGenerator.generateSupportGrid(storage.support, optomizedModel, config);
 
-            storage.modelSize = optomizedModel.modelSize;
-            storage.modelMin = optomizedModel.vMin;
-            storage.modelMax = optomizedModel.vMax;
+            storage.modelSize = optomizedModel.size;
+            storage.modelMin = optomizedModel.minXYZ;
+            storage.modelMax = optomizedModel.maxXYZ;
 
             LogOutput.log("Generating layer parts...\n");
             for (int volumeIdx = 0; volumeIdx < slicerList.Count; volumeIdx++)
@@ -638,7 +638,7 @@ namespace MatterHackers.MatterSlice
                     supportGenerator.polygons = supportGenerator.polygons.CreateDifference(layer.parts[n].outline.Offset(config.supportXYDistance_µm));
                 }
             }
-            //Contract and expand the suppory polygons so small sections are removed and the final polygon is smoothed a bit.
+            //Contract and expand the support polygons so small sections are removed and the final polygon is smoothed a bit.
             supportGenerator.polygons = supportGenerator.polygons.Offset(-extrusionWidth * 3);
             supportGenerator.polygons = supportGenerator.polygons.Offset(extrusionWidth * 3);
             LogOutput.logPolygons("support", layerNr, z, supportGenerator.polygons);

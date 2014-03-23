@@ -88,10 +88,10 @@ namespace MatterHackers.MatterSlice
                     IntPoint addedSegmentEndPoint = segmentList[segmentIndexBeingAdded].end;
                     poly.Add(addedSegmentEndPoint);
                     int nextSegmentToCheck = -1;
-                    OptimizedFace face = optomizedMesh.faces[segmentList[segmentIndexBeingAdded].faceIndex];
+                    OptimizedFace face = optomizedMesh.facesTriangle[segmentList[segmentIndexBeingAdded].faceIndex];
                     for (int connectedFaceIndex = 0; connectedFaceIndex < 3; connectedFaceIndex++)
                     {
-                        int touchingFaceIndex = face.touching[connectedFaceIndex];
+                        int touchingFaceIndex = face.touchingFaces[connectedFaceIndex];
                         if (touchingFaceIndex > -1)
                         {
                             
@@ -529,8 +529,8 @@ namespace MatterHackers.MatterSlice
 
         public Slicer(OptimizedVolume ov, int initialLayerThickness, int layerThickness, ConfigConstants.REPAIR_OUTLINES outlineRepairTypes)
         {
-            modelSize = ov.model.modelSize;
-            modelMin = ov.model.vMin;
+            modelSize = ov.model.size;
+            modelMin = ov.model.minXYZ;
 
             int heightWithoutFirstLayer = modelSize.z - initialLayerThickness;
             int countOfNormalThicknessLayers = heightWithoutFirstLayer / layerThickness;
@@ -555,11 +555,11 @@ namespace MatterHackers.MatterSlice
                 }
             }
 
-            for (int faceIndex = 0; faceIndex < ov.faces.Count; faceIndex++)
+            for (int faceIndex = 0; faceIndex < ov.facesTriangle.Count; faceIndex++)
             {
-                Point3 p0 = ov.points[ov.faces[faceIndex].index[0]].p;
-                Point3 p1 = ov.points[ov.faces[faceIndex].index[1]].p;
-                Point3 p2 = ov.points[ov.faces[faceIndex].index[2]].p;
+                Point3 p0 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[0]].position;
+                Point3 p1 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[1]].position;
+                Point3 p2 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[2]].position;
                 int minZ = p0.z;
                 int maxZ = p0.z;
                 if (p1.z < minZ) minZ = p1.z;

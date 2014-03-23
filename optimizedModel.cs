@@ -29,18 +29,19 @@ namespace MatterHackers.MatterSlice
 {
     public class OptimizedFace
     {
-        public int[] index = new int[3];
-        public int[] touching = new int[3];
+        public int[] vertexIndex = new int[3];
+        // each face can be touching 3 other faces (along its edges)
+        public int[] touchingFaces = new int[3];
     }
 
     public class OptimizedPoint3
     {
-        public Point3 p;
-        public List<int> faceIndexList = new List<int>();
+        public Point3 position;
+        public List<int> usedByFacesList = new List<int>();
 
-        public OptimizedPoint3(Point3 p)
+        public OptimizedPoint3(Point3 position)
         {
-            this.p = p;
+            this.position = position;
         }
     }
 
@@ -49,29 +50,29 @@ namespace MatterHackers.MatterSlice
         const int MELD_DIST = 30;
 
         public OptimizedModel model;
-        public List<OptimizedPoint3> points = new List<OptimizedPoint3>();
-        public List<OptimizedFace> faces = new List<OptimizedFace>();
+        public List<OptimizedPoint3> vertices = new List<OptimizedPoint3>();
+        public List<OptimizedFace> facesTriangle = new List<OptimizedFace>();
 
         public OptimizedVolume(SimpleVolume volume, OptimizedModel model)
         {
             this.model = model;
-            points.Capacity = volume.faces.Count * 3;
-            faces.Capacity = volume.faces.Count;
+            vertices.Capacity = volume.faceTriangles.Count * 3;
+            facesTriangle.Capacity = volume.faceTriangles.Count;
 
             Dictionary<int, List<int>> indexMap = new Dictionary<int, List<int>>();
 
             Stopwatch t = new Stopwatch();
             t.Start();
-            for (int i = 0; i < volume.faces.Count; i++)
+            for (int i = 0; i < volume.faceTriangles.Count; i++)
             {
                 OptimizedFace f = new OptimizedFace();
                 if ((i % 1000 == 0) && t.Elapsed.Seconds > 2)
                 {
-                    LogOutput.logProgress("optimized", i + 1, volume.faces.Count);
+                    LogOutput.logProgress("optimized", i + 1, volume.faceTriangles.Count);
                 }
                 for (int j = 0; j < 3; j++)
                 {
-                    Point3 p = volume.faces[i].v[j];
+                    Point3 p = volume.faceTriangles[i].v[j];
                     int hash = (int)(((p.x + MELD_DIST / 2) / MELD_DIST) ^ (((p.y + MELD_DIST / 2) / MELD_DIST) << 10) ^ (((p.z + MELD_DIST / 2) / MELD_DIST) << 20));
                     int idx = 0;
                     bool add = true;
@@ -79,7 +80,7 @@ namespace MatterHackers.MatterSlice
                     {
                         for (int n = 0; n < indexMap[hash].Count; n++)
                         {
-                            if ((points[indexMap[hash][n]].p - p).testLength(MELD_DIST))
+                            if ((vertices[indexMap[hash][n]].position - p).testLength(MELD_DIST))
                             {
                                 idx = indexMap[hash][n];
                                 add = false;
@@ -93,50 +94,50 @@ namespace MatterHackers.MatterSlice
                         {
                             indexMap.Add(hash, new List<int>());
                         }
-                        indexMap[hash].Add(points.Count);
-                        idx = points.Count;
-                        points.Add(new OptimizedPoint3(p));
+                        indexMap[hash].Add(vertices.Count);
+                        idx = vertices.Count;
+                        vertices.Add(new OptimizedPoint3(p));
                     }
-                    f.index[j] = idx;
+                    f.vertexIndex[j] = idx;
                 }
-                if (f.index[0] != f.index[1] && f.index[0] != f.index[2] && f.index[1] != f.index[2])
+                if (f.vertexIndex[0] != f.vertexIndex[1] && f.vertexIndex[0] != f.vertexIndex[2] && f.vertexIndex[1] != f.vertexIndex[2])
                 {
                     //Check if there is a face with the same points
                     bool duplicate = false;
-                    for (int _idx0 = 0; _idx0 < points[f.index[0]].faceIndexList.Count; _idx0++)
+                    for (int _idx0 = 0; _idx0 < vertices[f.vertexIndex[0]].usedByFacesList.Count; _idx0++)
                     {
-                        for (int _idx1 = 0; _idx1 < points[f.index[1]].faceIndexList.Count; _idx1++)
+                        for (int _idx1 = 0; _idx1 < vertices[f.vertexIndex[1]].usedByFacesList.Count; _idx1++)
                         {
-                            for (int _idx2 = 0; _idx2 < points[f.index[2]].faceIndexList.Count; _idx2++)
+                            for (int _idx2 = 0; _idx2 < vertices[f.vertexIndex[2]].usedByFacesList.Count; _idx2++)
                             {
-                                if (points[f.index[0]].faceIndexList[_idx0] == points[f.index[1]].faceIndexList[_idx1] && points[f.index[0]].faceIndexList[_idx0] == points[f.index[2]].faceIndexList[_idx2])
+                                if (vertices[f.vertexIndex[0]].usedByFacesList[_idx0] == vertices[f.vertexIndex[1]].usedByFacesList[_idx1] && vertices[f.vertexIndex[0]].usedByFacesList[_idx0] == vertices[f.vertexIndex[2]].usedByFacesList[_idx2])
                                     duplicate = true;
                             }
                         }
                     }
                     if (!duplicate)
                     {
-                        points[f.index[0]].faceIndexList.Add(faces.Count);
-                        points[f.index[1]].faceIndexList.Add(faces.Count);
-                        points[f.index[2]].faceIndexList.Add(faces.Count);
-                        faces.Add(f);
+                        vertices[f.vertexIndex[0]].usedByFacesList.Add(facesTriangle.Count);
+                        vertices[f.vertexIndex[1]].usedByFacesList.Add(facesTriangle.Count);
+                        vertices[f.vertexIndex[2]].usedByFacesList.Add(facesTriangle.Count);
+                        facesTriangle.Add(f);
                     }
                 }
             }
             //fprintf(stdout, "\rAll faces are optimized in %5.1fs.\n",timeElapsed(t));
 
             int openFacesCount = 0;
-            for (int i = 0; i < faces.Count; i++)
+            for (int i = 0; i < facesTriangle.Count; i++)
             {
-                OptimizedFace f = faces[i];
-                f.touching[0] = getFaceIdxWithPoints(f.index[0], f.index[1], i);
-                f.touching[1] = getFaceIdxWithPoints(f.index[1], f.index[2], i);
-                f.touching[2] = getFaceIdxWithPoints(f.index[2], f.index[0], i);
-                if (f.touching[0] == -1)
+                OptimizedFace f = facesTriangle[i];
+                f.touchingFaces[0] = getFaceIdxWithPoints(f.vertexIndex[0], f.vertexIndex[1], i);
+                f.touchingFaces[1] = getFaceIdxWithPoints(f.vertexIndex[1], f.vertexIndex[2], i);
+                f.touchingFaces[2] = getFaceIdxWithPoints(f.vertexIndex[2], f.vertexIndex[0], i);
+                if (f.touchingFaces[0] == -1)
                     openFacesCount++;
-                if (f.touching[1] == -1)
+                if (f.touchingFaces[1] == -1)
                     openFacesCount++;
-                if (f.touching[2] == -1)
+                if (f.touchingFaces[2] == -1)
                     openFacesCount++;
             }
             //fprintf(stdout, "  Number of open faces: %i\n", openFacesCount);
@@ -144,13 +145,13 @@ namespace MatterHackers.MatterSlice
 
         public int getFaceIdxWithPoints(int idx0, int idx1, int notFaceIdx)
         {
-            for (int i = 0; i < points[idx0].faceIndexList.Count; i++)
+            for (int i = 0; i < vertices[idx0].usedByFacesList.Count; i++)
             {
-                int f0 = points[idx0].faceIndexList[i];
+                int f0 = vertices[idx0].usedByFacesList[i];
                 if (f0 == notFaceIdx) continue;
-                for (int j = 0; j < points[idx1].faceIndexList.Count; j++)
+                for (int j = 0; j < vertices[idx1].usedByFacesList.Count; j++)
                 {
-                    int f1 = points[idx1].faceIndexList[j];
+                    int f1 = vertices[idx1].usedByFacesList[j];
                     if (f1 == notFaceIdx) continue;
                     if (f0 == f1) return f0;
                 }
@@ -161,8 +162,9 @@ namespace MatterHackers.MatterSlice
     public class OptimizedModel
     {
         public List<OptimizedVolume> volumes = new List<OptimizedVolume>();
-        public Point3 modelSize;
-        public Point3 vMin, vMax;
+        public Point3 size;
+        public Point3 minXYZ;
+        public Point3 maxXYZ;
 
         public OptimizedModel(SimpleModel model, Point3 center)
         {
@@ -171,22 +173,22 @@ namespace MatterHackers.MatterSlice
                 volumes.Add(new OptimizedVolume(model.volumes[i], this));
             }
 
-            vMin = model.min();
-            vMax = model.max();
+            minXYZ = model.minXYZ();
+            maxXYZ = model.maxXYZ();
 
-            Point3 vOffset = new Point3((vMin.x + vMax.x) / 2, (vMin.y + vMax.y) / 2, vMin.z);
+            Point3 vOffset = new Point3((minXYZ.x + maxXYZ.x) / 2, (minXYZ.y + maxXYZ.y) / 2, minXYZ.z);
             vOffset -= center;
             for (int i = 0; i < volumes.Count; i++)
             {
-                for (int n = 0; n < volumes[i].points.Count; n++)
+                for (int n = 0; n < volumes[i].vertices.Count; n++)
                 {
-                    volumes[i].points[n].p -= vOffset;
+                    volumes[i].vertices[n].position -= vOffset;
                 }
             }
 
-            modelSize = vMax - vMin;
-            vMin -= vOffset;
-            vMax -= vOffset;
+            size = maxXYZ - minXYZ;
+            minXYZ -= vOffset;
+            maxXYZ -= vOffset;
         }
 
         public void saveDebugSTL(string filename)
@@ -201,11 +203,11 @@ namespace MatterHackers.MatterSlice
 
                 f.Write(header);
 
-                int n = vol.faces.Count;
+                int n = vol.facesTriangle.Count;
 
                 f.Write(n);
 
-                for (int i = 0; i < vol.faces.Count; i++)
+                for (int i = 0; i < vol.facesTriangle.Count; i++)
                 {
                     // stl expects a normal (we don't care about it's data)
                     f.Write((float)1);
@@ -214,9 +216,9 @@ namespace MatterHackers.MatterSlice
 
                     for (int vert = 0; vert < 3; vert++)
                     {
-                        f.Write((float)(vol.points[vol.faces[i].index[vert]].p.x / 1000.0));
-                        f.Write((float)(vol.points[vol.faces[i].index[vert]].p.y / 1000.0));
-                        f.Write((float)(vol.points[vol.faces[i].index[vert]].p.z / 1000.0));
+                        f.Write((float)(vol.vertices[vol.facesTriangle[i].vertexIndex[vert]].position.x / 1000.0));
+                        f.Write((float)(vol.vertices[vol.facesTriangle[i].vertexIndex[vert]].position.y / 1000.0));
+                        f.Write((float)(vol.vertices[vol.facesTriangle[i].vertexIndex[vert]].position.z / 1000.0));
                     }
 
                     f.Write((short)0);

@@ -66,36 +66,41 @@ namespace MatterHackers.MatterSlice
             return a.z - b.z;
         }
 
-        public static void generateSupportGrid(SupportStorage storage, OptimizedModel om, int supportAngle, bool supportEverywhere, int supportXYDistance, int supportZDistance)
+        public static void generateSupportGrid(SupportStorage storage, OptimizedModel model, ConfigSettings config)
         {
             storage.generated = false;
-            if (supportAngle < 0)
+            if (config.supportType == ConfigConstants.SUPPORT_TYPE.NONE)
             {
                 return;
             }
 
             storage.generated = true;
 
-            storage.gridOffset.X = om.vMin.x;
-            storage.gridOffset.Y = om.vMin.y;
+            storage.gridOffset.X = model.minXYZ.x;
+            storage.gridOffset.Y = model.minXYZ.y;
             storage.gridScale = 200;
-            storage.gridWidth = (om.modelSize.x / storage.gridScale) + 1;
-            storage.gridHeight = (om.modelSize.y / storage.gridScale) + 1;
-            storage.grid = new List<List<SupportPoint>>(storage.gridWidth * storage.gridHeight);
-            storage.angle = supportAngle;
-            storage.everywhere = supportEverywhere;
-            storage.XYDistance = supportXYDistance;
-            storage.ZDistance = supportZDistance;
-
-            for (int volumeIdx = 0; volumeIdx < om.volumes.Count; volumeIdx++)
+            storage.gridWidth = (model.size.x / storage.gridScale) + 1;
+            storage.gridHeight = (model.size.y / storage.gridScale) + 1;
+            int gridSize = storage.gridWidth * storage.gridHeight;
+            storage.grid = new List<List<SupportPoint>>(gridSize);
+            for(int i=0; i<gridSize; i++)
             {
-                OptimizedVolume vol = om.volumes[volumeIdx];
-                for (int faceIdx = 0; faceIdx < vol.faces.Count; faceIdx++)
+                storage.grid.Add(new List<SupportPoint>());
+            }
+            storage.angle = config.supportStartingAngleDegrees;
+            storage.everywhere = config.generateInternalSupport;
+            storage.XYDistance = config.supportXYDistance_µm;
+            storage.ZDistance = config.supportZDistance_µm;
+
+            for (int volumeIndex = 0; volumeIndex < model.volumes.Count; volumeIndex++)
+            {
+                OptimizedVolume vol = model.volumes[volumeIndex];
+                for (int faceIndex = 0; faceIndex < vol.facesTriangle.Count; faceIndex++)
                 {
-                    OptimizedFace face = vol.faces[faceIdx];
-                    Point3 v0 = vol.points[face.index[0]].p;
-                    Point3 v1 = vol.points[face.index[1]].p;
-                    Point3 v2 = vol.points[face.index[2]].p;
+                    OptimizedFace faceTriangle = vol.facesTriangle[faceIndex];
+                    Point3 v0 = vol.vertices[faceTriangle.vertexIndex[0]].position;
+                    Point3 v1 = vol.vertices[faceTriangle.vertexIndex[1]].position;
+                    Point3 v2 = vol.vertices[faceTriangle.vertexIndex[2]].position;
 
                     Point3 normal = (v1 - v0).cross(v2 - v0);
                     int normalSize = normal.vSize();
@@ -135,7 +140,9 @@ namespace MatterHackers.MatterSlice
 
                         if (y0 > y1) { swap(ref y0, ref y1); swap(ref z0, ref z1); }
                         for (int y = (int)y0; y < y1; y++)
+                        {
                             storage.grid[x + y * storage.gridWidth].Add(new SupportPoint((int)(z0 + (z1 - z0) * (y - y0) / (y1 - y0)), cosAngle));
+                        }
                     }
                 }
             }
@@ -145,12 +152,16 @@ namespace MatterHackers.MatterSlice
                 for (int y = 0; y < storage.gridHeight; y++)
                 {
                     int n = x + y * storage.gridWidth;
-                    throw new NotImplementedException();
-                    //qsort(storage.grid[n].data(), storage.grid[n].Count, sizeof(SupportPoint), cmp_SupportPoint);
+                    storage.grid[n].Sort(SortSupportsOnZ);
                 }
             }
             storage.gridOffset.X += storage.gridScale / 2;
             storage.gridOffset.Y += storage.gridScale / 2;
+        }
+
+        private static int SortSupportsOnZ(SupportPoint one, SupportPoint two)
+        {
+            return one.z.CompareTo(two.z);
         }
 
         public bool needSupportAt(IntPoint p)
