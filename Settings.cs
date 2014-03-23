@@ -73,108 +73,166 @@ namespace MatterHackers.MatterSlice
     {
         // if you were to change the layerThicknessMm variable you would add a legacy name so that we can still use old settings
         //[LegacyName("layerThickness")] // the name before we added Mm
-        public double layerThicknessMm;
-        public int layerThickness_µm { get { return (int)(layerThicknessMm * 1000); } }
+        public double layerThickness;
+        public int layerThickness_µm { get { return (int)(layerThickness * 1000); } }
 
-        public double firstLayerThicknessMm;
-        public int firstLayerThickness_µm { get { return (int)(firstLayerThicknessMm * 1000); } }
+        [SettingDescription("The height of the first layer to print, in millimeters.")]
+        public double firstLayerThickness;
+        public int firstLayerThickness_µm { get { return (int)(firstLayerThickness * 1000); } }
 
-        public double filamentDiameterMm;
-        public int filamentDiameter_µm { get { return (int)(filamentDiameterMm * 1000); } }
+        [SettingDescription("The width of the filament being fed into the extruder, in millimeters.")]
+        public double filamentDiameter;
+        public int filamentDiameter_µm { get { return (int)(filamentDiameter * 1000); } }
 
+        [SettingDescription("Lets you adjust how much material to extrude.")]
         public int filamentFlowPercent;
         
-        public double firstLayerExtrusionWidthMm;
-        public int firstLayerExtrusionWidth_µm { get { return (int)(firstLayerExtrusionWidthMm * 1000); } }
+        public double firstLayerExtrusionWidth;
+        public int firstLayerExtrusionWidth_µm { get { return (int)(firstLayerExtrusionWidth * 1000); } }
 
-        public double extrusionWidthMm;
-        public int extrusionWidth_µm { get { return (int)(extrusionWidthMm * 1000); } }
+        [SettingDescription("The width of the line to extrude.")]
+        public double extrusionWidth;
+        public int extrusionWidth_µm { get { return (int)(extrusionWidth * 1000); } }
 
         public int perimeterCount;
         public int numberOfBottomLayers;
         public int numberOfTopLayers;
-        public int sparseInfillLineDistance;
+
+        [SettingDescription("The percent of filled space to open space while infilling.")]
+        public double infillPercent;
+
+        public int infillLineDistance_µm 
+        { 
+            get 
+            {
+                double linespacing = 0;
+                if (infillPercent > 0)
+                {
+                    // make this math generate the correct ratio
+                    linespacing = extrusionWidth / (infillPercent / 100);
+                }
+
+                return (int)(linespacing * 1000);
+            } 
+        }
+
         public int infillOverlapPercent;
-        public int infillAngleDegrees;
 
-        public int skirtDistanceMm;
-        public int skirtDistance_µm { get { return (int)(skirtDistanceMm * 1000); } }
+        public int infillStartingAngle;
+
+        [SettingDescription("How far from objects the first skirt loop should be, in millimeters.")]
+        public int skirtDistanceFromObject;
+        public int skirtDistance_µm { get { return (int)(skirtDistanceFromObject * 1000); } }
+
+        [SettingDescription("The number of loops to draw around objects. Can be used to help hold them down.")]
+        public int skirtLoopCount;
         
-        public int skirtLineCount;
+        [SettingDescription("The minimum length of line to draw, in millimeters.")]
+        public int skirtMinLength;
+        public int skirtMinLength_µm { get { return (int)(skirtMinLength * 1000); } }
 
-        public int skirtMinLengthMm;
-        public int skirtMinLength_µm { get { return (int)(skirtMinLengthMm * 1000); } }
+        public double retractionAmount;
+        public int retractionAmount_µm { get { return (int)(retractionAmount * 1000); } }
+        public double retractionAmountOnExtruderSwitch;
+        public int retractionAmountOnExtruderSwitch_µm { get { return (int)(retractionAmountOnExtruderSwitch * 1000); } }
 
-        public int retractionAmount;
-        public int retractionAmountExtruderSwitch;
-        public int retractionSpeedMmPerS;
-        public int retractionMinimumDistance;
+        [SettingDescription("mm/s.")]
+        public int retractionSpeed;
 
-        public double minimumExtrusionBeforeRetractionMm;
-        public int minimumExtrusionBeforeRetraction_µm { get { return (int)(minimumExtrusionBeforeRetractionMm * 1000); } }
-        
-        public double retractionZHopMm;
+        public double retractionMinimumDistance;
+        public int retractionMinimumDistance_µm { get { return (int)(retractionMinimumDistance * 1000); } }
+
+        [SettingDescription("mm.")]
+        public double minimumExtrusionBeforeRetraction;
+        public int minimumExtrusionBeforeRetraction_µm { get { return (int)(minimumExtrusionBeforeRetraction * 1000); } }
+
+        [SettingDescription("The amount to move the extruder up in z after retracting (before a move). mm.")]
+        public double retractionZHop;
         
         [SettingDescription("Try to avoid crossing out of the perimeter of a shape while printing its parts.")]
         public bool avoidCrossingPerimeters;
         
         [SettingDescription("Create an outline around shapes so the extrude will be wiped when entering.")]
         public bool createWipeShield;
-        
-        public double wipeShieldDistanceMm;
-        public int wipeShieldDistance_µm { get { return (int)(wipeShieldDistanceMm * 1000); } }
+
+        [SettingDescription("mm.")]
+        public double wipeShieldDistance;
+        public int wipeShieldDistance_µm { get { return (int)(wipeShieldDistance * 1000); } }
         
         public int wipeTowerSize;
         public int multiVolumeOverlapPercent;
 
         // speed settings
-        public int firstLayerSpeedMmPerS;
-        public int normalPrintSpeedMmPerS;
-        public int infillSpeedMmPerS;
-        public int outsidePerimeterSpeedMmPerS;
-        public int insidePerimeterSpeedMmPerS;
-        public int travelSpeedMmPerS;
+        [SettingDescription("mm/s.")]
+        public int firstLayerSpeed;
+        [SettingDescription("mm/s.")]
+        public int normalPrintSpeed;
+        [SettingDescription("mm/s.")]
+        public int infillSpeed;
+        [SettingDescription("The speed of the first perimeter. mm/s.")]
+        public int outsidePerimeterSpeed;
+        [SettingDescription("The speed of all perimeters but the outside one. mm/s.")]
+        public int insidePerimetersSpeed;
+        [SettingDescription("mm/s.")]
+        public int travelSpeed;
 
         //Support material
         public ConfigConstants.SUPPORT_TYPE supportType;
-        public int supportAngleDegrees;
+        public int supportStartingAngleDegrees;
         public int supportEverywhere;
-        public int supportLineDistance;
-        public int supportXYDistance;
-        public int supportZDistance;
+        
+        public double supportLineDistance;
+        public int supportLineDistance_µm { get { return (int)(supportLineDistance * 1000); } }
+
+        public double supportXYDistance;
+        public int supportXYDistance_µm { get { return (int)(supportXYDistance * 1000); } }
+
+        public double supportZDistance;
+        public int supportZDistance_µm { get { return (int)(supportZDistance * 1000); } }
+        
         public int supportExtruder;
 
         //Cool settings
         public int minimumLayerTimeSeconds;
-        public int minimumFeedrateMmPerS;
+        [SettingDescription("mm/s.")]
+        public int minimumFeedrate;
         [SettingDescription("Will cause the head to be raised in z until min layer time is reached.")]
         public bool doCoolHeadLift;
         public int fanSpeedMinPercent;
         public int fanSpeedMaxPercent;
+        [SettingDescription("The fan will be force to stay off below this layer.")]
         public int firstLayerToAllowFan;
 
         //Raft settings
-        public double raftExtraDistanceAroundPartMm;
-        public int raftExtraDistanceAroundPart_µm { get { return (int)(raftExtraDistanceAroundPartMm * 1000); } }
-        public int raftLineSpacing;
+        [SettingDescription("mm.")]
+        public double raftExtraDistanceAroundPart;
+        public int raftExtraDistanceAroundPart_µm { get { return (int)(raftExtraDistanceAroundPart * 1000); } }
 
-        public int raftBaseThickness;
-        
-        public int raftBaseLinewidth;
-        
-        public int raftInterfaceThickness;
-        
-        public int raftInterfaceLinewidth;
+        public double raftLineSpacing;
+        public int raftLineSpacing_µm { get { return (int)(raftLineSpacing * 1000); } }
+
+        public double raftBaseThickness;
+        public int raftBaseThickness_µm { get { return (int)(raftBaseThickness * 1000); } }
+
+        public double raftBaseLinewidth;
+        public int raftBaseLinewidth_µm { get { return (int)(raftBaseLinewidth * 1000); } }
+
+        public double raftInterfaceThicknes;
+        public int raftInterfaceThicknes_µm { get { return (int)(raftInterfaceThicknes * 1000); } }
+
+        public double raftInterfaceLinewidth;
+        public int raftInterfaceLinewidth_µm { get { return (int)(raftInterfaceLinewidth * 1000); } }
 
         public FMatrix3x3 modelRotationMatrix = new FMatrix3x3();
 
-        [SettingDescription("Describes if 'positionToPlaceObjectCenterMm' should be used.")]
+        [SettingDescription("Describes if 'positionToPlaceObjectCenter' should be used.")]
         public bool centerObjectInXy;
-        public DoublePoint positionToPlaceObjectCenterMm;
-        public IntPoint objectCenterPosition_µm { get { return new IntPoint(positionToPlaceObjectCenterMm.X * 1000, positionToPlaceObjectCenterMm.Y * 1000); } }
+        public DoublePoint positionToPlaceObjectCenter;
+        public IntPoint objectCenterPosition_µm { get { return new IntPoint(positionToPlaceObjectCenter.X * 1000, positionToPlaceObjectCenter.Y * 1000); } }
 
-        public double objectSinkMm;
-        public int objectSink_µm { get { return (int)(objectSinkMm * 1000); } }
+        [SettingDescription("The amount to clip off the bottom of the part, in millimeters.")]
+        public double bottomClipAmount;
+        public int bottomClipAmount_µm { get { return (int)(bottomClipAmount * 1000); } }
 
         [SettingDescription("You can or them together using '|'.")]
         public ConfigConstants.REPAIR_OUTLINES repairOutlines;
@@ -183,7 +241,7 @@ namespace MatterHackers.MatterSlice
         public ConfigConstants.REPAIR_OVERLAPS repairOverlaps;
         
         public bool spiralizeMode;
-        public ConfigConstants.GCODE_FLAVOR gcodeFlavor;
+        public ConfigConstants.GCODE_OUTPUT_TYPE gcodeOutputType;
 
         public IntPoint[] extruderOffsets = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
         public string startCode;
@@ -196,65 +254,65 @@ namespace MatterHackers.MatterSlice
 
         public void SetToDefault()
         {
-            filamentDiameterMm = 2.89;
+            filamentDiameter = 2.89;
             filamentFlowPercent = 100;
-            firstLayerThicknessMm = .3;
-            layerThicknessMm = .1;
-            firstLayerExtrusionWidthMm = .8;
-            extrusionWidthMm = .4;
+            firstLayerThickness = .3;
+            layerThickness = .1;
+            firstLayerExtrusionWidth = .8;
+            extrusionWidth = .4;
             perimeterCount = 2;
             numberOfBottomLayers = 6;
             numberOfTopLayers = 6;
-            firstLayerSpeedMmPerS = 20;
-            normalPrintSpeedMmPerS = 50;
-            infillSpeedMmPerS = 50;
-            outsidePerimeterSpeedMmPerS = 50;
-            insidePerimeterSpeedMmPerS = 50;
-            travelSpeedMmPerS = 200;
+            firstLayerSpeed = 20;
+            normalPrintSpeed = 50;
+            infillSpeed = 50;
+            outsidePerimeterSpeed = 50;
+            insidePerimetersSpeed = 50;
+            travelSpeed = 200;
             firstLayerToAllowFan = 2;
-            skirtDistanceMm = 6;
-            skirtLineCount = 1;
-            skirtMinLengthMm = 0;
-            sparseInfillLineDistance = 100 * extrusionWidth_µm / 20;
+            skirtDistanceFromObject = 6;
+            skirtLoopCount = 1;
+            skirtMinLength = 0;
+            infillPercent = 20;
             infillOverlapPercent = 15;
-            infillAngleDegrees = 45;
+            infillStartingAngle = 45;
             centerObjectInXy = true;
-            positionToPlaceObjectCenterMm.X = 102.5;
-            positionToPlaceObjectCenterMm.Y = 102.5;
-            objectSinkMm = 0;
+            positionToPlaceObjectCenter.X = 102.5;
+            positionToPlaceObjectCenter.Y = 102.5;
+            bottomClipAmount = 0;
             supportType = ConfigConstants.SUPPORT_TYPE.GRID;
-            supportAngleDegrees = -1;
+            supportStartingAngleDegrees = -1;
             supportEverywhere = 0;
-            supportLineDistance = sparseInfillLineDistance;
+            supportLineDistance = extrusionWidth * 5;
             supportExtruder = -1;
-            supportXYDistance = 700;
-            supportZDistance = 150;
-            retractionAmount = 4500;
-            retractionSpeedMmPerS = 45;
-            retractionAmountExtruderSwitch = 14500;
-            retractionMinimumDistance = 1500;
-            minimumExtrusionBeforeRetractionMm = .1;
+            supportXYDistance = .7;
+            supportZDistance = .15;
+            retractionAmount = 4.5;
+            retractionSpeed = 45;
+            retractionAmountOnExtruderSwitch = 14.5;
+            retractionMinimumDistance = 1.5;
+            minimumExtrusionBeforeRetraction = .1;
             createWipeShield = false;
-            wipeShieldDistanceMm = 2;
+            wipeShieldDistance = 2;
             avoidCrossingPerimeters = true;
             wipeTowerSize = 0;
             multiVolumeOverlapPercent = 0;
 
             minimumLayerTimeSeconds = 5;
-            minimumFeedrateMmPerS = 10;
+            minimumFeedrate = 10;
             doCoolHeadLift = false;
             fanSpeedMinPercent = 100;
             fanSpeedMaxPercent = 100;
 
-            raftExtraDistanceAroundPartMm = 5;
-            raftLineSpacing = 1000;
+            raftExtraDistanceAroundPart = 5;
+            raftLineSpacing = 1;
             raftBaseThickness = 0;
             raftBaseLinewidth = 0;
-            raftInterfaceThickness = 0;
+            raftInterfaceThicknes = 0;
             raftInterfaceLinewidth = 0;
 
             spiralizeMode = false;
-            gcodeFlavor = ConfigConstants.GCODE_FLAVOR.REPRAP;
+            gcodeOutputType = ConfigConstants.GCODE_OUTPUT_TYPE.REPRAP;
 
             startCode =
                             "M109 S210     ;Heatup to 210C\n" +
@@ -349,7 +407,7 @@ namespace MatterHackers.MatterSlice
                     case "REPAIR_OUTLINES":
                     case "REPAIR_OVERLAPS":
                     case "SUPPORT_TYPE":
-                    case "GCODE_FLAVOR":
+                    case "GCODE_OUTPUT_TYPE":
                         // all the enums can be output by this function
                         lines.Add("{0}={1} # {2}{3}".FormatWith(name, value, GetEnumHelpText(field.FieldType, field.FieldType.Name), fieldDescription));
                         break;
@@ -476,7 +534,7 @@ namespace MatterHackers.MatterSlice
 
                         case "FIX_HORRIBLE":
                         case "SUPPORT_TYPE":
-                        case "GCODE_FLAVOR":
+                        case "GCODE_OUTPUT_TYPE":
                             field.SetValue(this, Enum.Parse(field.FieldType, valueToSetTo));
                             break;
 
@@ -596,10 +654,10 @@ namespace MatterHackers.MatterSlice
             LINES
         }
 
-        public enum GCODE_FLAVOR
+        public enum GCODE_OUTPUT_TYPE
         {
             /**
-             * RepRap flavored GCode is Marlin/Sprinter/Repetier based GCode. 
+             * RepRap GCode is Marlin/Sprinter/Repetier based GCode. 
              *  This is the most commonly used GCode set.
              *  G0 for moves, G1 for extrusion.
              *  E values give mm of filament extrusion.
@@ -608,7 +666,7 @@ namespace MatterHackers.MatterSlice
              **/
             REPRAP,
             /**
-             * UltiGCode flavored is Marlin based GCode. 
+             * UltiGCode is Marlin based GCode. 
              *  UltiGCode uses less settings on the slicer and puts more settings in the firmware. This makes for more hardware/material independed GCode.
              *  G0 for moves, G1 for extrusion.
              *  E values give mm^3 of filament extrusion. Ignores the filament diameter setting.
@@ -618,7 +676,7 @@ namespace MatterHackers.MatterSlice
              **/
             ULTIGCODE,
             /**
-             * Makerbot flavored GCode.
+             * Makerbot GCode.
              *  Looks a lot like RepRap GCode with a few changes. Requires MakerWare to convert to X3G files.
              *   Heating needs to be done with M104 Sxxx T0
              *   No G21 or G90
