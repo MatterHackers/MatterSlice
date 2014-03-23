@@ -31,7 +31,7 @@ namespace MatterHackers.MatterSlice
 
     public static class Skin
     {
-        public static void generateSkins(int layerNr, SliceVolumeStorage storage, int extrusionWidth, int downSkinCount, int upSkinCount, int infillOverlap)
+        public static void generateTopAndBottomLayers(int layerNr, SliceVolumeStorage storage, int extrusionWidth, int downSkinCount, int upSkinCount, int infillOverlap)
         {
             SliceLayer layer = storage.layers[layerNr];
 
@@ -55,7 +55,9 @@ namespace MatterHackers.MatterSlice
                     for (int partNr2 = 0; partNr2 < layer2.parts.Count; partNr2++)
                     {
                         if (part.boundaryBox.hit(layer2.parts[partNr2].boundaryBox))
+                        {
                             downskin = downskin.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 1]);
+                        }
                     }
                 }
                 if ((int)(layerNr + upSkinCount) < (int)storage.layers.Count)
@@ -64,7 +66,9 @@ namespace MatterHackers.MatterSlice
                     for (int partNr2 = 0; partNr2 < layer2.parts.Count; partNr2++)
                     {
                         if (part.boundaryBox.hit(layer2.parts[partNr2].boundaryBox))
+                        {
                             upskin = upskin.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 1]);
+                        }
                     }
                 }
 
@@ -83,9 +87,9 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        public static void generateSparse(int layerNr, SliceVolumeStorage storage, int extrusionWidth, int downSkinCount, int upSkinCount)
+        public static void generateSparse(int layerIndex, SliceVolumeStorage storage, int extrusionWidth, int downSkinCount, int upSkinCount)
         {
-            SliceLayer layer = storage.layers[layerNr];
+            SliceLayer layer = storage.layers[layerIndex];
 
             for (int partNr = 0; partNr < layer.parts.Count; partNr++)
             {
@@ -95,9 +99,9 @@ namespace MatterHackers.MatterSlice
                 Polygons downskin = sparse;
                 Polygons upskin = sparse;
 
-                if ((int)(layerNr - downSkinCount) >= 0)
+                if ((int)(layerIndex - downSkinCount) >= 0)
                 {
-                    SliceLayer layer2 = storage.layers[layerNr - downSkinCount];
+                    SliceLayer layer2 = storage.layers[layerIndex - downSkinCount];
                     for (int partNr2 = 0; partNr2 < layer2.parts.Count; partNr2++)
                     {
                         if (part.boundaryBox.hit(layer2.parts[partNr2].boundaryBox))
@@ -113,9 +117,9 @@ namespace MatterHackers.MatterSlice
                         }
                     }
                 }
-                if ((int)(layerNr + upSkinCount) < (int)storage.layers.Count)
+                if ((int)(layerIndex + upSkinCount) < (int)storage.layers.Count)
                 {
-                    SliceLayer layer2 = storage.layers[layerNr + upSkinCount];
+                    SliceLayer layer2 = storage.layers[layerIndex + upSkinCount];
                     for (int partNr2 = 0; partNr2 < layer2.parts.Count; partNr2++)
                     {
                         if (part.boundaryBox.hit(layer2.parts[partNr2].boundaryBox))

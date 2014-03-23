@@ -392,19 +392,6 @@ namespace MatterHackers.MatterSlice
                 }
             }
 
-            /*
-            int q=0;
-            for(int i=0;i<openPolygonList.Count;i++)
-            {
-                if (openPolygonList[i].Count < 2) continue;
-                if (!q) log("***\n");
-                log("S: %f %f\n", float(openPolygonList[i][0].X), float(openPolygonList[i][0].Y));
-                log("E: %f %f\n", float(openPolygonList[i][openPolygonList[i].Count-1].X), float(openPolygonList[i][openPolygonList[i].Count-1].Y));
-                q = 1;
-            }
-            */
-            //if (q) exit(1);
-
             if ((outlineRepairTypes & ConfigConstants.REPAIR_OUTLINES.KEEP_NON_CLOSED) == ConfigConstants.REPAIR_OUTLINES.KEEP_NON_CLOSED)
             {
                 for (int n = 0; n < openPolygonList.Count; n++)
@@ -415,18 +402,16 @@ namespace MatterHackers.MatterSlice
                     }
                 }
             }
-            //Clear the openPolygonList to save memory, the only reason to keep it after this is for debugging.
-            //openPolygonList.clear();
 
             //Remove all the tiny polygons, or polygons that are not closed. As they do not contribute to the actual print.
             int snapDistance = 1000;
-            for (int i = 0; i < polygonList.Count; i++)
+            for (int polygonIndex = 0; polygonIndex < polygonList.Count; polygonIndex++)
             {
                 int length = 0;
 
-                for (int n = 1; n < polygonList[i].Count; n++)
+                for (int intPointIndex = 1; intPointIndex < polygonList[polygonIndex].Count; intPointIndex++)
                 {
-                    length += (polygonList[i][n] - polygonList[i][n - 1]).vSize();
+                    length += (polygonList[polygonIndex][intPointIndex] - polygonList[polygonIndex][intPointIndex - 1]).vSize();
                     if (length > snapDistance)
                     {
                         break;
@@ -434,8 +419,8 @@ namespace MatterHackers.MatterSlice
                 }
                 if (length < snapDistance)
                 {
-                    polygonList.RemoveAt(i);
-                    i--;
+                    polygonList.RemoveAt(polygonIndex);
+                    polygonIndex--;
                 }
             }
 

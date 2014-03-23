@@ -145,7 +145,7 @@ namespace MatterHackers.MatterSlice
             List<Slicer> slicerList = new List<Slicer>();
             for (int volumeIdx = 0; volumeIdx < optomizedModel.volumes.Count; volumeIdx++)
             {
-                Slicer slicer = new Slicer(optomizedModel.volumes[volumeIdx], config.initialLayerThickness_µm, config.layerThickness_µm, config.repairOutlines);
+                Slicer slicer = new Slicer(optomizedModel.volumes[volumeIdx], config.firstLayerThickness_µm, config.layerThickness_µm, config.repairOutlines);
                 slicerList.Add(slicer);
                 for (int layerNr = 0; layerNr < slicer.layers.Count; layerNr++)
                 {
@@ -259,32 +259,32 @@ namespace MatterHackers.MatterSlice
             LogOutput.log("Generated inset in {0:0.000}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();
 
-            for (int layerNr = 0; layerNr < totalLayers; layerNr++)
+            for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
             {
-                //Only generate up/downskin and infill for the first X layers when spiralize is choosen.
-                if (!config.spiralizeMode || (int)(layerNr) < config.numberOfBottomLayers)
+                //Only generate bottom and top layers and infill for the first X layers when spiralize is choosen.
+                if (!config.spiralizeMode || (int)(layerIndex) < config.numberOfBottomLayers)
                 {
-                    for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
+                    for (int volumeIndex = 0; volumeIndex < storage.volumes.Count; volumeIndex++)
                     {
                         int extrusionWidth = config.extrusionWidth_µm;
-                        if (layerNr == 0)
+                        if (layerIndex == 0)
                         {
                             extrusionWidth = config.firstLayerExtrusionWidth_µm;
                         }
 
-                        Skin.generateSkins(layerNr, storage.volumes[volumeIdx], extrusionWidth, config.numberOfBottomLayers, config.numberOfTopLayers, config.infillOverlapPercent);
-                        Skin.generateSparse(layerNr, storage.volumes[volumeIdx], extrusionWidth, config.numberOfBottomLayers, config.numberOfTopLayers);
+                        Skin.generateTopAndBottomLayers(layerIndex, storage.volumes[volumeIndex], extrusionWidth, config.numberOfBottomLayers, config.numberOfTopLayers, config.infillOverlapPercent);
+                        Skin.generateSparse(layerIndex, storage.volumes[volumeIndex], extrusionWidth, config.numberOfBottomLayers, config.numberOfTopLayers);
 
-                        SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
+                        SliceLayer layer = storage.volumes[volumeIndex].layers[layerIndex];
                         for (int partNr = 0; partNr < layer.parts.Count; partNr++)
                         {
-                            LogOutput.logPolygons("skin", layerNr, layer.printZ, layer.parts[partNr].skinOutline);
+                            LogOutput.logPolygons("skin", layerIndex, layer.printZ, layer.parts[partNr].skinOutline);
                         }
                     }
                 }
-                LogOutput.logProgress("skin", layerNr + 1, totalLayers);
+                LogOutput.logProgress("skin", layerIndex + 1, totalLayers);
             }
-            LogOutput.log("Generated up/down skin in {0:0.000}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
+            LogOutput.log("Generated top bottom layers in {0:0.000}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();
 
             if (config.wipeTowerSize > 0)
@@ -299,7 +299,7 @@ namespace MatterHackers.MatterSlice
                 storage.wipePoint = new IntPoint(storage.modelMin.x - 3000 - config.wipeTowerSize / 2, storage.modelMax.y + 3000 + config.wipeTowerSize / 2);
             }
 
-            Skirt.generateSkirt(storage, config.skirtDistance_µm, config.firstLayerExtrusionWidth_µm, config.skirtLineCount, config.skirtMinLength_µm, config.initialLayerThickness_µm);
+            Skirt.generateSkirt(storage, config.skirtDistance_µm, config.firstLayerExtrusionWidth_µm, config.skirtLineCount, config.skirtMinLength_µm, config.firstLayerThickness_µm);
             Raft.generateRaft(storage, config.raftExtraDistanceAroundPart_µm);
 
             for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
@@ -426,7 +426,7 @@ namespace MatterHackers.MatterSlice
                 gcode.writeComment("LAYER:{0}".FormatWith(layerNr));
                 if (layerNr == 0)
                 {
-                    gcode.setExtrusion(config.initialLayerThickness_µm, config.filamentDiameter_µm, config.filamentFlowPercent);
+                    gcode.setExtrusion(config.firstLayerThickness_µm, config.filamentDiameter_µm, config.filamentFlowPercent);
                 }
                 else
                 {
@@ -434,7 +434,7 @@ namespace MatterHackers.MatterSlice
                 }
 
                 GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeedMmPerS, config.retractionMinimumDistance);
-                int z = config.initialLayerThickness_µm + layerNr * config.layerThickness_µm;
+                int z = config.firstLayerThickness_µm + layerNr * config.layerThickness_µm;
                 z += config.raftBaseThickness + config.raftInterfaceThickness;
                 gcode.setZ(z);
 
@@ -479,7 +479,7 @@ namespace MatterHackers.MatterSlice
                 }
                 gcode.writeFanCommand(fanSpeed);
 
-                gcodeLayer.writeGCode(config.doCoolHeadLift, (int)(layerNr) > 0 ? config.layerThickness_µm : config.initialLayerThickness_µm);
+                gcodeLayer.writeGCode(config.doCoolHeadLift, (int)(layerNr) > 0 ? config.layerThickness_µm : config.firstLayerThickness_µm);
             }
 
             LogOutput.log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.Seconds));
@@ -628,7 +628,7 @@ namespace MatterHackers.MatterSlice
                 }
             }
 
-            int z = config.initialLayerThickness_µm + layerNr * config.layerThickness_µm;
+            int z = config.firstLayerThickness_µm + layerNr * config.layerThickness_µm;
             SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, z);
             for (int volumeCnt = 0; volumeCnt < storage.volumes.Count; volumeCnt++)
             {

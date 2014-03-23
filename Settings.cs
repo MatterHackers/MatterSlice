@@ -76,8 +76,8 @@ namespace MatterHackers.MatterSlice
         public double layerThicknessMm;
         public int layerThickness_µm { get { return (int)(layerThicknessMm * 1000); } }
 
-        public double initialLayerThicknessMm;
-        public int initialLayerThickness_µm { get { return (int)(initialLayerThicknessMm * 1000); } }
+        public double firstLayerThicknessMm;
+        public int firstLayerThickness_µm { get { return (int)(firstLayerThicknessMm * 1000); } }
 
         public double filamentDiameterMm;
         public int filamentDiameter_µm { get { return (int)(filamentDiameterMm * 1000); } }
@@ -198,7 +198,7 @@ namespace MatterHackers.MatterSlice
         {
             filamentDiameterMm = 2.89;
             filamentFlowPercent = 100;
-            initialLayerThicknessMm = .3;
+            firstLayerThicknessMm = .3;
             layerThicknessMm = .1;
             firstLayerExtrusionWidthMm = .8;
             extrusionWidthMm = .4;
