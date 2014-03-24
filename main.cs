@@ -31,7 +31,7 @@ namespace MatterHackers.MatterSlice
             LogOutput.logError("usage: MatterSlice [-h] [-d] [-v] [-m 3x3matrix] [-c <config file>]\n       [-s <settingkey>=<value>] -o <output.gcode> <model.stl>\n\n");
             LogOutput.logError("    [] enclose optional settings, <> are required.\n\n");
             LogOutput.logError("    -h Show this message.\n");
-            LogOutput.logError("    -d Save a default.ini (usefull to see all settings).\n");
+            LogOutput.logError("    -d Save the currently loaded settings to settings.ini (usefull to see all settings).\n");
             LogOutput.logError("    -v Increment verbose level.\n");
             LogOutput.logError("    -m A 3x3 matrix for translating and rotating the layers.\n");
             LogOutput.logError("    -c A config file to apply to the current settings.\n       Can be applyed multiple times.\n       Formated like the default.ini (partial settings are fine).\n");
@@ -63,7 +63,6 @@ namespace MatterHackers.MatterSlice
 
             LogOutput.log("\nMatterSlice version {0}\n\n".FormatWith(ConfigConstants.VERSION));
 
-            config.DumpSettings("settings.ini");
             for (int argn = 0; argn < args.Length; argn++)
             {
                 string str = args[argn];
@@ -104,6 +103,10 @@ namespace MatterHackers.MatterSlice
                                         LogOutput.logError("Failed to read config '{0}'\n".FormatWith(args[argn]));
                                     }
                                 }
+                                break;
+
+                            case 'd':
+                                config.DumpSettings("settings.ini");
                                 break;
 
                             case 's':
