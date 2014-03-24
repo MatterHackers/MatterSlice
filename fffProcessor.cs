@@ -191,20 +191,20 @@ namespace MatterHackers.MatterSlice
 #endif
 
             int totalLayers = storage.volumes[0].layers.Count;
-            for (int layerNr = 0; layerNr < totalLayers; layerNr++)
+            for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
             {
-                for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
+                for (int volumeIndex = 0; volumeIndex < storage.volumes.Count; volumeIndex++)
                 {
                     int insetCount = config.perimeterCount;
-                    if (config.continuousSpiralOuterPerimeter && (int)(layerNr) < config.numberOfBottomLayers && layerNr % 2 == 1)
+                    if (config.continuousSpiralOuterPerimeter && (int)(layerIndex) < config.numberOfBottomLayers && layerIndex % 2 == 1)
                     {
                         //Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
                         insetCount += 5;
                     }
 
-                    SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
+                    SliceLayer layer = storage.volumes[volumeIndex].layers[layerIndex];
                     int extrusionWidth = config.extrusionWidth_µm;
-                    if (layerNr == 0)
+                    if (layerIndex == 0)
                     {
                         extrusionWidth = config.firstLayerExtrusionWidth_µm;
                     }
@@ -214,46 +214,46 @@ namespace MatterHackers.MatterSlice
                     {
                         if (layer.parts[partNr].insets.Count > 0)
                         {
-                            LogOutput.logPolygons("inset0", layerNr, layer.printZ, layer.parts[partNr].insets[0]);
+                            LogOutput.logPolygons("inset0", layerIndex, layer.printZ, layer.parts[partNr].insets[0]);
                             for (int inset = 1; inset < layer.parts[partNr].insets.Count; inset++)
                             {
-                                LogOutput.logPolygons("insetx", layerNr, layer.printZ, layer.parts[partNr].insets[inset]);
+                                LogOutput.logPolygons("insetx", layerIndex, layer.printZ, layer.parts[partNr].insets[inset]);
                             }
                         }
                     }
                 }
-                LogOutput.logProgress("inset", layerNr + 1, totalLayers);
+                LogOutput.logProgress("inset", layerIndex + 1, totalLayers);
             }
 
             if (config.createWipeShield)
             {
                 for (int layerNr = 0; layerNr < totalLayers; layerNr++)
                 {
-                    Polygons oozeShield = new Polygons();
+                    Polygons wipeShield = new Polygons();
                     for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
                     {
                         for (int partNr = 0; partNr < storage.volumes[volumeIdx].layers[layerNr].parts.Count; partNr++)
                         {
-                            oozeShield = oozeShield.CreateUnion(storage.volumes[volumeIdx].layers[layerNr].parts[partNr].outline.Offset(config.wipeShieldDistance_µm));
+                            wipeShield = wipeShield.CreateUnion(storage.volumes[volumeIdx].layers[layerNr].parts[partNr].outline.Offset(config.wipeShieldDistance_µm));
                         }
                     }
-                    storage.oozeShield.Add(oozeShield);
+                    storage.wipeShield.Add(wipeShield);
                 }
 
-                for (int layerNr = 0; layerNr < totalLayers; layerNr++)
+                for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
                 {
-                    storage.oozeShield[layerNr] = storage.oozeShield[layerNr].Offset(-1000).Offset(1000);
+                    storage.wipeShield[layerIndex] = storage.wipeShield[layerIndex].Offset(-1000).Offset(1000);
                 }
 
-                int offsetAngle = (int)Math.Tan(60.0 * Math.PI / 180) * config.layerThickness_µm;//Allow for a 60deg angle in the oozeShield.
+                int offsetAngle = (int)Math.Tan(60.0 * Math.PI / 180) * config.layerThickness_µm;//Allow for a 60deg angle in the wipeShield.
                 for (int layerNr = 1; layerNr < totalLayers; layerNr++)
                 {
-                    storage.oozeShield[layerNr] = storage.oozeShield[layerNr].CreateUnion(storage.oozeShield[layerNr - 1].Offset(-offsetAngle));
+                    storage.wipeShield[layerNr] = storage.wipeShield[layerNr].CreateUnion(storage.wipeShield[layerNr - 1].Offset(-offsetAngle));
                 }
 
                 for (int layerNr = totalLayers - 1; layerNr > 0; layerNr--)
                 {
-                    storage.oozeShield[layerNr - 1] = storage.oozeShield[layerNr - 1].CreateUnion(storage.oozeShield[layerNr].Offset(-offsetAngle));
+                    storage.wipeShield[layerNr - 1] = storage.wipeShield[layerNr - 1].CreateUnion(storage.wipeShield[layerNr].Offset(-offsetAngle));
                 }
             }
             LogOutput.log("Generated inset in {0:0.000}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
@@ -507,11 +507,11 @@ namespace MatterHackers.MatterSlice
                 addWipeTower(storage, gcodeLayer, layerNr, prevExtruder, extrusionWidth);
             }
 
-            if (storage.oozeShield.Count > 0 && storage.volumes.Count > 1)
+            if (storage.wipeShield.Count > 0 && storage.volumes.Count > 1)
             {
                 gcodeLayer.setAlwaysRetract(true);
-                gcodeLayer.writePolygonsByOptimizer(storage.oozeShield[layerNr], skirtConfig);
-                LogOutput.logPolygons("oozeshield", layerNr, layer.printZ, storage.oozeShield[layerNr]);
+                gcodeLayer.writePolygonsByOptimizer(storage.wipeShield[layerNr], skirtConfig);
+                LogOutput.logPolygons("wipeShield", layerNr, layer.printZ, storage.wipeShield[layerNr]);
                 gcodeLayer.setAlwaysRetract(!config.avoidCrossingPerimeters);
             }
 
@@ -620,10 +620,10 @@ namespace MatterHackers.MatterSlice
                     addWipeTower(storage, gcodeLayer, layerNr, prevExtruder, extrusionWidth);
                 }
 
-                if (storage.oozeShield.Count > 0 && storage.volumes.Count == 1)
+                if (storage.wipeShield.Count > 0 && storage.volumes.Count == 1)
                 {
                     gcodeLayer.setAlwaysRetract(true);
-                    gcodeLayer.writePolygonsByOptimizer(storage.oozeShield[layerNr], skirtConfig);
+                    gcodeLayer.writePolygonsByOptimizer(storage.wipeShield[layerNr], skirtConfig);
                     gcodeLayer.setAlwaysRetract(config.avoidCrossingPerimeters);
                 }
             }

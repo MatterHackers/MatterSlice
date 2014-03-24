@@ -100,7 +100,7 @@ namespace MatterHackers.MatterSlice
         public Point3 modelSize, modelMin, modelMax;
         public Polygons skirt = new Polygons();
         public Polygons raftOutline = new Polygons();
-        public List<Polygons> oozeShield = new List<Polygons>();
+        public List<Polygons> wipeShield = new List<Polygons>();
         public List<SliceVolumeStorage> volumes = new List<SliceVolumeStorage>();
 
         public SupportStorage support = new SupportStorage();

@@ -177,7 +177,7 @@ namespace MatterHackers.MatterSlice
         public int outsidePerimeterSpeed;
         [SettingDescription("The speed of all perimeters but the outside one. mm/s.")]
         public int insidePerimetersSpeed;
-        [SettingDescription("mm/s.")]
+        [SettingDescription("The speed to move when not extruding material. mm/s.")]
         public int travelSpeed;
 
         //Support material

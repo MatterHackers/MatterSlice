@@ -51,22 +51,6 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        static int compare_long(long a, long b)
-        {
-            long n = a - b;
-            if (n < 0)
-            {
-                return -1;
-            }
-
-            if (n > 0)
-            {
-                return 1;
-            }
-
-            return 0;
-        }
-
         public static void generateLineInfill(Polygons in_outline, Polygons result, int extrusionWidth, int lineSpacing, int infillExtendIntoPerimeter_µm, double rotation)
         {
             Polygons outlines = in_outline.Offset(infillExtendIntoPerimeter_µm);
