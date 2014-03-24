@@ -95,7 +95,7 @@ namespace MatterHackers.MatterSlice
         public double extrusionWidth;
         public int extrusionWidth_µm { get { return (int)(extrusionWidth * 1000); } }
 
-        public int perimeterCount;
+        public int numberOfPerimeters;
         public int numberOfBottomLayers;
         public int numberOfTopLayers;
 
@@ -118,8 +118,8 @@ namespace MatterHackers.MatterSlice
         }
 
         [SettingDescription("The amount the infill extends into the perimeter in millimeters.")]
-        public double infillExtendIntoPerimeter;
-        public int infillExtendIntoPerimeter_µm { get { return (int)(infillExtendIntoPerimeter * 1000); } }
+        public double infillOverlapPerimeter;
+        public int infillOverlapPerimeter_µm { get { return (int)(infillOverlapPerimeter * 1000); } }
 
         public int infillStartingAngle;
 
@@ -128,7 +128,7 @@ namespace MatterHackers.MatterSlice
         public int skirtDistance_µm { get { return (int)(skirtDistanceFromObject * 1000); } }
 
         [SettingDescription("The number of loops to draw around objects. Can be used to help hold them down.")]
-        public int skirtLoopCount;
+        public int numberOfSkirtLoops;
         
         [SettingDescription("The minimum length of line to draw, in millimeters.")]
         public int skirtMinLength;
@@ -162,8 +162,10 @@ namespace MatterHackers.MatterSlice
         [SettingDescription("mm.")]
         public double wipeShieldDistance;
         public int wipeShieldDistance_µm { get { return (int)(wipeShieldDistance * 1000); } }
-        
-        public int wipeTowerSize;
+
+        [SettingDescription("Unlike the wipe shield this is a square of size X size in the lower left corner for wiping during extruder changing.")]
+        public double wipeTowerSize;
+        public int wipeTowerSize_µm { get { return (int)(wipeTowerSize * 1000); } }
         public int multiVolumeOverlapPercent;
 
         // speed settings
@@ -235,7 +237,7 @@ namespace MatterHackers.MatterSlice
         [SettingDescription("Describes if 'positionToPlaceObjectCenter' should be used.")]
         public bool centerObjectInXy;
         public DoublePoint positionToPlaceObjectCenter;
-        public IntPoint objectCenterPosition_µm { get { return new IntPoint(positionToPlaceObjectCenter.X * 1000, positionToPlaceObjectCenter.Y * 1000); } }
+        public IntPoint positionToPlaceObjectCenter_µm { get { return new IntPoint(positionToPlaceObjectCenter.X * 1000, positionToPlaceObjectCenter.Y * 1000); } }
 
         [SettingDescription("The amount to clip off the bottom of the part, in millimeters.")]
         public double bottomClipAmount;
@@ -249,7 +251,7 @@ namespace MatterHackers.MatterSlice
 
         [SettingDescription("This will cause the z height to raise continuously while on the outer perimeter.")]
         public bool continuousSpiralOuterPerimeter;
-        public ConfigConstants.GCODE_OUTPUT_TYPE gcodeOutputType;
+        public ConfigConstants.OUTPUT_TYPE outputType;
 
         public IntPoint[] extruderOffsets = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
         public string startCode;
@@ -268,7 +270,7 @@ namespace MatterHackers.MatterSlice
             layerThickness = .1;
             firstLayerExtrusionWidth = .8;
             extrusionWidth = .4;
-            perimeterCount = 2;
+            numberOfPerimeters = 2;
             numberOfBottomLayers = 6;
             numberOfTopLayers = 6;
             firstLayerSpeed = 20;
@@ -279,10 +281,10 @@ namespace MatterHackers.MatterSlice
             travelSpeed = 200;
             firstLayerToAllowFan = 2;
             skirtDistanceFromObject = 6;
-            skirtLoopCount = 1;
+            numberOfSkirtLoops = 1;
             skirtMinLength = 0;
             infillPercent = 20;
-            infillExtendIntoPerimeter = .06;
+            infillOverlapPerimeter = .06;
             infillStartingAngle = 45;
             centerObjectInXy = true;
             positionToPlaceObjectCenter.X = 102.5;
@@ -320,7 +322,7 @@ namespace MatterHackers.MatterSlice
             raftInterfaceLinewidth = 0;
 
             continuousSpiralOuterPerimeter = false;
-            gcodeOutputType = ConfigConstants.GCODE_OUTPUT_TYPE.REPRAP;
+            outputType = ConfigConstants.OUTPUT_TYPE.REPRAP;
 
             startCode =
                             "M109 S210     ;Heatup to 210C\n" +
@@ -415,7 +417,7 @@ namespace MatterHackers.MatterSlice
                     case "REPAIR_OUTLINES":
                     case "REPAIR_OVERLAPS":
                     case "SUPPORT_TYPE":
-                    case "GCODE_OUTPUT_TYPE":
+                    case "OUTPUT_TYPE":
                         // all the enums can be output by this function
                         lines.Add("{0}={1} # {2}{3}".FormatWith(name, value, GetEnumHelpText(field.FieldType, field.FieldType.Name), fieldDescription));
                         break;
@@ -540,9 +542,10 @@ namespace MatterHackers.MatterSlice
                             field.SetValue(this, valueToSetTo);
                             break;
 
-                        case "FIX_HORRIBLE":
+                        case "REPAIR_OVERLAPS":
+                        case "REPAIR_OUTLINES":
                         case "SUPPORT_TYPE":
-                        case "GCODE_OUTPUT_TYPE":
+                        case "OUTPUT_TYPE":
                             field.SetValue(this, Enum.Parse(field.FieldType, valueToSetTo));
                             break;
 
@@ -663,7 +666,7 @@ namespace MatterHackers.MatterSlice
             LINES
         }
 
-        public enum GCODE_OUTPUT_TYPE
+        public enum OUTPUT_TYPE
         {
             /**
              * RepRap GCode is Marlin/Sprinter/Repetier based GCode. 

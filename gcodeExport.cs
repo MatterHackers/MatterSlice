@@ -47,7 +47,7 @@ namespace MatterHackers.MatterSlice
         bool isRetracted;
         int extruderNr;
         int currentFanSpeed;
-        ConfigConstants.GCODE_OUTPUT_TYPE outputType;
+        ConfigConstants.OUTPUT_TYPE outputType;
 
         double[] totalFilament = new double[ConfigConstants.MAX_EXTRUDERS];
         double totalPrintTime;
@@ -73,7 +73,7 @@ namespace MatterHackers.MatterSlice
             currentSpeed = 0;
             retractionSpeed = 45;
             isRetracted = true;
-            SetOutputType(ConfigConstants.GCODE_OUTPUT_TYPE.REPRAP);
+            SetOutputType(ConfigConstants.OUTPUT_TYPE.REPRAP);
             f = new StreamWriter(Console.OpenStandardOutput());
         }
 
@@ -108,10 +108,10 @@ namespace MatterHackers.MatterSlice
             extruderOffset[id] = p;
         }
 
-        public void SetOutputType(ConfigConstants.GCODE_OUTPUT_TYPE outputType)
+        public void SetOutputType(ConfigConstants.OUTPUT_TYPE outputType)
         {
             this.outputType = outputType;
-            if (outputType == ConfigConstants.GCODE_OUTPUT_TYPE.MACH3)
+            if (outputType == ConfigConstants.OUTPUT_TYPE.MACH3)
             {
                 for (int n = 0; n < ConfigConstants.MAX_EXTRUDERS; n++)
                 {
@@ -127,7 +127,7 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        public ConfigConstants.GCODE_OUTPUT_TYPE GetOutputType()
+        public ConfigConstants.OUTPUT_TYPE GetOutputType()
         {
             return this.outputType;
         }
@@ -146,7 +146,7 @@ namespace MatterHackers.MatterSlice
         public void setExtrusion(int layerThickness, int filamentDiameter, int flowPercent)
         {
             double filamentArea = Math.PI * ((double)(filamentDiameter) / 1000.0 / 2.0) * ((double)(filamentDiameter) / 1000.0 / 2.0);
-            if (outputType == ConfigConstants.GCODE_OUTPUT_TYPE.ULTIGCODE)//UltiGCode uses volume extrusion as E value, and thus does not need the filamentArea in the mix.
+            if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)//UltiGCode uses volume extrusion as E value, and thus does not need the filamentArea in the mix.
             {
                 extrusionPerMM = (double)(layerThickness) / 1000.0;
             }
@@ -218,7 +218,7 @@ namespace MatterHackers.MatterSlice
 
         public void resetExtrusionValue()
         {
-            if (extrusionAmount != 0.0 && outputType != ConfigConstants.GCODE_OUTPUT_TYPE.MAKERBOT)
+            if (extrusionAmount != 0.0 && outputType != ConfigConstants.OUTPUT_TYPE.MAKERBOT)
             {
                 f.Write("G92 {0}0\n".FormatWith(extruderCharacter[extruderNr]));
                 totalFilament[extruderNr] += extrusionAmount;
@@ -240,7 +240,7 @@ namespace MatterHackers.MatterSlice
 
         public void writeMove(IntPoint p, int speed, int lineWidth)
         {
-            if (outputType == ConfigConstants.GCODE_OUTPUT_TYPE.BFB)
+            if (outputType == ConfigConstants.OUTPUT_TYPE.BFB)
             {
                 //For Bits From Bytes machines, we need to handle this completely differently. As they do not use E values, they use RPM values
                 double fspeed = speed * 60;
@@ -290,7 +290,7 @@ namespace MatterHackers.MatterSlice
                             f.Write("G1 Z{0:0.00}\n".FormatWith(currentPosition.z - retractionZHop));
                         }
 
-                        if (outputType == ConfigConstants.GCODE_OUTPUT_TYPE.ULTIGCODE)
+                        if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
                         {
                             f.Write("G11\n");
                         }
@@ -347,14 +347,14 @@ namespace MatterHackers.MatterSlice
 
         public void writeRetraction()
         {
-            if (outputType == ConfigConstants.GCODE_OUTPUT_TYPE.BFB)//BitsFromBytes does automatic retraction.
+            if (outputType == ConfigConstants.OUTPUT_TYPE.BFB)//BitsFromBytes does automatic retraction.
             {
                 return;
             }
 
             if (retractionAmount > 0 && !isRetracted && extrusionAmountAtPreviousRetraction + minimumExtrusionBeforeRetraction < extrusionAmount)
             {
-                if (outputType == ConfigConstants.GCODE_OUTPUT_TYPE.ULTIGCODE)
+                if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
                 {
                     f.Write("G10\n");
                 }
@@ -380,7 +380,7 @@ namespace MatterHackers.MatterSlice
                 return;
             }
 
-            if (outputType == ConfigConstants.GCODE_OUTPUT_TYPE.ULTIGCODE)
+            if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
             {
                 f.Write("G10 S1\n");
             }
@@ -392,13 +392,13 @@ namespace MatterHackers.MatterSlice
 
             resetExtrusionValue();
             extruderNr = newExtruder;
-            if (outputType == ConfigConstants.GCODE_OUTPUT_TYPE.MACH3)
+            if (outputType == ConfigConstants.OUTPUT_TYPE.MACH3)
             {
                 resetExtrusionValue();
             }
 
             isRetracted = true;
-            if (outputType == ConfigConstants.GCODE_OUTPUT_TYPE.MAKERBOT)
+            if (outputType == ConfigConstants.OUTPUT_TYPE.MAKERBOT)
             {
                 f.Write("M135 T{0}\n".FormatWith(extruderNr));
             }
@@ -419,14 +419,14 @@ namespace MatterHackers.MatterSlice
                 return;
             if (speed > 0)
             {
-                if (outputType == ConfigConstants.GCODE_OUTPUT_TYPE.MAKERBOT)
+                if (outputType == ConfigConstants.OUTPUT_TYPE.MAKERBOT)
                     f.Write("M126 T0 ; value = {0}\n".FormatWith(speed * 255 / 100));
                 else
                     f.Write("M106 S{0}\n".FormatWith(speed * 255 / 100));
             }
             else
             {
-                if (outputType == ConfigConstants.GCODE_OUTPUT_TYPE.MAKERBOT)
+                if (outputType == ConfigConstants.OUTPUT_TYPE.MAKERBOT)
                     f.Write("M127 T0\n");
                 else
                     f.Write("M107\n");
@@ -471,7 +471,7 @@ namespace MatterHackers.MatterSlice
             LogOutput.log("Filament: {0}\n".FormatWith((int)(getTotalFilamentUsed(0))));
             LogOutput.log("Filament2: {0}\n".FormatWith((int)(getTotalFilamentUsed(1))));
 
-            if (GetOutputType() == ConfigConstants.GCODE_OUTPUT_TYPE.ULTIGCODE)
+            if (GetOutputType() == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
             {
                 string numberString;
                 numberString = "{0}".FormatWith((int)(getTotalPrintTime()));
