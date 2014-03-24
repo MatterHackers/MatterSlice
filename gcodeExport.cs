@@ -208,12 +208,12 @@ namespace MatterHackers.MatterSlice
 
         public void writeComment(string comment)
         {
-            f.Write(";{0}\n".FormatWith(comment));
+            f.Write("; {0}\n".FormatWith(comment));
         }
 
         public void writeLine(string line)
         {
-            f.Write(";{0}\n".FormatWith(line));
+            f.Write("{0}\n".FormatWith(line));
         }
 
         public void resetExtrusionValue()
@@ -462,6 +462,11 @@ namespace MatterHackers.MatterSlice
             setZ(maxObjectHeight + 5000);
             writeMove(getPositionXY(), moveSpeed, 0);
             writeCode(endCode);
+            writeComment("filament used = {0:0.0}".FormatWith(getTotalFilamentUsed(0) + getTotalFilamentUsed(1)));
+            writeComment("filament used extruder 1 (mm) = {0:0.0}".FormatWith(getTotalFilamentUsed(0)));
+            writeComment("filament used extruder 2 (mm) = {0:0.0}".FormatWith(getTotalFilamentUsed(1)));
+            writeComment("total print time (s) = {0:0}".FormatWith(getTotalPrintTime()));
+            
             LogOutput.log("Print time: {0}\n".FormatWith((int)(getTotalPrintTime())));
             LogOutput.log("Filament: {0}\n".FormatWith((int)(getTotalFilamentUsed(0))));
             LogOutput.log("Filament2: {0}\n".FormatWith((int)(getTotalFilamentUsed(1))));
