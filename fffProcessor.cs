@@ -100,11 +100,11 @@ namespace MatterHackers.MatterSlice
 
         void preSetup(int extrusionWidth)
         {
-            skirtConfig.setData(config.normalPrintSpeed, extrusionWidth, "SKIRT");
+            skirtConfig.setData(config.supportMaterialSpeed, extrusionWidth, "SKIRT");
             inset0Config.setData(config.outsidePerimeterSpeed, extrusionWidth, "WALL-OUTER");
             insetXConfig.setData(config.insidePerimetersSpeed, extrusionWidth, "WALL-INNER");
             fillConfig.setData(config.infillSpeed, extrusionWidth, "FILL");
-            supportConfig.setData(config.normalPrintSpeed, extrusionWidth, "SUPPORT");
+            supportConfig.setData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT");
 
             for (int n = 1; n < ConfigConstants.MAX_EXTRUDERS; n++)
             {
@@ -416,11 +416,11 @@ namespace MatterHackers.MatterSlice
                 }
                 else
                 {
-                    skirtConfig.setData(config.normalPrintSpeed, extrusionWidth, "SKIRT");
+                    skirtConfig.setData(config.supportMaterialSpeed, extrusionWidth, "SKIRT");
                     inset0Config.setData(config.outsidePerimeterSpeed, extrusionWidth, "WALL-OUTER");
                     insetXConfig.setData(config.insidePerimetersSpeed, extrusionWidth, "WALL-INNER");
                     fillConfig.setData(config.infillSpeed, extrusionWidth, "FILL");
-                    supportConfig.setData(config.normalPrintSpeed, extrusionWidth, "SUPPORT");
+                    supportConfig.setData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT");
                 }
 
                 gcode.writeComment("LAYER:{0}".FormatWith(layerNr));

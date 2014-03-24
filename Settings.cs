@@ -129,8 +129,8 @@ namespace MatterHackers.MatterSlice
 
         [SettingDescription("The number of loops to draw around objects. Can be used to help hold them down.")]
         public int numberOfSkirtLoops;
-        
-        [SettingDescription("The minimum length of line to draw, in millimeters.")]
+
+        [SettingDescription("The minimum length of the skirt line, in millimeters.")]
         public int skirtMinLength;
         public int skirtMinLength_µm { get { return (int)(skirtMinLength * 1000); } }
 
@@ -172,7 +172,7 @@ namespace MatterHackers.MatterSlice
         [SettingDescription("mm/s.")]
         public int firstLayerSpeed;
         [SettingDescription("mm/s.")]
-        public int normalPrintSpeed;
+        public int supportMaterialSpeed;
         [SettingDescription("mm/s.")]
         public int infillSpeed;
         [SettingDescription("The speed of the first perimeter. mm/s.")]
@@ -274,7 +274,7 @@ namespace MatterHackers.MatterSlice
             numberOfBottomLayers = 6;
             numberOfTopLayers = 6;
             firstLayerSpeed = 20;
-            normalPrintSpeed = 50;
+            supportMaterialSpeed = 40;
             infillSpeed = 50;
             outsidePerimeterSpeed = 50;
             insidePerimetersSpeed = 50;
