@@ -140,6 +140,7 @@ namespace MatterHackers.MatterSlice
                                 break;
 
                             default:
+                                throw new NotImplementedException("Unknown option: {0}\n".FormatWith(str));
                                 LogOutput.logError("Unknown option: {0}\n".FormatWith(str));
                                 break;
                         }
