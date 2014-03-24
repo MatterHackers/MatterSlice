@@ -134,10 +134,10 @@ namespace MatterHackers.MatterSlice
         public int skirtMinLength;
         public int skirtMinLength_µm { get { return (int)(skirtMinLength * 1000); } }
 
-        public double retractionAmount;
-        public int retractionAmount_µm { get { return (int)(retractionAmount * 1000); } }
-        public double retractionAmountOnExtruderSwitch;
-        public int retractionAmountOnExtruderSwitch_µm { get { return (int)(retractionAmountOnExtruderSwitch * 1000); } }
+        public double retractionOnTravel;
+        public int retractionAmount_µm { get { return (int)(retractionOnTravel * 1000); } }
+        public double retractionOnExtruderSwitch;
+        public int retractionAmountOnExtruderSwitch_µm { get { return (int)(retractionOnExtruderSwitch * 1000); } }
 
         [SettingDescription("mm/s.")]
         public int retractionSpeed;
@@ -186,8 +186,8 @@ namespace MatterHackers.MatterSlice
         [SettingDescription("If True, support will be generated within the part as well as from the bed.")]
         public bool generateInternalSupport;
         
-        public double supportLineDistance;
-        public int supportLineDistance_µm { get { return (int)(supportLineDistance * 1000); } }
+        public double supportLineSpacing;
+        public int supportLineSpacing_µm { get { return (int)(supportLineSpacing * 1000); } }
 
         [SettingDescription("The closest xy distance that support will be to the object. mm/s.")]
         public double supportXYDistanceFromObject;
@@ -246,8 +246,9 @@ namespace MatterHackers.MatterSlice
 
         [SettingDescription("You can or them together using '|'.")]
         public ConfigConstants.REPAIR_OVERLAPS repairOverlaps;
-        
-        public bool spiralizeMode;
+
+        [SettingDescription("This will cause the z height to raise continuously while on the outer perimeter.")]
+        public bool continuousSpiralOuterPerimeter;
         public ConfigConstants.GCODE_OUTPUT_TYPE gcodeOutputType;
 
         public IntPoint[] extruderOffsets = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
@@ -290,13 +291,13 @@ namespace MatterHackers.MatterSlice
             supportType = ConfigConstants.SUPPORT_TYPE.NONE;
             supportStartingAngleDegrees = 0;
             generateInternalSupport = true;
-            supportLineDistance = extrusionWidth * 5;
+            supportLineSpacing = extrusionWidth * 5;
             supportExtruder = -1;
             supportXYDistanceFromObject = .7;
             supportZDistanceFromObject = .15;
-            retractionAmount = 4.5;
+            retractionOnTravel = 4.5;
             retractionSpeed = 45;
-            retractionAmountOnExtruderSwitch = 14.5;
+            retractionOnExtruderSwitch = 14.5;
             minimumTravelToCauseRetraction = 1.5;
             minimumExtrusionBeforeRetraction = .1;
             createWipeShield = false;
@@ -318,7 +319,7 @@ namespace MatterHackers.MatterSlice
             raftInterfaceThicknes = 0;
             raftInterfaceLinewidth = 0;
 
-            spiralizeMode = false;
+            continuousSpiralOuterPerimeter = false;
             gcodeOutputType = ConfigConstants.GCODE_OUTPUT_TYPE.REPRAP;
 
             startCode =

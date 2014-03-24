@@ -275,7 +275,7 @@ namespace MatterHackers.MatterSlice
                         isRetracted = true;
                     }
                 }
-                f.Write("G1 X{0:0.00} Y{1:0.00} Z{0:0.00} F{0:0.0}\n".FormatWith((double)(p.X - extruderOffset[extruderNr].X) / 1000, (double)(p.Y - extruderOffset[extruderNr].Y) / 1000, (double)(zPos) / 1000, fspeed));
+                f.Write("G1 X{0:0.00} Y{1:0.00} Z{2:0.00} F{3:0.0}\n".FormatWith((double)(p.X - extruderOffset[extruderNr].X) / 1000, (double)(p.Y - extruderOffset[extruderNr].Y) / 1000, (double)(zPos) / 1000, fspeed));
             }
             else
             {
@@ -331,12 +331,19 @@ namespace MatterHackers.MatterSlice
                 {
                     f.Write(" {0}{1:0.00000}".FormatWith(extruderCharacter[extruderNr], extrusionAmount));
                 }
+                int totalSecondsInPrintAsInt = (int)(totalPrintTime + estimateCalculator.calculate() + .5);
+                if (totalSecondsInPrintAsInt > lastSecondsWriten)
+                {
+                    f.Write(" ; s:{0:0}", totalSecondsInPrintAsInt);
+                    lastSecondsWriten = totalSecondsInPrintAsInt;
+                }
                 f.Write("\n");
             }
 
             currentPosition = new Point3(p.X, p.Y, zPos);
             estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition.x) / 1000.0, (currentPosition.y) / 1000.0, (double)(currentPosition.z) / 1000.0, extrusionAmount), speed);
         }
+        int lastSecondsWriten = 0;
 
         public void writeRetraction()
         {
@@ -732,16 +739,24 @@ namespace MatterHackers.MatterSlice
             {
                 double minExtrudeTime = minTime - travelTime;
                 if (minExtrudeTime < 1)
+                {
                     minExtrudeTime = 1;
+                }
+
                 double factor = extrudeTime / minExtrudeTime;
                 for (int n = 0; n < paths.Count; n++)
                 {
                     GCodePath path = paths[n];
                     if (path.config.lineWidth == 0)
+                    {
                         continue;
+                    }
+
                     int speed = (int)(path.config.speed * factor);
                     if (speed < minimumSpeed)
+                    {
                         factor = (double)(minimumSpeed) / (double)(path.config.speed);
+                    }
                 }
 
                 //Only slow down with the minimum time if that will be slower then a factor already set. First layer slowdown also sets the speed factor.
@@ -789,12 +804,17 @@ namespace MatterHackers.MatterSlice
                     gcode.writeComment("TYPE:{0}".FormatWith(path.config.name));
                     lastConfig = path.config;
                 }
+                
                 int speed = path.config.speed;
-
-                if (path.config.lineWidth != 0)// Only apply the extrudeSpeedFactor to extrusion moves
+                if (path.config.lineWidth != 0)
+                {
+                    // Only apply the extrudeSpeedFactor to extrusion moves
                     speed = speed * extrudeSpeedFactor / 100;
+                }
                 else
+                {
                     speed = speed * travelSpeedFactor / 100;
+                }
 
                 if (path.points.Count == 1 && path.config != travelConfig && (gcode.getPositionXY() - path.points[0]).shorterThen(path.config.lineWidth * 2))
                 {

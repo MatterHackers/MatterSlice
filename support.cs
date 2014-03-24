@@ -240,7 +240,9 @@ namespace MatterHackers.MatterSlice
             this.everywhere = storage.everywhere;
 
             if (!storage.generated)
+            {
                 return;
+            }
 
             cosAngle = Math.Cos((double)(90 - storage.angle) / 180.0 * Math.PI) - 0.01;
             this.supportZDistance = storage.ZDistance;

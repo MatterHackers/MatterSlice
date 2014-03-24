@@ -196,7 +196,7 @@ namespace MatterHackers.MatterSlice
                 for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
                 {
                     int insetCount = config.perimeterCount;
-                    if (config.spiralizeMode && (int)(layerNr) < config.numberOfBottomLayers && layerNr % 2 == 1)
+                    if (config.continuousSpiralOuterPerimeter && (int)(layerNr) < config.numberOfBottomLayers && layerNr % 2 == 1)
                     {
                         //Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
                         insetCount += 5;
@@ -262,7 +262,7 @@ namespace MatterHackers.MatterSlice
             for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
             {
                 //Only generate bottom and top layers and infill for the first X layers when spiralize is choosen.
-                if (!config.spiralizeMode || (int)(layerIndex) < config.numberOfBottomLayers)
+                if (!config.continuousSpiralOuterPerimeter || (int)(layerIndex) < config.numberOfBottomLayers)
                 {
                     for (int volumeIndex = 0; volumeIndex < storage.volumes.Count; volumeIndex++)
                     {
@@ -537,7 +537,7 @@ namespace MatterHackers.MatterSlice
 
                 if (config.perimeterCount > 0)
                 {
-                    if (config.spiralizeMode)
+                    if (config.continuousSpiralOuterPerimeter)
                     {
                         if ((int)(layerNr) >= config.numberOfBottomLayers)
                         {
@@ -597,7 +597,7 @@ namespace MatterHackers.MatterSlice
                 LogOutput.logPolygons("infill", layerNr, layer.printZ, fillPolygons);
 
                 //After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
-                if (!config.spiralizeMode || (int)(layerNr) < config.numberOfBottomLayers)
+                if (!config.continuousSpiralOuterPerimeter || (int)(layerNr) < config.numberOfBottomLayers)
                 {
                     gcodeLayer.moveInsideCombBoundary(extrusionWidth * 2);
                 }
@@ -656,24 +656,24 @@ namespace MatterHackers.MatterSlice
             {
                 Polygons island = supportIslands[islandOrderOptimizer.polyOrder[n]];
                 Polygons supportLines = new Polygons();
-                if (config.supportLineDistance_µm > 0)
+                if (config.supportLineSpacing_µm > 0)
                 {
                     switch(config.supportType)
                     {
                         case ConfigConstants.SUPPORT_TYPE.GRID:
-                            if (config.supportLineDistance_µm > extrusionWidth * 4)
+                            if (config.supportLineSpacing_µm > extrusionWidth * 4)
                             {
-                                Infill.generateLineInfill(island, supportLines, extrusionWidth, config.supportLineDistance_µm * 2, config.infillExtendIntoPerimeter_µm, 0);
-                                Infill.generateLineInfill(island, supportLines, extrusionWidth, config.supportLineDistance_µm * 2, config.infillExtendIntoPerimeter_µm, 90);
+                                Infill.generateLineInfill(island, supportLines, extrusionWidth, config.supportLineSpacing_µm * 2, config.infillExtendIntoPerimeter_µm, 0);
+                                Infill.generateLineInfill(island, supportLines, extrusionWidth, config.supportLineSpacing_µm * 2, config.infillExtendIntoPerimeter_µm, 90);
                             }
                             else
                             {
-                                Infill.generateLineInfill(island, supportLines, extrusionWidth, config.supportLineDistance_µm, config.infillExtendIntoPerimeter_µm, (layerNr & 1) == 1 ? 0 : 90);
+                                Infill.generateLineInfill(island, supportLines, extrusionWidth, config.supportLineSpacing_µm, config.infillExtendIntoPerimeter_µm, (layerNr & 1) == 1 ? 0 : 90);
                             }
                             break;
 
                         case ConfigConstants.SUPPORT_TYPE.LINES:
-                            Infill.generateLineInfill(island, supportLines, extrusionWidth, config.supportLineDistance_µm, config.infillExtendIntoPerimeter_µm, 0);
+                            Infill.generateLineInfill(island, supportLines, extrusionWidth, config.supportLineSpacing_µm, config.infillExtendIntoPerimeter_µm, 0);
                             break;
                     }                    
                 }
