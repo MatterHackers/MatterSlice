@@ -314,6 +314,7 @@ namespace MatterHackers.MatterSlice
             // This gives a path from the start to finish curved around the holes that it encounters.
             while (true)
             {
+                // if we go up enough we should run into the boundry
                 int abovePolyIndex = getPolygonIndexAbove(startX);
                 if (abovePolyIndex < 0)
                 {

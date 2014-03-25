@@ -627,12 +627,12 @@ namespace MatterHackers.MatterSlice
             return this.travelSpeedFactor;
         }
 
-        public void writeTravel(IntPoint p)
+        public void writeTravel(IntPoint positionToWrite)
         {
             GCodePath path = getLatestPathWithConfig(travelConfig);
             if (forceRetraction)
             {
-                if (!(lastPosition - p).shorterThen(retractionMinimumDistance))
+                if (!(lastPosition - positionToWrite).shorterThen(retractionMinimumDistance))
                 {
                     path.retract = true;
                 }
@@ -641,7 +641,7 @@ namespace MatterHackers.MatterSlice
             else if (comb != null)
             {
                 List<IntPoint> pointList = new List<IntPoint>();
-                if (comb.calc(lastPosition, p, pointList))
+                if (comb.calc(lastPosition, positionToWrite, pointList))
                 {
                     for (int n = 0; n < pointList.Count; n++)
                     {
@@ -650,7 +650,7 @@ namespace MatterHackers.MatterSlice
                 }
                 else
                 {
-                    if (!(lastPosition - p).shorterThen(retractionMinimumDistance))
+                    if (!(lastPosition - positionToWrite).shorterThen(retractionMinimumDistance))
                     {
                         path.retract = true;
                     }
@@ -658,13 +658,13 @@ namespace MatterHackers.MatterSlice
             }
             else if (alwaysRetract)
             {
-                if (!(lastPosition - p).shorterThen(retractionMinimumDistance))
+                if (!(lastPosition - positionToWrite).shorterThen(retractionMinimumDistance))
                 {
                     path.retract = true;
                 }
             }
-            path.points.Add(p);
-            lastPosition = p;
+            path.points.Add(positionToWrite);
+            lastPosition = positionToWrite;
         }
 
         public void writeExtrusionMove(IntPoint p, GCodePathConfig config)
