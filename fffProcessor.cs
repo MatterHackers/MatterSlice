@@ -128,7 +128,7 @@ namespace MatterHackers.MatterSlice
             LogOutput.log("Loaded from disk in {0:0.000}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();
             LogOutput.log("Analyzing and optimizing model...\n");
-            OptimizedModel optomizedModel = new OptimizedModel(model, new Point3(config.positionToPlaceObjectCenter_µm.X, config.positionToPlaceObjectCenter_µm.Y, -config.bottomClipAmount_µm));
+            OptimizedModel optomizedModel = new OptimizedModel(model, new Point3(config.positionToPlaceObjectCenter_µm.X, config.positionToPlaceObjectCenter_µm.Y, -config.bottomClipAmount_µm), config.centerObjectInXy);
             for (int volumeIndex = 0; volumeIndex < model.volumes.Count; volumeIndex++)
             {
                 LogOutput.log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)model.volumes[volumeIndex].faceTriangles.Count, (int)optomizedModel.volumes[volumeIndex].facesTriangle.Count, (double)(optomizedModel.volumes[volumeIndex].facesTriangle.Count) / (double)(model.volumes[volumeIndex].faceTriangles.Count) * 100));
@@ -225,7 +225,7 @@ namespace MatterHackers.MatterSlice
                 LogOutput.logProgress("inset", layerIndex + 1, totalLayers);
             }
 
-            if (config.createWipeShield)
+            if (config.wipeShieldDistanceFromShapes_µm > 0)
             {
                 for (int layerNr = 0; layerNr < totalLayers; layerNr++)
                 {
@@ -234,7 +234,7 @@ namespace MatterHackers.MatterSlice
                     {
                         for (int partNr = 0; partNr < storage.volumes[volumeIdx].layers[layerNr].parts.Count; partNr++)
                         {
-                            wipeShield = wipeShield.CreateUnion(storage.volumes[volumeIdx].layers[layerNr].parts[partNr].outline.Offset(config.wipeShieldDistance_µm));
+                            wipeShield = wipeShield.CreateUnion(storage.volumes[volumeIdx].layers[layerNr].parts[partNr].outline.Offset(config.wipeShieldDistanceFromShapes_µm));
                         }
                     }
                     storage.wipeShield.Add(wipeShield);
@@ -364,7 +364,7 @@ namespace MatterHackers.MatterSlice
                     GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_µm);
                     gcodeLayer.setAlwaysRetract(true);
                     gcode.setZ(config.raftBaseThickness_µm);
-                    gcode.setExtrusion(config.raftBaseThickness_µm, config.filamentDiameter_µm, config.filamentFlowPercent);
+                    gcode.setExtrusion(config.raftBaseThickness_µm, config.filamentDiameter_µm, config.extrusionMultiplier);
                     gcodeLayer.writePolygonsByOptimizer(storage.raftOutline, raftBaseConfig);
 
                     Polygons raftLines = new Polygons();
@@ -385,7 +385,7 @@ namespace MatterHackers.MatterSlice
 
                     gcodeLayer.setAlwaysRetract(true);
                     gcode.setZ(config.raftBaseThickness_µm + config.raftInterfaceThicknes_µm);
-                    gcode.setExtrusion(config.raftInterfaceThicknes_µm, config.filamentDiameter_µm, config.filamentFlowPercent);
+                    gcode.setExtrusion(config.raftInterfaceThicknes_µm, config.filamentDiameter_µm, config.extrusionMultiplier);
 
                     Polygons raftLines = new Polygons();
                     Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftInterfaceLinewidth_µm, config.raftLineSpacing_µm, config.infillOverlapPerimeter_µm, 90);
@@ -426,11 +426,11 @@ namespace MatterHackers.MatterSlice
                 gcode.writeComment("LAYER:{0}".FormatWith(layerNr));
                 if (layerNr == 0)
                 {
-                    gcode.setExtrusion(config.firstLayerThickness_µm, config.filamentDiameter_µm, config.filamentFlowPercent);
+                    gcode.setExtrusion(config.firstLayerThickness_µm, config.filamentDiameter_µm, config.extrusionMultiplier);
                 }
                 else
                 {
-                    gcode.setExtrusion(config.layerThickness_µm, config.filamentDiameter_µm, config.filamentFlowPercent);
+                    gcode.setExtrusion(config.layerThickness_µm, config.filamentDiameter_µm, config.extrusionMultiplier);
                 }
 
                 GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_µm);

@@ -85,7 +85,7 @@ namespace MatterHackers.MatterSlice
         public int filamentDiameter_µm { get { return (int)(filamentDiameter * 1000); } }
 
         [SettingDescription("Lets you adjust how much material to extrude.")]
-        public int filamentFlowPercent;
+        public int extrusionMultiplier;
 
         [SettingDescription("The width of the line to extrude for the first layer.")]
         public double firstLayerExtrusionWidth;
@@ -156,12 +156,9 @@ namespace MatterHackers.MatterSlice
         [SettingDescription("Avoid crossing any of the perimeters of a shape while printing its parts.")]
         public bool avoidCrossingPerimeters;
         
-        [SettingDescription("Create an outline around shapes so the extrude will be wiped when entering.")]
-        public bool createWipeShield;
-
-        [SettingDescription("mm.")]
-        public double wipeShieldDistance;
-        public int wipeShieldDistance_µm { get { return (int)(wipeShieldDistance * 1000); } }
+        [SettingDescription("If greater than 0 this creates an outline around shapes so the extrude will be wiped when entering.")]
+        public double wipeShieldDistanceFromObject;
+        public int wipeShieldDistanceFromShapes_µm { get { return (int)(wipeShieldDistanceFromObject * 1000); } }
 
         [SettingDescription("Unlike the wipe shield this is a square of size X size in the lower left corner for wiping during extruder changing.")]
         public double wipeTowerSize;
@@ -265,7 +262,7 @@ namespace MatterHackers.MatterSlice
         public void SetToDefault()
         {
             filamentDiameter = 2.89;
-            filamentFlowPercent = 100;
+            extrusionMultiplier = 1;
             firstLayerThickness = .3;
             layerThickness = .1;
             firstLayerExtrusionWidth = .8;
@@ -302,8 +299,7 @@ namespace MatterHackers.MatterSlice
             retractionOnExtruderSwitch = 14.5;
             minimumTravelToCauseRetraction = 1.5;
             minimumExtrusionBeforeRetraction = .1;
-            createWipeShield = false;
-            wipeShieldDistance = 2;
+            wipeShieldDistanceFromObject = 0;
             avoidCrossingPerimeters = true;
             wipeTowerSize = 0;
             multiVolumeOverlapPercent = 0;

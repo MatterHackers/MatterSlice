@@ -166,7 +166,7 @@ namespace MatterHackers.MatterSlice
         public Point3 minXYZ;
         public Point3 maxXYZ;
 
-        public OptimizedModel(SimpleModel model, Point3 center)
+        public OptimizedModel(SimpleModel model, Point3 center, bool centerObjectInXy)
         {
             for (int i = 0; i < model.volumes.Count; i++)
             {
@@ -176,19 +176,23 @@ namespace MatterHackers.MatterSlice
             minXYZ = model.minXYZ();
             maxXYZ = model.maxXYZ();
 
-            Point3 vOffset = new Point3((minXYZ.x + maxXYZ.x) / 2, (minXYZ.y + maxXYZ.y) / 2, minXYZ.z);
-            vOffset -= center;
-            for (int i = 0; i < volumes.Count; i++)
+            if (centerObjectInXy)
             {
-                for (int n = 0; n < volumes[i].vertices.Count; n++)
+                Point3 vOffset = new Point3((minXYZ.x + maxXYZ.x) / 2, (minXYZ.y + maxXYZ.y) / 2, minXYZ.z);
+                vOffset -= center;
+                for (int i = 0; i < volumes.Count; i++)
                 {
-                    volumes[i].vertices[n].position -= vOffset;
+                    for (int n = 0; n < volumes[i].vertices.Count; n++)
+                    {
+                        volumes[i].vertices[n].position -= vOffset;
+                    }
                 }
+
+                minXYZ -= vOffset;
+                maxXYZ -= vOffset;
             }
 
             size = maxXYZ - minXYZ;
-            minXYZ -= vOffset;
-            maxXYZ -= vOffset;
         }
 
         public void saveDebugSTL(string filename)
