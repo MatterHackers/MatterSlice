@@ -677,10 +677,10 @@ namespace MatterHackers.MatterSlice
         {
             if (comb == null || comb.checkInside(lastPosition)) return;
             IntPoint p = lastPosition;
-            if (comb.moveInside(p, distance))
+            if (comb.moveInside(ref p, distance))
             {
                 //Move inside again, so we move out of tight 90deg corners
-                comb.moveInside(p, distance);
+                comb.moveInside(ref p, distance);
                 if (comb.checkInside(p))
                 {
                     writeTravel(p);

@@ -208,7 +208,7 @@ namespace MatterHackers.MatterSlice
             return true;
         }
 
-        public bool moveInside(IntPoint pointToMove, int distance = 100)
+        public bool moveInside(ref IntPoint pointToMove, int distance = 100)
         {
             IntPoint newPosition = pointToMove;
             long bestDist = 2000 * 2000;
@@ -273,7 +273,7 @@ namespace MatterHackers.MatterSlice
             //Check if we are inside the comb boundaries
             if (!checkInside(startPoint))
             {
-                if (!moveInside(startPoint))
+                if (!moveInside(ref startPoint))
                 {
                     //If we fail to move the point inside the comb boundary we need to retract.
                     return false;
@@ -283,7 +283,7 @@ namespace MatterHackers.MatterSlice
             }
             if (!checkInside(endPoint))
             {
-                if (!moveInside(endPoint))
+                if (!moveInside(ref endPoint))
                 {
                     //If we fail to move the point inside the comb boundary we need to retract.
                     return false;
