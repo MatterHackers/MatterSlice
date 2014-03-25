@@ -270,66 +270,57 @@ namespace MatterHackers.MatterSlice
 
         static SimpleModel loadModelSTL_binary(string filename, FMatrix3x3 matrix)
         {
-            throw new NotImplementedException();
-#if false
-    StreamReader f = new StreamReader(filename);
-    char[] buffer = new char[80];
-    int faceCount;
-    //Skip the header
-    if (fread(buffer, 80, 1, f) != 1)
-    {
-        fclose(f);
-        return NULL;
-    }
-    //Read the face count
-    if (fread(&faceCount, sizeof(int), 1, f) != 1)
-    {
-        fclose(f);
-        return NULL;
-    }
-    //For each face read:
-    //float(x,y,z) = normal, float(X,Y,Z)*3 = vertexes, uint16_t = flags
-    SimpleModel m = new SimpleModel();
-    m.volumes.Add(SimpleVolume());
-    SimpleVolume* vol = &m.volumes[0];
-	if(vol == NULL)
-	{
-		fclose(f);
-		return NULL;
-	}
+            SimpleModel m = new SimpleModel();
 
-    for(int i=0;i<faceCount;i++)
-    {
-        if (fread(buffer, sizeof(float) * 3, 1, f) != 1)
-        {
-            fclose(f);
-            return NULL;
-        }
-        float v[9];
-        if (fread(v, sizeof(float) * 9, 1, f) != 1)
-        {
-            fclose(f);
-            return NULL;
-        }
-        Point3 v0 = matrix.apply(FPoint3(v[0], v[1], v[2]));
-        Point3 v1 = matrix.apply(FPoint3(v[3], v[4], v[5]));
-        Point3 v2 = matrix.apply(FPoint3(v[6], v[7], v[8]));
-        vol.addFace(v0, v1, v2);
-        if (fread(buffer, sizeof(uint16_t), 1, f) != 1)
-        {
-            fclose(f);
-            return NULL;
-        }
-    } 
-    fclose(f);
-    return m;
-#endif
+            using (FileStream stlStream = File.Open(filename, FileMode.Open))
+            {
+                // load it as a binary stl
+                // skip the first 80 bytes
+                // read in the number of triangles
+                stlStream.Position = 0;
+                BinaryReader br = new BinaryReader(stlStream);
+                byte[] fileContents = br.ReadBytes((int)stlStream.Length);
+                int currentPosition = 80;
+                uint numTriangles = System.BitConverter.ToUInt32(fileContents, currentPosition);
+                long bytesForNormals = numTriangles * 3 * 4;
+                long bytesForVertices = numTriangles * 3 * 4;
+                long bytesForAttributs = numTriangles * 2;
+                currentPosition += 4;
+                long numBytesRequiredForVertexData = currentPosition + bytesForNormals + bytesForVertices + bytesForAttributs;
+                if (fileContents.Length < numBytesRequiredForVertexData || numTriangles < 4)
+                {
+                    stlStream.Close();
+                    return null;
+                }
+
+                m.volumes.Add(new SimpleVolume());
+                SimpleVolume vol = m.volumes[0];
+                Point3[] vector = new Point3[3];
+                for (int i = 0; i < numTriangles; i++)
+                {
+                    // skip the normal 
+                    currentPosition += 3 * 4;
+                    for (int j = 0; j < 3; j++)
+                    {
+                        vector[j] = new Point3(
+                            System.BitConverter.ToSingle(fileContents, currentPosition + 0 * 4) * 1000,
+                            System.BitConverter.ToSingle(fileContents, currentPosition + 1 * 4) * 1000,
+                            System.BitConverter.ToSingle(fileContents, currentPosition + 2 * 4) * 1000);
+                        currentPosition += 3 * 4;
+                    }
+                    currentPosition += 2; // skip the attribute
+
+                    vol.addFaceTriangle(vector[2], vector[1], vector[0]);
+                }
+            }
+
+            return m;
         }
 
         public static SimpleModel loadModelFromFile(string filename, FMatrix3x3 matrix)
         {
             SimpleModel fromAsciiModel = loadModelSTL_ascii(filename, matrix);
-            if (fromAsciiModel == null)
+            if (fromAsciiModel.volumes[0].faceTriangles.Count == 0)
             {
                 return loadModelSTL_binary(filename, matrix);
             }
