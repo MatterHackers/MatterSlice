@@ -143,7 +143,7 @@ namespace MatterHackers.MatterSlice
             return f != null;
         }
 
-        public void setExtrusion(int layerThickness, int filamentDiameter, int flowPercent)
+        public void setExtrusion(int layerThickness, int filamentDiameter, double extrusionMultiplier)
         {
             double filamentArea = Math.PI * ((double)(filamentDiameter) / 1000.0 / 2.0) * ((double)(filamentDiameter) / 1000.0 / 2.0);
             if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)//UltiGCode uses volume extrusion as E value, and thus does not need the filamentArea in the mix.
@@ -152,7 +152,7 @@ namespace MatterHackers.MatterSlice
             }
             else
             {
-                extrusionPerMM = (double)(layerThickness) / 1000.0 / filamentArea * (double)(flowPercent) / 100.0;
+                extrusionPerMM = (double)(layerThickness) / 1000.0 / filamentArea * extrusionMultiplier;
             }
         }
 

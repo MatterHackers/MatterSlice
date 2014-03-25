@@ -85,7 +85,7 @@ namespace MatterHackers.MatterSlice
         public int filamentDiameter_µm { get { return (int)(filamentDiameter * 1000); } }
 
         [SettingDescription("Lets you adjust how much material to extrude.")]
-        public int extrusionMultiplier;
+        public double extrusionMultiplier;
 
         [SettingDescription("The width of the line to extrude for the first layer.")]
         public double firstLayerExtrusionWidth;
