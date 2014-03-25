@@ -627,12 +627,13 @@ namespace MatterHackers.MatterSlice
             return this.travelSpeedFactor;
         }
 
-        public void writeTravel(IntPoint positionToWrite)
+        public void writeTravel(IntPoint positionToMoveTo)
         {
             GCodePath path = getLatestPathWithConfig(travelConfig);
+
             if (forceRetraction)
             {
-                if (!(lastPosition - positionToWrite).shorterThen(retractionMinimumDistance))
+                if (!(lastPosition - positionToMoveTo).shorterThen(retractionMinimumDistance))
                 {
                     path.retract = true;
                 }
@@ -641,30 +642,44 @@ namespace MatterHackers.MatterSlice
             else if (comb != null)
             {
                 List<IntPoint> pointList = new List<IntPoint>();
-                if (comb.calc(lastPosition, positionToWrite, pointList))
+                if (comb.CreatePathInsideBoundary(lastPosition, positionToMoveTo, pointList))
                 {
-                    for (int n = 0; n < pointList.Count; n++)
+                    long lineLength = 0;
+                    // we can stay inside so move within the boundary
+                    for (int pointIndex = 0; pointIndex < pointList.Count; pointIndex++)
                     {
-                        path.points.Add(pointList[n]);
+                        path.points.Add(pointList[pointIndex]);
+                        if(pointIndex > 0)
+                        {
+                            lineLength += (pointList[pointIndex] - pointList[pointIndex-1]).Length();
+                        }
+                    }
+
+                    // If the internal move is very long (20 mm), do a retration anyway
+                    if(lineLength > (20 * 1000))
+                    {
+                        path.retract = true;
                     }
                 }
                 else
                 {
-                    if (!(lastPosition - positionToWrite).shorterThen(retractionMinimumDistance))
+                    if (!(lastPosition - positionToMoveTo).shorterThen(retractionMinimumDistance))
                     {
+                        // We are moving relatively far and are going to cross a boundary so do a retraction.
                         path.retract = true;
                     }
                 }
             }
             else if (alwaysRetract)
             {
-                if (!(lastPosition - positionToWrite).shorterThen(retractionMinimumDistance))
+                if (!(lastPosition - positionToMoveTo).shorterThen(retractionMinimumDistance))
                 {
                     path.retract = true;
                 }
             }
-            path.points.Add(positionToWrite);
-            lastPosition = positionToWrite;
+            
+            path.points.Add(positionToMoveTo);
+            lastPosition = positionToMoveTo;
         }
 
         public void writeExtrusionMove(IntPoint p, GCodePathConfig config)
@@ -675,13 +690,13 @@ namespace MatterHackers.MatterSlice
 
         public void moveInsideCombBoundary(int distance)
         {
-            if (comb == null || comb.checkInside(lastPosition)) return;
+            if (comb == null || comb.PointIsInsideBoundary(lastPosition)) return;
             IntPoint p = lastPosition;
-            if (comb.moveInside(ref p, distance))
+            if (comb.MovePointInsideBoundary(ref p, distance))
             {
                 //Move inside again, so we move out of tight 90deg corners
-                comb.moveInside(ref p, distance);
-                if (comb.checkInside(p))
+                comb.MovePointInsideBoundary(ref p, distance);
+                if (comb.PointIsInsideBoundary(p))
                 {
                     writeTravel(p);
                     //Make sure the that any retraction happens after this move, not before it by starting a new move path.
