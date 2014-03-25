@@ -181,7 +181,9 @@ namespace MatterHackers.MatterSlice
 
         //Support material
         public ConfigConstants.SUPPORT_TYPE supportType;
-        public int supportStartingAngleDegrees;
+        
+        // Support will be generated up to this angle. Mor than this and there will be no support (it can rest on itself), degrees.
+        public int supportEndAngle;
         [SettingDescription("If True, support will be generated within the part as well as from the bed.")]
         public bool generateInternalSupport;
         
@@ -288,7 +290,7 @@ namespace MatterHackers.MatterSlice
             positionToPlaceObjectCenter.Y = 102.5;
             bottomClipAmount = 0;
             supportType = ConfigConstants.SUPPORT_TYPE.NONE;
-            supportStartingAngleDegrees = 0;
+            supportEndAngle = 0;
             generateInternalSupport = true;
             supportLineSpacing = extrusionWidth * 5;
             supportExtruder = -1;

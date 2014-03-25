@@ -87,7 +87,7 @@ namespace MatterHackers.MatterSlice
             {
                 storage.grid.Add(new List<SupportPoint>());
             }
-            storage.angle = config.supportStartingAngleDegrees;
+            storage.endAngle = config.supportEndAngle;
             storage.everywhere = config.generateInternalSupport;
             storage.XYDistance = config.supportXYDistance_µm;
             storage.ZDistance = config.supportZDistance_µm;
@@ -244,7 +244,7 @@ namespace MatterHackers.MatterSlice
                 return;
             }
 
-            cosAngle = Math.Cos((double)(90 - storage.angle) / 180.0 * Math.PI) - 0.01;
+            cosAngle = Math.Cos((double)(90 - storage.endAngle) / 180.0 * Math.PI) - 0.01;
             this.supportZDistance = storage.ZDistance;
 
             done = new int[(int)(storage.gridWidth * storage.gridHeight)];

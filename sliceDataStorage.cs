@@ -72,7 +72,7 @@ namespace MatterHackers.MatterSlice
     public class SupportStorage
     {
         public bool generated;
-        public int angle;
+        public int endAngle;
         public bool everywhere;
         public int XYDistance;
         public int ZDistance;
