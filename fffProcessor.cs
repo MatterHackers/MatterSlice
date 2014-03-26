@@ -175,7 +175,7 @@ namespace MatterHackers.MatterSlice
                 for (int layerNr = 0; layerNr < storage.volumes[volumeIdx].layers.Count; layerNr++)
                 {
                     storage.volumes[volumeIdx].layers[layerNr].printZ += config.raftBaseThickness_µm + config.raftInterfaceThicknes_µm;
-                }          
+                }
             }
             LogOutput.log("Generated layer parts in {0:0.000}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();
@@ -300,7 +300,7 @@ namespace MatterHackers.MatterSlice
             }
 
             Skirt.generateSkirt(storage, config.skirtDistance_µm, config.firstLayerExtrusionWidth_µm, config.numberOfSkirtLoops, config.skirtMinLength_µm, config.firstLayerThickness_µm);
-            Raft.generateRaft(storage, config.raftExtraDistanceAroundPart_µm);
+            Raft.GenerateRaftOutlines(storage, config.raftExtraDistanceAroundPart_µm);
 
             for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
             {
@@ -338,7 +338,7 @@ namespace MatterHackers.MatterSlice
                     gcode.writeComment("enable auto-retraction");
                     gcode.writeLine("M227 S{0} P{1}".FormatWith(config.retractionAmount_µm * 2560 / 1000, config.retractionAmount_µm * 2560 / 1000));
                 }
-         
+
             }
             else
             {
@@ -354,52 +354,14 @@ namespace MatterHackers.MatterSlice
             int totalLayers = storage.volumes[0].layers.Count;
             gcode.writeComment("Layer count: {0}".FormatWith(totalLayers));
 
-            if (config.raftBaseThickness_µm > 0 && config.raftInterfaceThicknes_µm > 0)
-            {
-                GCodePathConfig raftBaseConfig = new GCodePathConfig(config.firstLayerSpeed, config.raftBaseLinewidth_µm, "SUPPORT");
-                GCodePathConfig raftInterfaceConfig = new GCodePathConfig(config.firstLayerSpeed, config.raftInterfaceLinewidth_µm, "SUPPORT");
-                {
-                    gcode.writeComment("LAYER:-2");
-                    gcode.writeComment("RAFT");
-                    GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_µm);
-                    gcodeLayer.setAlwaysRetract(true);
-                    gcode.setZ(config.raftBaseThickness_µm);
-                    gcode.setExtrusion(config.raftBaseThickness_µm, config.filamentDiameter_µm, config.extrusionMultiplier);
-                    gcodeLayer.writePolygonsByOptimizer(storage.raftOutline, raftBaseConfig);
-
-                    Polygons raftLines = new Polygons();
-                    Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftBaseLinewidth_µm, config.raftLineSpacing_µm, config.infillOverlapPerimeter_µm, 0);
-                    gcodeLayer.writePolygonsByOptimizer(raftLines, raftBaseConfig);
-
-                    gcodeLayer.writeGCode(false, config.raftBaseThickness_µm);
-                }
-
-                {
-                    gcode.writeComment("LAYER:-1");
-                    gcode.writeComment("RAFT");
-                    GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_µm);
-                    if (config.supportExtruder > 0)
-                    {
-                        gcodeLayer.setExtruder(config.supportExtruder);
-                    }
-
-                    gcodeLayer.setAlwaysRetract(true);
-                    gcode.setZ(config.raftBaseThickness_µm + config.raftInterfaceThicknes_µm);
-                    gcode.setExtrusion(config.raftInterfaceThicknes_µm, config.filamentDiameter_µm, config.extrusionMultiplier);
-
-                    Polygons raftLines = new Polygons();
-                    Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftInterfaceLinewidth_µm, config.raftLineSpacing_µm, config.infillOverlapPerimeter_µm, 90);
-                    gcodeLayer.writePolygonsByOptimizer(raftLines, raftInterfaceConfig);
-
-                    gcodeLayer.writeGCode(false, config.raftInterfaceThicknes_µm);
-                }
-            }
+            // keep the raft generation code inside of raft
+            Raft.GenerateRaftGCodeIfRequired(storage, config, gcode);
 
             int volumeIdx = 0;
             for (int layerNr = 0; layerNr < totalLayers; layerNr++)
             {
                 LogOutput.logProgress("export", layerNr + 1, totalLayers);
-                
+
                 int extrusionWidth = config.extrusionWidth_µm;
                 if (layerNr == 0)
                 {
@@ -434,8 +396,20 @@ namespace MatterHackers.MatterSlice
                 }
 
                 GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_µm);
+
+                // get the correct height for this layer
                 int z = config.firstLayerThickness_µm + layerNr * config.layerThickness_µm;
-                z += config.raftBaseThickness_µm + config.raftInterfaceThicknes_µm;
+                z += config.raftBaseThickness_µm + config.raftInterfaceThicknes_µm + config.raftSurfaceLayers * config.raftSurfaceThickness;
+                if (layerNr == 0)
+                {
+                    // We only raise the first layer of the print up by the air gap.
+                    // To give it:
+                    //   Less press into the raft
+                    //   More time to cool
+                    //   more surface area to air while extruding
+                    z += config.raftAirGap;
+                }
+
                 gcode.setZ(z);
 
                 bool printSupportFirst = (storage.support.generated && config.supportExtruder > 0 && config.supportExtruder == gcodeLayer.getExtruder());
@@ -651,14 +625,14 @@ namespace MatterHackers.MatterSlice
                 islandOrderOptimizer.addPolygon(supportIslands[n][0]);
             }
             islandOrderOptimizer.optimize();
-         
-            for(int n=0; n<supportIslands.Count; n++)
+
+            for (int n = 0; n < supportIslands.Count; n++)
             {
                 Polygons island = supportIslands[islandOrderOptimizer.polyOrder[n]];
                 Polygons supportLines = new Polygons();
                 if (config.supportLineSpacing_µm > 0)
                 {
-                    switch(config.supportType)
+                    switch (config.supportType)
                     {
                         case ConfigConstants.SUPPORT_TYPE.GRID:
                             if (config.supportLineSpacing_µm > extrusionWidth * 4)
@@ -675,7 +649,7 @@ namespace MatterHackers.MatterSlice
                         case ConfigConstants.SUPPORT_TYPE.LINES:
                             Infill.generateLineInfill(island, supportLines, extrusionWidth, config.supportLineSpacing_µm, config.infillOverlapPerimeter_µm, 0);
                             break;
-                    }                    
+                    }
                 }
 
                 gcodeLayer.forceRetract();

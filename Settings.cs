@@ -233,6 +233,18 @@ namespace MatterHackers.MatterSlice
         public double raftInterfaceLinewidth;
         public int raftInterfaceLinewidth_µm { get { return (int)(raftInterfaceLinewidth * 1000); } }
 
+        public int raftPrintSpeed;
+        public int raftSurfacePrintSpeed;
+        public int raftFanSpeedPercent;
+
+        public int raftInterfaceLineSpacing;
+        public int raftSurfaceThickness;
+        public int raftSurfaceLinewidth;
+        public int raftSurfaceLineSpacing;
+        public int raftSurfaceLayers;
+        public int raftAirGap;
+
+        // object transform
         public FMatrix3x3 modelRotationMatrix = new FMatrix3x3();
 
         [SettingDescription("Describes if 'positionToPlaceObjectCenter' should be used.")]
@@ -244,12 +256,14 @@ namespace MatterHackers.MatterSlice
         public double bottomClipAmount;
         public int bottomClipAmount_µm { get { return (int)(bottomClipAmount * 1000); } }
 
+        // repair settings
         [SettingDescription("You can or them together using '|'.")]
         public ConfigConstants.REPAIR_OUTLINES repairOutlines;
 
         [SettingDescription("You can or them together using '|'.")]
         public ConfigConstants.REPAIR_OVERLAPS repairOverlaps;
 
+        // other
         [SettingDescription("This will cause the z height to raise continuously while on the outer perimeter.")]
         public bool continuousSpiralOuterPerimeter;
         public ConfigConstants.OUTPUT_TYPE outputType;
@@ -291,6 +305,16 @@ namespace MatterHackers.MatterSlice
             positionToPlaceObjectCenter.X = 102.5;
             positionToPlaceObjectCenter.Y = 102.5;
             bottomClipAmount = 0;
+
+            // raft settings
+            raftExtraDistanceAroundPart = 5;
+            raftLineSpacing = 1;
+            raftBaseThickness = 0;
+            raftBaseLinewidth = 0;
+            raftInterfaceThicknes = 0;
+            raftInterfaceLinewidth = 0;
+            raftInterfaceLineSpacing = 250;
+
             supportType = ConfigConstants.SUPPORT_TYPE.NONE;
             supportEndAngle = 0;
             generateInternalSupport = true;
@@ -313,13 +337,6 @@ namespace MatterHackers.MatterSlice
             doCoolHeadLift = false;
             fanSpeedMinPercent = 100;
             fanSpeedMaxPercent = 100;
-
-            raftExtraDistanceAroundPart = 5;
-            raftLineSpacing = 1;
-            raftBaseThickness = 0;
-            raftBaseLinewidth = 0;
-            raftInterfaceThicknes = 0;
-            raftInterfaceLinewidth = 0;
 
             continuousSpiralOuterPerimeter = false;
             outputType = ConfigConstants.OUTPUT_TYPE.REPRAP;
