@@ -71,19 +71,19 @@ namespace MatterHackers.MatterSlice
             for (int outlineIndex = 0; outlineIndex < outlines.Count; outlineIndex++)
             {
                 Polygon currentOutline = outlines[outlineIndex];
-                IntPoint lastPoint = currentOutline[currentOutline.Count - 1];
+                IntPoint previousPoint = currentOutline[currentOutline.Count - 1];
                 for (int pointIndex = 0; pointIndex < currentOutline.Count; pointIndex++)
                 {
                     IntPoint currentPoint = currentOutline[pointIndex];
                     int idx0 = (int)((currentPoint.X - boundary.min.X) / lineSpacing);
-                    int idx1 = (int)((lastPoint.X - boundary.min.X) / lineSpacing);
+                    int idx1 = (int)((previousPoint.X - boundary.min.X) / lineSpacing);
                     
-                    long xMin = Math.Min(currentPoint.X, lastPoint.X);
-                    long xMax = Math.Max(currentPoint.X, lastPoint.X);
+                    long xMin = Math.Min(currentPoint.X, previousPoint.X);
+                    long xMax = Math.Max(currentPoint.X, previousPoint.X);
 
-                    if (currentPoint.X > lastPoint.X)
+                    if (currentPoint.X > previousPoint.X)
                     {
-                        xMin = lastPoint.X; 
+                        xMin = previousPoint.X; 
                         xMax = currentPoint.X; 
                     }
 
@@ -97,13 +97,17 @@ namespace MatterHackers.MatterSlice
                     for (int idx = idx0; idx <= idx1; idx++)
                     {
                         int x = (int)((idx * lineSpacing) + boundary.min.X + lineSpacing / 2);
-                        if (x < xMin) continue;
-                        if (x >= xMax) continue;
-                        int y = (int)(currentPoint.Y + (lastPoint.Y - currentPoint.Y) * (x - currentPoint.X) / (lastPoint.X - currentPoint.X));
+                        if (x < xMin
+                            || x >= xMax)
+                        {
+                            continue;
+                        }
+
+                        int y = (int)(currentPoint.Y + (previousPoint.Y - currentPoint.Y) * (x - currentPoint.X) / (previousPoint.X - currentPoint.X));
                         cutList[idx].Add(y);
                     }
 
-                    lastPoint = currentPoint;
+                    previousPoint = currentPoint;
                 }
             }
 
