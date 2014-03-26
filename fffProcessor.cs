@@ -460,7 +460,7 @@ namespace MatterHackers.MatterSlice
                 }
 
                 //Finish the layer by applying speed corrections for minimum layer times.
-                gcodeLayer.forceMinimumLayerTime(config.minimumLayerTimeSeconds, config.minimumFeedrate);
+                gcodeLayer.forceMinimumLayerTime(config.minimumLayerTimeSeconds, config.minimumPrintingSpeed);
 
                 int fanSpeed = config.fanSpeedMinPercent;
                 if (gcodeLayer.getExtrudeSpeedFactor() <= 50)

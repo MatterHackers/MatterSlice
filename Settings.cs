@@ -160,7 +160,7 @@ namespace MatterHackers.MatterSlice
         public double wipeShieldDistanceFromObject;
         public int wipeShieldDistanceFromShapes_µm { get { return (int)(wipeShieldDistanceFromObject * 1000); } }
 
-        [SettingDescription("Unlike the wipe shield this is a square of size X size in the lower left corner for wiping during extruder changing.")]
+        [SettingDescription("Unlike the wipe shield this is a square of size*size in the lower left corner for wiping during extruder changing.")]
         public double wipeTowerSize;
         public int wipeTowerSize_µm { get { return (int)(wipeTowerSize * 1000); } }
         public int multiVolumeOverlapPercent;
@@ -202,8 +202,10 @@ namespace MatterHackers.MatterSlice
 
         //Cool settings
         public int minimumLayerTimeSeconds;
-        [SettingDescription("mm/s.")]
-        public int minimumFeedrate;
+        
+        [SettingDescription("The minimum speed that the extruder is allowed to move while printing. mm/s.")]
+        public int minimumPrintingSpeed;
+
         [SettingDescription("Will cause the head to be raised in z until the min layer time is reached.")]
         public bool doCoolHeadLift;
         public int fanSpeedMinPercent;
@@ -307,7 +309,7 @@ namespace MatterHackers.MatterSlice
             multiVolumeOverlapPercent = 0;
 
             minimumLayerTimeSeconds = 5;
-            minimumFeedrate = 10;
+            minimumPrintingSpeed = 10;
             doCoolHeadLift = false;
             fanSpeedMinPercent = 100;
             fanSpeedMaxPercent = 100;

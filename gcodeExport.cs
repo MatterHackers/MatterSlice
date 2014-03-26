@@ -57,7 +57,7 @@ namespace MatterHackers.MatterSlice
         {
             extrusionAmount = 0;
             extrusionPerMM = 0;
-            retractionAmount = 4.5;
+            retractionAmount = 0;
             minimumExtrusionBeforeRetraction = 0.0;
             extrusionAmountAtPreviousRetraction = -10000;
             extruderSwitchRetraction = 14.5;
@@ -416,20 +416,31 @@ namespace MatterHackers.MatterSlice
         public void writeFanCommand(int speed)
         {
             if (currentFanSpeed == speed)
+            {
                 return;
+            }
+
             if (speed > 0)
             {
                 if (outputType == ConfigConstants.OUTPUT_TYPE.MAKERBOT)
+                {
                     f.Write("M126 T0 ; value = {0}\n".FormatWith(speed * 255 / 100));
+                }
                 else
+                {
                     f.Write("M106 S{0}\n".FormatWith(speed * 255 / 100));
+                }
             }
             else
             {
                 if (outputType == ConfigConstants.OUTPUT_TYPE.MAKERBOT)
+                {
                     f.Write("M127 T0\n");
+                }
                 else
+                {
                     f.Write("M107\n");
+                }
             }
             currentFanSpeed = speed;
         }
@@ -736,7 +747,7 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        public void forceMinimumLayerTime(double minTime, int minimumSpeed)
+        public void forceMinimumLayerTime(double minTime, int minimumPrintingSpeed)
         {
             IntPoint p0 = gcode.getPositionXY();
             double travelTime = 0.0;
@@ -773,9 +784,9 @@ namespace MatterHackers.MatterSlice
                     }
 
                     int speed = (int)(path.config.speed * factor);
-                    if (speed < minimumSpeed)
+                    if (speed < minimumPrintingSpeed)
                     {
-                        factor = (double)(minimumSpeed) / (double)(path.config.speed);
+                        factor = (double)(minimumPrintingSpeed) / (double)(path.config.speed);
                     }
                 }
 
