@@ -87,6 +87,7 @@ namespace MatterHackers.MatterSlice
             {
                 storage.grid.Add(new List<SupportPoint>());
             }
+
             storage.endAngle = config.supportEndAngle;
             storage.everywhere = config.generateInternalSupport;
             storage.XYDistance = config.supportXYDistance_µm;
@@ -124,7 +125,12 @@ namespace MatterHackers.MatterSlice
                         long z0 = v0.z + (v1.z - v0.z) * (x - v0.x) / (v1.x - v0.x);
                         long z1 = v0.z + (v2.z - v0.z) * (x - v0.x) / (v2.x - v0.x);
 
-                        if (y0 > y1) { swap(ref y0, ref y1); swap(ref z0, ref z1); }
+                        if (y0 > y1) 
+                        {
+                            swap(ref y0, ref y1);
+                            swap(ref z0, ref z1); 
+                        }
+
                         for (long y = y0; y < y1; y++)
                         {
                             storage.grid[(int)(x + y * storage.gridWidth)].Add(new SupportPoint((int)(z0 + (z1 - z0) * (y - y0) / (y1 - y0)), cosAngle));
@@ -138,7 +144,12 @@ namespace MatterHackers.MatterSlice
                         long z0 = v1.z + (v2.z - v1.z) * (x - v1.x) / (v2.x - v1.x);
                         long z1 = v0.z + (v2.z - v0.z) * (x - v0.x) / (v2.x - v0.x);
 
-                        if (y0 > y1) { swap(ref y0, ref y1); swap(ref z0, ref z1); }
+                        if (y0 > y1) 
+                        {
+                            swap(ref y0, ref y1);
+                            swap(ref z0, ref z1); 
+                        }
+
                         for (int y = (int)y0; y < y1; y++)
                         {
                             storage.grid[x + y * storage.gridWidth].Add(new SupportPoint((int)(z0 + (z1 - z0) * (y - y0) / (y1 - y0)), cosAngle));
@@ -166,11 +177,14 @@ namespace MatterHackers.MatterSlice
 
         public bool needSupportAt(IntPoint p)
         {
-            if (p.X < 1) return false;
-            if (p.Y < 1) return false;
-            if (p.X >= storage.gridWidth - 1) return false;
-            if (p.Y >= storage.gridHeight - 1) return false;
-            if (done[p.X + p.Y * storage.gridWidth] != 0) return false;
+            if (p.X < 1 
+                || p.Y < 1 
+                || p.X >= storage.gridWidth - 1 
+                || p.Y >= storage.gridHeight - 1
+                || done[p.X + p.Y * storage.gridWidth] != 0)
+            {
+                return false;
+            }
 
             int n = (int)(p.X + p.Y * storage.gridWidth);
 
@@ -185,7 +199,11 @@ namespace MatterHackers.MatterSlice
                         break;
                     }
                 }
-                if (!ok) return false;
+                
+                if (!ok)
+                {
+                    return false;
+                }
             }
             else
             {
@@ -193,6 +211,7 @@ namespace MatterHackers.MatterSlice
                 if (storage.grid[n][0].cosAngle < cosAngle) return false;
                 if (storage.grid[n][0].z - supportZDistance < z) return false;
             }
+
             return true;
         }
 
@@ -218,7 +237,10 @@ namespace MatterHackers.MatterSlice
                 poly.Add(p * storage.gridScale + storage.gridOffset);
                 startPoint.Y++;
                 while (!needSupportAt(startPoint) && startPoint.X <= p.X)
+                {
                     startPoint.X++;
+                }
+
                 if (startPoint.X > p.X)
                 {
                     for (int n = 0; n < tmpPoly.Count; n++)
@@ -228,8 +250,11 @@ namespace MatterHackers.MatterSlice
                     polygons.Add(poly);
                     return;
                 }
+
                 while (needSupportAt(startPoint - new IntPoint(1, 0)) && startPoint.X > 1)
+                {
                     startPoint.X--;
+                }
             }
         }
 
@@ -253,7 +278,10 @@ namespace MatterHackers.MatterSlice
             {
                 for (int x = 1; x < storage.gridWidth; x++)
                 {
-                    if (!needSupportAt(new IntPoint(x, y)) || done[x + y * storage.gridWidth] != 0) continue;
+                    if (!needSupportAt(new IntPoint(x, y)) || done[x + y * storage.gridWidth] != 0)
+                    {
+                        continue;
+                    }
 
                     lazyFill(new IntPoint(x, y));
                 }

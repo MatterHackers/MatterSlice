@@ -166,7 +166,7 @@ namespace MatterHackers.MatterSlice
         public int multiVolumeOverlapPercent;
 
         // speed settings
-        [SettingDescription("mm/s.")]
+        [SettingDescription("This is the speed to print everything on the first layer, mm/s.")]
         public int firstLayerSpeed;
         [SettingDescription("mm/s.")]
         public int supportMaterialSpeed;
