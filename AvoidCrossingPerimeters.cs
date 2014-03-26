@@ -22,7 +22,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 
-using ClipperLib;
+using MatterSlice.ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {

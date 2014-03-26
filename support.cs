@@ -22,7 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-using ClipperLib;
+using MatterSlice.ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -91,7 +91,7 @@ namespace MatterHackers.MatterSlice
             storage.endAngle = config.supportEndAngle;
             storage.everywhere = config.generateInternalSupport;
             storage.XYDistance = config.supportXYDistance_µm;
-            storage.ZDistance = config.supportZDistance_µm;
+            storage.ZDistance = config.supportNumberOfLayersToSkipInZ * config.layerThickness_µm;
 
             for (int volumeIndex = 0; volumeIndex < model.volumes.Count; volumeIndex++)
             {

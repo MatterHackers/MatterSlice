@@ -25,7 +25,7 @@ using System.Text;
 using System.Reflection;
 using System.IO;
 
-using ClipperLib;
+using MatterSlice.ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -194,9 +194,8 @@ namespace MatterHackers.MatterSlice
         public double supportXYDistanceFromObject;
         public int supportXYDistance_µm { get { return (int)(supportXYDistanceFromObject * 1000); } }
 
-        [SettingDescription("The closest z distance that support will be to the object. mm/s.")]
-        public double supportZDistanceFromObject;
-        public int supportZDistance_µm { get { return (int)(supportZDistanceFromObject * 1000); } }
+        [SettingDescription("The number of layers to skip in z. The gap between the support and the model.")]
+        public int supportNumberOfLayersToSkipInZ;
         
         public int supportExtruder;
 
@@ -321,7 +320,7 @@ namespace MatterHackers.MatterSlice
             supportLineSpacing = extrusionWidth * 5;
             supportExtruder = -1;
             supportXYDistanceFromObject = .7;
-            supportZDistanceFromObject = .15;
+            supportNumberOfLayersToSkipInZ = 1;
             retractionOnTravel = 4.5;
             retractionSpeed = 45;
             retractionOnExtruderSwitch = 14.5;

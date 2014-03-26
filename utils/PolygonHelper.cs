@@ -22,7 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-using ClipperLib;
+using MatterSlice.ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -141,30 +141,30 @@ namespace MatterHackers.MatterSlice
         public static Polygons CreateDifference(this Polygons polygons, Polygons other)
         {
             Polygons ret = new Polygons();
-            ClipperLib.Clipper clipper = new Clipper();
-            clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
-            clipper.AddPaths(other, ClipperLib.PolyType.ptClip, true);
-            clipper.Execute(ClipperLib.ClipType.ctDifference, ret);
+            Clipper clipper = new Clipper();
+            clipper.AddPaths(polygons, PolyType.ptSubject, true);
+            clipper.AddPaths(other, PolyType.ptClip, true);
+            clipper.Execute(ClipType.ctDifference, ret);
             return ret;
         }
 
         public static Polygons CreateUnion(this Polygons polygons, Polygons other)
         {
             Polygons ret = new Polygons();
-            ClipperLib.Clipper clipper = new Clipper();
-            clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
-            clipper.AddPaths(other, ClipperLib.PolyType.ptSubject, true);
-            clipper.Execute(ClipType.ctUnion, ret, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
+            Clipper clipper = new Clipper();
+            clipper.AddPaths(polygons, PolyType.ptSubject, true);
+            clipper.AddPaths(other, PolyType.ptSubject, true);
+            clipper.Execute(ClipType.ctUnion, ret, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
             return ret;
         }
 
         public static Polygons CreateIntersection(this Polygons polygons, Polygons other)
         {
             Polygons ret = new Polygons();
-            ClipperLib.Clipper clipper = new Clipper();
-            clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
-            clipper.AddPaths(other, ClipperLib.PolyType.ptClip, true);
-            clipper.Execute(ClipperLib.ClipType.ctIntersection, ret);
+            Clipper clipper = new Clipper();
+            clipper.AddPaths(polygons, PolyType.ptSubject, true);
+            clipper.AddPaths(other, PolyType.ptClip, true);
+            clipper.Execute(ClipType.ctIntersection, ret);
             return ret;
         }
 
@@ -185,20 +185,20 @@ namespace MatterHackers.MatterSlice
         {
 #if false
         Polygons ret = new Polygons();
-        ClipperLib.Clipper clipper = new ClipperLib.Clipper();
-        clipper.AddPaths(polygons, ClipperLib.JoinType.jtMiter, ClipperLib.EndType.etClosed);
+        Clipper clipper = new Clipper();
+        clipper.AddPaths(polygons, JoinType.jtMiter, EndType.etClosed);
         clipper.MiterLimit = 2.0;
         clipper.Execute(ret, distance);
 #endif
-            return ClipperLib.Clipper.OffsetPaths(polygons, distance, JoinType.jtMiter, EndType_.etClosed, 2.0);
+            return Clipper.OffsetPaths(polygons, distance, JoinType.jtMiter, EndType_.etClosed, 2.0);
         }
 
         public static List<Polygons> SplitIntoParts(this Polygons polygons, bool unionAll = false)
         {
             List<Polygons> ret = new List<Polygons>();
-            ClipperLib.Clipper clipper = new Clipper();
-            ClipperLib.PolyTree resultPolyTree = new PolyTree();
-            clipper.AddPaths(polygons, ClipperLib.PolyType.ptSubject, true);
+            Clipper clipper = new Clipper();
+            PolyTree resultPolyTree = new PolyTree();
+            clipper.AddPaths(polygons, PolyType.ptSubject, true);
             if (unionAll)
             {
                 clipper.Execute(ClipType.ctUnion, resultPolyTree, PolyFillType.pftNonZero, PolyFillType.pftNonZero);

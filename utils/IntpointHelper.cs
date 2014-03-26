@@ -25,7 +25,7 @@ Integer points are used to avoid floating point rounding errors, and because Cli
 
 //Include Clipper to get the ClipperLib::IntPoint definition, which we reuse as Point definition.
 using System;
-using ClipperLib;
+using MatterSlice.ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
