@@ -309,7 +309,7 @@ namespace MatterHackers.MatterSlice
                         }
                         isRetracted = false;
                     }
-                    extrusionAmount += extrusionPerMM * (double)(lineWidth) / 1000.0 * diff.vSizeMM();
+                    extrusionAmount += extrusionPerMM * (double)(lineWidth) / 1000.0 * diff.LengthMm();
                     f.Write("G1");
                 }
                 else
@@ -537,7 +537,7 @@ namespace MatterHackers.MatterSlice
 
         IntPoint lastPosition;
         List<GCodePath> paths = new List<GCodePath>();
-        Comb comb;
+        AvoidCrossingPerimeters comb;
 
         GCodePathConfig travelConfig = new GCodePathConfig();
         int extrudeSpeedFactor;
@@ -601,9 +601,13 @@ namespace MatterHackers.MatterSlice
         public void setCombBoundary(Polygons polygons)
         {
             if (polygons != null)
-                comb = new Comb(polygons);
+            {
+                comb = new AvoidCrossingPerimeters(polygons);
+            }
             else
+            {
                 comb = null;
+            }
         }
 
         public void setAlwaysRetract(bool alwaysRetract)
@@ -726,8 +730,11 @@ namespace MatterHackers.MatterSlice
                 writeExtrusionMove(p1, config);
                 p0 = p1;
             }
+
             if (polygon.Count > 2)
+            {
                 writeExtrusionMove(polygon[startIdx], config);
+            }
         }
 
         public void writePolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
@@ -749,22 +756,29 @@ namespace MatterHackers.MatterSlice
 
         public void forceMinimumLayerTime(double minTime, int minimumPrintingSpeed)
         {
-            IntPoint p0 = gcode.getPositionXY();
+            IntPoint lastPosition = gcode.getPositionXY();
             double travelTime = 0.0;
             double extrudeTime = 0.0;
             for (int n = 0; n < paths.Count; n++)
             {
                 GCodePath path = paths[n];
-                for (int i = 0; i < path.points.Count; i++)
+                for (int pointIndex = 0; pointIndex < path.points.Count; pointIndex++)
                 {
-                    double thisTime = (p0 - path.points[i]).vSizeMM() / (double)(path.config.speed);
+                    IntPoint currentPosition = path.points[pointIndex];
+                    double thisTime = (lastPosition - currentPosition).LengthMm() / (double)(path.config.speed);
                     if (path.config.lineWidth != 0)
+                    {
                         extrudeTime += thisTime;
+                    }
                     else
+                    {
                         travelTime += thisTime;
-                    p0 = path.points[i];
+                    }
+
+                    lastPosition = currentPosition;
                 }
             }
+
             double totalTime = extrudeTime + travelTime;
             if (totalTime < minTime && extrudeTime > 0.0)
             {
@@ -902,7 +916,7 @@ namespace MatterHackers.MatterSlice
                     for (int i = 0; i < path.points.Count; i++)
                     {
                         IntPoint p1 = path.points[i];
-                        totalLength += (p0 - p1).vSizeMM();
+                        totalLength += (p0 - p1).LengthMm();
                         p0 = p1;
                     }
 
@@ -911,7 +925,7 @@ namespace MatterHackers.MatterSlice
                     for (int i = 0; i < path.points.Count; i++)
                     {
                         IntPoint p1 = path.points[i];
-                        length += (p0 - p1).vSizeMM();
+                        length += (p0 - p1).LengthMm();
                         p0 = p1;
                         gcode.setZ((int)(z + layerThickness * length / totalLength));
                         gcode.writeMove(path.points[i], speed, path.config.lineWidth);

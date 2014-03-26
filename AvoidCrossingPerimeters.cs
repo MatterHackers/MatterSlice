@@ -29,7 +29,7 @@ namespace MatterHackers.MatterSlice
     using Polygon = List<IntPoint>;
     using Polygons = List<List<IntPoint>>;
 
-    public class Comb
+    public class AvoidCrossingPerimeters
     {
         Polygons bounderyPolygons;
 
@@ -159,7 +159,7 @@ namespace MatterHackers.MatterSlice
             return currentPoint + n;
         }
 
-        public Comb(Polygons bounderyPolygons)
+        public AvoidCrossingPerimeters(Polygons bounderyPolygons)
         {
             this.bounderyPolygons = bounderyPolygons;
             minXPosition = new long[bounderyPolygons.Count];
@@ -243,7 +243,7 @@ namespace MatterHackers.MatterSlice
 
                     IntPoint q = previousPoint + deltaToCurrent * distToBoundrySegment / deltaLength;
 
-                    long dist = (q - pointToMove).vSize2();
+                    long dist = (q - pointToMove).LengthSquared();
                     if (dist < bestDist)
                     {
                         bestDist = dist;
@@ -265,11 +265,6 @@ namespace MatterHackers.MatterSlice
 
         public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, List<IntPoint> pathThatIsInside)
         {
-            if (startPoint.X < 0 && endPoint.X > 0)
-            {
-                int a = 0;
-            }
-
             if ((endPoint - startPoint).shorterThen(1500))
             {
                 // If the movement is very short (not a lot of time to ooze filament)
@@ -363,25 +358,40 @@ namespace MatterHackers.MatterSlice
             }
             pointList.Add(endPoint);
 
-            //Optimize the pointList, skip each point we could already reach by not crossing a boundary. This smooths out the path and makes it skip any unneeded corners.
-            IntPoint previousPoint = startPoint;
-            for (int pointIndex = 1; pointIndex < pointList.Count; pointIndex++)
-            {
-                if (collisionTest(previousPoint, pointList[pointIndex]))
-                {
-                    if (collisionTest(previousPoint, pointList[pointIndex - 1]))
-                    {
-                        return false;
-                    }
-
-                    previousPoint = pointList[pointIndex - 1];
-                    pathThatIsInside.Add(previousPoint);
-                }
-            }
             
             if (addEndpoint)
             {
-                pathThatIsInside.Add(endPoint);
+                pointList.Add(endPoint);
+            }
+
+            // Optimize the pointList, skip each point we could already reach by connecting directly to the next point.
+            for(int startIndex = 0; startIndex < pointList.Count-2; startIndex++)
+            {
+                IntPoint startPosition = pointList[startIndex];
+                // make sure there is at least one point between the start and the end to optomize
+                if (pointList.Count > startIndex + 2)
+                {
+                    for (int checkIndex = pointList.Count - 1; checkIndex > startIndex + 1; checkIndex--)
+                    {
+                        IntPoint checkPosition = pointList[checkIndex];
+                        if (!collisionTest(startPosition, checkPosition))
+                        {
+                            // Remove all the points from startIndex+1 to checkIndex-1, inclusive.
+                            for (int i = startIndex + 1; i < checkIndex; i++)
+                            {
+                                pointList.RemoveAt(startIndex + 1);
+                            }
+
+                            // we removed all the points up to start so we are done with the inner loop
+                            break;
+                        }
+                    }
+                }
+            }
+
+            foreach (IntPoint point in pointList)
+            {
+                pathThatIsInside.Add(point);
             }
 
             return true;

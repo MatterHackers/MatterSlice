@@ -58,12 +58,12 @@ namespace MatterHackers.MatterSlice
             {
                 GCodePathConfig raftBaseConfig = new GCodePathConfig(config.firstLayerSpeed, config.raftBaseThickness_µm, "SUPPORT");
                 GCodePathConfig raftMiddleConfig = new GCodePathConfig(config.raftPrintSpeed, config.raftInterfaceLinewidth_µm, "SUPPORT");
-                GCodePathConfig raftInterfaceConfig = new GCodePathConfig(config.raftPrintSpeed, config.raftInterfaceLinewidth_µm, "SUPPORT");
                 GCodePathConfig raftSurfaceConfig = new GCodePathConfig((config.raftSurfacePrintSpeed > 0) ? config.raftSurfacePrintSpeed : config.raftPrintSpeed, config.raftSurfaceLinewidth, "SUPPORT");
 
+                // create the raft base
                 {
-                    gcode.writeComment("LAYER:-2");
-                    gcode.writeComment("RAFT");
+                    gcode.writeComment("LAYER:-3");
+                    gcode.writeComment("RAFT BASE");
                     GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_µm);
                     if (config.supportExtruder > 0)
                     {
@@ -87,9 +87,10 @@ namespace MatterHackers.MatterSlice
                     gcode.writeFanCommand(config.raftFanSpeedPercent);
                 }
 
+                // raft middle layers
                 {
-                    gcode.writeComment("LAYER:-1");
-                    gcode.writeComment("RAFT");
+                    gcode.writeComment("LAYER:-2");
+                    gcode.writeComment("RAFT MIDDLE");
                     GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_µm);
                     gcodeLayer.setAlwaysRetract(true);
                     gcode.setZ(config.raftBaseThickness_µm + config.raftInterfaceThicknes_µm);
@@ -97,15 +98,15 @@ namespace MatterHackers.MatterSlice
 
                     Polygons raftLines = new Polygons();
                     Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftInterfaceLinewidth_µm, config.raftInterfaceLineSpacing, config.infillOverlapPerimeter_µm, 45);
-                    gcodeLayer.writePolygonsByOptimizer(raftLines, raftInterfaceConfig);
+                    gcodeLayer.writePolygonsByOptimizer(raftLines, raftMiddleConfig);
 
                     gcodeLayer.writeGCode(false, config.raftInterfaceThicknes_µm);
                 }
 
                 for (int raftSurfaceLayer = 1; raftSurfaceLayer <= config.raftSurfaceLayers; raftSurfaceLayer++)
                 {
-                    gcode.writeComment("LAYER:FullRaft");
-                    gcode.writeComment("RAFT");
+                    gcode.writeComment("LAYER:-1");
+                    gcode.writeComment("RAFT SURFACE");
                     GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_µm);
                     gcodeLayer.setAlwaysRetract(true);
                     gcode.setZ(config.raftBaseThickness_µm + config.raftInterfaceThicknes_µm + config.raftSurfaceThickness * raftSurfaceLayer);

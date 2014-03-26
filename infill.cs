@@ -97,8 +97,7 @@ namespace MatterHackers.MatterSlice
                     for (int idx = idx0; idx <= idx1; idx++)
                     {
                         int x = (int)((idx * lineSpacing) + boundary.min.X + lineSpacing / 2);
-                        if (x < xMin
-                            || x >= xMax)
+                        if (x < xMin || x >= xMax)
                         {
                             continue;
                         }

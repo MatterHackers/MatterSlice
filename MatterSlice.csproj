@@ -69,7 +69,7 @@
     <Compile Include="modelFile.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="comb.cs" />
+    <Compile Include="AvoidCrossingPerimeters.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="utils\PolygonHelper.cs" />
