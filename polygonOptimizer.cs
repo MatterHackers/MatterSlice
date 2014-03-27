@@ -46,7 +46,7 @@ namespace MatterHackers.MatterSlice
                     poly.RemoveAt(pointIndex);
                     pointIndex--;
                 }
-                else if ((currentPosition - previousPosition).shorterThen(500))
+                else if ((currentPosition - previousPosition).shorterThen(5000))
                 {
                     IntPoint nextPosition;
                     if (pointIndex < poly.Count - 1)
@@ -60,13 +60,27 @@ namespace MatterHackers.MatterSlice
               
                     IntPoint normalPrevToCur = (currentPosition - previousPosition).normal(100000);
                     IntPoint normalCurToNext = (nextPosition - currentPosition).normal(100000);
-              
-                    long d = normalPrevToCur.Dot(normalCurToNext);
-                    long xLengthToConsiderSameDirection = 95000;
-                    if (d > (xLengthToConsiderSameDirection * xLengthToConsiderSameDirection)) // if they are mostly going the same direction 
+
+                    bool removePoint = false;
+                    if (normalPrevToCur == normalCurToNext)
+                    {
+                        removePoint = true;
+                    }
+                    else if ((currentPosition - previousPosition).shorterThen(500))
+                    {
+                        long d = normalPrevToCur.Dot(normalCurToNext);
+                        long xLengthToConsiderSameDirection = 95000;
+                        if (d > (xLengthToConsiderSameDirection * xLengthToConsiderSameDirection))
+                        {
+                            // if they are mostly going the same direction
+                            removePoint = true;
+                        }
+                    }
+
+                    if (removePoint)
                     {
                         poly.RemoveAt(pointIndex);
-                        pointIndex --; // check this point again against the next point
+                        pointIndex--; // check this point again against the next point
                     }
                     else
                     {
