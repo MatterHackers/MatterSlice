@@ -243,6 +243,22 @@ namespace MatterHackers.MatterSlice
         public int raftSurfaceLayers;
         public int raftAirGap;
 
+#if false
+        config.raftBaseThickness = 300;
+        config.raftBaseLinewidth = 1000;
+        config.raftLineSpacing = 3000;
+ 
+        config.raftInterfaceThickness = 250;
+        config.raftInterfaceLinewidth = 350;
+        config.raftInterfaceLineSpacing = 1000;
+ 
+        config.raftSurfaceThickness = 250;
+        config.raftSurfaceLinewidth = 400;
+        config.raftSurfaceLineSpacing = 400;
+        config.raftSurfaceLayers = 2;
+        config.raftAirGap = 200;
+#endif
+
         // object transform
         public FMatrix3x3 modelRotationMatrix = new FMatrix3x3();
 
