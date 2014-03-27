@@ -217,31 +217,26 @@ namespace MatterHackers.MatterSlice
         public double raftExtraDistanceAroundPart;
         public int raftExtraDistanceAroundPart_µm { get { return (int)(raftExtraDistanceAroundPart * 1000); } }
 
-        public double raftLineSpacing;
-        public int raftLineSpacing_µm { get { return (int)(raftLineSpacing * 1000); } }
+        public int raftLineSpacing_µm { get { return extrusionWidth_µm * 3000 / 400; } }
 
-        public double raftBaseThickness;
-        public int raftBaseThickness_µm { get { return (int)(raftBaseThickness * 1000); } }
+        public int raftBaseThickness_µm { get { return extrusionWidth_µm * 300 / 400; } }
 
-        public double raftBaseLinewidth;
-        public int raftBaseLinewidth_µm { get { return (int)(raftBaseLinewidth * 1000); } }
+        public int raftBaseLinewidth_µm { get { return extrusionWidth_µm * 1000 / 400; } }
+        public int raftInterfaceThicknes_µm { get { return extrusionWidth_µm * 250 / 400; } } // .25 mm for .4 mm nozzle
+        public int raftInterfaceLinewidth_µm { get { return extrusionWidth_µm * 350 / 400; } } // .35 mm for .4 mm nozzle
 
-        public double raftInterfaceThicknes;
-        public int raftInterfaceThicknes_µm { get { return (int)(raftInterfaceThicknes * 1000); } }
+        public int raftPrintSpeed { get { return firstLayerSpeed; } }
+        public int raftSurfacePrintSpeed { get { return firstLayerSpeed; } }
+        public int raftFanSpeedPercent { get { return 50; } }
 
-        public double raftInterfaceLinewidth;
-        public int raftInterfaceLinewidth_µm { get { return (int)(raftInterfaceLinewidth * 1000); } }
+        public int raftInterfaceLineSpacing_µm { get { return extrusionWidth_µm * 1000 / 400; } } // 1 mm for .4 mm nozzle
+        public int raftSurfaceThickness_µm { get { return extrusionWidth_µm * 250 / 400; } } // .250 mm for .4 mm nozzle
+        public int raftSurfaceLinewidth_µm { get { return extrusionWidth_µm * 400 / 400; } } // .4 mm for .4 mm nozzle
+        public int raftSurfaceLineSpacing_µm { get { return extrusionWidth_µm * 400 / 400; } } // .4 mm for .4 mm nozzle
+        public int raftSurfaceLayers_µm { get { return 2; } }
+        public int raftAirGap_µm { get { return extrusionWidth_µm * 200 / 400; } } // .2 mm for .4 mm nozzle
 
-        public int raftPrintSpeed;
-        public int raftSurfacePrintSpeed;
-        public int raftFanSpeedPercent;
-
-        public int raftInterfaceLineSpacing;
-        public int raftSurfaceThickness;
-        public int raftSurfaceLinewidth;
-        public int raftSurfaceLineSpacing;
-        public int raftSurfaceLayers;
-        public int raftAirGap;
+        public bool enableRaft;
 
         // object transform
         public FMatrix3x3 modelRotationMatrix = new FMatrix3x3();
@@ -307,12 +302,6 @@ namespace MatterHackers.MatterSlice
 
             // raft settings
             raftExtraDistanceAroundPart = 5;
-            raftLineSpacing = 1;
-            raftBaseThickness = 0;
-            raftBaseLinewidth = 0;
-            raftInterfaceThicknes = 0;
-            raftInterfaceLinewidth = 0;
-            raftInterfaceLineSpacing = 250;
 
             supportType = ConfigConstants.SUPPORT_TYPE.NONE;
             supportEndAngle = 0;

@@ -34,19 +34,63 @@ namespace MatterHackers.MatterSlice
     {
         public static void optimizePolygon(Polygon poly)
         {
-            IntPoint p0 = poly[poly.Count - 1];
-            for (int i = 0; i < poly.Count; i++)
+            long minimumDistanceToCreateNewPosition = 10;
+
+            IntPoint previousPosition = poly[poly.Count - 1];
+            for (int pointIndex = 0; pointIndex < poly.Count; pointIndex++)
             {
-                IntPoint p1 = poly[i];
-                if ((p0 - p1).shorterThen(10))
+                IntPoint currentPosition = poly[pointIndex];
+                if ((currentPosition - previousPosition).shorterThen(minimumDistanceToCreateNewPosition))
                 {
-                    poly.RemoveAt(i);
-                    i--;
+                    // anything shorter than 
+                    poly.RemoveAt(pointIndex);
+                    pointIndex--;
+                }
+                else if ((currentPosition - previousPosition).shorterThen(5000))
+                {
+                    IntPoint nextPosition;
+                    if (pointIndex < poly.Count - 1)
+                    {
+                        nextPosition = poly[pointIndex+1];
+                    }
+                    else
+                    {
+                        nextPosition = poly[0];
+                    }
+              
+                    IntPoint normalPrevToCur = (currentPosition - previousPosition).normal(100000);
+                    IntPoint normalCurToNext = (nextPosition - currentPosition).normal(100000);
+
+                    bool removePoint = false;
+                    if (normalPrevToCur == normalCurToNext)
+                    {
+                        removePoint = true;
+                    }
+                    else if ((currentPosition - previousPosition).shorterThen(500))
+                    {
+                        long d = normalPrevToCur.Dot(normalCurToNext);
+                        long xLengthToConsiderSameDirection = 95000;
+                        if (d > (xLengthToConsiderSameDirection * xLengthToConsiderSameDirection))
+                        {
+                            // if they are mostly going the same direction
+                            removePoint = true;
+                        }
+                    }
+
+                    if (removePoint)
+                    {
+                        poly.RemoveAt(pointIndex);
+                        pointIndex--; // check this point again against the next point
+                    }
+                    else
+                    {
+                        previousPosition = currentPosition;
+                    }
                 }
                 else
                 {
-                    p0 = p1;
-                }
+                    previousPosition = currentPosition;
+                }           
             }
         }
 

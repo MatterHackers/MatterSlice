@@ -54,11 +54,13 @@ namespace MatterHackers.MatterSlice
 
         public static void GenerateRaftGCodeIfRequired(SliceDataStorage storage, ConfigSettings config, GCodeExport gcode)
         {
-            if (config.raftBaseThickness_µm > 0 && config.raftInterfaceThicknes_µm > 0)
+            if (config.enableRaft 
+                && config.raftBaseThickness_µm > 0 
+                && config.raftInterfaceThicknes_µm > 0)
             {
                 GCodePathConfig raftBaseConfig = new GCodePathConfig(config.firstLayerSpeed, config.raftBaseThickness_µm, "SUPPORT");
                 GCodePathConfig raftMiddleConfig = new GCodePathConfig(config.raftPrintSpeed, config.raftInterfaceLinewidth_µm, "SUPPORT");
-                GCodePathConfig raftSurfaceConfig = new GCodePathConfig((config.raftSurfacePrintSpeed > 0) ? config.raftSurfacePrintSpeed : config.raftPrintSpeed, config.raftSurfaceLinewidth, "SUPPORT");
+                GCodePathConfig raftSurfaceConfig = new GCodePathConfig((config.raftSurfacePrintSpeed > 0) ? config.raftSurfacePrintSpeed : config.raftPrintSpeed, config.raftSurfaceLinewidth_µm, "SUPPORT");
 
                 // create the raft base
                 {
@@ -97,23 +99,23 @@ namespace MatterHackers.MatterSlice
                     gcode.setExtrusion(config.raftInterfaceThicknes_µm, config.filamentDiameter_µm, config.extrusionMultiplier);
 
                     Polygons raftLines = new Polygons();
-                    Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftInterfaceLinewidth_µm, config.raftInterfaceLineSpacing, config.infillOverlapPerimeter_µm, 45);
+                    Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftInterfaceLinewidth_µm, config.raftInterfaceLineSpacing_µm, config.infillOverlapPerimeter_µm, 45);
                     gcodeLayer.writePolygonsByOptimizer(raftLines, raftMiddleConfig);
 
                     gcodeLayer.writeGCode(false, config.raftInterfaceThicknes_µm);
                 }
 
-                for (int raftSurfaceLayer = 1; raftSurfaceLayer <= config.raftSurfaceLayers; raftSurfaceLayer++)
+                for (int raftSurfaceLayer = 1; raftSurfaceLayer <= config.raftSurfaceLayers_µm; raftSurfaceLayer++)
                 {
                     gcode.writeComment("LAYER:-1");
                     gcode.writeComment("RAFT SURFACE");
                     GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_µm);
                     gcodeLayer.setAlwaysRetract(true);
-                    gcode.setZ(config.raftBaseThickness_µm + config.raftInterfaceThicknes_µm + config.raftSurfaceThickness * raftSurfaceLayer);
-                    gcode.setExtrusion(config.raftSurfaceThickness, config.filamentDiameter_µm, config.extrusionMultiplier);
+                    gcode.setZ(config.raftBaseThickness_µm + config.raftInterfaceThicknes_µm + config.raftSurfaceThickness_µm * raftSurfaceLayer);
+                    gcode.setExtrusion(config.raftSurfaceThickness_µm, config.filamentDiameter_µm, config.extrusionMultiplier);
 
                     Polygons raftLines = new Polygons();
-                    Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftSurfaceLinewidth, config.raftSurfaceLineSpacing, config.infillOverlapPerimeter_µm, 90);
+                    Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftSurfaceLinewidth_µm, config.raftSurfaceLineSpacing_µm, config.infillOverlapPerimeter_µm, 90);
                     gcodeLayer.writePolygonsByOptimizer(raftLines, raftSurfaceConfig);
 
                     gcodeLayer.writeGCode(false, config.raftInterfaceThicknes_µm);
