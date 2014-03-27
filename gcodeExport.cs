@@ -265,6 +265,10 @@ namespace MatterHackers.MatterSlice
                     // Fix the speed by the actual RPM we are asking, because of rounding errors we cannot get all RPM values, but we have a lot more resolution in the feedrate value.
                     // (Trick copied from KISSlicer, thanks Jonathan)
                     fspeed *= (rpm / (Round(rpm * 100) / 100));
+                    
+                    //Increase the extrusion amount to calculate the amount of filament used.
+                    IntPoint diff = p - getPositionXY();
+                    extrusionAmount += extrusionPerMM * lineWidth / 1000.0 * diff.LengthMm();
                 }
                 else
                 {
