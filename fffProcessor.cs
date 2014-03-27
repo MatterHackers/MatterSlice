@@ -399,7 +399,7 @@ namespace MatterHackers.MatterSlice
 
                 // get the correct height for this layer
                 int z = config.firstLayerThickness_µm + layerNr * config.layerThickness_µm;
-                z += config.raftBaseThickness_µm + config.raftInterfaceThicknes_µm + config.raftSurfaceLayers * config.raftSurfaceThickness;
+                z += config.raftBaseThickness_µm + config.raftInterfaceThicknes_µm + config.raftSurfaceLayers_µm * config.raftSurfaceThickness_µm;
                 if (layerNr == 0)
                 {
                     // We only raise the first layer of the print up by the air gap.
@@ -407,7 +407,7 @@ namespace MatterHackers.MatterSlice
                     //   Less press into the raft
                     //   More time to cool
                     //   more surface area to air while extruding
-                    z += config.raftAirGap;
+                    z += config.raftAirGap_µm;
                 }
 
                 gcode.setZ(z);

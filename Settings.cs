@@ -229,12 +229,12 @@ namespace MatterHackers.MatterSlice
         public int raftSurfacePrintSpeed { get { return firstLayerSpeed; } }
         public int raftFanSpeedPercent { get { return 50; } }
 
-        public int raftInterfaceLineSpacing { get { return extrusionWidth_µm * 1000 / 400; } } // 1 mm for .4 mm nozzle
-        public int raftSurfaceThickness { get { return extrusionWidth_µm * 250 / 400; } } // .250 mm for .4 mm nozzle
-        public int raftSurfaceLinewidth { get { return extrusionWidth_µm * 400 / 400; } } // .4 mm for .4 mm nozzle
-        public int raftSurfaceLineSpacing { get { return extrusionWidth_µm * 400 / 400; } } // .4 mm for .4 mm nozzle
-        public int raftSurfaceLayers { get { return 2; } }
-        public int raftAirGap { get { return extrusionWidth_µm * 200 / 400; } } // .2 mm for .4 mm nozzle
+        public int raftInterfaceLineSpacing_µm { get { return extrusionWidth_µm * 1000 / 400; } } // 1 mm for .4 mm nozzle
+        public int raftSurfaceThickness_µm { get { return extrusionWidth_µm * 250 / 400; } } // .250 mm for .4 mm nozzle
+        public int raftSurfaceLinewidth_µm { get { return extrusionWidth_µm * 400 / 400; } } // .4 mm for .4 mm nozzle
+        public int raftSurfaceLineSpacing_µm { get { return extrusionWidth_µm * 400 / 400; } } // .4 mm for .4 mm nozzle
+        public int raftSurfaceLayers_µm { get { return 2; } }
+        public int raftAirGap_µm { get { return extrusionWidth_µm * 200 / 400; } } // .2 mm for .4 mm nozzle
 
         public bool enableRaft;
 
