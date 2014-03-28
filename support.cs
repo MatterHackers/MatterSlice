@@ -269,7 +269,7 @@ namespace MatterHackers.MatterSlice
                 return;
             }
 
-            cosAngle = Math.Cos((double)(90 - storage.endAngle) / 180.0 * Math.PI) - 0.01;
+            cosAngle = Math.Cos((double)(storage.endAngle) / 180.0 * Math.PI) - 0.01;
             this.supportZDistance = storage.ZDistance;
 
             done = new int[(int)(storage.gridWidth * storage.gridHeight)];
