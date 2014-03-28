@@ -92,9 +92,6 @@
     <Compile Include="skin.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="polygonOptimizer.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="skirt.cs" />
   </ItemGroup>
   <ItemGroup>

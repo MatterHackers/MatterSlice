@@ -425,7 +425,8 @@ namespace MatterHackers.MatterSlice
             }
 
             //Finally optimize all the polygons. Every point removed saves time in the long run.
-            PolygonOptimizer.optimizePolygons(polygonList);
+            long minimumDistanceToCreateNewPosition = 10;
+            polygonList = Clipper.CleanPolygons(polygonList, minimumDistanceToCreateNewPosition);
         }
 
         gapCloserResult findPolygonGapCloser(IntPoint ip0, IntPoint ip1)
