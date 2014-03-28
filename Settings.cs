@@ -181,8 +181,8 @@ namespace MatterHackers.MatterSlice
 
         //Support material
         public ConfigConstants.SUPPORT_TYPE supportType;
-        
-        // Support will be generated up to this angle. Mor than this and there will be no support (it can rest on itself), degrees.
+
+        [SettingDescription("The ending angle at which support material will be generated. Larger numbers will result in more support, degrees.")]
         public int supportEndAngle;
         [SettingDescription("If True, support will be generated within the part as well as from the bed.")]
         public bool generateInternalSupport;
@@ -303,7 +303,7 @@ namespace MatterHackers.MatterSlice
             // raft settings
             raftExtraDistanceAroundPart = 5;
 
-            supportType = ConfigConstants.SUPPORT_TYPE.NONE;
+            supportType = ConfigConstants.SUPPORT_TYPE.GRID;
             supportEndAngle = 0;
             generateInternalSupport = true;
             supportLineSpacing = extrusionWidth * 5;
@@ -666,7 +666,6 @@ namespace MatterHackers.MatterSlice
          * */
         public enum SUPPORT_TYPE
         {
-            NONE,
             GRID,
             LINES
         }

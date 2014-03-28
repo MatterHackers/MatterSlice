@@ -69,7 +69,7 @@ namespace MatterHackers.MatterSlice
         public static void generateSupportGrid(SupportStorage storage, OptimizedModel model, ConfigSettings config)
         {
             storage.generated = false;
-            if (config.supportType == ConfigConstants.SUPPORT_TYPE.NONE)
+            if (config.supportEndAngle < 0)
             {
                 return;
             }
