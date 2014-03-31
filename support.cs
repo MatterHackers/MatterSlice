@@ -174,7 +174,7 @@ namespace MatterHackers.MatterSlice
             return one.z.CompareTo(two.z);
         }
 
-        public bool needSupportAt(IntPoint pointToCheckIfNeedsSupport)
+        public bool needSupportAt(IntPoint pointToCheckIfNeedsSupport, int z)
         {
             if (pointToCheckIfNeedsSupport.X < 1 
                 || pointToCheckIfNeedsSupport.Y < 1 
@@ -214,7 +214,7 @@ namespace MatterHackers.MatterSlice
             return true;
         }
 
-        public void lazyFill(IntPoint startPoint)
+        public void lazyFill(IntPoint startPoint, int z)
         {
             int nr = 0;
             nr++;
@@ -227,7 +227,7 @@ namespace MatterHackers.MatterSlice
             {
                 IntPoint p = startPoint;
                 done[p.X + p.Y * storage.gridWidth] = nr;
-                while (needSupportAt(p + new IntPoint(1, 0)))
+                while (needSupportAt(p + new IntPoint(1, 0), z))
                 {
                     p.X++;
                     done[p.X + p.Y * storage.gridWidth] = nr;
@@ -235,7 +235,7 @@ namespace MatterHackers.MatterSlice
                 tmpPoly.Add(startPoint * storage.gridScale + storage.gridOffset - new IntPoint(storage.gridScale / 2, 0));
                 poly.Add(p * storage.gridScale + storage.gridOffset);
                 startPoint.Y++;
-                while (!needSupportAt(startPoint) && startPoint.X <= p.X)
+                while (!needSupportAt(startPoint, z) && startPoint.X <= p.X)
                 {
                     startPoint.X++;
                 }
@@ -250,7 +250,7 @@ namespace MatterHackers.MatterSlice
                     return;
                 }
 
-                while (needSupportAt(startPoint - new IntPoint(1, 0)) && startPoint.X > 1)
+                while (needSupportAt(startPoint - new IntPoint(1, 0), z) && startPoint.X > 1)
                 {
                     startPoint.X--;
                 }
@@ -260,7 +260,6 @@ namespace MatterHackers.MatterSlice
         public SupportPolyGenerator(SupportStorage storage, int z)
         {
             this.storage = storage;
-            this.z = z;
             this.generateInternalSupport = storage.generateInternalSupport;
 
             if (!storage.generated)
@@ -277,12 +276,12 @@ namespace MatterHackers.MatterSlice
             {
                 for (int x = 1; x < storage.gridWidth; x++)
                 {
-                    if (!needSupportAt(new IntPoint(x, y)) || done[x + y * storage.gridWidth] != 0)
+                    if (!needSupportAt(new IntPoint(x, y), z) || done[x + y * storage.gridWidth] != 0)
                     {
                         continue;
                     }
 
-                    lazyFill(new IntPoint(x, y));
+                    lazyFill(new IntPoint(x, y), z);
                 }
             }
 
