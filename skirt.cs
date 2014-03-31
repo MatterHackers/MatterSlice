@@ -22,7 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-using ClipperLib;
+using MatterSlice.ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -31,12 +31,12 @@ namespace MatterHackers.MatterSlice
 
     public class Skirt
     {
-        public static void generateSkirt(SliceDataStorage storage, int distance, int extrusionWidth, int count, int minLength, int initialLayerHeight)
+        public static void generateSkirt(SliceDataStorage storage, int distance, int extrusionWidth, int numberOfLoops, int minLength, int initialLayerHeight)
         {
             bool externalOnly = (distance > 0);
-            for (int skirtNr = 0; skirtNr < count; skirtNr++)
+            for (int skirtLoop = 0; skirtLoop < numberOfLoops; skirtLoop++)
             {
-                int offsetDistance = distance + extrusionWidth * skirtNr + extrusionWidth / 2;
+                int offsetDistance = distance + extrusionWidth * skirtLoop + extrusionWidth / 2;
 
                 Polygons skirtPolygons = new Polygons(storage.wipeTower.Offset(offsetDistance));
                 for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
@@ -80,9 +80,10 @@ namespace MatterHackers.MatterSlice
                 storage.skirt.AddAll(skirtPolygons);
 
                 int lenght = (int)storage.skirt.polygonLength();
-                if (skirtNr + 1 >= count && lenght > 0 && lenght < minLength)
+                if (skirtLoop + 1 >= numberOfLoops && lenght > 0 && lenght < minLength)
                 {
-                    count++;
+                    // add more loops for as long as we have not extruded enough length
+                    numberOfLoops++;
                 }
             }
         }

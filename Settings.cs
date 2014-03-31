@@ -23,8 +23,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Reflection;
+using System.IO;
 
-using ClipperLib;
+using MatterSlice.ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -54,81 +55,214 @@ namespace MatterHackers.MatterSlice
         }
     }
 
+    // this class is so that we can add a help text to variables in the config file
+    [System.AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Field)]
+    public class SettingDescription : System.Attribute
+    {
+        private string description;
+        public string Description { get { return description; } }
+
+        public SettingDescription(string description)
+        {
+            this.description = description;
+        }
+    }
+
     // all the variables in this class will be saved and loaded from settings files
     public class ConfigSettings
     {
-        // if you were to change the layerThickness variable you would add a legacy name so that we can still use old settings
-        //[LegacyName("exampleLegacyLayerThickness")]
+        // if you were to change the layerThicknessMm variable you would add a legacy name so that we can still use old settings
+        //[LegacyName("layerThickness")] // the name before we added Mm
         public double layerThickness;
         public int layerThickness_µm { get { return (int)(layerThickness * 1000); } }
 
-        public double initialLayerThickness;
-        public int initialLayerThickness_µm { get { return (int)(initialLayerThickness * 1000); } }
+        [SettingDescription("The height of the first layer to print, in millimeters.")]
+        public double firstLayerThickness;
+        public int firstLayerThickness_µm { get { return (int)(firstLayerThickness * 1000); } }
 
-        public int filamentDiameter;
-        public int filamentFlow;
-        public int extrusionWidth;
-        public int insetCount;
-        public int downSkinCount;
-        public int upSkinCount;
-        public int sparseInfillLineDistance;
-        public int infillOverlap;
-        public int skirtDistance;
-        public int skirtLineCount;
+        [SettingDescription("The width of the filament being fed into the extruder, in millimeters.")]
+        public double filamentDiameter;
+        public int filamentDiameter_µm { get { return (int)(filamentDiameter * 1000); } }
+
+        [SettingDescription("Lets you adjust how much material to extrude.")]
+        public double extrusionMultiplier;
+
+        [SettingDescription("The width of the line to extrude for the first layer.")]
+        public double firstLayerExtrusionWidth;
+        public int firstLayerExtrusionWidth_µm { get { return (int)(firstLayerExtrusionWidth * 1000); } }
+
+        [SettingDescription("The width of the line to extrude.")]
+        public double extrusionWidth;
+        public int extrusionWidth_µm { get { return (int)(extrusionWidth * 1000); } }
+
+        public int numberOfPerimeters;
+        public int numberOfBottomLayers;
+        public int numberOfTopLayers;
+
+        [SettingDescription("The percent of filled space to open space while infilling.")]
+        public double infillPercent;
+
+        public int infillLineDistance_µm
+        { 
+            get 
+            {
+                double linespacing = 0;
+                if (infillPercent > 0)
+                {
+                    // make this math generate the correct ratio
+                    linespacing = extrusionWidth / (infillPercent / 100);
+                }
+
+                return (int)(linespacing * 1000);
+            } 
+        }
+
+        [SettingDescription("The amount the infill extends into the perimeter in millimeters.")]
+        public double infillOverlapPerimeter;
+        public int infillOverlapPerimeter_µm { get { return (int)(infillOverlapPerimeter * 1000); } }
+
+        public int infillStartingAngle;
+
+        [SettingDescription("How far from objects the first skirt loop should be, in millimeters.")]
+        public int skirtDistanceFromObject;
+        public int skirtDistance_µm { get { return (int)(skirtDistanceFromObject * 1000); } }
+
+        [SettingDescription("The number of loops to draw around objects. Can be used to help hold them down.")]
+        public int numberOfSkirtLoops;
+
+        [SettingDescription("The minimum length of the skirt line, in millimeters.")]
         public int skirtMinLength;
-        public int retractionAmount;
-        public int retractionAmountExtruderSwitch;
-        public int retractionSpeed;
-        public int retractionMinimalDistance;
-        public int minimalExtrusionBeforeRetraction;
-        public int retractionZHop;
-        public bool enableCombing;
-        public bool enableOozeShield;
-        public int wipeTowerSize;
-        public int multiVolumeOverlap;
+        public int skirtMinLength_µm { get { return (int)(skirtMinLength * 1000); } }
 
-        public int initialSpeedupLayers;
-        public int initialLayerSpeed;
-        public int printSpeed;
+        public double retractionOnTravel;
+        public int retractionAmount_µm { get { return (int)(retractionOnTravel * 1000); } }
+        public double retractionOnExtruderSwitch;
+        public int retractionAmountOnExtruderSwitch_µm { get { return (int)(retractionOnExtruderSwitch * 1000); } }
+
+        [SettingDescription("mm/s.")]
+        public int retractionSpeed;
+
+        [SettingDescription("The minimum travel distance that will require a retraction")]
+        public double minimumTravelToCauseRetraction;
+        public int minimumTravelToCauseRetraction_µm { get { return (int)(minimumTravelToCauseRetraction * 1000); } }
+
+        [SettingDescription("mm.")]
+        public double minimumExtrusionBeforeRetraction;
+        public int minimumExtrusionBeforeRetraction_µm { get { return (int)(minimumExtrusionBeforeRetraction * 1000); } }
+
+        [SettingDescription("The amount to move the extruder up in z after retracting (before a move). mm.")]
+        public double retractionZHop;
+        
+        [SettingDescription("Avoid crossing any of the perimeters of a shape while printing its parts.")]
+        public bool avoidCrossingPerimeters;
+        
+        [SettingDescription("If greater than 0 this creates an outline around shapes so the extrude will be wiped when entering.")]
+        public double wipeShieldDistanceFromObject;
+        public int wipeShieldDistanceFromShapes_µm { get { return (int)(wipeShieldDistanceFromObject * 1000); } }
+
+        [SettingDescription("Unlike the wipe shield this is a square of size*size in the lower left corner for wiping during extruder changing.")]
+        public double wipeTowerSize;
+        public int wipeTowerSize_µm { get { return (int)(wipeTowerSize * 1000); } }
+        public int multiVolumeOverlapPercent;
+
+        // speed settings
+        [SettingDescription("This is the speed to print everything on the first layer, mm/s.")]
+        public int firstLayerSpeed;
+        [SettingDescription("mm/s.")]
+        public int supportMaterialSpeed;
+        [SettingDescription("mm/s.")]
         public int infillSpeed;
-        public int inset0Speed;
-        public int insetXSpeed;
-        public int moveSpeed;
-        public int fanFullOnLayerNr;
+        [SettingDescription("The speed of the first perimeter. mm/s.")]
+        public int outsidePerimeterSpeed;
+        [SettingDescription("The speed of all perimeters but the outside one. mm/s.")]
+        public int insidePerimetersSpeed;
+        [SettingDescription("The speed to move when not extruding material. mm/s.")]
+        public int travelSpeed;
 
         //Support material
         public ConfigConstants.SUPPORT_TYPE supportType;
-        public int supportAngle;
-        public int supportEverywhere;
-        public int supportLineDistance;
-        public int supportXYDistance;
-        public int supportZDistance;
+
+        [SettingDescription("The ending angle at which support material will be generated. Larger numbers will result in more support, degrees.")]
+        public int supportEndAngle;
+        [SettingDescription("If True, support will be generated within the part as well as from the bed.")]
+        public bool generateInternalSupport;
+        
+        public double supportLineSpacing;
+        public int supportLineSpacing_µm { get { return (int)(supportLineSpacing * 1000); } }
+
+        [SettingDescription("The closest xy distance that support will be to the object. mm/s.")]
+        public double supportXYDistanceFromObject;
+        public int supportXYDistance_µm { get { return (int)(supportXYDistanceFromObject * 1000); } }
+
+        [SettingDescription("The number of layers to skip in z. The gap between the support and the model.")]
+        public int supportNumberOfLayersToSkipInZ;
+        
         public int supportExtruder;
 
         //Cool settings
-        public int minimalLayerTime;
-        public int minimalFeedrate;
-        public bool coolHeadLift;
-        public int fanSpeedMin;
-        public int fanSpeedMax;
+        public int minimumLayerTimeSeconds;
+        
+        [SettingDescription("The minimum speed that the extruder is allowed to move while printing. mm/s.")]
+        public int minimumPrintingSpeed;
+
+        [SettingDescription("Will cause the head to be raised in z until the min layer time is reached.")]
+        public bool doCoolHeadLift;
+        public int fanSpeedMinPercent;
+        public int fanSpeedMaxPercent;
+        [SettingDescription("The fan will be force to stay off below this layer.")]
+        public int firstLayerToAllowFan;
 
         //Raft settings
-        public int raftMargin;
-        public int raftLineSpacing;
-        public int raftBaseThickness;
-        public int raftBaseLinewidth;
-        public int raftInterfaceThickness;
-        public int raftInterfaceLinewidth;
+        [SettingDescription("mm.")]
+        public double raftExtraDistanceAroundPart;
+        public int raftExtraDistanceAroundPart_µm { get { return (int)(raftExtraDistanceAroundPart * 1000); } }
 
-        public FMatrix3x3 matrix = new FMatrix3x3();
-        public IntPoint objectPosition;
-        public int objectSink;
+        public int raftLineSpacing_µm { get { return extrusionWidth_µm * 3000 / 400; } }
 
-        public ConfigConstants.FIX_HORRIBLE fixHorrible;
-        public bool spiralizeMode;
-        public ConfigConstants.GCODE_FLAVOR gcodeFlavor;
+        public int raftBaseThickness_µm { get { return extrusionWidth_µm * 300 / 400; } }
 
-        public IntPoint[] extruderOffset = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
+        public int raftBaseLinewidth_µm { get { return extrusionWidth_µm * 1000 / 400; } }
+        public int raftInterfaceThicknes_µm { get { return extrusionWidth_µm * 250 / 400; } } // .25 mm for .4 mm nozzle
+        public int raftInterfaceLinewidth_µm { get { return extrusionWidth_µm * 350 / 400; } } // .35 mm for .4 mm nozzle
+
+        public int raftPrintSpeed { get { return firstLayerSpeed; } }
+        public int raftSurfacePrintSpeed { get { return firstLayerSpeed; } }
+        public int raftFanSpeedPercent { get { return 50; } }
+
+        public int raftInterfaceLineSpacing_µm { get { return extrusionWidth_µm * 1000 / 400; } } // 1 mm for .4 mm nozzle
+        public int raftSurfaceThickness_µm { get { return extrusionWidth_µm * 250 / 400; } } // .250 mm for .4 mm nozzle
+        public int raftSurfaceLinewidth_µm { get { return extrusionWidth_µm * 400 / 400; } } // .4 mm for .4 mm nozzle
+        public int raftSurfaceLineSpacing_µm { get { return extrusionWidth_µm * 400 / 400; } } // .4 mm for .4 mm nozzle
+        public int raftSurfaceLayers_µm { get { return 2; } }
+        public int raftAirGap_µm { get { return extrusionWidth_µm * 200 / 400; } } // .2 mm for .4 mm nozzle
+
+        public bool enableRaft;
+
+        // object transform
+        public FMatrix3x3 modelRotationMatrix = new FMatrix3x3();
+
+        [SettingDescription("Describes if 'positionToPlaceObjectCenter' should be used.")]
+        public bool centerObjectInXy;
+        public DoublePoint positionToPlaceObjectCenter;
+        public IntPoint positionToPlaceObjectCenter_µm { get { return new IntPoint(positionToPlaceObjectCenter.X * 1000, positionToPlaceObjectCenter.Y * 1000); } }
+
+        [SettingDescription("The amount to clip off the bottom of the part, in millimeters.")]
+        public double bottomClipAmount;
+        public int bottomClipAmount_µm { get { return (int)(bottomClipAmount * 1000); } }
+
+        // repair settings
+        [SettingDescription("You can or them together using '|'.")]
+        public ConfigConstants.REPAIR_OUTLINES repairOutlines;
+
+        [SettingDescription("You can or them together using '|'.")]
+        public ConfigConstants.REPAIR_OVERLAPS repairOverlaps;
+
+        // other
+        [SettingDescription("This will cause the z height to raise continuously while on the outer perimeter.")]
+        public bool continuousSpiralOuterPerimeter;
+        public ConfigConstants.OUTPUT_TYPE outputType;
+
+        public IntPoint[] extruderOffsets = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
         public string startCode;
         public string endCode;
 
@@ -139,63 +273,61 @@ namespace MatterHackers.MatterSlice
 
         public void SetToDefault()
         {
-            filamentDiameter = 2890;
-            filamentFlow = 100;
-            initialLayerThickness = .3;
+            filamentDiameter = 2.89;
+            extrusionMultiplier = 1;
+            firstLayerThickness = .3;
             layerThickness = .1;
-            extrusionWidth = 400;
-            insetCount = 2;
-            downSkinCount = 6;
-            upSkinCount = 6;
-            initialSpeedupLayers = 4;
-            initialLayerSpeed = 20;
-            printSpeed = 50;
+            firstLayerExtrusionWidth = .8;
+            extrusionWidth = .4;
+            numberOfPerimeters = 2;
+            numberOfBottomLayers = 6;
+            numberOfTopLayers = 6;
+            firstLayerSpeed = 20;
+            supportMaterialSpeed = 40;
             infillSpeed = 50;
-            inset0Speed = 50;
-            insetXSpeed = 50;
-            moveSpeed = 200;
-            fanFullOnLayerNr = 2;
-            skirtDistance = 6000;
-            skirtLineCount = 1;
+            outsidePerimeterSpeed = 50;
+            insidePerimetersSpeed = 50;
+            travelSpeed = 200;
+            firstLayerToAllowFan = 2;
+            skirtDistanceFromObject = 6;
+            numberOfSkirtLoops = 1;
             skirtMinLength = 0;
-            sparseInfillLineDistance = 100 * extrusionWidth / 20;
-            infillOverlap = 15;
-            objectPosition.X = 102500;
-            objectPosition.Y = 102500;
-            objectSink = 0;
+            infillPercent = 20;
+            infillOverlapPerimeter = .06;
+            infillStartingAngle = 45;
+            centerObjectInXy = true;
+            positionToPlaceObjectCenter.X = 102.5;
+            positionToPlaceObjectCenter.Y = 102.5;
+            bottomClipAmount = 0;
+
+            // raft settings
+            raftExtraDistanceAroundPart = 5;
+
             supportType = ConfigConstants.SUPPORT_TYPE.GRID;
-            supportAngle = -1;
-            supportEverywhere = 0;
-            supportLineDistance = sparseInfillLineDistance;
+            supportEndAngle = 0;
+            generateInternalSupport = true;
+            supportLineSpacing = extrusionWidth * 5;
             supportExtruder = -1;
-            supportXYDistance = 700;
-            supportZDistance = 150;
-            retractionAmount = 4500;
+            supportXYDistanceFromObject = .7;
+            supportNumberOfLayersToSkipInZ = 1;
+            retractionOnTravel = 4.5;
             retractionSpeed = 45;
-            retractionAmountExtruderSwitch = 14500;
-            retractionMinimalDistance = 1500;
-            minimalExtrusionBeforeRetraction = 100;
-            enableOozeShield = false;
-            enableCombing = true;
+            retractionOnExtruderSwitch = 14.5;
+            minimumTravelToCauseRetraction = 1.5;
+            minimumExtrusionBeforeRetraction = .1;
+            wipeShieldDistanceFromObject = 0;
+            avoidCrossingPerimeters = true;
             wipeTowerSize = 0;
-            multiVolumeOverlap = 0;
+            multiVolumeOverlapPercent = 0;
 
-            minimalLayerTime = 5;
-            minimalFeedrate = 10;
-            coolHeadLift = false;
-            fanSpeedMin = 100;
-            fanSpeedMax = 100;
+            minimumLayerTimeSeconds = 5;
+            minimumPrintingSpeed = 10;
+            doCoolHeadLift = false;
+            fanSpeedMinPercent = 100;
+            fanSpeedMaxPercent = 100;
 
-            raftMargin = 5000;
-            raftLineSpacing = 1000;
-            raftBaseThickness = 0;
-            raftBaseLinewidth = 0;
-            raftInterfaceThickness = 0;
-            raftInterfaceLinewidth = 0;
-
-            spiralizeMode = false;
-            fixHorrible = 0;
-            gcodeFlavor = ConfigConstants.GCODE_FLAVOR.REPRAP;
+            continuousSpiralOuterPerimeter = false;
+            outputType = ConfigConstants.OUTPUT_TYPE.REPRAP;
 
             startCode =
                             "M109 S210     ;Heatup to 210C\n" +
@@ -224,6 +356,7 @@ namespace MatterHackers.MatterSlice
             fields = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
             foreach (FieldInfo field in fields)
             {
+                string fieldDescription = "";
                 System.Attribute[] attributes = System.Attribute.GetCustomAttributes(field);
                 foreach (Attribute attribute in attributes)
                 {
@@ -232,53 +365,70 @@ namespace MatterHackers.MatterSlice
                     {
                         string Name = legacyName.Name;
                     }
+
+                    SettingDescription description = attribute as SettingDescription;
+                    if (description != null)
+                    {
+                        fieldDescription = " # {0}".FormatWith(description.Description);
+                    }
                 }
                 string name = field.Name;
                 object value = field.GetValue(this);
                 switch (field.FieldType.Name)
                 {
                     case "Int32":
-                        lines.Add("{0}={1}".FormatWith(name, value));
-                        break;
-
                     case "Double":
-                        lines.Add("{0}={1}".FormatWith(name, value));
-                        break;
-
                     case "Boolean":
-                        lines.Add("{0}={1}".FormatWith(name, value));
-                        break;
-
                     case "FMatrix3x3":
-                        lines.Add("{0}={1}".FormatWith(name, value));
+                        // all these setting just output correctly with ToString() so we don't have to do anything special.
+                        lines.Add("{0}={1}{2}".FormatWith(name, value, fieldDescription));
                         break;
 
                     case "IntPoint":
-                        lines.Add("{0}={1}".FormatWith(name, value));
+                        lines.Add("{0}={1}{2}".FormatWith(name, ((IntPoint)value).OutputInMm(), fieldDescription));
+                        break;
+
+                    case "DoublePoint":
+                        lines.Add("{0}=[{1},{2}]{3}".FormatWith(name, ((DoublePoint)value).X, ((DoublePoint)value).Y, fieldDescription));
                         break;
 
                     case "IntPoint[]":
-                        lines.Add("{0}={1}".FormatWith(name, value));
+                        {
+                            IntPoint[] valueIntArray = value as IntPoint[];
+                            string values = "[";
+                            bool first = true;
+                            foreach(IntPoint intPoint in valueIntArray)
+                            {
+                                if (!first)
+                                {
+                                    values += ",";
+                                }
+                                values = values + intPoint.OutputInMm();
+                                first = false;
+                            }
+                            lines.Add("{0}={1}]{2}".FormatWith(name, values, fieldDescription));
+                        }
                         break;
 
                     case "String":
+                        if(fieldDescription != "")
+                        {
+                            throw new Exception("We can't output a description on a string as we need to write whatever the string says.");
+                        }
+                        // change the cariage returns to '\n's in the file
                         lines.Add("{0}={1}".FormatWith(name, value).Replace("\n", "\\n"));
                         break;
 
-                    case "FIX_HORRIBLE":
-                        lines.Add("{0}={1}".FormatWith(name, value));
-                        break;
-
+                    case "REPAIR_OUTLINES":
+                    case "REPAIR_OVERLAPS":
                     case "SUPPORT_TYPE":
-                        lines.Add("{0}={1}".FormatWith(name, value));
-                        break;
-
-                    case "GCODE_FLAVOR":
-                        lines.Add("{0}={1}".FormatWith(name, value));
+                    case "OUTPUT_TYPE":
+                        // all the enums can be output by this function
+                        lines.Add("{0}={1} # {2}{3}".FormatWith(name, value, GetEnumHelpText(field.FieldType, field.FieldType.Name), fieldDescription));
                         break;
 
                     default:
-                        throw new NotImplementedException("unknown type");
+                        throw new NotImplementedException("unknown type '{0}'".FormatWith(field.FieldType.Name));
                 }
             }
 
@@ -292,263 +442,200 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        public bool SetSetting(string key, string value)
+        private static string GetEnumHelpText(Type type, string enumName)
         {
-            value = value.Replace("\"", "");
-            switch (key)
+            bool first = true;
+            string helpLine = "Available Values: ";
+            FieldInfo[] fields = type.GetFields();
+            foreach (FieldInfo field in fields)
             {
-                case "layerThickness":
-                    layerThickness = double.Parse(value);
-                    return true;
+                string[] names = field.ToString().Split(' ');
+                if (names.Length == 2 && names[0] == enumName)
+                {
+                    if (!first)
+                    {
+                        helpLine += ", ";
+                    }
+                    helpLine += names[1];
+                    first = false;
+                }
+            }
 
-                case "initialLayerThickness":
-                    initialLayerThickness = double.Parse(value);
-                    return true;
+            return helpLine;
+        }
 
-                case "filamentDiameter":
-                    filamentDiameter = int.Parse(value);
-                    return true;
+        public bool SetSetting(string keyToSet, string valueToSetTo)
+        {
+            valueToSetTo = valueToSetTo.Replace("\"", "").Trim();
 
-                case "filamentFlow":
-                    filamentFlow = int.Parse(value);
-                    return true;
+            List<string> lines = new List<string>();
+            FieldInfo[] fields;
+            fields = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
+            foreach (FieldInfo field in fields)
+            {
+                System.Attribute[] attributes = System.Attribute.GetCustomAttributes(field);
+                List<string> possibleNames = new List<string>();
+                possibleNames.Add(field.Name);
+                foreach (Attribute attribute in attributes)
+                {
+                    LegacyName legacyName = attribute as LegacyName;
+                    if (legacyName != null)
+                    {
+                        possibleNames.Add(legacyName.Name);
+                    }
+                }
 
-                case "extrusionWidth":
-                    extrusionWidth = int.Parse(value);
-                    return true;
+                if (possibleNames.Contains(keyToSet))
+                {
+                    string name = field.Name;
+                    object value = field.GetValue(this);
+                    switch (field.FieldType.Name)
+                    {
+                        case "Int32":
+                            field.SetValue(this, (int)double.Parse(valueToSetTo));
+                            break;
 
-                case "insetCount":
-                    insetCount = int.Parse(value);
-                    return true;
+                        case "Double":
+                            field.SetValue(this, double.Parse(valueToSetTo));
+                            break;
 
-                case "downSkinCount":
-                    downSkinCount = int.Parse(value);
-                    return true;
+                        case "Boolean":
+                            field.SetValue(this, bool.Parse(valueToSetTo));
+                            break;
 
-                case "upSkinCount":
-                    upSkinCount = int.Parse(value);
-                    return true;
+                        case "FMatrix3x3":
+                            {
+                                field.SetValue(this, new FMatrix3x3(valueToSetTo));
+                            }
+                            break;
 
-                case "sparseInfillLineDistance":
-                    sparseInfillLineDistance = int.Parse(value);
-                    return true;
+                        case "DoublePoint":
+                            {
+                                string bracketContents = GetInsides(valueToSetTo, '[', ']');
+                                string[] xyValues = bracketContents.Split(',');
+                                field.SetValue(this, new DoublePoint(double.Parse(xyValues[0]), double.Parse(xyValues[1])));
+                            }
+                            break;
 
-                case "infillOverlap":
-                    infillOverlap = int.Parse(value);
-                    return true;
+                        case "IntPoint":
+                            {
+                                string bracketContents = GetInsides(valueToSetTo, '[', ']');
+                                string[] xyValues = bracketContents.Split(',');
+                                field.SetValue(this, new IntPoint(double.Parse(xyValues[0]), double.Parse(xyValues[1])));
+                            }
+                            break;
 
-                case "skirtDistance":
-                    skirtDistance = int.Parse(value);
-                    return true;
+                        case "IntPoint[]":
+                            {
+                                string bracketContents = GetInsides(valueToSetTo, '[', ']');
+                                List<IntPoint> points = new List<IntPoint>();
 
-                case "skirtLineCount":
-                    skirtLineCount = int.Parse(value);
-                    return true;
+                                string intPointString;
+                                int nextIndex = GetInsides(out intPointString, bracketContents, '[', ']', 0);
+                                do
+                                {
+                                    string[] xyValues = intPointString.Split(',');
+                                    points.Add(new IntPoint(double.Parse(xyValues[0]), double.Parse(xyValues[1])));
 
-                case "skirtMinLength":
-                    skirtMinLength = (int)double.Parse(value);
-                    return true;
+                                    nextIndex = GetInsides(out intPointString, bracketContents, '[', ']', nextIndex);
+                                } while (nextIndex != -1);
+                                field.SetValue(this, points.ToArray());
+                            }
+                            break;
 
-                case "initialSpeedupLayers":
-                    initialSpeedupLayers = int.Parse(value);
-                    return true;
+                        case "String":
+                            field.SetValue(this, valueToSetTo);
+                            break;
 
-                case "initialLayerSpeed":
-                    initialLayerSpeed = int.Parse(value);
-                    return true;
+                        case "REPAIR_OVERLAPS":
+                        case "REPAIR_OUTLINES":
+                        case "SUPPORT_TYPE":
+                        case "OUTPUT_TYPE":
+                            field.SetValue(this, Enum.Parse(field.FieldType, valueToSetTo));
+                            break;
 
-                case "printSpeed":
-                    printSpeed = int.Parse(value);
-                    return true;
+                        default:
+                            throw new NotImplementedException("unknown type");
+                    }
 
-                case "infillSpeed":
-                    infillSpeed = int.Parse(value);
                     return true;
-
-                case "inset0Speed":
-                    inset0Speed = int.Parse(value);
-                    return true;
-
-                case "insetXSpeed":
-                    insetXSpeed = int.Parse(value);
-                    return true;
-
-                case "moveSpeed":
-                    moveSpeed = int.Parse(value);
-                    return true;
-
-                case "fanFullOnLayerNr":
-                    fanFullOnLayerNr = int.Parse(value);
-                    return true;
-
-                case "supportAngle":
-                    supportAngle = int.Parse(value);
-                    return true;
-
-                case "supportEverywhere":
-                    supportEverywhere = int.Parse(value);
-                    return true;
-
-                case "supportLineDistance":
-                    supportLineDistance = int.Parse(value);
-                    return true;
-
-                case "supportXYDistance":
-                    supportXYDistance = int.Parse(value);
-                    return true;
-
-                case "supportZDistance":
-                    supportZDistance = int.Parse(value);
-                    return true;
-
-                case "supportExtruder":
-                    supportExtruder = int.Parse(value);
-                    return true;
-
-                case "retractionAmount":
-                    retractionAmount = int.Parse(value);
-                    return true;
-
-                case "retractionSpeed":
-                    retractionSpeed = int.Parse(value);
-                    return true;
-
-                case "retractionAmountExtruderSwitch":
-                    retractionAmountExtruderSwitch = int.Parse(value);
-                    return true;
-
-                case "retractionMinimalDistance":
-                    retractionMinimalDistance = int.Parse(value);
-                    return true;
-
-                case "minimalExtrusionBeforeRetraction":
-                    minimalExtrusionBeforeRetraction = int.Parse(value);
-                    return true;
-
-                case "enableCombing":
-                    enableCombing = value == "1";
-                    return true;
-
-                case "enableOozeShield":
-                    enableOozeShield = value == "1";
-                    return true;
-
-                case "wipeTowerSize":
-                    wipeTowerSize = int.Parse(value);
-                    return true;
-
-                case "multiVolumeOverlap":
-                    multiVolumeOverlap = int.Parse(value);
-                    return true;
-
-                case "objectPosition.X":
-                    objectPosition.X = int.Parse(value);
-                    return true;
-
-                case "objectPosition.Y":
-                    objectPosition.Y = int.Parse(value);
-                    return true;
-
-                case "objectSink":
-                    objectSink = int.Parse(value);
-                    return true;
-
-                case "raftMargin":
-                    raftMargin = int.Parse(value);
-                    return true;
-
-                case "raftLineSpacing":
-                    raftLineSpacing = int.Parse(value);
-                    return true;
-
-                case "raftBaseThickness":
-                    raftBaseThickness = int.Parse(value);
-                    return true;
-
-                case "raftBaseLinewidth":
-                    raftBaseLinewidth = int.Parse(value);
-                    return true;
-
-                case "raftInterfaceThickness":
-                    raftInterfaceThickness = int.Parse(value);
-                    return true;
-
-                case "raftInterfaceLinewidth":
-                    raftInterfaceLinewidth = int.Parse(value);
-                    return true;
-
-                case "minimalLayerTime":
-                    minimalLayerTime = int.Parse(value);
-                    return true;
-
-                case "minimalFeedrate":
-                    minimalFeedrate = int.Parse(value);
-                    return true;
-
-                case "coolHeadLift":
-                    coolHeadLift = value == "1";
-                    return true;
-
-                case "fanSpeedMin":
-                    fanSpeedMin = int.Parse(value);
-                    return true;
-
-                case "fanSpeedMax":
-                    fanSpeedMax = int.Parse(value);
-                    return true;
-
-                case "fixHorrible":
-                    throw new NotImplementedException();
-                    //fixHorrible = int.Parse(value);
-                    return true;
-
-                case "spiralizeMode":
-                    sparseInfillLineDistance = int.Parse(value);
-                    return true;
-
-                case "gcodeFlavor":
-                    throw new NotImplementedException();
-                    //gcodeFlavor = int.Parse(value);
-                    return true;
-
-                case "extruderOffset[1].X":
-                    extruderOffset[1].X = int.Parse(value);
-                    return true;
-
-                case "extruderOffset[1].Y":
-                    extruderOffset[1].Y = int.Parse(value);
-                    return true;
-
-                case "extruderOffset[2].X":
-                    extruderOffset[2].X = int.Parse(value);
-                    return true;
-
-                case "extruderOffset[2].Y":
-                    extruderOffset[2].Y = int.Parse(value);
-                    return true;
-
-                case "extruderOffset[3].X":
-                    extruderOffset[3].X = int.Parse(value);
-                    return true;
-
-                case "extruderOffset[3].Y":
-                    extruderOffset[3].Y = int.Parse(value);
-                    return true;
-
-                case "startCode":
-                    this.startCode = value;
-                    return true;
-
-                case "endCode":
-                    this.endCode = value;
-                    return true;
+                }
             }
             return false;
         }
 
+        private string GetInsides(string content, char startingChar, char endingChar)
+        {
+            string insides;
+            GetInsides(out insides, content, startingChar, endingChar, 0);
+            return insides;
+        }
+
+        private int GetInsides(out string insides, string content, char startingChar, char endingChar, int startIndex, int endIndex = -1)
+        {
+            if (endIndex == -1)
+            {
+                endIndex = content.Length;
+            }
+            insides = "";
+            int firstOpen = -1;
+            int openCount = 0;
+            int endPosition = -1;
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                if (content[i] == startingChar)
+                {
+                    if (firstOpen == -1)
+                    {
+                        firstOpen = i;
+                    }
+                    openCount++;
+                }
+                else if (openCount > 0 && content[i] == endingChar)
+                {
+                    openCount--;
+                    if (openCount == 0)
+                    {
+                        endPosition = i;
+                        insides = content.Substring(firstOpen+1, i-(firstOpen+1));
+                        break;
+                    }
+                }
+            }
+
+            return endPosition;
+        }
+
         public bool ReadSettings(string fileName)
         {
-            throw new NotImplementedException();
+            if (File.Exists(fileName))
+            {
+                string[] lines = File.ReadAllLines(fileName);
+                for(int i=0; i< lines.Length; i++)
+                {
+                    string line = lines[i];
+                    int commentStart = line.IndexOf("#");
+                    if(commentStart >= 0)
+                    {
+                        line = line.Substring(0, commentStart);
+                    }
+
+                    int equalsPos = line.IndexOf('=');
+                    if (equalsPos > 0)
+                    {
+                        string key = line.Substring(0, equalsPos).Trim();
+                        string value = line.Substring(equalsPos + 1).Trim();
+                        if (key.Length > 0 && value.Length > 0)
+                        {
+                            SetSetting(key, value);
+                        }
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
         }
     }
 
@@ -557,14 +644,19 @@ namespace MatterHackers.MatterSlice
         public const string VERSION = "1.0";
 
         [Flags]
-        public enum FIX_HORRIBLE
+        public enum REPAIR_OVERLAPS
         {
             NONE,
-            UNION_ALL_TYPE_A = 0x01,
-            UNION_ALL_TYPE_B = 0x02,
-            EXTENSIVE_STITCHING = 0x04,
-            UNION_ALL_TYPE_C = 0x08,
-            KEEP_NONE_CLOSED = 0x10,
+            REVERSE_ORIENTATION = 0x01,
+            UNION_ALL_TOGETHER = 0x02,
+        }
+
+        [Flags]
+        public enum REPAIR_OUTLINES
+        {
+            NONE,
+            EXTENSIVE_STITCHING = 0x01,
+            KEEP_NON_CLOSED = 0x02,
         }
 
         /**
@@ -578,10 +670,10 @@ namespace MatterHackers.MatterSlice
             LINES
         }
 
-        public enum GCODE_FLAVOR
+        public enum OUTPUT_TYPE
         {
             /**
-             * RepRap flavored GCode is Marlin/Sprinter/Repetier based GCode. 
+             * RepRap GCode is Marlin/Sprinter/Repetier based GCode. 
              *  This is the most commonly used GCode set.
              *  G0 for moves, G1 for extrusion.
              *  E values give mm of filament extrusion.
@@ -590,7 +682,7 @@ namespace MatterHackers.MatterSlice
              **/
             REPRAP,
             /**
-             * UltiGCode flavored is Marlin based GCode. 
+             * UltiGCode is Marlin based GCode. 
              *  UltiGCode uses less settings on the slicer and puts more settings in the firmware. This makes for more hardware/material independed GCode.
              *  G0 for moves, G1 for extrusion.
              *  E values give mm^3 of filament extrusion. Ignores the filament diameter setting.
@@ -600,7 +692,7 @@ namespace MatterHackers.MatterSlice
              **/
             ULTIGCODE,
             /**
-             * Makerbot flavored GCode.
+             * Makerbot GCode.
              *  Looks a lot like RepRap GCode with a few changes. Requires MakerWare to convert to X3G files.
              *   Heating needs to be done with M104 Sxxx T0
              *   No G21 or G90

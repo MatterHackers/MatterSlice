@@ -22,7 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-using ClipperLib;
+using MatterSlice.ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -44,7 +44,10 @@ namespace MatterHackers.MatterSlice
             {
                 part.insets.Add(new Polygons());
                 part.insets[i] = part.outline.Offset(-offset * i - offset / 2);
-                PolygonOptimizer.optimizePolygons(part.insets[i]);
+
+                long minimumDistanceToCreateNewPosition = 10;
+                part.insets[i] = Clipper.CleanPolygons(part.insets[i], minimumDistanceToCreateNewPosition);
+                
                 if (part.insets[i].Count < 1)
                 {
                     part.insets.RemoveAt(part.insets.Count - 1);
@@ -61,13 +64,13 @@ namespace MatterHackers.MatterSlice
             }
 
             //Remove the parts which did not generate an inset. As these parts are too small to print,
-            // and later code can now assume that there is always minimal 1 inset line.
-            for (int partNr = 0; partNr < layer.parts.Count; partNr++)
+            // and later code can now assume that there is always minimum 1 inset line.
+            for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
             {
-                if (layer.parts[partNr].insets.Count < 1)
+                if (layer.parts[partIndex].insets.Count < 1)
                 {
-                    layer.parts.RemoveAt(partNr);
-                    partNr -= 1;
+                    layer.parts.RemoveAt(partIndex);
+                    partIndex -= 1;
                 }
             }
         }

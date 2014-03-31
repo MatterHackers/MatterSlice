@@ -22,7 +22,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 
-using ClipperLib;
+using MatterSlice.ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -49,7 +49,9 @@ namespace MatterHackers.MatterSlice
         public void addPolygons(Polygons polygons)
         {
             for (int i = 0; i < polygons.Count; i++)
+            {
                 this.polygons.Add(polygons[i]);
+            }
         }
 
         public void optimize()
@@ -57,19 +59,19 @@ namespace MatterHackers.MatterSlice
             List<bool> picked = new List<bool>();
             for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
             {
-                int bestPoint = -1;
-                float closestDist = float.MaxValue;
-                Polygon poly = polygons[polygonIndex];
-                for (int pointIndex = 0; pointIndex < poly.Count; pointIndex++)
+                int bestPointIndex = -1;
+                double closestDist = double.MaxValue;
+                Polygon currentPolygon = polygons[polygonIndex];
+                for (int pointIndex = 0; pointIndex < currentPolygon.Count; pointIndex++)
                 {
-                    float dist = (poly[pointIndex] - startPoint).vSize2f();
+                    double dist = (currentPolygon[pointIndex] - startPoint).LengthSquared();
                     if (dist < closestDist)
                     {
-                        bestPoint = pointIndex;
+                        bestPointIndex = pointIndex;
                         closestDist = dist;
                     }
                 }
-                polyStart.Add(bestPoint);
+                polyStart.Add(bestPointIndex);
                 picked.Add(false);
             }
 
@@ -77,21 +79,21 @@ namespace MatterHackers.MatterSlice
             for (int n = 0; n < polygons.Count; n++)
             {
                 int best = -1;
-                float bestDist = float.MaxValue;
+                double bestDist = double.MaxValue;
                 for (int i = 0; i < polygons.Count; i++)
                 {
                     if (picked[i] || polygons[i].Count < 1)
                         continue;
                     if (polygons[i].Count == 2)
                     {
-                        float dist = (polygons[i][0] - p0).vSize2f();
+                        double dist = (polygons[i][0] - p0).LengthSquared();
                         if (dist < bestDist)
                         {
                             best = i;
                             bestDist = dist;
                             polyStart[i] = 0;
                         }
-                        dist = (polygons[i][1] - p0).vSize2f();
+                        dist = (polygons[i][1] - p0).LengthSquared();
                         if (dist < bestDist)
                         {
                             best = i;
@@ -101,7 +103,7 @@ namespace MatterHackers.MatterSlice
                     }
                     else
                     {
-                        float dist = (polygons[i][polyStart[i]] - p0).vSize2f();
+                        double dist = (polygons[i][polyStart[i]] - p0).LengthSquared();
                         if (dist < bestDist)
                         {
                             best = i;
@@ -129,10 +131,10 @@ namespace MatterHackers.MatterSlice
             {
                 int nr = polyOrder[n];
                 int best = -1;
-                float bestDist = float.MaxValue;
+                double bestDist = double.MaxValue;
                 for (int i = 0; i < polygons[nr].Count; i++)
                 {
-                    float dist = (polygons[nr][i] - p0).vSize2f();
+                    double dist = (polygons[nr][i] - p0).LengthSquared();
                     if (dist < bestDist)
                     {
                         best = i;

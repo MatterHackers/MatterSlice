@@ -31,7 +31,7 @@ namespace MatterHackers.MatterSlice
             LogOutput.logError("usage: MatterSlice [-h] [-d] [-v] [-m 3x3matrix] [-c <config file>]\n       [-s <settingkey>=<value>] -o <output.gcode> <model.stl>\n\n");
             LogOutput.logError("    [] enclose optional settings, <> are required.\n\n");
             LogOutput.logError("    -h Show this message.\n");
-            LogOutput.logError("    -d Save a default.ini (usefull to see all settings).\n");
+            LogOutput.logError("    -d Save the currently loaded settings to settings.ini (usefull to see all settings).\n");
             LogOutput.logError("    -v Increment verbose level.\n");
             LogOutput.logError("    -m A 3x3 matrix for translating and rotating the layers.\n");
             LogOutput.logError("    -c A config file to apply to the current settings.\n       Can be applyed multiple times.\n       Formated like the default.ini (partial settings are fine).\n");
@@ -63,7 +63,6 @@ namespace MatterHackers.MatterSlice
 
             LogOutput.log("\nMatterSlice version {0}\n\n".FormatWith(ConfigConstants.VERSION));
 
-            config.DumpSettings("settings.ini");
             for (int argn = 0; argn < args.Length; argn++)
             {
                 string str = args[argn];
@@ -106,15 +105,24 @@ namespace MatterHackers.MatterSlice
                                 }
                                 break;
 
+                            case 'd':
+                                config.DumpSettings("settings.ini");
+                                break;
+
                             case 's':
                                 {
                                     argn++;
-                                    string[] keyValue = args[argn].Split('=');
-                                    if (keyValue.Length > 1)
+                                    int equalsPos = args[argn].IndexOf('=');
+                                    if (equalsPos != -1)
                                     {
-                                        if (!config.SetSetting(keyValue[0], keyValue[1]))
+                                        string key = args[argn].Substring(0, equalsPos);
+                                        string value = args[argn].Substring(equalsPos+1);
+                                        if (key.Length > 1)
                                         {
-                                            LogOutput.logError("Setting not found: {0} {1}\n".FormatWith(keyValue[0], keyValue[1]));
+                                            if (!config.SetSetting(key, value))
+                                            {
+                                                LogOutput.logError("Setting not found: {0} {1}\n".FormatWith(key, value));
+                                            }
                                         }
                                     }
                                 }
@@ -132,6 +140,7 @@ namespace MatterHackers.MatterSlice
                                 break;
 
                             default:
+                                throw new NotImplementedException("Unknown option: {0}\n".FormatWith(str));
                                 LogOutput.logError("Unknown option: {0}\n".FormatWith(str));
                                 break;
                         }

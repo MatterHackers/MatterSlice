@@ -99,6 +99,23 @@ namespace MatterHackers.MatterSlice
             m[2, 2] = 1.0;
         }
 
+        public FMatrix3x3(string valueToSetTo)
+        {
+            valueToSetTo = valueToSetTo.Replace("[", "");
+            valueToSetTo = valueToSetTo.Replace("]", "");
+            string[] values = valueToSetTo.Split(',');
+
+            m[0, 0] = double.Parse(values[0]);
+            m[1, 0] = double.Parse(values[1]);
+            m[2, 0] = double.Parse(values[2]);
+            m[0, 1] = double.Parse(values[3]);
+            m[1, 1] = double.Parse(values[4]);
+            m[2, 1] = double.Parse(values[5]);
+            m[0, 2] = double.Parse(values[6]);
+            m[1, 2] = double.Parse(values[7]);
+            m[2, 2] = double.Parse(values[8]);
+        }
+
         public Point3 apply(FPoint3 p)
         {
             return new Point3(

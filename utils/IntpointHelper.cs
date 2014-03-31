@@ -25,7 +25,7 @@ Integer points are used to avoid floating point rounding errors, and because Cli
 
 //Include Clipper to get the ClipperLib::IntPoint definition, which we reuse as Point definition.
 using System;
-using ClipperLib;
+using MatterSlice.ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -140,10 +140,10 @@ namespace MatterHackers.MatterSlice
         {
             return p0.X * p0.X + p0.Y * p0.Y;
         }
-        
-        public static long vSize2(this IntPoint p0)
+
+        public static string OutputInMm(this IntPoint p0)
         {
-            return p0.X * p0.X + p0.Y * p0.Y;
+            return string.Format("[{0},{1}]", p0.X / 1000.0, p0.Y / 1000.0);
         }
 
         public static IntPoint SetLength(this IntPoint p0, long len)
@@ -157,26 +157,21 @@ namespace MatterHackers.MatterSlice
             return p0 * len / _len;
         }
 
-        public static float vSize2f(this IntPoint p0)
-        {
-            return (float)(p0.X) * (float)(p0.X) + (float)(p0.Y) * (float)(p0.Y);
-        }
-
         public static bool shorterThen(this IntPoint p0, long len)
         {
             if (p0.X > len || p0.X < -len)
                 return false;
             if (p0.Y > len || p0.Y < -len)
                 return false;
-            return p0.vSize2() <= len * len;
+            return p0.LengthSquared() <= len * len;
         }
 
         public static int vSize(this IntPoint p0)
         {
-            return (int)Math.Sqrt(p0.vSize2());
+            return (int)Math.Sqrt(p0.LengthSquared());
         }
 
-        public static double vSizeMM(this IntPoint p0)
+        public static double LengthMm(this IntPoint p0)
         {
             double fx = (double)(p0.X) / 1000.0;
             double fy = (double)(p0.Y) / 1000.0;

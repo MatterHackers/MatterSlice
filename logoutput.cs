@@ -22,7 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-using ClipperLib;
+using MatterSlice.ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -61,24 +61,6 @@ namespace MatterHackers.MatterSlice
             }
 
             Console.Write("Progress:{0}:{1}:{2}\n".FormatWith(type, value, maxValue));
-        }
-
-        internal static void logPolygons(string p, int layerNr, int p_2, List<Polygon> list)
-        {
-#if false
- guiSocket.sendNr(GUI_CMD_SEND_POLYGONS);
-        guiSocket.sendNr(polygons.size());
-        guiSocket.sendNr(layerNr);
-        guiSocket.sendNr(z);
-        guiSocket.sendNr(strlen(name));
-        guiSocket.sendAll(name, strlen(name));
-        for(unsigned int n=0; n<polygons.size(); n++)
-        {
-            Polygon polygon = polygons[n];
-            guiSocket.sendNr(polygon.size());
-            guiSocket.sendAll(polygon.data(), polygon.size() * sizeof(Point));
-        }
-#endif
         }
     }
 }

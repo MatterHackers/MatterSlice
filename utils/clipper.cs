@@ -59,7 +59,7 @@ using System.Collections.Generic;
 //using System.IO;            //debugging with streamReader & StreamWriter
 //using System.Windows.Forms; //debugging to clipboard
 
-namespace ClipperLib
+namespace MatterSlice.ClipperLib
 {
 
 #if use_int32

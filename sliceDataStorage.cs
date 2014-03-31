@@ -22,7 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-using ClipperLib;
+using MatterSlice.ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -72,8 +72,8 @@ namespace MatterHackers.MatterSlice
     public class SupportStorage
     {
         public bool generated;
-        public int angle;
-        public bool everywhere;
+        public int endAngle;
+        public bool generateInternalSupport;
         public int XYDistance;
         public int ZDistance;
 
@@ -100,7 +100,7 @@ namespace MatterHackers.MatterSlice
         public Point3 modelSize, modelMin, modelMax;
         public Polygons skirt = new Polygons();
         public Polygons raftOutline = new Polygons();
-        public List<Polygons> oozeShield = new List<Polygons>();
+        public List<Polygons> wipeShield = new List<Polygons>();
         public List<SliceVolumeStorage> volumes = new List<SliceVolumeStorage>();
 
         public SupportStorage support = new SupportStorage();

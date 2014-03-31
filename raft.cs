@@ -22,13 +22,16 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-using ClipperLib;
+using MatterSlice.ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+    using Polygon = List<IntPoint>;
+    using Polygons = List<List<IntPoint>>;
+
     public static class Raft
     {
-        public static void generateRaft(SliceDataStorage storage, int distance)
+        public static void GenerateRaftOutlines(SliceDataStorage storage, int extraDistanceAroundPart_µm)
         {
             for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
             {
@@ -40,13 +43,84 @@ namespace MatterHackers.MatterSlice
                 SliceLayer layer = storage.volumes[volumeIdx].layers[0];
                 for (int i = 0; i < layer.parts.Count; i++)
                 {
-                    storage.raftOutline = storage.raftOutline.CreateUnion(layer.parts[i].outline.Offset(distance));
+                    storage.raftOutline = storage.raftOutline.CreateUnion(layer.parts[i].outline.Offset(extraDistanceAroundPart_µm));
                 }
             }
 
             SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, 0);
-            storage.raftOutline = storage.raftOutline.CreateUnion(storage.wipeTower.Offset(distance));
-            storage.raftOutline = storage.raftOutline.CreateUnion(supportGenerator.polygons.Offset(distance));
+            storage.raftOutline = storage.raftOutline.CreateUnion(storage.wipeTower.Offset(extraDistanceAroundPart_µm));
+            storage.raftOutline = storage.raftOutline.CreateUnion(supportGenerator.polygons.Offset(extraDistanceAroundPart_µm));
+        }
+
+        public static void GenerateRaftGCodeIfRequired(SliceDataStorage storage, ConfigSettings config, GCodeExport gcode)
+        {
+            if (config.enableRaft 
+                && config.raftBaseThickness_µm > 0 
+                && config.raftInterfaceThicknes_µm > 0)
+            {
+                GCodePathConfig raftBaseConfig = new GCodePathConfig(config.firstLayerSpeed, config.raftBaseThickness_µm, "SUPPORT");
+                GCodePathConfig raftMiddleConfig = new GCodePathConfig(config.raftPrintSpeed, config.raftInterfaceLinewidth_µm, "SUPPORT");
+                GCodePathConfig raftSurfaceConfig = new GCodePathConfig((config.raftSurfacePrintSpeed > 0) ? config.raftSurfacePrintSpeed : config.raftPrintSpeed, config.raftSurfaceLinewidth_µm, "SUPPORT");
+
+                // create the raft base
+                {
+                    gcode.writeComment("LAYER:-3");
+                    gcode.writeComment("RAFT BASE");
+                    GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_µm);
+                    if (config.supportExtruder > 0)
+                    {
+                        gcodeLayer.setExtruder(config.supportExtruder);
+                    }
+
+                    gcodeLayer.setAlwaysRetract(true);
+                    gcode.setZ(config.raftBaseThickness_µm);
+                    gcode.setExtrusion(config.raftBaseThickness_µm, config.filamentDiameter_µm, config.extrusionMultiplier);
+                    gcodeLayer.writePolygonsByOptimizer(storage.raftOutline, raftBaseConfig);
+
+                    Polygons raftLines = new Polygons();
+                    Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftBaseThickness_µm, config.raftLineSpacing_µm, config.infillOverlapPerimeter_µm, 0);
+                    gcodeLayer.writePolygonsByOptimizer(raftLines, raftBaseConfig);
+
+                    gcodeLayer.writeGCode(false, config.raftBaseThickness_µm);
+                }
+
+                if (config.raftFanSpeedPercent > 0)
+                {
+                    gcode.writeFanCommand(config.raftFanSpeedPercent);
+                }
+
+                // raft middle layers
+                {
+                    gcode.writeComment("LAYER:-2");
+                    gcode.writeComment("RAFT MIDDLE");
+                    GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_µm);
+                    gcodeLayer.setAlwaysRetract(true);
+                    gcode.setZ(config.raftBaseThickness_µm + config.raftInterfaceThicknes_µm);
+                    gcode.setExtrusion(config.raftInterfaceThicknes_µm, config.filamentDiameter_µm, config.extrusionMultiplier);
+
+                    Polygons raftLines = new Polygons();
+                    Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftInterfaceLinewidth_µm, config.raftInterfaceLineSpacing_µm, config.infillOverlapPerimeter_µm, 45);
+                    gcodeLayer.writePolygonsByOptimizer(raftLines, raftMiddleConfig);
+
+                    gcodeLayer.writeGCode(false, config.raftInterfaceThicknes_µm);
+                }
+
+                for (int raftSurfaceLayer = 1; raftSurfaceLayer <= config.raftSurfaceLayers_µm; raftSurfaceLayer++)
+                {
+                    gcode.writeComment("LAYER:-1");
+                    gcode.writeComment("RAFT SURFACE");
+                    GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_µm);
+                    gcodeLayer.setAlwaysRetract(true);
+                    gcode.setZ(config.raftBaseThickness_µm + config.raftInterfaceThicknes_µm + config.raftSurfaceThickness_µm * raftSurfaceLayer);
+                    gcode.setExtrusion(config.raftSurfaceThickness_µm, config.filamentDiameter_µm, config.extrusionMultiplier);
+
+                    Polygons raftLines = new Polygons();
+                    Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftSurfaceLinewidth_µm, config.raftSurfaceLineSpacing_µm, config.infillOverlapPerimeter_µm, 90);
+                    gcodeLayer.writePolygonsByOptimizer(raftLines, raftSurfaceConfig);
+
+                    gcodeLayer.writeGCode(false, config.raftInterfaceThicknes_µm);
+                }
+            }
         }
     }
 }

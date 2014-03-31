@@ -23,7 +23,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
-using ClipperLib;
+using MatterSlice.ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -65,7 +65,7 @@ namespace MatterHackers.MatterSlice
         public Polygons polygonList = new Polygons();
         public Polygons openPolygonList = new Polygons();
 
-        public void makePolygons(OptimizedVolume optomizedMesh, bool keepNoneClosed, bool extensiveStitching)
+        public void makePolygons(OptimizedVolume optomizedMesh, ConfigConstants.REPAIR_OUTLINES outlineRepairTypes)
         {
             for (int startingSegmentIndex = 0; startingSegmentIndex < segmentList.Count; startingSegmentIndex++)
             {
@@ -88,10 +88,10 @@ namespace MatterHackers.MatterSlice
                     IntPoint addedSegmentEndPoint = segmentList[segmentIndexBeingAdded].end;
                     poly.Add(addedSegmentEndPoint);
                     int nextSegmentToCheck = -1;
-                    OptimizedFace face = optomizedMesh.faces[segmentList[segmentIndexBeingAdded].faceIndex];
+                    OptimizedFace face = optomizedMesh.facesTriangle[segmentList[segmentIndexBeingAdded].faceIndex];
                     for (int connectedFaceIndex = 0; connectedFaceIndex < 3; connectedFaceIndex++)
                     {
-                        int touchingFaceIndex = face.touching[connectedFaceIndex];
+                        int touchingFaceIndex = face.touchingFaces[connectedFaceIndex];
                         if (touchingFaceIndex > -1)
                         {
                             
@@ -151,7 +151,7 @@ namespace MatterHackers.MatterSlice
                     if (openPolygonList[j].Count < 1) continue;
 
                     IntPoint diff = openPolygonList[i][openPolygonList[i].Count - 1] - openPolygonList[j][0];
-                    long distSquared = (diff).vSize2();
+                    long distSquared = (diff).LengthSquared();
 
                     if (distSquared < 2 * 2)
                     {
@@ -187,7 +187,7 @@ namespace MatterHackers.MatterSlice
                         if (openPolygonList[j].Count < 1) continue;
 
                         IntPoint diff1 = openPolygonList[i][openPolygonList[i].Count - 1] - openPolygonList[j][0];
-                        long distSquared1 = (diff1).vSize2();
+                        long distSquared1 = (diff1).LengthSquared();
                         if (distSquared1 < bestScore)
                         {
                             bestScore = distSquared1;
@@ -199,7 +199,7 @@ namespace MatterHackers.MatterSlice
                         if (i != j)
                         {
                             IntPoint diff2 = openPolygonList[i][openPolygonList[i].Count - 1] - openPolygonList[j][openPolygonList[j].Count - 1];
-                            long distSquared2 = (diff2).vSize2();
+                            long distSquared2 = (diff2).LengthSquared();
                             if (distSquared2 < bestScore)
                             {
                                 bestScore = distSquared2;
@@ -255,9 +255,9 @@ namespace MatterHackers.MatterSlice
                     }
                 }
             }
-            
 
-            if (extensiveStitching)
+
+            if ((outlineRepairTypes & ConfigConstants.REPAIR_OUTLINES.EXTENSIVE_STITCHING) == ConfigConstants.REPAIR_OUTLINES.EXTENSIVE_STITCHING)
             {
                 //For extensive stitching find 2 open polygons that are touching 2 closed polygons.
                 // Then find the sortest path over this polygon that can be used to connect the open polygons,
@@ -392,20 +392,7 @@ namespace MatterHackers.MatterSlice
                 }
             }
 
-            /*
-            int q=0;
-            for(int i=0;i<openPolygonList.Count;i++)
-            {
-                if (openPolygonList[i].Count < 2) continue;
-                if (!q) log("***\n");
-                log("S: %f %f\n", float(openPolygonList[i][0].X), float(openPolygonList[i][0].Y));
-                log("E: %f %f\n", float(openPolygonList[i][openPolygonList[i].Count-1].X), float(openPolygonList[i][openPolygonList[i].Count-1].Y));
-                q = 1;
-            }
-            */
-            //if (q) exit(1);
-
-            if (keepNoneClosed)
+            if ((outlineRepairTypes & ConfigConstants.REPAIR_OUTLINES.KEEP_NON_CLOSED) == ConfigConstants.REPAIR_OUTLINES.KEEP_NON_CLOSED)
             {
                 for (int n = 0; n < openPolygonList.Count; n++)
                 {
@@ -415,18 +402,16 @@ namespace MatterHackers.MatterSlice
                     }
                 }
             }
-            //Clear the openPolygonList to save memory, the only reason to keep it after this is for debugging.
-            //openPolygonList.clear();
 
             //Remove all the tiny polygons, or polygons that are not closed. As they do not contribute to the actual print.
             int snapDistance = 1000;
-            for (int i = 0; i < polygonList.Count; i++)
+            for (int polygonIndex = 0; polygonIndex < polygonList.Count; polygonIndex++)
             {
                 int length = 0;
 
-                for (int n = 1; n < polygonList[i].Count; n++)
+                for (int intPointIndex = 1; intPointIndex < polygonList[polygonIndex].Count; intPointIndex++)
                 {
-                    length += (polygonList[i][n] - polygonList[i][n - 1]).vSize();
+                    length += (polygonList[polygonIndex][intPointIndex] - polygonList[polygonIndex][intPointIndex - 1]).vSize();
                     if (length > snapDistance)
                     {
                         break;
@@ -434,13 +419,14 @@ namespace MatterHackers.MatterSlice
                 }
                 if (length < snapDistance)
                 {
-                    polygonList.RemoveAt(i);
-                    i--;
+                    polygonList.RemoveAt(polygonIndex);
+                    polygonIndex--;
                 }
             }
 
             //Finally optimize all the polygons. Every point removed saves time in the long run.
-            PolygonOptimizer.optimizePolygons(polygonList);
+            long minimumDistanceToCreateNewPosition = 10;
+            polygonList = Clipper.CleanPolygons(polygonList, minimumDistanceToCreateNewPosition);
         }
 
         gapCloserResult findPolygonGapCloser(IntPoint ip0, IntPoint ip1)
@@ -542,12 +528,15 @@ namespace MatterHackers.MatterSlice
         public Point3 modelSize;
         public Point3 modelMin;
 
-        public Slicer(OptimizedVolume ov, int initial, int thickness, bool keepNoneClosed, bool extensiveStitching)
+        public Slicer(OptimizedVolume ov, int initialLayerThickness, int layerThickness, ConfigConstants.REPAIR_OUTLINES outlineRepairTypes)
         {
-            modelSize = ov.model.modelSize;
-            modelMin = ov.model.vMin;
+            modelSize = ov.model.size;
+            modelMin = ov.model.minXYZ;
 
-            int layerCount = (modelSize.z - initial) / thickness + 1;
+            int heightWithoutFirstLayer = modelSize.z - initialLayerThickness;
+            int countOfNormalThicknessLayers = heightWithoutFirstLayer / layerThickness;
+            
+            int layerCount = countOfNormalThicknessLayers + 1; // we have to add in the first layer (that is a differnt size)
             LogOutput.log(string.Format("Layer count: {0}\n", layerCount));
             layers.Capacity = layerCount;
             for (int i = 0; i < layerCount; i++)
@@ -555,16 +544,23 @@ namespace MatterHackers.MatterSlice
                 layers.Add(new SlicerLayer());
             }
 
-            for (int layerNr = 0; layerNr < layerCount; layerNr++)
+            for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
             {
-                layers[layerNr].z = initial + thickness * layerNr;
+                if (layerIndex == 0)
+                {
+                    layers[layerIndex].z = initialLayerThickness / 2;
+                }
+                else
+                {
+                    layers[layerIndex].z = initialLayerThickness + layerThickness / 2 + layerThickness * layerIndex;
+                }
             }
 
-            for (int faceIndex = 0; faceIndex < ov.faces.Count; faceIndex++)
+            for (int faceIndex = 0; faceIndex < ov.facesTriangle.Count; faceIndex++)
             {
-                Point3 p0 = ov.points[ov.faces[faceIndex].index[0]].p;
-                Point3 p1 = ov.points[ov.faces[faceIndex].index[1]].p;
-                Point3 p2 = ov.points[ov.faces[faceIndex].index[2]].p;
+                Point3 p0 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[0]].position;
+                Point3 p1 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[1]].position;
+                Point3 p2 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[2]].position;
                 int minZ = p0.z;
                 int maxZ = p0.z;
                 if (p1.z < minZ) minZ = p1.z;
@@ -572,11 +568,13 @@ namespace MatterHackers.MatterSlice
                 if (p1.z > maxZ) maxZ = p1.z;
                 if (p2.z > maxZ) maxZ = p2.z;
 
-                for (int layerNr = (minZ - initial) / thickness; layerNr <= (maxZ - initial) / thickness; layerNr++)
+                for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
                 {
-                    int z = layerNr * thickness + initial;
-                    if (z < minZ) continue;
-                    if (layerNr < 0) continue;
+                    int z = layers[layerIndex].z;
+                    if (z < minZ || layerIndex < 0)
+                    {
+                        continue;
+                    }
 
                     SlicerSegment polyCrossingAtThisZ;
                     if (p0.z < z && p1.z >= z && p2.z >= z)
@@ -627,16 +625,16 @@ namespace MatterHackers.MatterSlice
                         //  on the slice would create two segments
                         continue;
                     }
-                    layers[layerNr].faceTo2DSegmentIndex[faceIndex] = layers[layerNr].segmentList.Count;
+                    layers[layerIndex].faceTo2DSegmentIndex[faceIndex] = layers[layerIndex].segmentList.Count;
                     polyCrossingAtThisZ.faceIndex = faceIndex;
                     polyCrossingAtThisZ.addedToPolygon = false;
-                    layers[layerNr].segmentList.Add(polyCrossingAtThisZ);
+                    layers[layerIndex].segmentList.Add(polyCrossingAtThisZ);
                 }
             }
 
             for (int layerNr = 0; layerNr < layers.Count; layerNr++)
             {
-                layers[layerNr].makePolygons(ov, keepNoneClosed, extensiveStitching);
+                layers[layerNr].makePolygons(ov, outlineRepairTypes);
             }
         }
 
