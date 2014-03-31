@@ -73,7 +73,7 @@ namespace MatterHackers.MatterSlice
     {
         public bool generated;
         public int endAngle;
-        public bool everywhere;
+        public bool generateInternalSupport;
         public int XYDistance;
         public int ZDistance;
 

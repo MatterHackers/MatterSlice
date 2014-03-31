@@ -35,9 +35,8 @@ namespace MatterHackers.MatterSlice
 
         SupportStorage storage = new SupportStorage();
         double cosAngle;
-        int z;
         int supportZDistance;
-        bool everywhere;
+        bool generateInternalSupport;
         int[] done;
 
         static void swap(ref int p0, ref int p1)
@@ -89,7 +88,7 @@ namespace MatterHackers.MatterSlice
             }
 
             storage.endAngle = config.supportEndAngle;
-            storage.everywhere = config.generateInternalSupport;
+            storage.generateInternalSupport = config.generateInternalSupport;
             storage.XYDistance = config.supportXYDistance_µm;
             storage.ZDistance = config.supportNumberOfLayersToSkipInZ * config.layerThickness_µm;
 
@@ -175,20 +174,20 @@ namespace MatterHackers.MatterSlice
             return one.z.CompareTo(two.z);
         }
 
-        public bool needSupportAt(IntPoint p)
+        public bool needSupportAt(IntPoint pointToCheckIfNeedsSupport)
         {
-            if (p.X < 1 
-                || p.Y < 1 
-                || p.X >= storage.gridWidth - 1 
-                || p.Y >= storage.gridHeight - 1
-                || done[p.X + p.Y * storage.gridWidth] != 0)
+            if (pointToCheckIfNeedsSupport.X < 1 
+                || pointToCheckIfNeedsSupport.Y < 1 
+                || pointToCheckIfNeedsSupport.X >= storage.gridWidth - 1 
+                || pointToCheckIfNeedsSupport.Y >= storage.gridHeight - 1
+                || done[pointToCheckIfNeedsSupport.X + pointToCheckIfNeedsSupport.Y * storage.gridWidth] != 0)
             {
                 return false;
             }
 
-            int n = (int)(p.X + p.Y * storage.gridWidth);
+            int n = (int)(pointToCheckIfNeedsSupport.X + pointToCheckIfNeedsSupport.Y * storage.gridWidth);
 
-            if (everywhere)
+            if (generateInternalSupport)
             {
                 bool ok = false;
                 for (int i = 0; i < storage.grid[n].Count; i += 2)
@@ -262,7 +261,7 @@ namespace MatterHackers.MatterSlice
         {
             this.storage = storage;
             this.z = z;
-            this.everywhere = storage.everywhere;
+            this.generateInternalSupport = storage.generateInternalSupport;
 
             if (!storage.generated)
             {
