@@ -551,7 +551,13 @@ namespace MatterHackers.MatterSlice
                         case "REPAIR_OUTLINES":
                         case "SUPPORT_TYPE":
                         case "OUTPUT_TYPE":
-                            field.SetValue(this, Enum.Parse(field.FieldType, valueToSetTo));
+                            try
+                            {
+                                field.SetValue(this, Enum.Parse(field.FieldType, valueToSetTo));
+                            }
+                            catch (Exception)
+                            {
+                            }
                             break;
 
                         default:

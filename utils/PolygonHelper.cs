@@ -183,13 +183,6 @@ namespace MatterHackers.MatterSlice
         
         public static Polygons Offset(this Polygons polygons, int distance)
         {
-#if false
-        Polygons ret = new Polygons();
-        Clipper clipper = new Clipper();
-        clipper.AddPaths(polygons, JoinType.jtMiter, EndType.etClosed);
-        clipper.MiterLimit = 2.0;
-        clipper.Execute(ret, distance);
-#endif
             return Clipper.OffsetPaths(polygons, distance, JoinType.jtMiter, EndType_.etClosed, 2.0);
         }
 

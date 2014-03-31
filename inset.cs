@@ -36,22 +36,32 @@ namespace MatterHackers.MatterSlice
             part.combBoundery = part.outline.Offset(-offset);
             if (insetCount == 0)
             {
+                // if we have no insets defined still create one
                 part.insets.Add(part.outline);
-                return;
             }
-
-            for (int i = 0; i < insetCount; i++)
+            else // generate the insets
             {
-                part.insets.Add(new Polygons());
-                part.insets[i] = part.outline.Offset(-offset * i - offset / 2);
-
-                long minimumDistanceToCreateNewPosition = 10;
-                part.insets[i] = Clipper.CleanPolygons(part.insets[i], minimumDistanceToCreateNewPosition);
-                
-                if (part.insets[i].Count < 1)
+                for (int i = 0; i < insetCount; i++)
                 {
-                    part.insets.RemoveAt(part.insets.Count - 1);
-                    break;
+                    part.insets.Add(new Polygons());
+                    part.insets[i] = part.outline.Offset(-offset * i - offset / 2);
+
+                    if (i == 0)
+                    {
+                        // Add thin wall filling by taking the area between the insets.
+                        //Polygons thinWalls = part.insets[0].Offset(-offset / 4).CreateDifference(part.insets[0].Offset);
+                        //upskin.AddAll(thinWalls);
+                        //downskin.AddAll(thinWalls);
+                    }
+
+                    long minimumDistanceToCreateNewPosition = 10;
+                    part.insets[i] = Clipper.CleanPolygons(part.insets[i], minimumDistanceToCreateNewPosition);
+
+                    if (part.insets[i].Count < 1)
+                    {
+                        part.insets.RemoveAt(part.insets.Count - 1);
+                        break;
+                    }
                 }
             }
         }
