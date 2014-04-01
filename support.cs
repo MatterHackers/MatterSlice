@@ -89,8 +89,8 @@ namespace MatterHackers.MatterSlice
 
             storage.endAngle = config.supportEndAngle;
             storage.generateInternalSupport = config.generateInternalSupport;
-            storage.XYDistance = config.supportXYDistance_µm;
-            storage.ZDistance = config.supportNumberOfLayersToSkipInZ * config.layerThickness_µm;
+            storage.XYDistance = config.supportXYDistance_um;
+            storage.ZDistance = config.supportNumberOfLayersToSkipInZ * config.layerThickness_um;
 
             for (int volumeIndex = 0; volumeIndex < model.volumes.Count; volumeIndex++)
             {

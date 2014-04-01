@@ -31,7 +31,7 @@ namespace MatterHackers.MatterSlice
 
     public static class Raft
     {
-        public static void GenerateRaftOutlines(SliceDataStorage storage, int extraDistanceAroundPart_µm)
+        public static void GenerateRaftOutlines(SliceDataStorage storage, int extraDistanceAroundPart_um)
         {
             for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
             {
@@ -43,45 +43,45 @@ namespace MatterHackers.MatterSlice
                 SliceLayer layer = storage.volumes[volumeIdx].layers[0];
                 for (int i = 0; i < layer.parts.Count; i++)
                 {
-                    storage.raftOutline = storage.raftOutline.CreateUnion(layer.parts[i].outline.Offset(extraDistanceAroundPart_µm));
+                    storage.raftOutline = storage.raftOutline.CreateUnion(layer.parts[i].outline.Offset(extraDistanceAroundPart_um));
                 }
             }
 
             SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, 0);
-            storage.raftOutline = storage.raftOutline.CreateUnion(storage.wipeTower.Offset(extraDistanceAroundPart_µm));
-            storage.raftOutline = storage.raftOutline.CreateUnion(supportGenerator.polygons.Offset(extraDistanceAroundPart_µm));
+            storage.raftOutline = storage.raftOutline.CreateUnion(storage.wipeTower.Offset(extraDistanceAroundPart_um));
+            storage.raftOutline = storage.raftOutline.CreateUnion(supportGenerator.polygons.Offset(extraDistanceAroundPart_um));
         }
 
         public static void GenerateRaftGCodeIfRequired(SliceDataStorage storage, ConfigSettings config, GCodeExport gcode)
         {
             if (config.enableRaft 
-                && config.raftBaseThickness_µm > 0 
-                && config.raftInterfaceThicknes_µm > 0)
+                && config.raftBaseThickness_um > 0 
+                && config.raftInterfaceThicknes_um > 0)
             {
-                GCodePathConfig raftBaseConfig = new GCodePathConfig(config.firstLayerSpeed, config.raftBaseThickness_µm, "SUPPORT");
-                GCodePathConfig raftMiddleConfig = new GCodePathConfig(config.raftPrintSpeed, config.raftInterfaceLinewidth_µm, "SUPPORT");
-                GCodePathConfig raftSurfaceConfig = new GCodePathConfig((config.raftSurfacePrintSpeed > 0) ? config.raftSurfacePrintSpeed : config.raftPrintSpeed, config.raftSurfaceLinewidth_µm, "SUPPORT");
+                GCodePathConfig raftBaseConfig = new GCodePathConfig(config.firstLayerSpeed, config.raftBaseThickness_um, "SUPPORT");
+                GCodePathConfig raftMiddleConfig = new GCodePathConfig(config.raftPrintSpeed, config.raftInterfaceLinewidth_um, "SUPPORT");
+                GCodePathConfig raftSurfaceConfig = new GCodePathConfig((config.raftSurfacePrintSpeed > 0) ? config.raftSurfacePrintSpeed : config.raftPrintSpeed, config.raftSurfaceLinewidth_um, "SUPPORT");
 
                 // create the raft base
                 {
                     gcode.writeComment("LAYER:-3");
                     gcode.writeComment("RAFT BASE");
-                    GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_µm);
+                    GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_um);
                     if (config.supportExtruder > 0)
                     {
                         gcodeLayer.setExtruder(config.supportExtruder);
                     }
 
                     gcodeLayer.setAlwaysRetract(true);
-                    gcode.setZ(config.raftBaseThickness_µm);
-                    gcode.setExtrusion(config.raftBaseThickness_µm, config.filamentDiameter_µm, config.extrusionMultiplier);
+                    gcode.setZ(config.raftBaseThickness_um);
+                    gcode.setExtrusion(config.raftBaseThickness_um, config.filamentDiameter_um, config.extrusionMultiplier);
                     gcodeLayer.writePolygonsByOptimizer(storage.raftOutline, raftBaseConfig);
 
                     Polygons raftLines = new Polygons();
-                    Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftBaseThickness_µm, config.raftLineSpacing_µm, config.infillOverlapPerimeter_µm, 0);
+                    Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftBaseThickness_um, config.raftLineSpacing_um, config.infillOverlapPerimeter_um, 0);
                     gcodeLayer.writePolygonsByOptimizer(raftLines, raftBaseConfig);
 
-                    gcodeLayer.writeGCode(false, config.raftBaseThickness_µm);
+                    gcodeLayer.writeGCode(false, config.raftBaseThickness_um);
                 }
 
                 if (config.raftFanSpeedPercent > 0)
@@ -93,32 +93,32 @@ namespace MatterHackers.MatterSlice
                 {
                     gcode.writeComment("LAYER:-2");
                     gcode.writeComment("RAFT MIDDLE");
-                    GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_µm);
+                    GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_um);
                     gcodeLayer.setAlwaysRetract(true);
-                    gcode.setZ(config.raftBaseThickness_µm + config.raftInterfaceThicknes_µm);
-                    gcode.setExtrusion(config.raftInterfaceThicknes_µm, config.filamentDiameter_µm, config.extrusionMultiplier);
+                    gcode.setZ(config.raftBaseThickness_um + config.raftInterfaceThicknes_um);
+                    gcode.setExtrusion(config.raftInterfaceThicknes_um, config.filamentDiameter_um, config.extrusionMultiplier);
 
                     Polygons raftLines = new Polygons();
-                    Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftInterfaceLinewidth_µm, config.raftInterfaceLineSpacing_µm, config.infillOverlapPerimeter_µm, 45);
+                    Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftInterfaceLinewidth_um, config.raftInterfaceLineSpacing_um, config.infillOverlapPerimeter_um, 45);
                     gcodeLayer.writePolygonsByOptimizer(raftLines, raftMiddleConfig);
 
-                    gcodeLayer.writeGCode(false, config.raftInterfaceThicknes_µm);
+                    gcodeLayer.writeGCode(false, config.raftInterfaceThicknes_um);
                 }
 
-                for (int raftSurfaceLayer = 1; raftSurfaceLayer <= config.raftSurfaceLayers_µm; raftSurfaceLayer++)
+                for (int raftSurfaceLayer = 1; raftSurfaceLayer <= config.raftSurfaceLayers_um; raftSurfaceLayer++)
                 {
                     gcode.writeComment("LAYER:-1");
                     gcode.writeComment("RAFT SURFACE");
-                    GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_µm);
+                    GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_um);
                     gcodeLayer.setAlwaysRetract(true);
-                    gcode.setZ(config.raftBaseThickness_µm + config.raftInterfaceThicknes_µm + config.raftSurfaceThickness_µm * raftSurfaceLayer);
-                    gcode.setExtrusion(config.raftSurfaceThickness_µm, config.filamentDiameter_µm, config.extrusionMultiplier);
+                    gcode.setZ(config.raftBaseThickness_um + config.raftInterfaceThicknes_um + config.raftSurfaceThickness_um * raftSurfaceLayer);
+                    gcode.setExtrusion(config.raftSurfaceThickness_um, config.filamentDiameter_um, config.extrusionMultiplier);
 
                     Polygons raftLines = new Polygons();
-                    Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftSurfaceLinewidth_µm, config.raftSurfaceLineSpacing_µm, config.infillOverlapPerimeter_µm, 90);
+                    Infill.generateLineInfill(storage.raftOutline, raftLines, config.raftSurfaceLinewidth_um, config.raftSurfaceLineSpacing_um, config.infillOverlapPerimeter_um, 90);
                     gcodeLayer.writePolygonsByOptimizer(raftLines, raftSurfaceConfig);
 
-                    gcodeLayer.writeGCode(false, config.raftInterfaceThicknes_µm);
+                    gcodeLayer.writeGCode(false, config.raftInterfaceThicknes_um);
                 }
             }
         }

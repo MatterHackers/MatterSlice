@@ -71,7 +71,7 @@ namespace MatterHackers.MatterSlice
             Stopwatch timeKeeperTotal = new Stopwatch();
             timeKeeperTotal.Start();
             SliceDataStorage storage = new SliceDataStorage();
-            preSetup(config.extrusionWidth_µm);
+            preSetup(config.extrusionWidth_um);
             if (!prepareModel(storage, input_filename))
             {
                 return false;
@@ -112,7 +112,7 @@ namespace MatterHackers.MatterSlice
             }
 
             gcode.SetOutputType(config.outputType);
-            gcode.setRetractionSettings(config.retractionAmount_µm, config.retractionSpeed, config.retractionAmountOnExtruderSwitch_µm, config.minimumExtrusionBeforeRetraction_µm, config.retractionZHop);
+            gcode.setRetractionSettings(config.retractionAmount_um, config.retractionSpeed, config.retractionAmountOnExtruderSwitch_um, config.minimumExtrusionBeforeRetraction_um, config.retractionZHop);
         }
 
         bool prepareModel(SliceDataStorage storage, string input_filename)
@@ -128,7 +128,7 @@ namespace MatterHackers.MatterSlice
             LogOutput.log("Loaded from disk in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();
             LogOutput.log("Analyzing and optimizing model...\n");
-            OptimizedModel optomizedModel = new OptimizedModel(model, new Point3(config.positionToPlaceObjectCenter_µm.X, config.positionToPlaceObjectCenter_µm.Y, -config.bottomClipAmount_µm), config.centerObjectInXy);
+            OptimizedModel optomizedModel = new OptimizedModel(model, new Point3(config.positionToPlaceObjectCenter_um.X, config.positionToPlaceObjectCenter_um.Y, -config.bottomClipAmount_um), config.centerObjectInXy);
             for (int volumeIndex = 0; volumeIndex < model.volumes.Count; volumeIndex++)
             {
                 LogOutput.log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)model.volumes[volumeIndex].faceTriangles.Count, (int)optomizedModel.volumes[volumeIndex].facesTriangle.Count, (double)(optomizedModel.volumes[volumeIndex].facesTriangle.Count) / (double)(model.volumes[volumeIndex].faceTriangles.Count) * 100));
@@ -145,7 +145,7 @@ namespace MatterHackers.MatterSlice
             List<Slicer> slicerList = new List<Slicer>();
             for (int volumeIdx = 0; volumeIdx < optomizedModel.volumes.Count; volumeIdx++)
             {
-                Slicer slicer = new Slicer(optomizedModel.volumes[volumeIdx], config.firstLayerThickness_µm, config.layerThickness_µm, config.repairOutlines);
+                Slicer slicer = new Slicer(optomizedModel.volumes[volumeIdx], config.firstLayerThickness_um, config.layerThickness_um, config.repairOutlines);
                 slicerList.Add(slicer);
             }
             LogOutput.log("Sliced model in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
@@ -168,7 +168,7 @@ namespace MatterHackers.MatterSlice
                 //Add the raft offset to each layer.
                 for (int layerNr = 0; layerNr < storage.volumes[volumeIdx].layers.Count; layerNr++)
                 {
-                    storage.volumes[volumeIdx].layers[layerNr].printZ += config.raftBaseThickness_µm + config.raftInterfaceThicknes_µm;
+                    storage.volumes[volumeIdx].layers[layerNr].printZ += config.raftBaseThickness_um + config.raftInterfaceThicknes_um;
                 }
             }
             LogOutput.log("Generated layer parts in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
@@ -197,17 +197,17 @@ namespace MatterHackers.MatterSlice
                     }
 
                     SliceLayer layer = storage.volumes[volumeIndex].layers[layerIndex];
-                    int extrusionWidth = config.extrusionWidth_µm;
+                    int extrusionWidth = config.extrusionWidth_um;
                     if (layerIndex == 0)
                     {
-                        extrusionWidth = config.firstLayerExtrusionWidth_µm;
+                        extrusionWidth = config.firstLayerExtrusionWidth_um;
                     }
                     Inset.generateInsets(layer, extrusionWidth, insetCount);
                 }
                 LogOutput.log("Creating Insets {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
             }
 
-            if (config.wipeShieldDistanceFromShapes_µm > 0)
+            if (config.wipeShieldDistanceFromShapes_um > 0)
             {
                 CreateWipeShields(storage, totalLayers);
             }
@@ -222,10 +222,10 @@ namespace MatterHackers.MatterSlice
                 {
                     for (int volumeIndex = 0; volumeIndex < storage.volumes.Count; volumeIndex++)
                     {
-                        int extrusionWidth = config.extrusionWidth_µm;
+                        int extrusionWidth = config.extrusionWidth_um;
                         if (layerIndex == 0)
                         {
-                            extrusionWidth = config.firstLayerExtrusionWidth_µm;
+                            extrusionWidth = config.firstLayerExtrusionWidth_um;
                         }
 
                         Skin.generateTopAndBottomLayers(layerIndex, storage.volumes[volumeIndex], extrusionWidth, config.numberOfBottomLayers, config.numberOfTopLayers);
@@ -237,20 +237,20 @@ namespace MatterHackers.MatterSlice
             LogOutput.log("Generated top bottom layers in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();
 
-            if (config.wipeTowerSize_µm > 0)
+            if (config.wipeTowerSize_um > 0)
             {
                 Polygon p = new Polygon();
                 storage.wipeTower.Add(p);
                 p.Add(new IntPoint(storage.modelMin.x - 3000, storage.modelMax.y + 3000));
-                p.Add(new IntPoint(storage.modelMin.x - 3000, storage.modelMax.y + 3000 + config.wipeTowerSize_µm));
-                p.Add(new IntPoint(storage.modelMin.x - 3000 - config.wipeTowerSize_µm, storage.modelMax.y + 3000 + config.wipeTowerSize_µm));
-                p.Add(new IntPoint(storage.modelMin.x - 3000 - config.wipeTowerSize_µm, storage.modelMax.y + 3000));
+                p.Add(new IntPoint(storage.modelMin.x - 3000, storage.modelMax.y + 3000 + config.wipeTowerSize_um));
+                p.Add(new IntPoint(storage.modelMin.x - 3000 - config.wipeTowerSize_um, storage.modelMax.y + 3000 + config.wipeTowerSize_um));
+                p.Add(new IntPoint(storage.modelMin.x - 3000 - config.wipeTowerSize_um, storage.modelMax.y + 3000));
 
-                storage.wipePoint = new IntPoint(storage.modelMin.x - 3000 - config.wipeTowerSize_µm / 2, storage.modelMax.y + 3000 + config.wipeTowerSize_µm / 2);
+                storage.wipePoint = new IntPoint(storage.modelMin.x - 3000 - config.wipeTowerSize_um / 2, storage.modelMax.y + 3000 + config.wipeTowerSize_um / 2);
             }
 
-            Skirt.generateSkirt(storage, config.skirtDistance_µm, config.firstLayerExtrusionWidth_µm, config.numberOfSkirtLoops, config.skirtMinLength_µm, config.firstLayerThickness_µm);
-            Raft.GenerateRaftOutlines(storage, config.raftExtraDistanceAroundPart_µm);
+            Skirt.generateSkirt(storage, config.skirtDistance_um, config.firstLayerExtrusionWidth_um, config.numberOfSkirtLoops, config.skirtMinLength_um, config.firstLayerThickness_um);
+            Raft.GenerateRaftOutlines(storage, config.raftExtraDistanceAroundPart_um);
 
             for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
             {
@@ -280,7 +280,7 @@ namespace MatterHackers.MatterSlice
                 {
                     for (int partNr = 0; partNr < storage.volumes[volumeIdx].layers[layerNr].parts.Count; partNr++)
                     {
-                        wipeShield = wipeShield.CreateUnion(storage.volumes[volumeIdx].layers[layerNr].parts[partNr].outline.Offset(config.wipeShieldDistanceFromShapes_µm));
+                        wipeShield = wipeShield.CreateUnion(storage.volumes[volumeIdx].layers[layerNr].parts[partNr].outline.Offset(config.wipeShieldDistanceFromShapes_um));
                     }
                 }
                 storage.wipeShield.Add(wipeShield);
@@ -291,7 +291,7 @@ namespace MatterHackers.MatterSlice
                 storage.wipeShield[layerIndex] = storage.wipeShield[layerIndex].Offset(-1000).Offset(1000);
             }
 
-            int offsetAngle = (int)Math.Tan(60.0 * Math.PI / 180) * config.layerThickness_µm;//Allow for a 60deg angle in the wipeShield.
+            int offsetAngle = (int)Math.Tan(60.0 * Math.PI / 180) * config.layerThickness_um;//Allow for a 60deg angle in the wipeShield.
             for (int layerNr = 1; layerNr < totalLayers; layerNr++)
             {
                 storage.wipeShield[layerNr] = storage.wipeShield[layerNr].CreateUnion(storage.wipeShield[layerNr - 1].Offset(-offsetAngle));
@@ -318,7 +318,7 @@ namespace MatterHackers.MatterSlice
                 if (gcode.GetOutputType() == ConfigConstants.OUTPUT_TYPE.BFB)
                 {
                     gcode.writeComment("enable auto-retraction");
-                    gcode.writeLine("M227 S{0} P{1}".FormatWith(config.retractionAmount_µm * 2560 / 1000, config.retractionAmount_µm * 2560 / 1000));
+                    gcode.writeLine("M227 S{0} P{1}".FormatWith(config.retractionAmount_um * 2560 / 1000, config.retractionAmount_um * 2560 / 1000));
                 }
 
             }
@@ -346,10 +346,10 @@ namespace MatterHackers.MatterSlice
 
                 LogOutput.logProgress("export", layerIndex + 1, totalLayers);
 
-                int extrusionWidth = config.extrusionWidth_µm;
+                int extrusionWidth = config.extrusionWidth_um;
                 if (layerIndex == 0)
                 {
-                    extrusionWidth = config.firstLayerExtrusionWidth_µm;
+                    extrusionWidth = config.firstLayerExtrusionWidth_um;
                 }
 
                 if (layerIndex == 0)
@@ -366,23 +366,23 @@ namespace MatterHackers.MatterSlice
                     insetXConfig.setData(config.insidePerimetersSpeed, extrusionWidth, "WALL-INNER");
                     fillConfig.setData(config.infillSpeed, extrusionWidth, "FILL");
                 }
-                supportConfig.setData(config.firstLayerSpeed, config.extrusionWidth_µm, "SUPPORT");
+                supportConfig.setData(config.firstLayerSpeed, config.extrusionWidth_um, "SUPPORT");
 
                 gcode.writeComment("LAYER:{0}".FormatWith(layerIndex));
                 if (layerIndex == 0)
                 {
-                    gcode.setExtrusion(config.firstLayerThickness_µm, config.filamentDiameter_µm, config.extrusionMultiplier);
+                    gcode.setExtrusion(config.firstLayerThickness_um, config.filamentDiameter_um, config.extrusionMultiplier);
                 }
                 else
                 {
-                    gcode.setExtrusion(config.layerThickness_µm, config.filamentDiameter_µm, config.extrusionMultiplier);
+                    gcode.setExtrusion(config.layerThickness_um, config.filamentDiameter_um, config.extrusionMultiplier);
                 }
 
-                GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_µm);
+                GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_um);
 
                 // get the correct height for this layer
-                int z = config.firstLayerThickness_µm + layerIndex * config.layerThickness_µm;
-                z += config.raftBaseThickness_µm + config.raftInterfaceThicknes_µm + config.raftSurfaceLayers_µm * config.raftSurfaceThickness_µm;
+                int z = config.firstLayerThickness_um + layerIndex * config.layerThickness_um;
+                z += config.raftBaseThickness_um + config.raftInterfaceThicknes_um + config.raftSurfaceLayers_um * config.raftSurfaceThickness_um;
                 if (layerIndex == 0)
                 {
                     // We only raise the first layer of the print up by the air gap.
@@ -390,7 +390,7 @@ namespace MatterHackers.MatterSlice
                     //   Less press into the raft
                     //   More time to cool
                     //   more surface area to air while extruding
-                    z += config.raftAirGap_µm;
+                    z += config.raftAirGap_um;
                 }
 
                 gcode.setZ(z);
@@ -398,7 +398,7 @@ namespace MatterHackers.MatterSlice
                 bool printSupportFirst = (storage.support.generated && config.supportExtruder > 0 && config.supportExtruder == gcodeLayer.getExtruder());
                 if (printSupportFirst)
                 {
-                    addSupportToGCode(storage, gcodeLayer, layerIndex, config.extrusionWidth_µm);
+                    addSupportToGCode(storage, gcodeLayer, layerIndex, config.extrusionWidth_um);
                 }
 
                 for (int volumeCnt = 0; volumeCnt < storage.volumes.Count; volumeCnt++)
@@ -413,7 +413,7 @@ namespace MatterHackers.MatterSlice
 
                 if (!printSupportFirst)
                 {
-                    addSupportToGCode(storage, gcodeLayer, layerIndex, config.extrusionWidth_µm);
+                    addSupportToGCode(storage, gcodeLayer, layerIndex, config.extrusionWidth_um);
                 }
 
                 //Finish the layer by applying speed corrections for minimum layer times.
@@ -436,7 +436,7 @@ namespace MatterHackers.MatterSlice
                 }
                 gcode.writeFanCommand(fanSpeed);
 
-                gcodeLayer.writeGCode(config.doCoolHeadLift, (int)(layerIndex) > 0 ? config.layerThickness_µm : config.firstLayerThickness_µm);
+                gcodeLayer.writeGCode(config.doCoolHeadLift, (int)(layerIndex) > 0 ? config.layerThickness_um : config.firstLayerThickness_um);
             }
 
             LogOutput.log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.Seconds));
@@ -527,25 +527,25 @@ namespace MatterHackers.MatterSlice
                 }
                 //int sparseSteps[1] = {extrusionWidth};
                 //generateConcentricInfill(part.skinOutline, fillPolygons, sparseSteps, 1);
-                Infill.generateLineInfill(part.skinOutline, fillPolygons, extrusionWidth, extrusionWidth, config.infillOverlapPerimeter_µm, (part.bridgeAngle > -1) ? part.bridgeAngle : fillAngle);
+                Infill.generateLineInfill(part.skinOutline, fillPolygons, extrusionWidth, extrusionWidth, config.infillOverlapPerimeter_um, (part.bridgeAngle > -1) ? part.bridgeAngle : fillAngle);
                 //int sparseSteps[2] = {extrusionWidth*5, extrusionWidth * 0.8};
                 //generateConcentricInfill(part.sparseOutline, fillPolygons, sparseSteps, 2);
-                if (config.infillLineDistance_µm > 0)
+                if (config.infillLineDistance_um > 0)
                 {
-                    if (config.infillLineDistance_µm > extrusionWidth * 4)
+                    if (config.infillLineDistance_um > extrusionWidth * 4)
                     {
-                        Infill.generateLineInfill(part.sparseOutline, fillPolygons, extrusionWidth, config.infillLineDistance_µm * 2, config.infillOverlapPerimeter_µm, fillAngle);
+                        Infill.generateLineInfill(part.sparseOutline, fillPolygons, extrusionWidth, config.infillLineDistance_um * 2, config.infillOverlapPerimeter_um, fillAngle);
                         int fillAngle90 = fillAngle + 90;
                         if (fillAngle90 > 360)
                         {
                             fillAngle90 -= 360;
                         }
 
-                        Infill.generateLineInfill(part.sparseOutline, fillPolygons, extrusionWidth, config.infillLineDistance_µm * 2, config.infillOverlapPerimeter_µm, fillAngle90);
+                        Infill.generateLineInfill(part.sparseOutline, fillPolygons, extrusionWidth, config.infillLineDistance_um * 2, config.infillOverlapPerimeter_um, fillAngle90);
                     }
                     else
                     {
-                        Infill.generateLineInfill(part.sparseOutline, fillPolygons, extrusionWidth, config.infillLineDistance_µm, config.infillOverlapPerimeter_µm, fillAngle);
+                        Infill.generateLineInfill(part.sparseOutline, fillPolygons, extrusionWidth, config.infillLineDistance_um, config.infillOverlapPerimeter_um, fillAngle);
                     }
                 }
 
@@ -583,14 +583,14 @@ namespace MatterHackers.MatterSlice
                 }
             }
 
-            int z = config.firstLayerThickness_µm + layerIndex * config.layerThickness_µm;
+            int z = config.firstLayerThickness_um + layerIndex * config.layerThickness_um;
             SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, z);
             for (int volumeIndex = 0; volumeIndex < storage.volumes.Count; volumeIndex++)
             {
                 SliceLayer layer = storage.volumes[volumeIndex].layers[layerIndex];
                 for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
                 {
-                    supportGenerator.polygons = supportGenerator.polygons.CreateDifference(layer.parts[partIndex].outline.Offset(config.supportXYDistance_µm));
+                    supportGenerator.polygons = supportGenerator.polygons.CreateDifference(layer.parts[partIndex].outline.Offset(config.supportXYDistance_um));
                 }
             }
             //Contract and expand the support polygons so small sections are removed and the final polygon is smoothed a bit.
@@ -610,24 +610,24 @@ namespace MatterHackers.MatterSlice
             {
                 Polygons island = supportIslands[islandOrderOptimizer.polyOrder[islandIndex]];
                 Polygons supportLines = new Polygons();
-                if (config.supportLineSpacing_µm > 0)
+                if (config.supportLineSpacing_um > 0)
                 {
                     switch (config.supportType)
                     {
                         case ConfigConstants.SUPPORT_TYPE.GRID:
-                            if (config.supportLineSpacing_µm > extrusionWidth * 4)
+                            if (config.supportLineSpacing_um > extrusionWidth * 4)
                             {
-                                Infill.generateLineInfill(island, supportLines, extrusionWidth, config.supportLineSpacing_µm * 2, config.infillOverlapPerimeter_µm, 0);
-                                Infill.generateLineInfill(island, supportLines, extrusionWidth, config.supportLineSpacing_µm * 2, config.infillOverlapPerimeter_µm, 90);
+                                Infill.generateLineInfill(island, supportLines, extrusionWidth, config.supportLineSpacing_um * 2, config.infillOverlapPerimeter_um, 0);
+                                Infill.generateLineInfill(island, supportLines, extrusionWidth, config.supportLineSpacing_um * 2, config.infillOverlapPerimeter_um, 90);
                             }
                             else
                             {
-                                Infill.generateLineInfill(island, supportLines, extrusionWidth, config.supportLineSpacing_µm, config.infillOverlapPerimeter_µm, (layerIndex & 1) == 1 ? 0 : 90);
+                                Infill.generateLineInfill(island, supportLines, extrusionWidth, config.supportLineSpacing_um, config.infillOverlapPerimeter_um, (layerIndex & 1) == 1 ? 0 : 90);
                             }
                             break;
 
                         case ConfigConstants.SUPPORT_TYPE.LINES:
-                            Infill.generateLineInfill(island, supportLines, extrusionWidth, config.supportLineSpacing_µm, config.infillOverlapPerimeter_µm, 0);
+                            Infill.generateLineInfill(island, supportLines, extrusionWidth, config.supportLineSpacing_um, config.infillOverlapPerimeter_um, 0);
                             break;
                     }
                 }
@@ -646,7 +646,7 @@ namespace MatterHackers.MatterSlice
 
         void addWipeTower(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerNr, int prevExtruder, int extrusionWidth)
         {
-            if (config.wipeTowerSize_µm == 1)
+            if (config.wipeTowerSize_um == 1)
             {
                 return;
             }
@@ -654,7 +654,7 @@ namespace MatterHackers.MatterSlice
             //If we changed extruder, print the wipe/prime tower for this nozzle;
             gcodeLayer.writePolygonsByOptimizer(storage.wipeTower, supportConfig);
             Polygons fillPolygons = new Polygons();
-            Infill.generateLineInfill(storage.wipeTower, fillPolygons, extrusionWidth, extrusionWidth, config.infillOverlapPerimeter_µm, 45 + 90 * (layerNr % 2));
+            Infill.generateLineInfill(storage.wipeTower, fillPolygons, extrusionWidth, extrusionWidth, config.infillOverlapPerimeter_um, 45 + 90 * (layerNr % 2));
             gcodeLayer.writePolygonsByOptimizer(fillPolygons, supportConfig);
 
             //Make sure we wipe the old extruder on the wipe tower.

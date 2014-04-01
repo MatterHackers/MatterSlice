@@ -74,26 +74,26 @@ namespace MatterHackers.MatterSlice
         // if you were to change the layerThicknessMm variable you would add a legacy name so that we can still use old settings
         //[LegacyName("layerThickness")] // the name before we added Mm
         public double layerThickness;
-        public int layerThickness_µm { get { return (int)(layerThickness * 1000); } }
+        public int layerThickness_um { get { return (int)(layerThickness * 1000); } }
 
         [SettingDescription("The height of the first layer to print, in millimeters.")]
         public double firstLayerThickness;
-        public int firstLayerThickness_µm { get { return (int)(firstLayerThickness * 1000); } }
+        public int firstLayerThickness_um { get { return (int)(firstLayerThickness * 1000); } }
 
         [SettingDescription("The width of the filament being fed into the extruder, in millimeters.")]
         public double filamentDiameter;
-        public int filamentDiameter_µm { get { return (int)(filamentDiameter * 1000); } }
+        public int filamentDiameter_um { get { return (int)(filamentDiameter * 1000); } }
 
         [SettingDescription("Lets you adjust how much material to extrude.")]
         public double extrusionMultiplier;
 
         [SettingDescription("The width of the line to extrude for the first layer.")]
         public double firstLayerExtrusionWidth;
-        public int firstLayerExtrusionWidth_µm { get { return (int)(firstLayerExtrusionWidth * 1000); } }
+        public int firstLayerExtrusionWidth_um { get { return (int)(firstLayerExtrusionWidth * 1000); } }
 
         [SettingDescription("The width of the line to extrude.")]
         public double extrusionWidth;
-        public int extrusionWidth_µm { get { return (int)(extrusionWidth * 1000); } }
+        public int extrusionWidth_um { get { return (int)(extrusionWidth * 1000); } }
 
         public int numberOfPerimeters;
         public int numberOfBottomLayers;
@@ -102,7 +102,7 @@ namespace MatterHackers.MatterSlice
         [SettingDescription("The percent of filled space to open space while infilling.")]
         public double infillPercent;
 
-        public int infillLineDistance_µm
+        public int infillLineDistance_um
         { 
             get 
             {
@@ -119,36 +119,36 @@ namespace MatterHackers.MatterSlice
 
         [SettingDescription("The amount the infill extends into the perimeter in millimeters.")]
         public double infillOverlapPerimeter;
-        public int infillOverlapPerimeter_µm { get { return (int)(infillOverlapPerimeter * 1000); } }
+        public int infillOverlapPerimeter_um { get { return (int)(infillOverlapPerimeter * 1000); } }
 
         public int infillStartingAngle;
 
         [SettingDescription("How far from objects the first skirt loop should be, in millimeters.")]
         public int skirtDistanceFromObject;
-        public int skirtDistance_µm { get { return (int)(skirtDistanceFromObject * 1000); } }
+        public int skirtDistance_um { get { return (int)(skirtDistanceFromObject * 1000); } }
 
         [SettingDescription("The number of loops to draw around objects. Can be used to help hold them down.")]
         public int numberOfSkirtLoops;
 
         [SettingDescription("The minimum length of the skirt line, in millimeters.")]
         public int skirtMinLength;
-        public int skirtMinLength_µm { get { return (int)(skirtMinLength * 1000); } }
+        public int skirtMinLength_um { get { return (int)(skirtMinLength * 1000); } }
 
         public double retractionOnTravel;
-        public int retractionAmount_µm { get { return (int)(retractionOnTravel * 1000); } }
+        public int retractionAmount_um { get { return (int)(retractionOnTravel * 1000); } }
         public double retractionOnExtruderSwitch;
-        public int retractionAmountOnExtruderSwitch_µm { get { return (int)(retractionOnExtruderSwitch * 1000); } }
+        public int retractionAmountOnExtruderSwitch_um { get { return (int)(retractionOnExtruderSwitch * 1000); } }
 
         [SettingDescription("mm/s.")]
         public int retractionSpeed;
 
         [SettingDescription("The minimum travel distance that will require a retraction")]
         public double minimumTravelToCauseRetraction;
-        public int minimumTravelToCauseRetraction_µm { get { return (int)(minimumTravelToCauseRetraction * 1000); } }
+        public int minimumTravelToCauseRetraction_um { get { return (int)(minimumTravelToCauseRetraction * 1000); } }
 
         [SettingDescription("mm.")]
         public double minimumExtrusionBeforeRetraction;
-        public int minimumExtrusionBeforeRetraction_µm { get { return (int)(minimumExtrusionBeforeRetraction * 1000); } }
+        public int minimumExtrusionBeforeRetraction_um { get { return (int)(minimumExtrusionBeforeRetraction * 1000); } }
 
         [SettingDescription("The amount to move the extruder up in z after retracting (before a move). mm.")]
         public double retractionZHop;
@@ -158,11 +158,11 @@ namespace MatterHackers.MatterSlice
         
         [SettingDescription("If greater than 0 this creates an outline around shapes so the extrude will be wiped when entering.")]
         public double wipeShieldDistanceFromObject;
-        public int wipeShieldDistanceFromShapes_µm { get { return (int)(wipeShieldDistanceFromObject * 1000); } }
+        public int wipeShieldDistanceFromShapes_um { get { return (int)(wipeShieldDistanceFromObject * 1000); } }
 
         [SettingDescription("Unlike the wipe shield this is a square of size*size in the lower left corner for wiping during extruder changing.")]
         public double wipeTowerSize;
-        public int wipeTowerSize_µm { get { return (int)(wipeTowerSize * 1000); } }
+        public int wipeTowerSize_um { get { return (int)(wipeTowerSize * 1000); } }
         public int multiVolumeOverlapPercent;
 
         // speed settings
@@ -188,11 +188,11 @@ namespace MatterHackers.MatterSlice
         public bool generateInternalSupport;
         
         public double supportLineSpacing;
-        public int supportLineSpacing_µm { get { return (int)(supportLineSpacing * 1000); } }
+        public int supportLineSpacing_um { get { return (int)(supportLineSpacing * 1000); } }
 
         [SettingDescription("The closest xy distance that support will be to the object. mm/s.")]
         public double supportXYDistanceFromObject;
-        public int supportXYDistance_µm { get { return (int)(supportXYDistanceFromObject * 1000); } }
+        public int supportXYDistance_um { get { return (int)(supportXYDistanceFromObject * 1000); } }
 
         [SettingDescription("The number of layers to skip in z. The gap between the support and the model.")]
         public int supportNumberOfLayersToSkipInZ;
@@ -215,26 +215,26 @@ namespace MatterHackers.MatterSlice
         //Raft settings
         [SettingDescription("mm.")]
         public double raftExtraDistanceAroundPart;
-        public int raftExtraDistanceAroundPart_µm { get { return (int)(raftExtraDistanceAroundPart * 1000); } }
+        public int raftExtraDistanceAroundPart_um { get { return (int)(raftExtraDistanceAroundPart * 1000); } }
 
-        public int raftLineSpacing_µm { get { return extrusionWidth_µm * 3000 / 400; } }
+        public int raftLineSpacing_um { get { return extrusionWidth_um * 3000 / 400; } }
 
-        public int raftBaseThickness_µm { get { return extrusionWidth_µm * 300 / 400; } }
+        public int raftBaseThickness_um { get { return extrusionWidth_um * 300 / 400; } }
 
-        public int raftBaseLinewidth_µm { get { return extrusionWidth_µm * 1000 / 400; } }
-        public int raftInterfaceThicknes_µm { get { return extrusionWidth_µm * 250 / 400; } } // .25 mm for .4 mm nozzle
-        public int raftInterfaceLinewidth_µm { get { return extrusionWidth_µm * 350 / 400; } } // .35 mm for .4 mm nozzle
+        public int raftBaseLinewidth_um { get { return extrusionWidth_um * 1000 / 400; } }
+        public int raftInterfaceThicknes_um { get { return extrusionWidth_um * 250 / 400; } } // .25 mm for .4 mm nozzle
+        public int raftInterfaceLinewidth_um { get { return extrusionWidth_um * 350 / 400; } } // .35 mm for .4 mm nozzle
 
         public int raftPrintSpeed { get { return firstLayerSpeed; } }
         public int raftSurfacePrintSpeed { get { return firstLayerSpeed; } }
         public int raftFanSpeedPercent { get { return 50; } }
 
-        public int raftInterfaceLineSpacing_µm { get { return extrusionWidth_µm * 1000 / 400; } } // 1 mm for .4 mm nozzle
-        public int raftSurfaceThickness_µm { get { return extrusionWidth_µm * 250 / 400; } } // .250 mm for .4 mm nozzle
-        public int raftSurfaceLinewidth_µm { get { return extrusionWidth_µm * 400 / 400; } } // .4 mm for .4 mm nozzle
-        public int raftSurfaceLineSpacing_µm { get { return extrusionWidth_µm * 400 / 400; } } // .4 mm for .4 mm nozzle
-        public int raftSurfaceLayers_µm { get { return 2; } }
-        public int raftAirGap_µm { get { return extrusionWidth_µm * 200 / 400; } } // .2 mm for .4 mm nozzle
+        public int raftInterfaceLineSpacing_um { get { return extrusionWidth_um * 1000 / 400; } } // 1 mm for .4 mm nozzle
+        public int raftSurfaceThickness_um { get { return extrusionWidth_um * 250 / 400; } } // .250 mm for .4 mm nozzle
+        public int raftSurfaceLinewidth_um { get { return extrusionWidth_um * 400 / 400; } } // .4 mm for .4 mm nozzle
+        public int raftSurfaceLineSpacing_um { get { return extrusionWidth_um * 400 / 400; } } // .4 mm for .4 mm nozzle
+        public int raftSurfaceLayers_um { get { return 2; } }
+        public int raftAirGap_um { get { return extrusionWidth_um * 200 / 400; } } // .2 mm for .4 mm nozzle
 
         public bool enableRaft;
 
@@ -244,11 +244,11 @@ namespace MatterHackers.MatterSlice
         [SettingDescription("Describes if 'positionToPlaceObjectCenter' should be used.")]
         public bool centerObjectInXy;
         public DoublePoint positionToPlaceObjectCenter;
-        public IntPoint positionToPlaceObjectCenter_µm { get { return new IntPoint(positionToPlaceObjectCenter.X * 1000, positionToPlaceObjectCenter.Y * 1000); } }
+        public IntPoint positionToPlaceObjectCenter_um { get { return new IntPoint(positionToPlaceObjectCenter.X * 1000, positionToPlaceObjectCenter.Y * 1000); } }
 
         [SettingDescription("The amount to clip off the bottom of the part, in millimeters.")]
         public double bottomClipAmount;
-        public int bottomClipAmount_µm { get { return (int)(bottomClipAmount * 1000); } }
+        public int bottomClipAmount_um { get { return (int)(bottomClipAmount * 1000); } }
 
         // repair settings
         [SettingDescription("You can or them together using '|'.")]

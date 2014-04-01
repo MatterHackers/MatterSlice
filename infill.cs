@@ -51,9 +51,9 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        public static void generateLineInfill(Polygons in_outline, Polygons result, int extrusionWidth, int lineSpacing, int infillExtendIntoPerimeter_µm, double rotation)
+        public static void generateLineInfill(Polygons in_outline, Polygons result, int extrusionWidth, int lineSpacing, int infillExtendIntoPerimeter_um, double rotation)
         {
-            Polygons outlines = in_outline.Offset(infillExtendIntoPerimeter_µm);
+            Polygons outlines = in_outline.Offset(infillExtendIntoPerimeter_um);
             PointMatrix matrix = new PointMatrix(rotation);
 
             outlines.applyMatrix(matrix);
