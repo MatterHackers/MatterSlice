@@ -168,5 +168,12 @@ namespace MatterHackers.MatterSlice
             processor.finalize();
             return 0;
         }
+
+        public static void AssertDebugNotDefined()
+        {
+#if DEBUG
+            throw new Exception("DEBUG is defined and should not be!");
+#endif
+        }
     }
 }
