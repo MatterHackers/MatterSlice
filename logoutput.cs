@@ -48,9 +48,16 @@ namespace MatterHackers.MatterSlice
             Console.Write(message);
         }
 
+        public static EventHandler GetLogWrites;
+
         public static void log(string output)
         {
             Console.Write(output);
+
+            if (GetLogWrites != null)
+            {
+                GetLogWrites(output, null);
+            }
         }
 
         public static void logProgress(string type, int value, int maxValue)

@@ -335,12 +335,6 @@ namespace MatterHackers.MatterSlice
                 {
                     f.Write(" {0}{1:0.00000}".FormatWith(extruderCharacter[extruderNr], extrusionAmount));
                 }
-                int totalSecondsInPrintAsInt = (int)(totalPrintTime + estimateCalculator.calculate() + .5);
-                if (totalSecondsInPrintAsInt > lastSecondsWriten)
-                {
-                    f.Write(" ; s:{0:0}", totalSecondsInPrintAsInt);
-                    lastSecondsWriten = totalSecondsInPrintAsInt;
-                }
                 f.Write("\n");
             }
 
