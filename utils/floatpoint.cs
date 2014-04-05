@@ -66,6 +66,27 @@ namespace MatterHackers.MatterSlice
             return z;
         }
 
+        public override bool Equals(object obj)
+        {
+            if (!(obj is FPoint3))
+                return false;
+
+            return this.Equals((FPoint3)obj);
+        }
+
+        public bool Equals(FPoint3 other)
+        {
+            return
+                x == other.x &&
+                y == other.y && 
+                z == other.z;
+        }
+
+        public override int GetHashCode()
+        {
+            return new { x, y, z }.GetHashCode();
+        }
+
         bool testLength(double len)
         {
             return vSize2() <= len * len;

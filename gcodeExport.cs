@@ -341,7 +341,6 @@ namespace MatterHackers.MatterSlice
             currentPosition = new Point3(p.X, p.Y, zPos);
             estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition.x) / 1000.0, (currentPosition.y) / 1000.0, (double)(currentPosition.z) / 1000.0, extrusionAmount), speed);
         }
-        int lastSecondsWriten = 0;
 
         public void writeRetraction()
         {

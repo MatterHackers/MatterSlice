@@ -70,6 +70,11 @@ namespace MatterHackers.MatterSlice
             return left.x != right.x || left.y != right.y || left.z != right.z;
         }
 
+        public override int GetHashCode()
+        {
+            return new { x, y, z }.GetHashCode();
+        }
+
         public int max()
         {
             if (x > y && x > z)
