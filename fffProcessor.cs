@@ -168,7 +168,10 @@ namespace MatterHackers.MatterSlice
                 //Add the raft offset to each layer.
                 for (int layerNr = 0; layerNr < storage.volumes[volumeIdx].layers.Count; layerNr++)
                 {
-                    storage.volumes[volumeIdx].layers[layerNr].printZ += config.raftBaseThickness_um + config.raftInterfaceThicknes_um;
+                    if (config.enableRaft)
+                    {
+                        storage.volumes[volumeIdx].layers[layerNr].printZ += config.raftBaseThickness_um + config.raftInterfaceThicknes_um;
+                    }
                 }
             }
             LogOutput.log("Generated layer parts in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
@@ -382,15 +385,18 @@ namespace MatterHackers.MatterSlice
 
                 // get the correct height for this layer
                 int z = config.firstLayerThickness_um + layerIndex * config.layerThickness_um;
-                z += config.raftBaseThickness_um + config.raftInterfaceThicknes_um + config.raftSurfaceLayers_um * config.raftSurfaceThickness_um;
-                if (layerIndex == 0)
+                if (config.enableRaft)
                 {
-                    // We only raise the first layer of the print up by the air gap.
-                    // To give it:
-                    //   Less press into the raft
-                    //   More time to cool
-                    //   more surface area to air while extruding
-                    z += config.raftAirGap_um;
+                    z += config.raftBaseThickness_um + config.raftInterfaceThicknes_um + config.raftSurfaceLayers_um * config.raftSurfaceThickness_um;
+                    if (layerIndex == 0)
+                    {
+                        // We only raise the first layer of the print up by the air gap.
+                        // To give it:
+                        //   Less press into the raft
+                        //   More time to cool
+                        //   more surface area to air while extruding
+                        z += config.raftAirGap_um;
+                    }
                 }
 
                 gcode.setZ(z);

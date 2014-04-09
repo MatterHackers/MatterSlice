@@ -291,7 +291,7 @@ namespace MatterHackers.MatterSlice
                     {
                         if (retractionZHop_mm > 0)
                         {
-                            f.Write("G1 Z{0:0.00}\n".FormatWith(currentPosition_um.z/1000.0 - retractionZHop_mm));
+                            f.Write("G1 Z{0:0.00}\n".FormatWith(currentPosition_um.z/1000.0));
                         }
 
                         if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
