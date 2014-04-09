@@ -32,18 +32,18 @@ namespace MatterHackers.MatterSlice
     public class GCodeExport
     {
         StreamWriter f;
-        double extrusionAmount;
-        double extrusionPerMM;
-        double retractionAmount;
-        double retractionZHop;
-        double extruderSwitchRetraction;
-        double minimumExtrusionBeforeRetraction;
-        double extrusionAmountAtPreviousRetraction;
-        Point3 currentPosition;
-        IntPoint[] extruderOffset = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
+        double extrusionAmount_mm;
+        double extrusionPerMm;
+        double retractionAmount_mm;
+        double retractionZHop_mm;
+        double extruderSwitchRetraction_mm;
+        double minimumExtrusionBeforeRetraction_mm;
+        double extrusionAmountAtPreviousRetraction_mm;
+        Point3 currentPosition_um;
+        IntPoint[] extruderOffset_um = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
         char[] extruderCharacter = new char[ConfigConstants.MAX_EXTRUDERS];
         int currentSpeed, retractionSpeed;
-        int zPos;
+        int zPos_um;
         bool isRetracted;
         int extruderNr;
         int currentFanSpeed;
@@ -55,12 +55,12 @@ namespace MatterHackers.MatterSlice
 
         public GCodeExport()
         {
-            extrusionAmount = 0;
-            extrusionPerMM = 0;
-            retractionAmount = 0;
-            minimumExtrusionBeforeRetraction = 0.0;
-            extrusionAmountAtPreviousRetraction = -10000;
-            extruderSwitchRetraction = 14.5;
+            extrusionAmount_mm = 0;
+            extrusionPerMm = 0;
+            retractionAmount_mm = 0;
+            minimumExtrusionBeforeRetraction_mm = 0.0;
+            extrusionAmountAtPreviousRetraction_mm = -1;
+            extruderSwitchRetraction_mm = 14.5;
             extruderNr = 0;
             currentFanSpeed = -1;
 
@@ -103,9 +103,9 @@ namespace MatterHackers.MatterSlice
 #endif
         }
 
-        public void setExtruderOffset(int id, IntPoint p)
+        public void setExtruderOffset(int extruderIndex, IntPoint extruderOffset_um)
         {
-            extruderOffset[id] = p;
+            this.extruderOffset_um[extruderIndex] = extruderOffset_um;
         }
 
         public void SetOutputType(ConfigConstants.OUTPUT_TYPE outputType)
@@ -148,36 +148,36 @@ namespace MatterHackers.MatterSlice
             double filamentArea = Math.PI * ((double)(filamentDiameter) / 1000.0 / 2.0) * ((double)(filamentDiameter) / 1000.0 / 2.0);
             if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)//UltiGCode uses volume extrusion as E value, and thus does not need the filamentArea in the mix.
             {
-                extrusionPerMM = (double)(layerThickness) / 1000.0;
+                extrusionPerMm = (double)(layerThickness) / 1000.0;
             }
             else
             {
-                extrusionPerMM = (double)(layerThickness) / 1000.0 / filamentArea * extrusionMultiplier;
+                extrusionPerMm = (double)(layerThickness) / 1000.0 / filamentArea * extrusionMultiplier;
             }
         }
 
-        public void setRetractionSettings(int retractionAmount, int retractionSpeed, int extruderSwitchRetraction, int minimumExtrusionBeforeRetraction, double retractionZHop)
+        public void setRetractionSettings(int retractionAmount_um, int retractionSpeed, int extruderSwitchRetraction_um, int minimumExtrusionBeforeRetraction_mm, double retractionZHop_mm)
         {
-            this.retractionAmount = (double)(retractionAmount) / 1000.0;
+            this.retractionAmount_mm = (double)(retractionAmount_um) / 1000.0;
             this.retractionSpeed = retractionSpeed;
-            this.extruderSwitchRetraction = (double)(extruderSwitchRetraction) / 1000.0;
-            this.minimumExtrusionBeforeRetraction = (double)(minimumExtrusionBeforeRetraction) / 1000.0;
-            this.retractionZHop = retractionZHop;
+            this.extruderSwitchRetraction_mm = (double)(extruderSwitchRetraction_um) / 1000.0;
+            this.minimumExtrusionBeforeRetraction_mm = (double)(minimumExtrusionBeforeRetraction_mm) / 1000.0;
+            this.retractionZHop_mm = retractionZHop_mm;
         }
 
         public void setZ(int z)
         {
-            this.zPos = z;
+            this.zPos_um = z;
         }
 
         public IntPoint getPositionXY()
         {
-            return new IntPoint(currentPosition.x, currentPosition.y);
+            return new IntPoint(currentPosition_um.x, currentPosition_um.y);
         }
 
         public int getPositionZ()
         {
-            return currentPosition.z;
+            return currentPosition_um.z;
         }
 
         public int getExtruderNr()
@@ -189,7 +189,7 @@ namespace MatterHackers.MatterSlice
         {
             if (e == extruderNr)
             {
-                return totalFilament[e] + extrusionAmount;
+                return totalFilament[e] + extrusionAmount_mm;
             }
 
             return totalFilament[e];
@@ -218,12 +218,12 @@ namespace MatterHackers.MatterSlice
 
         public void resetExtrusionValue()
         {
-            if (extrusionAmount != 0.0 && outputType != ConfigConstants.OUTPUT_TYPE.MAKERBOT)
+            if (extrusionAmount_mm != 0.0 && outputType != ConfigConstants.OUTPUT_TYPE.MAKERBOT)
             {
                 f.Write("G92 {0}0\n".FormatWith(extruderCharacter[extruderNr]));
-                totalFilament[extruderNr] += extrusionAmount;
-                extrusionAmountAtPreviousRetraction -= extrusionAmount;
-                extrusionAmount = 0.0;
+                totalFilament[extruderNr] += extrusionAmount_mm;
+                extrusionAmountAtPreviousRetraction_mm -= extrusionAmount_mm;
+                extrusionAmount_mm = 0.0;
             }
         }
 
@@ -238,13 +238,13 @@ namespace MatterHackers.MatterSlice
             return value < 0 ? (int)(value - 0.5) : (int)(value + 0.5);
         }
 
-        public void writeMove(IntPoint p, int speed, int lineWidth)
+        public void writeMove(IntPoint p, int speed, int lineWidth_um)
         {
             if (outputType == ConfigConstants.OUTPUT_TYPE.BFB)
             {
                 //For Bits From Bytes machines, we need to handle this completely differently. As they do not use E values, they use RPM values
                 double fspeed = speed * 60;
-                double rpm = (extrusionPerMM * (double)(lineWidth) / 1000.0) * speed * 60;
+                double rpm = (extrusionPerMm * (double)(lineWidth_um) / 1000.0) * speed * 60;
                 
                 //All BFB machines have 4mm per RPM extrusion.
                 const double mm_per_rpm = 4.0; 
@@ -268,7 +268,7 @@ namespace MatterHackers.MatterSlice
                     
                     //Increase the extrusion amount to calculate the amount of filament used.
                     IntPoint diff = p - getPositionXY();
-                    extrusionAmount += extrusionPerMM * lineWidth / 1000.0 * diff.LengthMm();
+                    extrusionAmount_mm += extrusionPerMm * lineWidth_um / 1000.0 * diff.LengthMm();
                 }
                 else
                 {
@@ -279,19 +279,19 @@ namespace MatterHackers.MatterSlice
                         isRetracted = true;
                     }
                 }
-                f.Write("G1 X{0:0.00} Y{1:0.00} Z{2:0.00} F{3:0.0}\n".FormatWith((double)(p.X - extruderOffset[extruderNr].X) / 1000, (double)(p.Y - extruderOffset[extruderNr].Y) / 1000, (double)(zPos) / 1000, fspeed));
+                f.Write("G1 X{0:0.00} Y{1:0.00} Z{2:0.00} F{3:0.0}\n".FormatWith((double)(p.X - extruderOffset_um[extruderNr].X) / 1000, (double)(p.Y - extruderOffset_um[extruderNr].Y) / 1000, (double)(zPos_um) / 1000, fspeed));
             }
             else
             {
                 //Normal E handling.
-                if (lineWidth != 0)
+                if (lineWidth_um != 0)
                 {
                     IntPoint diff = p - getPositionXY();
                     if (isRetracted)
                     {
-                        if (retractionZHop > 0)
+                        if (retractionZHop_mm > 0)
                         {
-                            f.Write("G1 Z{0:0.00}\n".FormatWith(currentPosition.z - retractionZHop));
+                            f.Write("G1 Z{0:0.00}\n".FormatWith(currentPosition_um.z/1000.0 - retractionZHop_mm));
                         }
 
                         if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
@@ -300,20 +300,20 @@ namespace MatterHackers.MatterSlice
                         }
                         else
                         {
-                            f.Write("G1 F{0} {1}{2:0.00000}\n".FormatWith(retractionSpeed * 60, extruderCharacter[extruderNr], extrusionAmount));
+                            f.Write("G1 F{0} {1}{2:0.00000}\n".FormatWith(retractionSpeed * 60, extruderCharacter[extruderNr], extrusionAmount_mm));
                       
                             currentSpeed = retractionSpeed;
-                            estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(p.X) / 1000.0, (p.Y) / 1000.0, (double)(zPos) / 1000.0, extrusionAmount), currentSpeed);
+                            estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(p.X) / 1000.0, (p.Y) / 1000.0, (double)(zPos_um) / 1000.0, extrusionAmount_mm), currentSpeed);
                         }
 
-                        if (extrusionAmount > 10000.0)
+                        if (extrusionAmount_mm > 10000.0)
                         {
                             //According to https://github.com/Ultimaker/CuraEngine/issues/14 having more then 21m of extrusion causes inaccuracies. So reset it every 10m, just to be sure.
                             resetExtrusionValue();
                         }
                         isRetracted = false;
                     }
-                    extrusionAmount += extrusionPerMM * (double)(lineWidth) / 1000.0 * diff.LengthMm();
+                    extrusionAmount_mm += extrusionPerMm * (double)(lineWidth_um) / 1000.0 * diff.LengthMm();
                     f.Write("G1");
                 }
                 else
@@ -326,20 +326,20 @@ namespace MatterHackers.MatterSlice
                     f.Write(" F{0}".FormatWith(speed * 60));
                     currentSpeed = speed;
                 }
-                f.Write(" X{0:0.00} Y{1:0.00}".FormatWith((double)(p.X - extruderOffset[extruderNr].X) / 1000, (double)(p.Y - extruderOffset[extruderNr].Y) / 1000));
-                if (zPos != currentPosition.z)
+                f.Write(" X{0:0.00} Y{1:0.00}".FormatWith((double)(p.X - extruderOffset_um[extruderNr].X) / 1000, (double)(p.Y - extruderOffset_um[extruderNr].Y) / 1000));
+                if (zPos_um != currentPosition_um.z)
                 {
-                    f.Write(" Z{0:0.00}".FormatWith((double)(zPos) / 1000));
+                    f.Write(" Z{0:0.00}".FormatWith((double)(zPos_um) / 1000));
                 }
-                if (lineWidth != 0)
+                if (lineWidth_um != 0)
                 {
-                    f.Write(" {0}{1:0.00000}".FormatWith(extruderCharacter[extruderNr], extrusionAmount));
+                    f.Write(" {0}{1:0.00000}".FormatWith(extruderCharacter[extruderNr], extrusionAmount_mm));
                 }
                 f.Write("\n");
             }
 
-            currentPosition = new Point3(p.X, p.Y, zPos);
-            estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition.x) / 1000.0, (currentPosition.y) / 1000.0, (double)(currentPosition.z) / 1000.0, extrusionAmount), speed);
+            currentPosition_um = new Point3(p.X, p.Y, zPos_um);
+            estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition_um.x) / 1000.0, (currentPosition_um.y) / 1000.0, (double)(currentPosition_um.z) / 1000.0, extrusionAmount_mm), speed);
         }
 
         public void writeRetraction()
@@ -349,7 +349,7 @@ namespace MatterHackers.MatterSlice
                 return;
             }
 
-            if (retractionAmount > 0 && !isRetracted && extrusionAmountAtPreviousRetraction + minimumExtrusionBeforeRetraction < extrusionAmount)
+            if (retractionAmount_mm > 0 && !isRetracted && extrusionAmountAtPreviousRetraction_mm + minimumExtrusionBeforeRetraction_mm < extrusionAmount_mm)
             {
                 if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
                 {
@@ -357,15 +357,15 @@ namespace MatterHackers.MatterSlice
                 }
                 else
                 {
-                    f.Write("G1 F{0} {1}{2:0.00000}\n".FormatWith(retractionSpeed * 60, extruderCharacter[extruderNr], extrusionAmount - retractionAmount));
+                    f.Write("G1 F{0} {1}{2:0.00000}\n".FormatWith(retractionSpeed * 60, extruderCharacter[extruderNr], extrusionAmount_mm - retractionAmount_mm));
                     currentSpeed = retractionSpeed;
-                    estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition.x) / 1000.0, (currentPosition.y) / 1000.0, (double)(currentPosition.z) / 1000.0, extrusionAmount - retractionAmount), currentSpeed);
+                    estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition_um.x) / 1000.0, (currentPosition_um.y) / 1000.0, (double)(currentPosition_um.z) / 1000.0, extrusionAmount_mm - retractionAmount_mm), currentSpeed);
                 }
-                if (retractionZHop > 0)
+                if (retractionZHop_mm > 0)
                 {
-                    f.Write("G1 Z{0:0.00}\n".FormatWith(currentPosition.z + retractionZHop));
+                    f.Write("G1 Z{0:0.00}\n".FormatWith(currentPosition_um.z/1000.0 + retractionZHop_mm));
                 }
-                extrusionAmountAtPreviousRetraction = extrusionAmount;
+                extrusionAmountAtPreviousRetraction_mm = extrusionAmount_mm;
                 isRetracted = true;
             }
         }
@@ -383,7 +383,7 @@ namespace MatterHackers.MatterSlice
             }
             else
             {
-                f.Write("G1 F{0} {1}{2:0.0000}\n", retractionSpeed * 60, extruderCharacter[extruderNr], extrusionAmount - extruderSwitchRetraction);
+                f.Write("G1 F{0} {1}{2:0.0000}\n", retractionSpeed * 60, extruderCharacter[extruderNr], extrusionAmount_mm - extruderSwitchRetraction_mm);
                 currentSpeed = retractionSpeed;
             }
 
