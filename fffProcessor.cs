@@ -165,10 +165,10 @@ namespace MatterHackers.MatterSlice
                 LayerPart.createLayerParts(storage.volumes[volumeIdx], slicerList[volumeIdx], config.repairOverlaps);
                 slicerList[volumeIdx] = null;
 
-                //Add the raft offset to each layer.
-                for (int layerNr = 0; layerNr < storage.volumes[volumeIdx].layers.Count; layerNr++)
+                if (config.enableRaft)
                 {
-                    if (config.enableRaft)
+                    //Add the raft offset to each layer.
+                    for (int layerNr = 0; layerNr < storage.volumes[volumeIdx].layers.Count; layerNr++)
                     {
                         storage.volumes[volumeIdx].layers[layerNr].printZ += config.raftBaseThickness_um + config.raftInterfaceThicknes_um;
                     }
@@ -253,7 +253,10 @@ namespace MatterHackers.MatterSlice
             }
 
             Skirt.generateSkirt(storage, config.skirtDistance_um, config.firstLayerExtrusionWidth_um, config.numberOfSkirtLoops, config.skirtMinLength_um, config.firstLayerThickness_um);
-            Raft.GenerateRaftOutlines(storage, config.raftExtraDistanceAroundPart_um);
+            if (config.enableRaft)
+            {
+                Raft.GenerateRaftOutlines(storage, config.raftExtraDistanceAroundPart_um);
+            }
 
             for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
             {
