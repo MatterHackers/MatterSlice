@@ -272,7 +272,7 @@ namespace MatterHackers.MatterSlice
         {
             SimpleModel m = new SimpleModel();
 
-            using (FileStream stlStream = File.Open(filename, FileMode.Open))
+            using (FileStream stlStream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 // load it as a binary stl
                 // skip the first 80 bytes
