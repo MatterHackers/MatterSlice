@@ -113,7 +113,7 @@ namespace MatterHackers.MatterSlice
 
         public static void GenerateLineInfill(ConfigSettings config, SliceLayerPart part, Polygons fillPolygons, int extrusionWidth_um, int fillAngle)
         {
-            if (config.infillPercent > 0)
+            if (config.infillPercent <= 0)
             {
                 throw new Exception("infillPercent must be gerater than 0.");
             }
@@ -124,6 +124,11 @@ namespace MatterHackers.MatterSlice
 
         public static void GenerateGridInfill(ConfigSettings config, SliceLayerPart part, Polygons fillPolygons, int extrusionWidth_um, int fillAngle)
         {
+            if (config.infillPercent <= 0)
+            {
+                throw new Exception("infillPercent must be gerater than 0.");
+            }
+
             int linespacing_um = (int)(config.extrusionWidth_um / (config.infillPercent / 100) * 2);
 
             Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, config.extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle);
