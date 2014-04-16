@@ -102,24 +102,9 @@ namespace MatterHackers.MatterSlice
         [SettingDescription("The percent of filled space to open space while infilling.")]
         public double infillPercent;
 
-        public int infillLineDistance_um
-        { 
-            get 
-            {
-                double linespacing = 0;
-                if (infillPercent > 0)
-                {
-                    // make this math generate the correct ratio
-                    linespacing = extrusionWidth / (infillPercent / 100);
-                }
-
-                return (int)(linespacing * 1000);
-            } 
-        }
-
         [SettingDescription("The amount the infill extends into the perimeter in millimeters.")]
-        public double infillOverlapPerimeter;
-        public int infillOverlapPerimeter_um { get { return (int)(infillOverlapPerimeter * 1000); } }
+        public double infillExtendIntoPerimeter;
+        public int infillExtendIntoPerimeter_um { get { return (int)(infillExtendIntoPerimeter * 1000); } }
 
         public int infillStartingAngle;
 
@@ -181,6 +166,8 @@ namespace MatterHackers.MatterSlice
 
         //Support material
         public ConfigConstants.SUPPORT_TYPE supportType;
+
+        public ConfigConstants.INFILL_TYPE infillType;
 
         [SettingDescription("The ending angle at which support material will be generated. Larger numbers will result in more support, degrees.")]
         public int supportEndAngle;
@@ -293,8 +280,9 @@ namespace MatterHackers.MatterSlice
             numberOfSkirtLoops = 1;
             skirtMinLength = 0;
             infillPercent = 20;
-            infillOverlapPerimeter = .06;
+            infillExtendIntoPerimeter = .06;
             infillStartingAngle = 45;
+            infillType = ConfigConstants.INFILL_TYPE.GRID;
             centerObjectInXy = true;
             positionToPlaceObjectCenter.X = 102.5;
             positionToPlaceObjectCenter.Y = 102.5;
@@ -423,6 +411,7 @@ namespace MatterHackers.MatterSlice
                     case "REPAIR_OVERLAPS":
                     case "SUPPORT_TYPE":
                     case "OUTPUT_TYPE":
+                    case "INFILL_TYPE":
                         // all the enums can be output by this function
                         lines.Add("{0}={1} # {2}{3}".FormatWith(name, value, GetEnumHelpText(field.FieldType, field.FieldType.Name), fieldDescription));
                         break;
@@ -550,6 +539,7 @@ namespace MatterHackers.MatterSlice
                         case "REPAIR_OVERLAPS":
                         case "REPAIR_OUTLINES":
                         case "SUPPORT_TYPE":
+                        case "INFILL_TYPE":
                         case "OUTPUT_TYPE":
                             try
                             {
@@ -671,6 +661,12 @@ namespace MatterHackers.MatterSlice
          * * Lines give a row of lines which break off one at a time, making them easier to remove, but they do not support as good as the grid support.
          * */
         public enum SUPPORT_TYPE
+        {
+            GRID,
+            LINES
+        }
+
+        public enum INFILL_TYPE
         {
             GRID,
             LINES

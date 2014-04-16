@@ -31,27 +31,7 @@ namespace MatterHackers.MatterSlice
 
     public static class Infill
     {
-        public static void generateConcentricInfill(Polygons outline, Polygons result, int[] offsets, int offsetsSize)
-        {
-            int step = 0;
-            while (true)
-            {
-                for (int polygonNr = 0; polygonNr < outline.Count; polygonNr++)
-                {
-                    result.Add(outline[polygonNr]);
-                }
-
-                outline = outline.Offset(-offsets[step]);
-                if (outline.Count < 1)
-                {
-                    break;
-                }
-
-                step = (step + 1) % offsetsSize;
-            }
-        }
-
-        public static void generateLineInfill(Polygons in_outline, Polygons result, int extrusionWidth, int lineSpacing, int infillExtendIntoPerimeter_um, double rotation)
+        public static void GenerateLinePaths(Polygons in_outline, Polygons result, int extrusionWidth_um, int lineSpacing, int infillExtendIntoPerimeter_um, double rotation)
         {
             Polygons outlines = in_outline.Offset(infillExtendIntoPerimeter_um);
             PointMatrix matrix = new PointMatrix(rotation);
@@ -116,7 +96,7 @@ namespace MatterHackers.MatterSlice
                 cutList[idx2].Sort();
                 for (int i = 0; i + 1 < cutList[idx2].Count; i += 2)
                 {
-                    if (cutList[idx2][i + 1] - cutList[idx2][i] < extrusionWidth / 5)
+                    if (cutList[idx2][i + 1] - cutList[idx2][i] < extrusionWidth_um / 5)
                     {
                         continue;
                     }
@@ -128,6 +108,50 @@ namespace MatterHackers.MatterSlice
                 }
 
                 idx2 += 1;
+            }
+        }
+
+        public static void GenerateLineInfill(ConfigSettings config, SliceLayerPart part, Polygons fillPolygons, int extrusionWidth_um, int fillAngle)
+        {
+            if (config.infillPercent > 0)
+            {
+                throw new Exception("infillPercent must be gerater than 0.");
+            }
+
+            int linespacing_um = (int)(config.extrusionWidth_um / (config.infillPercent / 100));
+            GenerateLinePaths(part.sparseOutline, fillPolygons, extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle);
+        }
+
+        public static void GenerateGridInfill(ConfigSettings config, SliceLayerPart part, Polygons fillPolygons, int extrusionWidth_um, int fillAngle)
+        {
+            int linespacing_um = (int)(config.extrusionWidth_um / (config.infillPercent / 100) * 2);
+
+            Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, config.extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle);
+            
+            int fillAngle90 = fillAngle + 90;
+            if (fillAngle90 > 360)
+            {
+                fillAngle90 -= 360;
+            }
+
+            Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle90);
+        }
+
+        public static void generateConcentricInfill(Polygons outline, Polygons result, int inset_value, int inset_count)
+        {
+            for(int step = 0; step < inset_count; step++)
+            {
+                if (outline.Count < 1)
+                {
+                    break;
+                }
+
+                for (int polyNr = 0; polyNr < outline.Count; polyNr++)
+                {
+                    Polygon r = outline[polyNr];
+                    result.Add(r);
+                }
+                outline = outline.Offset(-inset_value);
             }
         }
     }
