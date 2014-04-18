@@ -163,7 +163,6 @@ namespace MatterHackers.MatterSlice
             {
                 storage.volumes.Add(new SliceVolumeStorage());
                 LayerPart.createLayerParts(storage.volumes[volumeIndex], slicerList[volumeIndex], config.repairOverlaps);
-                slicerList[volumeIndex] = null;
 
                 if (config.enableRaft)
                 {
