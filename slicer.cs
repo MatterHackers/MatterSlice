@@ -87,46 +87,45 @@ namespace MatterHackers.MatterSlice
                     segmentList[segmentIndexBeingAdded].addedToPolygon = true;
                     IntPoint addedSegmentEndPoint = segmentList[segmentIndexBeingAdded].end;
                     poly.Add(addedSegmentEndPoint);
-                    int nextSegmentToCheck = -1;
+                    int nextSegmentToCheckIndex = -1;
                     OptimizedFace face = optomizedMesh.facesTriangle[segmentList[segmentIndexBeingAdded].faceIndex];
                     for (int connectedFaceIndex = 0; connectedFaceIndex < 3; connectedFaceIndex++)
                     {
-                        int touchingFaceIndex = face.touchingFaces[connectedFaceIndex];
-                        if (touchingFaceIndex > -1)
+                        int testFaceIndex = face.touchingFaces[connectedFaceIndex];
+                        if (testFaceIndex > -1)
                         {
-                            
                             // If the connected face has an edge that is in the segment list
-                            if (faceTo2DSegmentIndex.ContainsKey(touchingFaceIndex))
+                            if (faceTo2DSegmentIndex.ContainsKey(testFaceIndex))
                             {
-                                int foundTouching2DSegmentIndex = faceTo2DSegmentIndex[touchingFaceIndex];
-                                IntPoint foundSegmentStart = segmentList[faceTo2DSegmentIndex[touchingFaceIndex]].start;
+                                int touchingSegmentIndex = faceTo2DSegmentIndex[testFaceIndex];
+                                IntPoint foundSegmentStart = segmentList[touchingSegmentIndex].start;
                                 IntPoint diff = addedSegmentEndPoint - foundSegmentStart;
                                 if (diff.IsShorterThen(10))
                                 {
                                     // if we have looped back around to where we started
-                                    if (faceTo2DSegmentIndex[touchingFaceIndex] == startingSegmentIndex)
+                                    if (diff.IsShorterThen(2))//touchingSegmentIndex == startingSegmentIndex)
                                     {
                                         canClose = true;
                                     }
 
                                     // If this segment has already been added
-                                    if (segmentList[faceTo2DSegmentIndex[touchingFaceIndex]].addedToPolygon)
+                                    if (segmentList[touchingSegmentIndex].addedToPolygon)
                                     {
                                         continue;
                                     }
 
-                                    nextSegmentToCheck = faceTo2DSegmentIndex[touchingFaceIndex];
+                                    nextSegmentToCheckIndex = touchingSegmentIndex;
                                 }
                             }
                         }
                     }
 
-                    if (nextSegmentToCheck == -1)
+                    if (nextSegmentToCheckIndex == -1)
                     {
                         break;
                     }
 
-                    segmentIndexBeingAdded = nextSegmentToCheck;
+                    segmentIndexBeingAdded = nextSegmentToCheckIndex;
                 }
                 if (canClose)
                 {
@@ -632,9 +631,9 @@ namespace MatterHackers.MatterSlice
                 }
             }
 
-            for (int layerNr = 0; layerNr < layers.Count; layerNr++)
+            for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
             {
-                layers[layerNr].makePolygons(ov, outlineRepairTypes);
+                layers[layerIndex].makePolygons(ov, outlineRepairTypes);
             }
         }
 

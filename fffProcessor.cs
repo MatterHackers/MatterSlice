@@ -143,9 +143,9 @@ namespace MatterHackers.MatterSlice
 
             LogOutput.log("Slicing model...\n");
             List<Slicer> slicerList = new List<Slicer>();
-            for (int volumeIdx = 0; volumeIdx < optomizedModel.volumes.Count; volumeIdx++)
+            for (int volumeIndex = 0; volumeIndex < optomizedModel.volumes.Count; volumeIndex++)
             {
-                Slicer slicer = new Slicer(optomizedModel.volumes[volumeIdx], config.firstLayerThickness_um, config.layerThickness_um, config.repairOutlines);
+                Slicer slicer = new Slicer(optomizedModel.volumes[volumeIndex], config.firstLayerThickness_um, config.layerThickness_um, config.repairOutlines);
                 slicerList.Add(slicer);
             }
             LogOutput.log("Sliced model in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
@@ -159,18 +159,18 @@ namespace MatterHackers.MatterSlice
             storage.modelMax = optomizedModel.maxXYZ;
 
             LogOutput.log("Generating layer parts...\n");
-            for (int volumeIdx = 0; volumeIdx < slicerList.Count; volumeIdx++)
+            for (int volumeIndex = 0; volumeIndex < slicerList.Count; volumeIndex++)
             {
                 storage.volumes.Add(new SliceVolumeStorage());
-                LayerPart.createLayerParts(storage.volumes[volumeIdx], slicerList[volumeIdx], config.repairOverlaps);
-                slicerList[volumeIdx] = null;
+                LayerPart.createLayerParts(storage.volumes[volumeIndex], slicerList[volumeIndex], config.repairOverlaps);
+                slicerList[volumeIndex] = null;
 
                 if (config.enableRaft)
                 {
                     //Add the raft offset to each layer.
-                    for (int layerNr = 0; layerNr < storage.volumes[volumeIdx].layers.Count; layerNr++)
+                    for (int layerNr = 0; layerNr < storage.volumes[volumeIndex].layers.Count; layerNr++)
                     {
-                        storage.volumes[volumeIdx].layers[layerNr].printZ += config.raftBaseThickness_um + config.raftInterfaceThicknes_um;
+                        storage.volumes[volumeIndex].layers[layerNr].printZ += config.raftBaseThickness_um + config.raftInterfaceThicknes_um;
                     }
                 }
             }

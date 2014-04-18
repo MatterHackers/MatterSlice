@@ -87,18 +87,18 @@ namespace MatterHackers.MatterSlice
 
         public static void createLayerParts(SliceVolumeStorage storage, Slicer slicer, ConfigConstants.REPAIR_OVERLAPS unionAllType)
         {
-            for (int layerNr = 0; layerNr < slicer.layers.Count; layerNr++)
+            for (int layerIndex = 0; layerIndex < slicer.layers.Count; layerIndex++)
             {
                 storage.layers.Add(new SliceLayer());
-                storage.layers[layerNr].printZ = slicer.layers[layerNr].z;
-                LayerPart.createLayerWithParts(storage.layers[layerNr], slicer.layers[layerNr], unionAllType);
+                storage.layers[layerIndex].printZ = slicer.layers[layerIndex].z;
+                LayerPart.createLayerWithParts(storage.layers[layerIndex], slicer.layers[layerIndex], unionAllType);
             }
         }
 
         public static void dumpLayerparts(SliceDataStorage storage, string filename)
         {
-            StreamWriter f = new StreamWriter(filename);
-            f.Write("<!DOCTYPE html><html><body>");
+            StreamWriter streamToWriteTo = new StreamWriter(filename);
+            streamToWriteTo.Write("<!DOCTYPE html><html><body>");
             Point3 modelSize = storage.modelSize;
             Point3 modelMin = storage.modelMin;
 
@@ -106,27 +106,27 @@ namespace MatterHackers.MatterSlice
             {
                 for (int layerNr = 0; layerNr < storage.volumes[volumeIdx].layers.Count; layerNr++)
                 {
-                    f.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style=\"width: 500px; height:500px\">\n");
+                    streamToWriteTo.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style=\"width: 500px; height:500px\">\n");
                     SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
                     for (int i = 0; i < layer.parts.Count; i++)
                     {
                         SliceLayerPart part = layer.parts[i];
                         for (int j = 0; j < part.outline.Count; j++)
                         {
-                            f.Write("<polygon points=\"");
+                            streamToWriteTo.Write("<polygon points=\"");
                             for (int k = 0; k < part.outline[j].Count; k++)
-                                f.Write("{0},{1} ".FormatWith((float)(part.outline[j][k].X - modelMin.x) / modelSize.x * 500, (float)(part.outline[j][k].Y - modelMin.y) / modelSize.y * 500));
+                                streamToWriteTo.Write("{0},{1} ".FormatWith((float)(part.outline[j][k].X - modelMin.x) / modelSize.x * 500, (float)(part.outline[j][k].Y - modelMin.y) / modelSize.y * 500));
                             if (j == 0)
-                                f.Write("\" style=\"fill:gray; stroke:black;stroke-width:1\" />\n");
+                                streamToWriteTo.Write("\" style=\"fill:gray; stroke:black;stroke-width:1\" />\n");
                             else
-                                f.Write("\" style=\"fill:red; stroke:black;stroke-width:1\" />\n");
+                                streamToWriteTo.Write("\" style=\"fill:red; stroke:black;stroke-width:1\" />\n");
                         }
                     }
-                    f.Write("</svg>\n");
+                    streamToWriteTo.Write("</svg>\n");
                 }
             }
-            f.Write("</body></html>");
-            f.Close();
+            streamToWriteTo.Write("</body></html>");
+            streamToWriteTo.Close();
         }
 
     }
