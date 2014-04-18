@@ -31,12 +31,12 @@ namespace MatterHackers.MatterSlice
 
     public class Skirt
     {
-        public static void generateSkirt(SliceDataStorage storage, int distance, int extrusionWidth, int numberOfLoops, int minLength, int initialLayerHeight)
+        public static void generateSkirt(SliceDataStorage storage, int distance, int extrusionWidth_um, int numberOfLoops, int minLength, int initialLayerHeight)
         {
             bool externalOnly = (distance > 0);
             for (int skirtLoop = 0; skirtLoop < numberOfLoops; skirtLoop++)
             {
-                int offsetDistance = distance + extrusionWidth * skirtLoop + extrusionWidth / 2;
+                int offsetDistance = distance + extrusionWidth_um * skirtLoop + extrusionWidth_um / 2;
 
                 Polygons skirtPolygons = new Polygons(storage.wipeTower.Offset(offsetDistance));
                 for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
@@ -49,8 +49,6 @@ namespace MatterHackers.MatterSlice
                     SliceLayer layer = storage.volumes[volumeIdx].layers[0];
                     for (int i = 0; i < layer.parts.Count; i++)
                     {
-                        skirtPolygons = skirtPolygons.CreateUnion(layer.parts[i].outline.Offset(offsetDistance));
-
                         if (externalOnly)
                         {
                             Polygons p = new Polygons();
@@ -71,7 +69,7 @@ namespace MatterHackers.MatterSlice
                 for (int n = 0; n < skirtPolygons.Count; n++)
                 {
                     double area = skirtPolygons[n].Area();
-                    if (area < 0 && area > -extrusionWidth * extrusionWidth * 100)
+                    if (area < 0 && area > -extrusionWidth_um * extrusionWidth_um * 100)
                     {
                         skirtPolygons.RemoveAt(n--);
                     }
