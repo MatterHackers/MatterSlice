@@ -100,10 +100,10 @@ namespace MatterHackers.MatterSlice
                                 int touchingSegmentIndex = faceTo2DSegmentIndex[testFaceIndex];
                                 IntPoint foundSegmentStart = segmentList[touchingSegmentIndex].start;
                                 IntPoint diff = addedSegmentEndPoint - foundSegmentStart;
-                                if (diff.IsShorterThen(10))
+                                if (diff.IsShorterThen(2))
                                 {
                                     // if we have looped back around to where we started
-                                    if (diff.IsShorterThen(2))//touchingSegmentIndex == startingSegmentIndex)
+                                    if (touchingSegmentIndex == startingSegmentIndex)
                                     {
                                         canClose = true;
                                     }
