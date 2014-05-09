@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text.RegularExpressions;
 
 using MatterSlice.ClipperLib;
 
@@ -163,25 +164,6 @@ namespace MatterHackers.MatterSlice
             return ret;
         }
 
-#if false
-        /* Custom fgets function to support Mac line-ends in Ascii STL files. OpenSCAD produces this when used on Mac */
-        void* fgets_(char* ptr, size_t len, FILE* f)
-        {
-            while (len && fread(ptr, 1, 1, f) > 0)
-            {
-                if (*ptr == '\n' || *ptr == '\r')
-                {
-                    *ptr = '\0';
-                    return ptr;
-                }
-                ptr++;
-                len--;
-            }
-            return NULL;
-        }
-#endif
-
-#if true
         public static SimpleModel loadModelSTL_ascii(string filename, FMatrix3x3 matrix)
         {
             SimpleModel m = new SimpleModel();
@@ -197,8 +179,10 @@ namespace MatterHackers.MatterSlice
                 Point3 v1 = new Point3(0, 0, 0);
                 Point3 v2 = new Point3(0, 0, 0);
                 string line = f.ReadLine();
+                Regex onlySingleSpaces = new Regex("\\s+", RegexOptions.Compiled);
                 while (line != null)
                 {
+                    line = onlySingleSpaces.Replace(line, " ");
                     var parts = line.Trim().Split(' ');
                     if (parts[0].Trim() == "vertex")
                     {
@@ -231,42 +215,6 @@ namespace MatterHackers.MatterSlice
                 return m;
             }
         }
-#else
-        SimpleModel loadModelSTL_ascii(string filename, FMatrix3x3 matrix)
-        {
-    SimpleModel m = new SimpleModel();
-    m.volumes.Add(SimpleVolume());
-    SimpleVolume* vol = &m.volumes[0];
-    FILE* f = fopen(filename, "rt");
-    char buffer[1024];
-    FPoint3 vertex;
-    int n = 0;
-    Point3 v0(0,0,0), v1(0,0,0), v2(0,0,0);
-    while(fgets_(buffer, sizeof(buffer), f))
-    {
-        if (sscanf(buffer, " vertex %lf %lf %lf", vertex.x, vertex.y, vertex.z) == 3)
-        {
-            n++;
-            switch(n)
-            {
-            case 1:
-                v0 = matrix.apply(vertex);
-                break;
-            case 2:
-                v1 = matrix.apply(vertex);
-                break;
-            case 3:
-                v2 = matrix.apply(vertex);
-                vol.addFace(v0, v1, v2);
-                n = 0;
-                break;
-            }
-        }
-    }
-    fclose(f);
-    return m;
-        }
-#endif
 
         static SimpleModel loadModelSTL_binary(string filename, FMatrix3x3 matrix)
         {
