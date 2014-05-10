@@ -148,6 +148,10 @@ namespace MatterHackers.MatterSlice
                 Slicer slicer = new Slicer(optomizedModel.volumes[volumeIndex], config.firstLayerThickness_um, config.layerThickness_um, config.repairOutlines);
                 slicerList.Add(slicer);
             }
+
+            //slicerList[0].DumpSegmentsToHTML("Volume 0 Segments.gcode");
+            //slicerList[0].DumpPolygonsToHTML("Volume 0 Polygons.html");
+
             LogOutput.log("Sliced model in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();
 

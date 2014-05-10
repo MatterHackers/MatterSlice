@@ -30,32 +30,6 @@ namespace MatterHackers.MatterSlice
     using Polygon = List<IntPoint>;
     using Polygons = List<List<IntPoint>>;
 
-    public class SlicerSegment
-    {
-        public IntPoint start;
-        public IntPoint end;
-        public int faceIndex;
-        public bool addedToPolygon;
-    }
-
-    public class closePolygonResult
-    {
-        //The result of trying to find a point on a closed polygon line. This gives back the point index, the polygon index, and the point of the connection.
-        //The line on which the point lays is between pointIdx-1 and pointIdx
-        public IntPoint intersectionPoint;
-        public int polygonIdx;
-        public int pointIdx;
-    }
-
-    public class gapCloserResult
-    {
-        public long len;
-        public int polygonIdx;
-        public int pointIdxA;
-        public int pointIdxB;
-        public bool AtoB;
-    }
-
     public class SlicerLayer
     {
         public List<SlicerSegment> segmentList = new List<SlicerSegment>();
@@ -138,7 +112,9 @@ namespace MatterHackers.MatterSlice
             }
 
             //Clear the segmentList to save memory, it is no longer needed after this point.
+#if !DEBUG
             segmentList.Clear();
+#endif
 
             //Connecting polygons that are not closed yet, as models are not always perfect manifold we need to join some stuff up to get proper polygons
             //First link up polygon ends that are within 2 microns.
@@ -518,178 +494,6 @@ namespace MatterHackers.MatterSlice
             }
             ret.polygonIdx = -1;
             return ret;
-        }
-    }
-
-    public class Slicer
-    {
-        public List<SlicerLayer> layers = new List<SlicerLayer>();
-        public Point3 modelSize;
-        public Point3 modelMin;
-
-        public Slicer(OptimizedVolume ov, int initialLayerThickness, int layerThickness, ConfigConstants.REPAIR_OUTLINES outlineRepairTypes)
-        {
-            modelSize = ov.model.size;
-            modelMin = ov.model.minXYZ;
-
-            int heightWithoutFirstLayer = modelSize.z - initialLayerThickness;
-            int countOfNormalThicknessLayers = heightWithoutFirstLayer / layerThickness;
-            
-            int layerCount = countOfNormalThicknessLayers + 1; // we have to add in the first layer (that is a differnt size)
-            LogOutput.log(string.Format("Layer count: {0}\n", layerCount));
-            layers.Capacity = layerCount;
-            for (int i = 0; i < layerCount; i++)
-            {
-                layers.Add(new SlicerLayer());
-            }
-
-            for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
-            {
-                if (layerIndex == 0)
-                {
-                    layers[layerIndex].z = initialLayerThickness / 2;
-                }
-                else
-                {
-                    layers[layerIndex].z = initialLayerThickness + layerThickness / 2 + layerThickness * layerIndex;
-                }
-            }
-
-            for (int faceIndex = 0; faceIndex < ov.facesTriangle.Count; faceIndex++)
-            {
-                Point3 p0 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[0]].position;
-                Point3 p1 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[1]].position;
-                Point3 p2 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[2]].position;
-                int minZ = p0.z;
-                int maxZ = p0.z;
-                if (p1.z < minZ) minZ = p1.z;
-                if (p2.z < minZ) minZ = p2.z;
-                if (p1.z > maxZ) maxZ = p1.z;
-                if (p2.z > maxZ) maxZ = p2.z;
-
-                for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
-                {
-                    int z = layers[layerIndex].z;
-                    if (z < minZ || layerIndex < 0)
-                    {
-                        continue;
-                    }
-
-                    SlicerSegment polyCrossingAtThisZ;
-                    if (p0.z < z && p1.z >= z && p2.z >= z)
-                    {
-                        // p1   p2
-                        // --------
-                        //   p0
-                        polyCrossingAtThisZ = getCrossingAtZ(p0, p2, p1, z);
-                    }
-                    else if (p0.z >= z && p1.z < z && p2.z < z)
-                    {
-                        //   p0
-                        // --------
-                        // p1  p2
-                        polyCrossingAtThisZ = getCrossingAtZ(p0, p1, p2, z);
-                    }
-                    else if (p1.z < z && p0.z >= z && p2.z >= z)
-                    {
-                        // p0   p2
-                        // --------
-                        //   p1
-                        polyCrossingAtThisZ = getCrossingAtZ(p1, p0, p2, z);
-                    }
-                    else if (p1.z >= z && p0.z < z && p2.z < z)
-                    {
-                        //   p1
-                        // --------
-                        // p0  p2
-                        polyCrossingAtThisZ = getCrossingAtZ(p1, p2, p0, z);
-                    }
-                    else if (p2.z < z && p1.z >= z && p0.z >= z)
-                    {
-                        // p1   p0
-                        // --------
-                        //   p2
-                        polyCrossingAtThisZ = getCrossingAtZ(p2, p1, p0, z);
-                    }
-                    else if (p2.z >= z && p1.z < z && p0.z < z)
-                    {
-                        //   p2
-                        // --------
-                        // p1  p0
-                        polyCrossingAtThisZ = getCrossingAtZ(p2, p0, p1, z);
-                    }
-                    else
-                    {
-                        //Not all cases create a segment, because a point of a face could create just a dot, and two touching faces
-                        //  on the slice would create two segments
-                        continue;
-                    }
-                    layers[layerIndex].faceTo2DSegmentIndex[faceIndex] = layers[layerIndex].segmentList.Count;
-                    polyCrossingAtThisZ.faceIndex = faceIndex;
-                    polyCrossingAtThisZ.addedToPolygon = false;
-                    layers[layerIndex].segmentList.Add(polyCrossingAtThisZ);
-                }
-            }
-
-            for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
-            {
-                layers[layerIndex].makePolygons(ov, outlineRepairTypes);
-            }
-        }
-
-        public SlicerSegment getCrossingAtZ(Point3 singlePointOnSide, Point3 otherSide1, Point3 otherSide2, int z)
-        {
-            SlicerSegment seg = new SlicerSegment();
-            seg.start.X = singlePointOnSide.x + (long)(otherSide1.x - singlePointOnSide.x) * (long)(z - singlePointOnSide.z) / (long)(otherSide1.z - singlePointOnSide.z);
-            seg.start.Y = singlePointOnSide.y + (long)(otherSide1.y - singlePointOnSide.y) * (long)(z - singlePointOnSide.z) / (long)(otherSide1.z - singlePointOnSide.z);
-            seg.end.X = singlePointOnSide.x + (long)(otherSide2.x - singlePointOnSide.x) * (long)(z - singlePointOnSide.z) / (long)(otherSide2.z - singlePointOnSide.z);
-            seg.end.Y = singlePointOnSide.y + (long)(otherSide2.y - singlePointOnSide.y) * (long)(z - singlePointOnSide.z) / (long)(otherSide2.z - singlePointOnSide.z);
-            return seg;
-        }
-
-        void dumpSegmentsToHTML(string filename)
-        {
-            float scale = Math.Max(modelSize.x, modelSize.y) / 1500;
-            StreamWriter f = new StreamWriter(filename);
-            f.Write("<!DOCTYPE html><html><body>\n");
-            for (int i = 0; i < layers.Count; i++)
-            {
-                f.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style='width:%ipx;height:%ipx'>\n", (int)(modelSize.x / scale), (int)(modelSize.y / scale));
-                f.Write("<marker id='MidMarker' viewBox='0 0 10 10' refX='5' refY='5' markerUnits='strokeWidth' markerWidth='10' markerHeight='10' stroke='lightblue' stroke-width='2' fill='none' orient='auto'>");
-                f.Write("<path d='M 0 0 L 10 5 M 0 10 L 10 5'/>");
-                f.Write("</marker>");
-                f.Write("<g fill-rule='evenodd' style=\"fill: gray; stroke:black;stroke-width:1\">\n");
-                f.Write("<path marker-mid='url(#MidMarker)' d=\"");
-                for (int j = 0; j < layers[i].polygonList.Count; j++)
-                {
-                    Polygon p = layers[i].polygonList[j];
-                    for (int n = 0; n < p.Count; n++)
-                    {
-                        if (n == 0)
-                            f.Write("M");
-                        else
-                            f.Write("L");
-                        f.Write("%f,%f ", (float)(p[n].X - modelMin.x) / scale, (float)(p[n].Y - modelMin.y) / scale);
-                    }
-                    f.Write("Z\n");
-                }
-                f.Write("\"/>");
-                f.Write("</g>\n");
-                for (int j = 0; j < layers[i].openPolygonList.Count; j++)
-                {
-                    Polygon p = layers[i].openPolygonList[j];
-                    if (p.Count < 1) continue;
-                    f.Write("<polyline marker-mid='url(#MidMarker)' points=\"");
-                    for (int n = 0; n < p.Count; n++)
-                    {
-                        f.Write("%f,%f ", (float)(p[n].X - modelMin.x) / scale, (float)(p[n].Y - modelMin.y) / scale);
-                    }
-                    f.Write("\" style=\"fill: none; stroke:red;stroke-width:1\" />\n");
-                }
-                f.Write("</svg>\n");
-            }
-            f.Write("</body></html>");
-            f.Close();
         }
     }
 }
