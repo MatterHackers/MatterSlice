@@ -533,7 +533,7 @@ namespace MatterHackers.MatterSlice
                             break;
 
                         case "String":
-                            field.SetValue(this, valueToSetTo);
+                            field.SetValue(this, valueToSetTo.Replace("\\n", "\n"));
                             break;
 
                         case "REPAIR_OVERLAPS":

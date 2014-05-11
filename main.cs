@@ -75,16 +75,11 @@ namespace MatterHackers.MatterSlice
                             case 'h':
                                 print_usage();
                                 return 0;
+
                             case 'v':
                                 LogOutput.verbose_level++;
                                 break;
-                            case 'b':
-                                argn++;
-                                throw new NotImplementedException();
-#if false
-                        binaryMeshBlob = fopen(args[argn], "rb");
-#endif
-                                break;
+
                             case 'o':
                                 argn++;
                                 if (!processor.setTargetFile(args[argn]))
@@ -148,20 +143,7 @@ namespace MatterHackers.MatterSlice
                 }
                 else
                 {
-#if !DEBUG
-                    try
-#endif
-                    {
-                        processor.processFile(args[argn]);
-                    }
-#if !DEBUG
-                    catch (Exception e)
-                    {
-                        LogOutput.logError("{0}".FormatWith( e));
-                        LogOutput.logError("InnerException: {0}".FormatWith( e.InnerException));
-                        return 1;
-                    }
-#endif
+                    processor.processFile(args[argn]);
                 }
             }
 
