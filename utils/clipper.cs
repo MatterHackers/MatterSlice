@@ -453,6 +453,10 @@ namespace MatterSlice.ClipperLib
 #endif
 
     /////////////////////////////////////////////////// start added for MatterSlice ///////////////////////////////////////////////////
+    public override string ToString()
+    {
+        return string.Format("x:{0}, y:{1}", X, Y);
+    }
     public static IntPoint operator +(IntPoint p0, IntPoint p1)
     {
         return new IntPoint(p0.X + p1.X, p0.Y + p1.Y);

@@ -35,25 +35,7 @@ namespace MatterHackers.MatterSlice
         public IntPoint start;
         public IntPoint end;
         public int faceIndex;
-        public bool addedToPolygon;
-    }
-
-    public class closePolygonResult
-    {
-        //The result of trying to find a point on a closed polygon line. This gives back the point index, the polygon index, and the point of the connection.
-        //The line on which the point lays is between pointIdx-1 and pointIdx
-        public IntPoint intersectionPoint;
-        public int polygonIdx;
-        public int pointIdx;
-    }
-
-    public class gapCloserResult
-    {
-        public long len;
-        public int polygonIdx;
-        public int pointIdxA;
-        public int pointIdxB;
-        public bool AtoB;
+        public bool hasBeenAddedToPolygon;
     }
 
     public class Slicer
@@ -116,42 +98,42 @@ namespace MatterHackers.MatterSlice
                         // p1   p2
                         // --------
                         //   p0
-                        polyCrossingAtThisZ = getCrossingAtZ(p0, p2, p1, z);
+                        polyCrossingAtThisZ = GetCrossingAtZ(p0, p2, p1, z);
                     }
                     else if (p0.z >= z && p1.z < z && p2.z < z)
                     {
                         //   p0
                         // --------
                         // p1  p2
-                        polyCrossingAtThisZ = getCrossingAtZ(p0, p1, p2, z);
+                        polyCrossingAtThisZ = GetCrossingAtZ(p0, p1, p2, z);
                     }
                     else if (p1.z < z && p0.z >= z && p2.z >= z)
                     {
                         // p0   p2
                         // --------
                         //   p1
-                        polyCrossingAtThisZ = getCrossingAtZ(p1, p0, p2, z);
+                        polyCrossingAtThisZ = GetCrossingAtZ(p1, p0, p2, z);
                     }
                     else if (p1.z >= z && p0.z < z && p2.z < z)
                     {
                         //   p1
                         // --------
                         // p0  p2
-                        polyCrossingAtThisZ = getCrossingAtZ(p1, p2, p0, z);
+                        polyCrossingAtThisZ = GetCrossingAtZ(p1, p2, p0, z);
                     }
                     else if (p2.z < z && p1.z >= z && p0.z >= z)
                     {
                         // p1   p0
                         // --------
                         //   p2
-                        polyCrossingAtThisZ = getCrossingAtZ(p2, p1, p0, z);
+                        polyCrossingAtThisZ = GetCrossingAtZ(p2, p1, p0, z);
                     }
                     else if (p2.z >= z && p1.z < z && p0.z < z)
                     {
                         //   p2
                         // --------
                         // p1  p0
-                        polyCrossingAtThisZ = getCrossingAtZ(p2, p0, p1, z);
+                        polyCrossingAtThisZ = GetCrossingAtZ(p2, p0, p1, z);
                     }
                     else
                     {
@@ -161,46 +143,95 @@ namespace MatterHackers.MatterSlice
                     }
                     layers[layerIndex].faceTo2DSegmentIndex[faceIndex] = layers[layerIndex].segmentList.Count;
                     polyCrossingAtThisZ.faceIndex = faceIndex;
-                    polyCrossingAtThisZ.addedToPolygon = false;
+                    polyCrossingAtThisZ.hasBeenAddedToPolygon = false;
                     layers[layerIndex].segmentList.Add(polyCrossingAtThisZ);
                 }
             }
 
             for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
             {
-                layers[layerIndex].makePolygons(ov, outlineRepairTypes);
+                layers[layerIndex].MakePolygons(ov, outlineRepairTypes);
             }
         }
 
-        public SlicerSegment getCrossingAtZ(Point3 singlePointOnSide, Point3 otherSide1, Point3 otherSide2, int z)
+        public SlicerSegment GetCrossingAtZ(Point3 singlePointOnSide, Point3 otherSide1, Point3 otherSide2, int z)
         {
             SlicerSegment seg = new SlicerSegment();
-            seg.start.X = singlePointOnSide.x + (long)(otherSide1.x - singlePointOnSide.x) * (long)(z - singlePointOnSide.z) / (long)(otherSide1.z - singlePointOnSide.z);
-            seg.start.Y = singlePointOnSide.y + (long)(otherSide1.y - singlePointOnSide.y) * (long)(z - singlePointOnSide.z) / (long)(otherSide1.z - singlePointOnSide.z);
-            seg.end.X = singlePointOnSide.x + (long)(otherSide2.x - singlePointOnSide.x) * (long)(z - singlePointOnSide.z) / (long)(otherSide2.z - singlePointOnSide.z);
-            seg.end.Y = singlePointOnSide.y + (long)(otherSide2.y - singlePointOnSide.y) * (long)(z - singlePointOnSide.z) / (long)(otherSide2.z - singlePointOnSide.z);
+            seg.start.X = (long)(singlePointOnSide.x + (double)(otherSide1.x - singlePointOnSide.x) * (double)(z - singlePointOnSide.z) / (double)(otherSide1.z - singlePointOnSide.z) + .5);
+            seg.start.Y = (long)(singlePointOnSide.y + (double)(otherSide1.y - singlePointOnSide.y) * (double)(z - singlePointOnSide.z) / (double)(otherSide1.z - singlePointOnSide.z) + .5);
+            seg.end.X = (long)(singlePointOnSide.x + (double)(otherSide2.x - singlePointOnSide.x) * (double)(z - singlePointOnSide.z) / (double)(otherSide2.z - singlePointOnSide.z) + .5);
+            seg.end.Y = (long)(singlePointOnSide.y + (double)(otherSide2.y - singlePointOnSide.y) * (double)(z - singlePointOnSide.z) / (double)(otherSide2.z - singlePointOnSide.z) + .5);
             return seg;
         }
 
-        public void DumpSegmentsToHTML(string filename)
+        readonly double scaleDenominator = 150;
+        public void DumpSegmentsToGcode(string filename)
         {
-            float scale = Math.Max(modelSize.x, modelSize.y) / 1500;
+            double scale = Math.Max(modelSize.x, modelSize.y) / scaleDenominator;
             StreamWriter stream = new StreamWriter(filename);
-            stream.Write("; some gcode to look at the layers");
+            stream.Write("; some gcode to look at the layer segments");
             int extrudeAmount = 0;
             for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
             {
                 stream.Write("; LAYER:{0}\n".FormatWith(layerIndex));
-                for (int j = 0; j < layers[layerIndex].polygonList.Count; j++)
+                List<SlicerSegment> segmentList = layers[layerIndex].segmentList;
+                for (int segmentIndex = 0; segmentIndex < segmentList.Count; segmentIndex++)
                 {
-                    List<SlicerSegment> segmentList = layers[layerIndex].segmentList;
-                    for (int segmentIndex = 0; segmentIndex < segmentList.Count; segmentIndex++)
+                    stream.Write("G1 X{0}Y{1}\n", (double)(segmentList[segmentIndex].start.X - modelMin.x) / scale,
+                        (double)(segmentList[segmentIndex].start.Y - modelMin.y) / scale);
+                    stream.Write("G1 X{0}Y{1}E{2}\n", (double)(segmentList[segmentIndex].end.X - modelMin.x) / scale,
+                        (double)(segmentList[segmentIndex].end.Y - modelMin.y) / scale,
+                        extrudeAmount++);
+                }
+            }
+            stream.Close();
+        }
+
+        public void DumpPolygonsToGcode(string filename)
+        {
+            double scale = Math.Max(modelSize.x, modelSize.y) / scaleDenominator;
+            StreamWriter stream = new StreamWriter(filename);
+            stream.Write("; some gcode to look at the layer polygons");
+            int extrudeAmount = 0;
+            for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
+            {
+                stream.Write("; LAYER:{0}\n".FormatWith(layerIndex));
+                for (int polygonIndex = 0; polygonIndex < layers[layerIndex].polygonList.Count; polygonIndex++)
+                {
+                    Polygon polygon = layers[layerIndex].polygonList[polygonIndex];
+
+                    // move to the start without extruding (so it is a move)
+                    stream.Write("G1 X{0}Y{1}\n", (double)(polygon[0].X - modelMin.x) / scale,
+                        (double)(polygon[0].Y - modelMin.y) / scale);
+                    for (int intPointIndex = 1; intPointIndex < polygon.Count; intPointIndex++)
                     {
-                        stream.Write("G1 X{0}Y{1}\n", (float)(segmentList[segmentIndex].start.X - modelMin.x) / scale,
-                            (float)(segmentList[segmentIndex].start.Y - modelMin.y) / scale);
-                        stream.Write("G1 X{0}Y{1}E{2}\n", (float)(segmentList[segmentIndex].end.X - modelMin.x) / scale,
-                            (float)(segmentList[segmentIndex].end.Y - modelMin.y) / scale,
-                            extrudeAmount++);
+                        // do all the points with extruding
+                        stream.Write("G1 X{0}Y{1}E{2}\n", (double)(polygon[intPointIndex].X - modelMin.x) / scale,
+                            (double)(polygon[intPointIndex].Y - modelMin.y) / scale, extrudeAmount++);
+                    }
+                    // go back to the start extruding
+                    stream.Write("G1 X{0}Y{1}E{2}\n", (double)(polygon[0].X - modelMin.x) / scale,
+                        (double)(polygon[0].Y - modelMin.y) / scale, extrudeAmount++);
+                }
+
+                for (int openPolygonIndex = 0; openPolygonIndex < layers[layerIndex].openPolygonList.Count; openPolygonIndex++)
+                {
+                    Polygon openPolygon = layers[layerIndex].openPolygonList[openPolygonIndex];
+
+                    if (openPolygon.Count > 0)
+                    {
+                        // move to the start without extruding (so it is a move)
+                        stream.Write("G1 X{0}Y{1}\n", (double)(openPolygon[0].X - modelMin.x) / scale,
+                            (double)(openPolygon[0].Y - modelMin.y) / scale);
+                        for (int intPointIndex = 1; intPointIndex < openPolygon.Count; intPointIndex++)
+                        {
+                            // do all the points with extruding
+                            stream.Write("G1 X{0}Y{1}E{2}\n", (double)(openPolygon[intPointIndex].X - modelMin.x) / scale,
+                                (double)(openPolygon[intPointIndex].Y - modelMin.y) / scale, extrudeAmount++);
+                        }
+                        // go back to the start extruding
+                        stream.Write("G1 X{0}Y{1}E{2}\n", (double)(openPolygon[0].X - modelMin.x) / scale,
+                            (double)(openPolygon[0].Y - modelMin.y) / scale, extrudeAmount++);
                     }
                 }
             }
@@ -209,7 +240,7 @@ namespace MatterHackers.MatterSlice
 
         public void DumpPolygonsToHTML(string filename)
         {
-            float scale = Math.Max(modelSize.x, modelSize.y) / 1500;
+            double scale = Math.Max(modelSize.x, modelSize.y) / scaleDenominator;
             StreamWriter stream = new StreamWriter(filename);
             stream.Write("<!DOCTYPE html><html><body>\n");
             for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
@@ -233,7 +264,7 @@ namespace MatterHackers.MatterSlice
                         {
                             stream.Write("L");
                         }
-                        stream.Write("{0},{1} ", (float)(polygon[intPointIndex].X - modelMin.x) / scale, (float)(polygon[intPointIndex].Y - modelMin.y) / scale);
+                        stream.Write("{0},{1} ", (double)(polygon[intPointIndex].X - modelMin.x) / scale, (double)(polygon[intPointIndex].Y - modelMin.y) / scale);
                     }
                     stream.Write("Z\n");
                 }
@@ -246,7 +277,7 @@ namespace MatterHackers.MatterSlice
                     stream.Write("<polyline marker-mid='url(#MidMarker)' points=\"");
                     for (int n = 0; n < openPolygon.Count; n++)
                     {
-                        stream.Write("{0},{1} ", (float)(openPolygon[n].X - modelMin.x) / scale, (float)(openPolygon[n].Y - modelMin.y) / scale);
+                        stream.Write("{0},{1} ", (double)(openPolygon[n].X - modelMin.x) / scale, (double)(openPolygon[n].Y - modelMin.y) / scale);
                     }
                     stream.Write("\" style=\"fill: none; stroke:red;stroke-width:1\" />\n");
                 }
