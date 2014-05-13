@@ -82,27 +82,6 @@ namespace MatterHackers.MatterSlice
             f.Close();
         }
 
-        public void replaceTagInStart(string tag, string replaceValue)
-        {
-            throw new NotImplementedException();
-#if false
-    long oldPos = ftello64(f);
-    
-    char[] buffer = new char[1024];
-    fseeko64(f, 0, SEEK_SET);
-    fread(buffer, 1024, 1, f);
-    
-    char* c = strstr(buffer, tag);
-    memset(c, ' ', strlen(tag));
-    if (c) memcpy(c, replaceValue, strlen(replaceValue));
-    
-    fseeko64(f, 0, SEEK_SET);
-    fwrite(buffer, 1024, 1, f);
-    
-    fseeko64(f, oldPos, SEEK_SET);
-#endif
-        }
-
         public void setExtruderOffset(int extruderIndex, IntPoint extruderOffset_um)
         {
             this.extruderOffset_um[extruderIndex] = extruderOffset_um;
@@ -483,11 +462,11 @@ namespace MatterHackers.MatterSlice
             {
                 string numberString;
                 numberString = "{0}".FormatWith((int)(getTotalPrintTime()));
-                replaceTagInStart("<__TIME__>", numberString);
+                //replaceTagInStart("<__TIME__>", numberString);
                 numberString = "{0}".FormatWith((int)(getTotalFilamentUsed(0)));
-                replaceTagInStart("<FILAMENT>", numberString);
+                //replaceTagInStart("<FILAMENT>", numberString);
                 numberString = "{0}".FormatWith((int)(getTotalFilamentUsed(1)));
-                replaceTagInStart("<FILAMEN2>", numberString);
+                //replaceTagInStart("<FILAMEN2>", numberString);
             }
         }
     }
