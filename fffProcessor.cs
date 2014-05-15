@@ -112,7 +112,7 @@ namespace MatterHackers.MatterSlice
             }
 
             gcode.SetOutputType(config.outputType);
-            gcode.setRetractionSettings(config.retractionAmount_um, config.retractionSpeed, config.retractionAmountOnExtruderSwitch_um, config.minimumExtrusionBeforeRetraction_um, config.retractionZHop);
+            gcode.setRetractionSettings(config.retractionAmount_um, config.retractionSpeed, config.retractionAmountOnExtruderSwitch_um, config.minimumExtrusionBeforeRetraction, config.retractionZHop);
         }
 
         bool prepareModel(SliceDataStorage storage, string input_filename)

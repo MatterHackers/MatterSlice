@@ -135,12 +135,12 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        public void setRetractionSettings(int retractionAmount_um, int retractionSpeed, int extruderSwitchRetraction_um, int minimumExtrusionBeforeRetraction_mm, double retractionZHop_mm)
+        public void setRetractionSettings(int retractionAmount_um, int retractionSpeed, int extruderSwitchRetraction_um, double minimumExtrusionBeforeRetraction_mm, double retractionZHop_mm)
         {
             this.retractionAmount_mm = (double)(retractionAmount_um) / 1000.0;
             this.retractionSpeed = retractionSpeed;
             this.extruderSwitchRetraction_mm = (double)(extruderSwitchRetraction_um) / 1000.0;
-            this.minimumExtrusionBeforeRetraction_mm = (double)(minimumExtrusionBeforeRetraction_mm) / 1000.0;
+            this.minimumExtrusionBeforeRetraction_mm = minimumExtrusionBeforeRetraction_mm;
             this.retractionZHop_mm = retractionZHop_mm;
         }
 

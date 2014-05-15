@@ -133,7 +133,6 @@ namespace MatterHackers.MatterSlice
 
         [SettingDescription("mm.")]
         public double minimumExtrusionBeforeRetraction;
-        public int minimumExtrusionBeforeRetraction_um { get { return (int)(minimumExtrusionBeforeRetraction * 1000); } }
 
         [SettingDescription("The amount to move the extruder up in z after retracting (before a move). mm.")]
         public double retractionZHop;
@@ -302,7 +301,7 @@ namespace MatterHackers.MatterSlice
             retractionSpeed = 45;
             retractionOnExtruderSwitch = 14.5;
             minimumTravelToCauseRetraction = 1.5;
-            minimumExtrusionBeforeRetraction = .1;
+            minimumExtrusionBeforeRetraction = 0;
             wipeShieldDistanceFromObject = 0;
             avoidCrossingPerimeters = true;
             wipeTowerSize = 0;
