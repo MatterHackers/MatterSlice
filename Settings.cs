@@ -198,11 +198,12 @@ namespace MatterHackers.MatterSlice
         [SettingDescription("The fan will be force to stay off below this layer.")]
         public int firstLayerToAllowFan;
 
-        //Raft settings
+        // Raft settings
         [SettingDescription("mm.")]
         public double raftExtraDistanceAroundPart;
         public int raftExtraDistanceAroundPart_um { get { return (int)(raftExtraDistanceAroundPart * 1000); } }
 
+        // Raft read only info
         public int raftLineSpacing_um { get { return extrusionWidth_um * 3000 / 400; } }
 
         public int raftBaseThickness_um { get { return extrusionWidth_um * 300 / 400; } }
