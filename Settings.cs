@@ -220,7 +220,7 @@ namespace MatterHackers.MatterSlice
         public int raftSurfaceThickness_um { get { return extrusionWidth_um * 250 / 400; } } // .250 mm for .4 mm nozzle
         public int raftSurfaceLinewidth_um { get { return extrusionWidth_um * 400 / 400; } } // .4 mm for .4 mm nozzle
         public int raftSurfaceLineSpacing_um { get { return extrusionWidth_um * 400 / 400; } } // .4 mm for .4 mm nozzle
-        public int raftSurfaceLayers_um { get { return 2; } }
+        public int raftSurfaceLayers { get { return 2; } }
         public int raftAirGap_um { get { return extrusionWidth_um * 200 / 400; } } // .2 mm for .4 mm nozzle
 
         public bool enableRaft;

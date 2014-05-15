@@ -256,11 +256,11 @@ namespace MatterHackers.MatterSlice
                 storage.wipePoint = new IntPoint(storage.modelMin.x - 3000 - config.wipeTowerSize_um / 2, storage.modelMax.y + 3000 + config.wipeTowerSize_um / 2);
             }
 
-            Skirt.generateSkirt(storage, config.skirtDistance_um, config.firstLayerExtrusionWidth_um, config.numberOfSkirtLoops, config.skirtMinLength_um, config.firstLayerThickness_um);
             if (config.enableRaft)
             {
                 Raft.GenerateRaftOutlines(storage, config.raftExtraDistanceAroundPart_um);
             }
+            Skirt.generateSkirt(storage, config.skirtDistance_um, config.firstLayerExtrusionWidth_um, config.numberOfSkirtLoops, config.skirtMinLength_um, config.firstLayerThickness_um);
 
             for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
             {
@@ -394,7 +394,7 @@ namespace MatterHackers.MatterSlice
                 int z = config.firstLayerThickness_um + layerIndex * config.layerThickness_um;
                 if (config.enableRaft)
                 {
-                    z += config.raftBaseThickness_um + config.raftInterfaceThicknes_um + config.raftSurfaceLayers_um * config.raftSurfaceThickness_um;
+                    z += config.raftBaseThickness_um + config.raftInterfaceThicknes_um + config.raftSurfaceLayers * config.raftSurfaceThickness_um;
                     if (layerIndex == 0)
                     {
                         // We only raise the first layer of the print up by the air gap.
@@ -466,7 +466,7 @@ namespace MatterHackers.MatterSlice
         {
             int prevExtruder = gcodeLayer.getExtruder();
             bool extruderChanged = gcodeLayer.setExtruder(volumeIdx);
-            if (layerNr == 0 && volumeIdx == 0)
+            if (layerNr == 0 && volumeIdx == 0 && !Raft.ShouldGenerateRaft(config))
             {
                 gcodeLayer.writePolygonsByOptimizer(storage.skirt, skirtConfig);
             }
