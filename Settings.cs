@@ -200,6 +200,11 @@ namespace MatterHackers.MatterSlice
 
         // Raft settings
         [SettingDescription("mm.")]
+        public bool enableRaft;
+
+        public double raftAirGapAsPercentOfExtrusionWidth;
+        public int raftAirGap_um { get { return (int)(extrusionWidth_um * (raftAirGapAsPercentOfExtrusionWidth / 100) + .5); } }
+
         public double raftExtraDistanceAroundPart;
         public int raftExtraDistanceAroundPart_um { get { return (int)(raftExtraDistanceAroundPart * 1000); } }
 
@@ -221,9 +226,6 @@ namespace MatterHackers.MatterSlice
         public int raftSurfaceLinewidth_um { get { return extrusionWidth_um * 400 / 400; } } // .4 mm for .4 mm nozzle
         public int raftSurfaceLineSpacing_um { get { return extrusionWidth_um * 400 / 400; } } // .4 mm for .4 mm nozzle
         public int raftSurfaceLayers { get { return 2; } }
-        public int raftAirGap_um { get { return extrusionWidth_um * 200 / 400; } } // .2 mm for .4 mm nozzle
-
-        public bool enableRaft;
 
         // object transform
         public FMatrix3x3 modelRotationMatrix = new FMatrix3x3();
@@ -289,6 +291,8 @@ namespace MatterHackers.MatterSlice
             bottomClipAmount = 0;
 
             // raft settings
+            enableRaft = false;
+            raftAirGapAsPercentOfExtrusionWidth = 50; // .2 mm for .4 mm nozzle
             raftExtraDistanceAroundPart = 5;
 
             supportType = ConfigConstants.SUPPORT_TYPE.GRID;
