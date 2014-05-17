@@ -202,8 +202,8 @@ namespace MatterHackers.MatterSlice
         [SettingDescription("mm.")]
         public bool enableRaft;
 
-        public double raftAirGapAsPercentOfExtrusionWidth;
-        public int raftAirGap_um { get { return (int)(extrusionWidth_um * (raftAirGapAsPercentOfExtrusionWidth / 100) + .5); } }
+        public double raftAirGap;
+        public int raftAirGap_um { get { return (int)((raftAirGap / 1000) + .5); } }
 
         public double raftExtraDistanceAroundPart;
         public int raftExtraDistanceAroundPart_um { get { return (int)(raftExtraDistanceAroundPart * 1000); } }
@@ -292,7 +292,7 @@ namespace MatterHackers.MatterSlice
 
             // raft settings
             enableRaft = false;
-            raftAirGapAsPercentOfExtrusionWidth = 50; // .2 mm for .4 mm nozzle
+            raftAirGap = .2; // .2 mm for .4 mm nozzle
             raftExtraDistanceAroundPart = 5;
 
             supportType = ConfigConstants.SUPPORT_TYPE.GRID;
@@ -656,7 +656,7 @@ namespace MatterHackers.MatterSlice
         {
             NONE,
             EXTENSIVE_STITCHING = 0x01,
-            KEEP_NON_CLOSED = 0x02,
+            KEEP_OPEN = 0x02,
         }
 
         /**

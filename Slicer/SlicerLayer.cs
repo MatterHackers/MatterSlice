@@ -391,7 +391,7 @@ namespace MatterHackers.MatterSlice
                 }
             }
 
-            if ((outlineRepairTypes & ConfigConstants.REPAIR_OUTLINES.KEEP_NON_CLOSED) == ConfigConstants.REPAIR_OUTLINES.KEEP_NON_CLOSED)
+            if ((outlineRepairTypes & ConfigConstants.REPAIR_OUTLINES.KEEP_OPEN) == ConfigConstants.REPAIR_OUTLINES.KEEP_OPEN)
             {
                 for (int n = 0; n < openPolygonList.Count; n++)
                 {
