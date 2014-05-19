@@ -19,6 +19,8 @@ along with MatterSlice.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 using System;
+using System.Globalization;
+using System.Threading;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -42,6 +44,7 @@ namespace MatterHackers.MatterSlice
 
         static int Main(string[] args)
         {
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             return ProcessArgs(args);
         }
 
