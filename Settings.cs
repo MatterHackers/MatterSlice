@@ -203,7 +203,7 @@ namespace MatterHackers.MatterSlice
         public bool enableRaft;
 
         public double raftAirGap;
-        public int raftAirGap_um { get { return (int)((raftAirGap / 1000) + .5); } }
+        public int raftAirGap_um { get { return (int)(raftAirGap * 1000); } }
 
         public double raftExtraDistanceAroundPart;
         public int raftExtraDistanceAroundPart_um { get { return (int)(raftExtraDistanceAroundPart * 1000); } }
