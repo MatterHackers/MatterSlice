@@ -297,6 +297,12 @@ namespace MatterHackers.MatterSlice
 
         void writeGCode(SliceDataStorage storage)
         {
+            gcode.writeComment("filamentDiameter = {0}".FormatWith(config.filamentDiameter));
+            gcode.writeComment("extrusionWidth = {0}".FormatWith(config.extrusionWidth));
+            gcode.writeComment("firstLayerExtrusionWidth = {0}".FormatWith(config.firstLayerExtrusionWidth));
+            gcode.writeComment("layerThickness = {0}".FormatWith(config.layerThickness));
+            gcode.writeComment("firstLayerThickness = {0}".FormatWith(config.firstLayerThickness));
+
             if (fileNr == 1)
             {
                 if (gcode.GetOutputType() == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
