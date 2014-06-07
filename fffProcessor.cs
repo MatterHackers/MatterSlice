@@ -261,24 +261,6 @@ namespace MatterHackers.MatterSlice
                 Raft.GenerateRaftOutlines(storage, config.raftExtraDistanceAroundPart_um);
             }
             Skirt.generateSkirt(storage, config.skirtDistance_um, config.firstLayerExtrusionWidth_um, config.numberOfSkirtLoops, config.skirtMinLength_um, config.firstLayerThickness_um);
-
-            for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
-            {
-                for (int layerNr = 0; layerNr < totalLayers; layerNr++)
-                {
-                    for (int partNr = 0; partNr < storage.volumes[volumeIdx].layers[layerNr].parts.Count; partNr++)
-                    {
-                        if (layerNr > 0)
-                        {
-                            storage.volumes[volumeIdx].layers[layerNr].parts[partNr].bridgeAngle = Bridge.bridgeAngle(storage.volumes[volumeIdx].layers[layerNr].parts[partNr], storage.volumes[volumeIdx].layers[layerNr - 1]);
-                        }
-                        else
-                        {
-                            storage.volumes[volumeIdx].layers[layerNr].parts[partNr].bridgeAngle = -1;
-                        }
-                    }
-                }
-            }
         }
 
         private void CreateWipeShields(SliceDataStorage storage, int totalLayers)
@@ -462,25 +444,25 @@ namespace MatterHackers.MatterSlice
         }
 
         //Add a single layer from a single mesh-volume to the GCode
-        void addVolumeLayerToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int volumeIdx, int layerNr, int extrusionWidth_um)
+        void addVolumeLayerToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int volumeIndex, int layerIndex, int extrusionWidth_um)
         {
             int prevExtruder = gcodeLayer.getExtruder();
-            bool extruderChanged = gcodeLayer.setExtruder(volumeIdx);
-            if (layerNr == 0 && volumeIdx == 0 && !Raft.ShouldGenerateRaft(config))
+            bool extruderChanged = gcodeLayer.setExtruder(volumeIndex);
+            if (layerIndex == 0 && volumeIndex == 0 && !Raft.ShouldGenerateRaft(config))
             {
                 gcodeLayer.writePolygonsByOptimizer(storage.skirt, skirtConfig);
             }
 
-            SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
+            SliceLayer layer = storage.volumes[volumeIndex].layers[layerIndex];
             if (extruderChanged)
             {
-                addWipeTower(storage, gcodeLayer, layerNr, prevExtruder, extrusionWidth_um);
+                addWipeTower(storage, gcodeLayer, layerIndex, prevExtruder, extrusionWidth_um);
             }
 
             if (storage.wipeShield.Count > 0 && storage.volumes.Count > 1)
             {
                 gcodeLayer.setAlwaysRetract(true);
-                gcodeLayer.writePolygonsByOptimizer(storage.wipeShield[layerNr], skirtConfig);
+                gcodeLayer.writePolygonsByOptimizer(storage.wipeShield[layerIndex], skirtConfig);
                 gcodeLayer.setAlwaysRetract(!config.avoidCrossingPerimeters);
             }
 
@@ -508,12 +490,12 @@ namespace MatterHackers.MatterSlice
                 {
                     if (config.continuousSpiralOuterPerimeter)
                     {
-                        if ((int)(layerNr) >= config.numberOfBottomLayers)
+                        if ((int)(layerIndex) >= config.numberOfBottomLayers)
                         {
                             inset0Config.spiralize = true;
                         }
 
-                        if ((int)(layerNr) == config.numberOfBottomLayers && part.insets.Count > 0)
+                        if ((int)(layerIndex) == config.numberOfBottomLayers && part.insets.Count > 0)
                         {
                             gcodeLayer.writePolygonsByOptimizer(part.insets[0], insetXConfig);
                         }
@@ -534,14 +516,22 @@ namespace MatterHackers.MatterSlice
 
                 Polygons fillPolygons = new Polygons();
                 int fillAngle = config.infillStartingAngle;
-                if ((layerNr & 1) == 1)
+                if ((layerIndex & 1) == 1)
                 {
                     fillAngle += 90;
                 }
 
                 // generate infill for outline including bridging
-                Infill.GenerateLinePaths(part.skinOutline, fillPolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, (part.bridgeAngle > -1) ? part.bridgeAngle : fillAngle);
-
+                foreach(Polygons outline in part.skinOutline.SplitIntoParts())
+                {
+                    int bridge = -1;
+                    if (layerIndex > 0)
+                    {
+                        bridge = Bridge.bridgeAngle(outline, storage.volumes[volumeIndex].layers[layerIndex-1]);
+                    }
+                    Infill.GenerateLinePaths(outline, fillPolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, (bridge > -1) ? bridge : fillAngle);
+                }
+                
                 // generate the infill for this part on this layer
                 if (config.infillPercent > 0)
                 {
@@ -563,7 +553,7 @@ namespace MatterHackers.MatterSlice
                 gcodeLayer.writePolygonsByOptimizer(fillPolygons, fillConfig);
 
                 //After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
-                if (!config.continuousSpiralOuterPerimeter || (int)(layerNr) < config.numberOfBottomLayers)
+                if (!config.continuousSpiralOuterPerimeter || (int)(layerIndex) < config.numberOfBottomLayers)
                 {
                     gcodeLayer.moveInsideCombBoundary(extrusionWidth_um * 2);
                 }
