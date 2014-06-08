@@ -31,16 +31,17 @@ namespace MatterHackers.MatterSlice
 
     public static class Infill
     {
-        public static void GenerateLinePaths(Polygons in_outline, Polygons result, int extrusionWidth_um, int lineSpacing, int infillExtendIntoPerimeter_um, double rotation)
+        public static void GenerateLinePaths(Polygons in_outline, Polygons result, int extrusionWidth_um, int lineSpacing, int infillExtendIntoPerimeter_um, double rotation, long lineOffset = 0)
         {
             Polygons outlines = in_outline.Offset(infillExtendIntoPerimeter_um);
             PointMatrix matrix = new PointMatrix(rotation);
 
+            //outlines.applyTranslation(new IntPoint(lineOffset / 2, 0));
             outlines.applyMatrix(matrix);
 
             AABB boundary = new AABB(outlines);
 
-            boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing - lineSpacing / 2;
+            boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing - lineOffset;
             int lineCount = (int)((boundary.max.X - boundary.min.X + (lineSpacing - 1)) / lineSpacing);
             List<List<long>> cutList = new List<List<long>>();
             for (int lineIndex = 0; lineIndex < lineCount; lineIndex++)
@@ -57,21 +58,21 @@ namespace MatterHackers.MatterSlice
                     IntPoint currentPoint = currentOutline[pointIndex];
                     int idx0 = (int)((currentPoint.X - boundary.min.X) / lineSpacing);
                     int idx1 = (int)((previousPoint.X - boundary.min.X) / lineSpacing);
-                    
+
                     long xMin = Math.Min(currentPoint.X, previousPoint.X);
                     long xMax = Math.Max(currentPoint.X, previousPoint.X);
 
                     if (currentPoint.X > previousPoint.X)
                     {
-                        xMin = previousPoint.X; 
-                        xMax = currentPoint.X; 
+                        xMin = previousPoint.X;
+                        xMax = currentPoint.X;
                     }
 
-                    if (idx0 > idx1) 
+                    if (idx0 > idx1)
                     {
-                        int tmp = idx0; 
-                        idx0 = idx1; 
-                        idx1 = tmp; 
+                        int tmp = idx0;
+                        idx0 = idx1;
+                        idx1 = tmp;
                     }
 
                     for (int idx = idx0; idx <= idx1; idx++)
@@ -104,8 +105,10 @@ namespace MatterHackers.MatterSlice
                     Polygon p = new Polygon();
                     result.Add(p);
                     IntPoint start = matrix.unapply(new IntPoint(x, cutList[idx2][i]));
+                    //start -= new IntPoint(lineOffset / 2, 0);
                     p.Add(start);
                     IntPoint end = matrix.unapply(new IntPoint(x, cutList[idx2][i + 1]));
+                    //end -= new IntPoint(lineOffset / 2, 0);
                     p.Add(end);
                 }
 
@@ -144,7 +147,7 @@ namespace MatterHackers.MatterSlice
             Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle);
         }
 
-        public static void GenerateTriangleInfill(ConfigSettings config, SliceLayerPart part, Polygons fillPolygons, int extrusionWidth_um, int fillAngle)
+        public static void GenerateTriangleInfill(ConfigSettings config, SliceLayerPart part, Polygons fillPolygons, int extrusionWidth_um, int fillAngle, long printZ)
         {
             if (config.infillPercent <= 0)
             {
@@ -153,7 +156,10 @@ namespace MatterHackers.MatterSlice
 
             int linespacing_um = (int)(config.extrusionWidth_um / (config.infillPercent / 100) * 3);
 
-            Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, config.extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle);
+            long offset = printZ % linespacing_um;
+            //long offset = linespacing_um / 2;
+
+            Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, config.extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle, offset);
 
             fillAngle += 60;
             if (fillAngle > 360)
@@ -161,7 +167,7 @@ namespace MatterHackers.MatterSlice
                 fillAngle -= 360;
             }
 
-            Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle);
+            Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle, offset);
 
             fillAngle += 60;
             if (fillAngle > 360)
@@ -169,24 +175,20 @@ namespace MatterHackers.MatterSlice
                 fillAngle -= 360;
             }
 
-            Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle);
+            Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle, offset);
         }
 
-        public static void generateConcentricInfill(Polygons outline, Polygons result, int inset_value, int inset_count)
+        public static void generateConcentricInfill(ConfigSettings config, SliceLayerPart part, Polygons fillPolygons, int extrusionWidth_um, int fillAngle)
         {
-            for(int step = 0; step < inset_count; step++)
+            int linespacing_um = (int)(config.extrusionWidth_um / (config.infillPercent / 100));
+            while (part.sparseOutline.Count > 0)
             {
-                if (outline.Count < 1)
+                for (int outlineIndex = 0; outlineIndex < part.sparseOutline.Count; outlineIndex++)
                 {
-                    break;
+                    Polygon r = part.sparseOutline[outlineIndex];
+                    fillPolygons.Add(r);
                 }
-
-                for (int polyNr = 0; polyNr < outline.Count; polyNr++)
-                {
-                    Polygon r = outline[polyNr];
-                    result.Add(r);
-                }
-                outline = outline.Offset(-inset_value);
+                part.sparseOutline = part.sparseOutline.Offset(-linespacing_um);
             }
         }
     }

@@ -675,6 +675,7 @@ namespace MatterHackers.MatterSlice
             GRID,
             LINES,
             TRIANGLES,
+            CONCENTRIC,
         }
 
         public enum OUTPUT_TYPE

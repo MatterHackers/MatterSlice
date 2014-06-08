@@ -552,7 +552,11 @@ namespace MatterHackers.MatterSlice
                             break;
 
                         case ConfigConstants.INFILL_TYPE.TRIANGLES:
-                            Infill.GenerateTriangleInfill(config, part, fillPolygons, extrusionWidth_um, fillAngle);
+                            Infill.GenerateTriangleInfill(config, part, fillPolygons, extrusionWidth_um, fillAngle, layer.printZ);
+                            break;
+
+                        case ConfigConstants.INFILL_TYPE.CONCENTRIC:
+                            Infill.generateConcentricInfill(config, part, fillPolygons, extrusionWidth_um, fillAngle);
                             break;
 
                         default:
