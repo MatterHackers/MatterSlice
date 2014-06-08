@@ -522,10 +522,6 @@ namespace MatterHackers.MatterSlice
 
                 Polygons fillPolygons = new Polygons();
                 int fillAngle = config.infillStartingAngle;
-                if ((layerIndex & 1) == 1)
-                {
-                    fillAngle += 90;
-                }
 
                 // generate infill for outline including bridging
                 foreach(Polygons outline in part.skinOutline.SplitIntoParts())
@@ -544,11 +540,19 @@ namespace MatterHackers.MatterSlice
                     switch (config.infillType)
                     {
                         case ConfigConstants.INFILL_TYPE.LINES:
+                            if ((layerIndex & 1) == 1)
+                            {
+                                fillAngle += 90;
+                            }
                             Infill.GenerateLineInfill(config, part, fillPolygons, extrusionWidth_um, fillAngle);
                             break;
 
                         case ConfigConstants.INFILL_TYPE.GRID:
                             Infill.GenerateGridInfill(config, part, fillPolygons, extrusionWidth_um, fillAngle);
+                            break;
+
+                        case ConfigConstants.INFILL_TYPE.TRIANGLES:
+                            Infill.GenerateTriangleInfill(config, part, fillPolygons, extrusionWidth_um, fillAngle);
                             break;
 
                         default:

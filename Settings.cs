@@ -673,7 +673,8 @@ namespace MatterHackers.MatterSlice
         public enum INFILL_TYPE
         {
             GRID,
-            LINES
+            LINES,
+            TRIANGLES,
         }
 
         public enum OUTPUT_TYPE

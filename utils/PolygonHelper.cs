@@ -256,6 +256,17 @@ namespace MatterHackers.MatterSlice
                 }
             }
         }
+
+        public static void applyTranslation(this Polygons polygons, IntPoint translation)
+        {
+            for (int i = 0; i < polygons.Count; i++)
+            {
+                for (int j = 0; j < polygons[i].Count; j++)
+                {
+                    polygons[i][j] = polygons[i][j] + translation;
+                }
+            }
+        }
     }
 
     // Axis aligned boundary box

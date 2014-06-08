@@ -40,10 +40,10 @@ namespace MatterHackers.MatterSlice
 
             AABB boundary = new AABB(outlines);
 
-            boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing;
+            boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing - lineSpacing / 2;
             int lineCount = (int)((boundary.max.X - boundary.min.X + (lineSpacing - 1)) / lineSpacing);
             List<List<long>> cutList = new List<List<long>>();
-            for (int n = 0; n < lineCount; n++)
+            for (int lineIndex = 0; lineIndex < lineCount; lineIndex++)
             {
                 cutList.Add(new List<long>());
             }
@@ -103,8 +103,10 @@ namespace MatterHackers.MatterSlice
 
                     Polygon p = new Polygon();
                     result.Add(p);
-                    p.Add(matrix.unapply(new IntPoint(x, cutList[idx2][i])));
-                    p.Add(matrix.unapply(new IntPoint(x, cutList[idx2][i + 1])));
+                    IntPoint start = matrix.unapply(new IntPoint(x, cutList[idx2][i]));
+                    p.Add(start);
+                    IntPoint end = matrix.unapply(new IntPoint(x, cutList[idx2][i + 1]));
+                    p.Add(end);
                 }
 
                 idx2 += 1;
@@ -132,14 +134,42 @@ namespace MatterHackers.MatterSlice
             int linespacing_um = (int)(config.extrusionWidth_um / (config.infillPercent / 100) * 2);
 
             Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, config.extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle);
-            
-            int fillAngle90 = fillAngle + 90;
-            if (fillAngle90 > 360)
+
+            fillAngle += 90;
+            if (fillAngle > 360)
             {
-                fillAngle90 -= 360;
+                fillAngle -= 360;
             }
 
-            Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle90);
+            Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle);
+        }
+
+        public static void GenerateTriangleInfill(ConfigSettings config, SliceLayerPart part, Polygons fillPolygons, int extrusionWidth_um, int fillAngle)
+        {
+            if (config.infillPercent <= 0)
+            {
+                throw new Exception("infillPercent must be gerater than 0.");
+            }
+
+            int linespacing_um = (int)(config.extrusionWidth_um / (config.infillPercent / 100) * 3);
+
+            Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, config.extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle);
+
+            fillAngle += 60;
+            if (fillAngle > 360)
+            {
+                fillAngle -= 360;
+            }
+
+            Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle);
+
+            fillAngle += 60;
+            if (fillAngle > 360)
+            {
+                fillAngle -= 360;
+            }
+
+            Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle);
         }
 
         public static void generateConcentricInfill(Polygons outline, Polygons result, int inset_value, int inset_count)
