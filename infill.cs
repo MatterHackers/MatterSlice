@@ -31,17 +31,16 @@ namespace MatterHackers.MatterSlice
 
     public static class Infill
     {
-        public static void GenerateLinePaths(Polygons in_outline, Polygons result, int extrusionWidth_um, int lineSpacing, int infillExtendIntoPerimeter_um, double rotation, long lineOffset = 0)
+        public static void GenerateLinePaths(Polygons in_outline, Polygons result, int extrusionWidth_um, int lineSpacing, int infillExtendIntoPerimeter_um, double rotation, long rotationOffset = 0)
         {
             Polygons outlines = in_outline.Offset(infillExtendIntoPerimeter_um);
             PointMatrix matrix = new PointMatrix(rotation);
 
-            //outlines.applyTranslation(new IntPoint(lineOffset / 2, 0));
             outlines.applyMatrix(matrix);
 
             AABB boundary = new AABB(outlines);
 
-            boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing - lineOffset;
+            boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing - rotationOffset;
             int lineCount = (int)((boundary.max.X - boundary.min.X + (lineSpacing - 1)) / lineSpacing);
             List<List<long>> cutList = new List<List<long>>();
             for (int lineIndex = 0; lineIndex < lineCount; lineIndex++)
