@@ -156,8 +156,8 @@ namespace MatterHackers.MatterSlice
 
             int linespacing_um = (int)(config.extrusionWidth_um / (config.infillPercent / 100) * 3);
 
-            long offset = printZ % linespacing_um;
-            //long offset = linespacing_um / 2;
+            //long offset = printZ % linespacing_um;
+            long offset = linespacing_um / 2;
 
             Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, config.extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle, offset);
 
