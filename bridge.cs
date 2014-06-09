@@ -47,6 +47,38 @@ namespace MatterHackers.MatterSlice
                 islands.AddRange(outline.CreateIntersection(prevLayerPart.outline));
             }
 
+            if (islands.Count == 1)
+            {
+                int count = islands[0].Count;
+                // check if it is concave
+                for (int i = 0; i < count; i++)
+                {
+                    continue;
+                    IntPoint prev = islands[0][(i + count - 1) % count];
+                    IntPoint curr = islands[0][i];
+                    IntPoint next = islands[0][(i + 1) % count];
+
+                    if ((prev - curr).Cross(next - curr) > 0)
+                    {
+                        return (int)(Math.Atan2((next - prev).Y, (next - prev).X) * 180 / Math.PI);
+
+                        // We found a concave angle. now we want to find the first non-concave angle and make
+                        // a bridge at the start and en angle of the concave region 
+                        for (int j = i; j < count; j++)
+                        {
+                            IntPoint prev2 = islands[0][(j + count - 1) % count];
+                            IntPoint curr2 = islands[0][j];
+                            IntPoint next2 = islands[0][(j + 1) % count];
+
+                            if ((prev - curr).Cross(next - curr) < 0)
+                            {
+                                return (int)Math.Atan2((next - prev).Y, (next - prev).X);
+                            }
+                        }
+                    }
+                }
+            }
+
             if (islands.Count > 5 || islands.Count < 1)
             {
                 return -1;

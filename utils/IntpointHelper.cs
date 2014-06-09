@@ -146,6 +146,11 @@ namespace MatterHackers.MatterSlice
             return p0.X * p0.X + p0.Y * p0.Y;
         }
 
+        public static long Cross(this IntPoint left, IntPoint right)
+        {
+            return left.X * right.Y - left.Y * right.X;
+        }
+
         public static string OutputInMm(this IntPoint p0)
         {
             return string.Format("[{0},{1}]", p0.X / 1000.0, p0.Y / 1000.0);
