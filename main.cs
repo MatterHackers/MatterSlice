@@ -61,6 +61,9 @@ namespace MatterHackers.MatterSlice
 
         public static int ProcessArgs(string[] args)
         {
+#if DEBUG
+            Tests.BridgeTests.Run();
+#endif
             ConfigSettings config = new ConfigSettings();
             fffProcessor processor = new fffProcessor(config);
 

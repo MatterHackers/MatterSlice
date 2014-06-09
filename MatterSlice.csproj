@@ -74,6 +74,9 @@
     <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="nunit.framework">
+      <HintPath>..\agg-sharp\AggTests\nunit.framework.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
@@ -81,6 +84,7 @@
     <Compile Include="sliceDataStorage.cs" />
     <Compile Include="Slicer\SlicerLayer.cs" />
     <Compile Include="Slicer\Slicer.cs" />
+    <Compile Include="UnitTests\BridgeTests.cs" />
     <Compile Include="utils\clipper.cs" />
     <Compile Include="utils\floatpoint.cs" />
     <Compile Include="main.cs" />
@@ -158,5 +162,6 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

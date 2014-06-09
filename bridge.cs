@@ -53,28 +53,32 @@ namespace MatterHackers.MatterSlice
                 // check if it is concave
                 for (int i = 0; i < count; i++)
                 {
-                    continue;
+                    continue; // disable all this for now
                     IntPoint prev = islands[0][(i + count - 1) % count];
                     IntPoint curr = islands[0][i];
                     IntPoint next = islands[0][(i + 1) % count];
 
                     if ((prev - curr).Cross(next - curr) > 0)
                     {
-                        return (int)(Math.Atan2((next - prev).Y, (next - prev).X) * 180 / Math.PI);
+                        IntPoint convexStart = prev;
 
                         // We found a concave angle. now we want to find the first non-concave angle and make
                         // a bridge at the start and en angle of the concave region 
-                        for (int j = i; j < count; j++)
+                        for (int j = i+1; j < count; j++)
                         {
                             IntPoint prev2 = islands[0][(j + count - 1) % count];
                             IntPoint curr2 = islands[0][j];
                             IntPoint next2 = islands[0][(j + 1) % count];
 
-                            if ((prev - curr).Cross(next - curr) < 0)
+                            if ((prev2 - curr2).Cross(next2 - curr2) <= 0)
                             {
-                                return (int)Math.Atan2((next - prev).Y, (next - prev).X);
+                                int angleOfConvexStartToEnd = (int)(Math.Atan2((curr2 - convexStart).Y, (curr2 - convexStart).X) * 180 / Math.PI + 90);
+                                return angleOfConvexStartToEnd;
                             }
                         }
+
+                        int angleOfConvexStartToEnd2 = (int)(Math.Atan2((next - prev).Y, (next - prev).X) * 180 / Math.PI + 90);
+                        return angleOfConvexStartToEnd2;
                     }
                 }
             }
