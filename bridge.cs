@@ -47,6 +47,20 @@ namespace MatterHackers.MatterSlice
                 islands.AddRange(outline.CreateIntersection(prevLayerPart.outline));
             }
 
+#if false //DEBUG
+            string outlineString = outline.WriteToString();
+            string partOutlineString = "";
+            foreach (SliceLayerPart prevLayerPart in prevLayer.parts)
+            {
+                foreach (Polygon prevPartOutline in prevLayerPart.outline)
+                {
+                    partOutlineString += prevPartOutline.WriteToString();
+                }
+
+                partOutlineString += "|";
+            }
+#endif
+
             if (islands.Count == 1)
             {
                 int count = islands[0].Count;

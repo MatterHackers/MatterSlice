@@ -521,19 +521,28 @@ namespace MatterHackers.MatterSlice
                 }
 
                 Polygons fillPolygons = new Polygons();
-                int fillAngle = config.infillStartingAngle;
 
                 // generate infill for outline including bridging
                 foreach(Polygons outline in part.skinOutline.SplitIntoParts())
                 {
-                    int bridge = -1;
+                    int partFillAngle = config.infillStartingAngle;
+                    if ((layerIndex & 1) == 1)
+                    {
+                        partFillAngle += 90;
+                    }
                     if (layerIndex > 0)
                     {
-                        bridge = Bridge.bridgeAngle(outline, storage.volumes[volumeIndex].layers[layerIndex-1]);
+                        int bridgeAngle = Bridge.bridgeAngle(outline, storage.volumes[volumeIndex].layers[layerIndex-1]);
+                        if (bridgeAngle >= 0)
+                        {
+                            partFillAngle = bridgeAngle;
+                        }
                     }
-                    Infill.GenerateLinePaths(outline, fillPolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, (bridge > -1) ? bridge : fillAngle);
+                    Infill.GenerateLinePaths(outline, fillPolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
                 }
-                
+
+                int fillAngle = config.infillStartingAngle;
+
                 // generate the infill for this part on this layer
                 if (config.infillPercent > 0)
                 {

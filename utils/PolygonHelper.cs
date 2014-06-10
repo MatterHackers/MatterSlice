@@ -61,6 +61,16 @@ namespace MatterHackers.MatterSlice
             return Clipper.Area(polygon);
         }
 
+        public static string WriteToString(this Polygon polygon)
+        {
+            string total = "";
+            foreach (IntPoint point in polygon)
+            {
+                total += point.ToString() + ",";
+            }
+            return total;
+        }
+
         public static void optimizePolygon(this Polygon polygon)
         {
             IntPoint p0 = polygon[polygon.Count - 1];
@@ -136,6 +146,16 @@ namespace MatterHackers.MatterSlice
             {
                 polygons.Add(other[n]);
             }
+        }
+
+        public static string WriteToString(this Polygons polygons)
+        {
+            string total = "";
+            foreach (Polygon polygon in polygons)
+            {
+                total += polygon.WriteToString() + "|";
+            }
+            return total;
         }
 
         public static Polygons CreateDifference(this Polygons polygons, Polygons other)
