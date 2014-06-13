@@ -67,7 +67,6 @@ namespace MatterHackers.MatterSlice
                 // check if it is concave
                 for (int i = 0; i < count; i++)
                 {
-                    continue; // disable all this for now
                     IntPoint prev = islands[0][(i + count - 1) % count];
                     IntPoint curr = islands[0][i];
                     IntPoint next = islands[0][(i + 1) % count];
@@ -77,7 +76,7 @@ namespace MatterHackers.MatterSlice
                         IntPoint convexStart = prev;
 
                         // We found a concave angle. now we want to find the first non-concave angle and make
-                        // a bridge at the start and en angle of the concave region 
+                        // a bridge at the start and end angle of the concave region 
                         for (int j = i+1; j < count; j++)
                         {
                             IntPoint prev2 = islands[0][(j + count - 1) % count];
@@ -103,43 +102,43 @@ namespace MatterHackers.MatterSlice
             }
 
             //Next find the 2 largest islands that we rest on.
-            double area1 = 0;
-            double area2 = 0;
-            int idx1 = -1;
-            int idx2 = -1;
-            for (int n = 0; n < islands.Count; n++)
+            double biggestArea = 0;
+            double nextBiggestArea = 0;
+            int indexOfBiggest = -1;
+            int indexOfNextBigest = -1;
+            for (int islandIndex = 0; islandIndex < islands.Count; islandIndex++)
             {
                 //Skip internal holes
-                if (!islands[n].Orientation())
+                if (!islands[islandIndex].Orientation())
                 {
                     continue;
                 }
 
-                double area = Math.Abs(islands[n].Area());
-                if (area > area1)
+                double area = Math.Abs(islands[islandIndex].Area());
+                if (area > biggestArea)
                 {
-                    if (area1 > area2)
+                    if (biggestArea > nextBiggestArea)
                     {
-                        area2 = area1;
-                        idx2 = idx1;
+                        nextBiggestArea = biggestArea;
+                        indexOfNextBigest = indexOfBiggest;
                     }
-                    area1 = area;
-                    idx1 = n;
+                    biggestArea = area;
+                    indexOfBiggest = islandIndex;
                 }
-                else if (area > area2)
+                else if (area > nextBiggestArea)
                 {
-                    area2 = area;
-                    idx2 = n;
+                    nextBiggestArea = area;
+                    indexOfNextBigest = islandIndex;
                 }
             }
 
-            if (idx1 < 0 || idx2 < 0)
+            if (indexOfBiggest < 0 || indexOfNextBigest < 0)
             {
                 return -1;
             }
 
-            IntPoint center1 = islands[idx1].CenterOfMass();
-            IntPoint center2 = islands[idx2].CenterOfMass();
+            IntPoint center1 = islands[indexOfBiggest].CenterOfMass();
+            IntPoint center2 = islands[indexOfNextBigest].CenterOfMass();
 
             double angle = Math.Atan2(center2.X - center1.X, center2.Y - center1.Y) / Math.PI * 180;
             if (angle < 0)

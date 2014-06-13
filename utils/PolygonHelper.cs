@@ -114,32 +114,57 @@ namespace MatterHackers.MatterSlice
         public static IntPoint CenterOfMass(this Polygon polygon)
         {
             double x = 0, y = 0;
-            IntPoint p0 = (polygon)[polygon.Count - 1];
+            IntPoint prevPosition = polygon[polygon.Count - 1];
             for (int n = 0; n < polygon.Count; n++)
             {
-                IntPoint p1 = (polygon)[n];
-                double second_factor = (p0.X * p1.Y) - (p1.X * p0.Y);
+                IntPoint currentPosition = polygon[n];
+                double second_factor = (prevPosition.X * currentPosition.Y) - (currentPosition.X * prevPosition.Y);
 
-                x += (double)(p0.X + p1.X) * second_factor;
-                y += (double)(p0.Y + p1.Y) * second_factor;
-                p0 = p1;
+                x += (double)(prevPosition.X + currentPosition.X) * second_factor;
+                y += (double)(prevPosition.Y + currentPosition.Y) * second_factor;
+                prevPosition = currentPosition;
             }
 
             double area = Clipper.Area(polygon);
             x = x / 6 / area;
             y = y / 6 / area;
 
-            if (x < 0)
-            {
-                x = -x;
-                y = -y;
-            }
             return new IntPoint(x, y);
+        }
+
+        public static Polygon CreateFromString(string polygonString)
+        {
+            Polygon output = new Polygon();
+            string[] intPointData = polygonString.Split(',');
+            for (int i = 0; i < intPointData.Length-1; i+=2)
+            {
+                string elementX = intPointData[i];
+                string elementY = intPointData[i + 1];
+                IntPoint nextIntPoint = new IntPoint(int.Parse(elementX.Substring(2)), int.Parse(elementY.Substring(3)));
+                output.Add(nextIntPoint);
+            }
+
+            return output;
         }
     }
 
     static class PolygonsHelper
     {
+        public static Polygons CreateFromString(string polygonsPackedString)
+        {
+            Polygons output = new Polygons();
+            string[] polygons = polygonsPackedString.Split('|');
+            foreach (string polygonString in polygons)
+            {
+                Polygon nextPoly = PolygonHelper.CreateFromString(polygonString);
+                if (nextPoly.Count > 0)
+                {
+                    output.Add(nextPoly);
+                }
+            }
+            return output;
+        }
+
         public static void AddAll(this Polygons polygons, Polygons other)
         {
             for (int n = 0; n < other.Count; n++)

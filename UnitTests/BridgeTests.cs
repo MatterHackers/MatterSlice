@@ -47,18 +47,19 @@ namespace MatterHackers.MatterSlice.Tests
         [Test]
         public void TestConvexBottomLayer()
         {
-            Polygons outline = new Polygons();
-            // outlineString	"x:5655, y:-706,x:-706, y:5656,x:-5655, y:707,x:706, y:-5655,|"	string
+            string outlineString = "x:5655, y:-706,x:-706, y:5656,x:-5655, y:707,x:706, y:-5655,|";
+            Polygons outline = PolygonsHelper.CreateFromString(outlineString);
             
             SliceLayer prevLayer = new SliceLayer();
             prevLayer.parts = new List<SliceLayerPart>();
             SliceLayerPart part = new SliceLayerPart();
-            // partOutlineString	"x:706, y:6364,x:-706, y:7778,x:-7777, y:707,x:-6363, y:-706,|x:7777, y:-706,x:6363, y:707,x:-706, y:-6363,x:706, y:-7777,|"	string
+            string partOutlineString = "x:706, y:6364,x:-706, y:7778,x:-7777, y:707,x:-6363, y:-706,|x:7777, y:-706,x:6363, y:707,x:-706, y:-6363,x:706, y:-7777,|";
+            part.outline = PolygonsHelper.CreateFromString(partOutlineString);
             prevLayer.parts.Add(part);
             prevLayer.parts[0].boundaryBox.calculate(prevLayer.parts[0].outline);
 
             int bridgeAngle = Bridge.bridgeAngle(outline, prevLayer);
-            Assert.IsTrue(45 == 45); //(bridgeAngle == 45);
+            Assert.IsTrue(bridgeAngle == 135);
         }
     }
 
