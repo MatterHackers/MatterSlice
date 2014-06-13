@@ -31,7 +31,7 @@ namespace MatterHackers.MatterSlice
 
     public static class Bridge
     {
-        public static int bridgeAngle(Polygons outline, SliceLayer prevLayer)
+        public static int BridgeAngle(Polygons outline, SliceLayer prevLayer)
         {
             AABB boundaryBox = new AABB(outline);
             //To detect if we have a bridge, first calculate the intersection of the current layer with the previous layer.

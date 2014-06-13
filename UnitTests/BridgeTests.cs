@@ -58,7 +58,7 @@ namespace MatterHackers.MatterSlice.Tests
             prevLayer.parts.Add(part);
             prevLayer.parts[0].boundaryBox.calculate(prevLayer.parts[0].outline);
 
-            int bridgeAngle = Bridge.bridgeAngle(outline, prevLayer);
+            int bridgeAngle = Bridge.BridgeAngle(outline, prevLayer);
             Assert.IsTrue(bridgeAngle == 135);
         }
     }

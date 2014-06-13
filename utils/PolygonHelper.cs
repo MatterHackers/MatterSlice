@@ -113,15 +113,25 @@ namespace MatterHackers.MatterSlice
 
         public static IntPoint CenterOfMass(this Polygon polygon)
         {
+#if true
+            IntPoint center = new IntPoint();
+            for (int positionIndex = 0; positionIndex < polygon.Count; positionIndex++)
+            {
+                center += polygon[positionIndex];
+            }
+
+            center /= polygon.Count;
+            return center;
+#else
             double x = 0, y = 0;
             IntPoint prevPosition = polygon[polygon.Count - 1];
-            for (int n = 0; n < polygon.Count; n++)
+            for (int positionIndex = 0; positionIndex < polygon.Count; positionIndex++)
             {
-                IntPoint currentPosition = polygon[n];
-                double second_factor = (prevPosition.X * currentPosition.Y) - (currentPosition.X * prevPosition.Y);
+                IntPoint currentPosition = polygon[positionIndex];
+                double crossProduct = (prevPosition.X * currentPosition.Y) - (prevPosition.Y * currentPosition.X);
 
-                x += (double)(prevPosition.X + currentPosition.X) * second_factor;
-                y += (double)(prevPosition.Y + currentPosition.Y) * second_factor;
+                x += (double)(prevPosition.X + currentPosition.X) * crossProduct;
+                y += (double)(prevPosition.Y + currentPosition.Y) * crossProduct;
                 prevPosition = currentPosition;
             }
 
@@ -130,6 +140,7 @@ namespace MatterHackers.MatterSlice
             y = y / 6 / area;
 
             return new IntPoint(x, y);
+#endif
         }
 
         public static Polygon CreateFromString(string polygonString)

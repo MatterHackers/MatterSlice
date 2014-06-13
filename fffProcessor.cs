@@ -532,7 +532,7 @@ namespace MatterHackers.MatterSlice
                     }
                     if (layerIndex > 0)
                     {
-                        int bridgeAngle = Bridge.bridgeAngle(outline, storage.volumes[volumeIndex].layers[layerIndex-1]);
+                        int bridgeAngle = Bridge.BridgeAngle(outline, storage.volumes[volumeIndex].layers[layerIndex-1]);
                         if (bridgeAngle >= 0)
                         {
                             partFillAngle = bridgeAngle;
