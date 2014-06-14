@@ -20,6 +20,7 @@ along with MatterSlice.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Diagnostics;
 
 using MatterSlice.ClipperLib;
@@ -174,6 +175,56 @@ namespace MatterHackers.MatterSlice
                 }
             }
             return output;
+        }
+
+        public static void SaveToSvg(this Polygons polygons, string filename)
+        {
+            double scaleDenominator = 150;
+            IntRect bounds = Clipper.GetBounds(polygons);
+            IntPoint size = new IntPoint(bounds.right - bounds.left, bounds.top - bounds.bottom);
+            double scale = Math.Max(size.X, size.Y) / scaleDenominator;
+            StreamWriter stream = new StreamWriter(filename);
+            stream.Write("<!DOCTYPE html><html><body>\n");
+            stream.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style='width:%ipx;height:%ipx'>\n", (int)(size.X / scale), (int)(size.Y / scale));
+            stream.Write("<marker id='MidMarker' viewBox='0 0 10 10' refX='5' refY='5' markerUnits='strokeWidth' markerWidth='10' markerHeight='10' stroke='lightblue' stroke-width='2' fill='none' orient='auto'>");
+            stream.Write("<path d='M 0 0 L 10 5 M 0 10 L 10 5'/>");
+            stream.Write("</marker>");
+            stream.Write("<g fill-rule='evenodd' style=\"fill: gray; stroke:black;stroke-width:1\">\n");
+            stream.Write("<path marker-mid='url(#MidMarker)' d=\"");
+            for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
+            {
+                Polygon polygon = polygons[polygonIndex];
+                for (int intPointIndex = 0; intPointIndex < polygon.Count; intPointIndex++)
+                {
+                    if (intPointIndex == 0)
+                    {
+                        stream.Write("M");
+                    }
+                    else
+                    {
+                        stream.Write("L");
+                    }
+                    stream.Write("{0},{1} ", (double)(polygon[intPointIndex].X - bounds.left) / scale, (double)(polygon[intPointIndex].Y - bounds.bottom) / scale);
+                }
+                stream.Write("Z\n");
+            }
+            stream.Write("\"/>");
+            stream.Write("</g>\n");
+            for (int openPolygonIndex = 0; openPolygonIndex < polygons.Count; openPolygonIndex++)
+            {
+                Polygon openPolygon = polygons[openPolygonIndex];
+                if (openPolygon.Count < 1) continue;
+                stream.Write("<polyline marker-mid='url(#MidMarker)' points=\"");
+                for (int n = 0; n < openPolygon.Count; n++)
+                {
+                    stream.Write("{0},{1} ", (double)(openPolygon[n].X - bounds.left) / scale, (double)(openPolygon[n].Y - bounds.bottom) / scale);
+                }
+                stream.Write("\" style=\"fill: none; stroke:red;stroke-width:1\" />\n");
+            }
+            stream.Write("</svg>\n");
+
+            stream.Write("</body></html>");
+            stream.Close();
         }
 
         public static void AddAll(this Polygons polygons, Polygons other)
