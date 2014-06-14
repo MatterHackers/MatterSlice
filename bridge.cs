@@ -47,7 +47,7 @@ namespace MatterHackers.MatterSlice
                 islands.AddRange(outline.CreateIntersection(prevLayerPart.outline));
             }
 
-#if false //DEBUG
+#if DEBUG
             string outlineString = outline.WriteToString();
             string partOutlineString = "";
             foreach (SliceLayerPart prevLayerPart in prevLayer.parts)
@@ -64,12 +64,28 @@ namespace MatterHackers.MatterSlice
             if (islands.Count == 1)
             {
                 int count = islands[0].Count;
-                // check if it is concave
+
+                // we need to find the first convex angle to be our start of finding the cancave area
+                int startIndex = 0;
                 for (int i = 0; i < count; i++)
                 {
                     IntPoint prev = islands[0][(i + count - 1) % count];
                     IntPoint curr = islands[0][i];
                     IntPoint next = islands[0][(i + 1) % count];
+
+                    if ((prev - curr).Cross(next - curr) > 0)
+                    {
+                        startIndex = i;
+                        break;
+                    }
+                }
+
+                // check if it is concave
+                for (int i = 0; i < count; i++)
+                {
+                    IntPoint prev = islands[0][(startIndex + i + count - 1) % count];
+                    IntPoint curr = islands[0][(startIndex + i) % count];
+                    IntPoint next = islands[0][(startIndex + i + 1) % count];
 
                     if ((prev - curr).Cross(next - curr) > 0)
                     {
@@ -79,9 +95,9 @@ namespace MatterHackers.MatterSlice
                         // a bridge at the start and end angle of the concave region 
                         for (int j = i+1; j < count; j++)
                         {
-                            IntPoint prev2 = islands[0][(j + count - 1) % count];
-                            IntPoint curr2 = islands[0][j];
-                            IntPoint next2 = islands[0][(j + 1) % count];
+                            IntPoint prev2 = islands[0][(startIndex + j + count - 1) % count];
+                            IntPoint curr2 = islands[0][(startIndex + j) % count];
+                            IntPoint next2 = islands[0][(startIndex + j + 1) % count];
 
                             if ((prev2 - curr2).Cross(next2 - curr2) <= 0)
                             {
