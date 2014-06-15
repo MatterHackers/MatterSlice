@@ -65,6 +65,8 @@ namespace MatterHackers.MatterSlice
             {
                 int count = islands[0].Count;
 
+                // Lets find the area of each concave section and take the clossing of the largest.
+
                 // we need to find the first convex angle to be our start of finding the cancave area
                 int startIndex = 0;
                 for (int i = 0; i < count; i++)
