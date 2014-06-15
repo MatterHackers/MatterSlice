@@ -106,7 +106,7 @@ namespace MatterHackers.MatterSlice
         public double infillExtendIntoPerimeter;
         public int infillExtendIntoPerimeter_um { get { return (int)(infillExtendIntoPerimeter * 1000); } }
 
-        public int infillStartingAngle;
+        public double infillStartingAngle;
 
         [SettingDescription("How far from objects the first skirt loop should be, in millimeters.")]
         public int skirtDistanceFromObject;

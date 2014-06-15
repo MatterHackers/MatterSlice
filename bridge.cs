@@ -17,6 +17,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with MatterSlice.  If not, see <http://www.gnu.org/licenses/>.
 */
+//#define OUTPUT_DEBUG_DATA
 
 using System;
 using System.Collections.Generic;
@@ -31,7 +32,7 @@ namespace MatterHackers.MatterSlice
 
     public static class Bridge
     {
-        public static int BridgeAngle(Polygons outline, SliceLayer prevLayer, string debugName = "")
+        public static double BridgeAngle(Polygons outline, SliceLayer prevLayer, string debugName = "")
         {
             AABB boundaryBox = new AABB(outline);
             //To detect if we have a bridge, first calculate the intersection of the current layer with the previous layer.
@@ -47,7 +48,7 @@ namespace MatterHackers.MatterSlice
                 islands.AddRange(outline.CreateIntersection(prevLayerPart.outline));
             }
 
-#if DEBUG
+#if OUTPUT_DEBUG_DATA
             string outlineString = outline.WriteToString();
             string partOutlineString = "";
             foreach (SliceLayerPart prevLayerPart in prevLayer.parts)
@@ -83,6 +84,9 @@ namespace MatterHackers.MatterSlice
                     }
                 }
 
+                double longestSide = 0;
+                double bestAngle = -1;
+
                 // check if it is concave
                 for (int i = 0; i < count; i++)
                 {
@@ -104,21 +108,25 @@ namespace MatterHackers.MatterSlice
 
                             if ((prev2 - curr2).Cross(next2 - curr2) <= 0)
                             {
-                                int angleOfConvexStartToEnd = (int)(Math.Atan2((curr2 - convexStart).Y, (curr2 - convexStart).X) * 180 / Math.PI + .5);
-#if DEBUG
-                                islands.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, angleOfConvexStartToEnd));
+                                IntPoint sideDelta = curr2 - convexStart;
+                                double lengthOfSide = sideDelta.Length();
+                                if (lengthOfSide > longestSide)
+                                {
+                                    bestAngle = Math.Atan2(sideDelta.Y, sideDelta.X) * 180 / Math.PI;
+#if OUTPUT_DEBUG_DATA
+                                    islands.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, bestAngle));
+
 #endif
-                                return angleOfConvexStartToEnd;
+                                    i = j+1;
+                                    break;
+                                }
                             }
                         }
-
-                        int angleOfConvexStartToEnd2 = (int)(Math.Atan2((next - prev).Y, (next - prev).X) * 180 / Math.PI + .5);
-#if DEBUG
-                        islands.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, angleOfConvexStartToEnd2));
-#endif
-                        return angleOfConvexStartToEnd2;
                     }
                 }
+
+                Range0To360(ref bestAngle);
+                return bestAngle;
             }
 
             if (islands.Count > 5 || islands.Count < 1)
@@ -166,15 +174,23 @@ namespace MatterHackers.MatterSlice
             IntPoint center2 = islands[indexOfNextBigest].CenterOfMass();
 
             double angle = Math.Atan2(center2.Y - center1.Y, center2.X - center1.X) / Math.PI * 180;
+            Range0To360(ref angle);
+#if OUTPUT_DEBUG_DATA
+            islands.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, angle));
+#endif
+            return angle;
+        }
+
+        static void Range0To360(ref double angle)
+        {
             if (angle < 0)
             {
                 angle += 360;
             }
-
-#if DEBUG
-            islands.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, angle));
-#endif
-            return (int)(angle + .5);
+            if (angle > 360)
+            {
+                angle -= 360;
+            }
         }
     }
 }

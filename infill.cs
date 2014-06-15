@@ -115,7 +115,7 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        public static void GenerateLineInfill(ConfigSettings config, SliceLayerPart part, Polygons fillPolygons, int extrusionWidth_um, int fillAngle)
+        public static void GenerateLineInfill(ConfigSettings config, SliceLayerPart part, Polygons fillPolygons, int extrusionWidth_um, double fillAngle)
         {
             if (config.infillPercent <= 0)
             {
@@ -126,7 +126,7 @@ namespace MatterHackers.MatterSlice
             GenerateLinePaths(part.sparseOutline, fillPolygons, extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle);
         }
 
-        public static void GenerateGridInfill(ConfigSettings config, SliceLayerPart part, Polygons fillPolygons, int extrusionWidth_um, int fillAngle)
+        public static void GenerateGridInfill(ConfigSettings config, SliceLayerPart part, Polygons fillPolygons, int extrusionWidth_um, double fillAngle)
         {
             if (config.infillPercent <= 0)
             {
@@ -146,7 +146,7 @@ namespace MatterHackers.MatterSlice
             Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle);
         }
 
-        public static void GenerateTriangleInfill(ConfigSettings config, SliceLayerPart part, Polygons fillPolygons, int extrusionWidth_um, int fillAngle, long printZ)
+        public static void GenerateTriangleInfill(ConfigSettings config, SliceLayerPart part, Polygons fillPolygons, int extrusionWidth_um, double fillAngle, long printZ)
         {
             if (config.infillPercent <= 0)
             {
@@ -177,7 +177,7 @@ namespace MatterHackers.MatterSlice
             Infill.GenerateLinePaths(part.sparseOutline, fillPolygons, extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle, offset);
         }
 
-        public static void generateConcentricInfill(ConfigSettings config, SliceLayerPart part, Polygons fillPolygons, int extrusionWidth_um, int fillAngle)
+        public static void generateConcentricInfill(ConfigSettings config, SliceLayerPart part, Polygons fillPolygons, int extrusionWidth_um, double fillAngle)
         {
             int linespacing_um = (int)(config.extrusionWidth_um / (config.infillPercent / 100));
             while (part.sparseOutline.Count > 0)
