@@ -245,7 +245,7 @@ namespace MatterHackers.MatterSlice
             stream.Write("<!DOCTYPE html><html><body>\n");
             for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
             {
-                stream.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style='width:%ipx;height:%ipx'>\n", (int)(modelSize.x / scale), (int)(modelSize.y / scale));
+                stream.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style='width:{0}px;height:{1}px'>\n".FormatWith((int)(modelSize.x / scale), (int)(modelSize.y / scale)));
                 stream.Write("<marker id='MidMarker' viewBox='0 0 10 10' refX='5' refY='5' markerUnits='strokeWidth' markerWidth='10' markerHeight='10' stroke='lightblue' stroke-width='2' fill='none' orient='auto'>");
                 stream.Write("<path d='M 0 0 L 10 5 M 0 10 L 10 5'/>");
                 stream.Write("</marker>");

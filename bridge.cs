@@ -31,7 +31,7 @@ namespace MatterHackers.MatterSlice
 
     public static class Bridge
     {
-        public static int BridgeAngle(Polygons outline, SliceLayer prevLayer)
+        public static int BridgeAngle(Polygons outline, SliceLayer prevLayer, string debugName = "")
         {
             AABB boundaryBox = new AABB(outline);
             //To detect if we have a bridge, first calculate the intersection of the current layer with the previous layer.
@@ -73,7 +73,8 @@ namespace MatterHackers.MatterSlice
                     IntPoint curr = islands[0][i];
                     IntPoint next = islands[0][(i + 1) % count];
 
-                    if ((prev - curr).Cross(next - curr) > 0)
+                    double cross = (prev - curr).Cross(next - curr);
+                    if (cross < 0)
                     {
                         startIndex = i;
                         break;
@@ -101,12 +102,18 @@ namespace MatterHackers.MatterSlice
 
                             if ((prev2 - curr2).Cross(next2 - curr2) <= 0)
                             {
-                                int angleOfConvexStartToEnd = (int)(Math.Atan2((curr2 - convexStart).Y, (curr2 - convexStart).X) * 180 / Math.PI + 90);
+                                int angleOfConvexStartToEnd = (int)(Math.Atan2((curr2 - convexStart).Y, (curr2 - convexStart).X) * 180 / Math.PI + .5);
+#if DEBUG
+                                islands.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, angleOfConvexStartToEnd));
+#endif
                                 return angleOfConvexStartToEnd;
                             }
                         }
 
-                        int angleOfConvexStartToEnd2 = (int)(Math.Atan2((next - prev).Y, (next - prev).X) * 180 / Math.PI + 90);
+                        int angleOfConvexStartToEnd2 = (int)(Math.Atan2((next - prev).Y, (next - prev).X) * 180 / Math.PI + .5);
+#if DEBUG
+                        islands.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, angleOfConvexStartToEnd2));
+#endif
                         return angleOfConvexStartToEnd2;
                     }
                 }
@@ -156,13 +163,16 @@ namespace MatterHackers.MatterSlice
             IntPoint center1 = islands[indexOfBiggest].CenterOfMass();
             IntPoint center2 = islands[indexOfNextBigest].CenterOfMass();
 
-            double angle = Math.Atan2(center2.X - center1.X, center2.Y - center1.Y) / Math.PI * 180;
+            double angle = Math.Atan2(center2.Y - center1.Y, center2.X - center1.X) / Math.PI * 180;
             if (angle < 0)
             {
                 angle += 360;
             }
 
-            return (int)angle;
+#if DEBUG
+            islands.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, angle));
+#endif
+            return (int)(angle + .5);
         }
     }
 }

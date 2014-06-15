@@ -177,15 +177,50 @@ namespace MatterHackers.MatterSlice
             return output;
         }
 
+        public static void SaveToGCode(this Polygons polygons, string filename)
+        {
+            double scale = 1000;
+            StreamWriter stream = new StreamWriter(filename);
+            stream.Write("; some gcode to look at the layer segments\n");
+            int extrudeAmount = 0;
+            double firstX = 0;
+            double firstY = 0;
+            for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
+            {
+                Polygon polygon = polygons[polygonIndex];
+
+                for (int intPointIndex = 0; intPointIndex < polygon.Count; intPointIndex++)
+                {
+                    double x = (double)(polygon[intPointIndex].X) / scale;
+                    double y = (double)(polygon[intPointIndex].Y) / scale;
+                    if (intPointIndex == 0)
+                    {
+                        firstX = x;
+                        firstY = y;
+                        stream.Write("G1 X{0} Y{1}\n", x, y);
+                    }
+                    else
+                    {
+                        stream.Write("G1 X{0} Y{1} E{2}\n", x, y, ++extrudeAmount);
+                    }
+                }
+                stream.Write("G1 X{0} Y{1} E{2}\n", firstX, firstY, ++extrudeAmount);
+            }
+            stream.Close();
+        }
+
         public static void SaveToSvg(this Polygons polygons, string filename)
         {
             double scaleDenominator = 150;
             IntRect bounds = Clipper.GetBounds(polygons);
+            long temp = bounds.bottom;
+            bounds.bottom = bounds.top;
+            bounds.top = temp;
             IntPoint size = new IntPoint(bounds.right - bounds.left, bounds.top - bounds.bottom);
             double scale = Math.Max(size.X, size.Y) / scaleDenominator;
             StreamWriter stream = new StreamWriter(filename);
             stream.Write("<!DOCTYPE html><html><body>\n");
-            stream.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style='width:%ipx;height:%ipx'>\n", (int)(size.X / scale), (int)(size.Y / scale));
+            stream.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style='width:{0}px;height:{1}px'>\n".FormatWith((int)(size.X / scale), (int)(size.Y / scale)));
             stream.Write("<marker id='MidMarker' viewBox='0 0 10 10' refX='5' refY='5' markerUnits='strokeWidth' markerWidth='10' markerHeight='10' stroke='lightblue' stroke-width='2' fill='none' orient='auto'>");
             stream.Write("<path d='M 0 0 L 10 5 M 0 10 L 10 5'/>");
             stream.Write("</marker>");

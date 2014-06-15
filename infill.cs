@@ -34,7 +34,7 @@ namespace MatterHackers.MatterSlice
         public static void GenerateLinePaths(Polygons in_outline, Polygons result, int extrusionWidth_um, int lineSpacing, int infillExtendIntoPerimeter_um, double rotation, long rotationOffset = 0)
         {
             Polygons outlines = in_outline.Offset(infillExtendIntoPerimeter_um);
-            PointMatrix matrix = new PointMatrix(rotation);
+            PointMatrix matrix = new PointMatrix(-(rotation + 90)); // we are rotating the part so we rotate by the negative so the lines go the way we expect
 
             outlines.applyMatrix(matrix);
 
