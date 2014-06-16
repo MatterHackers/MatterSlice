@@ -60,24 +60,36 @@ namespace MatterHackers.MatterSlice
 
                 partOutlineString += "|";
             }
+
+            string islandsString = islands.WriteToString();
 #endif
 
             if (islands.Count == 1)
             {
-                int count = islands[0].Count;
+                int island0PointCount = islands[0].Count;
 
-                // Lets find the area of each concave section and take the clossing of the largest.
+                // Check if the island exactly matches the outline (if it does no bridging is going to happen)
+                if (outline.Count == 1 && island0PointCount == outline[0].Count)
+                {
+                    for (int i = 0; i < island0PointCount; i++)
+                    {
+                        if (islands[0][i] != outline[0][i])
+                        {
+                            break;
+                        }
+                    }
+
+                    // they are all the same so we don't need to change the angle
+                    return -1;
+                }
 
                 // we need to find the first convex angle to be our start of finding the cancave area
                 int startIndex = 0;
-                for (int i = 0; i < count; i++)
+                for (int i = 0; i < island0PointCount; i++)
                 {
-                    IntPoint prev = islands[0][(i + count - 1) % count];
                     IntPoint curr = islands[0][i];
-                    IntPoint next = islands[0][(i + 1) % count];
 
-                    double cross = (prev - curr).Cross(next - curr);
-                    if (cross < 0)
+                    if (outline[0].Contains(curr))
                     {
                         startIndex = i;
                         break;
@@ -88,31 +100,29 @@ namespace MatterHackers.MatterSlice
                 double bestAngle = -1;
 
                 // check if it is concave
-                for (int i = 0; i < count; i++)
+                for (int i = 0; i < island0PointCount + startIndex; i++)
                 {
-                    IntPoint prev = islands[0][(startIndex + i + count - 1) % count];
-                    IntPoint curr = islands[0][(startIndex + i) % count];
-                    IntPoint next = islands[0][(startIndex + i + 1) % count];
+                    IntPoint curr = islands[0][(startIndex + i) % island0PointCount];
 
-                    if ((prev - curr).Cross(next - curr) > 0)
+                    if (!outline[0].Contains(curr))
                     {
+                        IntPoint prev = islands[0][(startIndex + i + island0PointCount - 1) % island0PointCount];
                         IntPoint convexStart = prev;
 
                         // We found a concave angle. now we want to find the first non-concave angle and make
                         // a bridge at the start and end angle of the concave region 
-                        for (int j = i+1; j < count; j++)
+                        for (int j = i + 1; j < island0PointCount + startIndex; j++)
                         {
-                            IntPoint prev2 = islands[0][(startIndex + j + count - 1) % count];
-                            IntPoint curr2 = islands[0][(startIndex + j) % count];
-                            IntPoint next2 = islands[0][(startIndex + j + 1) % count];
+                            IntPoint curr2 = islands[0][(startIndex + j) % island0PointCount];
 
-                            if ((prev2 - curr2).Cross(next2 - curr2) <= 0)
+                            if (outline[0].Contains(curr2))
                             {
                                 IntPoint sideDelta = curr2 - convexStart;
                                 double lengthOfSide = sideDelta.Length();
                                 if (lengthOfSide > longestSide)
                                 {
                                     bestAngle = Math.Atan2(sideDelta.Y, sideDelta.X) * 180 / Math.PI;
+                                    longestSide = lengthOfSide;
 #if OUTPUT_DEBUG_DATA
                                     islands.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, bestAngle));
 
@@ -123,6 +133,11 @@ namespace MatterHackers.MatterSlice
                             }
                         }
                     }
+                }
+
+                if (bestAngle == -1)
+                {
+                    return -1;
                 }
 
                 Range0To360(ref bestAngle);
