@@ -42,6 +42,7 @@ namespace MatterHackers.MatterSlice
         GCodePathConfig inset0Config = new GCodePathConfig();
         GCodePathConfig insetXConfig = new GCodePathConfig();
         GCodePathConfig fillConfig = new GCodePathConfig();
+        GCodePathConfig bridgConfig = new GCodePathConfig();
         GCodePathConfig supportConfig = new GCodePathConfig();
 
         public fffProcessor(ConfigSettings config)
@@ -104,6 +105,7 @@ namespace MatterHackers.MatterSlice
             inset0Config.setData(config.outsidePerimeterSpeed, extrusionWidth, "WALL-OUTER");
             insetXConfig.setData(config.insidePerimetersSpeed, extrusionWidth, "WALL-INNER");
             fillConfig.setData(config.infillSpeed, extrusionWidth, "FILL");
+            bridgConfig.setData(config.bridgeSpeed, extrusionWidth, "BRIDGE");
             supportConfig.setData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT");
 
             for (int n = 1; n < ConfigConstants.MAX_EXTRUDERS; n++)
@@ -356,6 +358,7 @@ namespace MatterHackers.MatterSlice
                     inset0Config.setData(config.firstLayerSpeed, extrusionWidth_um, "WALL-OUTER");
                     insetXConfig.setData(config.firstLayerSpeed, extrusionWidth_um, "WALL-INNER");
                     fillConfig.setData(config.firstLayerSpeed, extrusionWidth_um, "FILL");
+                    bridgConfig.setData(config.firstLayerSpeed, extrusionWidth_um, "BRIDGE");
                 }
                 else
                 {
@@ -363,6 +366,7 @@ namespace MatterHackers.MatterSlice
                     inset0Config.setData(config.outsidePerimeterSpeed, extrusionWidth_um, "WALL-OUTER");
                     insetXConfig.setData(config.insidePerimetersSpeed, extrusionWidth_um, "WALL-INNER");
                     fillConfig.setData(config.infillSpeed, extrusionWidth_um, "FILL");
+                    bridgConfig.setData(config.bridgeSpeed, extrusionWidth_um, "BRIDGE");
                 }
                 supportConfig.setData(config.firstLayerSpeed, config.extrusionWidth_um, "SUPPORT");
 
@@ -521,6 +525,7 @@ namespace MatterHackers.MatterSlice
                 }
 
                 Polygons fillPolygons = new Polygons();
+                Polygons bridgePolygons = new Polygons();
 
                 // generate infill for outline including bridging
                 foreach(Polygons outline in part.skinOutline.SplitIntoParts())
@@ -532,13 +537,20 @@ namespace MatterHackers.MatterSlice
                     }
                     if (layerIndex > 0)
                     {
-                        double bridgeAngle = Bridge.BridgeAngle(outline, storage.volumes[volumeIndex].layers[layerIndex - 1]);
-                        if (bridgeAngle >= 0)
+                        double bridgeAngle;
+                        if (Bridge.BridgeAngle(outline, storage.volumes[volumeIndex].layers[layerIndex - 1], out bridgeAngle))
                         {
-                            partFillAngle = bridgeAngle;
+                            Infill.GenerateLinePaths(outline, bridgePolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, bridgeAngle);
+                        }
+                        else
+                        {
+                            Infill.GenerateLinePaths(outline, fillPolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
                         }
                     }
-                    Infill.GenerateLinePaths(outline, fillPolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
+                    else
+                    {
+                        Infill.GenerateLinePaths(outline, fillPolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
+                    }
                 }
 
                 double fillAngle = config.infillStartingAngle;
@@ -574,6 +586,7 @@ namespace MatterHackers.MatterSlice
                 }
 
                 gcodeLayer.writePolygonsByOptimizer(fillPolygons, fillConfig);
+                gcodeLayer.writePolygonsByOptimizer(bridgePolygons, bridgConfig);
 
                 //After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
                 if (!config.continuousSpiralOuterPerimeter || (int)(layerIndex) < config.numberOfBottomLayers)

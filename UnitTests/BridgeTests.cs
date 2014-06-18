@@ -153,7 +153,8 @@ namespace MatterHackers.MatterSlice.Tests
             prevLayer.parts.Add(part);
             prevLayer.parts[0].boundaryBox.calculate(prevLayer.parts[0].outline);
 
-            double bridgeAngle = Bridge.BridgeAngle(outline, prevLayer, debugName);
+            double bridgeAngle;
+            Bridge.BridgeAngle(outline, prevLayer, out bridgeAngle, debugName);
             return bridgeAngle;
         }
     }

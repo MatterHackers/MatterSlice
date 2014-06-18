@@ -112,6 +112,34 @@ namespace MatterHackers.MatterSlice
             }
         }
 
+        public static void SaveToGCode(this Polygon polygon, string filename)
+        {
+            double scale = 1000;
+            StreamWriter stream = new StreamWriter(filename);
+            stream.Write("; some gcode to look at the layer segments\n");
+            int extrudeAmount = 0;
+            double firstX = 0;
+            double firstY = 0;
+            for (int intPointIndex = 0; intPointIndex < polygon.Count; intPointIndex++)
+            {
+                double x = (double)(polygon[intPointIndex].X) / scale;
+                double y = (double)(polygon[intPointIndex].Y) / scale;
+                if (intPointIndex == 0)
+                {
+                    firstX = x;
+                    firstY = y;
+                    stream.Write("G1 X{0} Y{1}\n", x, y);
+                }
+                else
+                {
+                    stream.Write("G1 X{0} Y{1} E{2}\n", x, y, ++extrudeAmount);
+                }
+            }
+            stream.Write("G1 X{0} Y{1} E{2}\n", firstX, firstY, ++extrudeAmount);
+         
+            stream.Close();
+        }
+
         public static IntPoint CenterOfMass(this Polygon polygon)
         {
 #if true

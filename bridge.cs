@@ -17,7 +17,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with MatterSlice.  If not, see <http://www.gnu.org/licenses/>.
 */
-//#define OUTPUT_DEBUG_DATA
+#define OUTPUT_DEBUG_DATA
 
 using System;
 using System.Collections.Generic;
@@ -32,8 +32,9 @@ namespace MatterHackers.MatterSlice
 
     public static class Bridge
     {
-        public static double BridgeAngle(Polygons outline, SliceLayer prevLayer, string debugName = "")
+        public static bool BridgeAngle(Polygons outline, SliceLayer prevLayer, out double bridgeAngle, string debugName = "")
         {
+            bridgeAngle = -1;
             AABB boundaryBox = new AABB(outline);
             //To detect if we have a bridge, first calculate the intersection of the current layer with the previous layer.
             // This gives us the islands that the layer rests on.
@@ -64,92 +65,17 @@ namespace MatterHackers.MatterSlice
             string islandsString = islands.WriteToString();
 #endif
 
-            if (islands.Count == 1)
-            {
-                int island0PointCount = islands[0].Count;
-
-                // Check if the island exactly matches the outline (if it does no bridging is going to happen)
-                if (outline.Count == 1 && island0PointCount == outline[0].Count)
-                {
-                    for (int i = 0; i < island0PointCount; i++)
-                    {
-                        if (islands[0][i] != outline[0][i])
-                        {
-                            break;
-                        }
-                    }
-
-                    // they are all the same so we don't need to change the angle
-                    return -1;
-                }
-
-                // we need to find the first convex angle to be our start of finding the cancave area
-                int startIndex = 0;
-                for (int i = 0; i < island0PointCount; i++)
-                {
-                    IntPoint curr = islands[0][i];
-
-                    if (outline[0].Contains(curr))
-                    {
-                        startIndex = i;
-                        break;
-                    }
-                }
-
-                double longestSide = 0;
-                double bestAngle = -1;
-
-                // check if it is concave
-                for (int i = 0; i < island0PointCount + startIndex; i++)
-                {
-                    IntPoint curr = islands[0][(startIndex + i) % island0PointCount];
-
-                    if (!outline[0].Contains(curr))
-                    {
-                        IntPoint prev = islands[0][(startIndex + i + island0PointCount - 1) % island0PointCount];
-                        IntPoint convexStart = prev;
-
-                        // We found a concave angle. now we want to find the first non-concave angle and make
-                        // a bridge at the start and end angle of the concave region 
-                        for (int j = i + 1; j < island0PointCount + startIndex; j++)
-                        {
-                            IntPoint curr2 = islands[0][(startIndex + j) % island0PointCount];
-
-                            if (outline[0].Contains(curr2))
-                            {
-                                IntPoint sideDelta = curr2 - convexStart;
-                                double lengthOfSide = sideDelta.Length();
-                                if (lengthOfSide > longestSide)
-                                {
-                                    bestAngle = Math.Atan2(sideDelta.Y, sideDelta.X) * 180 / Math.PI;
-                                    longestSide = lengthOfSide;
-#if OUTPUT_DEBUG_DATA
-                                    islands.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, bestAngle));
-
-#endif
-                                    i = j+1;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (bestAngle == -1)
-                {
-                    return -1;
-                }
-
-                Range0To360(ref bestAngle);
-                return bestAngle;
-            }
-
             if (islands.Count > 5 || islands.Count < 1)
             {
-                return -1;
+                return false;
             }
 
-            //Next find the 2 largest islands that we rest on.
+            if (islands.Count == 1)
+            {
+                return GetSingleIslandAngle(outline, islands[0], out bridgeAngle, debugName);
+            }
+
+            // Find the 2 largest islands that we rest on.
             double biggestArea = 0;
             double nextBiggestArea = 0;
             int indexOfBiggest = -1;
@@ -182,18 +108,100 @@ namespace MatterHackers.MatterSlice
 
             if (indexOfBiggest < 0 || indexOfNextBigest < 0)
             {
-                return -1;
+                return false;
             }
 
             IntPoint center1 = islands[indexOfBiggest].CenterOfMass();
             IntPoint center2 = islands[indexOfNextBigest].CenterOfMass();
 
-            double angle = Math.Atan2(center2.Y - center1.Y, center2.X - center1.X) / Math.PI * 180;
-            Range0To360(ref angle);
+            bridgeAngle = Math.Atan2(center2.Y - center1.Y, center2.X - center1.X) / Math.PI * 180;
+            Range0To360(ref bridgeAngle);
 #if OUTPUT_DEBUG_DATA
-            islands.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, angle));
+            islands.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, bridgeAngle));
 #endif
-            return angle;
+            return true;
+        }
+
+        public static bool GetSingleIslandAngle(Polygons outline, Polygon island, out double bridgeAngle, string debugName)
+        {
+            bridgeAngle = -1;
+            int island0PointCount = island.Count;
+
+            // Check if the island exactly matches the outline (if it does no bridging is going to happen)
+            if (outline.Count == 1 && island0PointCount == outline[0].Count)
+            {
+                for (int i = 0; i < island0PointCount; i++)
+                {
+                    if (island[i] != outline[0][i])
+                    {
+                        break;
+                    }
+                }
+
+                // they are all the same so we don't need to change the angle
+                return false;
+            }
+
+            // we need to find the first convex angle to be our start of finding the cancave area
+            int startIndex = 0;
+            for (int i = 0; i < island0PointCount; i++)
+            {
+                IntPoint curr = island[i];
+
+                if (outline[0].Contains(curr))
+                {
+                    startIndex = i;
+                    break;
+                }
+            }
+
+            double longestSide = 0;
+            double bestAngle = -1;
+
+            // check if it is concave
+            for (int i = 0; i < island0PointCount + startIndex; i++)
+            {
+                IntPoint curr = island[(startIndex + i) % island0PointCount];
+
+                if (!outline[0].Contains(curr))
+                {
+                    IntPoint prev = island[(startIndex + i + island0PointCount - 1) % island0PointCount];
+                    IntPoint convexStart = prev;
+
+                    // We found a concave angle. now we want to find the first non-concave angle and make
+                    // a bridge at the start and end angle of the concave region 
+                    for (int j = i + 1; j < island0PointCount + startIndex; j++)
+                    {
+                        IntPoint curr2 = island[(startIndex + j) % island0PointCount];
+
+                        if (outline[0].Contains(curr2))
+                        {
+                            IntPoint sideDelta = curr2 - convexStart;
+                            double lengthOfSide = sideDelta.Length();
+                            if (lengthOfSide > longestSide)
+                            {
+                                bestAngle = Math.Atan2(sideDelta.Y, sideDelta.X) * 180 / Math.PI;
+                                longestSide = lengthOfSide;
+#if OUTPUT_DEBUG_DATA
+                                island.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, bestAngle));
+
+#endif
+                                i = j + 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (bestAngle == -1)
+            {
+                return false;
+            }
+
+            Range0To360(ref bestAngle);
+            bridgeAngle = bestAngle;
+            return true;
         }
 
         static void Range0To360(ref double angle)

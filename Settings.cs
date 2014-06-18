@@ -156,6 +156,8 @@ namespace MatterHackers.MatterSlice
         public int supportMaterialSpeed;
         [SettingDescription("mm/s.")]
         public int infillSpeed;
+        [SettingDescription("mm/s.")]
+        public int bridgeSpeed;
         [SettingDescription("The speed of the first perimeter. mm/s.")]
         public int outsidePerimeterSpeed;
         [SettingDescription("The speed of all perimeters but the outside one. mm/s.")]
@@ -274,6 +276,7 @@ namespace MatterHackers.MatterSlice
             firstLayerSpeed = 20;
             supportMaterialSpeed = 40;
             infillSpeed = 50;
+            bridgeSpeed = 20;
             outsidePerimeterSpeed = 50;
             insidePerimetersSpeed = 50;
             travelSpeed = 200;
