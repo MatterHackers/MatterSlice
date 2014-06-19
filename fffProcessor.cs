@@ -406,6 +406,8 @@ namespace MatterHackers.MatterSlice
                     addSupportToGCode(storage, gcodeLayer, layerIndex, config.extrusionWidth_um);
                 }
 
+                int fanSpeedPercent = GetFanSpeed(layerIndex, gcodeLayer);
+
                 for (int volumeCnt = 0; volumeCnt < storage.volumes.Count; volumeCnt++)
                 {
                     if (volumeCnt > 0)
@@ -413,7 +415,7 @@ namespace MatterHackers.MatterSlice
                         volumeIdx = (volumeIdx + 1) % storage.volumes.Count;
                     }
 
-                    addVolumeLayerToGCode(storage, gcodeLayer, volumeIdx, layerIndex, extrusionWidth_um);
+                    addVolumeLayerToGCode(storage, gcodeLayer, volumeIdx, layerIndex, extrusionWidth_um, fanSpeedPercent);
                 }
 
                 if (!printSupportFirst)
@@ -424,22 +426,7 @@ namespace MatterHackers.MatterSlice
                 //Finish the layer by applying speed corrections for minimum layer times.
                 gcodeLayer.forceMinimumLayerTime(config.minimumLayerTimeSeconds, config.minimumPrintingSpeed);
 
-                int fanSpeed = config.fanSpeedMinPercent;
-                if (gcodeLayer.getExtrudeSpeedFactor() <= 50)
-                {
-                    fanSpeed = config.fanSpeedMaxPercent;
-                }
-                else
-                {
-                    int n = gcodeLayer.getExtrudeSpeedFactor() - 50;
-                    fanSpeed = config.fanSpeedMinPercent * n / 50 + config.fanSpeedMaxPercent * (50 - n) / 50;
-                }
-                if ((int)(layerIndex) < config.firstLayerToAllowFan)
-                {
-                    // Don't allow the fan below this layer
-                    fanSpeed = 0;
-                }
-                gcode.writeFanCommand(fanSpeed);
+                gcode.writeFanCommand(fanSpeedPercent);
 
                 gcodeLayer.writeGCode(config.doCoolHeadLift, (int)(layerIndex) > 0 ? config.layerThickness_um : config.firstLayerThickness_um);
             }
@@ -453,8 +440,29 @@ namespace MatterHackers.MatterSlice
             maxObjectHeight = Math.Max(maxObjectHeight, storage.modelSize.z);
         }
 
+        private int GetFanSpeed(int layerIndex, GCodePlanner gcodeLayer)
+        {
+            int fanSpeedPercent = config.fanSpeedMinPercent;
+            if (gcodeLayer.getExtrudeSpeedFactor() <= 50)
+            {
+                fanSpeedPercent = config.fanSpeedMaxPercent;
+            }
+            else
+            {
+                int n = gcodeLayer.getExtrudeSpeedFactor() - 50;
+                fanSpeedPercent = config.fanSpeedMinPercent * n / 50 + config.fanSpeedMaxPercent * (50 - n) / 50;
+            }
+
+            if (layerIndex < config.firstLayerToAllowFan)
+            {
+                // Don't allow the fan below this layer
+                fanSpeedPercent = 0;
+            }
+            return fanSpeedPercent;
+        }
+
         //Add a single layer from a single mesh-volume to the GCode
-        void addVolumeLayerToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int volumeIndex, int layerIndex, int extrusionWidth_um)
+        void addVolumeLayerToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int volumeIndex, int layerIndex, int extrusionWidth_um, int fanSpeedPercent)
         {
             int prevExtruder = gcodeLayer.getExtruder();
             bool extruderChanged = gcodeLayer.setExtruder(volumeIndex);
@@ -585,7 +593,10 @@ namespace MatterHackers.MatterSlice
                     }
                 }
 
+                gcode.writeFanCommand(config.bridgeFanSpeedPercent);
                 gcodeLayer.writePolygonsByOptimizer(fillPolygons, fillConfig);
+                gcode.writeFanCommand(fanSpeedPercent);
+
                 gcodeLayer.writePolygonsByOptimizer(bridgePolygons, bridgConfig);
 
                 //After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
@@ -675,8 +686,9 @@ namespace MatterHackers.MatterSlice
                     gcodeLayer.setCombBoundary(island);
                 }
 
-                gcodeLayer.writePolygonsByOptimizer(island, supportConfig);
                 gcodeLayer.writePolygonsByOptimizer(supportLines, supportConfig);
+                gcodeLayer.writePolygonsByOptimizer(island, supportConfig);
+
                 gcodeLayer.setCombBoundary(null);
             }
         }
