@@ -593,11 +593,14 @@ namespace MatterHackers.MatterSlice
                     }
                 }
 
-                gcode.writeFanCommand(config.bridgeFanSpeedPercent);
-                gcodeLayer.writePolygonsByOptimizer(fillPolygons, fillConfig);
-                gcode.writeFanCommand(fanSpeedPercent);
+                if (bridgePolygons.Count > 0)
+                {
+                    gcode.writeFanCommand(config.bridgeFanSpeedPercent);
+                    gcodeLayer.writePolygonsByOptimizer(bridgePolygons, bridgConfig);
+                    gcode.writeFanCommand(fanSpeedPercent);
+                }
 
-                gcodeLayer.writePolygonsByOptimizer(bridgePolygons, bridgConfig);
+                gcodeLayer.writePolygonsByOptimizer(fillPolygons, fillConfig);
 
                 //After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
                 if (!config.continuousSpiralOuterPerimeter || (int)(layerIndex) < config.numberOfBottomLayers)
