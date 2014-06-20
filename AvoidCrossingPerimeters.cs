@@ -265,7 +265,7 @@ namespace MatterHackers.MatterSlice
 
         public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, List<IntPoint> pathThatIsInside)
         {
-            if ((endPoint - startPoint).shorterThen(1500))
+            if ((endPoint - startPoint).ShorterThen(1500))
             {
                 // If the movement is very short (not a lot of time to ooze filament)
                 // then don't add any points

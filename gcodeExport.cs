@@ -549,8 +549,13 @@ namespace MatterHackers.MatterSlice
 
         GCodePath getLatestPathWithConfig(GCodePathConfig config)
         {
-            if (paths.Count > 0 && paths[paths.Count - 1].config == config && !paths[paths.Count - 1].done)
+            if (paths.Count > 0
+                && paths[paths.Count - 1].config == config
+                && !paths[paths.Count - 1].done)
+            {
                 return paths[paths.Count - 1];
+            }
+
             paths.Add(new GCodePath());
             GCodePath ret = paths[paths.Count - 1];
             ret.retract = false;
@@ -563,13 +568,18 @@ namespace MatterHackers.MatterSlice
         void forceNewPathStart()
         {
             if (paths.Count > 0)
+            {
                 paths[paths.Count - 1].done = true;
+            }
         }
 
         public bool setExtruder(int extruder)
         {
             if (extruder == currentExtruder)
+            {
                 return false;
+            }
+
             currentExtruder = extruder;
             return true;
         }
@@ -629,7 +639,7 @@ namespace MatterHackers.MatterSlice
 
             if (forceRetraction)
             {
-                if (!(lastPosition - positionToMoveTo).shorterThen(retractionMinimumDistance))
+                if (!(lastPosition - positionToMoveTo).ShorterThen(retractionMinimumDistance))
                 {
                     path.retract = true;
                 }
@@ -659,7 +669,7 @@ namespace MatterHackers.MatterSlice
                 }
                 else
                 {
-                    if (!(lastPosition - positionToMoveTo).shorterThen(retractionMinimumDistance))
+                    if (!(lastPosition - positionToMoveTo).ShorterThen(retractionMinimumDistance))
                     {
                         // We are moving relatively far and are going to cross a boundary so do a retraction.
                         path.retract = true;
@@ -668,7 +678,7 @@ namespace MatterHackers.MatterSlice
             }
             else if (alwaysRetract)
             {
-                if (!(lastPosition - positionToMoveTo).shorterThen(retractionMinimumDistance))
+                if (!(lastPosition - positionToMoveTo).ShorterThen(retractionMinimumDistance))
                 {
                     path.retract = true;
                 }
@@ -678,15 +688,19 @@ namespace MatterHackers.MatterSlice
             lastPosition = positionToMoveTo;
         }
 
-        public void writeExtrusionMove(IntPoint p, GCodePathConfig config)
+        public void writeExtrusionMove(IntPoint destination, GCodePathConfig config)
         {
-            getLatestPathWithConfig(config).points.Add(p);
-            lastPosition = p;
+            getLatestPathWithConfig(config).points.Add(destination);
+            lastPosition = destination;
         }
 
         public void moveInsideCombBoundary(int distance)
         {
-            if (comb == null || comb.PointIsInsideBoundary(lastPosition)) return;
+            if (comb == null || comb.PointIsInsideBoundary(lastPosition))
+            {
+                return;
+            }
+
             IntPoint p = lastPosition;
             if (comb.MovePointInsideBoundary(ref p, distance))
             {
@@ -701,20 +715,20 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        public void writePolygon(Polygon polygon, int startIdx, GCodePathConfig config)
+        public void writePolygon(Polygon polygon, int startIndex, GCodePathConfig config)
         {
-            IntPoint p0 = polygon[startIdx];
-            writeTravel(p0);
+            IntPoint currentPosition = polygon[startIndex];
+            writeTravel(currentPosition);
             for (int i = 1; i < polygon.Count; i++)
             {
-                IntPoint p1 = polygon[(startIdx + i) % polygon.Count];
-                writeExtrusionMove(p1, config);
-                p0 = p1;
+                IntPoint destination = polygon[(startIndex + i) % polygon.Count];
+                writeExtrusionMove(destination, config);
+                currentPosition = destination;
             }
 
             if (polygon.Count > 2)
             {
-                writeExtrusionMove(polygon[startIdx], config);
+                writeExtrusionMove(polygon[startIndex], config);
             }
         }
 
@@ -730,8 +744,8 @@ namespace MatterHackers.MatterSlice
 
             for (int i = 0; i < orderOptimizer.polyOrder.Count; i++)
             {
-                int nr = orderOptimizer.polyOrder[i];
-                writePolygon(polygons[nr], orderOptimizer.polyStart[nr], config);
+                int polygonIndex = orderOptimizer.polyOrder[i];
+                writePolygon(polygons[polygonIndex], orderOptimizer.polyStart[polygonIndex], config);
             }
         }
 
@@ -813,9 +827,9 @@ namespace MatterHackers.MatterSlice
             GCodePathConfig lastConfig = null;
             int extruder = gcode.getExtruderNr();
 
-            for (int n = 0; n < paths.Count; n++)
+            for (int pathIndex = 0; pathIndex < paths.Count; pathIndex++)
             {
-                GCodePath path = paths[n];
+                GCodePath path = paths[pathIndex];
                 if (extruder != path.extruder)
                 {
                     extruder = path.extruder;
@@ -842,14 +856,16 @@ namespace MatterHackers.MatterSlice
                     speed = speed * travelSpeedFactor / 100;
                 }
 
-                if (path.points.Count == 1 && path.config != travelConfig && (gcode.getPositionXY() - path.points[0]).shorterThen(path.config.lineWidth * 2))
+                if (path.points.Count == 1 
+                    && path.config != travelConfig 
+                    && (gcode.getPositionXY() - path.points[0]).ShorterThen(path.config.lineWidth * 2))
                 {
                     //Check for lots of small moves and combine them into one large line
-                    IntPoint p0 = path.points[0];
-                    int i = n + 1;
-                    while (i < paths.Count && paths[i].points.Count == 1 && (p0 - paths[i].points[0]).shorterThen(path.config.lineWidth * 2))
+                    IntPoint nextPosition = path.points[0];
+                    int i = pathIndex + 1;
+                    while (i < paths.Count && paths[i].points.Count == 1 && (nextPosition - paths[i].points[0]).ShorterThen(path.config.lineWidth * 2))
                     {
-                        p0 = paths[i].points[0];
+                        nextPosition = paths[i].points[0];
                         i++;
                     }
                     if (paths[i - 1].config == travelConfig)
@@ -857,12 +873,12 @@ namespace MatterHackers.MatterSlice
                         i--;
                     }
 
-                    if (i > n + 2)
+                    if (i > pathIndex + 2)
                     {
-                        p0 = gcode.getPositionXY();
-                        for (int x = n; x < i - 1; x += 2)
+                        nextPosition = gcode.getPositionXY();
+                        for (int x = pathIndex; x < i - 1; x += 2)
                         {
-                            long oldLen = (p0 - paths[x].points[0]).vSize();
+                            long oldLen = (nextPosition - paths[x].points[0]).vSize();
                             IntPoint newPoint = (paths[x].points[0] + paths[x + 1].points[0]) / 2;
                             long newLen = (gcode.getPositionXY() - newPoint).vSize();
                             if (newLen > 0)
@@ -870,10 +886,10 @@ namespace MatterHackers.MatterSlice
                                 gcode.writeMove(newPoint, speed, (int)(path.config.lineWidth * oldLen / newLen));
                             }
 
-                            p0 = paths[x + 1].points[0];
+                            nextPosition = paths[x + 1].points[0];
                         }
                         gcode.writeMove(paths[i - 1].points[0], speed, path.config.lineWidth);
-                        n = i - 1;
+                        pathIndex = i - 1;
                         continue;
                     }
                 }
@@ -882,10 +898,12 @@ namespace MatterHackers.MatterSlice
                 if (spiralize)
                 {
                     //Check if we are the last spiralize path in the list, if not, do not spiralize.
-                    for (int m = n + 1; m < paths.Count; m++)
+                    for (int m = pathIndex + 1; m < paths.Count; m++)
                     {
                         if (paths[m].config.spiralize)
+                        {
                             spiralize = false;
+                        }
                     }
                 }
                 if (spiralize)
@@ -893,30 +911,30 @@ namespace MatterHackers.MatterSlice
                     //If we need to spiralize then raise the head slowly by 1 layer as this path progresses.
                     double totalLength = 0;
                     int z = gcode.getPositionZ();
-                    IntPoint p0 = gcode.getPositionXY();
-                    for (int i = 0; i < path.points.Count; i++)
+                    IntPoint currentPosition = gcode.getPositionXY();
+                    for (int pointIndex = 0; pointIndex < path.points.Count; pointIndex++)
                     {
-                        IntPoint p1 = path.points[i];
-                        totalLength += (p0 - p1).LengthMm();
-                        p0 = p1;
+                        IntPoint nextPosition = path.points[pointIndex];
+                        totalLength += (currentPosition - nextPosition).LengthMm();
+                        currentPosition = nextPosition;
                     }
 
                     double length = 0.0;
-                    p0 = gcode.getPositionXY();
+                    currentPosition = gcode.getPositionXY();
                     for (int i = 0; i < path.points.Count; i++)
                     {
-                        IntPoint p1 = path.points[i];
-                        length += (p0 - p1).LengthMm();
-                        p0 = p1;
+                        IntPoint nextPosition = path.points[i];
+                        length += (currentPosition - nextPosition).LengthMm();
+                        currentPosition = nextPosition;
                         gcode.setZ((int)(z + layerThickness * length / totalLength));
                         gcode.writeMove(path.points[i], speed, path.config.lineWidth);
                     }
                 }
                 else
                 {
-                    for (int i = 0; i < path.points.Count; i++)
+                    for (int pointIndex = 0; pointIndex < path.points.Count; pointIndex++)
                     {
-                        gcode.writeMove(path.points[i], speed, path.config.lineWidth);
+                        gcode.writeMove(path.points[pointIndex], speed, path.config.lineWidth);
                     }
                 }
             }

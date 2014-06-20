@@ -428,7 +428,13 @@ namespace MatterHackers.MatterSlice
 
                 gcode.writeFanCommand(fanSpeedPercent);
 
-                gcodeLayer.writeGCode(config.doCoolHeadLift, (int)(layerIndex) > 0 ? config.layerThickness_um : config.firstLayerThickness_um);
+                int currentLayerThickness_um = config.layerThickness_um;
+                if(layerIndex <= 0)
+                {
+                    currentLayerThickness_um = config.firstLayerThickness_um;
+                }
+
+                gcodeLayer.writeGCode(config.doCoolHeadLift, currentLayerThickness_um);
             }
 
             LogOutput.log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.Seconds));

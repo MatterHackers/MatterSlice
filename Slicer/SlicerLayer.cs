@@ -504,7 +504,7 @@ namespace MatterHackers.MatterSlice
                         if (distOnLine >= 0 && distOnLine <= lineLength)
                         {
                             IntPoint q = p0 + pDiff * distOnLine / lineLength;
-                            if ((q - input).shorterThen(100))
+                            if ((q - input).ShorterThen(100))
                             {
                                 ret.intersectionPoint = q;
                                 ret.polygonIdx = n;

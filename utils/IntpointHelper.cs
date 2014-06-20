@@ -167,7 +167,7 @@ namespace MatterHackers.MatterSlice
             return p0 * len / _len;
         }
 
-        public static bool shorterThen(this IntPoint p0, long len)
+        public static bool ShorterThen(this IntPoint p0, long len)
         {
             if (p0.X > len || p0.X < -len)
                 return false;
