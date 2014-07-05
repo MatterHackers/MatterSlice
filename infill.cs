@@ -47,11 +47,12 @@ namespace MatterHackers.MatterSlice
                     boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing - rotationOffset;
                     int lineCount = (int)((boundary.max.X - boundary.min.X + (lineSpacing - 1)) / lineSpacing);
                     Polygons unclipedPatern = new Polygons();
+                    long firstX = boundary.min.X / lineSpacing * lineSpacing;
                     for (int lineIndex = 0; lineIndex < lineCount; lineIndex++)
                     {
                         Polygon line = new Polygon();
-                        line.Add(new IntPoint(boundary.min.X + lineIndex * lineSpacing, boundary.min.Y));
-                        line.Add(new IntPoint(boundary.min.X + lineIndex * lineSpacing, boundary.max.Y));
+                        line.Add(new IntPoint(firstX + lineIndex * lineSpacing, boundary.min.Y));
+                        line.Add(new IntPoint(firstX + lineIndex * lineSpacing, boundary.max.Y));
                         unclipedPatern.Add(line);
                     }
 
