@@ -33,85 +33,41 @@ namespace MatterHackers.MatterSlice
     {
         public static void GenerateLinePaths(Polygons in_outline, Polygons result, int extrusionWidth_um, int lineSpacing, int infillExtendIntoPerimeter_um, double rotation, long rotationOffset = 0)
         {
-            Polygons outlines = in_outline.Offset(infillExtendIntoPerimeter_um);
-            PointMatrix matrix = new PointMatrix(-(rotation + 90)); // we are rotating the part so we rotate by the negative so the lines go the way we expect
-
-            outlines.applyMatrix(matrix);
-
-            AABB boundary = new AABB(outlines);
-
-            boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing - rotationOffset;
-            int lineCount = (int)((boundary.max.X - boundary.min.X + (lineSpacing - 1)) / lineSpacing);
-            List<List<long>> cutList = new List<List<long>>();
-            for (int lineIndex = 0; lineIndex < lineCount; lineIndex++)
+            if (in_outline.Count > 0)
             {
-                cutList.Add(new List<long>());
-            }
-
-            for (int outlineIndex = 0; outlineIndex < outlines.Count; outlineIndex++)
-            {
-                Polygon currentOutline = outlines[outlineIndex];
-                IntPoint previousPoint = currentOutline[currentOutline.Count - 1];
-                for (int pointIndex = 0; pointIndex < currentOutline.Count; pointIndex++)
+                Polygons outlines = in_outline.Offset(infillExtendIntoPerimeter_um);
+                if (outlines.Count > 0)
                 {
-                    IntPoint currentPoint = currentOutline[pointIndex];
-                    int idx0 = (int)((currentPoint.X - boundary.min.X) / lineSpacing);
-                    int idx1 = (int)((previousPoint.X - boundary.min.X) / lineSpacing);
+                    PointMatrix matrix = new PointMatrix(-(rotation + 90)); // we are rotating the part so we rotate by the negative so the lines go the way we expect
 
-                    long xMin = Math.Min(currentPoint.X, previousPoint.X);
-                    long xMax = Math.Max(currentPoint.X, previousPoint.X);
+                    outlines.applyMatrix(matrix);
 
-                    if (currentPoint.X > previousPoint.X)
+                    AABB boundary = new AABB(outlines);
+
+                    boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing - rotationOffset;
+                    int lineCount = (int)((boundary.max.X - boundary.min.X + (lineSpacing - 1)) / lineSpacing);
+                    Polygons unclipedPatern = new Polygons();
+                    for (int lineIndex = 0; lineIndex < lineCount; lineIndex++)
                     {
-                        xMin = previousPoint.X;
-                        xMax = currentPoint.X;
+                        Polygon line = new Polygon();
+                        line.Add(new IntPoint(boundary.min.X + lineIndex * lineSpacing, boundary.min.Y));
+                        line.Add(new IntPoint(boundary.min.X + lineIndex * lineSpacing, boundary.max.Y));
+                        unclipedPatern.Add(line);
                     }
 
-                    if (idx0 > idx1)
-                    {
-                        int tmp = idx0;
-                        idx0 = idx1;
-                        idx1 = tmp;
-                    }
+                    PolyTree ret = new PolyTree();
+                    Clipper clipper = new Clipper();
+                    clipper.AddPaths(unclipedPatern, PolyType.ptSubject, false);
+                    clipper.AddPaths(outlines, PolyType.ptClip, true);
+                    clipper.Execute(ClipType.ctIntersection, ret, PolyFillType.pftPositive, PolyFillType.pftEvenOdd);
 
-                    for (int idx = idx0; idx <= idx1; idx++)
-                    {
-                        int x = (int)((idx * lineSpacing) + boundary.min.X + lineSpacing / 2);
-                        if (x < xMin || x >= xMax)
-                        {
-                            continue;
-                        }
+                    Polygons newSegments = Clipper.OpenPathsFromPolyTree(ret);
+                    PointMatrix inversematrix = new PointMatrix((rotation + 90));
+                    newSegments.applyMatrix(inversematrix);
+                    
+                    result.AddRange(newSegments);
 
-                        int y = (int)(currentPoint.Y + (previousPoint.Y - currentPoint.Y) * (x - currentPoint.X) / (previousPoint.X - currentPoint.X));
-                        cutList[idx].Add(y);
-                    }
-
-                    previousPoint = currentPoint;
                 }
-            }
-
-            int idx2 = 0;
-            for (long x = boundary.min.X + lineSpacing / 2; x < boundary.max.X; x += lineSpacing)
-            {
-                cutList[idx2].Sort();
-                for (int i = 0; i + 1 < cutList[idx2].Count; i += 2)
-                {
-                    if (cutList[idx2][i + 1] - cutList[idx2][i] < extrusionWidth_um / 5)
-                    {
-                        continue;
-                    }
-
-                    Polygon p = new Polygon();
-                    result.Add(p);
-                    IntPoint start = matrix.unapply(new IntPoint(x, cutList[idx2][i]));
-                    //start -= new IntPoint(lineOffset / 2, 0);
-                    p.Add(start);
-                    IntPoint end = matrix.unapply(new IntPoint(x, cutList[idx2][i + 1]));
-                    //end -= new IntPoint(lineOffset / 2, 0);
-                    p.Add(end);
-                }
-
-                idx2 += 1;
             }
         }
 
