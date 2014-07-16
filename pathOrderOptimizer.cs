@@ -31,14 +31,14 @@ namespace MatterHackers.MatterSlice
 
     public class PathOrderOptimizer
     {
-        public IntPoint startPoint;
+        public IntPoint startPosition;
         public List<Polygon> polygons = new List<Polygon>();
         public List<int> polyStart = new List<int>();
         public List<int> polyOrder = new List<int>();
 
         public PathOrderOptimizer(IntPoint startPoint)
         {
-            this.startPoint = startPoint;
+            this.startPosition = startPoint;
         }
 
         public void addPolygon(Polygon polygon)
@@ -64,7 +64,7 @@ namespace MatterHackers.MatterSlice
                 Polygon currentPolygon = polygons[polygonIndex];
                 for (int pointIndex = 0; pointIndex < currentPolygon.Count; pointIndex++)
                 {
-                    double dist = (currentPolygon[pointIndex] - startPoint).LengthSquared();
+                    double dist = (currentPolygon[pointIndex] - startPosition).LengthSquared();
                     if (dist < closestDist)
                     {
                         bestPointIndex = pointIndex;
@@ -75,58 +75,69 @@ namespace MatterHackers.MatterSlice
                 picked.Add(false);
             }
 
-            IntPoint p0 = startPoint;
-            for (int n = 0; n < polygons.Count; n++)
+            IntPoint incommingPerpundicularNormal = new IntPoint(0, 0);
+            IntPoint currentPosition = startPosition;
+            for (int positionIndex = 0; positionIndex < polygons.Count; positionIndex++)
             {
-                int best = -1;
+                int bestIndex = -1;
                 double bestDist = double.MaxValue;
-                for (int i = 0; i < polygons.Count; i++)
+                for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
                 {
-                    if (picked[i] || polygons[i].Count < 1)
-                        continue;
-                    if (polygons[i].Count == 2)
+                    if (picked[polygonIndex] || polygons[polygonIndex].Count < 1)
                     {
-                        double dist = (polygons[i][0] - p0).LengthSquared();
+                        continue;
+                    }
+
+                    if (polygons[polygonIndex].Count == 2)
+                    {
+                        double dist = (polygons[polygonIndex][0] - currentPosition).LengthSquared();
+                        dist += Math.Abs(incommingPerpundicularNormal.Dot(polygons[polygonIndex][1] - polygons[polygonIndex][0].normal(1000))) * 0.0001f;
                         if (dist < bestDist)
                         {
-                            best = i;
+                            bestIndex = polygonIndex;
                             bestDist = dist;
-                            polyStart[i] = 0;
+                            polyStart[polygonIndex] = 0;
                         }
-                        dist = (polygons[i][1] - p0).LengthSquared();
+                        
+                        dist = (polygons[polygonIndex][1] - currentPosition).LengthSquared();
+                        dist += Math.Abs(incommingPerpundicularNormal.Dot(polygons[polygonIndex][0] - polygons[polygonIndex][1].normal(1000))) * 0.0001f;
                         if (dist < bestDist)
                         {
-                            best = i;
+                            bestIndex = polygonIndex;
                             bestDist = dist;
-                            polyStart[i] = 1;
+                            polyStart[polygonIndex] = 1;
                         }
                     }
                     else
                     {
-                        double dist = (polygons[i][polyStart[i]] - p0).LengthSquared();
+                        double dist = (polygons[polygonIndex][polyStart[polygonIndex]] - currentPosition).LengthSquared();
                         if (dist < bestDist)
                         {
-                            best = i;
+                            bestIndex = polygonIndex;
                             bestDist = dist;
                         }
                     }
                 }
-                if (best > -1)
+
+                if (bestIndex > -1)
                 {
-                    if (polygons[best].Count == 2)
+                    if (polygons[bestIndex].Count == 2)
                     {
-                        p0 = polygons[best][(polyStart[best] + 1) % 2];
+                        int endIndex = (polyStart[bestIndex] + 1) % 2;
+                        currentPosition = polygons[bestIndex][endIndex];
+                        incommingPerpundicularNormal = (polygons[bestIndex][endIndex] - polygons[bestIndex][polyStart[bestIndex]]).normal(1000).CrossZ();
                     }
                     else
                     {
-                        p0 = polygons[best][polyStart[best]];
+                        currentPosition = polygons[bestIndex][polyStart[bestIndex]];
+                        incommingPerpundicularNormal = new IntPoint(0, 0);
                     }
-                    picked[best] = true;
-                    polyOrder.Add(best);
+                    picked[bestIndex] = true;
+                    polyOrder.Add(bestIndex);
                 }
             }
 
-            p0 = startPoint;
+            currentPosition = startPosition;
             for (int n = 0; n < polyOrder.Count; n++)
             {
                 int nr = polyOrder[n];
@@ -134,7 +145,7 @@ namespace MatterHackers.MatterSlice
                 double bestDist = double.MaxValue;
                 for (int i = 0; i < polygons[nr].Count; i++)
                 {
-                    double dist = (polygons[nr][i] - p0).LengthSquared();
+                    double dist = (polygons[nr][i] - currentPosition).LengthSquared();
                     if (dist < bestDist)
                     {
                         best = i;
@@ -144,11 +155,11 @@ namespace MatterHackers.MatterSlice
                 polyStart[nr] = best;
                 if (polygons[nr].Count <= 2)
                 {
-                    p0 = polygons[nr][(best + 1) % 2];
+                    currentPosition = polygons[nr][(best + 1) % 2];
                 }
                 else
                 {
-                    p0 = polygons[nr][best];
+                    currentPosition = polygons[nr][best];
                 }
             }
         }
