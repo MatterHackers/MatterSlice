@@ -139,7 +139,7 @@ namespace MatterHackers.MatterSlice
 
             LogOutput.log("Optimize model {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Reset();
-#if DEBUG
+#if False
             optomizedModel.saveDebugSTL("debug_output.stl");
 #endif
 
@@ -189,7 +189,7 @@ namespace MatterHackers.MatterSlice
         {
             //carveMultipleVolumes(storage.volumes);
             MultiVolumes.generateMultipleVolumesOverlap(storage.volumes, config.multiVolumeOverlapPercent);
-#if DEBUG
+#if False
             LayerPart.dumpLayerparts(storage, "output.html");
 #endif
 
