@@ -261,8 +261,22 @@ namespace MatterHackers.MatterSlice
             if (config.enableRaft)
             {
                 Raft.GenerateRaftOutlines(storage, config.raftExtraDistanceAroundPart_um);
+                Skirt.generateSkirt(storage, 
+                    config.skirtDistance_um + config.raftBaseLinewidth_um, 
+                    config.raftBaseLinewidth_um, 
+                    config.numberOfSkirtLoops, 
+                    config.skirtMinLength_um, 
+                    config.raftBaseThickness_um);
             }
-            Skirt.generateSkirt(storage, config.skirtDistance_um, config.firstLayerExtrusionWidth_um, config.numberOfSkirtLoops, config.skirtMinLength_um, config.firstLayerThickness_um);
+            else
+            {
+                Skirt.generateSkirt(storage, 
+                    config.skirtDistance_um, 
+                    config.firstLayerExtrusionWidth_um, 
+                    config.numberOfSkirtLoops, 
+                    config.skirtMinLength_um, 
+                    config.firstLayerThickness_um);
+            }
         }
 
         private void CreateWipeShields(SliceDataStorage storage, int totalLayers)

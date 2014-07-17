@@ -83,6 +83,7 @@ namespace MatterHackers.MatterSlice
 
                     Polygons raftLines = new Polygons();
                     Infill.GenerateLinePaths(storage.raftOutline, raftLines, config.raftBaseThickness_um, config.raftLineSpacing_um, config.infillExtendIntoPerimeter_um, 0);
+                    gcodeLayer.writePolygonsByOptimizer(storage.skirt, raftBaseConfig);
                     gcodeLayer.writePolygonsByOptimizer(raftLines, raftBaseConfig);
 
                     gcodeLayer.writeGCode(false, config.raftBaseThickness_um);
