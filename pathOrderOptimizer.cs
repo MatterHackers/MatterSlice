@@ -75,7 +75,7 @@ namespace MatterHackers.MatterSlice
                 picked.Add(false);
             }
 
-            IntPoint incommingPerpundicularNormal = new IntPoint(0, 0);
+            //IntPoint incommingPerpundicularNormal = new IntPoint(0, 0);
             IntPoint currentPosition = startPosition;
             for (int positionIndex = 0; positionIndex < polygons.Count; positionIndex++)
             {
@@ -91,7 +91,7 @@ namespace MatterHackers.MatterSlice
                     if (polygons[polygonIndex].Count == 2)
                     {
                         double dist = (polygons[polygonIndex][0] - currentPosition).LengthSquared();
-                        dist += Math.Abs(incommingPerpundicularNormal.Dot(polygons[polygonIndex][1] - polygons[polygonIndex][0].normal(1000))) * 0.0001f;
+                        //dist += Math.Abs(incommingPerpundicularNormal.Dot(polygons[polygonIndex][1] - polygons[polygonIndex][0].normal(1000))) * 0.0001f;
                         if (dist < bestDist)
                         {
                             bestIndex = polygonIndex;
@@ -100,7 +100,7 @@ namespace MatterHackers.MatterSlice
                         }
                         
                         dist = (polygons[polygonIndex][1] - currentPosition).LengthSquared();
-                        dist += Math.Abs(incommingPerpundicularNormal.Dot(polygons[polygonIndex][0] - polygons[polygonIndex][1].normal(1000))) * 0.0001f;
+                        //dist += Math.Abs(incommingPerpundicularNormal.Dot(polygons[polygonIndex][0] - polygons[polygonIndex][1].normal(1000))) * 0.0001f;
                         if (dist < bestDist)
                         {
                             bestIndex = polygonIndex;
@@ -125,12 +125,12 @@ namespace MatterHackers.MatterSlice
                     {
                         int endIndex = (polyStart[bestIndex] + 1) % 2;
                         currentPosition = polygons[bestIndex][endIndex];
-                        incommingPerpundicularNormal = (polygons[bestIndex][endIndex] - polygons[bestIndex][polyStart[bestIndex]]).normal(1000).CrossZ();
+                        //incommingPerpundicularNormal = (polygons[bestIndex][endIndex] - polygons[bestIndex][polyStart[bestIndex]]).normal(1000).CrossZ();
                     }
                     else
                     {
                         currentPosition = polygons[bestIndex][polyStart[bestIndex]];
-                        incommingPerpundicularNormal = new IntPoint(0, 0);
+                        //incommingPerpundicularNormal = new IntPoint(0, 0);
                     }
                     picked[bestIndex] = true;
                     polyOrder.Add(bestIndex);
