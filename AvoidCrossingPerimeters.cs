@@ -170,43 +170,19 @@ namespace MatterHackers.MatterSlice
 
         public bool PointIsInsideBoundary(IntPoint pointToCheck)
         {
-            // Check if we are inside the comb boundary. We do this by tracing from the point towards the negative X direction,
-            // every boundary we cross increments the crossings counter. If we have an even number of crossings then we are not inside the boundary
-            int crossings = 0;
+            // Check if we are inside the comb boundary.
             for (int bounderyIndex = 0; bounderyIndex < bounderyPolygons.Count; bounderyIndex++)
             {
                 Polygon boundryPolygon = bounderyPolygons[bounderyIndex];
 
-                if (boundryPolygon.Count < 1)
+                int pointInPolygon = Clipper.PointInPolygon(pointToCheck, boundryPolygon);
+                if (pointInPolygon != 0)
                 {
-                    continue;
-                }
-
-                IntPoint previousPoint = boundryPolygon[boundryPolygon.Count - 1];
-                for (int pointIndex = 0; pointIndex < boundryPolygon.Count; pointIndex++)
-                {
-                    IntPoint currentPoint = boundryPolygon[pointIndex];
-
-                    bool pointToCheckWithinLineHeight = (previousPoint.Y >= pointToCheck.Y && currentPoint.Y < pointToCheck.Y);
-                    pointToCheckWithinLineHeight |= (currentPoint.Y > pointToCheck.Y && previousPoint.Y <= pointToCheck.Y);
-                    if (pointToCheckWithinLineHeight)
-                    {
-                        long x = previousPoint.X + (currentPoint.X - previousPoint.X) * (pointToCheck.Y - previousPoint.Y) / (currentPoint.Y - previousPoint.Y);
-                        if (x >= pointToCheck.X)
-                        {
-                            crossings++;
-                        }
-                    }
-                    previousPoint = currentPoint;
+                    return true;
                 }
             }
 
-            if ((crossings % 2) == 0)
-            {
-                return false;
-            }
-
-            return true;
+            return false;
         }
 
         public bool MovePointInsideBoundary(ref IntPoint pointToMove, int maxDistanceToMove = 100)
@@ -364,6 +340,7 @@ namespace MatterHackers.MatterSlice
                 pointList.Add(endPoint);
             }
 
+#if false
             // Optimize the pointList, skip each point we could already reach by connecting directly to the next point.
             for(int startIndex = 0; startIndex < pointList.Count-2; startIndex++)
             {
@@ -388,6 +365,7 @@ namespace MatterHackers.MatterSlice
                     }
                 }
             }
+#endif
 
             foreach (IntPoint point in pointList)
             {

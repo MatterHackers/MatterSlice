@@ -518,7 +518,7 @@ namespace MatterHackers.MatterSlice
 
         IntPoint lastPosition;
         List<GCodePath> paths = new List<GCodePath>();
-        AvoidCrossingPerimeters comb;
+        AvoidCrossingPerimeters avaidCrossingPerimeters;
 
         GCodePathConfig travelConfig = new GCodePathConfig();
         int extrudeSpeedFactor;
@@ -536,7 +536,7 @@ namespace MatterHackers.MatterSlice
             travelConfig = new GCodePathConfig(travelSpeed, 0, "travel");
 
             lastPosition = gcode.getPositionXY();
-            comb = null;
+            avaidCrossingPerimeters = null;
             extrudeSpeedFactor = 100;
             travelSpeedFactor = 100;
             extraTime = 0.0;
@@ -593,11 +593,11 @@ namespace MatterHackers.MatterSlice
         {
             if (polygons != null)
             {
-                comb = new AvoidCrossingPerimeters(polygons);
+                avaidCrossingPerimeters = new AvoidCrossingPerimeters(polygons);
             }
             else
             {
-                comb = null;
+                avaidCrossingPerimeters = null;
             }
         }
 
@@ -645,10 +645,10 @@ namespace MatterHackers.MatterSlice
                 }
                 forceRetraction = false;
             }
-            else if (comb != null)
+            else if (avaidCrossingPerimeters != null)
             {
                 List<IntPoint> pointList = new List<IntPoint>();
-                if (comb.CreatePathInsideBoundary(lastPosition, positionToMoveTo, pointList))
+                if (avaidCrossingPerimeters.CreatePathInsideBoundary(lastPosition, positionToMoveTo, pointList))
                 {
                     long lineLength = 0;
                     // we can stay inside so move within the boundary
@@ -696,17 +696,17 @@ namespace MatterHackers.MatterSlice
 
         public void moveInsideCombBoundary(int distance)
         {
-            if (comb == null || comb.PointIsInsideBoundary(lastPosition))
+            if (avaidCrossingPerimeters == null || avaidCrossingPerimeters.PointIsInsideBoundary(lastPosition))
             {
                 return;
             }
 
             IntPoint p = lastPosition;
-            if (comb.MovePointInsideBoundary(ref p, distance))
+            if (avaidCrossingPerimeters.MovePointInsideBoundary(ref p, distance))
             {
                 //Move inside again, so we move out of tight 90deg corners
-                comb.MovePointInsideBoundary(ref p, distance);
-                if (comb.PointIsInsideBoundary(p))
+                avaidCrossingPerimeters.MovePointInsideBoundary(ref p, distance);
+                if (avaidCrossingPerimeters.PointIsInsideBoundary(p))
                 {
                     writeTravel(p);
                     //Make sure the that any retraction happens after this move, not before it by starting a new move path.
