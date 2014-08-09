@@ -82,7 +82,7 @@ namespace MatterHackers.MatterSlice
             storage.gridHeight = (model.size.y / storage.gridScale) + 1;
             int gridSize = storage.gridWidth * storage.gridHeight;
             storage.xYGridOfSupportPoints = new List<List<SupportPoint>>(gridSize);
-            for(int i=0; i<gridSize; i++)
+            for (int i = 0; i < gridSize; i++)
             {
                 storage.xYGridOfSupportPoints.Add(new List<SupportPoint>());
             }
@@ -107,12 +107,12 @@ namespace MatterHackers.MatterSlice
 
                     double cosAngle = Math.Abs((double)(normal.z) / (double)(normalSize));
 
-                    v0.x = (int)((v0.x - storage.gridOffset.X) / storage.gridScale + .5);
-                    v0.y = (int)((v0.y - storage.gridOffset.Y) / storage.gridScale + .5);
-                    v1.x = (int)((v1.x - storage.gridOffset.X) / storage.gridScale + .5);
-                    v1.y = (int)((v1.y - storage.gridOffset.Y) / storage.gridScale + .5);
-                    v2.x = (int)((v2.x - storage.gridOffset.X) / storage.gridScale + .5);
-                    v2.y = (int)((v2.y - storage.gridOffset.Y) / storage.gridScale + .5);
+                    v0.x = (int)((v0.x - storage.gridOffset.X) / (double)storage.gridScale + .5);
+                    v0.y = (int)((v0.y - storage.gridOffset.Y) / (double)storage.gridScale + .5);
+                    v1.x = (int)((v1.x - storage.gridOffset.X) / (double)storage.gridScale + .5);
+                    v1.y = (int)((v1.y - storage.gridOffset.Y) / (double)storage.gridScale + .5);
+                    v2.x = (int)((v2.x - storage.gridOffset.X) / (double)storage.gridScale + .5);
+                    v2.y = (int)((v2.y - storage.gridOffset.Y) / (double)storage.gridScale + .5);
 
                     if (v0.x > v1.x) swap(ref v0, ref v1);
                     if (v1.x > v2.x) swap(ref v1, ref v2);
@@ -124,10 +124,10 @@ namespace MatterHackers.MatterSlice
                         long z0 = (long)(v0.z + (v1.z - v0.z) * (x - v0.x) / (double)(v1.x - v0.x) + .5);
                         long z1 = (long)(v0.z + (v2.z - v0.z) * (x - v0.x) / (double)(v2.x - v0.x) + .5);
 
-                        if (y0 > y1) 
+                        if (y0 > y1)
                         {
                             swap(ref y0, ref y1);
-                            swap(ref z0, ref z1); 
+                            swap(ref z0, ref z1);
                         }
 
                         for (long y = y0; y < y1; y++)
@@ -144,15 +144,15 @@ namespace MatterHackers.MatterSlice
                         long z0 = (long)(v1.z + (v2.z - v1.z) * (x - v1.x) / (double)(v2.x - v1.x) + .5);
                         long z1 = (long)(v0.z + (v2.z - v0.z) * (x - v0.x) / (double)(v2.x - v0.x) + .5);
 
-                        if (y0 > y1) 
+                        if (y0 > y1)
                         {
                             swap(ref y0, ref y1);
-                            swap(ref z0, ref z1); 
+                            swap(ref z0, ref z1);
                         }
 
                         for (int y = (int)y0; y < y1; y++)
                         {
-                            storage.xYGridOfSupportPoints[x + y * storage.gridWidth].Add(new SupportPoint((int)(z0 + (z1 - z0) * (double)(y - y0) / (y1 - y0)+.5), cosAngle));
+                            storage.xYGridOfSupportPoints[x + y * storage.gridWidth].Add(new SupportPoint((int)(z0 + (z1 - z0) * (double)(y - y0) / (double)(y1 - y0) + .5), cosAngle));
                         }
                     }
                 }
@@ -177,9 +177,9 @@ namespace MatterHackers.MatterSlice
 
         public bool needSupportAt(IntPoint pointToCheckIfNeedsSupport, int z)
         {
-            if (pointToCheckIfNeedsSupport.X < 1 
-                || pointToCheckIfNeedsSupport.Y < 1 
-                || pointToCheckIfNeedsSupport.X >= storage.gridWidth - 1 
+            if (pointToCheckIfNeedsSupport.X < 1
+                || pointToCheckIfNeedsSupport.Y < 1
+                || pointToCheckIfNeedsSupport.X >= storage.gridWidth - 1
                 || pointToCheckIfNeedsSupport.Y >= storage.gridHeight - 1
                 || done[pointToCheckIfNeedsSupport.X + pointToCheckIfNeedsSupport.Y * storage.gridWidth] != 0)
             {
@@ -195,7 +195,7 @@ namespace MatterHackers.MatterSlice
                     bool angleNeedsSupport = storage.xYGridOfSupportPoints[gridIndex][zIndex].cosAngle >= cosAngle;
                     if (angleNeedsSupport)
                     {
-                        bool zIsBelowSupportPoint = z < storage.xYGridOfSupportPoints[gridIndex][zIndex].z - supportZDistance;
+                        bool zIsBelowSupportPoint = z < storage.xYGridOfSupportPoints[gridIndex][zIndex].z - supportZDistance - 20;
                         if (zIndex == 0)
                         {
                             if (zIsBelowSupportPoint)
@@ -213,7 +213,7 @@ namespace MatterHackers.MatterSlice
                         }
                     }
                 }
-                
+
                 return false;
             }
             else // we only ever look up to the first point needing support (the 0th index)
@@ -230,7 +230,7 @@ namespace MatterHackers.MatterSlice
                     return false;
                 }
 
-                if (z >= storage.xYGridOfSupportPoints[gridIndex][0].z - supportZDistance)
+                if (z >= storage.xYGridOfSupportPoints[gridIndex][0].z - supportZDistance - 20)
                 {
                     // the spot is above the place we need to support
                     return false;

@@ -686,11 +686,11 @@ namespace MatterHackers.MatterSlice
                     switch (config.supportType)
                     {
                         case ConfigConstants.SUPPORT_TYPE.GRID:
-                            Infill.GenerateGridInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle);
+                            Infill.GenerateGridInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle, config.supportLineSpacing_um);
                             break;
 
                         case ConfigConstants.SUPPORT_TYPE.LINES:
-                            Infill.GenerateLineInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle);
+                            Infill.GenerateLineInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle, config.supportLineSpacing_um);
                             break;
                     }
                 }
