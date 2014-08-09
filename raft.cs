@@ -82,7 +82,7 @@ namespace MatterHackers.MatterSlice
                     gcodeLayer.writePolygonsByOptimizer(storage.raftOutline, raftBaseConfig);
 
                     Polygons raftLines = new Polygons();
-                    Infill.GenerateLinePaths(storage.raftOutline, raftLines, config.raftBaseThickness_um, config.raftLineSpacing_um, config.infillExtendIntoPerimeter_um, 0);
+                    Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftBaseThickness_um, config.raftLineSpacing_um, config.infillExtendIntoPerimeter_um, 0);
                     gcodeLayer.writePolygonsByOptimizer(storage.skirt, raftBaseConfig);
                     gcodeLayer.writePolygonsByOptimizer(raftLines, raftBaseConfig);
 
@@ -103,7 +103,7 @@ namespace MatterHackers.MatterSlice
                     gcode.setExtrusion(config.raftInterfaceThicknes_um, config.filamentDiameter_um, config.extrusionMultiplier);
 
                     Polygons raftLines = new Polygons();
-                    Infill.GenerateLinePaths(storage.raftOutline, raftLines, config.raftInterfaceLinewidth_um, config.raftInterfaceLineSpacing_um, config.infillExtendIntoPerimeter_um, 45);
+                    Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftInterfaceLinewidth_um, config.raftInterfaceLineSpacing_um, config.infillExtendIntoPerimeter_um, 45);
                     gcodeLayer.writePolygonsByOptimizer(raftLines, raftMiddleConfig);
 
                     gcodeLayer.writeGCode(false, config.raftInterfaceThicknes_um);
@@ -118,7 +118,7 @@ namespace MatterHackers.MatterSlice
                     gcode.setExtrusion(config.raftSurfaceThickness_um, config.filamentDiameter_um, config.extrusionMultiplier);
 
                     Polygons raftLines = new Polygons();
-                    Infill.GenerateLinePaths(storage.raftOutline, raftLines, config.raftSurfaceLinewidth_um, config.raftSurfaceLineSpacing_um, config.infillExtendIntoPerimeter_um, 90 * raftSurfaceLayer);
+                    Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftSurfaceLinewidth_um, config.raftSurfaceLineSpacing_um, config.infillExtendIntoPerimeter_um, 90 * raftSurfaceLayer);
                     gcodeLayer.writePolygonsByOptimizer(raftLines, raftSurfaceConfig);
 
                     gcodeLayer.writeGCode(false, config.raftInterfaceThicknes_um);

@@ -75,16 +75,16 @@ namespace MatterHackers.MatterSlice
         public int endAngle;
         public bool generateInternalSupport;
         public int XYDistance;
-        public int ZDistance;
+        public int supportZDistance;
 
         public IntPoint gridOffset;
         public int gridScale;
         public int gridWidth, gridHeight;
-        public List<List<SupportPoint>> grid = new List<List<SupportPoint>>();
+        public List<List<SupportPoint>> xYGridOfSupportPoints = new List<List<SupportPoint>>();
         
         public SupportStorage()
         {
-            grid = null;
+            xYGridOfSupportPoints = null;
         }
     }
 

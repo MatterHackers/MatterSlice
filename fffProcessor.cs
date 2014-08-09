@@ -568,16 +568,16 @@ namespace MatterHackers.MatterSlice
                         double bridgeAngle;
                         if (Bridge.BridgeAngle(outline, storage.volumes[volumeIndex].layers[layerIndex - 1], out bridgeAngle))
                         {
-                            Infill.GenerateLinePaths(outline, bridgePolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, bridgeAngle);
+                            Infill.GenerateLinePaths(outline, ref bridgePolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, bridgeAngle);
                         }
                         else
                         {
-                            Infill.GenerateLinePaths(outline, fillPolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
+                            Infill.GenerateLinePaths(outline, ref fillPolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
                         }
                     }
                     else
                     {
-                        Infill.GenerateLinePaths(outline, fillPolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
+                        Infill.GenerateLinePaths(outline, ref fillPolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
                     }
                 }
 
@@ -593,19 +593,19 @@ namespace MatterHackers.MatterSlice
                             {
                                 fillAngle += 90;
                             }
-                            Infill.GenerateLineInfill(config, part, fillPolygons, extrusionWidth_um, fillAngle);
+                            Infill.GenerateLineInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle);
                             break;
 
                         case ConfigConstants.INFILL_TYPE.GRID:
-                            Infill.GenerateGridInfill(config, part, fillPolygons, extrusionWidth_um, fillAngle);
+                            Infill.GenerateGridInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle);
                             break;
 
                         case ConfigConstants.INFILL_TYPE.TRIANGLES:
-                            Infill.GenerateTriangleInfill(config, part, fillPolygons, extrusionWidth_um, fillAngle, layer.printZ);
+                            Infill.GenerateTriangleInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle, layer.printZ);
                             break;
 
                         case ConfigConstants.INFILL_TYPE.CONCENTRIC:
-                            Infill.generateConcentricInfill(config, part, fillPolygons, extrusionWidth_um, fillAngle);
+                            Infill.generateConcentricInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle);
                             break;
 
                         default:
@@ -665,8 +665,8 @@ namespace MatterHackers.MatterSlice
                 }
             }
             //Contract and expand the support polygons so small sections are removed and the final polygon is smoothed a bit.
-            supportGenerator.polygons = supportGenerator.polygons.Offset(-extrusionWidth_um * 3);
-            supportGenerator.polygons = supportGenerator.polygons.Offset(extrusionWidth_um * 3);
+            supportGenerator.polygons = supportGenerator.polygons.Offset(-extrusionWidth_um * 1);
+            supportGenerator.polygons = supportGenerator.polygons.Offset(extrusionWidth_um * 1);
 
             List<Polygons> supportIslands = supportGenerator.polygons.SplitIntoParts();
             PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(gcode.getPositionXY());
@@ -686,19 +686,11 @@ namespace MatterHackers.MatterSlice
                     switch (config.supportType)
                     {
                         case ConfigConstants.SUPPORT_TYPE.GRID:
-                            if (config.supportLineSpacing_um > extrusionWidth_um * 4)
-                            {
-                                Infill.GenerateLinePaths(island, supportLines, extrusionWidth_um, config.supportLineSpacing_um * 2, config.infillExtendIntoPerimeter_um, 0);
-                                Infill.GenerateLinePaths(island, supportLines, extrusionWidth_um, config.supportLineSpacing_um * 2, config.infillExtendIntoPerimeter_um, 90);
-                            }
-                            else
-                            {
-                                Infill.GenerateLinePaths(island, supportLines, extrusionWidth_um, config.supportLineSpacing_um, config.infillExtendIntoPerimeter_um, (layerIndex & 1) == 1 ? 0 : 90);
-                            }
+                            Infill.GenerateGridInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle);
                             break;
 
                         case ConfigConstants.SUPPORT_TYPE.LINES:
-                            Infill.GenerateLinePaths(island, supportLines, extrusionWidth_um, config.supportLineSpacing_um, config.infillExtendIntoPerimeter_um, 0);
+                            Infill.GenerateLineInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle);
                             break;
                     }
                 }
@@ -709,8 +701,11 @@ namespace MatterHackers.MatterSlice
                     gcodeLayer.setCombBoundary(island);
                 }
 
+                if (config.supportType == ConfigConstants.SUPPORT_TYPE.GRID)
+                {
+                    gcodeLayer.writePolygonsByOptimizer(island, supportConfig);
+                }
                 gcodeLayer.writePolygonsByOptimizer(supportLines, supportConfig);
-                gcodeLayer.writePolygonsByOptimizer(island, supportConfig);
 
                 gcodeLayer.setCombBoundary(null);
             }
@@ -726,7 +721,7 @@ namespace MatterHackers.MatterSlice
             //If we changed extruder, print the wipe/prime tower for this nozzle;
             gcodeLayer.writePolygonsByOptimizer(storage.wipeTower, supportConfig);
             Polygons fillPolygons = new Polygons();
-            Infill.GenerateLinePaths(storage.wipeTower, fillPolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, 45 + 90 * (layerNr % 2));
+            Infill.GenerateLinePaths(storage.wipeTower, ref fillPolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, 45 + 90 * (layerNr % 2));
             gcodeLayer.writePolygonsByOptimizer(fillPolygons, supportConfig);
 
             //Make sure we wipe the old extruder on the wipe tower.
