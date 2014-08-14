@@ -81,10 +81,136 @@ namespace MatterHackers.MatterSlice
         public int gridScale;
         public int gridWidth, gridHeight;
         public List<List<SupportPoint>> xYGridOfSupportPoints = new List<List<SupportPoint>>();
-        
-        public SupportStorage()
+
+        static void swap(ref int p0, ref int p1)
         {
-            xYGridOfSupportPoints = null;
+            int tmp = p0;
+            p0 = p1;
+            p1 = tmp;
+        }
+
+        static void swap(ref long p0, ref long p1)
+        {
+            long tmp = p0;
+            p0 = p1;
+            p1 = tmp;
+        }
+
+        static void swap(ref Point3 p0, ref Point3 p1)
+        {
+            Point3 tmp = p0;
+            p0 = p1;
+            p1 = tmp;
+        }
+
+        private static int SortSupportsOnZ(SupportPoint one, SupportPoint two)
+        {
+            return one.z.CompareTo(two.z);
+        }
+
+        public void GenerateSupportGrid(OptimizedModel model, ConfigSettings config)
+        {
+            this.generated = false;
+            if (config.supportEndAngle < 0)
+            {
+                return;
+            }
+
+            this.generated = true;
+
+            this.gridOffset.X = model.minXYZ.x;
+            this.gridOffset.Y = model.minXYZ.y;
+            this.gridScale = 200;
+            this.gridWidth = (model.size.x / this.gridScale) + 1;
+            this.gridHeight = (model.size.y / this.gridScale) + 1;
+            int gridSize = this.gridWidth * this.gridHeight;
+            this.xYGridOfSupportPoints = new List<List<SupportPoint>>(gridSize);
+            for (int i = 0; i < gridSize; i++)
+            {
+                this.xYGridOfSupportPoints.Add(new List<SupportPoint>());
+            }
+
+            this.endAngle = config.supportEndAngle;
+            this.generateInternalSupport = config.generateInternalSupport;
+            this.supportXYDistance_um = config.supportXYDistance_um;
+            this.supportZDistance_um = config.supportNumberOfLayersToSkipInZ * config.layerThickness_um;
+
+            for (int volumeIndex = 0; volumeIndex < model.volumes.Count; volumeIndex++)
+            {
+                OptimizedVolume vol = model.volumes[volumeIndex];
+                for (int faceIndex = 0; faceIndex < vol.facesTriangle.Count; faceIndex++)
+                {
+                    OptimizedFace faceTriangle = vol.facesTriangle[faceIndex];
+                    Point3 v0 = vol.vertices[faceTriangle.vertexIndex[0]].position;
+                    Point3 v1 = vol.vertices[faceTriangle.vertexIndex[1]].position;
+                    Point3 v2 = vol.vertices[faceTriangle.vertexIndex[2]].position;
+
+                    Point3 normal = (v1 - v0).cross(v2 - v0);
+                    int normalSize = normal.vSize();
+
+                    double cosAngle = Math.Abs((double)(normal.z) / (double)(normalSize));
+
+                    v0.x = (int)((v0.x - this.gridOffset.X) / (double)this.gridScale + .5);
+                    v0.y = (int)((v0.y - this.gridOffset.Y) / (double)this.gridScale + .5);
+                    v1.x = (int)((v1.x - this.gridOffset.X) / (double)this.gridScale + .5);
+                    v1.y = (int)((v1.y - this.gridOffset.Y) / (double)this.gridScale + .5);
+                    v2.x = (int)((v2.x - this.gridOffset.X) / (double)this.gridScale + .5);
+                    v2.y = (int)((v2.y - this.gridOffset.Y) / (double)this.gridScale + .5);
+
+                    if (v0.x > v1.x) swap(ref v0, ref v1);
+                    if (v1.x > v2.x) swap(ref v1, ref v2);
+                    if (v0.x > v1.x) swap(ref v0, ref v1);
+                    for (long x = v0.x; x < v1.x; x++)
+                    {
+                        long y0 = (long)(v0.y + (v1.y - v0.y) * (x - v0.x) / (double)(v1.x - v0.x) + .5);
+                        long y1 = (long)(v0.y + (v2.y - v0.y) * (x - v0.x) / (double)(v2.x - v0.x) + .5);
+                        long z0 = (long)(v0.z + (v1.z - v0.z) * (x - v0.x) / (double)(v1.x - v0.x) + .5);
+                        long z1 = (long)(v0.z + (v2.z - v0.z) * (x - v0.x) / (double)(v2.x - v0.x) + .5);
+
+                        if (y0 > y1)
+                        {
+                            swap(ref y0, ref y1);
+                            swap(ref z0, ref z1);
+                        }
+
+                        for (long y = y0; y < y1; y++)
+                        {
+                            SupportPoint newSupportPoint = new SupportPoint((int)(z0 + (z1 - z0) * (y - y0) / (double)(y1 - y0) + .5), cosAngle);
+                            this.xYGridOfSupportPoints[(int)(x + y * this.gridWidth)].Add(newSupportPoint);
+                        }
+                    }
+
+                    for (int x = v1.x; x < v2.x; x++)
+                    {
+                        long y0 = (long)(v1.y + (v2.y - v1.y) * (x - v1.x) / (double)(v2.x - v1.x) + .5);
+                        long y1 = (long)(v0.y + (v2.y - v0.y) * (x - v0.x) / (double)(v2.x - v0.x) + .5);
+                        long z0 = (long)(v1.z + (v2.z - v1.z) * (x - v1.x) / (double)(v2.x - v1.x) + .5);
+                        long z1 = (long)(v0.z + (v2.z - v0.z) * (x - v0.x) / (double)(v2.x - v0.x) + .5);
+
+                        if (y0 > y1)
+                        {
+                            swap(ref y0, ref y1);
+                            swap(ref z0, ref z1);
+                        }
+
+                        for (int y = (int)y0; y < y1; y++)
+                        {
+                            this.xYGridOfSupportPoints[x + y * this.gridWidth].Add(new SupportPoint((int)(z0 + (z1 - z0) * (double)(y - y0) / (double)(y1 - y0) + .5), cosAngle));
+                        }
+                    }
+                }
+            }
+
+            for (int x = 0; x < this.gridWidth; x++)
+            {
+                for (int y = 0; y < this.gridHeight; y++)
+                {
+                    int n = x + y * this.gridWidth;
+                    this.xYGridOfSupportPoints[n].Sort(SortSupportsOnZ);
+                }
+            }
+            this.gridOffset.X += this.gridScale / 2;
+            this.gridOffset.Y += this.gridScale / 2;
         }
     }
 

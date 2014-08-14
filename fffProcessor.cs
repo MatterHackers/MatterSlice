@@ -159,7 +159,7 @@ namespace MatterHackers.MatterSlice
             timeKeeper.Restart();
 
             LogOutput.log("Generating support map...\n");
-            SupportPolyGenerator.generateSupportGrid(storage.support, optomizedModel, config);
+            storage.support.GenerateSupportGrid(optomizedModel, config);
 
             storage.modelSize = optomizedModel.size;
             storage.modelMin = optomizedModel.minXYZ;
@@ -661,15 +661,15 @@ namespace MatterHackers.MatterSlice
                 SliceLayer layer = storage.volumes[volumeIndex].layers[layerIndex];
                 for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
                 {
-                    supportGenerator.polygons = supportGenerator.polygons.CreateDifference(layer.parts[partIndex].outline.Offset(config.supportXYDistance_um));
+                    supportGenerator.supportPolygons = supportGenerator.supportPolygons.CreateDifference(layer.parts[partIndex].outline.Offset(config.supportXYDistance_um));
                 }
             }
 
             //Contract and expand the support polygons so small sections are removed and the final polygon is smoothed a bit.
-            supportGenerator.polygons = supportGenerator.polygons.Offset(-extrusionWidth_um * 1);
-            supportGenerator.polygons = supportGenerator.polygons.Offset(extrusionWidth_um * 1);
+            supportGenerator.supportPolygons = supportGenerator.supportPolygons.Offset(-extrusionWidth_um * 1);
+            supportGenerator.supportPolygons = supportGenerator.supportPolygons.Offset(extrusionWidth_um * 1);
 
-            List<Polygons> supportIslands = supportGenerator.polygons.SplitIntoParts();
+            List<Polygons> supportIslands = supportGenerator.supportPolygons.SplitIntoParts();
             PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(gcode.getPositionXY());
 
             for (int islandIndex = 0; islandIndex < supportIslands.Count; islandIndex++)

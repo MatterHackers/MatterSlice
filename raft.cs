@@ -49,7 +49,7 @@ namespace MatterHackers.MatterSlice
 
             SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, 0);
             storage.raftOutline = storage.raftOutline.CreateUnion(storage.wipeTower.Offset(extraDistanceAroundPart_um));
-            storage.raftOutline = storage.raftOutline.CreateUnion(supportGenerator.polygons.Offset(extraDistanceAroundPart_um));
+            storage.raftOutline = storage.raftOutline.CreateUnion(supportGenerator.supportPolygons.Offset(extraDistanceAroundPart_um));
         }
 
         public static bool ShouldGenerateRaft(ConfigSettings config)
