@@ -89,8 +89,8 @@ namespace MatterHackers.MatterSlice
 
             storage.endAngle = config.supportEndAngle;
             storage.generateInternalSupport = config.generateInternalSupport;
-            storage.XYDistance = config.supportXYDistance_um;
-            storage.supportZDistance = config.supportNumberOfLayersToSkipInZ * config.layerThickness_um;
+            storage.supportXYDistance_um = config.supportXYDistance_um;
+            storage.supportZDistance_um = config.supportNumberOfLayersToSkipInZ * config.layerThickness_um;
 
             for (int volumeIndex = 0; volumeIndex < model.volumes.Count; volumeIndex++)
             {
@@ -294,7 +294,7 @@ namespace MatterHackers.MatterSlice
             }
 
             cosAngle = Math.Cos((double)(storage.endAngle) / 180.0 * Math.PI) - 0.01;
-            this.supportZDistance = storage.supportZDistance;
+            this.supportZDistance = storage.supportZDistance_um;
 
             done = new int[(int)(storage.gridWidth * storage.gridHeight)];
 
@@ -313,7 +313,7 @@ namespace MatterHackers.MatterSlice
 
             done = null;
 
-            polygons = polygons.Offset(storage.XYDistance);
+            polygons = polygons.Offset(storage.supportXYDistance_um);
         }
     }
 }

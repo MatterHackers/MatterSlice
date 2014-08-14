@@ -664,6 +664,7 @@ namespace MatterHackers.MatterSlice
                     supportGenerator.polygons = supportGenerator.polygons.CreateDifference(layer.parts[partIndex].outline.Offset(config.supportXYDistance_um));
                 }
             }
+
             //Contract and expand the support polygons so small sections are removed and the final polygon is smoothed a bit.
             supportGenerator.polygons = supportGenerator.polygons.Offset(-extrusionWidth_um * 1);
             supportGenerator.polygons = supportGenerator.polygons.Offset(extrusionWidth_um * 1);

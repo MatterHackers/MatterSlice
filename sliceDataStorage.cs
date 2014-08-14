@@ -74,8 +74,8 @@ namespace MatterHackers.MatterSlice
         public bool generated;
         public int endAngle;
         public bool generateInternalSupport;
-        public int XYDistance;
-        public int supportZDistance;
+        public int supportXYDistance_um;
+        public int supportZDistance_um;
 
         public IntPoint gridOffset;
         public int gridScale;
