@@ -135,6 +135,8 @@ namespace MatterHackers.MatterSlice
             this.supportXYDistance_um = config.supportXYDistance_um;
             this.supportZDistance_um = config.supportNumberOfLayersToSkipInZ * config.layerThickness_um;
 
+            // This should really be a ray intersection as later code is going to count on it being an even odd list of bottoms and tops.
+            // As it is we are finding the hit on the plane but not checking for good intersection with the triangle.
             for (int volumeIndex = 0; volumeIndex < model.volumes.Count; volumeIndex++)
             {
                 OptimizedVolume vol = model.volumes[volumeIndex];
@@ -205,8 +207,21 @@ namespace MatterHackers.MatterSlice
             {
                 for (int y = 0; y < this.gridHeight; y++)
                 {
-                    int n = x + y * this.gridWidth;
-                    this.xYGridOfSupportPoints[n].Sort(SortSupportsOnZ);
+                    int gridIndex = x + y * this.gridWidth;
+                    List<SupportPoint> currentList = this.xYGridOfSupportPoints[gridIndex];
+                    currentList.Sort(SortSupportsOnZ);
+
+                    if(currentList.Count > 1)
+                    {
+                        // now remove duplicates (try to make it a better bottom and top list)
+                        for (int i = currentList.Count-1; i>=1; i--)
+                        {
+                            if (currentList[i].z == currentList[i - 1].z)
+                            {
+                                currentList.RemoveAt(i);
+                            }
+                        }
+                    }
                 }
             }
             this.gridOffset.X += this.gridScale / 2;

@@ -41,7 +41,7 @@ namespace MatterHackers.MatterSlice
         bool generateInternalSupport;
         bool[] done;
 
-        int extraErrorGap = 50;
+        int extraErrorGap = 150;
         public bool needSupportAt(IntPoint pointToCheckIfNeedsSupport, int z)
         {
             if (pointToCheckIfNeedsSupport.X < 1
@@ -64,10 +64,10 @@ namespace MatterHackers.MatterSlice
                     bool angleNeedsSupport = currentBottomSupportPoint.cosAngle >= cosAngle;
                     if (angleNeedsSupport)
                     {
-                        bool zIsBelowCurrentSupportPoint = z < currentBottomSupportPoint.z - interfaceZDistance_um - supportZDistance_um - extraErrorGap;
+                        bool zIsBelowBottomSupportPoint = z < currentBottomSupportPoint.z - interfaceZDistance_um - supportZDistance_um - extraErrorGap;
                         if (zIndex == 0)
                         {
-                            if (zIsBelowCurrentSupportPoint)
+                            if (zIsBelowBottomSupportPoint)
                             {
                                 return true;
                             }
@@ -76,7 +76,7 @@ namespace MatterHackers.MatterSlice
                         {
                             SupportPoint previousTopSupportPoint = supportStorage.xYGridOfSupportPoints[gridIndex][zIndex - 1];
                             bool zIsAbovePrevSupportPoint = z > previousTopSupportPoint.z + supportZDistance_um;
-                            if (zIsBelowCurrentSupportPoint && zIsAbovePrevSupportPoint)
+                            if (zIsBelowBottomSupportPoint && zIsAbovePrevSupportPoint)
                             {
                                 return true;
                             }

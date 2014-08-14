@@ -654,7 +654,19 @@ namespace MatterHackers.MatterSlice
                 }
             }
 
-            int z = config.firstLayerThickness_um + layerIndex * config.layerThickness_um;
+            int z = config.firstLayerThickness_um;
+            if (layerIndex == 0)
+            {
+                z /= 2;
+            }
+            else
+            {
+                if(layerIndex > 1)
+                {
+                    z += (layerIndex-1) * config.layerThickness_um;
+                }
+                z += config.layerThickness_um / 2;
+            }
             SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, z);
             for (int volumeIndex = 0; volumeIndex < storage.volumes.Count; volumeIndex++)
             {
