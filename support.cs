@@ -41,7 +41,7 @@ namespace MatterHackers.MatterSlice
         bool generateInternalSupport;
         bool[] done;
 
-        int extraErrorGap = 150;
+        int extraErrorGap = 20;
         public bool needSupportAt(IntPoint pointToCheckIfNeedsSupport, int z)
         {
             if (pointToCheckIfNeedsSupport.X < 1
@@ -64,7 +64,7 @@ namespace MatterHackers.MatterSlice
                     bool angleNeedsSupport = currentBottomSupportPoint.cosAngle >= cosAngle;
                     if (angleNeedsSupport)
                     {
-                        bool zIsBelowBottomSupportPoint = z < currentBottomSupportPoint.z - interfaceZDistance_um - supportZDistance_um - extraErrorGap;
+                        bool zIsBelowBottomSupportPoint = z <= currentBottomSupportPoint.z - interfaceZDistance_um - supportZDistance_um - extraErrorGap;
                         if (zIndex == 0)
                         {
                             if (zIsBelowBottomSupportPoint)
@@ -128,12 +128,12 @@ namespace MatterHackers.MatterSlice
                 // We add 2 each time as we are wanting to look at the bottom face (even faces), and the intersections are bottom - top - bottom - top - etc.
                 for (int zIndex = 0; zIndex < supportStorage.xYGridOfSupportPoints[gridIndex].Count; zIndex += 2)
                 {
-                    SupportPoint currentPoint = supportStorage.xYGridOfSupportPoints[gridIndex][zIndex];
-                    bool angleNeedsSupport = currentPoint.cosAngle >= cosAngle;
+                    SupportPoint currentBottomSupportPoint = supportStorage.xYGridOfSupportPoints[gridIndex][zIndex];
+                    bool angleNeedsSupport = currentBottomSupportPoint.cosAngle >= cosAngle;
                     if (angleNeedsSupport)
                     {
-                        bool zIsBelowSupportPoint = z < currentPoint.z - supportZDistance_um - extraErrorGap;
-                        bool zIsWithinInterfaceGap = z > currentPoint.z - interfaceZDistance_um - supportZDistance_um - extraErrorGap;
+                        bool zIsBelowSupportPoint = z <= currentBottomSupportPoint.z - supportZDistance_um - extraErrorGap;
+                        bool zIsWithinInterfaceGap = z >= currentBottomSupportPoint.z - supportZDistance_um - extraErrorGap - interfaceZDistance_um;
                         if (zIndex == 0)
                         {
                             if (zIsBelowSupportPoint && zIsWithinInterfaceGap)
@@ -143,7 +143,8 @@ namespace MatterHackers.MatterSlice
                         }
                         else
                         {
-                            bool zIsAbovePrevSupportPoint = z > supportStorage.xYGridOfSupportPoints[gridIndex][zIndex - 1].z + supportZDistance_um;
+                            SupportPoint previousTopSupportPoint = supportStorage.xYGridOfSupportPoints[gridIndex][zIndex - 1];
+                            bool zIsAbovePrevSupportPoint = z > previousTopSupportPoint.z + supportZDistance_um;
                             if (zIsBelowSupportPoint
                                 && zIsWithinInterfaceGap
                                 && zIsAbovePrevSupportPoint)
@@ -179,7 +180,7 @@ namespace MatterHackers.MatterSlice
                 if (z < supportStorage.xYGridOfSupportPoints[gridIndex][0].z - interfaceZDistance_um - supportZDistance_um - extraErrorGap)
                 {
                     // the spot is not within the interface gap
-                    //return false;
+                    return false;
                 }
             }
 
@@ -239,7 +240,8 @@ namespace MatterHackers.MatterSlice
 
             cosAngle = Math.Cos((double)(storage.endAngle) / 180.0 * Math.PI) - 0.01;
             this.supportZDistance_um = storage.supportZDistance_um;
-            this.interfaceZDistance_um = 0;// 3 * supportZDistance_um;
+            this.interfaceZDistance_um = 0;
+            //this.interfaceZDistance_um = 3 * supportZDistance_um;
 
             done = new bool[storage.gridWidth * storage.gridHeight];
 
@@ -254,10 +256,10 @@ namespace MatterHackers.MatterSlice
                             lazyFill(supportPolygons, new IntPoint(x, y), z);
                         }
 #if false
-                        else if (needInterfaceAt(new IntPoint(x, y), z))
+                        //else if (needInterfaceAt(new IntPoint(x, y), z))
                         {
                             //lazyFill(supportPolygons, new IntPoint(x, y), z);
-                            lazyFill(interfacePolygons, new IntPoint(x, y), z);
+                            //lazyFill(interfacePolygons, new IntPoint(x, y), z);
                         }
 #endif
                     }

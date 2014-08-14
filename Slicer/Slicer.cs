@@ -68,7 +68,7 @@ namespace MatterHackers.MatterSlice
                 }
                 else
                 {
-                    layers[layerIndex].z = initialLayerThickness + layerThickness / 2 + layerThickness * layerIndex;
+                    layers[layerIndex].z = initialLayerThickness + layerThickness / 2 + layerThickness * (layerIndex-1);
                 }
             }
 
