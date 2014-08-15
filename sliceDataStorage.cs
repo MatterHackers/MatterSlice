@@ -76,6 +76,7 @@ namespace MatterHackers.MatterSlice
         public bool generateInternalSupport;
         public int supportXYDistance_um;
         public int supportZDistance_um;
+        public int interfaceLayers;
 
         public IntPoint gridOffset;
         public int gridScale;
@@ -134,6 +135,7 @@ namespace MatterHackers.MatterSlice
             this.generateInternalSupport = config.generateInternalSupport;
             this.supportXYDistance_um = config.supportXYDistance_um;
             this.supportZDistance_um = config.supportNumberOfLayersToSkipInZ * config.layerThickness_um;
+            this.interfaceLayers = config.supportInterfaceLayers;
 
             // This should really be a ray intersection as later code is going to count on it being an even odd list of bottoms and tops.
             // As it is we are finding the hit on the plane but not checking for good intersection with the triangle.

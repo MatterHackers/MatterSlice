@@ -188,6 +188,8 @@ namespace MatterHackers.MatterSlice
 
         [SettingDescription("The number of layers to skip in z. The gap between the support and the model.")]
         public int supportNumberOfLayersToSkipInZ;
+
+        public int supportInterfaceLayers;
         
         public int supportExtruder;
 
@@ -310,6 +312,7 @@ namespace MatterHackers.MatterSlice
             supportExtruder = -1;
             supportXYDistanceFromObject = .7;
             supportNumberOfLayersToSkipInZ = 1;
+            supportInterfaceLayers = 3;
             retractionOnTravel = 4.5;
             retractionSpeed = 45;
             retractionOnExtruderSwitch = 14.5;

@@ -242,8 +242,7 @@ namespace MatterHackers.MatterSlice
             cosAngle = Math.Cos((double)(storage.endAngle) / 180.0 * Math.PI) - 0.01;
             this.supportZDistance_um = storage.supportZDistance_um;
 
-            int numIntefaceLayers = 3;
-            this.interfaceZDistance_um = numIntefaceLayers * supportZDistance_um;
+            this.interfaceZDistance_um = storage.interfaceLayers * supportZDistance_um;
 
             done = new bool[storage.gridWidth * storage.gridHeight];
 
