@@ -667,21 +667,29 @@ namespace MatterHackers.MatterSlice
                 }
                 z += config.layerThickness_um / 2;
             }
+            
             SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, z);
+
+            WriteSupportPolygons(storage, gcodeLayer, layerIndex, extrusionWidth_um, supportGenerator.supportPolygons, false);
+            WriteSupportPolygons(storage, gcodeLayer, layerIndex, extrusionWidth_um, supportGenerator.interfacePolygons, true);
+        }
+
+        private void WriteSupportPolygons(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerIndex, int extrusionWidth_um, Polygons supportPolygons, bool interfaceLayer)
+        {
             for (int volumeIndex = 0; volumeIndex < storage.volumes.Count; volumeIndex++)
             {
                 SliceLayer layer = storage.volumes[volumeIndex].layers[layerIndex];
                 for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
                 {
-                    supportGenerator.supportPolygons = supportGenerator.supportPolygons.CreateDifference(layer.parts[partIndex].outline.Offset(config.supportXYDistance_um));
+                    supportPolygons = supportPolygons.CreateDifference(layer.parts[partIndex].outline.Offset(config.supportXYDistance_um));
                 }
             }
 
             //Contract and expand the support polygons so small sections are removed and the final polygon is smoothed a bit.
-            supportGenerator.supportPolygons = supportGenerator.supportPolygons.Offset(-extrusionWidth_um * 1);
-            supportGenerator.supportPolygons = supportGenerator.supportPolygons.Offset(extrusionWidth_um * 1);
+            supportPolygons = supportPolygons.Offset(-extrusionWidth_um * 1);
+            supportPolygons = supportPolygons.Offset(extrusionWidth_um * 1);
 
-            List<Polygons> supportIslands = supportGenerator.supportPolygons.SplitIntoParts();
+            List<Polygons> supportIslands = supportPolygons.SplitIntoParts();
             PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(gcode.getPositionXY());
 
             for (int islandIndex = 0; islandIndex < supportIslands.Count; islandIndex++)
@@ -696,15 +704,22 @@ namespace MatterHackers.MatterSlice
                 Polygons supportLines = new Polygons();
                 if (config.supportLineSpacing_um > 0)
                 {
-                    switch (config.supportType)
+                    if (interfaceLayer)
                     {
-                        case ConfigConstants.SUPPORT_TYPE.GRID:
-                            Infill.GenerateGridInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle, config.supportLineSpacing_um);
-                            break;
+                        Infill.GenerateLineInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle + 90, extrusionWidth_um);
+                    }
+                    else
+                    {
+                        switch (config.supportType)
+                        {
+                            case ConfigConstants.SUPPORT_TYPE.GRID:
+                                Infill.GenerateGridInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle, config.supportLineSpacing_um);
+                                break;
 
-                        case ConfigConstants.SUPPORT_TYPE.LINES:
-                            Infill.GenerateLineInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle, config.supportLineSpacing_um);
-                            break;
+                            case ConfigConstants.SUPPORT_TYPE.LINES:
+                                Infill.GenerateLineInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle, config.supportLineSpacing_um);
+                                break;
+                        }
                     }
                 }
 

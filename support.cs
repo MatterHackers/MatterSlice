@@ -42,6 +42,7 @@ namespace MatterHackers.MatterSlice
         bool[] done;
 
         int extraErrorGap = 20;
+        delegate bool CheckForSupport(IntPoint pointToCheckIfNeedsSupport, int z);
         public bool needSupportAt(IntPoint pointToCheckIfNeedsSupport, int z)
         {
             if (pointToCheckIfNeedsSupport.X < 1
@@ -132,11 +133,11 @@ namespace MatterHackers.MatterSlice
                     bool angleNeedsSupport = currentBottomSupportPoint.cosAngle >= cosAngle;
                     if (angleNeedsSupport)
                     {
-                        bool zIsBelowSupportPoint = z <= currentBottomSupportPoint.z - supportZDistance_um - extraErrorGap;
-                        bool zIsWithinInterfaceGap = z >= currentBottomSupportPoint.z - supportZDistance_um - extraErrorGap - interfaceZDistance_um;
+                        bool zIsBelowBottomSupportPoint = z <= currentBottomSupportPoint.z - supportZDistance_um - extraErrorGap;
+                        bool zIsWithinInterfaceGap = z >= currentBottomSupportPoint.z - interfaceZDistance_um - supportZDistance_um - extraErrorGap;
                         if (zIndex == 0)
                         {
-                            if (zIsBelowSupportPoint && zIsWithinInterfaceGap)
+                            if (zIsBelowBottomSupportPoint && zIsWithinInterfaceGap)
                             {
                                 return true;
                             }
@@ -145,7 +146,7 @@ namespace MatterHackers.MatterSlice
                         {
                             SupportPoint previousTopSupportPoint = supportStorage.xYGridOfSupportPoints[gridIndex][zIndex - 1];
                             bool zIsAbovePrevSupportPoint = z > previousTopSupportPoint.z + supportZDistance_um;
-                            if (zIsBelowSupportPoint
+                            if (zIsBelowBottomSupportPoint
                                 && zIsWithinInterfaceGap
                                 && zIsAbovePrevSupportPoint)
                             {
@@ -187,7 +188,7 @@ namespace MatterHackers.MatterSlice
             return true;
         }
 
-        public void lazyFill(Polygons polysToWriteTo, IntPoint startPoint, int z)
+        void lazyFill(Polygons polysToWriteTo, IntPoint startPoint, int z, CheckForSupport checkIfSupportNeeded)
         {
             Polygon poly = new Polygon();
             polysToWriteTo.Add(poly);
@@ -196,22 +197,22 @@ namespace MatterHackers.MatterSlice
 
             while (true)
             {
-                IntPoint p = startPoint;
-                done[p.X + p.Y * supportStorage.gridWidth] = true;
-                while (needSupportAt(p + new IntPoint(1, 0), z))
+                IntPoint endPoint = startPoint;
+                done[endPoint.X + endPoint.Y * supportStorage.gridWidth] = true;
+                while (checkIfSupportNeeded(endPoint + new IntPoint(1, 0), z))
                 {
-                    p.X++;
-                    done[p.X + p.Y * supportStorage.gridWidth] = true;
+                    endPoint.X++;
+                    done[endPoint.X + endPoint.Y * supportStorage.gridWidth] = true;
                 }
                 tmpPoly.Add(startPoint * supportStorage.gridScale + supportStorage.gridOffset - new IntPoint(supportStorage.gridScale / 2, 0));
-                poly.Add(p * supportStorage.gridScale + supportStorage.gridOffset);
+                poly.Add(endPoint * supportStorage.gridScale + supportStorage.gridOffset);
                 startPoint.Y++;
-                while (!needSupportAt(startPoint, z) && startPoint.X <= p.X)
+                while (!checkIfSupportNeeded(startPoint, z) && startPoint.X <= endPoint.X)
                 {
                     startPoint.X++;
                 }
 
-                if (startPoint.X > p.X)
+                if (startPoint.X > endPoint.X)
                 {
                     for (int n = 0; n < tmpPoly.Count; n++)
                     {
@@ -221,7 +222,7 @@ namespace MatterHackers.MatterSlice
                     return;
                 }
 
-                while (needSupportAt(startPoint - new IntPoint(1, 0), z) && startPoint.X > 1)
+                while (checkIfSupportNeeded(startPoint - new IntPoint(1, 0), z) && startPoint.X > 1)
                 {
                     startPoint.X--;
                 }
@@ -240,8 +241,9 @@ namespace MatterHackers.MatterSlice
 
             cosAngle = Math.Cos((double)(storage.endAngle) / 180.0 * Math.PI) - 0.01;
             this.supportZDistance_um = storage.supportZDistance_um;
-            this.interfaceZDistance_um = 0;
-            //this.interfaceZDistance_um = 3 * supportZDistance_um;
+
+            int numIntefaceLayers = 3;
+            this.interfaceZDistance_um = numIntefaceLayers * supportZDistance_um;
 
             done = new bool[storage.gridWidth * storage.gridHeight];
 
@@ -253,21 +255,19 @@ namespace MatterHackers.MatterSlice
                     {
                         if (needSupportAt(new IntPoint(x, y), z))
                         {
-                            lazyFill(supportPolygons, new IntPoint(x, y), z);
+                            lazyFill(supportPolygons, new IntPoint(x, y), z, needSupportAt);
                         }
-#if false
-                        //else if (needInterfaceAt(new IntPoint(x, y), z))
+                        else if (needInterfaceAt(new IntPoint(x, y), z))
                         {
-                            //lazyFill(supportPolygons, new IntPoint(x, y), z);
-                            //lazyFill(interfacePolygons, new IntPoint(x, y), z);
+                            //lazyFill(supportPolygons, new IntPoint(x, y), z, needInterfaceAt);
+                            lazyFill(interfacePolygons, new IntPoint(x, y), z, needInterfaceAt);
                         }
-#endif
                     }
                 }
             }
 
             supportPolygons = supportPolygons.Offset(storage.supportXYDistance_um);
-            interfacePolygons = supportPolygons.Offset(storage.supportXYDistance_um);
+            interfacePolygons = interfacePolygons.Offset(storage.supportXYDistance_um);
         }
     }
 }

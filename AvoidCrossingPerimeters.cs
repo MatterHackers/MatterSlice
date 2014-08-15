@@ -91,7 +91,8 @@ namespace MatterHackers.MatterSlice
                 for (int pointIndex = 0; pointIndex < boundryPolygon.Count; pointIndex++)
                 {
                     IntPoint currentPosition = matrix.apply(boundryPolygon[pointIndex]);
-                    if ((previousPosition.Y > nomalizedStartPoint.Y && currentPosition.Y < nomalizedStartPoint.Y) || (currentPosition.Y > nomalizedStartPoint.Y && previousPosition.Y < nomalizedStartPoint.Y))
+                    if ((previousPosition.Y > nomalizedStartPoint.Y && currentPosition.Y < nomalizedStartPoint.Y) 
+                        || (currentPosition.Y > nomalizedStartPoint.Y && previousPosition.Y < nomalizedStartPoint.Y))
                     {
                         long x = previousPosition.X + (currentPosition.X - previousPosition.X) * (nomalizedStartPoint.Y - previousPosition.Y) / (currentPosition.Y - previousPosition.Y);
 
@@ -168,21 +169,9 @@ namespace MatterHackers.MatterSlice
             indexOfMaxX = new int[bounderyPolygons.Count];
         }
 
-        public bool PointIsInsideBoundary(IntPoint pointToCheck)
+        public bool PointIsInsideBoundary(IntPoint pointToTest)
         {
-            // Check if we are inside the comb boundary.
-            for (int bounderyIndex = 0; bounderyIndex < bounderyPolygons.Count; bounderyIndex++)
-            {
-                Polygon boundryPolygon = bounderyPolygons[bounderyIndex];
-
-                int pointInPolygon = Clipper.PointInPolygon(pointToCheck, boundryPolygon);
-                if (pointInPolygon != 0)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return bounderyPolygons.Inside(pointToTest);
         }
 
         public bool MovePointInsideBoundary(ref IntPoint pointToMove, int maxDistanceToMove = 100)
@@ -340,7 +329,6 @@ namespace MatterHackers.MatterSlice
                 pointList.Add(endPoint);
             }
 
-#if false
             // Optimize the pointList, skip each point we could already reach by connecting directly to the next point.
             for(int startIndex = 0; startIndex < pointList.Count-2; startIndex++)
             {
@@ -365,7 +353,6 @@ namespace MatterHackers.MatterSlice
                     }
                 }
             }
-#endif
 
             foreach (IntPoint point in pointList)
             {

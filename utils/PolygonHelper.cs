@@ -57,6 +57,33 @@ namespace MatterHackers.MatterSlice
             return length;
         }
 
+        public static bool Inside(this Polygon polygon, IntPoint testPoint)
+        {
+            if (polygon.Count < 1)
+            {
+                return false;
+            }
+
+            int crossings = 0;
+            IntPoint previousPoint = polygon[polygon.Count - 1];
+            for (int pointIndex = 0; pointIndex < polygon.Count; pointIndex++)
+            {
+                IntPoint currentPoint = polygon[pointIndex];
+
+                if ((previousPoint.Y >= testPoint.Y && currentPoint.Y < testPoint.Y) || (currentPoint.Y > testPoint.Y && previousPoint.Y <= testPoint.Y))
+                {
+                    long x = previousPoint.X + (currentPoint.X - previousPoint.X) * (testPoint.Y - previousPoint.Y) / (currentPoint.Y - previousPoint.Y);
+                    if (x >= testPoint.X)
+                    {
+                        crossings++;
+                    }
+                }
+                previousPoint = currentPoint;
+            }
+            
+            return (crossings % 2) == 1;
+        }
+
         public static double Area(this Polygon polygon)
         {
             return Clipper.Area(polygon);
@@ -349,6 +376,47 @@ namespace MatterHackers.MatterSlice
                     n--;
                 }
             }
+        }
+
+        public static bool Inside(this Polygons polygons, IntPoint testPoint)
+        {
+#if true
+            if (polygons.Count < 1)
+            {
+                return false;
+            }
+
+            // we can just test the first one first as we know that there is a special case in 
+            // the silcer that all the other polygons are inside this one
+            if (!polygons[0].Inside(testPoint))
+            {
+                return false;
+            }
+
+            for (int polygonIndex = 1; polygonIndex < polygons.Count; polygonIndex++)
+            {
+                if (polygons[polygonIndex].Inside(testPoint))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+#else // this should work but it gives bad results on avoid crossing perimeters
+            // Check if we are inside the comb boundary.
+            for (int bounderyIndex = 0; bounderyIndex < polygons.Count; bounderyIndex++)
+            {
+                Polygon boundryPolygon = polygons[bounderyIndex];
+
+                int pointInPolygon = Clipper.PointInPolygon(testPoint, boundryPolygon);
+                if (pointInPolygon != 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+#endif
         }
         
         public static Polygons Offset(this Polygons polygons, int distance)
