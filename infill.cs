@@ -73,13 +73,13 @@ namespace MatterHackers.MatterSlice
 
         public static void GenerateLineInfill(ConfigSettings config, Polygons partOutline, ref Polygons fillPolygons, int extrusionWidth_um, double fillAngle, int linespacing_um = 0)
         {
-            if (config.infillPercent <= 0)
-            {
-                throw new Exception("infillPercent must be gerater than 0.");
-            }
-
             if (linespacing_um == 0)
             {
+                if (config.infillPercent <= 0)
+                {
+                    throw new Exception("infillPercent must be gerater than 0.");
+                }
+
                 linespacing_um = (int)(config.extrusionWidth_um / (config.infillPercent / 100));
             }
             GenerateLinePaths(partOutline, ref fillPolygons, extrusionWidth_um, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle);
