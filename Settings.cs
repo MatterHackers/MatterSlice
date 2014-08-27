@@ -558,7 +558,7 @@ namespace MatterHackers.MatterSlice
                         case "OUTPUT_TYPE":
                             try
                             {
-                                valueToSetTo.Replace('|', ',');
+                                valueToSetTo = valueToSetTo.Replace('|', ',');
                                 field.SetValue(this, Enum.Parse(field.FieldType, valueToSetTo));
                             }
                             catch (Exception)
