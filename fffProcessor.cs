@@ -488,6 +488,23 @@ namespace MatterHackers.MatterSlice
             bool extruderChanged = gcodeLayer.setExtruder(volumeIndex);
             if (layerIndex == 0 && volumeIndex == 0 && !Raft.ShouldGenerateRaft(config))
             {
+                if (storage.skirt.Count > 0
+                    && storage.skirt[0].Count > 0)
+                {
+                    IntPoint lowestPoint = storage.skirt[0][0];
+
+                    // lets make sure we start with the most outside loop
+                    foreach (Polygon polygon in storage.skirt)
+                    {
+                        if (polygon.Count > 0 && polygon[0].Y < lowestPoint.Y)
+                        {
+                            lowestPoint = polygon[0];
+                        }
+                    }
+
+                    gcodeLayer.writeTravel(lowestPoint);
+                }
+
                 gcodeLayer.writePolygonsByOptimizer(storage.skirt, skirtConfig);
             }
 
