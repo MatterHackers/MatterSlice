@@ -111,7 +111,7 @@ namespace MatterHackers.MatterSlice
         public double supportInfillStartingAngle;
 
         [SettingDescription("How far from objects the first skirt loop should be, in millimeters.")]
-        public int skirtDistanceFromObject;
+        public double skirtDistanceFromObject;
         public int skirtDistance_um { get { return (int)(skirtDistanceFromObject * 1000); } }
 
         [SettingDescription("The number of loops to draw around objects. Can be used to help hold them down.")]
@@ -558,6 +558,7 @@ namespace MatterHackers.MatterSlice
                         case "OUTPUT_TYPE":
                             try
                             {
+                                valueToSetTo.Replace('|', ',');
                                 field.SetValue(this, Enum.Parse(field.FieldType, valueToSetTo));
                             }
                             catch (Exception)
