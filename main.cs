@@ -149,10 +149,11 @@ namespace MatterHackers.MatterSlice
                 }
                 else
                 {
-                    processor.processFile(args[argn]);
+                    processor.LoadStlFile(args[argn]);
                 }
             }
 
+            processor.DoProcessing();
             processor.finalize();
             return 0;
         }

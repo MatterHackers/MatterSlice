@@ -130,9 +130,9 @@ namespace MatterHackers.MatterSlice
             for (int i = 0; i < facesTriangle.Count; i++)
             {
                 OptimizedFace f = facesTriangle[i];
-                f.touchingFaces[0] = getFaceIdxWithPoints(f.vertexIndex[0], f.vertexIndex[1], i);
-                f.touchingFaces[1] = getFaceIdxWithPoints(f.vertexIndex[1], f.vertexIndex[2], i);
-                f.touchingFaces[2] = getFaceIdxWithPoints(f.vertexIndex[2], f.vertexIndex[0], i);
+                f.touchingFaces[0] = getFaceIndexWithPoints(f.vertexIndex[0], f.vertexIndex[1], i);
+                f.touchingFaces[1] = getFaceIndexWithPoints(f.vertexIndex[1], f.vertexIndex[2], i);
+                f.touchingFaces[2] = getFaceIndexWithPoints(f.vertexIndex[2], f.vertexIndex[0], i);
                 if (f.touchingFaces[0] == -1)
                     openFacesCount++;
                 if (f.touchingFaces[1] == -1)
@@ -143,56 +143,74 @@ namespace MatterHackers.MatterSlice
             //fprintf(stdout, "  Number of open faces: %i\n", openFacesCount);
         }
 
-        public int getFaceIdxWithPoints(int idx0, int idx1, int notFaceIdx)
+        public int getFaceIndexWithPoints(int idx0, int idx1, int notFaceIndex)
         {
             for (int i = 0; i < vertices[idx0].usedByFacesList.Count; i++)
             {
                 int f0 = vertices[idx0].usedByFacesList[i];
-                if (f0 == notFaceIdx) continue;
+                if (f0 == notFaceIndex) continue;
                 for (int j = 0; j < vertices[idx1].usedByFacesList.Count; j++)
                 {
                     int f1 = vertices[idx1].usedByFacesList[j];
-                    if (f1 == notFaceIdx) continue;
+                    if (f1 == notFaceIndex) continue;
                     if (f0 == f1) return f0;
                 }
             }
             return -1;
         }
-    };
+    }
+
     public class OptimizedModel
     {
         public List<OptimizedVolume> volumes = new List<OptimizedVolume>();
-        public Point3 size;
-        public Point3 minXYZ;
-        public Point3 maxXYZ;
+        public Point3 size_um;
+        public Point3 minXYZ_um;
+        public Point3 maxXYZ_um;
 
-        public OptimizedModel(SimpleModel model, Point3 center, bool centerObjectInXy)
+        public OptimizedModel(SimpleModel model)
         {
             for (int i = 0; i < model.volumes.Count; i++)
             {
                 volumes.Add(new OptimizedVolume(model.volumes[i], this));
             }
+        }
 
-            minXYZ = model.minXYZ();
-            maxXYZ = model.maxXYZ();
+        public void SetPositionAndSize(SimpleModel model, long xCenter_um, long yCenter_um, long zClip_um, bool centerObjectInXy)
+        {
+            minXYZ_um = model.minXYZ();
+            maxXYZ_um = model.maxXYZ();
 
             if (centerObjectInXy)
             {
-                Point3 vOffset = new Point3((minXYZ.x + maxXYZ.x) / 2, (minXYZ.y + maxXYZ.y) / 2, minXYZ.z);
-                vOffset -= center;
+                Point3 modelXYCenterZBottom_um = new Point3((minXYZ_um.x + maxXYZ_um.x) / 2, (minXYZ_um.y + maxXYZ_um.y) / 2, minXYZ_um.z);
+                modelXYCenterZBottom_um -= new Point3(xCenter_um, yCenter_um, zClip_um);
                 for (int i = 0; i < volumes.Count; i++)
                 {
                     for (int n = 0; n < volumes[i].vertices.Count; n++)
                     {
-                        volumes[i].vertices[n].position -= vOffset;
+                        volumes[i].vertices[n].position -= modelXYCenterZBottom_um;
                     }
                 }
 
-                minXYZ -= vOffset;
-                maxXYZ -= vOffset;
+                minXYZ_um -= modelXYCenterZBottom_um;
+                maxXYZ_um -= modelXYCenterZBottom_um;
+            }
+            else // we still need to put in the bottom clip
+            {
+                Point3 modelZBottom_um = new Point3(0, 0, minXYZ_um.z - zClip_um);
+                for (int i = 0; i < volumes.Count; i++)
+                {
+                    for (int n = 0; n < volumes[i].vertices.Count; n++)
+                    {
+                        volumes[i].vertices[n].position -= modelZBottom_um;
+                    }
+                }
+
+                minXYZ_um -= modelZBottom_um;
+                maxXYZ_um -= modelZBottom_um;
             }
 
-            size = maxXYZ - minXYZ;
+            size_um = maxXYZ_um - minXYZ_um;
         }
 
         public void saveDebugSTL(string filename)

@@ -119,11 +119,11 @@ namespace MatterHackers.MatterSlice
 
             this.generated = true;
 
-            this.gridOffset.X = model.minXYZ.x;
-            this.gridOffset.Y = model.minXYZ.y;
+            this.gridOffset.X = model.minXYZ_um.x;
+            this.gridOffset.Y = model.minXYZ_um.y;
             this.gridScale = 200;
-            this.gridWidth = (model.size.x / this.gridScale) + 1;
-            this.gridHeight = (model.size.y / this.gridScale) + 1;
+            this.gridWidth = (model.size_um.x / this.gridScale) + 1;
+            this.gridHeight = (model.size_um.y / this.gridScale) + 1;
             int gridSize = this.gridWidth * this.gridHeight;
             this.xYGridOfSupportPoints = new List<List<SupportPoint>>(gridSize);
             for (int i = 0; i < gridSize; i++)

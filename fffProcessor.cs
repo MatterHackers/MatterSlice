@@ -38,6 +38,9 @@ namespace MatterHackers.MatterSlice
         ConfigSettings config;
         Stopwatch timeKeeper = new Stopwatch();
 
+        OptimizedModel optomizedModel;
+        SliceDataStorage storage = new SliceDataStorage();
+
         GCodePathConfig skirtConfig = new GCodePathConfig();
         GCodePathConfig inset0Config = new GCodePathConfig();
         GCodePathConfig insetXConfig = new GCodePathConfig();
@@ -62,27 +65,49 @@ namespace MatterHackers.MatterSlice
             return gcode.isOpened();
         }
 
-        public bool processFile(string input_filename)
+        public void DoProcessing()
         {
             if (!gcode.isOpened())
             {
-                return false;
+                return;
             }
 
             Stopwatch timeKeeperTotal = new Stopwatch();
             timeKeeperTotal.Start();
-            SliceDataStorage storage = new SliceDataStorage();
             preSetup(config.extrusionWidth_um);
-            if (!prepareModel(storage, input_filename))
-            {
-                return false;
-            }
+            sliceModels(storage);
 
             processSliceData(storage);
             writeGCode(storage);
 
             LogOutput.logProgress("process", 1, 1); //Report to the GUI that a file has been fully processed.
             LogOutput.log("Total time elapsed {0:0.00}s.\n".FormatWith(timeKeeperTotal.Elapsed.Seconds));
+        }
+
+        public bool LoadStlFile(string input_filename)
+        {
+            preSetup(config.extrusionWidth_um);
+            timeKeeper.Restart();
+            LogOutput.log("Loading {0} from disk...\n".FormatWith(input_filename));
+            SimpleModel simpleModel = SimpleModel.loadModelFromFile(input_filename, config.modelRotationMatrix);
+            if (simpleModel == null)
+            {
+                LogOutput.logError("Failed to load model: {0}\n".FormatWith(input_filename));
+                return false;
+            }
+            LogOutput.log("Loaded from disk in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
+            timeKeeper.Restart();
+            LogOutput.log("Analyzing and optimizing model...\n");
+            optomizedModel = new OptimizedModel(simpleModel);
+            optomizedModel.SetPositionAndSize(simpleModel, config.positionToPlaceObjectCenter_um.X, config.positionToPlaceObjectCenter_um.Y, -config.bottomClipAmount_um, config.centerObjectInXy);
+            for (int volumeIndex = 0; volumeIndex < simpleModel.volumes.Count; volumeIndex++)
+            {
+                LogOutput.log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleModel.volumes[volumeIndex].faceTriangles.Count, (int)optomizedModel.volumes[volumeIndex].facesTriangle.Count, (double)(optomizedModel.volumes[volumeIndex].facesTriangle.Count) / (double)(simpleModel.volumes[volumeIndex].faceTriangles.Count) * 100));
+                LogOutput.log("  Vertex counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleModel.volumes[volumeIndex].faceTriangles.Count * 3, (int)optomizedModel.volumes[volumeIndex].vertices.Count, (double)(optomizedModel.volumes[volumeIndex].vertices.Count) / (double)(simpleModel.volumes[volumeIndex].faceTriangles.Count * 3) * 100));
+            }
+
+            LogOutput.log("Optimize model {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.Seconds));
+            timeKeeper.Reset();
 
             return true;
         }
@@ -117,28 +142,9 @@ namespace MatterHackers.MatterSlice
             gcode.setRetractionSettings(config.retractionAmount_um, config.retractionSpeed, config.retractionAmountOnExtruderSwitch_um, config.minimumExtrusionBeforeRetraction, config.retractionZHop);
         }
 
-        bool prepareModel(SliceDataStorage storage, string input_filename)
+        void sliceModels(SliceDataStorage storage)
         {
             timeKeeper.Restart();
-            LogOutput.log("Loading {0} from disk...\n".FormatWith(input_filename));
-            SimpleModel model = SimpleModel.loadModelFromFile(input_filename, config.modelRotationMatrix);
-            if (model == null)
-            {
-                LogOutput.logError("Failed to load model: {0}\n".FormatWith(input_filename));
-                return false;
-            }
-            LogOutput.log("Loaded from disk in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
-            timeKeeper.Restart();
-            LogOutput.log("Analyzing and optimizing model...\n");
-            OptimizedModel optomizedModel = new OptimizedModel(model, new Point3(config.positionToPlaceObjectCenter_um.X, config.positionToPlaceObjectCenter_um.Y, -config.bottomClipAmount_um), config.centerObjectInXy);
-            for (int volumeIndex = 0; volumeIndex < model.volumes.Count; volumeIndex++)
-            {
-                LogOutput.log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)model.volumes[volumeIndex].faceTriangles.Count, (int)optomizedModel.volumes[volumeIndex].facesTriangle.Count, (double)(optomizedModel.volumes[volumeIndex].facesTriangle.Count) / (double)(model.volumes[volumeIndex].faceTriangles.Count) * 100));
-                LogOutput.log("  Vertex counts: {0} . {1} {2:0.0}%\n".FormatWith((int)model.volumes[volumeIndex].faceTriangles.Count * 3, (int)optomizedModel.volumes[volumeIndex].vertices.Count, (double)(optomizedModel.volumes[volumeIndex].vertices.Count) / (double)(model.volumes[volumeIndex].faceTriangles.Count * 3) * 100));
-            }
-
-            LogOutput.log("Optimize model {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.Seconds));
-            timeKeeper.Reset();
 #if False
             optomizedModel.saveDebugSTL("debug_output.stl");
 #endif
@@ -161,9 +167,9 @@ namespace MatterHackers.MatterSlice
             LogOutput.log("Generating support map...\n");
             storage.support.GenerateSupportGrid(optomizedModel, config);
 
-            storage.modelSize = optomizedModel.size;
-            storage.modelMin = optomizedModel.minXYZ;
-            storage.modelMax = optomizedModel.maxXYZ;
+            storage.modelSize = optomizedModel.size_um;
+            storage.modelMin = optomizedModel.minXYZ_um;
+            storage.modelMax = optomizedModel.maxXYZ_um;
 
             LogOutput.log("Generating layer parts...\n");
             for (int volumeIndex = 0; volumeIndex < slicerList.Count; volumeIndex++)
@@ -182,7 +188,6 @@ namespace MatterHackers.MatterSlice
             }
             LogOutput.log("Generated layer parts in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();
-            return true;
         }
 
         void processSliceData(SliceDataStorage storage)
