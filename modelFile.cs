@@ -31,9 +31,9 @@ namespace MatterHackers.MatterSlice
     // A SimpleFace is a 3 dimensional model triangle with 3 points. These points are already converted to integers
     public class SimpleFace
     {
-        public Point3[] v = new Point3[3];
+        public Point3[] vertices = new Point3[3];
 
-        public SimpleFace(Point3 v0, Point3 v1, Point3 v2) { v[0] = v0; v[1] = v1; v[2] = v2; }
+        public SimpleFace(Point3 v0, Point3 v1, Point3 v2) { vertices[0] = v0; vertices[1] = v1; vertices[2] = v2; }
     };
 
     // A SimpleVolume is the most basic reprisentation of a 3D model. It contains all the faces as SimpleTriangles, with nothing fancy.
@@ -65,18 +65,18 @@ namespace MatterHackers.MatterSlice
                 return new Point3(0, 0, 0);
             }
 
-            Point3 ret = faceTriangles[0].v[0];
+            Point3 ret = faceTriangles[0].vertices[0];
             for (int faceIndex = 0; faceIndex < faceTriangles.Count; faceIndex++)
             {
-                SET_MIN(ref ret.x, faceTriangles[faceIndex].v[0].x);
-                SET_MIN(ref ret.y, faceTriangles[faceIndex].v[0].y);
-                SET_MIN(ref ret.z, faceTriangles[faceIndex].v[0].z);
-                SET_MIN(ref ret.x, faceTriangles[faceIndex].v[1].x);
-                SET_MIN(ref ret.y, faceTriangles[faceIndex].v[1].y);
-                SET_MIN(ref ret.z, faceTriangles[faceIndex].v[1].z);
-                SET_MIN(ref ret.x, faceTriangles[faceIndex].v[2].x);
-                SET_MIN(ref ret.y, faceTriangles[faceIndex].v[2].y);
-                SET_MIN(ref ret.z, faceTriangles[faceIndex].v[2].z);
+                SET_MIN(ref ret.x, faceTriangles[faceIndex].vertices[0].x);
+                SET_MIN(ref ret.y, faceTriangles[faceIndex].vertices[0].y);
+                SET_MIN(ref ret.z, faceTriangles[faceIndex].vertices[0].z);
+                SET_MIN(ref ret.x, faceTriangles[faceIndex].vertices[1].x);
+                SET_MIN(ref ret.y, faceTriangles[faceIndex].vertices[1].y);
+                SET_MIN(ref ret.z, faceTriangles[faceIndex].vertices[1].z);
+                SET_MIN(ref ret.x, faceTriangles[faceIndex].vertices[2].x);
+                SET_MIN(ref ret.y, faceTriangles[faceIndex].vertices[2].y);
+                SET_MIN(ref ret.z, faceTriangles[faceIndex].vertices[2].z);
             }
             return ret;
         }
@@ -88,18 +88,18 @@ namespace MatterHackers.MatterSlice
                 return new Point3(0, 0, 0);
             }
 
-            Point3 ret = faceTriangles[0].v[0];
+            Point3 ret = faceTriangles[0].vertices[0];
             for (int i = 0; i < faceTriangles.Count; i++)
             {
-                SET_MAX(ref ret.x, faceTriangles[i].v[0].x);
-                SET_MAX(ref ret.y, faceTriangles[i].v[0].y);
-                SET_MAX(ref ret.z, faceTriangles[i].v[0].z);
-                SET_MAX(ref ret.x, faceTriangles[i].v[1].x);
-                SET_MAX(ref ret.y, faceTriangles[i].v[1].y);
-                SET_MAX(ref ret.z, faceTriangles[i].v[1].z);
-                SET_MAX(ref ret.x, faceTriangles[i].v[2].x);
-                SET_MAX(ref ret.y, faceTriangles[i].v[2].y);
-                SET_MAX(ref ret.z, faceTriangles[i].v[2].z);
+                SET_MAX(ref ret.x, faceTriangles[i].vertices[0].x);
+                SET_MAX(ref ret.y, faceTriangles[i].vertices[0].y);
+                SET_MAX(ref ret.z, faceTriangles[i].vertices[0].z);
+                SET_MAX(ref ret.x, faceTriangles[i].vertices[1].x);
+                SET_MAX(ref ret.y, faceTriangles[i].vertices[1].y);
+                SET_MAX(ref ret.z, faceTriangles[i].vertices[1].z);
+                SET_MAX(ref ret.x, faceTriangles[i].vertices[2].x);
+                SET_MAX(ref ret.y, faceTriangles[i].vertices[2].y);
+                SET_MAX(ref ret.z, faceTriangles[i].vertices[2].z);
             }
             return ret;
         }

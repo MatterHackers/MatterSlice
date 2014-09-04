@@ -49,13 +49,13 @@ namespace MatterHackers.MatterSlice
     {
         const int MELD_DIST = 30;
 
-        public OptimizedModel model;
+        public OptimizedModel parentModel;
         public List<OptimizedPoint3> vertices = new List<OptimizedPoint3>();
         public List<OptimizedFace> facesTriangle = new List<OptimizedFace>();
 
         public OptimizedVolume(SimpleVolume volume, OptimizedModel model)
         {
-            this.model = model;
+            this.parentModel = model;
             vertices.Capacity = volume.faceTriangles.Count * 3;
             facesTriangle.Capacity = volume.faceTriangles.Count;
 
@@ -63,16 +63,16 @@ namespace MatterHackers.MatterSlice
 
             Stopwatch t = new Stopwatch();
             t.Start();
-            for (int i = 0; i < volume.faceTriangles.Count; i++)
+            for (int faceIndex = 0; faceIndex < volume.faceTriangles.Count; faceIndex++)
             {
-                OptimizedFace f = new OptimizedFace();
-                if ((i % 1000 == 0) && t.Elapsed.Seconds > 2)
+                OptimizedFace optimizedFace = new OptimizedFace();
+                if ((faceIndex % 1000 == 0) && t.Elapsed.Seconds > 2)
                 {
-                    LogOutput.logProgress("optimized", i + 1, volume.faceTriangles.Count);
+                    LogOutput.logProgress("optimized", faceIndex + 1, volume.faceTriangles.Count);
                 }
-                for (int j = 0; j < 3; j++)
+                for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
                 {
-                    Point3 p = volume.faceTriangles[i].v[j];
+                    Point3 p = volume.faceTriangles[faceIndex].vertices[vertexIndex];
                     int hash = (int)(((p.x + MELD_DIST / 2) / MELD_DIST) ^ (((p.y + MELD_DIST / 2) / MELD_DIST) << 10) ^ (((p.z + MELD_DIST / 2) / MELD_DIST) << 20));
                     int idx = 0;
                     bool add = true;
@@ -98,64 +98,82 @@ namespace MatterHackers.MatterSlice
                         idx = vertices.Count;
                         vertices.Add(new OptimizedPoint3(p));
                     }
-                    f.vertexIndex[j] = idx;
+                    optimizedFace.vertexIndex[vertexIndex] = idx;
                 }
-                if (f.vertexIndex[0] != f.vertexIndex[1] && f.vertexIndex[0] != f.vertexIndex[2] && f.vertexIndex[1] != f.vertexIndex[2])
+                if (optimizedFace.vertexIndex[0] != optimizedFace.vertexIndex[1] && optimizedFace.vertexIndex[0] != optimizedFace.vertexIndex[2] && optimizedFace.vertexIndex[1] != optimizedFace.vertexIndex[2])
                 {
                     //Check if there is a face with the same points
                     bool duplicate = false;
-                    for (int _idx0 = 0; _idx0 < vertices[f.vertexIndex[0]].usedByFacesList.Count; _idx0++)
+                    for (int _idx0 = 0; _idx0 < vertices[optimizedFace.vertexIndex[0]].usedByFacesList.Count; _idx0++)
                     {
-                        for (int _idx1 = 0; _idx1 < vertices[f.vertexIndex[1]].usedByFacesList.Count; _idx1++)
+                        for (int _idx1 = 0; _idx1 < vertices[optimizedFace.vertexIndex[1]].usedByFacesList.Count; _idx1++)
                         {
-                            for (int _idx2 = 0; _idx2 < vertices[f.vertexIndex[2]].usedByFacesList.Count; _idx2++)
+                            for (int _idx2 = 0; _idx2 < vertices[optimizedFace.vertexIndex[2]].usedByFacesList.Count; _idx2++)
                             {
-                                if (vertices[f.vertexIndex[0]].usedByFacesList[_idx0] == vertices[f.vertexIndex[1]].usedByFacesList[_idx1] && vertices[f.vertexIndex[0]].usedByFacesList[_idx0] == vertices[f.vertexIndex[2]].usedByFacesList[_idx2])
+                                if (vertices[optimizedFace.vertexIndex[0]].usedByFacesList[_idx0] == vertices[optimizedFace.vertexIndex[1]].usedByFacesList[_idx1] && vertices[optimizedFace.vertexIndex[0]].usedByFacesList[_idx0] == vertices[optimizedFace.vertexIndex[2]].usedByFacesList[_idx2])
                                     duplicate = true;
                             }
                         }
                     }
                     if (!duplicate)
                     {
-                        vertices[f.vertexIndex[0]].usedByFacesList.Add(facesTriangle.Count);
-                        vertices[f.vertexIndex[1]].usedByFacesList.Add(facesTriangle.Count);
-                        vertices[f.vertexIndex[2]].usedByFacesList.Add(facesTriangle.Count);
-                        facesTriangle.Add(f);
+                        vertices[optimizedFace.vertexIndex[0]].usedByFacesList.Add(facesTriangle.Count);
+                        vertices[optimizedFace.vertexIndex[1]].usedByFacesList.Add(facesTriangle.Count);
+                        vertices[optimizedFace.vertexIndex[2]].usedByFacesList.Add(facesTriangle.Count);
+                        facesTriangle.Add(optimizedFace);
                     }
                 }
             }
             //fprintf(stdout, "\rAll faces are optimized in %5.1fs.\n",timeElapsed(t));
 
             int openFacesCount = 0;
-            for (int i = 0; i < facesTriangle.Count; i++)
+            for (int faceIndex = 0; faceIndex < facesTriangle.Count; faceIndex++)
             {
-                OptimizedFace f = facesTriangle[i];
-                f.touchingFaces[0] = getFaceIndexWithPoints(f.vertexIndex[0], f.vertexIndex[1], i);
-                f.touchingFaces[1] = getFaceIndexWithPoints(f.vertexIndex[1], f.vertexIndex[2], i);
-                f.touchingFaces[2] = getFaceIndexWithPoints(f.vertexIndex[2], f.vertexIndex[0], i);
-                if (f.touchingFaces[0] == -1)
+                OptimizedFace optimizedFace = facesTriangle[faceIndex];
+                optimizedFace.touchingFaces[0] = getOtherFaceIndexContainingVertices(optimizedFace.vertexIndex[0], optimizedFace.vertexIndex[1], faceIndex);
+                optimizedFace.touchingFaces[1] = getOtherFaceIndexContainingVertices(optimizedFace.vertexIndex[1], optimizedFace.vertexIndex[2], faceIndex);
+                optimizedFace.touchingFaces[2] = getOtherFaceIndexContainingVertices(optimizedFace.vertexIndex[2], optimizedFace.vertexIndex[0], faceIndex);
+                if (optimizedFace.touchingFaces[0] == -1)
+                {
                     openFacesCount++;
-                if (f.touchingFaces[1] == -1)
+                }
+                if (optimizedFace.touchingFaces[1] == -1)
+                {
                     openFacesCount++;
-                if (f.touchingFaces[2] == -1)
+                }
+                if (optimizedFace.touchingFaces[2] == -1)
+                {
                     openFacesCount++;
+                }
             }
             //fprintf(stdout, "  Number of open faces: %i\n", openFacesCount);
         }
 
-        public int getFaceIndexWithPoints(int idx0, int idx1, int notFaceIndex)
+        public int getOtherFaceIndexContainingVertices(int vertex1Index, int vertex2Index, int faceWeKnow)
         {
-            for (int i = 0; i < vertices[idx0].usedByFacesList.Count; i++)
+            for (int vertex1FaceIndex = 0; vertex1FaceIndex < vertices[vertex1Index].usedByFacesList.Count; vertex1FaceIndex++)
             {
-                int f0 = vertices[idx0].usedByFacesList[i];
-                if (f0 == notFaceIndex) continue;
-                for (int j = 0; j < vertices[idx1].usedByFacesList.Count; j++)
+                int faceUsingVertex1 = vertices[vertex1Index].usedByFacesList[vertex1FaceIndex];
+                if (faceUsingVertex1 == faceWeKnow)
                 {
-                    int f1 = vertices[idx1].usedByFacesList[j];
-                    if (f1 == notFaceIndex) continue;
-                    if (f0 == f1) return f0;
+                    continue;
+                }
+
+                for (int vertex2FaceIndex = 0; vertex2FaceIndex < vertices[vertex2Index].usedByFacesList.Count; vertex2FaceIndex++)
+                {
+                    int faceUsingVertex2 = vertices[vertex2Index].usedByFacesList[vertex2FaceIndex];
+                    if (faceUsingVertex2 == faceWeKnow)
+                    {
+                        continue;
+                    }
+                    
+                    if (faceUsingVertex1 == faceUsingVertex2)
+                    {
+                        return faceUsingVertex1;
+                    }
                 }
             }
+
             return -1;
         }
     }

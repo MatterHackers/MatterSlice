@@ -46,8 +46,8 @@ namespace MatterHackers.MatterSlice
 
         public Slicer(OptimizedVolume ov, int initialLayerThickness, int layerThickness, ConfigConstants.REPAIR_OUTLINES outlineRepairTypes)
         {
-            modelSize = ov.model.size_um;
-            modelMin = ov.model.minXYZ_um;
+            modelSize = ov.parentModel.size_um;
+            modelMin = ov.parentModel.minXYZ_um;
 
             int heightWithoutFirstLayer = modelSize.z - initialLayerThickness;
             int countOfNormalThicknessLayers = heightWithoutFirstLayer / layerThickness;
