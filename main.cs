@@ -39,6 +39,7 @@ namespace MatterHackers.MatterSlice
             LogOutput.logError("    -c A config file to apply to the current settings.\n       Can be applyed multiple times.\n       Formated like the default.ini (partial settings are fine).\n");
             LogOutput.logError("    -s Specify a setting on the command line.\n       Uses the same names and values as default.ini.\n");
             LogOutput.logError("    -o Specify the path and filename to save 'output.gcode'.\n");
+            LogOutput.logError("    -t Run unit tests.\n");
             LogOutput.logError("    model.stl, the file that will be loaded and sliced.\n");
         }
 
@@ -84,6 +85,11 @@ namespace MatterHackers.MatterSlice
 
                             case 'v':
                                 LogOutput.verbose_level++;
+                                break;
+
+                            case 't':
+                                Tests.BridgeTests.Run();
+                                Tests.SlicingTests.Run();
                                 break;
 
                             case 'o':
