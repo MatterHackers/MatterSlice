@@ -199,19 +199,21 @@ namespace MatterHackers.MatterSlice
                 for (int polygonIndex = 0; polygonIndex < layers[layerIndex].polygonList.Count; polygonIndex++)
                 {
                     Polygon polygon = layers[layerIndex].polygonList[polygonIndex];
-
-                    // move to the start without extruding (so it is a move)
-                    stream.Write("G1 X{0}Y{1}\n", (double)(polygon[0].X - modelMin.x) / scale,
-                        (double)(polygon[0].Y - modelMin.y) / scale);
-                    for (int intPointIndex = 1; intPointIndex < polygon.Count; intPointIndex++)
+                    if (polygon.Count > 0)
                     {
-                        // do all the points with extruding
-                        stream.Write("G1 X{0}Y{1}E{2}\n", (double)(polygon[intPointIndex].X - modelMin.x) / scale,
-                            (double)(polygon[intPointIndex].Y - modelMin.y) / scale, extrudeAmount++);
+                        // move to the start without extruding (so it is a move)
+                        stream.Write("G1 X{0}Y{1}\n", (double)(polygon[0].X - modelMin.x) / scale,
+                            (double)(polygon[0].Y - modelMin.y) / scale);
+                        for (int intPointIndex = 1; intPointIndex < polygon.Count; intPointIndex++)
+                        {
+                            // do all the points with extruding
+                            stream.Write("G1 X{0}Y{1}E{2}\n", (double)(polygon[intPointIndex].X - modelMin.x) / scale,
+                                (double)(polygon[intPointIndex].Y - modelMin.y) / scale, extrudeAmount++);
+                        }
+                        // go back to the start extruding
+                        stream.Write("G1 X{0}Y{1}E{2}\n", (double)(polygon[0].X - modelMin.x) / scale,
+                            (double)(polygon[0].Y - modelMin.y) / scale, extrudeAmount++);
                     }
-                    // go back to the start extruding
-                    stream.Write("G1 X{0}Y{1}E{2}\n", (double)(polygon[0].X - modelMin.x) / scale,
-                        (double)(polygon[0].Y - modelMin.y) / scale, extrudeAmount++);
                 }
 
                 for (int openPolygonIndex = 0; openPolygonIndex < layers[layerIndex].openPolygonList.Count; openPolygonIndex++)

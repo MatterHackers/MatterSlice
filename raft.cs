@@ -63,7 +63,7 @@ namespace MatterHackers.MatterSlice
         {
             if (ShouldGenerateRaft(config))
             {
-                GCodePathConfig raftBaseConfig = new GCodePathConfig(config.firstLayerSpeed, config.extrusionWidth_um * 3, "SUPPORT");
+                GCodePathConfig raftBaseConfig = new GCodePathConfig(config.firstLayerSpeed, config.raftExtrusionWidth_um, "SUPPORT");
                 GCodePathConfig raftMiddleConfig = new GCodePathConfig(config.raftPrintSpeed, config.raftInterfaceLinewidth_um, "SUPPORT");
                 GCodePathConfig raftSurfaceConfig = new GCodePathConfig((config.raftSurfacePrintSpeed > 0) ? config.raftSurfacePrintSpeed : config.raftPrintSpeed, config.raftSurfaceLinewidth_um, "SUPPORT");
 

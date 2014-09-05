@@ -157,9 +157,11 @@ namespace MatterHackers.MatterSlice
                 slicerList.Add(slicer);
             }
 
-            //slicerList[0].DumpSegmentsToGcode("Volume 0 Segments.gcode");
-            //slicerList[0].DumpPolygonsToGcode("Volume 0 Polygons.gcode");
-            //slicerList[0].DumpPolygonsToHTML("Volume 0 Polygons.html");
+#if false
+            slicerList[0].DumpSegmentsToGcode("Volume 0 Segments.gcode");
+            slicerList[0].DumpPolygonsToGcode("Volume 0 Polygons.gcode");
+            slicerList[0].DumpPolygonsToHTML("Volume 0 Polygons.html");
+#endif
 
             LogOutput.log("Sliced model in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
             timeKeeper.Restart();

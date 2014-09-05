@@ -75,11 +75,19 @@ namespace MatterHackers.MatterSlice
                 int segmentIndexBeingAdded = startingSegmentIndex;
                 bool canClose;
 
+                bool lastAddWasAStart = true;
+
                 while (true)
                 {
                     canClose = false;
                     segmentList[segmentIndexBeingAdded].hasBeenAddedToPolygon = true;
                     IntPoint addedSegmentEndPoint = segmentList[segmentIndexBeingAdded].end;
+                    if (!lastAddWasAStart)
+                    {
+                        // the last added point was an end so add the start as the text end point
+                        addedSegmentEndPoint = segmentList[segmentIndexBeingAdded].start;
+                    }
+
                     poly.Add(addedSegmentEndPoint);
                     int nextSegmentToCheckIndex = -1;
                     OptimizedFace face = optomizedMesh.facesTriangle[segmentList[segmentIndexBeingAdded].faceIndex];
@@ -108,6 +116,28 @@ namespace MatterHackers.MatterSlice
                                     }
 
                                     nextSegmentToCheckIndex = touchingSegmentIndex;
+                                    lastAddWasAStart = true;
+                                }
+                                else // let's check if the other side of this segment can hook up (the normal is facing the wrong way)
+                                {
+                                    IntPoint foundSegmentEnd = segmentList[touchingSegmentIndex].end;
+                                    if (addedSegmentEndPoint == foundSegmentEnd)
+                                    {
+                                        // if we have looped back around to where we started
+                                        if (addedSegmentEndPoint == polygonStartPosition)
+                                        {
+                                            canClose = true;
+                                        }
+
+                                        // If this segment has already been added
+                                        if (segmentList[touchingSegmentIndex].hasBeenAddedToPolygon)
+                                        {
+                                            continue;
+                                        }
+
+                                        nextSegmentToCheckIndex = touchingSegmentIndex;
+                                        lastAddWasAStart = false;
+                                    }
                                 }
                             }
                         }

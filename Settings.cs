@@ -217,7 +217,8 @@ namespace MatterHackers.MatterSlice
         public int raftExtraDistanceAroundPart_um { get { return (int)(raftExtraDistanceAroundPart * 1000); } }
 
         // Raft read only info
-        public int raftLineSpacing_um { get { return extrusionWidth_um * 3000 / 400; } }
+        public int raftExtrusionWidth_um { get { return extrusionWidth_um * 3; } }
+        public int raftLineSpacing_um { get { return (int)(extrusionWidth_um * 4); } } // the least it can be in the raftExtrusionWidth_um
 
         public int raftBaseThickness_um { get { return extrusionWidth_um * 300 / 400; } }
 
