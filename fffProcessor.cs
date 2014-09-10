@@ -503,9 +503,12 @@ namespace MatterHackers.MatterSlice
                     // lets make sure we start with the most outside loop
                     foreach (Polygon polygon in storage.skirt)
                     {
-                        if (polygon.Count > 0 && polygon[0].Y < lowestPoint.Y)
+                        foreach (IntPoint position in polygon)
                         {
-                            lowestPoint = polygon[0];
+                            if (position.Y < lowestPoint.Y)
+                            {
+                                lowestPoint = polygon[0];
+                            }
                         }
                     }
 
