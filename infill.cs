@@ -45,16 +45,41 @@ namespace MatterHackers.MatterSlice
                     AABB boundary = new AABB(outlines);
 
                     boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing - rotationOffset;
-                    int lineCount = (int)((boundary.max.X - boundary.min.X + (lineSpacing - 1)) / lineSpacing);
+                    int xLineCount = (int)((boundary.max.X - boundary.min.X + (lineSpacing - 1)) / lineSpacing);
                     Polygons unclipedPatern = new Polygons();
+#if false // this is for hex
+                    int perYOffset = (int)(lineSpacing * Math.Sqrt(3) / 2 + .5);
+                    int yLineCount = (int)((boundary.max.Y - boundary.min.Y + (perYOffset - 1)) / perYOffset);
+                    long firstY = boundary.min.Y / perYOffset * perYOffset;
+                    for (int yIndex = 0; yIndex < yLineCount; yIndex++)
+                    {
+                        long xOffsetForY = lineSpacing/2;
+                        if ((yIndex % 2) == 0) // if we are at every other y
+                        {
+                            xOffsetForY = 0;
+                        }
+                        long firstX = boundary.min.X / lineSpacing * lineSpacing + xOffsetForY;
+                        for (int xIndex = 0; xIndex < xLineCount; xIndex++)
+                        {
+                            IntPoint left = new IntPoint(firstX + xIndex * lineSpacing, firstY + yIndex * perYOffset);
+                            IntPoint right = new IntPoint(firstX + (xIndex + 1) * lineSpacing, firstY + yIndex * perYOffset);
+                            IntPoint top = new IntPoint((left.X + right.X) / 2, firstY + (yIndex + 1) * perYOffset);
+                            IntPoint center = (left + right + top)/3;
+                            unclipedPatern.Add(new Polygon() { left, center });
+                            unclipedPatern.Add(new Polygon() { right, center });
+                            unclipedPatern.Add(new Polygon() { top, center });
+                        }
+                    }
+#else
                     long firstX = boundary.min.X / lineSpacing * lineSpacing;
-                    for (int lineIndex = 0; lineIndex < lineCount; lineIndex++)
+                    for (int lineIndex = 0; lineIndex < xLineCount; lineIndex++)
                     {
                         Polygon line = new Polygon();
                         line.Add(new IntPoint(firstX + lineIndex * lineSpacing, boundary.min.Y));
                         line.Add(new IntPoint(firstX + lineIndex * lineSpacing, boundary.max.Y));
                         unclipedPatern.Add(line);
                     }
+#endif
 
                     PolyTree ret = new PolyTree();
                     Clipper clipper = new Clipper();
