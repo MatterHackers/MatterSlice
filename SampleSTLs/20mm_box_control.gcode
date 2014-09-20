@@ -1,1 +1,0 @@
--v -o "C:\Users\lbrubaker\AppData\Local\MatterControl\data\gcode\38705862_773220159.gcode" -s layerThickness = "400" -s initialLayerThickness = "500" "C:\Users\lbrubaker\Dropbox\Printed Parts\Birdstruder\idler_block.stl"

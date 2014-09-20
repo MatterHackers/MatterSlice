@@ -88,8 +88,10 @@ namespace MatterHackers.MatterSlice
                                 break;
 
                             case 't':
+                                Tests.TestUtlities.ClearTempGCode();
                                 Tests.BridgeTests.Run();
                                 Tests.SlicingTests.Run();
+                                Tests.SettingsTests.Run();
                                 break;
 
                             case 'o':

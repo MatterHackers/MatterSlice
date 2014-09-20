@@ -40,46 +40,38 @@ using NUnit.Framework;
 namespace MatterHackers.MatterSlice.Tests
 {
     [TestFixture]
-    public class SlicerLayerTests
+    public class SliceSettingsTests
     {
-        [Test]
-        public void WindingDirectionDoseNotMatter()
+        string CreateGCodeForLayerHeights(double firstLayerHeight, double otherLayerHeight)
         {
-            string manifoldFile = TestUtlities.GetStlPath("20mm-box");
-            string manifoldGCode = TestUtlities.GetTempGCodePath("20mm-box");
-            string nonManifoldFile = TestUtlities.GetStlPath("20mm-box bad winding");
-            string nonManifoldGCode = TestUtlities.GetTempGCodePath("20mm-box bad winding");
+            string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
+            string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box.{0}.{1}.gcode".FormatWith(firstLayerHeight, otherLayerHeight));
 
-            {
-                // load a model that is correctly manifold
-                ConfigSettings config = new ConfigSettings();
-                fffProcessor processor = new fffProcessor(config);
-                processor.setTargetFile(manifoldGCode);
-                processor.LoadStlFile(manifoldFile);
-                // slice and save it
-                processor.DoProcessing();
-                processor.finalize();
-            }
+            ConfigSettings config = new ConfigSettings();
+            config.firstLayerThickness = firstLayerHeight;
+            config.layerThickness = otherLayerHeight;
+            fffProcessor processor = new fffProcessor(config);
+            processor.setTargetFile(boxGCodeFile);
+            processor.LoadStlFile(box20MmStlFile);
+            // slice and save it
+            processor.DoProcessing();
+            processor.finalize();
 
-            {
-                // load a model that has some faces pointing the wroing way
-                ConfigSettings config = new ConfigSettings();
-                fffProcessor processor = new fffProcessor(config);
-                processor.setTargetFile(nonManifoldGCode);
-                processor.LoadStlFile(nonManifoldFile);
-                // slice and save it
-                processor.DoProcessing();
-                processor.finalize();
-            }
+            return boxGCodeFile;
+        }
 
-            // load both gcode files and check that they are the same
-            string manifoldGCodeContent = File.ReadAllText(manifoldGCode);
-            string nonManifoldGCodeContent = File.ReadAllText(nonManifoldGCode);
-            Assert.AreEqual(manifoldGCodeContent, nonManifoldGCodeContent);
+        [Test]
+        public void CorrectNumberOfLayersForLayerHeights()
+        {
+            // test .1 layer height
+            Assert.IsTrue(TestUtlities.CountLayers(CreateGCodeForLayerHeights(.1, .1)) == 100);
+            Assert.IsTrue(TestUtlities.CountLayers(CreateGCodeForLayerHeights(.2, .1)) == 99);
+            Assert.IsTrue(TestUtlities.CountLayers(CreateGCodeForLayerHeights(.2, .2)) == 50);
+            Assert.IsTrue(TestUtlities.CountLayers(CreateGCodeForLayerHeights(.05, .2)) == 51);
         }
     }
 
-    public static class SlicingTests
+    public static class SettingsTests
     {
         static bool ranTests = false;
 
@@ -88,8 +80,8 @@ namespace MatterHackers.MatterSlice.Tests
         {
             if (!ranTests)
             {
-                SlicerLayerTests slicerLayerTests = new SlicerLayerTests();
-                slicerLayerTests.WindingDirectionDoseNotMatter();
+                SliceSettingsTests settingsTests = new SliceSettingsTests();
+                settingsTests.CorrectNumberOfLayersForLayerHeights();
 
                 ranTests = true;
             }
