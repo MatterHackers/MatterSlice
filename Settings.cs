@@ -122,9 +122,7 @@ namespace MatterHackers.MatterSlice
         public int skirtMinLength_um { get { return (int)(skirtMinLength * 1000); } }
 
         public double retractionOnTravel;
-        public int retractionAmount_um { get { return (int)(retractionOnTravel * 1000); } }
         public double retractionOnExtruderSwitch;
-        public int retractionAmountOnExtruderSwitch_um { get { return (int)(retractionOnExtruderSwitch * 1000); } }
 
         [SettingDescription("mm/s.")]
         public int retractionSpeed;
@@ -321,7 +319,7 @@ namespace MatterHackers.MatterSlice
             minimumExtrusionBeforeRetraction = 0;
             wipeShieldDistanceFromObject = 0;
             avoidCrossingPerimeters = true;
-            wipeTowerSize = 0;
+            wipeTowerSize = 5;
             multiVolumeOverlapPercent = 0;
 
             minimumLayerTimeSeconds = 5;

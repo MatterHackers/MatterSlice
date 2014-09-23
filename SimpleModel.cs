@@ -108,8 +108,6 @@ namespace MatterHackers.MatterSlice
     //A SimpleModel is a 3D model with 1 or more 3D volumes.
     public class SimpleModel
     {
-        public static StreamWriter binaryMeshBlob;
-
         public List<SimpleVolume> volumes = new List<SimpleVolume>();
 
         void SET_MIN(ref int n, int m)
@@ -164,11 +162,9 @@ namespace MatterHackers.MatterSlice
             return ret;
         }
 
-        public static SimpleModel loadModelSTL_ascii(string filename, FMatrix3x3 matrix)
+        public static bool loadModelSTL_ascii(SimpleModel simpleModel, string filename, FMatrix3x3 matrix)
         {
-            SimpleModel m = new SimpleModel();
-            m.volumes.Add(new SimpleVolume());
-            SimpleVolume vol = m.volumes[0];
+            SimpleVolume vol = new SimpleVolume();
             using (StreamReader f = new StreamReader(filename))
             {
                 // check for "SOLID"
@@ -211,15 +207,20 @@ namespace MatterHackers.MatterSlice
                     }
                     line = f.ReadLine();
                 }
-
-                return m;
             }
+
+            if (vol.faceTriangles.Count > 3)
+            {
+                simpleModel.volumes.Add(vol);
+                return true;
+            }
+
+            return false;
         }
 
-        static SimpleModel loadModelSTL_binary(string filename, FMatrix3x3 matrix)
+        static bool loadModelSTL_binary(SimpleModel simpleModel, string filename, FMatrix3x3 matrix)
         {
-            SimpleModel m = new SimpleModel();
-
+            SimpleVolume vol = new SimpleVolume();
             using (FileStream stlStream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 // load it as a binary stl
@@ -238,11 +239,9 @@ namespace MatterHackers.MatterSlice
                 if (fileContents.Length < numBytesRequiredForVertexData || numTriangles < 4)
                 {
                     stlStream.Close();
-                    return null;
+                    return false;
                 }
 
-                m.volumes.Add(new SimpleVolume());
-                SimpleVolume vol = m.volumes[0];
                 Point3[] vector = new Point3[3];
                 for (int i = 0; i < numTriangles; i++)
                 {
@@ -262,18 +261,23 @@ namespace MatterHackers.MatterSlice
                 }
             }
 
-            return m;
-        }
-
-        public static SimpleModel loadModelFromFile(string filename, FMatrix3x3 matrix)
-        {
-            SimpleModel fromAsciiModel = loadModelSTL_ascii(filename, matrix);
-            if (fromAsciiModel.volumes[0].faceTriangles.Count == 0)
+            if (vol.faceTriangles.Count > 3)
             {
-                return loadModelSTL_binary(filename, matrix);
+                simpleModel.volumes.Add(vol);
+                return true;
             }
 
-            return fromAsciiModel;
+            return false;
+        }
+
+        public static bool loadModelFromFile(SimpleModel simpleModel, string filename, FMatrix3x3 matrix)
+        {
+            if (!loadModelSTL_ascii(simpleModel, filename, matrix))
+            {
+                return loadModelSTL_binary(simpleModel, filename, matrix);
+            }
+
+            return true;
         }
     }
 }

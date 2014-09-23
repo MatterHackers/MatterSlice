@@ -107,7 +107,7 @@
     <Compile Include="optimizedModel.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="modelFile.cs" />
+    <Compile Include="SimpleModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AvoidCrossingPerimeters.cs" />

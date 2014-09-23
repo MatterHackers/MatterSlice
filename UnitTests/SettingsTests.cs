@@ -42,14 +42,15 @@ namespace MatterHackers.MatterSlice.Tests
     [TestFixture]
     public class SliceSettingsTests
     {
-        string CreateGCodeForLayerHeights(double firstLayerHeight, double otherLayerHeight)
+        string CreateGCodeForLayerHeights(double firstLayerHeight, double otherLayerHeight, double bottomClip = 0)
         {
             string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
-            string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box.{0}.{1}.gcode".FormatWith(firstLayerHeight, otherLayerHeight));
+            string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}_o{1}_c{2}.gcode".FormatWith(firstLayerHeight, otherLayerHeight, bottomClip));
 
             ConfigSettings config = new ConfigSettings();
             config.firstLayerThickness = firstLayerHeight;
             config.layerThickness = otherLayerHeight;
+            config.bottomClipAmount = bottomClip;
             fffProcessor processor = new fffProcessor(config);
             processor.setTargetFile(boxGCodeFile);
             processor.LoadStlFile(box20MmStlFile);
@@ -69,6 +70,15 @@ namespace MatterHackers.MatterSlice.Tests
             Assert.IsTrue(TestUtlities.CountLayers(CreateGCodeForLayerHeights(.2, .2)) == 50);
             Assert.IsTrue(TestUtlities.CountLayers(CreateGCodeForLayerHeights(.05, .2)) == 51);
         }
+
+        [Test]
+        public void BottomClipCorrectNumberOfLayers()
+        {
+            // test .1 layer height
+            Assert.IsTrue(TestUtlities.CountLayers(CreateGCodeForLayerHeights(.2, .2, .2)) == 49);
+            Assert.IsTrue(TestUtlities.CountLayers(CreateGCodeForLayerHeights(.2, .2, .31)) == 48);
+            Assert.IsTrue(TestUtlities.CountLayers(CreateGCodeForLayerHeights(.2, .2, .4)) == 48);
+        }
     }
 
     public static class SettingsTests
@@ -82,6 +92,7 @@ namespace MatterHackers.MatterSlice.Tests
             {
                 SliceSettingsTests settingsTests = new SliceSettingsTests();
                 settingsTests.CorrectNumberOfLayersForLayerHeights();
+                settingsTests.BottomClipCorrectNumberOfLayers();
 
                 ranTests = true;
             }

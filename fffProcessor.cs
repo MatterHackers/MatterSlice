@@ -38,6 +38,7 @@ namespace MatterHackers.MatterSlice
         ConfigSettings config;
         Stopwatch timeKeeper = new Stopwatch();
 
+        SimpleModel simpleModel = new SimpleModel();
         OptimizedModel optomizedModel;
         SliceDataStorage storage = new SliceDataStorage();
 
@@ -89,8 +90,7 @@ namespace MatterHackers.MatterSlice
             preSetup(config.extrusionWidth_um);
             timeKeeper.Restart();
             LogOutput.log("Loading {0} from disk...\n".FormatWith(input_filename));
-            SimpleModel simpleModel = SimpleModel.loadModelFromFile(input_filename, config.modelRotationMatrix);
-            if (simpleModel == null)
+            if (!SimpleModel.loadModelFromFile(simpleModel, input_filename, config.modelRotationMatrix))
             {
                 LogOutput.logError("Failed to load model: {0}\n".FormatWith(input_filename));
                 return false;
@@ -139,7 +139,7 @@ namespace MatterHackers.MatterSlice
             }
 
             gcode.SetOutputType(config.outputType);
-            gcode.setRetractionSettings(config.retractionAmount_um, config.retractionSpeed, config.retractionAmountOnExtruderSwitch_um, config.minimumExtrusionBeforeRetraction, config.retractionZHop);
+            gcode.setRetractionSettings(config.retractionOnTravel, config.retractionSpeed, config.retractionOnExtruderSwitch, config.minimumExtrusionBeforeRetraction, config.retractionZHop);
         }
 
         void sliceModels(SliceDataStorage storage)
@@ -339,7 +339,7 @@ namespace MatterHackers.MatterSlice
                 if (gcode.GetOutputType() == ConfigConstants.OUTPUT_TYPE.BFB)
                 {
                     gcode.writeComment("enable auto-retraction");
-                    gcode.writeLine("M227 S{0} P{1}".FormatWith(config.retractionAmount_um * 2560 / 1000, config.retractionAmount_um * 2560 / 1000));
+                    gcode.writeLine("M227 S{0} P{1}".FormatWith(config.retractionOnTravel * 2560, config.retractionOnTravel * 2560));
                 }
 
             }
@@ -353,8 +353,32 @@ namespace MatterHackers.MatterSlice
                 gcode.writeMove(new IntPoint(storage.modelMin.x, storage.modelMin.y), config.travelSpeed, 0);
             }
             fileNr++;
+            
+            SliceVolumeStorage currentVolume = storage.volumes[0];
+            int totalLayers = currentVolume.layers.Count;
+            // let's remove any of the layers on top that are empty
+            {
+                for (int layerIndex = currentVolume.layers.Count - 1; layerIndex >= 0; layerIndex--)
+                {
+                    bool layerHasData = false;
+                    SliceLayer currentLayer = currentVolume.layers[layerIndex];
+                    for(int partIndex = 0; partIndex < currentVolume.layers[layerIndex].parts.Count; partIndex++)
+                    {
+                        SliceLayerPart currentPart = currentLayer.parts[partIndex];
+                        if (currentPart.outline.Count > 0)
+                        {
+                            layerHasData = true;
+                            break;
+                        }
+                    }
 
-            int totalLayers = storage.volumes[0].layers.Count;
+                    if (layerHasData)
+                    {
+                        break;
+                    }
+                    totalLayers--;
+                }
+            }
             gcode.writeComment("Layer count: {0}".FormatWith(totalLayers));
 
             // keep the raft generation code inside of raft
@@ -450,7 +474,7 @@ namespace MatterHackers.MatterSlice
                 gcode.writeFanCommand(fanSpeedPercent);
 
                 int currentLayerThickness_um = config.layerThickness_um;
-                if(layerIndex <= 0)
+                if (layerIndex <= 0)
                 {
                     currentLayerThickness_um = config.firstLayerThickness_um;
                 }
