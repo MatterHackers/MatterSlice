@@ -40,7 +40,7 @@ namespace MatterHackers.MatterSlice
         double minimumExtrusionBeforeRetraction_mm;
         double extrusionAmountAtPreviousRetraction_mm;
         Point3 currentPosition_um;
-        IntPoint[] extruderOffset_um = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
+        Point3[] extruderOffset_um = new Point3[ConfigConstants.MAX_EXTRUDERS];
         char[] extruderCharacter = new char[ConfigConstants.MAX_EXTRUDERS];
         int currentSpeed, retractionSpeed;
         int zPos_um;
@@ -82,9 +82,9 @@ namespace MatterHackers.MatterSlice
             f.Close();
         }
 
-        public void setExtruderOffset(int extruderIndex, IntPoint extruderOffset_um)
+        public void setExtruderOffset(int extruderIndex, IntPoint extruderOffset_um, int z_offset_um)
         {
-            this.extruderOffset_um[extruderIndex] = extruderOffset_um;
+            this.extruderOffset_um[extruderIndex] = new Point3(extruderOffset_um.X, extruderOffset_um.Y, z_offset_um);
         }
 
         public void SetOutputType(ConfigConstants.OUTPUT_TYPE outputType)
@@ -258,7 +258,10 @@ namespace MatterHackers.MatterSlice
                         isRetracted = true;
                     }
                 }
-                f.Write("G1 X{0:0.00} Y{1:0.00} Z{2:0.00} F{3:0.0}\n".FormatWith((double)(movePosition_um.X - extruderOffset_um[extruderIndex].X) / 1000, (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].Y) / 1000, (double)(zPos_um) / 1000, fspeed));
+                double xWritePosition = (double)(movePosition_um.X - extruderOffset_um[extruderIndex].x) / 1000;
+                double yWritePosition = (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].y) / 1000;
+                double zWritePosition = (double)(zPos_um - extruderOffset_um[extruderIndex].z) / 1000;
+                f.Write("G1 X{0:0.00} Y{1:0.00} Z{2:0.00} F{3:0.0}\n".FormatWith(xWritePosition, yWritePosition, zWritePosition, fspeed));
             }
             else
             {
@@ -310,10 +313,13 @@ namespace MatterHackers.MatterSlice
                     f.Write(" F{0}".FormatWith(speed * 60));
                     currentSpeed = speed;
                 }
-                f.Write(" X{0:0.00} Y{1:0.00}".FormatWith((movePosition_um.X - extruderOffset_um[extruderIndex].X) / 1000.0, (movePosition_um.Y - extruderOffset_um[extruderIndex].Y) / 1000.0));
+                double xWritePosition = (double)(movePosition_um.X - extruderOffset_um[extruderIndex].x) / 1000;
+                double yWritePosition = (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].y) / 1000;
+                f.Write(" X{0:0.00} Y{1:0.00}".FormatWith(xWritePosition, yWritePosition));
                 if (zPos_um != currentPosition_um.z)
                 {
-                    f.Write(" Z{0:0.00}".FormatWith((zPos_um) / 1000.0));
+                    double zWritePosition = (double)(zPos_um - extruderOffset_um[extruderIndex].z) / 1000;
+                    f.Write(" Z{0:0.00}".FormatWith(zWritePosition));
                 }
                 if (lineWidth_um != 0)
                 {
