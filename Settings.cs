@@ -247,6 +247,9 @@ namespace MatterHackers.MatterSlice
         public double bottomClipAmount;
         public int bottomClipAmount_um { get { return (int)(bottomClipAmount * 1000); } }
 
+        public double zOffset;
+        public int zOffset_um { get { return (int)(zOffset * 1000); } }
+
         // repair settings
         [SettingDescription("You can or them together using '|'.")]
         public ConfigConstants.REPAIR_OUTLINES repairOutlines;

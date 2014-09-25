@@ -108,9 +108,9 @@ namespace MatterHackers.MatterSlice
             bridgConfig.setData(config.bridgeSpeed, extrusionWidth, "BRIDGE");
             supportConfig.setData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT");
 
-            for (int extruderIndex = 1; extruderIndex < ConfigConstants.MAX_EXTRUDERS; extruderIndex++)
+            for (int extruderIndex = 0; extruderIndex < ConfigConstants.MAX_EXTRUDERS; extruderIndex++)
             {
-                gcode.setExtruderOffset(extruderIndex, config.extruderOffsets[extruderIndex]);
+                gcode.setExtruderOffset(extruderIndex, config.extruderOffsets[extruderIndex], -config.zOffset_um);
             }
 
             gcode.SetOutputType(config.outputType);
