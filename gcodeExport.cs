@@ -273,7 +273,8 @@ namespace MatterHackers.MatterSlice
                     {
                         if (retractionZHop_mm > 0)
                         {
-                            f.Write("G1 Z{0:0.00}\n".FormatWith(currentPosition_um.z/1000.0));
+                            double zWritePosition = (double)(currentPosition_um.z - extruderOffset_um[extruderIndex].z) / 1000;
+                            f.Write("G1 Z{0:0.00}\n".FormatWith(zWritePosition));
                         }
 
                         if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
@@ -313,12 +314,12 @@ namespace MatterHackers.MatterSlice
                     f.Write(" F{0}".FormatWith(speed * 60));
                     currentSpeed = speed;
                 }
-                double xWritePosition = (double)(movePosition_um.X - extruderOffset_um[extruderIndex].x) / 1000;
-                double yWritePosition = (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].y) / 1000;
+                double xWritePosition = (double)(movePosition_um.X - extruderOffset_um[extruderIndex].x) / 1000.0;
+                double yWritePosition = (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].y) / 1000.0;
                 f.Write(" X{0:0.00} Y{1:0.00}".FormatWith(xWritePosition, yWritePosition));
                 if (zPos_um != currentPosition_um.z)
                 {
-                    double zWritePosition = (double)(zPos_um - extruderOffset_um[extruderIndex].z) / 1000;
+                    double zWritePosition = (double)(zPos_um - extruderOffset_um[extruderIndex].z) / 1000.0;
                     f.Write(" Z{0:0.00}".FormatWith(zWritePosition));
                 }
                 if (lineWidth_um != 0)
@@ -353,7 +354,8 @@ namespace MatterHackers.MatterSlice
                 }
                 if (retractionZHop_mm > 0)
                 {
-                    f.Write("G1 Z{0:0.00}\n".FormatWith(currentPosition_um.z/1000.0 + retractionZHop_mm));
+                    double zWritePosition = (double)(currentPosition_um.z - extruderOffset_um[extruderIndex].z) / 1000 + retractionZHop_mm;
+                    f.Write("G1 Z{0:0.00}\n".FormatWith(zWritePosition));
                 }
                 extrusionAmountAtPreviousRetraction_mm = extrusionAmount_mm;
                 isRetracted = true;
