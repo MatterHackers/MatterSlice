@@ -558,13 +558,13 @@ namespace MatterHackers.MatterSlice
             PathOrderOptimizer partOrderOptimizer = new PathOrderOptimizer(gcode.getPositionXY());
             for (int partNr = 0; partNr < layer.parts.Count; partNr++)
             {
-                partOrderOptimizer.addPolygon(layer.parts[partNr].insets[0][0]);
+                partOrderOptimizer.AddPolygon(layer.parts[partNr].insets[0][0]);
             }
-            partOrderOptimizer.optimize();
+            partOrderOptimizer.Optimize();
 
-            for (int partCounter = 0; partCounter < partOrderOptimizer.polyOrder.Count; partCounter++)
+            for (int partCounter = 0; partCounter < partOrderOptimizer.bestPolygonOrderIndex.Count; partCounter++)
             {
-                SliceLayerPart part = layer.parts[partOrderOptimizer.polyOrder[partCounter]];
+                SliceLayerPart part = layer.parts[partOrderOptimizer.bestPolygonOrderIndex[partCounter]];
 
                 if (config.avoidCrossingPerimeters)
                 {
@@ -745,13 +745,13 @@ namespace MatterHackers.MatterSlice
 
             for (int islandIndex = 0; islandIndex < supportIslands.Count; islandIndex++)
             {
-                islandOrderOptimizer.addPolygon(supportIslands[islandIndex][0]);
+                islandOrderOptimizer.AddPolygon(supportIslands[islandIndex][0]);
             }
-            islandOrderOptimizer.optimize();
+            islandOrderOptimizer.Optimize();
 
             for (int islandIndex = 0; islandIndex < supportIslands.Count; islandIndex++)
             {
-                Polygons island = supportIslands[islandOrderOptimizer.polyOrder[islandIndex]];
+                Polygons island = supportIslands[islandOrderOptimizer.bestPolygonOrderIndex[islandIndex]];
                 Polygons supportLines = new Polygons();
                 if (config.supportLineSpacing_um > 0)
                 {

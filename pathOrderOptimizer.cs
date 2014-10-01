@@ -33,20 +33,20 @@ namespace MatterHackers.MatterSlice
     {
         public IntPoint startPosition;
         public List<Polygon> polygons = new List<Polygon>();
-        public List<int> polyStart = new List<int>();
-        public List<int> polyOrder = new List<int>();
+        public List<int> startIndexInPolygon = new List<int>();
+        public List<int> bestPolygonOrderIndex = new List<int>();
 
         public PathOrderOptimizer(IntPoint startPoint)
         {
             this.startPosition = startPoint;
         }
 
-        public void addPolygon(Polygon polygon)
+        public void AddPolygon(Polygon polygon)
         {
             this.polygons.Add(polygon);
         }
 
-        public void addPolygons(Polygons polygons)
+        public void AddPolygons(Polygons polygons)
         {
             for (int i = 0; i < polygons.Count; i++)
             {
@@ -54,9 +54,10 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        public void optimize()
+        public void Optimize()
         {
-            List<bool> picked = new List<bool>();
+            // Find the point that is closest to our current position (start position)
+            bool[] polygonHasBeenAdded = new bool[polygons.Count];
             for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
             {
                 int bestPointIndex = -1;
@@ -71,19 +72,19 @@ namespace MatterHackers.MatterSlice
                         closestDist = dist;
                     }
                 }
-                polyStart.Add(bestPointIndex);
-                picked.Add(false);
+                startIndexInPolygon.Add(bestPointIndex);
             }
 
-            //IntPoint incommingPerpundicularNormal = new IntPoint(0, 0);
+            //IntPoint incommingPerpendicularNormal = new IntPoint(0, 0);
             IntPoint currentPosition = startPosition;
-            for (int positionIndex = 0; positionIndex < polygons.Count; positionIndex++)
+            // We loop over the polygon list twice, as each inner loop we only pick one polygon.
+            for (int polygonIndexOuterLoop = 0; polygonIndexOuterLoop < polygons.Count; polygonIndexOuterLoop++)
             {
-                int bestIndex = -1;
+                int bestPolygonIndex = -1;
                 double bestDist = double.MaxValue;
                 for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
                 {
-                    if (picked[polygonIndex] || polygons[polygonIndex].Count < 1)
+                    if (polygonHasBeenAdded[polygonIndex] || polygons[polygonIndex].Count < 1)
                     {
                         continue;
                     }
@@ -91,75 +92,74 @@ namespace MatterHackers.MatterSlice
                     if (polygons[polygonIndex].Count == 2)
                     {
                         double dist = (polygons[polygonIndex][0] - currentPosition).LengthSquared();
-                        //dist += Math.Abs(incommingPerpundicularNormal.Dot(polygons[polygonIndex][1] - polygons[polygonIndex][0].normal(1000))) * 0.0001f;
+                        //dist += Math.Abs(incommingPerpendicularNormal.Dot(polygons[polygonIndex][1] - polygons[polygonIndex][0].normal(1000))) * 0.0001f;
                         if (dist < bestDist)
                         {
-                            bestIndex = polygonIndex;
+                            bestPolygonIndex = polygonIndex;
                             bestDist = dist;
-                            polyStart[polygonIndex] = 0;
+                            startIndexInPolygon[polygonIndex] = 0;
                         }
                         
                         dist = (polygons[polygonIndex][1] - currentPosition).LengthSquared();
-                        //dist += Math.Abs(incommingPerpundicularNormal.Dot(polygons[polygonIndex][0] - polygons[polygonIndex][1].normal(1000))) * 0.0001f;
+                        //dist += Math.Abs(incommingPerpendicularNormal.Dot(polygons[polygonIndex][0] - polygons[polygonIndex][1].normal(1000))) * 0.0001f;
                         if (dist < bestDist)
                         {
-                            bestIndex = polygonIndex;
+                            bestPolygonIndex = polygonIndex;
                             bestDist = dist;
-                            polyStart[polygonIndex] = 1;
+                            startIndexInPolygon[polygonIndex] = 1;
                         }
                     }
                     else
                     {
-                        double dist = (polygons[polygonIndex][polyStart[polygonIndex]] - currentPosition).LengthSquared();
+                        double dist = (polygons[polygonIndex][startIndexInPolygon[polygonIndex]] - currentPosition).LengthSquared();
                         if (dist < bestDist)
                         {
-                            bestIndex = polygonIndex;
+                            bestPolygonIndex = polygonIndex;
                             bestDist = dist;
                         }
                     }
                 }
 
-                if (bestIndex > -1)
+                if (bestPolygonIndex > -1)
                 {
-                    if (polygons[bestIndex].Count == 2)
+                    if (polygons[bestPolygonIndex].Count == 2)
                     {
-                        int endIndex = (polyStart[bestIndex] + 1) % 2;
-                        currentPosition = polygons[bestIndex][endIndex];
-                        //incommingPerpundicularNormal = (polygons[bestIndex][endIndex] - polygons[bestIndex][polyStart[bestIndex]]).normal(1000).CrossZ();
+                        int endIndex = (startIndexInPolygon[bestPolygonIndex] + 1) % 2;
+                        currentPosition = polygons[bestPolygonIndex][endIndex];
+                        //incommingPerpendicularNormal = (polygons[bestIndex][endIndex] - polygons[bestIndex][polyStart[bestIndex]]).normal(1000).CrossZ();
                     }
                     else
                     {
-                        currentPosition = polygons[bestIndex][polyStart[bestIndex]];
-                        //incommingPerpundicularNormal = new IntPoint(0, 0);
+                        currentPosition = polygons[bestPolygonIndex][startIndexInPolygon[bestPolygonIndex]];
+                        //incommingPerpendicularNormal = new IntPoint(0, 0);
                     }
-                    picked[bestIndex] = true;
-                    polyOrder.Add(bestIndex);
+                    polygonHasBeenAdded[bestPolygonIndex] = true;
+                    bestPolygonOrderIndex.Add(bestPolygonIndex);
                 }
             }
 
             currentPosition = startPosition;
-            for (int n = 0; n < polyOrder.Count; n++)
+            foreach(int bestPolygonIndex in bestPolygonOrderIndex)
             {
-                int nr = polyOrder[n];
-                int best = -1;
+                int bestStartPoint = -1;
                 double bestDist = double.MaxValue;
-                for (int i = 0; i < polygons[nr].Count; i++)
+                for (int pointIndex = 0; pointIndex < polygons[bestPolygonIndex].Count; pointIndex++)
                 {
-                    double dist = (polygons[nr][i] - currentPosition).LengthSquared();
+                    double dist = (polygons[bestPolygonIndex][pointIndex] - currentPosition).LengthSquared();
                     if (dist < bestDist)
                     {
-                        best = i;
+                        bestStartPoint = pointIndex;
                         bestDist = dist;
                     }
                 }
-                polyStart[nr] = best;
-                if (polygons[nr].Count <= 2)
+                startIndexInPolygon[bestPolygonIndex] = bestStartPoint;
+                if (polygons[bestPolygonIndex].Count <= 2)
                 {
-                    currentPosition = polygons[nr][(best + 1) % 2];
+                    currentPosition = polygons[bestPolygonIndex][(bestStartPoint + 1) % 2];
                 }
                 else
                 {
-                    currentPosition = polygons[nr][best];
+                    currentPosition = polygons[bestPolygonIndex][bestStartPoint];
                 }
             }
         }

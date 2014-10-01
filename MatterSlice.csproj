@@ -116,7 +116,7 @@
     <Compile Include="utils\PolygonHelper.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="pathOrderOptimizer.cs" />
+    <Compile Include="PathOrderOptimizer.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="support.cs" />

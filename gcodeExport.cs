@@ -745,15 +745,15 @@ namespace MatterHackers.MatterSlice
             PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(lastPosition);
             for (int i = 0; i < polygons.Count; i++)
             {
-                orderOptimizer.addPolygon(polygons[i]);
+                orderOptimizer.AddPolygon(polygons[i]);
             }
 
-            orderOptimizer.optimize();
+            orderOptimizer.Optimize();
 
-            for (int i = 0; i < orderOptimizer.polyOrder.Count; i++)
+            for (int i = 0; i < orderOptimizer.bestPolygonOrderIndex.Count; i++)
             {
-                int polygonIndex = orderOptimizer.polyOrder[i];
-                writePolygon(polygons[polygonIndex], orderOptimizer.polyStart[polygonIndex], config);
+                int polygonIndex = orderOptimizer.bestPolygonOrderIndex[i];
+                writePolygon(polygons[polygonIndex], orderOptimizer.startIndexInPolygon[polygonIndex], config);
             }
         }
 
