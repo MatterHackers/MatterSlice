@@ -448,7 +448,7 @@ namespace MatterHackers.MatterSlice
                 bool printSupportFirst = (storage.support.generated && config.supportExtruder > 0 && config.supportExtruder == gcodeLayer.getExtruder());
                 if (printSupportFirst)
                 {
-                    addSupportToGCode(storage, gcodeLayer, layerIndex, config.extrusionWidth_um);
+                    AddSupportToGCode(storage, gcodeLayer, layerIndex, config.extrusionWidth_um);
                 }
 
                 int fanSpeedPercent = GetFanSpeed(layerIndex, gcodeLayer);
@@ -460,12 +460,12 @@ namespace MatterHackers.MatterSlice
                         volumeIdx = (volumeIdx + 1) % storage.volumes.Count;
                     }
 
-                    addVolumeLayerToGCode(storage, gcodeLayer, volumeIdx, layerIndex, extrusionWidth_um, fanSpeedPercent);
+                    AddVolumeLayerToGCode(storage, gcodeLayer, volumeIdx, layerIndex, extrusionWidth_um, fanSpeedPercent);
                 }
 
                 if (!printSupportFirst)
                 {
-                    addSupportToGCode(storage, gcodeLayer, layerIndex, config.extrusionWidth_um);
+                    AddSupportToGCode(storage, gcodeLayer, layerIndex, config.extrusionWidth_um);
                 }
 
                 //Finish the layer by applying speed corrections for minimum layer times.
@@ -513,7 +513,7 @@ namespace MatterHackers.MatterSlice
         }
 
         //Add a single layer from a single mesh-volume to the GCode
-        void addVolumeLayerToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int volumeIndex, int layerIndex, int extrusionWidth_um, int fanSpeedPercent)
+        void AddVolumeLayerToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int volumeIndex, int layerIndex, int extrusionWidth_um, int fanSpeedPercent)
         {
             int prevExtruder = gcodeLayer.getExtruder();
             bool extruderChanged = gcodeLayer.setExtruder(volumeIndex);
@@ -556,9 +556,9 @@ namespace MatterHackers.MatterSlice
             }
 
             PathOrderOptimizer partOrderOptimizer = new PathOrderOptimizer(gcode.getPositionXY());
-            for (int partNr = 0; partNr < layer.parts.Count; partNr++)
+            for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
             {
-                partOrderOptimizer.AddPolygon(layer.parts[partNr].insets[0][0]);
+                partOrderOptimizer.AddPolygon(layer.parts[partIndex].insets[0][0]);
             }
             partOrderOptimizer.Optimize();
 
@@ -577,6 +577,11 @@ namespace MatterHackers.MatterSlice
 
                 if (config.numberOfPerimeters > 0)
                 {
+                    if (partCounter > 0)
+                    {
+                        gcodeLayer.forceRetract();
+                    }
+
                     if (config.continuousSpiralOuterPerimeter)
                     {
                         if ((int)(layerIndex) >= config.numberOfBottomLayers)
@@ -682,7 +687,7 @@ namespace MatterHackers.MatterSlice
             gcodeLayer.setCombBoundary(null);
         }
 
-        void addSupportToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerIndex, int extrusionWidth_um)
+        void AddSupportToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerIndex, int extrusionWidth_um)
         {
             if (!storage.support.generated)
             {

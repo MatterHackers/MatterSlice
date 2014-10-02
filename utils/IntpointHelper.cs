@@ -181,6 +181,11 @@ namespace MatterHackers.MatterSlice
             return p0.LengthSquared() <= len * len;
         }
 
+        public static bool LongerThen(this IntPoint p0, long len)
+        {
+            return !ShorterThen(p0, len);
+        }
+
         public static int vSize(this IntPoint p0)
         {
             return (int)Math.Sqrt(p0.LengthSquared());

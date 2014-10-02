@@ -31,8 +31,8 @@ namespace MatterHackers.MatterSlice
 
     public class PathOrderOptimizer
     {
-        public IntPoint startPosition;
-        public List<Polygon> polygons = new List<Polygon>();
+        IntPoint startPosition;
+        List<Polygon> polygons = new List<Polygon>();
         public List<int> startIndexInPolygon = new List<int>();
         public List<int> bestPolygonOrderIndex = new List<int>();
 
@@ -89,23 +89,24 @@ namespace MatterHackers.MatterSlice
                         continue;
                     }
 
+                    // If there are only 2 points (a single line) we are willing to start from the start or the end.
                     if (polygons[polygonIndex].Count == 2)
                     {
-                        double dist = (polygons[polygonIndex][0] - currentPosition).LengthSquared();
+                        double distToSart = (polygons[polygonIndex][0] - currentPosition).LengthSquared();
                         //dist += Math.Abs(incommingPerpendicularNormal.Dot(polygons[polygonIndex][1] - polygons[polygonIndex][0].normal(1000))) * 0.0001f;
-                        if (dist < bestDist)
+                        if (distToSart < bestDist)
                         {
                             bestPolygonIndex = polygonIndex;
-                            bestDist = dist;
+                            bestDist = distToSart;
                             startIndexInPolygon[polygonIndex] = 0;
                         }
                         
-                        dist = (polygons[polygonIndex][1] - currentPosition).LengthSquared();
+                        double distToEnd = (polygons[polygonIndex][1] - currentPosition).LengthSquared();
                         //dist += Math.Abs(incommingPerpendicularNormal.Dot(polygons[polygonIndex][0] - polygons[polygonIndex][1].normal(1000))) * 0.0001f;
-                        if (dist < bestDist)
+                        if (distToEnd < bestDist)
                         {
                             bestPolygonIndex = polygonIndex;
-                            bestDist = dist;
+                            bestDist = distToEnd;
                             startIndexInPolygon[polygonIndex] = 1;
                         }
                     }
@@ -124,7 +125,9 @@ namespace MatterHackers.MatterSlice
                 {
                     if (polygons[bestPolygonIndex].Count == 2)
                     {
-                        int endIndex = (startIndexInPolygon[bestPolygonIndex] + 1) % 2;
+                        // get the point that is opposite from the one we started on
+                        int startIndex = startIndexInPolygon[bestPolygonIndex];
+                        int endIndex = (startIndex + 1) % 2;
                         currentPosition = polygons[bestPolygonIndex][endIndex];
                         //incommingPerpendicularNormal = (polygons[bestIndex][endIndex] - polygons[bestIndex][polyStart[bestIndex]]).normal(1000).CrossZ();
                     }
@@ -153,7 +156,7 @@ namespace MatterHackers.MatterSlice
                     }
                 }
                 startIndexInPolygon[bestPolygonIndex] = bestStartPoint;
-                if (polygons[bestPolygonIndex].Count <= 2)
+                if (polygons[bestPolygonIndex].Count == 2)
                 {
                     currentPosition = polygons[bestPolygonIndex][(bestStartPoint + 1) % 2];
                 }

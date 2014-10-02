@@ -512,6 +512,7 @@ namespace MatterHackers.MatterSlice
     {
         public GCodePathConfig config;
         public bool retract;
+        public bool Retract { get { return retract; } set { retract = value; } }
         public int extruderIndex;
         public List<IntPoint> points = new List<IntPoint>();
         public bool done;//Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
@@ -526,7 +527,7 @@ namespace MatterHackers.MatterSlice
 
         IntPoint lastPosition;
         List<GCodePath> paths = new List<GCodePath>();
-        AvoidCrossingPerimeters avaidCrossingPerimeters;
+        AvoidCrossingPerimeters avoidCrossingPerimeters;
 
         GCodePathConfig travelConfig = new GCodePathConfig();
         int extrudeSpeedFactor;
@@ -544,7 +545,7 @@ namespace MatterHackers.MatterSlice
             travelConfig = new GCodePathConfig(travelSpeed, 0, "travel");
 
             lastPosition = gcode.getPositionXY();
-            avaidCrossingPerimeters = null;
+            avoidCrossingPerimeters = null;
             extrudeSpeedFactor = 100;
             travelSpeedFactor = 100;
             extraTime = 0.0;
@@ -566,7 +567,7 @@ namespace MatterHackers.MatterSlice
 
             paths.Add(new GCodePath());
             GCodePath ret = paths[paths.Count - 1];
-            ret.retract = false;
+            ret.Retract = false;
             ret.config = config;
             ret.extruderIndex = currentExtruderIndex;
             ret.done = false;
@@ -601,11 +602,11 @@ namespace MatterHackers.MatterSlice
         {
             if (polygons != null)
             {
-                avaidCrossingPerimeters = new AvoidCrossingPerimeters(polygons);
+                avoidCrossingPerimeters = new AvoidCrossingPerimeters(polygons);
             }
             else
             {
-                avaidCrossingPerimeters = null;
+                avoidCrossingPerimeters = null;
             }
         }
 
@@ -647,16 +648,13 @@ namespace MatterHackers.MatterSlice
 
             if (forceRetraction)
             {
-                if (!(lastPosition - positionToMoveTo).ShorterThen(retractionMinimumDistance))
-                {
-                    path.retract = true;
-                }
+                path.Retract = true;
                 forceRetraction = false;
             }
-            else if (avaidCrossingPerimeters != null)
+            else if (avoidCrossingPerimeters != null)
             {
                 List<IntPoint> pointList = new List<IntPoint>();
-                if (avaidCrossingPerimeters.CreatePathInsideBoundary(lastPosition, positionToMoveTo, pointList))
+                if (avoidCrossingPerimeters.CreatePathInsideBoundary(lastPosition, positionToMoveTo, pointList))
                 {
                     long lineLength = 0;
                     // we can stay inside so move within the boundary
@@ -670,25 +668,25 @@ namespace MatterHackers.MatterSlice
                     }
 
                     // If the internal move is very long (20 mm), do a retration anyway
-                    if(lineLength > (20 * 1000))
+                    if (lineLength > retractionMinimumDistance)
                     {
-                        path.retract = true;
+                        path.Retract = true;
                     }
                 }
                 else
                 {
-                    if (!(lastPosition - positionToMoveTo).ShorterThen(retractionMinimumDistance))
+                    if ((lastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance))
                     {
                         // We are moving relatively far and are going to cross a boundary so do a retraction.
-                        path.retract = true;
+                        path.Retract = true;
                     }
                 }
             }
             else if (alwaysRetract)
             {
-                if (!(lastPosition - positionToMoveTo).ShorterThen(retractionMinimumDistance))
+                if ((lastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance))
                 {
-                    path.retract = true;
+                    path.Retract = true;
                 }
             }
             
@@ -704,17 +702,17 @@ namespace MatterHackers.MatterSlice
 
         public void moveInsideCombBoundary(int distance)
         {
-            if (avaidCrossingPerimeters == null || avaidCrossingPerimeters.PointIsInsideBoundary(lastPosition))
+            if (avoidCrossingPerimeters == null || avoidCrossingPerimeters.PointIsInsideBoundary(lastPosition))
             {
                 return;
             }
 
             IntPoint p = lastPosition;
-            if (avaidCrossingPerimeters.MovePointInsideBoundary(ref p, distance))
+            if (avoidCrossingPerimeters.MovePointInsideBoundary(ref p, distance))
             {
                 //Move inside again, so we move out of tight 90deg corners
-                avaidCrossingPerimeters.MovePointInsideBoundary(ref p, distance);
-                if (avaidCrossingPerimeters.PointIsInsideBoundary(p))
+                avoidCrossingPerimeters.MovePointInsideBoundary(ref p, distance);
+                if (avoidCrossingPerimeters.PointIsInsideBoundary(p))
                 {
                     writeTravel(p);
                     //Make sure the that any retraction happens after this move, not before it by starting a new move path.
@@ -727,9 +725,9 @@ namespace MatterHackers.MatterSlice
         {
             IntPoint currentPosition = polygon[startIndex];
             writeTravel(currentPosition);
-            for (int i = 1; i < polygon.Count; i++)
+            for (int poisitionIndex = 1; poisitionIndex < polygon.Count; poisitionIndex++)
             {
-                IntPoint destination = polygon[(startIndex + i) % polygon.Count];
+                IntPoint destination = polygon[(startIndex + poisitionIndex) % polygon.Count];
                 writeExtrusionMove(destination, config);
                 currentPosition = destination;
             }
@@ -743,10 +741,7 @@ namespace MatterHackers.MatterSlice
         public void writePolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
         {
             PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(lastPosition);
-            for (int i = 0; i < polygons.Count; i++)
-            {
-                orderOptimizer.AddPolygon(polygons[i]);
-            }
+            orderOptimizer.AddPolygons(polygons);
 
             orderOptimizer.Optimize();
 
@@ -843,7 +838,7 @@ namespace MatterHackers.MatterSlice
                     extruderIndex = path.extruderIndex;
                     gcode.switchExtruder(extruderIndex);
                 }
-                else if (path.retract)
+                else if (path.Retract)
                 {
                     gcode.writeRetraction();
                 }

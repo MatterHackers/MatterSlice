@@ -318,7 +318,7 @@ namespace MatterHackers.MatterSlice
             retractionOnTravel = 4.5;
             retractionSpeed = 45;
             retractionOnExtruderSwitch = 14.5;
-            minimumTravelToCauseRetraction = 1.5;
+            minimumTravelToCauseRetraction = 10;
             minimumExtrusionBeforeRetraction = 0;
             wipeShieldDistanceFromObject = 0;
             avoidCrossingPerimeters = true;
