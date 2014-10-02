@@ -31,7 +31,7 @@ namespace MatterHackers.MatterSlice
 
     public static class Inset
     {
-        public static void generateInsets(SliceLayerPart part, int offset, int insetCount)
+        public static void GenerateInsets(SliceLayerPart part, int offset, int insetCount)
         {
             part.combBoundery = part.outline.Offset(-offset);
             if (insetCount == 0)
@@ -45,14 +45,6 @@ namespace MatterHackers.MatterSlice
                 {
                     part.insets.Add(new Polygons());
                     part.insets[i] = part.outline.Offset(-offset * i - offset / 2);
-
-                    if (i == 0)
-                    {
-                        // Add thin wall filling by taking the area between the insets.
-                        //Polygons thinWalls = part.insets[0].Offset(-offset / 4).CreateDifference(part.insets[0].Offset);
-                        //upskin.AddAll(thinWalls);
-                        //downskin.AddAll(thinWalls);
-                    }
 
                     long minimumDistanceToCreateNewPosition = 10;
                     part.insets[i] = Clipper.CleanPolygons(part.insets[i], minimumDistanceToCreateNewPosition);
@@ -68,9 +60,9 @@ namespace MatterHackers.MatterSlice
 
         public static void generateInsets(SliceLayer layer, int offset, int insetCount)
         {
-            for (int partNr = 0; partNr < layer.parts.Count; partNr++)
+            for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
             {
-                generateInsets(layer.parts[partNr], offset, insetCount);
+                GenerateInsets(layer.parts[partIndex], offset, insetCount);
             }
 
             //Remove the parts which did not generate an inset. As these parts are too small to print,
