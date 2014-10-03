@@ -65,19 +65,19 @@ namespace MatterHackers.MatterSlice.Tests
         public void CorrectNumberOfLayersForLayerHeights()
         {
             // test .1 layer height
-            Assert.IsTrue(TestUtlities.CountLayers(CreateGCodeForLayerHeights(.1, .1)) == 100);
-            Assert.IsTrue(TestUtlities.CountLayers(CreateGCodeForLayerHeights(.2, .1)) == 99);
-            Assert.IsTrue(TestUtlities.CountLayers(CreateGCodeForLayerHeights(.2, .2)) == 50);
-            Assert.IsTrue(TestUtlities.CountLayers(CreateGCodeForLayerHeights(.05, .2)) == 51);
+            Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.1, .1))) == 100);
+            Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .1))) == 99);
+            Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2))) == 50);
+            Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.05, .2))) == 51);
         }
 
         [Test]
         public void BottomClipCorrectNumberOfLayers()
         {
             // test .1 layer height
-            Assert.IsTrue(TestUtlities.CountLayers(CreateGCodeForLayerHeights(.2, .2, .2)) == 49);
-            Assert.IsTrue(TestUtlities.CountLayers(CreateGCodeForLayerHeights(.2, .2, .31)) == 48);
-            Assert.IsTrue(TestUtlities.CountLayers(CreateGCodeForLayerHeights(.2, .2, .4)) == 48);
+            Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2, .2))) == 49);
+            Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2, .31))) == 48);
+            Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2, .4))) == 48);
         }
     }
 

@@ -43,7 +43,36 @@ namespace MatterHackers.MatterSlice.Tests
     public class SlicerLayerTests
     {
         [Test]
-        public void WindingDirectionDoseNotMatter()
+        public void AlwaysRetractOnIslandChange()
+        {
+            string meshWithIslands = TestUtlities.GetStlPath("comb");
+            string gCodeWithIslands = TestUtlities.GetTempGCodePath("comb-box");
+
+            {
+                // load a model that has 3 islands
+                ConfigSettings config = new ConfigSettings();
+                // make sure no retractions are going to occure that are island crossing
+                config.minimumTravelToCauseRetraction = 2000;
+                fffProcessor processor = new fffProcessor(config);
+                processor.setTargetFile(gCodeWithIslands);
+                processor.LoadStlFile(meshWithIslands);
+                // slice and save it
+                processor.DoProcessing();
+                processor.finalize();
+
+                string[] gcodeContents = TestUtlities.LoadGCodeFile(gCodeWithIslands);
+                int numLayers = TestUtlities.CountLayers(gcodeContents);
+                for (int i = 1; i < numLayers - 1; i++)
+                {
+                    string[] layer = TestUtlities.GetGCodeForLayer(gcodeContents, i);
+                    int numRetractions = TestUtlities.CountRetractions(layer);
+                    Assert.IsTrue(numRetractions == 4);
+                }
+            }
+        }
+        
+        [Test]
+        public void WindingDirectionDoesNotMatter()
         {
             string manifoldFile = TestUtlities.GetStlPath("20mm-box");
             string manifoldGCode = TestUtlities.GetTempGCodePath("20mm-box");
@@ -89,7 +118,8 @@ namespace MatterHackers.MatterSlice.Tests
             if (!ranTests)
             {
                 SlicerLayerTests slicerLayerTests = new SlicerLayerTests();
-                slicerLayerTests.WindingDirectionDoseNotMatter();
+                slicerLayerTests.WindingDirectionDoesNotMatter();
+                slicerLayerTests.AlwaysRetractOnIslandChange();
 
                 ranTests = true;
             }

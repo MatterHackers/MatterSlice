@@ -64,12 +64,16 @@ namespace MatterHackers.MatterSlice.Tests
             return fileAndPath;
         }
 
-        public static int CountLayers(string gcodeFile)
+        public static string[] LoadGCodeFile(string gcodeFile)
+        {
+            return File.ReadAllLines(gcodeFile);
+        }
+
+        public static int CountLayers(string[] gcodeContents)
         {
             int layers = 0;
             int layerCount = 0;
-            string[] lines = File.ReadAllLines(gcodeFile);
-            foreach (string line in lines)
+            foreach (string line in gcodeContents)
             {
                 if (line.Contains("Layer count"))
                 {
@@ -103,6 +107,46 @@ namespace MatterHackers.MatterSlice.Tests
             while (!Directory.Exists(tempGCodePath))
             {
             }
+        }
+
+        public static string[] GetGCodeForLayer(string[] gcodeContents, int layerIndex)
+        {
+            List<string> layerLines = new List<string>();
+            int currentLayer = -1;
+            foreach (string line in gcodeContents)
+            {
+                if (line.Contains("LAYER:"))
+                {
+                    currentLayer++;
+                }
+
+                if (currentLayer == layerIndex)
+                {
+                    layerLines.Add(line);
+                }
+            }
+
+            return layerLines.ToArray();
+        }
+
+        public static int CountRetractions(string[] layer)
+        {
+            int retractions = 0;
+            foreach (string line in layer)
+            {
+                if (line.StartsWith("G1 "))
+                {
+                    if (line.Contains("E")
+                        && !line.Contains("X")
+                        && !line.Contains("Y")
+                        && !line.Contains("Z"))
+                    {
+                        retractions++;
+                    }
+                }
+            }
+
+            return retractions;
         }
     }
 }
