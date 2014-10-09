@@ -42,8 +42,8 @@ namespace MatterHackers.MatterSlice
         bool[] done;
 
         int extraErrorGap = 20;
-        delegate bool CheckForSupport(IntPoint pointToCheckIfNeedsSupport, int z);
-        public bool needSupportAt(IntPoint pointToCheckIfNeedsSupport, int z)
+        delegate bool CheckForSupport(IntPoint pointToCheckIfNeedsSupport, int currentZHeight_um);
+        public bool needSupportAt(IntPoint pointToCheckIfNeedsSupport, int currentZHeight_um)
         {
             if (pointToCheckIfNeedsSupport.X < 1
                 || pointToCheckIfNeedsSupport.Y < 1
@@ -65,7 +65,7 @@ namespace MatterHackers.MatterSlice
                     bool angleNeedsSupport = currentBottomSupportPoint.cosAngle >= cosAngle;
                     if (angleNeedsSupport)
                     {
-                        bool zIsBelowBottomSupportPoint = z <= currentBottomSupportPoint.z - interfaceZDistance_um - supportZDistance_um - extraErrorGap;
+                        bool zIsBelowBottomSupportPoint = currentZHeight_um <= currentBottomSupportPoint.z - interfaceZDistance_um - supportZDistance_um - extraErrorGap;
                         if (zIndex == 0)
                         {
                             if (zIsBelowBottomSupportPoint)
@@ -76,7 +76,7 @@ namespace MatterHackers.MatterSlice
                         else
                         {
                             SupportPoint previousTopSupportPoint = supportStorage.xYGridOfSupportPoints[gridIndex][zIndex - 1];
-                            bool zIsAbovePrevSupportPoint = z > previousTopSupportPoint.z + supportZDistance_um;
+                            bool zIsAbovePrevSupportPoint = currentZHeight_um > previousTopSupportPoint.z + supportZDistance_um;
                             if (zIsBelowBottomSupportPoint && zIsAbovePrevSupportPoint)
                             {
                                 return true;
@@ -101,7 +101,7 @@ namespace MatterHackers.MatterSlice
                     return false;
                 }
 
-                if (z >= supportStorage.xYGridOfSupportPoints[gridIndex][0].z - interfaceZDistance_um - supportZDistance_um - extraErrorGap)
+                if (currentZHeight_um >= supportStorage.xYGridOfSupportPoints[gridIndex][0].z - interfaceZDistance_um - supportZDistance_um - extraErrorGap)
                 {
                     // the spot is above the place we need to support
                     return false;
@@ -111,7 +111,7 @@ namespace MatterHackers.MatterSlice
             return true;
         }
 
-        public bool needInterfaceAt(IntPoint pointToCheckIfNeedsSupport, int z)
+        public bool needInterfaceAt(IntPoint pointToCheckIfNeedsSupport, int currentZHeight_um)
         {
             if (pointToCheckIfNeedsSupport.X < 1
                 || pointToCheckIfNeedsSupport.Y < 1
@@ -133,8 +133,8 @@ namespace MatterHackers.MatterSlice
                     bool angleNeedsSupport = currentBottomSupportPoint.cosAngle >= cosAngle;
                     if (angleNeedsSupport)
                     {
-                        bool zIsBelowBottomSupportPoint = z <= currentBottomSupportPoint.z - supportZDistance_um - extraErrorGap;
-                        bool zIsWithinInterfaceGap = z >= currentBottomSupportPoint.z - interfaceZDistance_um - supportZDistance_um - extraErrorGap;
+                        bool zIsBelowBottomSupportPoint = currentZHeight_um <= currentBottomSupportPoint.z - supportZDistance_um - extraErrorGap;
+                        bool zIsWithinInterfaceGap = currentZHeight_um >= currentBottomSupportPoint.z - interfaceZDistance_um - supportZDistance_um - extraErrorGap;
                         if (zIndex == 0)
                         {
                             if (zIsBelowBottomSupportPoint && zIsWithinInterfaceGap)
@@ -145,7 +145,7 @@ namespace MatterHackers.MatterSlice
                         else
                         {
                             SupportPoint previousTopSupportPoint = supportStorage.xYGridOfSupportPoints[gridIndex][zIndex - 1];
-                            bool zIsAbovePrevSupportPoint = z > previousTopSupportPoint.z + supportZDistance_um;
+                            bool zIsAbovePrevSupportPoint = currentZHeight_um > previousTopSupportPoint.z + supportZDistance_um;
                             if (zIsBelowBottomSupportPoint
                                 && zIsWithinInterfaceGap
                                 && zIsAbovePrevSupportPoint)
@@ -172,13 +172,13 @@ namespace MatterHackers.MatterSlice
                     return false;
                 }
 
-                if (z >= supportStorage.xYGridOfSupportPoints[gridIndex][0].z - supportZDistance_um - extraErrorGap)
+                if (currentZHeight_um >= supportStorage.xYGridOfSupportPoints[gridIndex][0].z - supportZDistance_um - extraErrorGap)
                 {
                     // the spot is above the place we need to support
                     return false;
                 }
 
-                if (z < supportStorage.xYGridOfSupportPoints[gridIndex][0].z - interfaceZDistance_um - supportZDistance_um - extraErrorGap)
+                if (currentZHeight_um < supportStorage.xYGridOfSupportPoints[gridIndex][0].z - interfaceZDistance_um - supportZDistance_um - extraErrorGap)
                 {
                     // the spot is not within the interface gap
                     return false;
@@ -229,7 +229,7 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        public SupportPolyGenerator(SupportStorage storage, int z)
+        public SupportPolyGenerator(SupportStorage storage, int currentZHeight_um)
         {
             this.supportStorage = storage;
             this.generateInternalSupport = storage.generateInternalSupport;
@@ -240,9 +240,9 @@ namespace MatterHackers.MatterSlice
             }
 
             cosAngle = Math.Cos((double)(storage.endAngle) / 180.0 * Math.PI) - 0.01;
-            this.supportZDistance_um = storage.supportZDistance_um;
+            this.supportZDistance_um = storage.supportLayerHeight_um * storage.supportZGapLayers;
 
-            this.interfaceZDistance_um = storage.interfaceLayers * supportZDistance_um;
+            this.interfaceZDistance_um = storage.supportLayerHeight_um * storage.supportInterfaceLayers;
 
             done = new bool[storage.gridWidth * storage.gridHeight];
 
@@ -252,14 +252,14 @@ namespace MatterHackers.MatterSlice
                 {
                     if (!done[x + y * storage.gridWidth])
                     {
-                        if (needSupportAt(new IntPoint(x, y), z))
+                        if (needSupportAt(new IntPoint(x, y), currentZHeight_um))
                         {
-                            lazyFill(supportPolygons, new IntPoint(x, y), z, needSupportAt);
+                            lazyFill(supportPolygons, new IntPoint(x, y), currentZHeight_um, needSupportAt);
                         }
-                        else if (needInterfaceAt(new IntPoint(x, y), z))
+                        else if (needInterfaceAt(new IntPoint(x, y), currentZHeight_um))
                         {
                             //lazyFill(supportPolygons, new IntPoint(x, y), z, needInterfaceAt);
-                            lazyFill(interfacePolygons, new IntPoint(x, y), z, needInterfaceAt);
+                            lazyFill(interfacePolygons, new IntPoint(x, y), currentZHeight_um, needInterfaceAt);
                         }
                     }
                 }

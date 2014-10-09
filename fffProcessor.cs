@@ -710,27 +710,28 @@ namespace MatterHackers.MatterSlice
                 }
             }
 
-            int z = config.firstLayerThickness_um;
+            int currentZHeight_um = config.firstLayerThickness_um;
             if (layerIndex == 0)
             {
-                z /= 2;
+                currentZHeight_um /= 2;
             }
             else
             {
                 if(layerIndex > 1)
                 {
-                    z += (layerIndex-1) * config.layerThickness_um;
+                    currentZHeight_um += (layerIndex-1) * config.layerThickness_um;
                 }
-                z += config.layerThickness_um / 2;
+                currentZHeight_um += config.layerThickness_um / 2;
             }
             
-            SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, z);
+            SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, currentZHeight_um);
 
-            WriteSupportPolygons(storage, gcodeLayer, layerIndex, extrusionWidth_um, supportGenerator.supportPolygons, false);
-            WriteSupportPolygons(storage, gcodeLayer, layerIndex, extrusionWidth_um, supportGenerator.interfacePolygons, true);
+            WriteSupportPolygons(storage, gcodeLayer, layerIndex, extrusionWidth_um, supportGenerator.supportPolygons, SupportType.General);
+            WriteSupportPolygons(storage, gcodeLayer, layerIndex, extrusionWidth_um, supportGenerator.interfacePolygons, SupportType.Interface);
         }
 
-        private void WriteSupportPolygons(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerIndex, int extrusionWidth_um, Polygons supportPolygons, bool interfaceLayer)
+        enum SupportType { General, Interface };
+        private void WriteSupportPolygons(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerIndex, int extrusionWidth_um, Polygons supportPolygons, SupportType interfaceLayer)
         {
             for (int volumeIndex = 0; volumeIndex < storage.volumes.Count; volumeIndex++)
             {
@@ -760,22 +761,27 @@ namespace MatterHackers.MatterSlice
                 Polygons supportLines = new Polygons();
                 if (config.supportLineSpacing_um > 0)
                 {
-                    if (interfaceLayer)
+                    switch (interfaceLayer)
                     {
-                        Infill.GenerateLineInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle + 90, extrusionWidth_um);
-                    }
-                    else
-                    {
-                        switch (config.supportType)
-                        {
-                            case ConfigConstants.SUPPORT_TYPE.GRID:
-                                Infill.GenerateGridInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle, config.supportLineSpacing_um);
-                                break;
+                        case SupportType.Interface:
+                            Infill.GenerateLineInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle + 90, extrusionWidth_um);
+                            break;
 
-                            case ConfigConstants.SUPPORT_TYPE.LINES:
-                                Infill.GenerateLineInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle, config.supportLineSpacing_um);
-                                break;
-                        }
+                        case SupportType.General:
+                            switch (config.supportType)
+                            {
+                                case ConfigConstants.SUPPORT_TYPE.GRID:
+                                    Infill.GenerateGridInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle, config.supportLineSpacing_um);
+                                    break;
+
+                                case ConfigConstants.SUPPORT_TYPE.LINES:
+                                    Infill.GenerateLineInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle, config.supportLineSpacing_um);
+                                    break;
+                            }
+                            break;
+
+                        default:
+                            throw new NotImplementedException();
                     }
                 }
 
