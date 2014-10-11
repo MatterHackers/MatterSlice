@@ -49,7 +49,7 @@ namespace MatterHackers.MatterSlice
         int currentFanSpeed;
         ConfigConstants.OUTPUT_TYPE outputType;
 
-        double[] totalFilament = new double[ConfigConstants.MAX_EXTRUDERS];
+        double[] totalFilament_mm = new double[ConfigConstants.MAX_EXTRUDERS];
         double totalPrintTime;
         TimeEstimateCalculator estimateCalculator = new TimeEstimateCalculator();
 
@@ -67,7 +67,7 @@ namespace MatterHackers.MatterSlice
             totalPrintTime = 0.0;
             for (int e = 0; e < ConfigConstants.MAX_EXTRUDERS; e++)
             {
-                totalFilament[e] = 0.0;
+                totalFilament_mm[e] = 0.0;
             }
 
             currentSpeed = 0;
@@ -168,10 +168,10 @@ namespace MatterHackers.MatterSlice
         {
             if (extruderIndexToGet == extruderIndex)
             {
-                return totalFilament[extruderIndexToGet] + extrusionAmount_mm;
+                return totalFilament_mm[extruderIndexToGet] + extrusionAmount_mm;
             }
 
-            return totalFilament[extruderIndexToGet];
+            return totalFilament_mm[extruderIndexToGet];
         }
 
         public double getTotalPrintTime()
@@ -200,7 +200,7 @@ namespace MatterHackers.MatterSlice
             if (extrusionAmount_mm != 0.0 && outputType != ConfigConstants.OUTPUT_TYPE.MAKERBOT)
             {
                 f.Write("G92 {0}0\n".FormatWith(extruderCharacter[extruderIndex]));
-                totalFilament[extruderIndex] += extrusionAmount_mm;
+                totalFilament_mm[extruderIndex] += extrusionAmount_mm;
                 extrusionAmountAtPreviousRetraction_mm -= extrusionAmount_mm;
                 extrusionAmount_mm = 0.0;
             }

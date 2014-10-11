@@ -785,7 +785,7 @@ namespace MatterHackers.MatterSlice
                     }
                 }
 
-                gcodeLayer.forceRetract();
+                //gcodeLayer.forceRetract();
                 if (config.avoidCrossingPerimeters)
                 {
                     gcodeLayer.setCombBoundary(island);
@@ -803,7 +803,7 @@ namespace MatterHackers.MatterSlice
 
         void addWipeTower(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerNr, int prevExtruder, int extrusionWidth_um)
         {
-            if (config.wipeTowerSize_um == 1)
+            if (config.wipeTowerSize_um < 1)
             {
                 return;
             }
