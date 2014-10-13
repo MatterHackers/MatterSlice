@@ -785,7 +785,6 @@ namespace MatterHackers.MatterSlice
                     }
                 }
 
-                //gcodeLayer.forceRetract();
                 if (config.avoidCrossingPerimeters)
                 {
                     gcodeLayer.setCombBoundary(island);

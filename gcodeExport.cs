@@ -387,6 +387,7 @@ namespace MatterHackers.MatterSlice
             }
 
             isRetracted = true;
+            extrusionAmount_mm = extruderSwitchRetraction_mm;
             if (outputType == ConfigConstants.OUTPUT_TYPE.MAKERBOT)
             {
                 f.Write("M135 T{0}\n".FormatWith(extruderIndex));
