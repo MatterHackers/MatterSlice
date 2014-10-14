@@ -31,22 +31,22 @@ namespace MatterHackers.MatterSlice
 
     public static class MultiVolumes
     {
-        public static void carveMultipleVolumes(List<SliceVolumeStorage> volumes)
+        public static void RemoveVolumesIntersections(List<SliceVolumeStorage> volumes)
         {
             //Go trough all the volumes, and remove the previous volume outlines from our own outline, so we never have overlapped areas.
-            for (int idx = 0; idx < volumes.Count; idx++)
+            for (int volumeToRemoveFromIndex = 0; volumeToRemoveFromIndex < volumes.Count; volumeToRemoveFromIndex++)
             {
-                for (int idx2 = 0; idx2 < idx; idx2++)
+                for (int volumeToRemoveIndex = volumeToRemoveFromIndex + 1; volumeToRemoveIndex < volumes.Count; volumeToRemoveIndex++)
                 {
-                    for (int layerNr = 0; layerNr < volumes[idx].layers.Count; layerNr++)
+                    for (int layerIndex = 0; layerIndex < volumes[volumeToRemoveFromIndex].layers.Count; layerIndex++)
                     {
-                        SliceLayer layer1 = volumes[idx].layers[layerNr];
-                        SliceLayer layer2 = volumes[idx2].layers[layerNr];
-                        for (int p1 = 0; p1 < layer1.parts.Count; p1++)
+                        SliceLayer layerToRemoveFrom = volumes[volumeToRemoveFromIndex].layers[layerIndex];
+                        SliceLayer layerToRemove = volumes[volumeToRemoveIndex].layers[layerIndex];
+                        for (int partToRemoveFromIndex = 0; partToRemoveFromIndex < layerToRemoveFrom.parts.Count; partToRemoveFromIndex++)
                         {
-                            for (int p2 = 0; p2 < layer2.parts.Count; p2++)
+                            for (int partToRemove = 0; partToRemove < layerToRemove.parts.Count; partToRemove++)
                             {
-                                layer1.parts[p1].outline = layer1.parts[p1].outline.CreateDifference(layer2.parts[p2].outline);
+                                layerToRemoveFrom.parts[partToRemoveFromIndex].outline = layerToRemoveFrom.parts[partToRemoveFromIndex].outline.CreateDifference(layerToRemove.parts[partToRemove].outline);
                             }
                         }
                     }
@@ -56,16 +56,19 @@ namespace MatterHackers.MatterSlice
 
         //Expand each layer a bit and then keep the extra overlapping parts that overlap with other volumes.
         //This generates some overlap in dual extrusion, for better bonding in touching parts.
-        public static void generateMultipleVolumesOverlap(List<SliceVolumeStorage> volumes, int overlap)
+        public static void OverlapMultipleVolumesSlightly(List<SliceVolumeStorage> volumes, int overlap)
         {
-            if (volumes.Count < 2 || overlap <= 0) return;
+            if (volumes.Count < 2 || overlap <= 0)
+            {
+                return;
+            }
 
-            for (int layerNr = 0; layerNr < volumes[0].layers.Count; layerNr++)
+            for (int layerIndex = 0; layerIndex < volumes[0].layers.Count; layerIndex++)
             {
                 Polygons fullLayer = new Polygons();
                 for (int volIdx = 0; volIdx < volumes.Count; volIdx++)
                 {
-                    SliceLayer layer1 = volumes[volIdx].layers[layerNr];
+                    SliceLayer layer1 = volumes[volIdx].layers[layerIndex];
                     for (int p1 = 0; p1 < layer1.parts.Count; p1++)
                     {
                         fullLayer = fullLayer.CreateUnion(layer1.parts[p1].outline.Offset(20));
@@ -73,12 +76,12 @@ namespace MatterHackers.MatterSlice
                 }
                 fullLayer = fullLayer.Offset(-20);
 
-                for (int volIdx = 0; volIdx < volumes.Count; volIdx++)
+                for (int volumeIndex = 0; volumeIndex < volumes.Count; volumeIndex++)
                 {
-                    SliceLayer layer1 = volumes[volIdx].layers[layerNr];
-                    for (int p1 = 0; p1 < layer1.parts.Count; p1++)
+                    SliceLayer layer1 = volumes[volumeIndex].layers[layerIndex];
+                    for (int partIndex = 0; partIndex < layer1.parts.Count; partIndex++)
                     {
-                        layer1.parts[p1].outline = fullLayer.CreateIntersection(layer1.parts[p1].outline.Offset(overlap / 2));
+                        layer1.parts[partIndex].outline = fullLayer.CreateIntersection(layer1.parts[partIndex].outline.Offset(overlap / 2));
                     }
                 }
             }

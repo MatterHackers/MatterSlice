@@ -195,8 +195,8 @@ namespace MatterHackers.MatterSlice
 
         public void SetPositionAndSize(SimpleModel model, long xCenter_um, long yCenter_um, long zClip_um, bool centerObjectInXy)
         {
-            minXYZ_um = model.minXYZ();
-            maxXYZ_um = model.maxXYZ();
+            minXYZ_um = model.minXYZ_um();
+            maxXYZ_um = model.maxXYZ_um();
 
             if (centerObjectInXy)
             {

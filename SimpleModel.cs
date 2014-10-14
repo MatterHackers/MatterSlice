@@ -58,7 +58,7 @@ namespace MatterHackers.MatterSlice
             faceTriangles.Add(new SimpleFace(v0, v1, v2));
         }
 
-        public Point3 minXYZ()
+        public Point3 minXYZ_um()
         {
             if (faceTriangles.Count < 1)
             {
@@ -81,7 +81,7 @@ namespace MatterHackers.MatterSlice
             return ret;
         }
 
-        public Point3 maxXYZ()
+        public Point3 maxXYZ_um()
         {
             if (faceTriangles.Count < 1)
             {
@@ -110,56 +110,40 @@ namespace MatterHackers.MatterSlice
     {
         public List<SimpleVolume> volumes = new List<SimpleVolume>();
 
-        void SET_MIN(ref int n, int m)
-        {
-            if ((m) < (n))
-            {
-                n = m;
-            }
-        }
-
-        void SET_MAX(ref int n, int m)
-        {
-            if ((m) > (n))
-            {
-                n = m;
-            }
-        }
-
-        public Point3 minXYZ()
+        public Point3 minXYZ_um()
         {
             if (volumes.Count < 1)
             {
                 return new Point3(0, 0, 0);
             }
 
-            Point3 ret = volumes[0].minXYZ();
-            for (int volumeIndex = 0; volumeIndex < volumes.Count; volumeIndex++)
+            Point3 minXYZ = volumes[0].minXYZ_um();
+            for (int volumeIndex = 1; volumeIndex < volumes.Count; volumeIndex++)
             {
-                Point3 v = volumes[volumeIndex].minXYZ();
-                SET_MIN(ref ret.x, v.x);
-                SET_MIN(ref ret.y, v.y);
-                SET_MIN(ref ret.z, v.z);
+                Point3 volumeMinXYZ = volumes[volumeIndex].minXYZ_um();
+                minXYZ.x = Math.Min(minXYZ.x, volumeMinXYZ.x);
+                minXYZ.y = Math.Min(minXYZ.y, volumeMinXYZ.y);
+                minXYZ.z = Math.Min(minXYZ.z, volumeMinXYZ.z);
             }
-            return ret;
+            return minXYZ;
         }
 
-        public Point3 maxXYZ()
+        public Point3 maxXYZ_um()
         {
             if (volumes.Count < 1)
             {
                 return new Point3(0, 0, 0);
             }
 
-            Point3 ret = volumes[0].maxXYZ();
-            for (int i = 0; i < volumes.Count; i++)
+            Point3 maxXYZ = volumes[0].maxXYZ_um();
+            for (int volumeIndex = 1; volumeIndex < volumes.Count; volumeIndex++)
             {
-                Point3 v = volumes[i].maxXYZ();
-                SET_MAX(ref ret.x, v.x);
-                SET_MAX(ref ret.y, v.y);
-                SET_MAX(ref ret.z, v.z);
+                Point3 volumeMaxXYZ = volumes[volumeIndex].maxXYZ_um();
+                maxXYZ.x = Math.Max(maxXYZ.x, volumeMaxXYZ.x);
+                maxXYZ.y = Math.Max(maxXYZ.y, volumeMaxXYZ.y);
+                maxXYZ.z = Math.Max(maxXYZ.z, volumeMaxXYZ.z);
             }
-            return ret;
+            return maxXYZ;
         }
 
         public static bool loadModelSTL_ascii(SimpleModel simpleModel, string filename, FMatrix3x3 matrix)

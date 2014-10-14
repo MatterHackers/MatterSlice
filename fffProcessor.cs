@@ -73,6 +73,19 @@ namespace MatterHackers.MatterSlice
                 return;
             }
 
+            timeKeeper.Restart();
+            LogOutput.log("Analyzing and optimizing model...\n");
+            optomizedModel = new OptimizedModel(simpleModel);
+            optomizedModel.SetPositionAndSize(simpleModel, config.positionToPlaceObjectCenter_um.X, config.positionToPlaceObjectCenter_um.Y, -config.bottomClipAmount_um, config.centerObjectInXy);
+            for (int volumeIndex = 0; volumeIndex < simpleModel.volumes.Count; volumeIndex++)
+            {
+                LogOutput.log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleModel.volumes[volumeIndex].faceTriangles.Count, (int)optomizedModel.volumes[volumeIndex].facesTriangle.Count, (double)(optomizedModel.volumes[volumeIndex].facesTriangle.Count) / (double)(simpleModel.volumes[volumeIndex].faceTriangles.Count) * 100));
+                LogOutput.log("  Vertex counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleModel.volumes[volumeIndex].faceTriangles.Count * 3, (int)optomizedModel.volumes[volumeIndex].vertices.Count, (double)(optomizedModel.volumes[volumeIndex].vertices.Count) / (double)(simpleModel.volumes[volumeIndex].faceTriangles.Count * 3) * 100));
+            }
+
+            LogOutput.log("Optimize model {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.Seconds));
+            timeKeeper.Reset();
+
             Stopwatch timeKeeperTotal = new Stopwatch();
             timeKeeperTotal.Start();
             preSetup(config.extrusionWidth_um);
@@ -96,19 +109,6 @@ namespace MatterHackers.MatterSlice
                 return false;
             }
             LogOutput.log("Loaded from disk in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
-            timeKeeper.Restart();
-            LogOutput.log("Analyzing and optimizing model...\n");
-            optomizedModel = new OptimizedModel(simpleModel);
-            optomizedModel.SetPositionAndSize(simpleModel, config.positionToPlaceObjectCenter_um.X, config.positionToPlaceObjectCenter_um.Y, -config.bottomClipAmount_um, config.centerObjectInXy);
-            for (int volumeIndex = 0; volumeIndex < simpleModel.volumes.Count; volumeIndex++)
-            {
-                LogOutput.log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleModel.volumes[volumeIndex].faceTriangles.Count, (int)optomizedModel.volumes[volumeIndex].facesTriangle.Count, (double)(optomizedModel.volumes[volumeIndex].facesTriangle.Count) / (double)(simpleModel.volumes[volumeIndex].faceTriangles.Count) * 100));
-                LogOutput.log("  Vertex counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleModel.volumes[volumeIndex].faceTriangles.Count * 3, (int)optomizedModel.volumes[volumeIndex].vertices.Count, (double)(optomizedModel.volumes[volumeIndex].vertices.Count) / (double)(simpleModel.volumes[volumeIndex].faceTriangles.Count * 3) * 100));
-            }
-
-            LogOutput.log("Optimize model {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.Seconds));
-            timeKeeper.Reset();
-
             return true;
         }
 
@@ -194,13 +194,23 @@ namespace MatterHackers.MatterSlice
 
         void processSliceData(SliceDataStorage storage)
         {
-            //carveMultipleVolumes(storage.volumes);
-            MultiVolumes.generateMultipleVolumesOverlap(storage.volumes, config.multiVolumeOverlapPercent);
+            MultiVolumes.RemoveVolumesIntersections(storage.volumes);
+            MultiVolumes.OverlapMultipleVolumesSlightly(storage.volumes, config.multiVolumeOverlapPercent);
 #if False
             LayerPart.dumpLayerparts(storage, "output.html");
 #endif
 
             int totalLayers = storage.volumes[0].layers.Count;
+#if DEBUG
+            for (int volumeIndex = 1; volumeIndex < storage.volumes.Count; volumeIndex++)
+            {
+                if (totalLayers != storage.volumes[volumeIndex].layers.Count)
+                {
+                    throw new Exception("All the valumes must have the same number of layers (they just can have empty layers).");
+                }
+            }
+#endif
+
             for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
             {
                 for (int volumeIndex = 0; volumeIndex < storage.volumes.Count; volumeIndex++)
@@ -354,21 +364,23 @@ namespace MatterHackers.MatterSlice
             }
             fileNr++;
             
-            SliceVolumeStorage currentVolume = storage.volumes[0];
-            int totalLayers = currentVolume.layers.Count;
+            int totalLayers = storage.volumes[0].layers.Count;
             // let's remove any of the layers on top that are empty
             {
-                for (int layerIndex = currentVolume.layers.Count - 1; layerIndex >= 0; layerIndex--)
+                for (int layerIndex = totalLayers - 1; layerIndex >= 0; layerIndex--)
                 {
                     bool layerHasData = false;
-                    SliceLayer currentLayer = currentVolume.layers[layerIndex];
-                    for(int partIndex = 0; partIndex < currentVolume.layers[layerIndex].parts.Count; partIndex++)
+                    foreach (SliceVolumeStorage currentVolume in storage.volumes)
                     {
-                        SliceLayerPart currentPart = currentLayer.parts[partIndex];
-                        if (currentPart.outline.Count > 0)
+                        SliceLayer currentLayer = currentVolume.layers[layerIndex];
+                        for (int partIndex = 0; partIndex < currentVolume.layers[layerIndex].parts.Count; partIndex++)
                         {
-                            layerHasData = true;
-                            break;
+                            SliceLayerPart currentPart = currentLayer.parts[partIndex];
+                            if (currentPart.outline.Count > 0)
+                            {
+                                layerHasData = true;
+                                break;
+                            }
                         }
                     }
 
