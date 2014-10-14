@@ -34,9 +34,9 @@ namespace MatterHackers.MatterSlice
         public static void RemoveVolumesIntersections(List<SliceVolumeStorage> volumes)
         {
             //Go trough all the volumes, and remove the previous volume outlines from our own outline, so we never have overlapped areas.
-            for (int volumeToRemoveFromIndex = 0; volumeToRemoveFromIndex < volumes.Count; volumeToRemoveFromIndex++)
+            for (int volumeToRemoveFromIndex = volumes.Count-1; volumeToRemoveFromIndex >= 0; volumeToRemoveFromIndex--)
             {
-                for (int volumeToRemoveIndex = volumeToRemoveFromIndex + 1; volumeToRemoveIndex < volumes.Count; volumeToRemoveIndex++)
+                for (int volumeToRemoveIndex = volumeToRemoveFromIndex - 1; volumeToRemoveIndex >= 0; volumeToRemoveIndex--)
                 {
                     for (int layerIndex = 0; layerIndex < volumes[volumeToRemoveFromIndex].layers.Count; layerIndex++)
                     {
