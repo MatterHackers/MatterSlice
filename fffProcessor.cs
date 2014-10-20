@@ -47,7 +47,8 @@ namespace MatterHackers.MatterSlice
         GCodePathConfig insetXConfig = new GCodePathConfig();
         GCodePathConfig fillConfig = new GCodePathConfig();
         GCodePathConfig bridgConfig = new GCodePathConfig();
-        GCodePathConfig supportConfig = new GCodePathConfig();
+        GCodePathConfig supportNormalConfig = new GCodePathConfig();
+        GCodePathConfig supportInterfaceConfig = new GCodePathConfig();
 
         public fffProcessor(ConfigSettings config)
         {
@@ -131,7 +132,8 @@ namespace MatterHackers.MatterSlice
             insetXConfig.setData(config.insidePerimetersSpeed, extrusionWidth, "WALL-INNER");
             fillConfig.setData(config.infillSpeed, extrusionWidth, "FILL");
             bridgConfig.setData(config.bridgeSpeed, extrusionWidth, "BRIDGE");
-            supportConfig.setData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT");
+            supportNormalConfig.setData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT");
+            supportInterfaceConfig.setData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT");
 
             for (int extruderIndex = 0; extruderIndex < ConfigConstants.MAX_EXTRUDERS; extruderIndex++)
             {
@@ -425,7 +427,8 @@ namespace MatterHackers.MatterSlice
                     fillConfig.setData(config.infillSpeed, extrusionWidth_um, "FILL");
                     bridgConfig.setData(config.bridgeSpeed, extrusionWidth_um, "BRIDGE");
                 }
-                supportConfig.setData(config.firstLayerSpeed, config.extrusionWidth_um, "SUPPORT");
+                supportNormalConfig.setData(config.firstLayerSpeed, config.supportExtrusionWidth_um, "SUPPORT");
+                supportInterfaceConfig.setData(config.firstLayerSpeed, config.extrusionWidth_um, "SUPPORT-INTERFACE");
 
                 gcode.writeComment("LAYER:{0}".FormatWith(layerIndex));
                 if (layerIndex == 0)
@@ -460,7 +463,7 @@ namespace MatterHackers.MatterSlice
                 bool printSupportFirst = (storage.support.generated && config.supportExtruder > 0 && config.supportExtruder == gcodeLayer.getExtruder());
                 if (printSupportFirst)
                 {
-                    AddSupportToGCode(storage, gcodeLayer, layerIndex, config.extrusionWidth_um);
+                    AddSupportToGCode(storage, gcodeLayer, layerIndex, config);
                 }
 
                 int fanSpeedPercent = GetFanSpeed(layerIndex, gcodeLayer);
@@ -477,7 +480,7 @@ namespace MatterHackers.MatterSlice
 
                 if (!printSupportFirst)
                 {
-                    AddSupportToGCode(storage, gcodeLayer, layerIndex, config.extrusionWidth_um);
+                    AddSupportToGCode(storage, gcodeLayer, layerIndex, config);
                 }
 
                 //Finish the layer by applying speed corrections for minimum layer times.
@@ -636,16 +639,16 @@ namespace MatterHackers.MatterSlice
                         double bridgeAngle;
                         if (Bridge.BridgeAngle(outline, storage.volumes[volumeIndex].layers[layerIndex - 1], out bridgeAngle))
                         {
-                            Infill.GenerateLinePaths(outline, ref bridgePolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, bridgeAngle);
+                            Infill.GenerateLinePaths(outline, ref bridgePolygons, extrusionWidth_um, config.infillExtendIntoPerimeter_um, bridgeAngle);
                         }
                         else
                         {
-                            Infill.GenerateLinePaths(outline, ref fillPolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
+                            Infill.GenerateLinePaths(outline, ref fillPolygons, extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
                         }
                     }
                     else
                     {
-                        Infill.GenerateLinePaths(outline, ref fillPolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
+                        Infill.GenerateLinePaths(outline, ref fillPolygons, extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
                     }
                 }
 
@@ -699,7 +702,7 @@ namespace MatterHackers.MatterSlice
             gcodeLayer.setCombBoundary(null);
         }
 
-        void AddSupportToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerIndex, int extrusionWidth_um)
+        void AddSupportToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerIndex, ConfigSettings config)
         {
             if (!storage.support.generated)
             {
@@ -711,7 +714,7 @@ namespace MatterHackers.MatterSlice
                 int prevExtruder = gcodeLayer.getExtruder();
                 if (gcodeLayer.setExtruder(config.supportExtruder))
                 {
-                    addWipeTower(storage, gcodeLayer, layerIndex, prevExtruder, extrusionWidth_um);
+                    addWipeTower(storage, gcodeLayer, layerIndex, prevExtruder, config.extrusionWidth_um);
                 }
 
                 if (storage.wipeShield.Count > 0 && storage.volumes.Count == 1)
@@ -738,12 +741,12 @@ namespace MatterHackers.MatterSlice
             
             SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, currentZHeight_um);
 
-            WriteSupportPolygons(storage, gcodeLayer, layerIndex, extrusionWidth_um, supportGenerator.supportPolygons, SupportType.General);
-            WriteSupportPolygons(storage, gcodeLayer, layerIndex, extrusionWidth_um, supportGenerator.interfacePolygons, SupportType.Interface);
+            WriteSupportPolygons(storage, gcodeLayer, layerIndex, config, supportGenerator.interfacePolygons, SupportType.Interface);
+            WriteSupportPolygons(storage, gcodeLayer, layerIndex, config, supportGenerator.supportPolygons, SupportType.General);
         }
 
         enum SupportType { General, Interface };
-        private void WriteSupportPolygons(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerIndex, int extrusionWidth_um, Polygons supportPolygons, SupportType interfaceLayer)
+        private void WriteSupportPolygons(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerIndex, ConfigSettings config, Polygons supportPolygons, SupportType interfaceLayer)
         {
             for (int volumeIndex = 0; volumeIndex < storage.volumes.Count; volumeIndex++)
             {
@@ -755,8 +758,8 @@ namespace MatterHackers.MatterSlice
             }
 
             //Contract and expand the support polygons so small sections are removed and the final polygon is smoothed a bit.
-            supportPolygons = supportPolygons.Offset(-extrusionWidth_um * 1);
-            supportPolygons = supportPolygons.Offset(extrusionWidth_um * 1);
+            supportPolygons = supportPolygons.Offset(-config.extrusionWidth_um * 1);
+            supportPolygons = supportPolygons.Offset(config.extrusionWidth_um * 1);
 
             List<Polygons> supportIslands = supportPolygons.SplitIntoParts();
             PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(gcode.getPositionXY());
@@ -776,18 +779,18 @@ namespace MatterHackers.MatterSlice
                     switch (interfaceLayer)
                     {
                         case SupportType.Interface:
-                            Infill.GenerateLineInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle + 90, extrusionWidth_um);
+                            Infill.GenerateLineInfill(config, island, ref supportLines, config.extrusionWidth_um, config.supportInfillStartingAngle + 90, config.extrusionWidth_um);
                             break;
 
                         case SupportType.General:
                             switch (config.supportType)
                             {
                                 case ConfigConstants.SUPPORT_TYPE.GRID:
-                                    Infill.GenerateGridInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle, config.supportLineSpacing_um);
+                                    Infill.GenerateGridInfill(config, island, ref supportLines, config.supportExtrusionWidth_um, config.supportInfillStartingAngle, config.supportLineSpacing_um);
                                     break;
 
                                 case ConfigConstants.SUPPORT_TYPE.LINES:
-                                    Infill.GenerateLineInfill(config, island, ref supportLines, extrusionWidth_um, config.supportInfillStartingAngle, config.supportLineSpacing_um);
+                                    Infill.GenerateLineInfill(config, island, ref supportLines, config.supportExtrusionWidth_um, config.supportInfillStartingAngle, config.supportLineSpacing_um);
                                     break;
                             }
                             break;
@@ -802,11 +805,23 @@ namespace MatterHackers.MatterSlice
                     gcodeLayer.setCombBoundary(island);
                 }
 
-                if (config.supportType == ConfigConstants.SUPPORT_TYPE.GRID)
+                switch (interfaceLayer)
                 {
-                    gcodeLayer.writePolygonsByOptimizer(island, supportConfig);
+                    case SupportType.Interface:
+                        gcodeLayer.writePolygonsByOptimizer(supportLines, supportInterfaceConfig);
+                        break;
+
+                    case SupportType.General:
+                        if (config.supportType == ConfigConstants.SUPPORT_TYPE.GRID)
+                        {
+                            gcodeLayer.writePolygonsByOptimizer(island, supportNormalConfig);
+                        }
+                        gcodeLayer.writePolygonsByOptimizer(supportLines, supportNormalConfig);
+                        break;
+
+                    default:
+                        throw new NotImplementedException();
                 }
-                gcodeLayer.writePolygonsByOptimizer(supportLines, supportConfig);
 
                 gcodeLayer.setCombBoundary(null);
             }
@@ -820,10 +835,10 @@ namespace MatterHackers.MatterSlice
             }
 
             //If we changed extruder, print the wipe/prime tower for this nozzle;
-            gcodeLayer.writePolygonsByOptimizer(storage.wipeTower, supportConfig);
+            gcodeLayer.writePolygonsByOptimizer(storage.wipeTower, supportInterfaceConfig);
             Polygons fillPolygons = new Polygons();
             Infill.GenerateLinePaths(storage.wipeTower, ref fillPolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, 45 + 90 * (layerNr % 2));
-            gcodeLayer.writePolygonsByOptimizer(fillPolygons, supportConfig);
+            gcodeLayer.writePolygonsByOptimizer(fillPolygons, supportInterfaceConfig);
 
             //Make sure we wipe the old extruder on the wipe tower.
             gcodeLayer.writeTravel(storage.wipePoint - config.extruderOffsets[prevExtruder] + config.extruderOffsets[gcodeLayer.getExtruder()]);

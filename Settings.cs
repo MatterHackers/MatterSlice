@@ -95,6 +95,11 @@ namespace MatterHackers.MatterSlice
         public double extrusionWidth;
         public int extrusionWidth_um { get { return (int)(extrusionWidth * 1000); } }
 
+
+        [SettingDescription("Support extrusion percent.")]
+        public double supportExtrusionPercent;
+        public int supportExtrusionWidth_um { get { return (int)(extrusionWidth * (supportExtrusionPercent/100.0) * 1000); } }
+
         public int numberOfPerimeters;
         public int numberOfBottomLayers;
         public int numberOfTopLayers;
@@ -278,6 +283,7 @@ namespace MatterHackers.MatterSlice
             layerThickness = .1;
             firstLayerExtrusionWidth = .8;
             extrusionWidth = .4;
+            supportExtrusionPercent = 100;
             numberOfPerimeters = 2;
             numberOfBottomLayers = 6;
             numberOfTopLayers = 6;
