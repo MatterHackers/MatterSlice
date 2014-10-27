@@ -280,9 +280,9 @@ namespace MatterHackers.MatterSlice
             if (config.enableRaft)
             {
                 Raft.GenerateRaftOutlines(storage, config.raftExtraDistanceAroundPart_um);
-                Skirt.generateSkirt(storage, 
-                    config.skirtDistance_um + config.raftBaseLinewidth_um, 
-                    config.raftBaseLinewidth_um, 
+                Skirt.generateSkirt(storage,
+                    config.skirtDistance_um + config.raftBaseLineSpacing_um,
+                    config.raftBaseLineSpacing_um,
                     config.numberOfSkirtLoops, 
                     config.skirtMinLength_um, 
                     config.raftBaseThickness_um);
@@ -837,7 +837,7 @@ namespace MatterHackers.MatterSlice
             //If we changed extruder, print the wipe/prime tower for this nozzle;
             gcodeLayer.writePolygonsByOptimizer(storage.wipeTower, supportInterfaceConfig);
             Polygons fillPolygons = new Polygons();
-            Infill.GenerateLinePaths(storage.wipeTower, ref fillPolygons, extrusionWidth_um, extrusionWidth_um, config.infillExtendIntoPerimeter_um, 45 + 90 * (layerNr % 2));
+            Infill.GenerateLinePaths(storage.wipeTower, ref fillPolygons, extrusionWidth_um, config.infillExtendIntoPerimeter_um, 45 + 90 * (layerNr % 2));
             gcodeLayer.writePolygonsByOptimizer(fillPolygons, supportInterfaceConfig);
 
             //Make sure we wipe the old extruder on the wipe tower.

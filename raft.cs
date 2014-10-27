@@ -63,9 +63,9 @@ namespace MatterHackers.MatterSlice
         {
             if (ShouldGenerateRaft(config))
             {
-                GCodePathConfig raftBaseConfig = new GCodePathConfig(config.firstLayerSpeed, config.raftExtrusionWidth_um, "SUPPORT");
-                GCodePathConfig raftMiddleConfig = new GCodePathConfig(config.raftPrintSpeed, config.raftInterfaceLinewidth_um, "SUPPORT");
-                GCodePathConfig raftSurfaceConfig = new GCodePathConfig((config.raftSurfacePrintSpeed > 0) ? config.raftSurfacePrintSpeed : config.raftPrintSpeed, config.raftSurfaceLinewidth_um, "SUPPORT");
+                GCodePathConfig raftBaseConfig = new GCodePathConfig(config.firstLayerSpeed, config.raftBaseExtrusionWidth_um, "SUPPORT");
+                GCodePathConfig raftMiddleConfig = new GCodePathConfig(config.raftPrintSpeed, config.raftInterfaceExtrusionWidth_um, "SUPPORT");
+                GCodePathConfig raftSurfaceConfig = new GCodePathConfig((config.raftSurfacePrintSpeed > 0) ? config.raftSurfacePrintSpeed : config.raftPrintSpeed, config.raftSurfaceExtrusionWidth_um, "SUPPORT");
 
                 // create the raft base
                 {
@@ -82,7 +82,7 @@ namespace MatterHackers.MatterSlice
                     gcodeLayer.writePolygonsByOptimizer(storage.raftOutline, raftBaseConfig);
 
                     Polygons raftLines = new Polygons();
-                    Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftBaseThickness_um, config.raftLineSpacing_um, config.infillExtendIntoPerimeter_um, 0);
+                    Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftBaseLineSpacing_um, config.infillExtendIntoPerimeter_um, 0);
                     gcodeLayer.writePolygonsByOptimizer(storage.skirt, raftBaseConfig);
                     gcodeLayer.writePolygonsByOptimizer(raftLines, raftBaseConfig);
 
@@ -103,7 +103,7 @@ namespace MatterHackers.MatterSlice
                     gcode.setExtrusion(config.raftInterfaceThicknes_um, config.filamentDiameter_um, config.extrusionMultiplier);
 
                     Polygons raftLines = new Polygons();
-                    Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftInterfaceLinewidth_um, config.raftInterfaceLineSpacing_um, config.infillExtendIntoPerimeter_um, 45);
+                    Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftInterfaceLineSpacing_um, config.infillExtendIntoPerimeter_um, 45);
                     gcodeLayer.writePolygonsByOptimizer(raftLines, raftMiddleConfig);
 
                     gcodeLayer.writeGCode(false, config.raftInterfaceThicknes_um);
@@ -118,7 +118,7 @@ namespace MatterHackers.MatterSlice
                     gcode.setExtrusion(config.raftSurfaceThickness_um, config.filamentDiameter_um, config.extrusionMultiplier);
 
                     Polygons raftLines = new Polygons();
-                    Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftSurfaceLinewidth_um, config.raftSurfaceLineSpacing_um, config.infillExtendIntoPerimeter_um, 90 * raftSurfaceLayer);
+                    Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftSurfaceLineSpacing_um, config.infillExtendIntoPerimeter_um, 90 * raftSurfaceLayer);
                     gcodeLayer.writePolygonsByOptimizer(raftLines, raftSurfaceConfig);
 
                     gcodeLayer.writeGCode(false, config.raftInterfaceThicknes_um);

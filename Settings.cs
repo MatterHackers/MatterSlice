@@ -95,7 +95,6 @@ namespace MatterHackers.MatterSlice
         public double extrusionWidth;
         public int extrusionWidth_um { get { return (int)(extrusionWidth * 1000); } }
 
-
         [SettingDescription("Support extrusion percent.")]
         public double supportExtrusionPercent;
         public int supportExtrusionWidth_um { get { return (int)(extrusionWidth * (supportExtrusionPercent/100.0) * 1000); } }
@@ -220,23 +219,21 @@ namespace MatterHackers.MatterSlice
         public int raftExtraDistanceAroundPart_um { get { return (int)(raftExtraDistanceAroundPart * 1000); } }
 
         // Raft read only info
-        public int raftExtrusionWidth_um { get { return extrusionWidth_um * 3; } }
-        public int raftLineSpacing_um { get { return (int)(extrusionWidth_um * 4); } } // the least it can be in the raftExtrusionWidth_um
-
-        public int raftBaseThickness_um { get { return extrusionWidth_um * 300 / 400; } }
-
-        public int raftBaseLinewidth_um { get { return extrusionWidth_um * 1000 / 400; } }
-        public int raftInterfaceThicknes_um { get { return extrusionWidth_um * 250 / 400; } } // .25 mm for .4 mm nozzle
-        public int raftInterfaceLinewidth_um { get { return extrusionWidth_um * 350 / 400; } } // .35 mm for .4 mm nozzle
-
         public int raftPrintSpeed { get { return firstLayerSpeed; } }
         public int raftSurfacePrintSpeed { get { return firstLayerSpeed; } }
         public int raftFanSpeedPercent { get { return 50; } }
 
+        public int raftBaseThickness_um { get { return extrusionWidth_um * 300 / 400; } }
+        public int raftBaseLineSpacing_um { get { return (int)(extrusionWidth_um * 4); } } // the least it can be in the raftExtrusionWidth_um
+        public int raftBaseExtrusionWidth_um { get { return extrusionWidth_um * 3; } }
+
+        public int raftInterfaceThicknes_um { get { return extrusionWidth_um * 250 / 400; } } // .25 mm for .4 mm nozzle
         public int raftInterfaceLineSpacing_um { get { return extrusionWidth_um * 1000 / 400; } } // 1 mm for .4 mm nozzle
+        public int raftInterfaceExtrusionWidth_um { get { return extrusionWidth_um * 350 / 400; } } // .35 mm for .4 mm nozzle
+
         public int raftSurfaceThickness_um { get { return extrusionWidth_um * 250 / 400; } } // .250 mm for .4 mm nozzle
-        public int raftSurfaceLinewidth_um { get { return extrusionWidth_um * 400 / 400; } } // .4 mm for .4 mm nozzle
         public int raftSurfaceLineSpacing_um { get { return extrusionWidth_um * 400 / 400; } } // .4 mm for .4 mm nozzle
+        public int raftSurfaceExtrusionWidth_um { get { return extrusionWidth_um * 400 / 400; } } // .4 mm for .4 mm nozzle
         public int raftSurfaceLayers { get { return 2; } }
 
         // object transform
