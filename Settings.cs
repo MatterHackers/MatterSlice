@@ -219,9 +219,10 @@ namespace MatterHackers.MatterSlice
         public int raftExtraDistanceAroundPart_um { get { return (int)(raftExtraDistanceAroundPart * 1000); } }
 
         // Raft read only info
-        public int raftPrintSpeed { get { return firstLayerSpeed; } }
-        public int raftSurfacePrintSpeed { get { return firstLayerSpeed; } }
-        public int raftFanSpeedPercent { get { return 50; } }
+        public int raftPrintSpeed;
+        public int raftSurfacePrintSpeed { get { return raftPrintSpeed; } }
+        [SettingDescription("The speed to run the fan during raft printing.")]
+        public int raftFanSpeedPercent;
 
         public int raftBaseThickness_um { get { return extrusionWidth_um * 300 / 400; } }
         public int raftBaseLineSpacing_um { get { return (int)(extrusionWidth_um * 4); } } // the least it can be in the raftExtrusionWidth_um
@@ -289,6 +290,7 @@ namespace MatterHackers.MatterSlice
             infillSpeed = 50;
             bridgeSpeed = 20;
             bridgeFanSpeedPercent = 100;
+            raftFanSpeedPercent = 100;
             outsidePerimeterSpeed = 50;
             insidePerimetersSpeed = 50;
             travelSpeed = 200;
