@@ -137,7 +137,7 @@ namespace MatterHackers.MatterSlice
 
             for (int extruderIndex = 0; extruderIndex < ConfigConstants.MAX_EXTRUDERS; extruderIndex++)
             {
-                gcode.setExtruderOffset(extruderIndex, config.extruderOffsets[extruderIndex], -config.zOffset_um);
+                gcode.setExtruderOffset(extruderIndex, config.extruderOffsets[extruderIndex] * 1000, -config.zOffset_um);
             }
 
             gcode.SetOutputType(config.outputType);
