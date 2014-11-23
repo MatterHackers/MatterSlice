@@ -72,8 +72,14 @@ namespace MatterHackers.MatterSlice
                     gcode.writeComment("LAYER:-3");
                     gcode.writeComment("RAFT BASE");
                     GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_um);
-                    if (config.supportExtruder > 0)
+                    if (config.raftExtruder > 0)
                     {
+                        // if we have a specified raft extruder use it
+                        gcodeLayer.setExtruder(config.raftExtruder);
+                    }
+                    else if (config.supportExtruder > 0)
+                    {
+                        // else preserve the old behavior of using the support extruder if set.
                         gcodeLayer.setExtruder(config.supportExtruder);
                     }
 

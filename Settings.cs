@@ -192,8 +192,10 @@ namespace MatterHackers.MatterSlice
         public int supportNumberOfLayersToSkipInZ;
 
         public int supportInterfaceLayers;
-        
+
         public int supportExtruder;
+        
+        public int raftExtruder;
 
         //Cool settings
         public int minimumLayerTimeSeconds;
@@ -315,6 +317,7 @@ namespace MatterHackers.MatterSlice
             supportType = ConfigConstants.SUPPORT_TYPE.GRID;
             supportEndAngle = 0;
             generateInternalSupport = true;
+            raftExtruder = -1;
             supportLineSpacing = extrusionWidth * 5;
             supportExtruder = -1;
             supportXYDistanceFromObject = .7;
