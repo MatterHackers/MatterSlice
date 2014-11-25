@@ -60,6 +60,14 @@ namespace MatterHackers.MatterSlice
             return new Point3(point.x / i, point.y / i, point.z / i);
         }
 
+        public override bool Equals(object obj)
+        {
+            if (!(obj is Point3))
+                return false;
+
+            return this == (Point3)obj;
+        }
+
         public static bool operator ==(Point3 left, Point3 right)
         {
             return left.x == right.x && left.y == right.y && left.z == right.z;

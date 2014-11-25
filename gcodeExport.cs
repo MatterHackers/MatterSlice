@@ -339,7 +339,6 @@ namespace MatterHackers.MatterSlice
                 // this is just to debug when we right exactly the same line twice.
                 if (lineAsString == lastLineWriten)
                 {
-                    int a = 0;
                 }
                 lastLineWriten = lineAsString;
 #endif

@@ -146,12 +146,12 @@ namespace MatterHackers.MatterSlice
                         &config.matrix.m[1][0], &config.matrix.m[1][1], &config.matrix.m[1][2],
                         &config.matrix.m[2][0], &config.matrix.m[2][1], &config.matrix.m[2][2]);
 #endif
-                                break;
+                                //break;
 
                             default:
                                 throw new NotImplementedException("Unknown option: {0}\n".FormatWith(str));
-                                LogOutput.logError("Unknown option: {0}\n".FormatWith(str));
-                                break;
+                                //LogOutput.logError("Unknown option: {0}\n".FormatWith(str));
+                                //break;
                         }
                     }
                 }
