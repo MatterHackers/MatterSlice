@@ -155,7 +155,7 @@ namespace MatterHackers.MatterSlice
             List<Slicer> slicerList = new List<Slicer>();
             for (int volumeIndex = 0; volumeIndex < optomizedModel.volumes.Count; volumeIndex++)
             {
-                Slicer slicer = new Slicer(optomizedModel.volumes[volumeIndex], config.firstLayerThickness_um, config.layerThickness_um, config.repairOutlines);
+                Slicer slicer = new Slicer(optomizedModel.volumes[volumeIndex], config);
                 slicerList.Add(slicer);
             }
 

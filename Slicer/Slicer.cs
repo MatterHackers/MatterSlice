@@ -44,13 +44,17 @@ namespace MatterHackers.MatterSlice
         public Point3 modelSize;
         public Point3 modelMin;
 
-        public Slicer(OptimizedVolume ov, int initialLayerThickness, int layerThickness, ConfigConstants.REPAIR_OUTLINES outlineRepairTypes)
+        public Slicer(OptimizedVolume ov, ConfigSettings config)
         {
+            int initialLayerThickness_um = config.firstLayerThickness_um;
+            int layerThickness_um = config.layerThickness_um;
+            ConfigConstants.REPAIR_OUTLINES outlineRepairTypes = config.repairOutlines;
+
             modelSize = ov.parentModel.size_um;
             modelMin = ov.parentModel.minXYZ_um;
 
-            int heightWithoutFirstLayer = modelSize.z - initialLayerThickness;
-            int countOfNormalThicknessLayers = (int)((heightWithoutFirstLayer / (double)layerThickness) + .5);
+            int heightWithoutFirstLayer = modelSize.z - initialLayerThickness_um - config.bottomClipAmount_um;
+            int countOfNormalThicknessLayers = (int)((heightWithoutFirstLayer / (double)layerThickness_um) + .5);
             
             int layerCount = countOfNormalThicknessLayers + 1; // we have to add in the first layer (that is a differnt size)
             LogOutput.log(string.Format("Layer count: {0}\n", layerCount));
@@ -64,11 +68,11 @@ namespace MatterHackers.MatterSlice
             {
                 if (layerIndex == 0)
                 {
-                    layers[layerIndex].z = initialLayerThickness / 2;
+                    layers[layerIndex].z = initialLayerThickness_um / 2;
                 }
                 else
                 {
-                    layers[layerIndex].z = initialLayerThickness + layerThickness / 2 + layerThickness * (layerIndex-1);
+                    layers[layerIndex].z = initialLayerThickness_um + layerThickness_um / 2 + layerThickness_um * (layerIndex-1);
                 }
             }
 
