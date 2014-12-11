@@ -1,4 +1,4 @@
 MatterSlice
 ===========
 
-This is a c# command line slicing engine. It uses clipper for much of the heavy lifting and is has no other external dependencies. It is a c# port of the CuraEngine which is a c++ translation of Skienforge. The goal of this library is to be a fast and easy to edit slicing engine for consumer desktop 3D printers.
+MatterSlice is a C# console application that generates GCode for 3D printing. It is an improved c# port of CuraEngine which is a c++ translation of Skienforge. MatterSlice has significant improvements to code readability, numerical stability and feature generation.
