@@ -571,7 +571,7 @@ namespace MatterHackers.MatterSlice
                 gcodeLayer.setAlwaysRetract(!config.avoidCrossingPerimeters);
             }
 
-            PathOrderOptimizer partOrderOptimizer = new PathOrderOptimizer(gcode.getPositionXY());
+            PathOrderOptimizer partOrderOptimizer = new PathOrderOptimizer(new IntPoint());
             for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
             {
                 partOrderOptimizer.AddPolygon(layer.parts[partIndex].insets[0][0]);
