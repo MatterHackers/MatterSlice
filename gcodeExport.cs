@@ -280,27 +280,29 @@ namespace MatterHackers.MatterSlice
                             lineToWrite.Append("G1 Z{0:0.00}\n".FormatWith(zWritePosition));
                         }
 
-                        if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
-                        {
-                            lineToWrite.Append("G11\n");
-                        }
-                        else
-                        {
-                            lineToWrite.Append("G1 F{0} {1}{2:0.00000}\n".FormatWith(retractionSpeed * 60, extruderCharacter[extruderIndex], extrusionAmount_mm));
-                      
-                            currentSpeed = retractionSpeed;
-                            estimateCalculator.plan(new TimeEstimateCalculator.Position(
-                                currentPosition_um.x / 1000.0,
-                                currentPosition_um.y / 1000.0,
-                                currentPosition_um.z / 1000.0, 
-                                extrusionAmount_mm), 
-                                currentSpeed);
-                        }
-
                         if (extrusionAmount_mm > 10000.0)
                         {
                             //According to https://github.com/Ultimaker/CuraEngine/issues/14 having more then 21m of extrusion causes inaccuracies. So reset it every 10m, just to be sure.
                             resetExtrusionValue();
+                        }
+                        else
+                        {
+                            if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
+                            {
+                                lineToWrite.Append("G11\n");
+                            }
+                            else
+                            {
+                                lineToWrite.Append("G1 F{0} {1}{2:0.00000}\n".FormatWith(retractionSpeed * 60, extruderCharacter[extruderIndex], extrusionAmount_mm));
+
+                                currentSpeed = retractionSpeed;
+                                estimateCalculator.plan(new TimeEstimateCalculator.Position(
+                                    currentPosition_um.x / 1000.0,
+                                    currentPosition_um.y / 1000.0,
+                                    currentPosition_um.z / 1000.0,
+                                    extrusionAmount_mm),
+                                    currentSpeed);
+                            }
                         }
                         isRetracted = false;
                     }
