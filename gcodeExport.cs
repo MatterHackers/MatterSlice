@@ -264,7 +264,7 @@ namespace MatterHackers.MatterSlice
                 double xWritePosition = (double)(movePosition_um.X - extruderOffset_um[extruderIndex].x) / 1000;
                 double yWritePosition = (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].y) / 1000;
                 double zWritePosition = (double)(zPos_um - extruderOffset_um[extruderIndex].z) / 1000;
-                lineToWrite.Append("G1 X{0:0.00} Y{1:0.00} Z{2:0.00} F{3:0.0}\n".FormatWith(xWritePosition, yWritePosition, zWritePosition, fspeed));
+                lineToWrite.Append("G1 X{0:0.##} Y{1:0.##} Z{2:0.###} F{3:0.#}\n".FormatWith(xWritePosition, yWritePosition, zWritePosition, fspeed));
             }
             else
             {
@@ -277,7 +277,7 @@ namespace MatterHackers.MatterSlice
                         if (retractionZHop_mm > 0)
                         {
                             double zWritePosition = (double)(currentPosition_um.z - extruderOffset_um[extruderIndex].z) / 1000;
-                            lineToWrite.Append("G1 Z{0:0.00}\n".FormatWith(zWritePosition));
+                            lineToWrite.Append("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
                         }
 
                         if (extrusionAmount_mm > 10000.0)
@@ -293,7 +293,7 @@ namespace MatterHackers.MatterSlice
                             }
                             else
                             {
-                                lineToWrite.Append("G1 F{0} {1}{2:0.00000}\n".FormatWith(retractionSpeed * 60, extruderCharacter[extruderIndex], extrusionAmount_mm));
+                                lineToWrite.Append("G1 F{0} {1}{2:0.#####}\n".FormatWith(retractionSpeed * 60, extruderCharacter[extruderIndex], extrusionAmount_mm));
 
                                 currentSpeed = retractionSpeed;
                                 estimateCalculator.plan(new TimeEstimateCalculator.Position(
@@ -321,15 +321,15 @@ namespace MatterHackers.MatterSlice
                 }
                 double xWritePosition = (double)(movePosition_um.X - extruderOffset_um[extruderIndex].x) / 1000.0;
                 double yWritePosition = (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].y) / 1000.0;
-                lineToWrite.Append(" X{0:0.00} Y{1:0.00}".FormatWith(xWritePosition, yWritePosition));
+                lineToWrite.Append(" X{0:0.##} Y{1:0.##}".FormatWith(xWritePosition, yWritePosition));
                 if (zPos_um != currentPosition_um.z)
                 {
                     double zWritePosition = (double)(zPos_um - extruderOffset_um[extruderIndex].z) / 1000.0;
-                    lineToWrite.Append(" Z{0:0.00}".FormatWith(zWritePosition));
+                    lineToWrite.Append(" Z{0:0.###}".FormatWith(zWritePosition));
                 }
                 if (lineWidth_um != 0)
                 {
-                    lineToWrite.Append(" {0}{1:0.00000}".FormatWith(extruderCharacter[extruderIndex], extrusionAmount_mm));
+                    lineToWrite.Append(" {0}{1:0.#####}".FormatWith(extruderCharacter[extruderIndex], extrusionAmount_mm));
                 }
                 lineToWrite.Append("\n");
             }
@@ -369,14 +369,14 @@ namespace MatterHackers.MatterSlice
                 }
                 else
                 {
-                    gcodeFileStream.Write("G1 F{0} {1}{2:0.00000}\n".FormatWith(retractionSpeed * 60, extruderCharacter[extruderIndex], extrusionAmount_mm - retractionAmount_mm));
+                    gcodeFileStream.Write("G1 F{0} {1}{2:0.#####}\n".FormatWith(retractionSpeed * 60, extruderCharacter[extruderIndex], extrusionAmount_mm - retractionAmount_mm));
                     currentSpeed = retractionSpeed;
                     estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition_um.x) / 1000.0, (currentPosition_um.y) / 1000.0, (double)(currentPosition_um.z) / 1000.0, extrusionAmount_mm - retractionAmount_mm), currentSpeed);
                 }
                 if (retractionZHop_mm > 0)
                 {
                     double zWritePosition = (double)(currentPosition_um.z - extruderOffset_um[extruderIndex].z) / 1000 + retractionZHop_mm;
-                    gcodeFileStream.Write("G1 Z{0:0.00}\n".FormatWith(zWritePosition));
+                    gcodeFileStream.Write("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
                 }
                 extrusionAmountAtPreviousRetraction_mm = extrusionAmount_mm;
                 isRetracted = true;
@@ -396,7 +396,7 @@ namespace MatterHackers.MatterSlice
             }
             else
             {
-                gcodeFileStream.Write("G1 F{0} {1}{2:0.0000}\n", retractionSpeed * 60, extruderCharacter[extruderIndex], extrusionAmount_mm - extruderSwitchRetraction_mm);
+                gcodeFileStream.Write("G1 F{0} {1}{2:0.####}\n", retractionSpeed * 60, extruderCharacter[extruderIndex], extrusionAmount_mm - extruderSwitchRetraction_mm);
                 currentSpeed = retractionSpeed;
             }
 
