@@ -61,6 +61,23 @@ namespace MatterHackers.MatterSlice.Tests
             return boxGCodeFile;
         }
 
+        string CreateGCodeRaft(bool hasRaft)
+        {
+            string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
+            string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
+
+            ConfigSettings config = new ConfigSettings();
+            config.enableRaft = hasRaft;
+            fffProcessor processor = new fffProcessor(config);
+            processor.setTargetFile(boxGCodeFile);
+            processor.LoadStlFile(box20MmStlFile);
+            // slice and save it
+            processor.DoProcessing();
+            processor.finalize();
+
+            return boxGCodeFile;
+        }
+
         [Test]
         public void CorrectNumberOfLayersForLayerHeights()
         {
@@ -79,8 +96,17 @@ namespace MatterHackers.MatterSlice.Tests
             Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2, .31))) == 48);
             Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2, .4))) == 48);
         }
+
+        [Test]
+        public void ExportGCodeWithRaft()
+        {
+            //test that file has raft
+            Assert.IsTrue(TestUtlities.CheckForRaft(TestUtlities.LoadGCodeFile(CreateGCodeRaft(true))) == true);
+        }
+
     }
 
+ 
     public static class SettingsTests
     {
         static bool ranTests = false;
@@ -91,8 +117,10 @@ namespace MatterHackers.MatterSlice.Tests
             if (!ranTests)
             {
                 SliceSettingsTests settingsTests = new SliceSettingsTests();
-                settingsTests.CorrectNumberOfLayersForLayerHeights();
+                settingsTests.CorrectNumberOfLayersForLayerHeights();             
                 settingsTests.BottomClipCorrectNumberOfLayers();
+                settingsTests.ExportGCodeWithRaft();
+               
 
                 ranTests = true;
             }

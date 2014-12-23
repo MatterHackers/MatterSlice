@@ -94,6 +94,20 @@ namespace MatterHackers.MatterSlice.Tests
             return layers;
         }
 
+        public static bool CheckForRaft(string[] gcodefile)
+        {
+            bool hasRaft = false;
+
+            foreach (string line in gcodefile)
+            {
+                if (line.Contains("RAFT"))
+                {
+                    hasRaft = true;
+                }
+            }
+            return hasRaft;
+        }
+
         public static void ClearTempGCode()
         {
             if (Directory.Exists(tempGCodePath))
