@@ -61,7 +61,24 @@ namespace MatterHackers.MatterSlice.Tests
             return boxGCodeFile;
         }
 
-        string CreateGCodeRaft(bool hasRaft)
+        string CreateGCodeWithRaft(bool hasRaft)
+        {
+            string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
+            string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
+
+            ConfigSettings config = new ConfigSettings();
+            config.enableRaft = hasRaft;
+            fffProcessor processor = new fffProcessor(config);
+            processor.setTargetFile(boxGCodeFile);
+            processor.LoadStlFile(box20MmStlFile);
+            // slice and save it
+            processor.DoProcessing();
+            processor.finalize();
+
+            return boxGCodeFile;
+        }
+
+        string CreateGcodeWithoutRaft(bool hasRaft)
         {
             string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
             string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
@@ -101,7 +118,8 @@ namespace MatterHackers.MatterSlice.Tests
         public void ExportGCodeWithRaft()
         {
             //test that file has raft
-            Assert.IsTrue(TestUtlities.CheckForRaft(TestUtlities.LoadGCodeFile(CreateGCodeRaft(true))) == true);
+            Assert.IsTrue(TestUtlities.CheckForRaft(TestUtlities.LoadGCodeFile(CreateGCodeWithRaft(true))) == true);
+            Assert.IsTrue(TestUtlities.CheckForRaft(TestUtlities.LoadGCodeFile(CreateGcodeWithoutRaft(false))) == false);
         }
 
     }

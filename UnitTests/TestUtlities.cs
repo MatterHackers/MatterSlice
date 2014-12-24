@@ -104,6 +104,7 @@ namespace MatterHackers.MatterSlice.Tests
                 {
                     hasRaft = true;
                 }
+             
             }
             return hasRaft;
         }
