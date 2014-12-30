@@ -195,6 +195,7 @@ namespace MatterHackers.MatterSlice
         public int supportInterfaceLayers;
 
         public int supportExtruder;
+        public int supportInterfaceExtruder;
         
         public int raftExtruder;
 
@@ -324,6 +325,7 @@ namespace MatterHackers.MatterSlice
             supportXYDistanceFromObject = .7;
             supportNumberOfLayersToSkipInZ = 1;
             supportInterfaceLayers = 3;
+            supportInterfaceExtruder = -1;
             retractionOnTravel = 4.5;
             retractionSpeed = 45;
             retractionOnExtruderSwitch = 14.5;

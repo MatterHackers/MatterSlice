@@ -742,8 +742,14 @@ namespace MatterHackers.MatterSlice
             
             SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, currentZHeight_um);
 
-            WriteSupportPolygons(storage, gcodeLayer, layerIndex, config, supportGenerator.interfacePolygons, SupportType.Interface);
             WriteSupportPolygons(storage, gcodeLayer, layerIndex, config, supportGenerator.supportPolygons, SupportType.General);
+
+            if (config.supportInterfaceExtruder != -1
+                && config.supportInterfaceExtruder != config.supportExtruder)
+            {
+                gcodeLayer.setExtruder(config.supportInterfaceExtruder);
+            }
+            WriteSupportPolygons(storage, gcodeLayer, layerIndex, config, supportGenerator.interfacePolygons, SupportType.Interface);
         }
 
         enum SupportType { General, Interface };
