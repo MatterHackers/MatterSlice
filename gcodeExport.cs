@@ -44,7 +44,8 @@ namespace MatterHackers.MatterSlice
         Point3 currentPosition_um;
         Point3[] extruderOffset_um = new Point3[ConfigConstants.MAX_EXTRUDERS];
         char[] extruderCharacter = new char[ConfigConstants.MAX_EXTRUDERS];
-        int currentSpeed, retractionSpeed;
+        int currentSpeed;
+        int retractionSpeed;
         int zPos_um;
         bool isRetracted;
         int extruderIndex;
@@ -261,10 +262,11 @@ namespace MatterHackers.MatterSlice
                         isRetracted = true;
                     }
                 }
-                double xWritePosition = (double)(movePosition_um.X - extruderOffset_um[extruderIndex].x) / 1000;
-                double yWritePosition = (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].y) / 1000;
-                double zWritePosition = (double)(zPos_um - extruderOffset_um[extruderIndex].z) / 1000;
-                lineToWrite.Append("G1 X{0:0.##} Y{1:0.##} Z{2:0.###} F{3:0.#}\n".FormatWith(xWritePosition, yWritePosition, zWritePosition, fspeed));
+                double xWritePosition = (double)(movePosition_um.X - extruderOffset_um[extruderIndex].x) / 1000.0;
+                double yWritePosition = (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].y) / 1000.0;
+                double zWritePosition = (double)(zPos_um - extruderOffset_um[extruderIndex].z) / 1000.0;
+                // These values exist in microns (integer) so there is an absolute limit to precision of 1/1000th.
+                lineToWrite.Append("G1 X{0:0.###} Y{1:0.###} Z{2:0.###} F{3:0.#}\n".FormatWith(xWritePosition, yWritePosition, zWritePosition, fspeed));
             }
             else
             {
@@ -321,7 +323,7 @@ namespace MatterHackers.MatterSlice
                 }
                 double xWritePosition = (double)(movePosition_um.X - extruderOffset_um[extruderIndex].x) / 1000.0;
                 double yWritePosition = (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].y) / 1000.0;
-                lineToWrite.Append(" X{0:0.##} Y{1:0.##}".FormatWith(xWritePosition, yWritePosition));
+                lineToWrite.Append(" X{0:0.###} Y{1:0.###}".FormatWith(xWritePosition, yWritePosition));
                 if (zPos_um != currentPosition_um.z)
                 {
                     double zWritePosition = (double)(zPos_um - extruderOffset_um[extruderIndex].z) / 1000.0;
@@ -951,7 +953,7 @@ namespace MatterHackers.MatterSlice
                         IntPoint nextPosition = path.points[i];
                         length += (currentPosition - nextPosition).LengthMm();
                         currentPosition = nextPosition;
-                        gcode.setZ((int)(z + layerThickness * length / totalLength));
+                        gcode.setZ((int)(z + layerThickness * length / totalLength + .5));
                         gcode.writeMove(path.points[i], speed, path.config.lineWidth);
                     }
                 }
