@@ -36,7 +36,7 @@ namespace MatterHackers.MatterSlice
         public Polygons supportPolygons = new Polygons();
 
         SupportStorage supportStorage = new SupportStorage();
-        double cosAngle;
+        double supportedAngleFromHorizon;
         int supportZDistance_um;
         int interfaceZDistance_um;
         bool generateInternalSupport;
@@ -63,7 +63,7 @@ namespace MatterHackers.MatterSlice
                 for (int zIndex = 0; zIndex < supportStorage.xYGridOfSupportPoints[gridIndex].Count; zIndex += 2)
                 {
                     SupportPoint currentBottomSupportPoint = supportStorage.xYGridOfSupportPoints[gridIndex][zIndex];
-                    bool angleNeedsSupport = currentBottomSupportPoint.cosAngle >= cosAngle;
+                    bool angleNeedsSupport = currentBottomSupportPoint.angleFromHorizon >= supportedAngleFromHorizon;
                     if (angleNeedsSupport)
                     {
                         bool zIsBelowBottomSupportPoint = currentZHeight_um <= currentBottomSupportPoint.z - interfaceZDistance_um - supportZDistance_um - extraErrorGap;
@@ -96,7 +96,7 @@ namespace MatterHackers.MatterSlice
                     return false;
                 }
 
-                if (supportStorage.xYGridOfSupportPoints[gridIndex][0].cosAngle < cosAngle)
+                if (supportStorage.xYGridOfSupportPoints[gridIndex][0].angleFromHorizon < supportedAngleFromHorizon)
                 {
                     // The angle does not need support
                     return false;
@@ -131,7 +131,7 @@ namespace MatterHackers.MatterSlice
                 for (int zIndex = 0; zIndex < supportStorage.xYGridOfSupportPoints[gridIndex].Count; zIndex += 2)
                 {
                     SupportPoint currentBottomSupportPoint = supportStorage.xYGridOfSupportPoints[gridIndex][zIndex];
-                    bool angleNeedsSupport = currentBottomSupportPoint.cosAngle >= cosAngle;
+                    bool angleNeedsSupport = currentBottomSupportPoint.angleFromHorizon >= supportedAngleFromHorizon;
                     if (angleNeedsSupport)
                     {
                         bool zIsBelowBottomSupportPoint = currentZHeight_um <= currentBottomSupportPoint.z - supportZDistance_um - extraErrorGap;
@@ -167,7 +167,7 @@ namespace MatterHackers.MatterSlice
                     return false;
                 }
 
-                if (supportStorage.xYGridOfSupportPoints[gridIndex][0].cosAngle < cosAngle)
+                if (supportStorage.xYGridOfSupportPoints[gridIndex][0].angleFromHorizon < supportedAngleFromHorizon)
                 {
                     // The angle does not need support
                     return false;
@@ -240,7 +240,7 @@ namespace MatterHackers.MatterSlice
                 return;
             }
 
-            cosAngle = Math.Cos((double)(storage.endAngle) / 180.0 * Math.PI) - 0.01;
+            supportedAngleFromHorizon = Math.PI/2 - (storage.endAngleDegrees / 180.0 * Math.PI + 0.01);
             this.supportZDistance_um = storage.supportLayerHeight_um * storage.supportZGapLayers;
 
             this.interfaceZDistance_um = storage.supportLayerHeight_um * storage.supportInterfaceLayers;

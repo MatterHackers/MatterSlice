@@ -30,6 +30,8 @@ namespace MatterHackers.MatterSlice
 
     public class FPoint3
     {
+        public static readonly FPoint3 Up = new FPoint3(0, 0, 1);
+
         public double x, y, z;
         public FPoint3() { }
         public FPoint3(double _x, double _y, double _z)
@@ -37,6 +39,13 @@ namespace MatterHackers.MatterSlice
             x = _x;
             y = _y;
             z = _z;
+        }
+
+        public FPoint3(Point3 v0)
+        {
+            this.x = v0.x;
+            this.y = v0.y;
+            this.z = v0.z;
         }
 
         public static FPoint3 operator +(FPoint3 left, FPoint3 right)
@@ -65,6 +74,37 @@ namespace MatterHackers.MatterSlice
             if (x > y && x > z) return x;
             if (y > z) return y;
             return z;
+        }
+
+        public double LengthSquared()
+        {
+            return x * x + y * y + z * z;
+        }
+
+        public static double CalculateAngle(FPoint3 first, FPoint3 second)
+        {
+            return Math.Acos((FPoint3.Dot(first, second)) / (first.Length * second.Length));
+        }
+
+        public double Length
+        {
+            get
+            {
+                return Math.Sqrt(LengthSquared());
+            }
+        }
+
+        public static double Dot(FPoint3 left, FPoint3 right)
+        {
+            return left.x * right.x + left.y * right.y + left.z * right.z;
+        }
+
+        public FPoint3 Cross(FPoint3 p)
+        {
+            return new FPoint3(
+                y * p.z - z * p.y,
+                z * p.x - x * p.z,
+                x * p.y - y * p.x);
         }
 
         public override bool Equals(object obj)
