@@ -61,19 +61,19 @@ namespace MatterHackers.MatterSlice
     public class SupportPoint
     {
         public int z;
-        public double cosAngle;
+        public double angleFromHorizon;
 
-        public SupportPoint(int z, double cosAngle)
+        public SupportPoint(int z, double angleFromHorizon)
         {
             this.z = z;
-            this.cosAngle = cosAngle;
+            this.angleFromHorizon = angleFromHorizon;
         }
     }
 
     public class SupportStorage
     {
         public bool generated;
-        public int endAngle;
+        public int endAngleDegrees;
         public bool generateInternalSupport;
         public int supportXYDistance_um;
         public int supportLayerHeight_um;
@@ -133,7 +133,7 @@ namespace MatterHackers.MatterSlice
                 this.xYGridOfSupportPoints.Add(new List<SupportPoint>());
             }
 
-            this.endAngle = config.supportEndAngle;
+            this.endAngleDegrees = config.supportEndAngle;
             this.generateInternalSupport = config.generateInternalSupport;
             this.supportXYDistance_um = config.supportXYDistance_um;
             this.supportLayerHeight_um = config.layerThickness_um;
@@ -152,10 +152,17 @@ namespace MatterHackers.MatterSlice
                     Point3 v1 = vol.vertices[faceTriangle.vertexIndex[1]].position;
                     Point3 v2 = vol.vertices[faceTriangle.vertexIndex[2]].position;
 
-                    Point3 normal = (v1 - v0).cross(v2 - v0);
-                    int normalSize = normal.vSize();
+                    // get the angle of this polygon
+                    double angleFromHorizon;
+                    {
+                        FPoint3 v0f = new FPoint3(v0);
+                        FPoint3 v1f = new FPoint3(v1);
+                        FPoint3 v2f = new FPoint3(v2);
+                        FPoint3 normal = (v1f - v0f).Cross(v2f - v0f);
+                        normal.z = Math.Abs(normal.z);
 
-                    double cosAngle = Math.Abs((double)(normal.z) / (double)(normalSize));
+                        angleFromHorizon = (Math.PI / 2) - FPoint3.CalculateAngle(normal, FPoint3.Up);
+                    }
 
                     v0.x = (int)((v0.x - this.gridOffset.X) / (double)this.gridScale + .5);
                     v0.y = (int)((v0.y - this.gridOffset.Y) / (double)this.gridScale + .5);
@@ -182,7 +189,7 @@ namespace MatterHackers.MatterSlice
 
                         for (long y = y0; y < y1; y++)
                         {
-                            SupportPoint newSupportPoint = new SupportPoint((int)(z0 + (z1 - z0) * (y - y0) / (double)(y1 - y0) + .5), cosAngle);
+                            SupportPoint newSupportPoint = new SupportPoint((int)(z0 + (z1 - z0) * (y - y0) / (double)(y1 - y0) + .5), angleFromHorizon);
                             this.xYGridOfSupportPoints[(int)(x + y * this.gridWidth)].Add(newSupportPoint);
                         }
                     }
@@ -202,7 +209,7 @@ namespace MatterHackers.MatterSlice
 
                         for (int y = (int)y0; y < y1; y++)
                         {
-                            this.xYGridOfSupportPoints[x + y * this.gridWidth].Add(new SupportPoint((int)(z0 + (z1 - z0) * (double)(y - y0) / (double)(y1 - y0) + .5), cosAngle));
+                            this.xYGridOfSupportPoints[x + y * this.gridWidth].Add(new SupportPoint((int)(z0 + (z1 - z0) * (double)(y - y0) / (double)(y1 - y0) + .5), angleFromHorizon));
                         }
                     }
                 }

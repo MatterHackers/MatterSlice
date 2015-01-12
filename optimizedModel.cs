@@ -81,7 +81,7 @@ namespace MatterHackers.MatterSlice
                     {
                         for (int n = 0; n < indexMap[hash].Count; n++)
                         {
-                            if ((vertices[indexMap[hash][n]].position - p).testLength(MELD_DIST))
+                            if ((vertices[indexMap[hash][n]].position - p).AbsLengthLEQ(MELD_DIST))
                             {
                                 idx = indexMap[hash][n];
                                 add = false;

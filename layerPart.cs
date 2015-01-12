@@ -40,13 +40,13 @@ namespace MatterHackers.MatterSlice
         isolated areas in the 2D layer with possible holes.
 
         Creating "parts" is an important step, as all elements in a single part should be printed before going to another part.
-        And all every bit inside a single part can be printed without the nozzle leaving the boundery of this part.
+        Every bit inside a single part can be printed without the nozzle leaving the boundery of this part.
 
         It's also the first step that stores the result in the "data storage" so all other steps can access it.
         */
 
 
-        public static void createLayerWithParts(SliceLayer storageLayer, SlicerLayer layer, ConfigConstants.REPAIR_OVERLAPS unionAllType)
+        static void createLayerWithParts(SliceLayer storageLayer, SlicerLayer layer, ConfigConstants.REPAIR_OVERLAPS unionAllType)
         {
             if ((unionAllType & ConfigConstants.REPAIR_OVERLAPS.REVERSE_ORIENTATION) == ConfigConstants.REPAIR_OVERLAPS.REVERSE_ORIENTATION)
             {

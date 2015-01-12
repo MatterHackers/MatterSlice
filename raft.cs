@@ -116,16 +116,24 @@ namespace MatterHackers.MatterSlice
                     gcodeLayer.writeGCode(false, config.raftInterfaceThicknes_um);
                 }
 
-                for (int raftSurfaceLayer = 1; raftSurfaceLayer <= config.raftSurfaceLayers; raftSurfaceLayer++)
+                for (int raftSurfaceIndex = 1; raftSurfaceIndex <= config.raftSurfaceLayers; raftSurfaceIndex++)
                 {
                     gcode.writeComment("LAYER:-1");
                     gcode.writeComment("RAFT SURFACE");
                     GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_um);
-                    gcode.setZ(config.raftBaseThickness_um + config.raftInterfaceThicknes_um + config.raftSurfaceThickness_um * raftSurfaceLayer);
+                    gcode.setZ(config.raftBaseThickness_um + config.raftInterfaceThicknes_um + config.raftSurfaceThickness_um * raftSurfaceIndex);
                     gcode.setExtrusion(config.raftSurfaceThickness_um, config.filamentDiameter_um, config.extrusionMultiplier);
 
                     Polygons raftLines = new Polygons();
-                    Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftSurfaceLineSpacing_um, config.infillExtendIntoPerimeter_um, 90 * raftSurfaceLayer);
+                    if (raftSurfaceIndex == config.raftSurfaceLayers)
+                    {
+                        // make sure the top layer of the raft is 90 degrees offset to the first layer of the part so that it has minimum contact points.
+                        Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftSurfaceLineSpacing_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle + 90);
+                    }
+                    else
+                    {
+                        Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftSurfaceLineSpacing_um, config.infillExtendIntoPerimeter_um, 90 * raftSurfaceIndex);
+                    }
                     gcodeLayer.writePolygonsByOptimizer(raftLines, raftSurfaceConfig);
 
                     gcodeLayer.writeGCode(false, config.raftInterfaceThicknes_um);

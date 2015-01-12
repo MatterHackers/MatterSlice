@@ -58,13 +58,15 @@ namespace MatterHackers.MatterSlice
 
         public static Point3 operator /(Point3 point, int i)
         {
-            return new Point3(point.x / i, point.y / i, point.z / i);
+            return new Point3((int)(point.x / i + .5), (int)(point.y / i + .5), (int)(point.z / i + .5));
         }
 
         public override bool Equals(object obj)
         {
             if (!(obj is Point3))
+            {
                 return false;
+            }
 
             return this == (Point3)obj;
         }
@@ -98,28 +100,28 @@ namespace MatterHackers.MatterSlice
             return z;
         }
 
-        public bool testLength(long len)
+        public bool AbsLengthLEQ(long minLength)
         {
-            if (x > len || x < -len)
+            if (x > minLength || x < -minLength)
                 return false;
-            if (y > len || y < -len)
+            if (y > minLength || y < -minLength)
                 return false;
-            if (z > len || z < -len)
+            if (z > minLength || z < -minLength)
                 return false;
-            return vSize2() <= len * len;
+            return LengthSquared() <= minLength * minLength;
         }
 
-        public long vSize2()
+        public long LengthSquared()
         {
             return (long)x * (long)x + (long)y * (long)y + (long)z * (long)z;
         }
 
-        public int vSize()
+        public int Length()
         {
-            return (int)Math.Sqrt(vSize2());
+            return (int)Math.Sqrt(LengthSquared());
         }
 
-        public Point3 cross(Point3 p)
+        public Point3 Cross(Point3 p)
         {
             return new Point3(
                 y * p.z - z * p.y,
@@ -130,29 +132,29 @@ namespace MatterHackers.MatterSlice
 
     static class IntPointHelper
     {
-        public static bool IsShorterThen(this IntPoint p0, long len)
+        public static bool IsShorterThen(this IntPoint thisPoint, long len)
         {
-            if (p0.X > len || p0.X < -len)
+            if (thisPoint.X > len || thisPoint.X < -len)
             {
                 return false;
             }
 
-            if (p0.Y > len || p0.Y < -len)
+            if (thisPoint.Y > len || thisPoint.Y < -len)
             {
                 return false;
             }
 
-            return p0.LengthSquared() <= len * len;
+            return thisPoint.LengthSquared() <= len * len;
         }
 
-        public static long Length(this IntPoint p0)
+        public static long Length(this IntPoint thisPoint)
         {
-            return (long)Math.Sqrt(p0.LengthSquared());
+            return (long)Math.Sqrt(thisPoint.LengthSquared());
         }
         
-        public static long LengthSquared(this IntPoint p0)
+        public static long LengthSquared(this IntPoint thisPoint)
         {
-            return p0.X * p0.X + p0.Y * p0.Y;
+            return thisPoint.X * thisPoint.X + thisPoint.Y * thisPoint.Y;
         }
 
         public static long Cross(this IntPoint left, IntPoint right)
@@ -160,34 +162,34 @@ namespace MatterHackers.MatterSlice
             return left.X * right.Y - left.Y * right.X;
         }
 
-        public static IntPoint CrossZ(this IntPoint p0)
+        public static IntPoint CrossZ(this IntPoint thisPoint)
         {
-            return new IntPoint(-p0.Y, p0.X);
+            return new IntPoint(-thisPoint.Y, thisPoint.X);
         }
 
-        public static string OutputInMm(this IntPoint p0)
+        public static string OutputInMm(this IntPoint thisPoint)
         {
-            return string.Format("[{0},{1}]", p0.X / 1000.0, p0.Y / 1000.0);
+            return string.Format("[{0},{1}]", thisPoint.X / 1000.0, thisPoint.Y / 1000.0);
         }
 
-        public static IntPoint SetLength(this IntPoint p0, long len)
+        public static IntPoint SetLength(this IntPoint thisPoint, long len)
         {
-            long _len = p0.Length();
+            long _len = thisPoint.Length();
             if (_len < 1)
             {
                 return new IntPoint(len, 0);
             }
 
-            return p0 * len / _len;
+            return thisPoint * len / _len;
         }
 
-        public static bool ShorterThen(this IntPoint p0, long len)
+        public static bool ShorterThen(this IntPoint thisPoint, long len)
         {
-            if (p0.X > len || p0.X < -len)
+            if (thisPoint.X > len || thisPoint.X < -len)
                 return false;
-            if (p0.Y > len || p0.Y < -len)
+            if (thisPoint.Y > len || thisPoint.Y < -len)
                 return false;
-            return p0.LengthSquared() <= len * len;
+            return thisPoint.LengthSquared() <= len * len;
         }
 
         public static bool LongerThen(this IntPoint p0, long len)
@@ -195,37 +197,37 @@ namespace MatterHackers.MatterSlice
             return !ShorterThen(p0, len);
         }
 
-        public static int vSize(this IntPoint p0)
+        public static int vSize(this IntPoint thisPoint)
         {
-            return (int)Math.Sqrt(p0.LengthSquared());
+            return (int)Math.Sqrt(thisPoint.LengthSquared());
         }
 
-        public static double LengthMm(this IntPoint p0)
+        public static double LengthMm(this IntPoint thisPoint)
         {
-            double fx = (double)(p0.X) / 1000.0;
-            double fy = (double)(p0.Y) / 1000.0;
+            double fx = (double)(thisPoint.X) / 1000.0;
+            double fy = (double)(thisPoint.Y) / 1000.0;
             return Math.Sqrt(fx * fx + fy * fy);
         }
 
-        public static IntPoint normal(this IntPoint p0, int len)
+        public static IntPoint normal(this IntPoint thisPoint, int len)
         {
-            int _len = p0.vSize();
+            int _len = thisPoint.vSize();
             if (_len < 1)
             {
                 return new IntPoint(len, 0);
             }
 
-            return p0 * len / _len;
+            return thisPoint * len / _len;
         }
 
-        public static IntPoint GetPerpendicularLeft(this IntPoint p0)
+        public static IntPoint GetPerpendicularLeft(this IntPoint thisPoint)
         {
-            return new IntPoint(-p0.Y, p0.X);
+            return new IntPoint(-thisPoint.Y, thisPoint.X);
         }
 
-        public static long Dot(this IntPoint p0, IntPoint p1)
+        public static long Dot(this IntPoint thisPoint, IntPoint p1)
         {
-            return p0.X * p1.X + p0.Y * p1.Y;
+            return thisPoint.X * p1.X + thisPoint.Y * p1.Y;
         }
     }
 
