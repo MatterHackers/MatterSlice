@@ -50,8 +50,11 @@ namespace MatterHackers.MatterSlice
             return ProcessArgs(args);
         }
 
+		static bool stop = false;
+		public static bool Canceled { get { return stop; } }
         public static int ProcessArgs(string argsInString)
         {
+			stop = false;
             List<string> commands = new List<string>();
             foreach (string command in SplitCommandLine.DoSplit(argsInString))
             {
@@ -60,6 +63,11 @@ namespace MatterHackers.MatterSlice
             string[] args = commands.ToArray();
             return ProcessArgs(args);
         }
+
+		public static void Stop()
+		{
+			stop = true;
+		}
 
         public static int ProcessArgs(string[] args)
         {
@@ -168,8 +176,19 @@ namespace MatterHackers.MatterSlice
                 }
             }
 
-            processor.DoProcessing();
-            processor.finalize();
+			if (!Canceled)
+			{
+				processor.DoProcessing();
+			}
+			if (!Canceled)
+			{
+				processor.finalize();
+			}
+			if (Canceled)
+			{
+				processor.Cancel();
+			}
+
             return 0;
         }
 
