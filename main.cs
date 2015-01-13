@@ -66,6 +66,12 @@ namespace MatterHackers.MatterSlice
 #if DEBUG
             Tests.BridgeTests.Run();
 #endif
+			if (args.Length == 0)
+			{
+				print_usage();
+				return 0;
+			}
+
             ConfigSettings config = new ConfigSettings();
             fffProcessor processor = new fffProcessor(config);
 
