@@ -422,7 +422,11 @@ namespace MatterHackers.MatterSlice
         
         public static Polygons Offset(this Polygons polygons, int distance)
         {
-            return Clipper.OffsetPaths(polygons, distance, JoinType.jtMiter, EndType_.etClosed, 2.0);
+			ClipperOffset offseter = new ClipperOffset();
+			offseter.AddPaths(polygons, JoinType.jtMiter, EndType.etClosedPolygon);
+			Paths solution = new Polygons();
+			offseter.Execute(ref solution, distance);
+			return solution;
         }
 
         public static List<Polygons> SplitIntoParts(this Polygons polygons, bool unionAll = false)

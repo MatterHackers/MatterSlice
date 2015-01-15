@@ -66,7 +66,11 @@ namespace MatterHackers.MatterSlice
             t.Start();
             for (int faceIndex = 0; faceIndex < volume.faceTriangles.Count; faceIndex++)
             {
-                OptimizedFace optimizedFace = new OptimizedFace();
+				if (MatterSlice.Canceled)
+				{
+					return;
+				}
+				OptimizedFace optimizedFace = new OptimizedFace();
                 if ((faceIndex % 1000 == 0) && t.Elapsed.Seconds > 2)
                 {
                     LogOutput.logProgress("optimized", faceIndex + 1, volume.faceTriangles.Count);
@@ -191,7 +195,11 @@ namespace MatterHackers.MatterSlice
             for (int i = 0; i < model.volumes.Count; i++)
             {
                 volumes.Add(new OptimizedVolume(model.volumes[i], this));
-            }
+				if (MatterSlice.Canceled)
+				{
+					return;
+				}
+			}
         }
 
         public void SetPositionAndSize(SimpleModel model, long xCenter_um, long yCenter_um, long zClip_um, bool centerObjectInXy)

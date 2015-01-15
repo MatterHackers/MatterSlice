@@ -160,7 +160,7 @@ namespace MatterHackers.MatterSlice
             double bestAngle = -1;
 
             // check if it is concave
-            for (int i = 0; i < island0PointCount + startIndex; i++)
+            for (int i = 0; i < island0PointCount; i++)
             {
                 IntPoint curr = island[(startIndex + i) % island0PointCount];
 
@@ -171,7 +171,7 @@ namespace MatterHackers.MatterSlice
 
                     // We found a concave angle. now we want to find the first non-concave angle and make
                     // a bridge at the start and end angle of the concave region 
-                    for (int j = i + 1; j < island0PointCount + startIndex; j++)
+                    for (int j = i + 1; j < island0PointCount + i; j++)
                     {
                         IntPoint curr2 = island[(startIndex + j) % island0PointCount];
 

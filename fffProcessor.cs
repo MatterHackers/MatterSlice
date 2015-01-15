@@ -78,6 +78,10 @@ namespace MatterHackers.MatterSlice
             timeKeeper.Restart();
             LogOutput.log("Analyzing and optimizing model...\n");
             optomizedModel = new OptimizedModel(simpleModel);
+			if (MatterSlice.Canceled)
+			{
+				return;
+			}
             optomizedModel.SetPositionAndSize(simpleModel, config.positionToPlaceObjectCenter_um.X, config.positionToPlaceObjectCenter_um.Y, -config.bottomClipAmount_um, config.centerObjectInXy);
             for (int volumeIndex = 0; volumeIndex < simpleModel.volumes.Count; volumeIndex++)
             {
@@ -94,7 +98,15 @@ namespace MatterHackers.MatterSlice
             sliceModels(storage);
 
             processSliceData(storage);
-            writeGCode(storage);
+			if (MatterSlice.Canceled)
+			{
+				return;
+			}
+			writeGCode(storage);
+			if (MatterSlice.Canceled)
+			{
+				return;
+			}
 
             LogOutput.logProgress("process", 1, 1); //Report to the GUI that a file has been fully processed.
             LogOutput.log("Total time elapsed {0:0.00}s.\n".FormatWith(timeKeeperTotal.Elapsed.Seconds));
@@ -218,7 +230,11 @@ namespace MatterHackers.MatterSlice
             {
                 for (int volumeIndex = 0; volumeIndex < storage.volumes.Count; volumeIndex++)
                 {
-                    int insetCount = config.numberOfPerimeters;
+					if (MatterSlice.Canceled)
+					{
+						return;
+					}
+					int insetCount = config.numberOfPerimeters;
                     if (config.continuousSpiralOuterPerimeter && (int)(layerIndex) < config.numberOfBottomLayers && layerIndex % 2 == 1)
                     {
                         //Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
@@ -246,7 +262,11 @@ namespace MatterHackers.MatterSlice
 
             for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
             {
-                //Only generate bottom and top layers and infill for the first X layers when spiralize is choosen.
+				if (MatterSlice.Canceled)
+				{
+					return;
+				}
+				//Only generate bottom and top layers and infill for the first X layers when spiralize is choosen.
                 if (!config.continuousSpiralOuterPerimeter || (int)(layerIndex) < config.numberOfBottomLayers)
                 {
                     for (int volumeIndex = 0; volumeIndex < storage.volumes.Count; volumeIndex++)
@@ -402,7 +422,11 @@ namespace MatterHackers.MatterSlice
             int volumeIdx = 0;
             for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
             {
-                LogOutput.log("Writing Layers {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
+				if (MatterSlice.Canceled)
+				{
+					return;
+				}
+				LogOutput.log("Writing Layers {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
 
                 LogOutput.logProgress("export", layerIndex + 1, totalLayers);
 
@@ -850,5 +874,13 @@ namespace MatterHackers.MatterSlice
             //Make sure we wipe the old extruder on the wipe tower.
             gcodeLayer.writeTravel(storage.wipePoint - config.extruderOffsets[prevExtruder] + config.extruderOffsets[gcodeLayer.getExtruder()]);
         }
-    }
+
+		public void Cancel()
+		{
+			if (gcode.isOpened())
+			{
+				gcode.Close();
+			}
+		}
+	}
 }
