@@ -624,43 +624,41 @@ namespace MatterHackers.MatterSlice
 
                     if (config.continuousSpiralOuterPerimeter)
                     {
-                        if ((int)(layerIndex) >= config.numberOfBottomLayers)
+                        if (layerIndex >= config.numberOfBottomLayers)
                         {
                             inset0Config.spiralize = true;
                         }
 
-                        if ((int)(layerIndex) == config.numberOfBottomLayers && part.insets.Count > 0)
+                        if (layerIndex == config.numberOfBottomLayers && part.insets.Count > 0)
                         {
                             gcodeLayer.writePolygonsByOptimizer(part.insets[0], insetXConfig);
                         }
                     }
 
-					if (config.outsidePerimetersFirst)
+					// If we are on the very first layer we start with the outside in so that we can stick to the bed better.
+					if (config.outsidePerimetersFirst || layerIndex == 0)
 					{
-						for (int insetNr = 0; insetNr < part.insets.Count; insetNr++)
+						// First the outside (this helps with accuracy)
+						if (part.insets.Count > 0)
 						{
-							if (insetNr == 0)
-							{
-								gcodeLayer.writePolygonsByOptimizer(part.insets[insetNr], inset0Config);
-							}
-							else
-							{
-								gcodeLayer.writePolygonsByOptimizer(part.insets[insetNr], insetXConfig);
-							}
+							gcodeLayer.writePolygonsByOptimizer(part.insets[0], inset0Config);
+						}
+						for (int perimeterIndex = 1; perimeterIndex < part.insets.Count; perimeterIndex++)
+						{
+							gcodeLayer.writePolygonsByOptimizer(part.insets[perimeterIndex], insetXConfig);
 						}
 					}
-					else
+					else // This is so we can do overhanges better (the outside can stick a bit to the inside).
 					{
-						for (int insetNr = part.insets.Count - 1; insetNr > -1; insetNr--)
+						// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
+						for (int perimeterIndex = 1; perimeterIndex < part.insets.Count; perimeterIndex++)
 						{
-							if (insetNr == 0)
-							{
-								gcodeLayer.writePolygonsByOptimizer(part.insets[insetNr], inset0Config);
-							}
-							else
-							{
-								gcodeLayer.writePolygonsByOptimizer(part.insets[insetNr], insetXConfig);
-							}
+							gcodeLayer.writePolygonsByOptimizer(part.insets[perimeterIndex], insetXConfig);
+						}
+						// then 0
+						if (part.insets.Count > 0)
+						{
+							gcodeLayer.writePolygonsByOptimizer(part.insets[0], inset0Config);
 						}
 					}
                 }
@@ -736,7 +734,7 @@ namespace MatterHackers.MatterSlice
                 gcodeLayer.writePolygonsByOptimizer(fillPolygons, fillConfig);
 
                 //After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
-                if (!config.continuousSpiralOuterPerimeter || (int)(layerIndex) < config.numberOfBottomLayers)
+                if (!config.continuousSpiralOuterPerimeter || layerIndex < config.numberOfBottomLayers)
                 {
                     gcodeLayer.moveInsideCombBoundary(extrusionWidth_um * 2);
                 }
