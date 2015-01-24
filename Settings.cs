@@ -144,6 +144,9 @@ namespace MatterHackers.MatterSlice
         
         [SettingDescription("Avoid crossing any of the perimeters of a shape while printing its parts.")]
         public bool avoidCrossingPerimeters;
+
+		[SettingDescription("Print the outside perimeter before the inside ones. This can help with accuracy.")]
+		public bool outsidePerimetersFirst;
         
         [SettingDescription("If greater than 0 this creates an outline around shapes so the extrude will be wiped when entering.")]
         public double wipeShieldDistanceFromObject;

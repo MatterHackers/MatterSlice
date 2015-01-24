@@ -635,17 +635,34 @@ namespace MatterHackers.MatterSlice
                         }
                     }
 
-                    for (int insetNr = part.insets.Count - 1; insetNr > -1; insetNr--)
-                    {
-                        if (insetNr == 0)
-                        {
-                            gcodeLayer.writePolygonsByOptimizer(part.insets[insetNr], inset0Config);
-                        }
-                        else
-                        {
-                            gcodeLayer.writePolygonsByOptimizer(part.insets[insetNr], insetXConfig);
-                        }
-                    }
+					if (config.outsidePerimetersFirst)
+					{
+						for (int insetNr = 0; insetNr < part.insets.Count; insetNr++)
+						{
+							if (insetNr == 0)
+							{
+								gcodeLayer.writePolygonsByOptimizer(part.insets[insetNr], inset0Config);
+							}
+							else
+							{
+								gcodeLayer.writePolygonsByOptimizer(part.insets[insetNr], insetXConfig);
+							}
+						}
+					}
+					else
+					{
+						for (int insetNr = part.insets.Count - 1; insetNr > -1; insetNr--)
+						{
+							if (insetNr == 0)
+							{
+								gcodeLayer.writePolygonsByOptimizer(part.insets[insetNr], inset0Config);
+							}
+							else
+							{
+								gcodeLayer.writePolygonsByOptimizer(part.insets[insetNr], insetXConfig);
+							}
+						}
+					}
                 }
 
                 Polygons fillPolygons = new Polygons();
