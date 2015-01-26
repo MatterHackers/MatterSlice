@@ -608,7 +608,7 @@ namespace MatterHackers.MatterSlice
 
                 if (config.avoidCrossingPerimeters)
                 {
-                    gcodeLayer.setCombBoundary(part.combBoundery);
+                    gcodeLayer.SetOuterPerimetersToAvoidCrossing(part.combBoundery);
                 }
                 else
                 {
@@ -736,10 +736,10 @@ namespace MatterHackers.MatterSlice
                 //After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
                 if (!config.continuousSpiralOuterPerimeter || layerIndex < config.numberOfBottomLayers)
                 {
-                    gcodeLayer.moveInsideCombBoundary(extrusionWidth_um * 2);
+                    gcodeLayer.MoveInsideTheOuterPerimeter(extrusionWidth_um * 2);
                 }
             }
-            gcodeLayer.setCombBoundary(null);
+            gcodeLayer.SetOuterPerimetersToAvoidCrossing(null);
         }
 
         void AddSupportToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerIndex, ConfigSettings config)
@@ -848,7 +848,7 @@ namespace MatterHackers.MatterSlice
 
                 if (config.avoidCrossingPerimeters)
                 {
-                    gcodeLayer.setCombBoundary(island);
+                    gcodeLayer.SetOuterPerimetersToAvoidCrossing(island);
                 }
 
                 switch (interfaceLayer)
@@ -869,7 +869,7 @@ namespace MatterHackers.MatterSlice
                         throw new NotImplementedException();
                 }
 
-                gcodeLayer.setCombBoundary(null);
+                gcodeLayer.SetOuterPerimetersToAvoidCrossing(null);
             }
         }
 
