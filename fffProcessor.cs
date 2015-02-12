@@ -143,7 +143,7 @@ namespace MatterHackers.MatterSlice
             skirtConfig.setData(config.insidePerimetersSpeed, extrusionWidth, "SKIRT");
             inset0Config.setData(config.outsidePerimeterSpeed, extrusionWidth, "WALL-OUTER");
             insetXConfig.setData(config.insidePerimetersSpeed, extrusionWidth, "WALL-INNER");
-            fillConfig.setData(config.infillSpeed, extrusionWidth, "FILL");
+            fillConfig.setData(config.infillSpeed, extrusionWidth, "FILL", false);
             bridgConfig.setData(config.bridgeSpeed, extrusionWidth, "BRIDGE");
             supportNormalConfig.setData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT");
             supportInterfaceConfig.setData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT-INTERFACE");
@@ -441,7 +441,7 @@ namespace MatterHackers.MatterSlice
                     skirtConfig.setData(config.firstLayerSpeed, extrusionWidth_um, "SKIRT");
                     inset0Config.setData(config.firstLayerSpeed, extrusionWidth_um, "WALL-OUTER");
                     insetXConfig.setData(config.firstLayerSpeed, extrusionWidth_um, "WALL-INNER");
-                    fillConfig.setData(config.firstLayerSpeed, extrusionWidth_um, "FILL");
+                    fillConfig.setData(config.firstLayerSpeed, extrusionWidth_um, "FILL", false);
                     bridgConfig.setData(config.firstLayerSpeed, extrusionWidth_um, "BRIDGE");
                 }
                 else
@@ -449,7 +449,7 @@ namespace MatterHackers.MatterSlice
                     skirtConfig.setData(config.insidePerimetersSpeed, extrusionWidth_um, "SKIRT");
                     inset0Config.setData(config.outsidePerimeterSpeed, extrusionWidth_um, "WALL-OUTER");
                     insetXConfig.setData(config.insidePerimetersSpeed, extrusionWidth_um, "WALL-INNER");
-                    fillConfig.setData(config.infillSpeed, extrusionWidth_um, "FILL");
+                    fillConfig.setData(config.infillSpeed, extrusionWidth_um, "FILL", false);
                     bridgConfig.setData(config.bridgeSpeed, extrusionWidth_um, "BRIDGE");
                 }
                 supportNormalConfig.setData(config.supportMaterialSpeed, config.supportExtrusionWidth_um, "SUPPORT");
@@ -711,11 +711,15 @@ namespace MatterHackers.MatterSlice
                             Infill.GenerateGridInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle);
                             break;
 
-                        case ConfigConstants.INFILL_TYPE.TRIANGLES:
-                            Infill.GenerateTriangleInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle, layer.printZ);
-                            break;
+						case ConfigConstants.INFILL_TYPE.TRIANGLES:
+							Infill.GenerateTriangleInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle);
+							break;
 
-                        case ConfigConstants.INFILL_TYPE.CONCENTRIC:
+						case ConfigConstants.INFILL_TYPE.HEXAGON:
+							Infill.GenerateHexagonInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle, layerIndex);
+							break;
+
+						case ConfigConstants.INFILL_TYPE.CONCENTRIC:
                             Infill.generateConcentricInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle);
                             break;
 

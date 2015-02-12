@@ -55,8 +55,9 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        public void Optimize()
+        public void Optimize(GCodePathConfig config = null)
         {
+			bool canTravelForwardOrBackward = config != null && !config.closedLoop;
             // Find the point that is closest to our current position (start position)
             bool[] polygonHasBeenAdded = new bool[polygons.Count];
             for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
@@ -64,19 +65,31 @@ namespace MatterHackers.MatterSlice
                 int bestPointIndex = -1;
                 double closestDist = double.MaxValue;
                 Polygon currentPolygon = polygons[polygonIndex];
-                for (int pointIndex = 0; pointIndex < currentPolygon.Count; pointIndex++)
-                {
-                    double dist = (currentPolygon[pointIndex] - startPosition).LengthSquared();
-                    if (dist < closestDist)
-                    {
-                        bestPointIndex = pointIndex;
-                        closestDist = dist;
-                    }
-                }
-                startIndexInPolygon.Add(bestPointIndex);
+				if (config == null)
+				{
+					for (int pointIndex = 0; pointIndex < currentPolygon.Count; pointIndex++)
+					{
+						double dist = (currentPolygon[pointIndex] - startPosition).LengthSquared();
+						if (dist < closestDist)
+						{
+							bestPointIndex = pointIndex;
+							closestDist = dist;
+						}
+					}
+					startIndexInPolygon.Add(bestPointIndex);
+				}
+				else
+				{
+					double dist = (currentPolygon[0] - startPosition).LengthSquared();
+					if (dist < closestDist)
+					{
+						bestPointIndex = 0;
+						closestDist = dist;
+					}
+					startIndexInPolygon.Add(bestPointIndex);
+				}
             }
 
-            //IntPoint incommingPerpendicularNormal = new IntPoint(0, 0);
             IntPoint currentPosition = startPosition;
             // We loop over the polygon list twice, as each inner loop we only pick one polygon.
             for (int polygonIndexOuterLoop = 0; polygonIndexOuterLoop < polygons.Count; polygonIndexOuterLoop++)
@@ -91,19 +104,17 @@ namespace MatterHackers.MatterSlice
                     }
 
                     // If there are only 2 points (a single line) we are willing to start from the start or the end.
-                    if (polygons[polygonIndex].Count == 2)
+					if (polygons[polygonIndex].Count == 2 || canTravelForwardOrBackward)
                     {
                         double distToSart = (polygons[polygonIndex][0] - currentPosition).LengthSquared();
-                        //dist += Math.Abs(incommingPerpendicularNormal.Dot(polygons[polygonIndex][1] - polygons[polygonIndex][0].normal(1000))) * 0.0001f;
                         if (distToSart < bestDist)
                         {
                             bestPolygonIndex = polygonIndex;
                             bestDist = distToSart;
                             startIndexInPolygon[polygonIndex] = 0;
                         }
-                        
-                        double distToEnd = (polygons[polygonIndex][1] - currentPosition).LengthSquared();
-                        //dist += Math.Abs(incommingPerpendicularNormal.Dot(polygons[polygonIndex][0] - polygons[polygonIndex][1].normal(1000))) * 0.0001f;
+
+						double distToEnd = (polygons[polygonIndex][polygons[polygonIndex].Count - 1] - currentPosition).LengthSquared();
                         if (distToEnd < bestDist)
                         {
                             bestPolygonIndex = polygonIndex;
@@ -124,18 +135,22 @@ namespace MatterHackers.MatterSlice
 
                 if (bestPolygonIndex > -1)
                 {
-                    if (polygons[bestPolygonIndex].Count == 2)
+					if (polygons[bestPolygonIndex].Count == 2 || canTravelForwardOrBackward)
                     {
                         // get the point that is opposite from the one we started on
                         int startIndex = startIndexInPolygon[bestPolygonIndex];
-                        int endIndex = (startIndex + 1) % 2;
-                        currentPosition = polygons[bestPolygonIndex][endIndex];
-                        //incommingPerpendicularNormal = (polygons[bestIndex][endIndex] - polygons[bestIndex][polyStart[bestIndex]]).normal(1000).CrossZ();
+						if (startIndex == 0)
+						{
+							currentPosition = polygons[bestPolygonIndex][polygons[bestPolygonIndex].Count -1];
+						}
+						else
+						{
+							currentPosition = polygons[bestPolygonIndex][0];
+						}
                     }
                     else
                     {
                         currentPosition = polygons[bestPolygonIndex][startIndexInPolygon[bestPolygonIndex]];
-                        //incommingPerpendicularNormal = new IntPoint(0, 0);
                     }
                     polygonHasBeenAdded[bestPolygonIndex] = true;
                     bestPolygonOrderIndex.Add(bestPolygonIndex);
@@ -147,20 +162,44 @@ namespace MatterHackers.MatterSlice
             {
                 int bestStartPoint = -1;
                 double bestDist = double.MaxValue;
-                for (int pointIndex = 0; pointIndex < polygons[bestPolygonIndex].Count; pointIndex++)
-                {
-                    double dist = (polygons[bestPolygonIndex][pointIndex] - currentPosition).LengthSquared();
-                    if (dist < bestDist)
-                    {
-                        bestStartPoint = pointIndex;
-                        bestDist = dist;
-                    }
-                }
+				if (canTravelForwardOrBackward)
+				{
+					bestDist = (polygons[bestPolygonIndex][0] - currentPosition).LengthSquared();
+					bestStartPoint = 0;
+
+					// check if the end is better
+					int endIndex = polygons[bestPolygonIndex].Count - 1;
+					double dist = (polygons[bestPolygonIndex][endIndex] - currentPosition).LengthSquared();
+					if (dist < bestDist)
+					{
+						bestStartPoint = endIndex;
+						bestDist = dist;
+					}
+				}
+				else
+				{
+					for (int pointIndex = 0; pointIndex < polygons[bestPolygonIndex].Count; pointIndex++)
+					{
+						double dist = (polygons[bestPolygonIndex][pointIndex] - currentPosition).LengthSquared();
+						if (dist < bestDist)
+						{
+							bestStartPoint = pointIndex;
+							bestDist = dist;
+						}
+					}
+				}
                 startIndexInPolygon[bestPolygonIndex] = bestStartPoint;
-                if (polygons[bestPolygonIndex].Count == 2)
+				if (polygons[bestPolygonIndex].Count == 2 || canTravelForwardOrBackward)
                 {
-                    currentPosition = polygons[bestPolygonIndex][(bestStartPoint + 1) % 2];
-                }
+					if (bestStartPoint == 0)
+					{
+						currentPosition = polygons[bestPolygonIndex][polygons[bestPolygonIndex].Count - 1];
+					}
+					else
+					{
+						currentPosition = polygons[bestPolygonIndex][0];
+					}
+				}
                 else
                 {
                     currentPosition = polygons[bestPolygonIndex][bestStartPoint];

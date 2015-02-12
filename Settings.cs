@@ -703,6 +703,7 @@ namespace MatterHackers.MatterSlice
             GRID,
             LINES,
             TRIANGLES,
+			HEXAGON,
             CONCENTRIC,
         }
 

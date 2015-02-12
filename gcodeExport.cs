@@ -517,6 +517,7 @@ namespace MatterHackers.MatterSlice
         public int lineWidth;
         public string name;
         public bool spiralize;
+		public bool closedLoop = true;
 
         public GCodePathConfig() { }
         public GCodePathConfig(int speed, int lineWidth, string name)
@@ -526,8 +527,9 @@ namespace MatterHackers.MatterSlice
             this.name = name;
         }
 
-        public void setData(int speed, int lineWidth, string name)
+        public void setData(int speed, int lineWidth, string name, bool closedLoop = true)
         {
+			this.closedLoop = closedLoop;
             this.speed = speed;
             this.lineWidth = lineWidth;
             this.name = name;
@@ -751,17 +753,42 @@ namespace MatterHackers.MatterSlice
         {
             IntPoint currentPosition = polygon[startIndex];
             writeTravel(currentPosition);
-            for (int poisitionIndex = 1; poisitionIndex < polygon.Count; poisitionIndex++)
-            {
-                IntPoint destination = polygon[(startIndex + poisitionIndex) % polygon.Count];
-                writeExtrusionMove(destination, config);
-                currentPosition = destination;
-            }
+			if (config.closedLoop)
+			{
+				for (int positionIndex = 1; positionIndex < polygon.Count; positionIndex++)
+				{
+					IntPoint destination = polygon[(startIndex + positionIndex) % polygon.Count];
+					writeExtrusionMove(destination, config);
+					currentPosition = destination;
+				}
 
-            if (polygon.Count > 2)
-            {
-                writeExtrusionMove(polygon[startIndex], config);
-            }
+				// We need to actually close the polygon so go back to the first point
+				if (polygon.Count > 2)
+				{
+					writeExtrusionMove(polygon[startIndex], config);
+				}
+			}
+			else // we are not closed 
+			{
+				if (startIndex == 0)
+				{
+					for (int positionIndex = 1; positionIndex < polygon.Count; positionIndex++)
+					{
+						IntPoint destination = polygon[positionIndex];
+						writeExtrusionMove(destination, config);
+						currentPosition = destination;
+					}
+				}
+				else
+				{
+					for (int positionIndex = polygon.Count - 1; positionIndex >= 1; positionIndex-- )
+					{
+						IntPoint destination = polygon[(startIndex + positionIndex) % polygon.Count];
+						writeExtrusionMove(destination, config);
+						currentPosition = destination;
+					}
+				}
+			}
         }
 
         public void writePolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
@@ -769,7 +796,7 @@ namespace MatterHackers.MatterSlice
             PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(lastPosition);
             orderOptimizer.AddPolygons(polygons);
 
-            orderOptimizer.Optimize();
+            orderOptimizer.Optimize(config);
 
             for (int i = 0; i < orderOptimizer.bestPolygonOrderIndex.Count; i++)
             {
