@@ -73,6 +73,35 @@ namespace MatterHackers.MatterSlice
             }
         }
 
+		private static IEnumerable<IntPoint> StartPositionIterator(AABB boundary, int lineSpacing, int layerIndex)
+		{
+			int perIncrementOffset = (int)(lineSpacing * Math.Sqrt(3) / 2 + .5);
+			int yLineCount = (int)((boundary.max.Y - boundary.min.Y + (perIncrementOffset - 1)) / perIncrementOffset) + 1;
+			long firstY = boundary.min.Y;
+			long xIndex = 0;
+
+			for (int yIndex = 2; yIndex < yLineCount - 2; yIndex++)
+			{
+				long xOffsetForY = lineSpacing / 2;
+				if ((yIndex % 2) == 0) // if we are at every other y
+				{
+					xOffsetForY = 0;
+				}
+				long firstX = boundary.min.X + xOffsetForY;
+
+				yield return new IntPoint(firstX + xIndex * lineSpacing, firstY + yIndex * perIncrementOffset);
+			}
+		}
+
+		private static IEnumerable<IntPoint> IncrementPositionIterator(IntPoint startPoint, AABB boundary, int lineSpacing, int layerIndex)
+		{
+			int xLineCount = (int)((boundary.max.X - boundary.min.X + (lineSpacing - 1)) / lineSpacing) + 1;
+			for (int xIndex = 2; xIndex < xLineCount - 2; xIndex++)
+			{
+				yield return startPoint + new IntPoint(xIndex * lineSpacing, 0);
+			}
+		}
+
 		public static void GenerateHexLinePaths(Polygons in_outline, ref Polygons result, int lineSpacing, int infillExtendIntoPerimeter_um, double rotationDegrees, int layerIndex)
 		{
 			int extraRotationAngle = 0;
@@ -90,23 +119,12 @@ namespace MatterHackers.MatterSlice
 
 					boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing;
 					boundary.min.Y = ((boundary.min.Y / perIncrementOffset) - 1) * perIncrementOffset;
-					int xLineCount = (int)((boundary.max.X - boundary.min.X + (lineSpacing - 1)) / lineSpacing) + 1;
 					Polygons unclipedPatern = new Polygons();
 
-					//foreach(IntPoint startPoint in StartPositionIterator(boundary, lineSpacing, layerIndex);
-
-					int yLineCount = (int)((boundary.max.Y - boundary.min.Y + (perIncrementOffset - 1)) / perIncrementOffset) + 1;
-					long firstY = boundary.min.Y;
-					for (int yIndex = 2; yIndex < yLineCount-2; yIndex++)
+					foreach (IntPoint startPoint in StartPositionIterator(boundary, lineSpacing, layerIndex))
 					{
 						Polygon attachedLine = new Polygon();
-						long xOffsetForY = lineSpacing / 2;
-						if ((yIndex % 2) == 0) // if we are at every other y
-						{
-							xOffsetForY = 0;
-						}
-						long firstX = boundary.min.X + xOffsetForY;
-						for (int xIndex = 2; xIndex < xLineCount-2; xIndex++)
+						foreach (IntPoint center in IncrementPositionIterator(startPoint, boundary, lineSpacing, layerIndex))
 						{
 							// what we are adding are the little plusses that define the points
 							//    |
@@ -114,15 +132,13 @@ namespace MatterHackers.MatterSlice
 							//    /\   
 							//   /  \
 							//    
-							IntPoint left = new IntPoint(firstX + xIndex * lineSpacing, firstY + yIndex * perIncrementOffset);
-							IntPoint right = new IntPoint(firstX + (xIndex + 1) * lineSpacing, firstY + yIndex * perIncrementOffset);
-							IntPoint top = new IntPoint((left.X + right.X) / 2, firstY + (yIndex + 1) * perIncrementOffset);
-							IntPoint center = (left + right + top) / 3;
+							IntPoint left = center + new IntPoint(-lineSpacing/2, -perIncrementOffset / 3);
+							IntPoint right = center + new IntPoint(lineSpacing / 2, -perIncrementOffset / 3);
+							IntPoint top = center + new IntPoint(0, perIncrementOffset * 2 / 3);
 
 							attachedLine.Add(left); attachedLine.Add(center);
 							attachedLine.Add(center); attachedLine.Add(right);
 							unclipedPatern.Add(new Polygon() { top, center });
-
 						}
 						unclipedPatern.Add(attachedLine);
 					}
@@ -141,7 +157,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 		}
-		
+
 		public static void GenerateLineInfill(ConfigSettings config, Polygons partOutline, ref Polygons fillPolygons, int extrusionWidth_um, double fillAngle, int linespacing_um = 0)
         {
             if (linespacing_um == 0)
