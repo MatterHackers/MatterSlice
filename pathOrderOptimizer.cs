@@ -80,11 +80,14 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					double dist = (currentPolygon[0] - startPosition).LengthSquared();
-					if (dist < closestDist)
+					if (currentPolygon.Count > 0)
 					{
-						bestPointIndex = 0;
-						closestDist = dist;
+						double dist = (currentPolygon[0] - startPosition).LengthSquared();
+						if (dist < closestDist)
+						{
+							bestPointIndex = 0;
+							closestDist = dist;
+						}
 					}
 					startIndexInPolygon.Add(bestPointIndex);
 				}
