@@ -77,8 +77,6 @@ namespace MatterHackers.MatterSlice
 		{
 			int perIncrementOffset = (int)(lineSpacing * Math.Sqrt(3) / 2 + .5);
 			int yLineCount = (int)((boundary.max.Y - boundary.min.Y + perIncrementOffset) / perIncrementOffset) + 1;
-			long firstY = boundary.min.Y;
-			long xIndex = 0;
 
 			switch (layerIndex % 3)
 			{
@@ -92,7 +90,7 @@ namespace MatterHackers.MatterSlice
 						}
 						long firstX = boundary.min.X + xOffsetForY;
 
-						yield return new IntPoint(firstX + xIndex * lineSpacing, firstY + yIndex * perIncrementOffset);
+						yield return new IntPoint(firstX, boundary.min.Y + yIndex * perIncrementOffset);
 					}
 					break;
 
@@ -101,15 +99,11 @@ namespace MatterHackers.MatterSlice
 						IntPoint nextPoint = new IntPoint();
 						for (int yIndex = yLineCount; yIndex >= 0; yIndex--)
 						{
-							long xOffsetForY = lineSpacing / 2;
-							if ((yIndex % 2) == 0) // if we are at every other y
+							if ((yIndex % 2) == 0)
 							{
-								xOffsetForY = 0;
+								nextPoint = new IntPoint(boundary.min.X, boundary.min.Y + yIndex * perIncrementOffset);
+								yield return nextPoint;
 							}
-							long firstX = boundary.min.X + xOffsetForY;
-
-							nextPoint = new IntPoint(firstX + xIndex * lineSpacing, firstY + yIndex * perIncrementOffset);
-							yield return nextPoint;
 						}
 
 						IntPoint positionAdd = new IntPoint(lineSpacing, 0);
@@ -126,16 +120,9 @@ namespace MatterHackers.MatterSlice
 				case 2: // top to right
 					{
 						IntPoint nextPoint = new IntPoint();
-						for (int yIndex = 0; yIndex < yLineCount; yIndex++)
+						for (int yIndex = 0; yIndex < yLineCount; yIndex+=2)
 						{
-							long xOffsetForY = lineSpacing / 2;
-							if ((yIndex % 2) == 0) // if we are at every other y
-							{
-								xOffsetForY = 0;
-							}
-							long firstX = boundary.min.X + xOffsetForY;
-
-							nextPoint = new IntPoint(firstX + xIndex * lineSpacing, firstY + yIndex * perIncrementOffset);
+							nextPoint = new IntPoint(boundary.min.X, boundary.min.Y + yIndex * perIncrementOffset);
 							yield return nextPoint;
 						}
 
@@ -242,10 +229,6 @@ namespace MatterHackers.MatterSlice
 						{
 							unclipedPatern.Add(attachedLine);
 						}
-						else
-						{
-							int a = 0;
-						}
 					}
 
 					PolyTree ret = new PolyTree();
@@ -255,13 +238,6 @@ namespace MatterHackers.MatterSlice
 					clipper.Execute(ClipType.ctIntersection, ret, PolyFillType.pftPositive, PolyFillType.pftEvenOdd);
 
 					Polygons newSegments = Clipper.OpenPathsFromPolyTree(ret);
-					foreach (Polygon polygon in newSegments)
-					{
-						if (polygon.Count == 0)
-						{
-							int a = 0;
-						}
-					}
 					PointMatrix inversematrix = new PointMatrix((rotationDegrees + extraRotationAngle));
 					newSegments.applyMatrix(inversematrix);
 
