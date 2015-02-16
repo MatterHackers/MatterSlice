@@ -599,7 +599,7 @@ namespace MatterHackers.MatterSlice
                 gcodeLayer.setAlwaysRetract(!config.avoidCrossingPerimeters);
             }
 
-            PathOrderOptimizer partOrderOptimizer = new PathOrderOptimizer(new IntPoint());
+			PathOrderOptimizer partOrderOptimizer = new PathOrderOptimizer(new IntPoint());
             for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
             {
                 partOrderOptimizer.AddPolygon(layer.parts[partIndex].insets[0][0]);
@@ -619,7 +619,21 @@ namespace MatterHackers.MatterSlice
                     gcodeLayer.setAlwaysRetract(true);
                 }
 
-                if (config.numberOfPerimeters > 0)
+				Polygons fillPolygons = new Polygons();
+				Polygons bridgePolygons = new Polygons();
+
+				CalculateInfillData(storage, volumeIndex, layerIndex, extrusionWidth_um, part, ref fillPolygons, ref bridgePolygons);
+
+				// Write the bidge polgons out first so the perimeter will have more to hold to while bridging the gaps.
+				// It would be even better to slow down the perimeters that are part of bridges but that is a bit harder.
+				if (bridgePolygons.Count > 0)
+				{
+					gcode.writeFanCommand(config.bridgeFanSpeedPercent);
+					gcodeLayer.writePolygonsByOptimizer(bridgePolygons, bridgConfig);
+					gcode.writeFanCommand(fanSpeedPercent);
+				}
+				
+				if (config.numberOfPerimeters > 0)
                 {
                     if (partCounter > 0)
                     {
@@ -667,78 +681,6 @@ namespace MatterHackers.MatterSlice
 					}
                 }
 
-                Polygons fillPolygons = new Polygons();
-                Polygons bridgePolygons = new Polygons();
-
-                // generate infill for outline including bridging
-                foreach(Polygons outline in part.skinOutline.SplitIntoParts())
-                {
-                    double partFillAngle = config.infillStartingAngle;
-                    if ((layerIndex & 1) == 1)
-                    {
-                        partFillAngle += 90;
-                    }
-                    if (layerIndex > 0)
-                    {
-                        double bridgeAngle;
-                        if (Bridge.BridgeAngle(outline, storage.volumes[volumeIndex].layers[layerIndex - 1], out bridgeAngle))
-                        {
-                            Infill.GenerateLinePaths(outline, ref bridgePolygons, extrusionWidth_um, config.infillExtendIntoPerimeter_um, bridgeAngle);
-                        }
-                        else
-                        {
-                            Infill.GenerateLinePaths(outline, ref fillPolygons, extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
-                        }
-                    }
-                    else
-                    {
-                        Infill.GenerateLinePaths(outline, ref fillPolygons, extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
-                    }
-                }
-
-                double fillAngle = config.infillStartingAngle;
-
-                // generate the infill for this part on this layer
-                if (config.infillPercent > 0)
-                {
-                    switch (config.infillType)
-                    {
-                        case ConfigConstants.INFILL_TYPE.LINES:
-                            if ((layerIndex & 1) == 1)
-                            {
-                                fillAngle += 90;
-                            }
-                            Infill.GenerateLineInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle);
-                            break;
-
-                        case ConfigConstants.INFILL_TYPE.GRID:
-                            Infill.GenerateGridInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle);
-                            break;
-
-						case ConfigConstants.INFILL_TYPE.TRIANGLES:
-							Infill.GenerateTriangleInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle);
-							break;
-
-						case ConfigConstants.INFILL_TYPE.HEXAGON:
-							Infill.GenerateHexagonInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle, layerIndex);
-							break;
-
-						case ConfigConstants.INFILL_TYPE.CONCENTRIC:
-                            Infill.generateConcentricInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle);
-                            break;
-
-                        default:
-                            throw new NotImplementedException();
-                    }
-                }
-
-                if (bridgePolygons.Count > 0)
-                {
-                    gcode.writeFanCommand(config.bridgeFanSpeedPercent);
-                    gcodeLayer.writePolygonsByOptimizer(bridgePolygons, bridgConfig);
-                    gcode.writeFanCommand(fanSpeedPercent);
-                }
-
                 gcodeLayer.writePolygonsByOptimizer(fillPolygons, fillConfig);
 
                 //After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
@@ -749,6 +691,71 @@ namespace MatterHackers.MatterSlice
             }
             gcodeLayer.SetOuterPerimetersToAvoidCrossing(null);
         }
+
+		private void CalculateInfillData(SliceDataStorage storage, int volumeIndex, int layerIndex, int extrusionWidth_um, SliceLayerPart part, ref Polygons fillPolygons, ref Polygons bridgePolygons)
+		{
+			// generate infill for outline including bridging
+			foreach (Polygons outline in part.skinOutline.SplitIntoParts())
+			{
+				double partFillAngle = config.infillStartingAngle;
+				if ((layerIndex & 1) == 1)
+				{
+					partFillAngle += 90;
+				}
+				if (layerIndex > 0)
+				{
+					double bridgeAngle;
+					if (Bridge.BridgeAngle(outline, storage.volumes[volumeIndex].layers[layerIndex - 1], out bridgeAngle))
+					{
+						Infill.GenerateLinePaths(outline, ref bridgePolygons, extrusionWidth_um, config.infillExtendIntoPerimeter_um, bridgeAngle);
+					}
+					else
+					{
+						Infill.GenerateLinePaths(outline, ref fillPolygons, extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
+					}
+				}
+				else
+				{
+					Infill.GenerateLinePaths(outline, ref fillPolygons, extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
+				}
+			}
+
+			double fillAngle = config.infillStartingAngle;
+
+			// generate the infill for this part on this layer
+			if (config.infillPercent > 0)
+			{
+				switch (config.infillType)
+				{
+					case ConfigConstants.INFILL_TYPE.LINES:
+						if ((layerIndex & 1) == 1)
+						{
+							fillAngle += 90;
+						}
+						Infill.GenerateLineInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle);
+						break;
+
+					case ConfigConstants.INFILL_TYPE.GRID:
+						Infill.GenerateGridInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle);
+						break;
+
+					case ConfigConstants.INFILL_TYPE.TRIANGLES:
+						Infill.GenerateTriangleInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle);
+						break;
+
+					case ConfigConstants.INFILL_TYPE.HEXAGON:
+						Infill.GenerateHexagonInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle, layerIndex);
+						break;
+
+					case ConfigConstants.INFILL_TYPE.CONCENTRIC:
+						Infill.generateConcentricInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle);
+						break;
+
+					default:
+						throw new NotImplementedException();
+				}
+			}
+		}
 
         void AddSupportToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerIndex, ConfigSettings config)
         {
