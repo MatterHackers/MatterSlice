@@ -83,14 +83,16 @@ namespace MatterHackers.MatterSlice
 				case 0: // left to right
 					for (int yIndex = 0; yIndex < yLineCount; yIndex++)
 					{
+						long yPosition = boundary.min.Y + yIndex * perIncrementOffset;
+						bool removeXOffset = ((yPosition / perIncrementOffset) % 2) == 0;
 						long xOffsetForY = lineSpacing / 2;
-						if ((yIndex % 2) == 0) // if we are at every other y
+						if (removeXOffset) // if we are at every other y
 						{
 							xOffsetForY = 0;
 						}
 						long firstX = boundary.min.X + xOffsetForY;
 
-						yield return new IntPoint(firstX, boundary.min.Y + yIndex * perIncrementOffset);
+						yield return new IntPoint(firstX, yPosition);
 					}
 					break;
 
@@ -99,9 +101,11 @@ namespace MatterHackers.MatterSlice
 						IntPoint nextPoint = new IntPoint();
 						for (int yIndex = yLineCount; yIndex >= 0; yIndex--)
 						{
-							if ((yIndex % 2) == 0)
+							long yPosition = boundary.min.Y + yIndex * perIncrementOffset;
+							bool createLineSegment = ((yPosition / perIncrementOffset) % 2) == 0;
+							if (createLineSegment)
 							{
-								nextPoint = new IntPoint(boundary.min.X, boundary.min.Y + yIndex * perIncrementOffset);
+								nextPoint = new IntPoint(boundary.min.X, yPosition);
 								yield return nextPoint;
 							}
 						}
@@ -120,10 +124,15 @@ namespace MatterHackers.MatterSlice
 				case 2: // top to right
 					{
 						IntPoint nextPoint = new IntPoint();
-						for (int yIndex = 0; yIndex < yLineCount; yIndex+=2)
+						for (int yIndex = 0; yIndex < yLineCount; yIndex++)
 						{
-							nextPoint = new IntPoint(boundary.min.X, boundary.min.Y + yIndex * perIncrementOffset);
-							yield return nextPoint;
+							long yPosition = boundary.min.Y + yIndex * perIncrementOffset;
+							bool createLineSegment = ((yPosition / perIncrementOffset) % 2) == 0;
+							if (createLineSegment)
+							{
+								nextPoint = new IntPoint(boundary.min.X, yPosition);
+								yield return nextPoint;
+							}
 						}
 
 						IntPoint positionAdd = new IntPoint(lineSpacing, 0);
