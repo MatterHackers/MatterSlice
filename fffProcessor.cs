@@ -443,7 +443,10 @@ namespace MatterHackers.MatterSlice
                     insetXConfig.setData(config.firstLayerSpeed, extrusionWidth_um, "WALL-INNER");
                     fillConfig.setData(config.firstLayerSpeed, extrusionWidth_um, "FILL", false);
                     bridgConfig.setData(config.firstLayerSpeed, extrusionWidth_um, "BRIDGE");
-                }
+					
+					supportNormalConfig.setData(config.firstLayerSpeed, config.supportExtrusionWidth_um, "SUPPORT");
+					supportInterfaceConfig.setData(config.firstLayerSpeed, config.extrusionWidth_um, "SUPPORT-INTERFACE");
+				}
                 else
                 {
                     skirtConfig.setData(config.insidePerimetersSpeed, extrusionWidth_um, "SKIRT");
@@ -451,9 +454,10 @@ namespace MatterHackers.MatterSlice
                     insetXConfig.setData(config.insidePerimetersSpeed, extrusionWidth_um, "WALL-INNER");
                     fillConfig.setData(config.infillSpeed, extrusionWidth_um, "FILL", false);
                     bridgConfig.setData(config.bridgeSpeed, extrusionWidth_um, "BRIDGE");
-                }
-                supportNormalConfig.setData(config.supportMaterialSpeed, config.supportExtrusionWidth_um, "SUPPORT");
-                supportInterfaceConfig.setData(config.supportMaterialSpeed, config.extrusionWidth_um, "SUPPORT-INTERFACE");
+					
+					supportNormalConfig.setData(config.supportMaterialSpeed, config.supportExtrusionWidth_um, "SUPPORT");
+					supportInterfaceConfig.setData(config.supportMaterialSpeed, config.extrusionWidth_um, "SUPPORT-INTERFACE");
+				}
 
                 gcode.writeComment("LAYER:{0}".FormatWith(layerIndex));
                 if (layerIndex == 0)
