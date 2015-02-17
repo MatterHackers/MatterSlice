@@ -56,8 +56,14 @@ namespace MatterHackers.MatterSlice
 
             int heightWithoutFirstLayer = modelSize.z - initialLayerThickness_um - config.bottomClipAmount_um;
             int countOfNormalThicknessLayers = (int)((heightWithoutFirstLayer / (double)layerThickness_um) + .5);
-            
-            int layerCount = countOfNormalThicknessLayers + 1; // we have to add in the first layer (that is a differnt size)
+
+			int layerCount = countOfNormalThicknessLayers;
+			if (initialLayerThickness_um > 0)
+			{
+				// we have to add in the first layer (that is a differnt size)
+				layerCount++; 
+			}
+
             LogOutput.log(string.Format("Layer count: {0}\n", layerCount));
             layers.Capacity = layerCount;
             for (int i = 0; i < layerCount; i++)
@@ -92,7 +98,7 @@ namespace MatterHackers.MatterSlice
                 for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
                 {
                     int z = layers[layerIndex].z;
-                    if (z < minZ || layerIndex < 0)
+                    if (z < minZ || z > maxZ)
                     {
                         continue;
                     }
