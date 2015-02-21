@@ -42,6 +42,8 @@ namespace MatterHackers.MatterSlice
                 }
 
                 SliceLayer layer = storage.volumes[volumeIdx].layers[0];
+				// let's find the first layer that has something in it for the raft rather than a zero layer
+				if (layer.parts.Count == 0 && storage.volumes[volumeIdx].layers.Count > 2) layer = storage.volumes[volumeIdx].layers[1];
                 for (int i = 0; i < layer.parts.Count; i++)
                 {
                     storage.raftOutline = storage.raftOutline.CreateUnion(layer.parts[i].outline.Offset(extraDistanceAroundPart_um));
