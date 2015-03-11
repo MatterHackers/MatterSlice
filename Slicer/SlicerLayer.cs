@@ -191,6 +191,12 @@ namespace MatterHackers.MatterSlice
                             bestA = polygonAIndex;
                             bestB = polygonBIndex;
                             reversed = false;
+
+							if (bestScore == 0)
+							{
+								// found a perfect match stop looking
+								break;
+							}
                         }
 
                         if (polygonAIndex != polygonBIndex)
@@ -203,10 +209,22 @@ namespace MatterHackers.MatterSlice
                                 bestA = polygonAIndex;
                                 bestB = polygonBIndex;
                                 reversed = true;
-                            }
+							
+								if (bestScore == 0)
+								{
+									// found a perfect match stop looking
+									break;
+								}
+							}
                         }
-                    }
-                }
+					}
+				
+					if (bestScore == 0)
+					{
+						// found a perfect match stop looking
+						break;
+					}
+				}
 
                 if (bestScore >= 10000 * 10000)
                 {
