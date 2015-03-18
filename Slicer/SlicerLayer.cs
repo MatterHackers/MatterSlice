@@ -428,7 +428,7 @@ namespace MatterHackers.MatterSlice
             }
 
             //Finally optimize all the polygons. Every point removed saves time in the long run.
-            long minimumDistanceToCreateNewPosition = 10;
+			double minimumDistanceToCreateNewPosition = 1.415;
             polygonList = Clipper.CleanPolygons(polygonList, minimumDistanceToCreateNewPosition);
         }
 

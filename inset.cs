@@ -47,7 +47,7 @@ namespace MatterHackers.MatterSlice
                     part.insets.Add(new Polygons());
                     part.insets[i] = part.outline.Offset(-offset * i - offset / 2);
 
-                    long minimumDistanceToCreateNewPosition = 10;
+					double minimumDistanceToCreateNewPosition = 1.415;
                     part.insets[i] = Clipper.CleanPolygons(part.insets[i], minimumDistanceToCreateNewPosition);
 
                     if (part.insets[i].Count < 1)
