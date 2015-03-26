@@ -175,10 +175,9 @@ namespace MatterHackers.MatterSlice
             return seg;
         }
 
-        readonly double scaleDenominator = 150;
         public void DumpSegmentsToGcode(string filename)
         {
-            double scale = Math.Max(modelSize.x, modelSize.y) / scaleDenominator;
+            double scale = 1000;
             StreamWriter stream = new StreamWriter(filename);
             stream.Write("; some gcode to look at the layer segments");
             int extrudeAmount = 0;
@@ -188,10 +187,10 @@ namespace MatterHackers.MatterSlice
                 List<SlicerSegment> segmentList = layers[layerIndex].segmentList;
                 for (int segmentIndex = 0; segmentIndex < segmentList.Count; segmentIndex++)
                 {
-                    stream.Write("G1 X{0}Y{1}\n", (double)(segmentList[segmentIndex].start.X - modelMin.x) / scale,
-                        (double)(segmentList[segmentIndex].start.Y - modelMin.y) / scale);
-                    stream.Write("G1 X{0}Y{1}E{2}\n", (double)(segmentList[segmentIndex].end.X - modelMin.x) / scale,
-                        (double)(segmentList[segmentIndex].end.Y - modelMin.y) / scale,
+                    stream.Write("G1 X{0}Y{1}\n", (double)(segmentList[segmentIndex].start.X) / scale,
+                        (double)(segmentList[segmentIndex].start.Y) / scale);
+                    stream.Write("G1 X{0}Y{1}E{2}\n", (double)(segmentList[segmentIndex].end.X) / scale,
+                        (double)(segmentList[segmentIndex].end.Y) / scale,
                         extrudeAmount++);
                 }
             }
@@ -200,7 +199,7 @@ namespace MatterHackers.MatterSlice
 
         public void DumpPolygonsToGcode(string filename)
         {
-            double scale = Math.Max(modelSize.x, modelSize.y) / scaleDenominator;
+            double scale = 1000;
             StreamWriter stream = new StreamWriter(filename);
             stream.Write("; some gcode to look at the layer polygons");
             int extrudeAmount = 0;
@@ -213,17 +212,17 @@ namespace MatterHackers.MatterSlice
                     if (polygon.Count > 0)
                     {
                         // move to the start without extruding (so it is a move)
-                        stream.Write("G1 X{0}Y{1}\n", (double)(polygon[0].X - modelMin.x) / scale,
-                            (double)(polygon[0].Y - modelMin.y) / scale);
+                        stream.Write("G1 X{0}Y{1}\n", (double)(polygon[0].X) / scale,
+                            (double)(polygon[0].Y) / scale);
                         for (int intPointIndex = 1; intPointIndex < polygon.Count; intPointIndex++)
                         {
                             // do all the points with extruding
-                            stream.Write("G1 X{0}Y{1}E{2}\n", (double)(polygon[intPointIndex].X - modelMin.x) / scale,
-                                (double)(polygon[intPointIndex].Y - modelMin.y) / scale, extrudeAmount++);
+                            stream.Write("G1 X{0}Y{1}E{2}\n", (double)(polygon[intPointIndex].X) / scale,
+                                (double)(polygon[intPointIndex].Y) / scale, extrudeAmount++);
                         }
                         // go back to the start extruding
-                        stream.Write("G1 X{0}Y{1}E{2}\n", (double)(polygon[0].X - modelMin.x) / scale,
-                            (double)(polygon[0].Y - modelMin.y) / scale, extrudeAmount++);
+                        stream.Write("G1 X{0}Y{1}E{2}\n", (double)(polygon[0].X) / scale,
+                            (double)(polygon[0].Y) / scale, extrudeAmount++);
                     }
                 }
 
@@ -234,17 +233,17 @@ namespace MatterHackers.MatterSlice
                     if (openPolygon.Count > 0)
                     {
                         // move to the start without extruding (so it is a move)
-                        stream.Write("G1 X{0}Y{1}\n", (double)(openPolygon[0].X - modelMin.x) / scale,
-                            (double)(openPolygon[0].Y - modelMin.y) / scale);
+                        stream.Write("G1 X{0}Y{1}\n", (double)(openPolygon[0].X) / scale,
+                            (double)(openPolygon[0].Y) / scale);
                         for (int intPointIndex = 1; intPointIndex < openPolygon.Count; intPointIndex++)
                         {
                             // do all the points with extruding
-                            stream.Write("G1 X{0}Y{1}E{2}\n", (double)(openPolygon[intPointIndex].X - modelMin.x) / scale,
-                                (double)(openPolygon[intPointIndex].Y - modelMin.y) / scale, extrudeAmount++);
+                            stream.Write("G1 X{0}Y{1}E{2}\n", (double)(openPolygon[intPointIndex].X) / scale,
+                                (double)(openPolygon[intPointIndex].Y) / scale, extrudeAmount++);
                         }
                         // go back to the start extruding
-                        stream.Write("G1 X{0}Y{1}E{2}\n", (double)(openPolygon[0].X - modelMin.x) / scale,
-                            (double)(openPolygon[0].Y - modelMin.y) / scale, extrudeAmount++);
+                        stream.Write("G1 X{0}Y{1}E{2}\n", (double)(openPolygon[0].X) / scale,
+                            (double)(openPolygon[0].Y) / scale, extrudeAmount++);
                     }
                 }
             }
@@ -253,6 +252,7 @@ namespace MatterHackers.MatterSlice
 
         public void DumpPolygonsToHTML(string filename)
         {
+			double scaleDenominator = 150;
             double scale = Math.Max(modelSize.x, modelSize.y) / scaleDenominator;
             StreamWriter stream = new StreamWriter(filename);
             stream.Write("<!DOCTYPE html><html><body>\n");

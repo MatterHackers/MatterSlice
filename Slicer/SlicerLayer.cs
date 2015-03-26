@@ -407,20 +407,20 @@ namespace MatterHackers.MatterSlice
             }
 
             //Remove all the tiny polygons, or polygons that are not closed. As they do not contribute to the actual print.
-            int snapDistance = 1000;
+            int minimumPerimeter = 1000;
             for (int polygonIndex = 0; polygonIndex < polygonList.Count; polygonIndex++)
             {
-                int length = 0;
+                int perimeterLength = 0;
 
                 for (int intPointIndex = 1; intPointIndex < polygonList[polygonIndex].Count; intPointIndex++)
                 {
-                    length += (polygonList[polygonIndex][intPointIndex] - polygonList[polygonIndex][intPointIndex - 1]).vSize();
-                    if (length > snapDistance)
+                    perimeterLength += (polygonList[polygonIndex][intPointIndex] - polygonList[polygonIndex][intPointIndex - 1]).vSize();
+                    if (perimeterLength > minimumPerimeter)
                     {
                         break;
                     }
                 }
-                if (length < snapDistance)
+                if (perimeterLength < minimumPerimeter)
                 {
                     polygonList.RemoveAt(polygonIndex);
                     polygonIndex--;
