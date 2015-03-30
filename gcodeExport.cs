@@ -224,12 +224,6 @@ namespace MatterHackers.MatterSlice
 
         public void writeMove(IntPoint movePosition_um, int speed, int lineWidth_um)
         {
-			if (movePosition_um.X == currentPosition_um.x
-				&& movePosition_um.Y == currentPosition_um.y)
-			{
-				return;
-			}
-
             StringBuilder lineToWrite = new StringBuilder();
             if (outputType == ConfigConstants.OUTPUT_TYPE.BFB)
             {
@@ -758,7 +752,18 @@ namespace MatterHackers.MatterSlice
         public void writePolygon(Polygon polygon, int startIndex, GCodePathConfig config)
         {
             IntPoint currentPosition = polygon[startIndex];
-            writeTravel(currentPosition);
+
+			if (!config.spiralize
+				&& (lastPosition.X != currentPosition.X
+				|| lastPosition.Y != currentPosition.Y))
+			{
+				writeTravel(currentPosition);
+			}
+			else
+			{
+				int a = 0;
+			}
+
 			if (config.closedLoop)
 			{
 				for (int positionIndex = 1; positionIndex < polygon.Count; positionIndex++)

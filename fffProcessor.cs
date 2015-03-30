@@ -209,7 +209,13 @@ namespace MatterHackers.MatterSlice
 
         void processSliceData(SliceDataStorage storage)
         {
-            MultiVolumes.RemoveVolumesIntersections(storage.volumes);
+			if (config.continuousSpiralOuterPerimeter)
+			{
+				config.numberOfTopLayers = 0;
+				config.infillPercent = 0;
+			}
+			
+			MultiVolumes.RemoveVolumesIntersections(storage.volumes);
             MultiVolumes.OverlapMultipleVolumesSlightly(storage.volumes, config.multiVolumeOverlapPercent);
 #if False
             LayerPart.dumpLayerparts(storage, "output.html");
@@ -300,13 +306,13 @@ namespace MatterHackers.MatterSlice
 
             if (config.enableRaft)
             {
-                Raft.GenerateRaftOutlines(storage, config.raftExtraDistanceAroundPart_um);
+                Raft.GenerateRaftOutlines(storage, config.raftExtraDistanceAroundPart_um, config);
                 Skirt.generateSkirt(storage,
                     config.skirtDistance_um + config.raftBaseLineSpacing_um,
                     config.raftBaseLineSpacing_um,
                     config.numberOfSkirtLoops, 
-                    config.skirtMinLength_um, 
-                    config.raftBaseThickness_um);
+                    config.skirtMinLength_um,
+					config.raftBaseThickness_um, config);
             }
             else
             {
@@ -314,8 +320,8 @@ namespace MatterHackers.MatterSlice
                     config.skirtDistance_um, 
                     config.firstLayerExtrusionWidth_um, 
                     config.numberOfSkirtLoops, 
-                    config.skirtMinLength_um, 
-                    config.firstLayerThickness_um);
+                    config.skirtMinLength_um,
+					config.firstLayerThickness_um, config);
             }
         }
 
@@ -602,13 +608,23 @@ namespace MatterHackers.MatterSlice
 			PathOrderOptimizer partOrderOptimizer = new PathOrderOptimizer(new IntPoint());
             for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
             {
-                partOrderOptimizer.AddPolygon(layer.parts[partIndex].insets[0][0]);
+				if (config.continuousSpiralOuterPerimeter && partIndex > 0)
+				{
+					continue;
+				}
+				
+				partOrderOptimizer.AddPolygon(layer.parts[partIndex].insets[0][0]);
             }
             partOrderOptimizer.Optimize();
 
-            for (int partCounter = 0; partCounter < partOrderOptimizer.bestPolygonOrderIndex.Count; partCounter++)
+            for (int partIndex = 0; partIndex < partOrderOptimizer.bestPolygonOrderIndex.Count; partIndex++)
             {
-                SliceLayerPart part = layer.parts[partOrderOptimizer.bestPolygonOrderIndex[partCounter]];
+				if (config.continuousSpiralOuterPerimeter && partIndex > 0)
+				{
+					continue;
+				}
+
+                SliceLayerPart part = layer.parts[partOrderOptimizer.bestPolygonOrderIndex[partIndex]];
 
                 if (config.avoidCrossingPerimeters)
                 {
@@ -635,7 +651,7 @@ namespace MatterHackers.MatterSlice
 				
 				if (config.numberOfPerimeters > 0)
                 {
-                    if (partCounter > 0)
+                    if (partIndex > 0)
                     {
                         gcodeLayer.forceRetract();
                     }
@@ -654,16 +670,20 @@ namespace MatterHackers.MatterSlice
                     }
 
 					// If we are on the very first layer we start with the outside in so that we can stick to the bed better.
-					if (config.outsidePerimetersFirst || layerIndex == 0)
+					if (config.outsidePerimetersFirst || layerIndex == 0 || inset0Config.spiralize)
 					{
 						// First the outside (this helps with accuracy)
 						if (part.insets.Count > 0)
 						{
 							gcodeLayer.writePolygonsByOptimizer(part.insets[0], inset0Config);
 						}
-						for (int perimeterIndex = 1; perimeterIndex < part.insets.Count; perimeterIndex++)
+
+						if (!inset0Config.spiralize)
 						{
-							gcodeLayer.writePolygonsByOptimizer(part.insets[perimeterIndex], insetXConfig);
+							for (int perimeterIndex = 1; perimeterIndex < part.insets.Count; perimeterIndex++)
+							{
+								gcodeLayer.writePolygonsByOptimizer(part.insets[perimeterIndex], insetXConfig);
+							}
 						}
 					}
 					else // This is so we can do overhanges better (the outside can stick a bit to the inside).

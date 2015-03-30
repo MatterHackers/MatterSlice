@@ -32,21 +32,31 @@ namespace MatterHackers.MatterSlice
 
     public static class Raft
     {
-        public static void GenerateRaftOutlines(SliceDataStorage storage, int extraDistanceAroundPart_um)
+        public static void GenerateRaftOutlines(SliceDataStorage storage, int extraDistanceAroundPart_um, ConfigSettings config)
         {
-            for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
+            for (int volumeIndex = 0; volumeIndex < storage.volumes.Count; volumeIndex++)
             {
-                if (storage.volumes[volumeIdx].layers.Count < 1)
+				if (config.continuousSpiralOuterPerimeter && volumeIndex > 0)
+				{
+					continue;
+				}
+
+                if (storage.volumes[volumeIndex].layers.Count < 1)
                 {
                     continue;
                 }
 
-                SliceLayer layer = storage.volumes[volumeIdx].layers[0];
+                SliceLayer layer = storage.volumes[volumeIndex].layers[0];
 				// let's find the first layer that has something in it for the raft rather than a zero layer
-				if (layer.parts.Count == 0 && storage.volumes[volumeIdx].layers.Count > 2) layer = storage.volumes[volumeIdx].layers[1];
-                for (int i = 0; i < layer.parts.Count; i++)
+				if (layer.parts.Count == 0 && storage.volumes[volumeIndex].layers.Count > 2) layer = storage.volumes[volumeIndex].layers[1];
+                for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
                 {
-                    storage.raftOutline = storage.raftOutline.CreateUnion(layer.parts[i].outline.Offset(extraDistanceAroundPart_um));
+					if (config.continuousSpiralOuterPerimeter && partIndex > 0)
+					{
+						continue;
+					}
+					
+					storage.raftOutline = storage.raftOutline.CreateUnion(layer.parts[partIndex].outline.Offset(extraDistanceAroundPart_um));
                 }
             }
 

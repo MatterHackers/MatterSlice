@@ -32,7 +32,7 @@ namespace MatterHackers.MatterSlice
 
     public class Skirt
     {
-        public static void generateSkirt(SliceDataStorage storage, int distance, int extrusionWidth_um, int numberOfLoops, int minLength, int initialLayerHeight)
+        public static void generateSkirt(SliceDataStorage storage, int distance, int extrusionWidth_um, int numberOfLoops, int minLength, int initialLayerHeight, ConfigSettings config)
         {
             bool externalOnly = (distance > 0);
             for (int skirtLoop = 0; skirtLoop < numberOfLoops; skirtLoop++)
@@ -42,23 +42,33 @@ namespace MatterHackers.MatterSlice
                 Polygons skirtPolygons = new Polygons(storage.wipeTower.Offset(offsetDistance));
                 for (int volumeIndex = 0; volumeIndex < storage.volumes.Count; volumeIndex++)
                 {
-                    if (storage.volumes[volumeIndex].layers.Count < 1)
+					if (config.continuousSpiralOuterPerimeter && volumeIndex > 0)
+					{
+						continue;
+					}
+					
+					if (storage.volumes[volumeIndex].layers.Count < 1)
                     {
                         continue;
                     }
 
                     SliceLayer layer = storage.volumes[volumeIndex].layers[0];
-                    for (int i = 0; i < layer.parts.Count; i++)
+                    for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
                     {
-                        if (externalOnly)
+						if (config.continuousSpiralOuterPerimeter && partIndex > 0)
+						{
+							continue;
+						}
+						
+						if (externalOnly)
                         {
                             Polygons p = new Polygons();
-                            p.Add(layer.parts[i].outline[0]);
+                            p.Add(layer.parts[partIndex].outline[0]);
                             skirtPolygons = skirtPolygons.CreateUnion(p.Offset(offsetDistance));
                         }
                         else
                         {
-                            skirtPolygons = skirtPolygons.CreateUnion(layer.parts[i].outline.Offset(offsetDistance));
+                            skirtPolygons = skirtPolygons.CreateUnion(layer.parts[partIndex].outline.Offset(offsetDistance));
                         }
                     }
                 }
