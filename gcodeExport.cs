@@ -224,6 +224,12 @@ namespace MatterHackers.MatterSlice
 
         public void writeMove(IntPoint movePosition_um, int speed, int lineWidth_um)
         {
+			if (movePosition_um.X == currentPosition_um.x
+				&& movePosition_um.Y == currentPosition_um.y)
+			{
+				return;
+			}
+
             StringBuilder lineToWrite = new StringBuilder();
             if (outputType == ConfigConstants.OUTPUT_TYPE.BFB)
             {
