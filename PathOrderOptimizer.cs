@@ -55,40 +55,38 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        public void Optimize(GCodePathConfig config = null)
+		private static int GetClosestIndex(Polygon currentPolygon, IntPoint startPosition)
+		{
+			int bestPointIndex = -1;
+			double closestDist = double.MaxValue;
+			for (int pointIndex = 0; pointIndex < currentPolygon.Count; pointIndex++)
+			{
+				double dist = (currentPolygon[pointIndex] - startPosition).LengthSquared();
+				if (dist < closestDist)
+				{
+					bestPointIndex = pointIndex;
+					closestDist = dist;
+				}
+			}
+
+			return bestPointIndex;
+		}
+		
+		public void Optimize(GCodePathConfig config = null)
         {
 			bool canTravelForwardOrBackward = config != null && !config.closedLoop;
             // Find the point that is closest to our current position (start position)
             bool[] polygonHasBeenAdded = new bool[polygons.Count];
             for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
             {
-                int bestPointIndex = -1;
-                double closestDist = double.MaxValue;
                 Polygon currentPolygon = polygons[polygonIndex];
-				if (config == null)
+				if (canTravelForwardOrBackward || currentPolygon.Count < 3)
 				{
-					for (int pointIndex = 0; pointIndex < currentPolygon.Count; pointIndex++)
-					{
-						double dist = (currentPolygon[pointIndex] - startPosition).LengthSquared();
-						if (dist < closestDist)
-						{
-							bestPointIndex = pointIndex;
-							closestDist = dist;
-						}
-					}
-					startIndexInPolygon.Add(bestPointIndex);
+					startIndexInPolygon.Add(0);
 				}
-				else
+				else // if we have passed a closed loop we are going to write
 				{
-					if (currentPolygon.Count > 0)
-					{
-						double dist = (currentPolygon[0] - startPosition).LengthSquared();
-						if (dist < closestDist)
-						{
-							bestPointIndex = 0;
-							closestDist = dist;
-						}
-					}
+					int bestPointIndex = GetClosestIndex(currentPolygon, startPosition);
 					startIndexInPolygon.Add(bestPointIndex);
 				}
             }
@@ -106,7 +104,7 @@ namespace MatterHackers.MatterSlice
                         continue;
                     }
 
-                    // If there are only 2 points (a single line) we are willing to start from the start or the end.
+                    // If there are only 2 points (a single line) or the path is marked as travel both ways, we are willing to start from the start or the end.
 					if (polygons[polygonIndex].Count == 2 || canTravelForwardOrBackward)
                     {
                         double distToSart = (polygons[polygonIndex][0] - currentPosition).LengthSquared();
