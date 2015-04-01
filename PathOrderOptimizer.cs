@@ -71,7 +71,36 @@ namespace MatterHackers.MatterSlice
 
 			return bestPointIndex;
 		}
-		
+
+		private static int GetBestEdgeIndex(Polygon currentPolygon, IntPoint startPosition)
+		{
+			double totalPositiveTurns = 0;
+			double totalNegativeTurns = 0;
+			List<int> positiveEdgeTurns = new List<int>();
+			List<int> negativeEdgeTurns = new List<int>();
+
+			int bestPointIndex = -1;
+			double closestDist = double.MaxValue;
+			int pointCount = currentPolygon.Count;
+			for (int pointIndex = 0; pointIndex < pointCount; pointIndex++)
+			{
+				int prevIndex = (pointIndex - 1) % pointCount;
+				int nextIndex = (pointIndex + 1) % pointCount;
+				IntPoint prevPoint = currentPolygon[prevIndex];
+				IntPoint currentPoint = currentPolygon[pointIndex];
+				IntPoint nextPoint = currentPolygon[nextIndex];
+				
+				double dist = (currentPolygon[pointIndex] - startPosition).LengthSquared();
+				if (dist < closestDist)
+				{
+					bestPointIndex = pointIndex;
+					closestDist = dist;
+				}
+			}
+
+			return bestPointIndex;
+		}
+
 		public void Optimize(GCodePathConfig config = null)
         {
 			bool canTravelForwardOrBackward = config != null && !config.closedLoop;
@@ -84,8 +113,9 @@ namespace MatterHackers.MatterSlice
 				{
 					startIndexInPolygon.Add(0);
 				}
-				else // if we have passed a closed loop we are going to write
+				else // This is a closed loop.
 				{
+					//int bestEdgeIndex = GetBestEdgeIndex(currentPolygon, startPosition);
 					int bestPointIndex = GetClosestIndex(currentPolygon, startPosition);
 					startIndexInPolygon.Add(bestPointIndex);
 				}

@@ -995,69 +995,13 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-#if false
-                    for (int pointIndex = 0; pointIndex < path.points.Count; pointIndex++)
-                    {
-                        gcode.writeMove(path.points[pointIndex], speed, path.config.lineWidth);
-                    }
-#else
-					IntPoint lastPoint = new IntPoint();
-					bool clip = false;
-
-					if (path.config.name == "WALL-OUTER" || path.config.name == "WALL-INNER")
-					{
-						double currentDistance = 0;
-						double targetDistance = (long)(path.config.lineWidth * .90);
-
-						if (path.points.Count > 1)
-						{
-							for (int p = path.points.Count - 1; p > 0; p--)
-							{
-								// Calculate distance between 2 points
-								currentDistance = (path.points[p] - path.points[p - 1]).Length();
-
-								// If distance exceeds clip distance:
-								// - Stores last point to do a fast move after the clip
-								//  - Sets the new last path point
-								if (currentDistance > targetDistance)
-								{
-									DoublePoint dir = new DoublePoint((path.points[p].X - path.points[p - 1].X) / currentDistance, (path.points[p].Y - path.points[p - 1].Y) / currentDistance);
-
-									double newDistance = currentDistance - targetDistance;
-									dir.X *= newDistance;
-									dir.Y *= newDistance;
-
-									IntPoint temp = path.points[p - 1] + new IntPoint(dir.X, dir.Y);
-
-									lastPoint.X = path.points[p].X;
-									lastPoint.Y = path.points[p].Y;
-
-									path.points[p] = temp;
-									clip = true;
-									break;
-								}
-								else if (currentDistance == targetDistance)
-								{
-									//Pops up last point because it is at the limit distance
-									path.points.RemoveAt(path.points.Count - 1);
-									break;
-								}
-								else
-								{
-									//Pops last point and reduces distance remaining to target
-									targetDistance = targetDistance - currentDistance;
-									path.points.RemoveAt(path.points.Count - 1);
-								}
-							}
-						}
-					}
+					TrimPerimeterIfNeeded(path);
 
 					for (int i = 0; i < path.points.Count; i++)
 					{
 						gcode.writeMove(path.points[i], speed, path.config.lineWidth);
 					}
 				}
-#endif
 			}
 
 			gcode.updateTotalPrintTime();
@@ -1069,6 +1013,53 @@ namespace MatterHackers.MatterSlice
 				gcode.writeMove(gcode.getPositionXY(), travelConfig.speed, 0);
 				gcode.writeMove(gcode.getPositionXY() - new IntPoint(-20000, 0), travelConfig.speed, 0);
 				gcode.writeDelay(extraTime);
+			}
+		}
+
+		private static void TrimPerimeterIfNeeded(GCodePath path)
+		{
+			if (path.config.name == "WALL-OUTER" || path.config.name == "WALL-INNER")
+			{
+				double currentDistance = 0;
+				double targetDistance = (long)(path.config.lineWidth * .90);
+
+				if (path.points.Count > 1)
+				{
+					for (int pointIndex = path.points.Count - 1; pointIndex > 0; pointIndex--)
+					{
+						// Calculate distance between 2 points
+						currentDistance = (path.points[pointIndex] - path.points[pointIndex - 1]).Length();
+
+						// If distance exceeds clip distance:
+						// - Stores last point to do a fast move after the clip
+						//  - Sets the new last path point
+						if (currentDistance > targetDistance)
+						{
+							DoublePoint dir = new DoublePoint((path.points[pointIndex].X - path.points[pointIndex - 1].X) / currentDistance, (path.points[pointIndex].Y - path.points[pointIndex - 1].Y) / currentDistance);
+
+							double newDistance = currentDistance - targetDistance;
+							dir.X *= newDistance;
+							dir.Y *= newDistance;
+
+							IntPoint clippedEndpoint = path.points[pointIndex - 1] + new IntPoint(dir.X, dir.Y);
+
+							path.points[pointIndex] = clippedEndpoint;
+							break;
+						}
+						else if (currentDistance == targetDistance)
+						{
+							//Pops up last point because it is at the limit distance
+							path.points.RemoveAt(path.points.Count - 1);
+							break;
+						}
+						else
+						{
+							//Pops last point and reduces distance remaining to target
+							targetDistance = targetDistance - currentDistance;
+							path.points.RemoveAt(path.points.Count - 1);
+						}
+					}
+				}
 			}
 		}
 	}
