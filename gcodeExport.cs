@@ -1007,7 +1007,7 @@ namespace MatterHackers.MatterSlice
 					if (path.config.name == "WALL-OUTER" || path.config.name == "WALL-INNER")
 					{
 						double currentDistance = 0;
-						double targetDistance = (long)(path.config.lineWidth * .85);
+						double targetDistance = (long)(path.config.lineWidth * .90);
 
 						if (path.points.Count > 1)
 						{
@@ -1056,28 +1056,6 @@ namespace MatterHackers.MatterSlice
 					{
 						gcode.writeMove(path.points[i], speed, path.config.lineWidth);
 					}
-
-#if true // This would be better if it checed if the inner wall was the last inner wall. (only do the retraction when moving to the outer wall)
-					if (pathIndex + 2 < paths.Count - 1) // only do this if we are not the last path (there is an outer loop)
-					{
-						// If it is to clip, then do:
-						// - a retraction in INNER WALLS
-						// - a fast move in OUTER WALLS
-						if (clip == true)
-						{
-							GCodePath pathNext = paths[pathIndex + 2];
-							if (path.config.name == "WALL-INNER"
-								&& pathNext.config.name == "WALL-OUTER")
-							{
-								gcode.writeRetraction();
-							}
-							if (path.config.name == "WALL-OUTER")
-							{
-								gcode.writeMove(lastPoint, speed, 0);
-							}
-						}
-					}
-#endif
 				}
 #endif
 			}
