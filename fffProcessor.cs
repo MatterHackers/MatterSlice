@@ -662,11 +662,6 @@ namespace MatterHackers.MatterSlice
                         {
                             inset0Config.spiralize = true;
                         }
-
-                        if (layerIndex == config.numberOfBottomLayers && part.insets.Count > 0)
-                        {
-                            gcodeLayer.writePolygonsByOptimizer(part.insets[0], insetXConfig);
-                        }
                     }
 
 					// If we are on the very first layer we start with the outside in so that we can stick to the bed better.
