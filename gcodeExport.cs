@@ -51,6 +51,7 @@ namespace MatterHackers.MatterSlice
 		int extruderIndex;
 		int currentFanSpeed;
 		ConfigConstants.OUTPUT_TYPE outputType;
+		string toolChangeCode;
 
 		double[] totalFilament_mm = new double[ConfigConstants.MAX_EXTRUDERS];
 		double totalPrintTime;
@@ -140,7 +141,12 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void setRetractionSettings(double retractionAmount, int retractionSpeed, double extruderSwitchRetraction, double minimumExtrusionBeforeRetraction_mm, double retractionZHop_mm)
+		public void SetToolChangeCode(string toolChangeCode)
+		{
+			this.toolChangeCode = toolChangeCode;
+		}
+
+		public void SetRetractionSettings(double retractionAmount, int retractionSpeed, double extruderSwitchRetraction, double minimumExtrusionBeforeRetraction_mm, double retractionZHop_mm)
 		{
 			this.retractionAmount_mm = retractionAmount;
 			this.retractionSpeed = retractionSpeed;
@@ -420,6 +426,11 @@ namespace MatterHackers.MatterSlice
 			else
 			{
 				gcodeFileStream.Write("T{0}\n".FormatWith(extruderIndex));
+			}
+
+			if (toolChangeCode != null && toolChangeCode != "")
+			{
+				writeCode(toolChangeCode);
 			}
 		}
 

@@ -275,6 +275,8 @@ namespace MatterHackers.MatterSlice
         public string startCode;
         public string endCode;
 
+		public string toolChangeCode;
+
         public ConfigSettings()
         {
             SetToDefault();

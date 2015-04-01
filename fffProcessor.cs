@@ -154,7 +154,8 @@ namespace MatterHackers.MatterSlice
             }
 
             gcode.SetOutputType(config.outputType);
-            gcode.setRetractionSettings(config.retractionOnTravel, config.retractionSpeed, config.retractionOnExtruderSwitch, config.minimumExtrusionBeforeRetraction, config.retractionZHop);
+            gcode.SetRetractionSettings(config.retractionOnTravel, config.retractionSpeed, config.retractionOnExtruderSwitch, config.minimumExtrusionBeforeRetraction, config.retractionZHop);
+			gcode.SetToolChangeCode(config.toolChangeCode);
         }
 
         void sliceModels(SliceDataStorage storage)

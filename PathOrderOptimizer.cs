@@ -74,8 +74,7 @@ namespace MatterHackers.MatterSlice
 
 		private static int GetBestEdgeIndex(Polygon currentPolygon, IntPoint startPosition)
 		{
-			double totalPositiveTurns = 0;
-			double totalNegativeTurns = 0;
+			double totalTurns = 0;
 			List<int> positiveEdgeTurns = new List<int>();
 			List<int> negativeEdgeTurns = new List<int>();
 
@@ -89,6 +88,9 @@ namespace MatterHackers.MatterSlice
 				IntPoint prevPoint = currentPolygon[prevIndex];
 				IntPoint currentPoint = currentPolygon[pointIndex];
 				IntPoint nextPoint = currentPolygon[nextIndex];
+
+				double angle = GetAngle(prevPoint, currentPoint, nextPoint);
+				totalTurns += angle;
 				
 				double dist = (currentPolygon[pointIndex] - startPosition).LengthSquared();
 				if (dist < closestDist)
@@ -99,6 +101,11 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return bestPointIndex;
+		}
+
+		private static double GetAngle(IntPoint prevPoint, IntPoint currentPoint, IntPoint nextPoint)
+		{
+			throw new NotImplementedException();
 		}
 
 		public void Optimize(GCodePathConfig config = null)
