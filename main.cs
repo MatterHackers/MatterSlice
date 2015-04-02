@@ -24,6 +24,7 @@ using System.Globalization;
 using System.Threading;
 using System.Collections;
 using System.Collections.Generic;
+using MatterHackers.MatterSlice.Tests;
 
 namespace MatterHackers.MatterSlice
 {
@@ -46,6 +47,9 @@ namespace MatterHackers.MatterSlice
 
         static int Main(string[] args)
         {
+			//PathOrderTests pathOrderTests = new PathOrderTests();
+			//pathOrderTests.CorrectSeamPlacement();
+
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             return ProcessArgs(args);
         }

@@ -40,6 +40,46 @@ using NUnit.Framework;
 namespace MatterHackers.MatterSlice.Tests
 {
 	[TestFixture]
+	public class PathOrderTests
+	{
+		[Test]
+		public void CorrectSeamPlacement()
+		{
+			// coincident points return 0 angle
+			{
+				IntPoint p1 = new IntPoint(10, 0);
+				IntPoint p2 = new IntPoint(0, 0);
+				IntPoint p3 = new IntPoint(0, 0);
+				Assert.IsTrue(PathOrderOptimizer.GetTurnAmount(p1, p2, p3) == 0);
+			}
+
+			// no turn returns a 0 angle
+			{
+				IntPoint p1 = new IntPoint(10, 0);
+				IntPoint p2 = new IntPoint(0, 0);
+				IntPoint p3 = new IntPoint(-10, 0);
+				Assert.IsTrue(PathOrderOptimizer.GetTurnAmount(p1, p2, p3) == 0);
+			}
+
+			// 90 turn works
+			{
+				IntPoint p1 = new IntPoint(10, 0);
+				IntPoint p2 = new IntPoint(0, 0);
+				IntPoint p3 = new IntPoint(0, 10);
+				Assert.AreEqual(PathOrderOptimizer.GetTurnAmount(p1, p2, p3), -Math.PI/2, .001);
+			}
+
+			// -90 turn works
+			{
+				IntPoint p1 = new IntPoint(10, 0);
+				IntPoint p2 = new IntPoint(0, 0);
+				IntPoint p3 = new IntPoint(0, -10);
+				Assert.AreEqual(PathOrderOptimizer.GetTurnAmount(p1, p2, p3), Math.PI / 2, .001);
+			}
+		}
+	}
+
+	[TestFixture]
 	public class SlicerLayerTests
 	{
 		[Test]
@@ -185,6 +225,9 @@ namespace MatterHackers.MatterSlice.Tests
 				SlicerLayerTests slicerLayerTests = new SlicerLayerTests();
 				slicerLayerTests.WindingDirectionDoesNotMatter();
 				slicerLayerTests.AlwaysRetractOnIslandChange();
+
+				PathOrderTests pathOrderTests = new PathOrderTests();
+				pathOrderTests.CorrectSeamPlacement();
 
 				ClipperTests clipperTests = new ClipperTests();
 				clipperTests.CleanPolygons();

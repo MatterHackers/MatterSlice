@@ -151,8 +151,22 @@ namespace MatterHackers.MatterSlice
         {
             return (long)Math.Sqrt(thisPoint.LengthSquared());
         }
-        
-        public static long LengthSquared(this IntPoint thisPoint)
+
+		public static IntPoint GetRotated(this IntPoint thisPoint, double radians)
+		{
+			double Cos, Sin;
+
+			Cos = (double)System.Math.Cos(radians);
+			Sin = (double)System.Math.Sin(radians);
+
+			IntPoint output;
+			output.X = (long)(thisPoint.X * Cos - thisPoint.Y * Sin);
+			output.Y = (long)(thisPoint.Y * Cos + thisPoint.X * Sin);
+
+			return output;
+		}
+		
+		public static long LengthSquared(this IntPoint thisPoint)
         {
             return thisPoint.X * thisPoint.X + thisPoint.Y * thisPoint.Y;
         }

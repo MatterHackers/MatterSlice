@@ -72,35 +72,80 @@ namespace MatterHackers.MatterSlice
 			return bestPointIndex;
 		}
 
+		public static double GetTurnAmount(IntPoint prevPoint, IntPoint currentPoint, IntPoint nextPoint)
+		{
+			if (prevPoint != currentPoint
+				&& currentPoint != nextPoint
+				&& nextPoint != prevPoint)
+			{
+				prevPoint = currentPoint - prevPoint;
+				nextPoint -= currentPoint;
+
+				double prevAngle = Math.Atan2(prevPoint.Y, prevPoint.X);
+
+				nextPoint = nextPoint.GetRotated(prevAngle);
+				double angle = Math.Atan2(nextPoint.Y, nextPoint.X);;
+
+				return angle;
+			}
+
+			return 0;
+		}
+
 		private static int GetBestEdgeIndex(Polygon currentPolygon, IntPoint startPosition)
 		{
 			double totalTurns = 0;
-			List<int> positiveEdgeTurns = new List<int>();
-			List<int> negativeEdgeTurns = new List<int>();
+			double bestPositiveTurn = double.MinValue;
+			int bestPositiveTurnIndex = -1;
+			double bestNegativeTurn = double.MaxValue;
+			int bestNegativeTurnIndex = -1;
 
-			int bestPointIndex = -1;
-			double closestDist = double.MaxValue;
 			int pointCount = currentPolygon.Count;
 			for (int pointIndex = 0; pointIndex < pointCount; pointIndex++)
 			{
-				int prevIndex = (pointIndex - 1) % pointCount;
-				int nextIndex = (pointIndex + 1) % pointCount;
+				int prevIndex = ((pointIndex + pointCount - 1) % pointCount);
+				int nextIndex = ((pointIndex + 1) % pointCount);
 				IntPoint prevPoint = currentPolygon[prevIndex];
 				IntPoint currentPoint = currentPolygon[pointIndex];
 				IntPoint nextPoint = currentPolygon[nextIndex];
 
-				double angle = GetAngle(prevPoint, currentPoint, nextPoint);
-				totalTurns += angle;
-				
-				double dist = (currentPolygon[pointIndex] - startPosition).LengthSquared();
-				if (dist < closestDist)
+				double turnAmount = GetTurnAmount(prevPoint, currentPoint, nextPoint);
+				totalTurns += turnAmount;
+
+				if (turnAmount < 0)
 				{
-					bestPointIndex = pointIndex;
-					closestDist = dist;
+					if (turnAmount < bestNegativeTurn)
+					{
+						bestNegativeTurn = turnAmount;
+						bestNegativeTurnIndex = pointIndex;
+					}
+				}
+				else
+				{
+					if (turnAmount > bestPositiveTurn)
+					{
+						bestPositiveTurn = turnAmount;
+						bestPositiveTurnIndex = pointIndex;
+					}
 				}
 			}
 
-			return bestPointIndex;
+			if (totalTurns > 0)
+			{
+				if (bestNegativeTurnIndex > 0)
+				{
+					return bestNegativeTurnIndex;
+				}
+				return bestPositiveTurnIndex;
+			}
+			else
+			{
+				if (bestPositiveTurnIndex > 0)
+				{
+					return bestPositiveTurnIndex;
+				}
+				return bestNegativeTurnIndex;
+			}
 		}
 
 		private static double GetAngle(IntPoint prevPoint, IntPoint currentPoint, IntPoint nextPoint)
