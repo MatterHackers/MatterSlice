@@ -82,8 +82,10 @@ namespace MatterHackers.MatterSlice
 				nextPoint -= currentPoint;
 
 				double prevAngle = Math.Atan2(prevPoint.Y, prevPoint.X);
+				IntPoint rotatedPrev = prevPoint.GetRotated(-prevAngle);
 
-				nextPoint = nextPoint.GetRotated(prevAngle);
+				// undo the rotation
+				nextPoint = nextPoint.GetRotated(-prevAngle);
 				double angle = Math.Atan2(nextPoint.Y, nextPoint.X);;
 
 				return angle;
@@ -92,7 +94,7 @@ namespace MatterHackers.MatterSlice
 			return 0;
 		}
 
-		private static int GetBestEdgeIndex(Polygon currentPolygon, IntPoint startPosition)
+		public static int GetBestEdgeIndex(Polygon currentPolygon)
 		{
 			double totalTurns = 0;
 			double bestPositiveTurn = double.MinValue;
@@ -167,14 +169,14 @@ namespace MatterHackers.MatterSlice
 				}
 				else // This is a closed loop.
 				{
-					//int bestEdgeIndex = GetBestEdgeIndex(currentPolygon, startPosition);
+					//int bestPointIndex = GetBestEdgeIndex(currentPolygon);
 					int bestPointIndex = GetClosestIndex(currentPolygon, startPosition);
 					startIndexInPolygon.Add(bestPointIndex);
 				}
             }
 
             IntPoint currentPosition = startPosition;
-            // We loop over the polygon list twice, as each inner loop we only pick one polygon.
+            // We loop over the polygon list twice, at each inner loop we only pick one polygon.
             for (int polygonIndexOuterLoop = 0; polygonIndexOuterLoop < polygons.Count; polygonIndexOuterLoop++)
             {
                 int bestPolygonIndex = -1;

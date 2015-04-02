@@ -160,8 +160,8 @@ namespace MatterHackers.MatterSlice
 			Sin = (double)System.Math.Sin(radians);
 
 			IntPoint output;
-			output.X = (long)(thisPoint.X * Cos - thisPoint.Y * Sin);
-			output.Y = (long)(thisPoint.Y * Cos + thisPoint.X * Sin);
+			output.X = (long)(Math.Round(thisPoint.X * Cos - thisPoint.Y * Sin));
+			output.Y = (long)(Math.Round(thisPoint.Y * Cos + thisPoint.X * Sin));
 
 			return output;
 		}

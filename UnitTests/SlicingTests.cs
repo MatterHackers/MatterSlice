@@ -63,18 +63,51 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// 90 turn works
 			{
-				IntPoint p1 = new IntPoint(10, 0);
-				IntPoint p2 = new IntPoint(0, 0);
-				IntPoint p3 = new IntPoint(0, 10);
-				Assert.AreEqual(PathOrderOptimizer.GetTurnAmount(p1, p2, p3), -Math.PI/2, .001);
+				IntPoint p1 = new IntPoint(0, 0);
+				IntPoint p2 = new IntPoint(10, 0);
+				IntPoint p3 = new IntPoint(10, 10);
+				Assert.AreEqual(PathOrderOptimizer.GetTurnAmount(p1, p2, p3), Math.PI / 2, .001);
+
+				IntPoint p4 = new IntPoint(0, 10);
+				IntPoint p5 = new IntPoint(0, 0);
+				IntPoint p6 = new IntPoint(10, 0);
+				Assert.AreEqual(PathOrderOptimizer.GetTurnAmount(p4, p5, p6), Math.PI / 2, .001);
 			}
 
 			// -90 turn works
 			{
-				IntPoint p1 = new IntPoint(10, 0);
-				IntPoint p2 = new IntPoint(0, 0);
-				IntPoint p3 = new IntPoint(0, -10);
-				Assert.AreEqual(PathOrderOptimizer.GetTurnAmount(p1, p2, p3), Math.PI / 2, .001);
+				IntPoint p1 = new IntPoint(0, 0);
+				IntPoint p2 = new IntPoint(10, 0);
+				IntPoint p3 = new IntPoint(10, -10);
+				Assert.AreEqual(PathOrderOptimizer.GetTurnAmount(p1, p2, p3), -Math.PI / 2, .001);
+			}
+
+			// 45 turn works
+			{
+				IntPoint p1 = new IntPoint(0, 0);
+				IntPoint p2 = new IntPoint(10, 0);
+				IntPoint p3 = new IntPoint(15, 5);
+				Assert.AreEqual(Math.PI / 4, PathOrderOptimizer.GetTurnAmount(p1, p2, p3), .001);
+
+				IntPoint p4 = new IntPoint(0, 0);
+				IntPoint p5 = new IntPoint(-10, 0);
+				IntPoint p6 = new IntPoint(-15, -5);
+				Assert.AreEqual(Math.PI / 4, PathOrderOptimizer.GetTurnAmount(p4, p5, p6), .001);
+			}
+
+			// -45 turn works
+			{
+				IntPoint p1 = new IntPoint(0, 0);
+				IntPoint p2 = new IntPoint(10, 0);
+				IntPoint p3 = new IntPoint(15, -5);
+				Assert.AreEqual(-Math.PI / 4, PathOrderOptimizer.GetTurnAmount(p1, p2, p3), .001);
+			}
+
+			// find the right point
+			{
+				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(10,0), new IntPoint(9,5), new IntPoint(10,10), new IntPoint(0,10) };
+				int betsPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+				Assert.IsTrue(betsPoint == 2);
 			}
 		}
 	}

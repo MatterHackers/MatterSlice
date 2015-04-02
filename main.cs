@@ -47,9 +47,6 @@ namespace MatterHackers.MatterSlice
 
         static int Main(string[] args)
         {
-			//PathOrderTests pathOrderTests = new PathOrderTests();
-			//pathOrderTests.CorrectSeamPlacement();
-
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             return ProcessArgs(args);
         }
@@ -76,7 +73,10 @@ namespace MatterHackers.MatterSlice
         public static int ProcessArgs(string[] args)
         {
 #if DEBUG
-            Tests.BridgeTests.Run();
+			PathOrderTests pathOrderTests = new PathOrderTests();
+			pathOrderTests.CorrectSeamPlacement();
+			
+			Tests.BridgeTests.Run();
 #endif
 			if (args.Length == 0)
 			{
