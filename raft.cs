@@ -98,11 +98,17 @@ namespace MatterHackers.MatterSlice
 
                     gcode.setZ(config.raftBaseThickness_um);
                     gcode.setExtrusion(config.raftBaseThickness_um, config.filamentDiameter_um, config.extrusionMultiplier);
-                    gcodeLayer.writePolygonsByOptimizer(storage.raftOutline, raftBaseConfig);
 
                     Polygons raftLines = new Polygons();
                     Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftBaseLineSpacing_um, config.infillExtendIntoPerimeter_um, 0);
-                    gcodeLayer.writePolygonsByOptimizer(storage.skirt, raftBaseConfig);
+
+					// write the skirt around the raft
+					gcodeLayer.writePolygonsByOptimizer(storage.skirt, raftBaseConfig);
+
+					// write the outline of the raft
+					gcodeLayer.writePolygonsByOptimizer(storage.raftOutline, raftBaseConfig);
+
+					// write the inside of the raft base
                     gcodeLayer.writePolygonsByOptimizer(raftLines, raftBaseConfig);
 
                     gcodeLayer.writeGCode(false, config.raftBaseThickness_um);

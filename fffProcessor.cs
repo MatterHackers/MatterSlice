@@ -307,14 +307,15 @@ namespace MatterHackers.MatterSlice
 
             if (config.enableRaft)
             {
-                Raft.GenerateRaftOutlines(storage, config.raftExtraDistanceAroundPart_um, config);
-                Skirt.generateSkirt(storage,
+				Raft.GenerateRaftOutlines(storage, config.raftExtraDistanceAroundPart_um, config);
+				
+				Skirt.generateSkirt(storage,
                     config.skirtDistance_um + config.raftBaseLineSpacing_um,
                     config.raftBaseLineSpacing_um,
                     config.numberOfSkirtLoops, 
                     config.skirtMinLength_um,
 					config.raftBaseThickness_um, config);
-            }
+			}
             else
             {
                 Skirt.generateSkirt(storage, 
