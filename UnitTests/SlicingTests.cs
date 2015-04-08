@@ -3,13 +3,13 @@ Copyright (c) 2014, Lars Brubaker
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met: 
+modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer. 
+   list of conditions and the following disclaimer.
 2. Redistributions in binary form must reproduce the above copyright notice,
    this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution. 
+   and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -23,19 +23,15 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 The views and conclusions contained in the software and documentation are those
-of the authors and should not be interpreted as representing official policies, 
+of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
-using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 using MatterSlice.ClipperLib;
-using MatterHackers.MatterSlice;
 using NUnit.Framework;
+using System;
+using System.Collections.Generic;
+using System.IO;
 
 namespace MatterHackers.MatterSlice.Tests
 {
@@ -105,7 +101,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// find the right point
 			{
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(10,0), new IntPoint(9,5), new IntPoint(10,10), new IntPoint(0,10) };
+				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(10, 0), new IntPoint(9, 5), new IntPoint(10, 10), new IntPoint(0, 10) };
 				int betsPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
 				Assert.IsTrue(betsPoint == 2);
 			}
@@ -232,7 +228,7 @@ namespace MatterHackers.MatterSlice.Tests
 				for (int i = 2; i < 58; i++)
 				//	for (int i = 2; i < 98; i++)
 				{
-					testPath.Add(new IntPoint(i, (int)(randY.NextDouble() * mergeDist - mergeDist/2)));
+					testPath.Add(new IntPoint(i, (int)(randY.NextDouble() * mergeDist - mergeDist / 2)));
 				}
 				testPath.Add(new IntPoint(100, 0));
 				testPath.Add(new IntPoint(50, 200));
@@ -248,9 +244,10 @@ namespace MatterHackers.MatterSlice.Tests
 
 	public static class SlicingTests
 	{
-		static bool ranTests = false;
+		private static bool ranTests = false;
 
 		public static bool RanTests { get { return ranTests; } }
+
 		public static void Run()
 		{
 			if (!ranTests)

@@ -1,5 +1,5 @@
 /*
-This file is part of MatterSlice. A commandline utility for 
+This file is part of MatterSlice. A commandline utility for
 generating 3D printing GCode.
 
 Copyright (C) 2013 David Braam
@@ -19,348 +19,345 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
-using System.IO;
-using System.Collections.Generic;
-
 using MatterSlice.ClipperLib;
+using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
-    using Polygon = List<IntPoint>;
-    using Polygons = List<List<IntPoint>>;
+	using Polygon = List<IntPoint>;
 
-    public class AvoidCrossingPerimeters
-    {
-        Polygons bounderyPolygons;
+	using Polygons = List<List<IntPoint>>;
 
-        long[] minXPosition;
-        long[] maxXPosition;
-        int[] indexOfMinX;
-        int[] indexOfMaxX;
+	public class AvoidCrossingPerimeters
+	{
+		private Polygons bounderyPolygons;
 
-        PointMatrix matrix;
-        IntPoint nomalizedStartPoint;
-        IntPoint normalizedEndPoint;
+		private long[] minXPosition;
+		private long[] maxXPosition;
+		private int[] indexOfMinX;
+		private int[] indexOfMaxX;
 
-        bool collisionTest(IntPoint startPoint, IntPoint endPoint)
-        {
-            IntPoint diff = endPoint - startPoint;
+		private PointMatrix matrix;
+		private IntPoint nomalizedStartPoint;
+		private IntPoint normalizedEndPoint;
 
-            matrix = new PointMatrix(diff);
-            this.nomalizedStartPoint = matrix.apply(startPoint);
-            this.normalizedEndPoint = matrix.apply(endPoint);
+		private bool collisionTest(IntPoint startPoint, IntPoint endPoint)
+		{
+			IntPoint diff = endPoint - startPoint;
 
-            for (int bounderyIndex = 0; bounderyIndex < bounderyPolygons.Count; bounderyIndex++)
-            {
-                Polygon boundryPolygon = bounderyPolygons[bounderyIndex];
-                if (boundryPolygon.Count < 1)
-                {
-                    continue;
-                }
+			matrix = new PointMatrix(diff);
+			this.nomalizedStartPoint = matrix.apply(startPoint);
+			this.normalizedEndPoint = matrix.apply(endPoint);
 
-                IntPoint lastPosition = matrix.apply(boundryPolygon[boundryPolygon.Count - 1]);
-                for (int pointIndex = 0; pointIndex < boundryPolygon.Count; pointIndex++)
-                {
-                    IntPoint currentPosition = matrix.apply(boundryPolygon[pointIndex]);
-                    if ((lastPosition.Y > nomalizedStartPoint.Y && currentPosition.Y < nomalizedStartPoint.Y)
-                        || (currentPosition.Y > nomalizedStartPoint.Y && lastPosition.Y < nomalizedStartPoint.Y))
-                    {
-                        long x = lastPosition.X + (currentPosition.X - lastPosition.X) * (nomalizedStartPoint.Y - lastPosition.Y) / (currentPosition.Y - lastPosition.Y);
+			for (int bounderyIndex = 0; bounderyIndex < bounderyPolygons.Count; bounderyIndex++)
+			{
+				Polygon boundryPolygon = bounderyPolygons[bounderyIndex];
+				if (boundryPolygon.Count < 1)
+				{
+					continue;
+				}
 
-                        if (x > nomalizedStartPoint.X && x < normalizedEndPoint.X)
-                        {
-                            return true;
-                        }
-                    }
+				IntPoint lastPosition = matrix.apply(boundryPolygon[boundryPolygon.Count - 1]);
+				for (int pointIndex = 0; pointIndex < boundryPolygon.Count; pointIndex++)
+				{
+					IntPoint currentPosition = matrix.apply(boundryPolygon[pointIndex]);
+					if ((lastPosition.Y > nomalizedStartPoint.Y && currentPosition.Y < nomalizedStartPoint.Y)
+						|| (currentPosition.Y > nomalizedStartPoint.Y && lastPosition.Y < nomalizedStartPoint.Y))
+					{
+						long x = lastPosition.X + (currentPosition.X - lastPosition.X) * (nomalizedStartPoint.Y - lastPosition.Y) / (currentPosition.Y - lastPosition.Y);
 
-                    lastPosition = currentPosition;
-                }
-            }
-            return false;
-        }
+						if (x > nomalizedStartPoint.X && x < normalizedEndPoint.X)
+						{
+							return true;
+						}
+					}
 
-        void calcMinMax()
-        {
-            for (int bounderyIndex = 0; bounderyIndex < bounderyPolygons.Count; bounderyIndex++)
-            {
-                Polygon boundryPolygon = bounderyPolygons[bounderyIndex];
+					lastPosition = currentPosition;
+				}
+			}
+			return false;
+		}
 
-                minXPosition[bounderyIndex] = long.MaxValue;
-                maxXPosition[bounderyIndex] = long.MinValue;
-                IntPoint previousPosition = matrix.apply(boundryPolygon[boundryPolygon.Count - 1]);
-                for (int pointIndex = 0; pointIndex < boundryPolygon.Count; pointIndex++)
-                {
-                    IntPoint currentPosition = matrix.apply(boundryPolygon[pointIndex]);
-                    if ((previousPosition.Y > nomalizedStartPoint.Y && currentPosition.Y < nomalizedStartPoint.Y) 
-                        || (currentPosition.Y > nomalizedStartPoint.Y && previousPosition.Y < nomalizedStartPoint.Y))
-                    {
-                        long x = previousPosition.X + (currentPosition.X - previousPosition.X) * (nomalizedStartPoint.Y - previousPosition.Y) / (currentPosition.Y - previousPosition.Y);
+		private void calcMinMax()
+		{
+			for (int bounderyIndex = 0; bounderyIndex < bounderyPolygons.Count; bounderyIndex++)
+			{
+				Polygon boundryPolygon = bounderyPolygons[bounderyIndex];
 
-                        if (x >= nomalizedStartPoint.X && x <= normalizedEndPoint.X)
-                        {
-                            if (x < minXPosition[bounderyIndex]) 
-                            { 
-                                minXPosition[bounderyIndex] = x; 
-                                indexOfMinX[bounderyIndex] = pointIndex; 
-                            }
+				minXPosition[bounderyIndex] = long.MaxValue;
+				maxXPosition[bounderyIndex] = long.MinValue;
+				IntPoint previousPosition = matrix.apply(boundryPolygon[boundryPolygon.Count - 1]);
+				for (int pointIndex = 0; pointIndex < boundryPolygon.Count; pointIndex++)
+				{
+					IntPoint currentPosition = matrix.apply(boundryPolygon[pointIndex]);
+					if ((previousPosition.Y > nomalizedStartPoint.Y && currentPosition.Y < nomalizedStartPoint.Y)
+						|| (currentPosition.Y > nomalizedStartPoint.Y && previousPosition.Y < nomalizedStartPoint.Y))
+					{
+						long x = previousPosition.X + (currentPosition.X - previousPosition.X) * (nomalizedStartPoint.Y - previousPosition.Y) / (currentPosition.Y - previousPosition.Y);
 
-                            if (x > maxXPosition[bounderyIndex]) 
-                            { 
-                                maxXPosition[bounderyIndex] = x; 
-                                indexOfMaxX[bounderyIndex] = pointIndex; 
-                            }
-                        }
-                    }
+						if (x >= nomalizedStartPoint.X && x <= normalizedEndPoint.X)
+						{
+							if (x < minXPosition[bounderyIndex])
+							{
+								minXPosition[bounderyIndex] = x;
+								indexOfMinX[bounderyIndex] = pointIndex;
+							}
 
-                    previousPosition = currentPosition;
-                }
-            }
-        }
+							if (x > maxXPosition[bounderyIndex])
+							{
+								maxXPosition[bounderyIndex] = x;
+								indexOfMaxX[bounderyIndex] = pointIndex;
+							}
+						}
+					}
 
-        int getPolygonIndexAbove(long startingPolygonIndex)
-        {
-            long minXFound = long.MaxValue;
-            int abovePolyIndex = -1;
-            
-            for (int polygonIndex = 0; polygonIndex < bounderyPolygons.Count; polygonIndex++)
-            {
-                if (minXPosition[polygonIndex] > startingPolygonIndex 
-                    && minXPosition[polygonIndex] < minXFound)
-                {
-                    minXFound = minXPosition[polygonIndex];
-                    abovePolyIndex = polygonIndex;
-                }
-            }
-            
-            return abovePolyIndex;
-        }
+					previousPosition = currentPosition;
+				}
+			}
+		}
 
-        IntPoint getBounderyPointWithOffset(int polygonIndex, int pointIndex)
-        {
-            int previousIndex = pointIndex - 1;
-            if(previousIndex < 0) 
-            {
-                previousIndex = bounderyPolygons[polygonIndex].Count - 1;
-            }
-            IntPoint previousPoint = bounderyPolygons[polygonIndex][previousIndex];
+		private int getPolygonIndexAbove(long startingPolygonIndex)
+		{
+			long minXFound = long.MaxValue;
+			int abovePolyIndex = -1;
 
-            IntPoint currentPoint = bounderyPolygons[polygonIndex][pointIndex];
+			for (int polygonIndex = 0; polygonIndex < bounderyPolygons.Count; polygonIndex++)
+			{
+				if (minXPosition[polygonIndex] > startingPolygonIndex
+					&& minXPosition[polygonIndex] < minXFound)
+				{
+					minXFound = minXPosition[polygonIndex];
+					abovePolyIndex = polygonIndex;
+				}
+			}
 
-            int nextIndex = pointIndex + 1;
-            if(nextIndex >= bounderyPolygons[polygonIndex].Count)
-            {
-                nextIndex = 0;
-            }
-            IntPoint nextPoint = bounderyPolygons[polygonIndex][nextIndex];
+			return abovePolyIndex;
+		}
 
-            IntPoint off0 = ((currentPoint - previousPoint).normal(1000)).GetPerpendicularLeft();
-            IntPoint off1 = ((nextPoint - currentPoint).normal(1000)).GetPerpendicularLeft();
-            IntPoint n = (off0 + off1).normal(200);
+		private IntPoint getBounderyPointWithOffset(int polygonIndex, int pointIndex)
+		{
+			int previousIndex = pointIndex - 1;
+			if (previousIndex < 0)
+			{
+				previousIndex = bounderyPolygons[polygonIndex].Count - 1;
+			}
+			IntPoint previousPoint = bounderyPolygons[polygonIndex][previousIndex];
 
-            return currentPoint + n;
-        }
+			IntPoint currentPoint = bounderyPolygons[polygonIndex][pointIndex];
 
-        public AvoidCrossingPerimeters(Polygons bounderyPolygons)
-        {
-            this.bounderyPolygons = bounderyPolygons;
-            minXPosition = new long[bounderyPolygons.Count];
-            maxXPosition = new long[bounderyPolygons.Count];
-            indexOfMinX = new int[bounderyPolygons.Count];
-            indexOfMaxX = new int[bounderyPolygons.Count];
-        }
+			int nextIndex = pointIndex + 1;
+			if (nextIndex >= bounderyPolygons[polygonIndex].Count)
+			{
+				nextIndex = 0;
+			}
+			IntPoint nextPoint = bounderyPolygons[polygonIndex][nextIndex];
 
-        public bool PointIsInsideBoundary(IntPoint pointToTest)
-        {
-            return bounderyPolygons.Inside(pointToTest);
-        }
+			IntPoint off0 = ((currentPoint - previousPoint).normal(1000)).GetPerpendicularLeft();
+			IntPoint off1 = ((nextPoint - currentPoint).normal(1000)).GetPerpendicularLeft();
+			IntPoint n = (off0 + off1).normal(200);
 
-        public bool MovePointInsideBoundary(ref IntPoint pointToMove, int maxDistanceToMove = 100)
-        {
-            IntPoint newPosition = pointToMove;
-            long bestDist = 2000 * 2000;
-            for (int bounderyIndex = 0; bounderyIndex < bounderyPolygons.Count; bounderyIndex++)
-            {
-                Polygon boundryPolygon = bounderyPolygons[bounderyIndex];
+			return currentPoint + n;
+		}
 
-                if (boundryPolygon.Count < 1)
-                {
-                    continue;
-                }
+		public AvoidCrossingPerimeters(Polygons bounderyPolygons)
+		{
+			this.bounderyPolygons = bounderyPolygons;
+			minXPosition = new long[bounderyPolygons.Count];
+			maxXPosition = new long[bounderyPolygons.Count];
+			indexOfMinX = new int[bounderyPolygons.Count];
+			indexOfMaxX = new int[bounderyPolygons.Count];
+		}
 
-                IntPoint previousPoint = boundryPolygon[boundryPolygon.Count - 1];
-                for (int pointIndex = 0; pointIndex < boundryPolygon.Count; pointIndex++)
-                {
-                    IntPoint currentPoint = boundryPolygon[pointIndex];
+		public bool PointIsInsideBoundary(IntPoint pointToTest)
+		{
+			return bounderyPolygons.Inside(pointToTest);
+		}
 
-                    //Q = A + Normal( B - A ) * ((( B - A ) dot ( P - A )) / VSize( A - B ));
-                    IntPoint deltaToCurrent = currentPoint - previousPoint;
-                    long deltaLength = deltaToCurrent.vSize();
-                    long distToBoundrySegment = deltaToCurrent.Dot(pointToMove - previousPoint) / deltaLength;
-                    if (distToBoundrySegment < 10)
-                    {
-                        distToBoundrySegment = 10;
-                    }
+		public bool MovePointInsideBoundary(ref IntPoint pointToMove, int maxDistanceToMove = 100)
+		{
+			IntPoint newPosition = pointToMove;
+			long bestDist = 2000 * 2000;
+			for (int bounderyIndex = 0; bounderyIndex < bounderyPolygons.Count; bounderyIndex++)
+			{
+				Polygon boundryPolygon = bounderyPolygons[bounderyIndex];
 
-                    if (distToBoundrySegment > deltaLength - 10)
-                    {
-                        distToBoundrySegment = deltaLength - 10;
-                    }
+				if (boundryPolygon.Count < 1)
+				{
+					continue;
+				}
 
-                    IntPoint q = previousPoint + deltaToCurrent * distToBoundrySegment / deltaLength;
+				IntPoint previousPoint = boundryPolygon[boundryPolygon.Count - 1];
+				for (int pointIndex = 0; pointIndex < boundryPolygon.Count; pointIndex++)
+				{
+					IntPoint currentPoint = boundryPolygon[pointIndex];
 
-                    long dist = (q - pointToMove).LengthSquared();
-                    if (dist < bestDist)
-                    {
-                        bestDist = dist;
-                        newPosition = q + ((currentPoint - previousPoint).normal(maxDistanceToMove)).GetPerpendicularLeft();
-                    }
+					//Q = A + Normal( B - A ) * ((( B - A ) dot ( P - A )) / VSize( A - B ));
+					IntPoint deltaToCurrent = currentPoint - previousPoint;
+					long deltaLength = deltaToCurrent.vSize();
+					long distToBoundrySegment = deltaToCurrent.Dot(pointToMove - previousPoint) / deltaLength;
+					if (distToBoundrySegment < 10)
+					{
+						distToBoundrySegment = 10;
+					}
 
-                    previousPoint = currentPoint;
-                }
-            }
+					if (distToBoundrySegment > deltaLength - 10)
+					{
+						distToBoundrySegment = deltaLength - 10;
+					}
 
-            if (bestDist < 2000 * 2000)
-            {
-                pointToMove = newPosition;
-                return true;
-            }
+					IntPoint q = previousPoint + deltaToCurrent * distToBoundrySegment / deltaLength;
 
-            return false;
-        }
+					long dist = (q - pointToMove).LengthSquared();
+					if (dist < bestDist)
+					{
+						bestDist = dist;
+						newPosition = q + ((currentPoint - previousPoint).normal(maxDistanceToMove)).GetPerpendicularLeft();
+					}
 
-        public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, List<IntPoint> pathThatIsInside)
-        {
-            if ((endPoint - startPoint).ShorterThen(1500))
-            {
-                // If the movement is very short (not a lot of time to ooze filament)
-                // then don't add any points
-                return true;
-            }
+					previousPoint = currentPoint;
+				}
+			}
 
-            bool addEndpoint = false;
-            //Check if we are inside the comb boundaries
-            if (!PointIsInsideBoundary(startPoint))
-            {
-                if (!MovePointInsideBoundary(ref startPoint))
-                {
-                    //If we fail to move the point inside the comb boundary we need to retract.
-                    return false;
-                }
+			if (bestDist < 2000 * 2000)
+			{
+				pointToMove = newPosition;
+				return true;
+			}
 
-                pathThatIsInside.Add(startPoint);
-            }
+			return false;
+		}
 
-            if (!PointIsInsideBoundary(endPoint))
-            {
-                if (!MovePointInsideBoundary(ref endPoint))
-                {
-                    //If we fail to move the point inside the comb boundary we need to retract.
-                    return false;
-                }
+		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, List<IntPoint> pathThatIsInside)
+		{
+			if ((endPoint - startPoint).ShorterThen(1500))
+			{
+				// If the movement is very short (not a lot of time to ooze filament)
+				// then don't add any points
+				return true;
+			}
 
-                addEndpoint = true;
-            }
+			bool addEndpoint = false;
+			//Check if we are inside the comb boundaries
+			if (!PointIsInsideBoundary(startPoint))
+			{
+				if (!MovePointInsideBoundary(ref startPoint))
+				{
+					//If we fail to move the point inside the comb boundary we need to retract.
+					return false;
+				}
 
-            // Check if we are crossing any bounderies, and pre-calculate some values.
-            if (!collisionTest(startPoint, endPoint))
-            {
-                //We're not crossing any boundaries. So skip the comb generation.
-                if (!addEndpoint && pathThatIsInside.Count == 0)
-                {
-                    //Only skip if we didn't move the start and end point.
-                    return true;
-                }
-            }
+				pathThatIsInside.Add(startPoint);
+			}
 
-            // Calculate the minimum and maximum positions where we cross the comb boundary
-            calcMinMax();
+			if (!PointIsInsideBoundary(endPoint))
+			{
+				if (!MovePointInsideBoundary(ref endPoint))
+				{
+					//If we fail to move the point inside the comb boundary we need to retract.
+					return false;
+				}
 
-            long nomalizedStartX = nomalizedStartPoint.X;
-            List<IntPoint> pointList = new List<IntPoint>();
-            // Now walk trough the crossings, for every boundary we cross, find the initial cross point and the exit point. 
-            // Then add all the points in between to the pointList and continue with the next boundary we will cross, 
-            // until there are no more boundaries to cross.
-            // This gives a path from the start to finish curved around the holes that it encounters.
-            while (true)
-            {
-                // if we go up enough we should run into the boundry
-                int abovePolyIndex = getPolygonIndexAbove(nomalizedStartX);
-                if (abovePolyIndex < 0)
-                {
-                    break;
-                }
+				addEndpoint = true;
+			}
 
-                pointList.Add(matrix.unapply(new IntPoint(minXPosition[abovePolyIndex] - 200, nomalizedStartPoint.Y)));
-                if ((indexOfMinX[abovePolyIndex] - indexOfMaxX[abovePolyIndex] + bounderyPolygons[abovePolyIndex].Count) % bounderyPolygons[abovePolyIndex].Count > (indexOfMaxX[abovePolyIndex] - indexOfMinX[abovePolyIndex] + bounderyPolygons[abovePolyIndex].Count) % bounderyPolygons[abovePolyIndex].Count)
-                {
-                    for (int i = indexOfMinX[abovePolyIndex]; i != indexOfMaxX[abovePolyIndex]; i = (i < bounderyPolygons[abovePolyIndex].Count - 1) ? (i + 1) : (0))
-                    {
-                        pointList.Add(getBounderyPointWithOffset(abovePolyIndex, i));
-                    }
-                }
-                else
-                {
-                    indexOfMinX[abovePolyIndex]--;
-                    if (indexOfMinX[abovePolyIndex] == -1)
-                    {
-                        indexOfMinX[abovePolyIndex] = bounderyPolygons[abovePolyIndex].Count - 1;
-                    }
+			// Check if we are crossing any bounderies, and pre-calculate some values.
+			if (!collisionTest(startPoint, endPoint))
+			{
+				//We're not crossing any boundaries. So skip the comb generation.
+				if (!addEndpoint && pathThatIsInside.Count == 0)
+				{
+					//Only skip if we didn't move the start and end point.
+					return true;
+				}
+			}
 
-                    indexOfMaxX[abovePolyIndex]--;
-                    if (indexOfMaxX[abovePolyIndex] == -1)
-                    {
-                        indexOfMaxX[abovePolyIndex] = bounderyPolygons[abovePolyIndex].Count - 1;
-                    }
+			// Calculate the minimum and maximum positions where we cross the comb boundary
+			calcMinMax();
 
-                    for (int i = indexOfMinX[abovePolyIndex]; i != indexOfMaxX[abovePolyIndex]; i = (i > 0) ? (i - 1) : (bounderyPolygons[abovePolyIndex].Count - 1))
-                    {
-                        pointList.Add(getBounderyPointWithOffset(abovePolyIndex, i));
-                    }
-                }
-                pointList.Add(matrix.unapply(new IntPoint(maxXPosition[abovePolyIndex] + 200, nomalizedStartPoint.Y)));
+			long nomalizedStartX = nomalizedStartPoint.X;
+			List<IntPoint> pointList = new List<IntPoint>();
+			// Now walk trough the crossings, for every boundary we cross, find the initial cross point and the exit point.
+			// Then add all the points in between to the pointList and continue with the next boundary we will cross,
+			// until there are no more boundaries to cross.
+			// This gives a path from the start to finish curved around the holes that it encounters.
+			while (true)
+			{
+				// if we go up enough we should run into the boundry
+				int abovePolyIndex = getPolygonIndexAbove(nomalizedStartX);
+				if (abovePolyIndex < 0)
+				{
+					break;
+				}
 
-                nomalizedStartX = maxXPosition[abovePolyIndex];
-            }
-            pointList.Add(endPoint);
+				pointList.Add(matrix.unapply(new IntPoint(minXPosition[abovePolyIndex] - 200, nomalizedStartPoint.Y)));
+				if ((indexOfMinX[abovePolyIndex] - indexOfMaxX[abovePolyIndex] + bounderyPolygons[abovePolyIndex].Count) % bounderyPolygons[abovePolyIndex].Count > (indexOfMaxX[abovePolyIndex] - indexOfMinX[abovePolyIndex] + bounderyPolygons[abovePolyIndex].Count) % bounderyPolygons[abovePolyIndex].Count)
+				{
+					for (int i = indexOfMinX[abovePolyIndex]; i != indexOfMaxX[abovePolyIndex]; i = (i < bounderyPolygons[abovePolyIndex].Count - 1) ? (i + 1) : (0))
+					{
+						pointList.Add(getBounderyPointWithOffset(abovePolyIndex, i));
+					}
+				}
+				else
+				{
+					indexOfMinX[abovePolyIndex]--;
+					if (indexOfMinX[abovePolyIndex] == -1)
+					{
+						indexOfMinX[abovePolyIndex] = bounderyPolygons[abovePolyIndex].Count - 1;
+					}
 
-            
-            if (addEndpoint)
-            {
-                pointList.Add(endPoint);
-            }
+					indexOfMaxX[abovePolyIndex]--;
+					if (indexOfMaxX[abovePolyIndex] == -1)
+					{
+						indexOfMaxX[abovePolyIndex] = bounderyPolygons[abovePolyIndex].Count - 1;
+					}
 
-            // Optimize the pointList, skip each point we could already reach by connecting directly to the next point.
-            for(int startIndex = 0; startIndex < pointList.Count-2; startIndex++)
-            {
-                IntPoint startPosition = pointList[startIndex];
-                // make sure there is at least one point between the start and the end to optomize
-                if (pointList.Count > startIndex + 2)
-                {
-                    for (int checkIndex = pointList.Count - 1; checkIndex > startIndex + 1; checkIndex--)
-                    {
-                        IntPoint checkPosition = pointList[checkIndex];
-                        if (!collisionTest(startPosition, checkPosition))
-                        {
-                            // Remove all the points from startIndex+1 to checkIndex-1, inclusive.
-                            for (int i = startIndex + 1; i < checkIndex; i++)
-                            {
-                                pointList.RemoveAt(startIndex + 1);
-                            }
+					for (int i = indexOfMinX[abovePolyIndex]; i != indexOfMaxX[abovePolyIndex]; i = (i > 0) ? (i - 1) : (bounderyPolygons[abovePolyIndex].Count - 1))
+					{
+						pointList.Add(getBounderyPointWithOffset(abovePolyIndex, i));
+					}
+				}
+				pointList.Add(matrix.unapply(new IntPoint(maxXPosition[abovePolyIndex] + 200, nomalizedStartPoint.Y)));
 
-                            // we removed all the points up to start so we are done with the inner loop
-                            break;
-                        }
-                    }
-                }
-            }
+				nomalizedStartX = maxXPosition[abovePolyIndex];
+			}
+			pointList.Add(endPoint);
 
-            foreach (IntPoint point in pointList)
-            {
-                pathThatIsInside.Add(point);
-            }
+			if (addEndpoint)
+			{
+				pointList.Add(endPoint);
+			}
 
-            return true;
-        }
-    }
+			// Optimize the pointList, skip each point we could already reach by connecting directly to the next point.
+			for (int startIndex = 0; startIndex < pointList.Count - 2; startIndex++)
+			{
+				IntPoint startPosition = pointList[startIndex];
+				// make sure there is at least one point between the start and the end to optomize
+				if (pointList.Count > startIndex + 2)
+				{
+					for (int checkIndex = pointList.Count - 1; checkIndex > startIndex + 1; checkIndex--)
+					{
+						IntPoint checkPosition = pointList[checkIndex];
+						if (!collisionTest(startPosition, checkPosition))
+						{
+							// Remove all the points from startIndex+1 to checkIndex-1, inclusive.
+							for (int i = startIndex + 1; i < checkIndex; i++)
+							{
+								pointList.RemoveAt(startIndex + 1);
+							}
+
+							// we removed all the points up to start so we are done with the inner loop
+							break;
+						}
+					}
+				}
+			}
+
+			foreach (IntPoint point in pointList)
+			{
+				pathThatIsInside.Add(point);
+			}
+
+			return true;
+		}
+	}
 }

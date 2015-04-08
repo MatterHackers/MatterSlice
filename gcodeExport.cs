@@ -1,5 +1,5 @@
 /*
-This file is part of MatterSlice. A commandline utility for 
+This file is part of MatterSlice. A commandline utility for
 generating 3D printing GCode.
 
 Copyright (C) 2013 David Braam
@@ -19,43 +19,43 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using MatterSlice.ClipperLib;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Collections.Generic;
-
-using MatterSlice.ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
 	using Polygon = List<IntPoint>;
+
 	using Polygons = List<List<IntPoint>>;
 
 	public class GCodeExport
 	{
-		StreamWriter gcodeFileStream;
-		double extrusionAmount_mm;
-		double extrusionPerMm;
-		double retractionAmount_mm;
-		double retractionZHop_mm;
-		double extruderSwitchRetraction_mm;
-		double minimumExtrusionBeforeRetraction_mm;
-		double extrusionAmountAtPreviousRetraction_mm;
-		Point3 currentPosition_um;
-		Point3[] extruderOffset_um = new Point3[ConfigConstants.MAX_EXTRUDERS];
-		char[] extruderCharacter = new char[ConfigConstants.MAX_EXTRUDERS];
-		int currentSpeed;
-		int retractionSpeed;
-		int zPos_um;
-		bool isRetracted;
-		int extruderIndex;
-		int currentFanSpeed;
-		ConfigConstants.OUTPUT_TYPE outputType;
-		string toolChangeCode;
+		private StreamWriter gcodeFileStream;
+		private double extrusionAmount_mm;
+		private double extrusionPerMm;
+		private double retractionAmount_mm;
+		private double retractionZHop_mm;
+		private double extruderSwitchRetraction_mm;
+		private double minimumExtrusionBeforeRetraction_mm;
+		private double extrusionAmountAtPreviousRetraction_mm;
+		private Point3 currentPosition_um;
+		private Point3[] extruderOffset_um = new Point3[ConfigConstants.MAX_EXTRUDERS];
+		private char[] extruderCharacter = new char[ConfigConstants.MAX_EXTRUDERS];
+		private int currentSpeed;
+		private int retractionSpeed;
+		private int zPos_um;
+		private bool isRetracted;
+		private int extruderIndex;
+		private int currentFanSpeed;
+		private ConfigConstants.OUTPUT_TYPE outputType;
+		private string toolChangeCode;
 
-		double[] totalFilament_mm = new double[ConfigConstants.MAX_EXTRUDERS];
-		double totalPrintTime;
-		TimeEstimateCalculator estimateCalculator = new TimeEstimateCalculator();
+		private double[] totalFilament_mm = new double[ConfigConstants.MAX_EXTRUDERS];
+		private double totalPrintTime;
+		private TimeEstimateCalculator estimateCalculator = new TimeEstimateCalculator();
 
 		public GCodeExport()
 		{
@@ -361,7 +361,7 @@ namespace MatterHackers.MatterSlice
 		}
 
 #if DEBUG
-		string lastLineWriten = "";
+		private string lastLineWriten = "";
 #endif
 
 		public void writeRetraction()
@@ -491,7 +491,6 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-
 		public void finalize(int maxObjectHeight, int moveSpeed, string endCode)
 		{
 			writeFanCommand(0);
@@ -530,7 +529,10 @@ namespace MatterHackers.MatterSlice
 		public bool spiralize;
 		public bool closedLoop = true;
 
-		public GCodePathConfig() { }
+		public GCodePathConfig()
+		{
+		}
+
 		public GCodePathConfig(int speed, int lineWidth, string name)
 		{
 			this.speed = speed;
@@ -551,7 +553,9 @@ namespace MatterHackers.MatterSlice
 	{
 		public GCodePathConfig config;
 		public bool retract;
+
 		public bool Retract { get { return retract; } set { retract = value; } }
+
 		public int extruderIndex;
 		public List<IntPoint> points = new List<IntPoint>();
 		public bool done;//Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
@@ -562,21 +566,21 @@ namespace MatterHackers.MatterSlice
 	// It also keeps track of the print time estimate for this planning so speed adjustments can be made for the minimum-layer-time.
 	public class GCodePlanner
 	{
-		GCodeExport gcode = new GCodeExport();
+		private GCodeExport gcode = new GCodeExport();
 
-		IntPoint lastPosition;
-		List<GCodePath> paths = new List<GCodePath>();
-		AvoidCrossingPerimeters outerPerimetersToAvoidCrossing;
+		private IntPoint lastPosition;
+		private List<GCodePath> paths = new List<GCodePath>();
+		private AvoidCrossingPerimeters outerPerimetersToAvoidCrossing;
 
-		GCodePathConfig travelConfig = new GCodePathConfig();
-		int extrudeSpeedFactor;
-		int travelSpeedFactor;
-		int currentExtruderIndex;
-		int retractionMinimumDistance;
-		bool forceRetraction;
-		bool alwaysRetract;
-		double extraTime;
-		double totalPrintTime;
+		private GCodePathConfig travelConfig = new GCodePathConfig();
+		private int extrudeSpeedFactor;
+		private int travelSpeedFactor;
+		private int currentExtruderIndex;
+		private int retractionMinimumDistance;
+		private bool forceRetraction;
+		private bool alwaysRetract;
+		private double extraTime;
+		private double totalPrintTime;
 
 		public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance)
 		{
@@ -595,7 +599,7 @@ namespace MatterHackers.MatterSlice
 			this.retractionMinimumDistance = retractionMinimumDistance;
 		}
 
-		GCodePath getLatestPathWithConfig(GCodePathConfig config)
+		private GCodePath getLatestPathWithConfig(GCodePathConfig config)
 		{
 			if (paths.Count > 0
 				&& paths[paths.Count - 1].config == config
@@ -613,7 +617,7 @@ namespace MatterHackers.MatterSlice
 			return ret;
 		}
 
-		void forceNewPathStart()
+		private void forceNewPathStart()
 		{
 			if (paths.Count > 0)
 			{
@@ -786,7 +790,7 @@ namespace MatterHackers.MatterSlice
 					writeExtrusionMove(polygon[startIndex], config);
 				}
 			}
-			else // we are not closed 
+			else // we are not closed
 			{
 				if (startIndex == 0)
 				{

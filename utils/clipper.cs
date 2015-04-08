@@ -48,23 +48,25 @@
 //use_lines: Enables open path clipping. Adds a very minor cost to performance.
 #define use_lines
 
-
 using System;
 using System.Collections.Generic;
+
 //using System.Text;          //for Int128.AsString() & StringBuilder
 //using System.IO;            //debugging with streamReader & StreamWriter
 //using System.Windows.Forms; //debugging to clipboard
 
 namespace MatterSlice.ClipperLib
 {
-
 #if use_int32
   using cInt = Int32;
 #else
+
 	using cInt = Int64;
+
 #endif
 
 	using Path = List<IntPoint>;
+
 	using Paths = List<List<IntPoint>>;
 
 	public struct DoublePoint
@@ -76,16 +78,17 @@ namespace MatterSlice.ClipperLib
 		{
 			this.X = x; this.Y = y;
 		}
+
 		public DoublePoint(DoublePoint dp)
 		{
 			this.X = dp.X; this.Y = dp.Y;
 		}
+
 		public DoublePoint(IntPoint ip)
 		{
 			this.X = ip.X; this.Y = ip.Y;
 		}
 	};
-
 
 	//------------------------------------------------------------------------------
 	// PolyTree & PolyNode classes
@@ -124,7 +127,6 @@ namespace MatterSlice.ClipperLib
 				return result;
 			}
 		}
-
 	}
 
 	public class PolyNode
@@ -201,7 +203,6 @@ namespace MatterSlice.ClipperLib
 
 		public bool IsOpen { get; set; }
 	}
-
 
 	//------------------------------------------------------------------------------
 	// Int128 struct (enables safe math on signed 64bit integers)
@@ -316,8 +317,8 @@ namespace MatterSlice.ClipperLib
 				return (double)(val.lo + val.hi * shift64);
 		}
 
-		//nb: Constructing two new Int128 objects every time we want to multiply longs  
-		//is slow. So, although calling the Int128Mul method doesn't look as clean, the 
+		//nb: Constructing two new Int128 objects every time we want to multiply longs
+		//is slow. So, although calling the Int128Mul method doesn't look as clean, the
 		//code runs significantly faster than if we'd used the * operator.
 
 		public static Int128 Int128Mul(Int64 lhs, Int64 rhs)
@@ -344,7 +345,6 @@ namespace MatterSlice.ClipperLib
 			Int128 result = new Int128(hi, lo);
 			return negate ? -result : result;
 		}
-
 	};
 
 	//------------------------------------------------------------------------------
@@ -356,17 +356,17 @@ namespace MatterSlice.ClipperLib
 		public cInt Y;
 #if use_xyz
     public cInt Z;
-    
+
     public IntPoint(cInt x, cInt y, cInt z = 0)
     {
       this.X = x; this.Y = y; this.Z = z;
     }
-    
+
     public IntPoint(double x, double y, double z = 0)
     {
       this.X = (cInt)x; this.Y = (cInt)y; this.Z = (cInt)z;
     }
-    
+
     public IntPoint(DoublePoint dp)
     {
       this.X = (cInt)dp.X; this.Y = (cInt)dp.Y; this.Z = 0;
@@ -377,10 +377,12 @@ namespace MatterSlice.ClipperLib
       this.X = pt.X; this.Y = pt.Y; this.Z = pt.Z;
     }
 #else
+
 		public IntPoint(cInt X, cInt Y)
 		{
 			this.X = X; this.Y = Y;
 		}
+
 		public IntPoint(double x, double y)
 		{
 			this.X = (cInt)x; this.Y = (cInt)y;
@@ -390,6 +392,7 @@ namespace MatterSlice.ClipperLib
 		{
 			this.X = pt.X; this.Y = pt.Y;
 		}
+
 #endif
 
 		/////////////////////////////////////////////////// start added for MatterSlice ///////////////////////////////////////////////////
@@ -397,6 +400,7 @@ namespace MatterSlice.ClipperLib
 		{
 			return string.Format("x:{0}, y:{1}", X, Y);
 		}
+
 		public static IntPoint operator +(IntPoint p0, IntPoint p1)
 		{
 			return new IntPoint(p0.X + p1.X, p0.Y + p1.Y);
@@ -445,7 +449,6 @@ namespace MatterSlice.ClipperLib
 			//simply prevents a compiler warning
 			return base.GetHashCode();
 		}
-
 	}// end struct IntPoint
 
 	public struct IntRect
@@ -460,6 +463,7 @@ namespace MatterSlice.ClipperLib
 			this.left = l; this.top = t;
 			this.right = r; this.bottom = b;
 		}
+
 		public IntRect(IntRect ir)
 		{
 			this.left = ir.left; this.top = ir.top;
@@ -468,6 +472,7 @@ namespace MatterSlice.ClipperLib
 	}
 
 	public enum ClipType { ctIntersection, ctUnion, ctDifference, ctXor };
+
 	public enum PolyType { ptSubject, ptClip };
 
 	//By far the most widely used winding rules for polygon filling are
@@ -477,9 +482,11 @@ namespace MatterSlice.ClipperLib
 	public enum PolyFillType { pftEvenOdd, pftNonZero, pftPositive, pftNegative };
 
 	public enum JoinType { jtSquare, jtRound, jtMiter };
+
 	public enum EndType { etClosedPolygon, etClosedLine, etOpenButt, etOpenSquare, etOpenRound };
 
 	internal enum EdgeSide { esLeft, esRight };
+
 	internal enum Direction { dRightToLeft, dLeftToRight };
 
 	internal class TEdge
@@ -575,7 +582,11 @@ namespace MatterSlice.ClipperLib
 		protected const int Skip = -2;
 		protected const int Unassigned = -1;
 		protected const double tolerance = 1.0E-20;
-		internal static bool near_zero(double val) { return (val > -tolerance) && (val < tolerance); }
+
+		internal static bool near_zero(double val)
+		{
+			return (val > -tolerance) && (val < tolerance);
+		}
 
 #if use_int32
     public const cInt loRange = 0x7FFF;
@@ -598,6 +609,7 @@ namespace MatterSlice.ClipperLib
 			get;
 			set;
 		}
+
 		//------------------------------------------------------------------------------
 
 		public void Swap(ref cInt val1, ref cInt val2)
@@ -606,12 +618,14 @@ namespace MatterSlice.ClipperLib
 			val1 = val2;
 			val2 = tmp;
 		}
+
 		//------------------------------------------------------------------------------
 
 		internal static bool IsHorizontal(TEdge e)
 		{
 			return e.Delta.Y == 0;
 		}
+
 		//------------------------------------------------------------------------------
 
 		internal bool PointIsVertex(IntPoint pt, OutPt pp)
@@ -625,6 +639,7 @@ namespace MatterSlice.ClipperLib
 			while (pp2 != pp);
 			return false;
 		}
+
 		//------------------------------------------------------------------------------
 
 		internal bool PointOnLineSegment(IntPoint pt,
@@ -645,6 +660,7 @@ namespace MatterSlice.ClipperLib
 				  ((pt.X - linePt1.X) * (linePt2.Y - linePt1.Y) ==
 					(linePt2.X - linePt1.X) * (pt.Y - linePt1.Y)));
 		}
+
 		//------------------------------------------------------------------------------
 
 		internal bool PointOnPolygon(IntPoint pt, OutPt pp, bool UseFullRange)
@@ -659,6 +675,7 @@ namespace MatterSlice.ClipperLib
 			}
 			return false;
 		}
+
 		//------------------------------------------------------------------------------
 
 		internal static bool SlopesEqual(TEdge e1, TEdge e2, bool UseFullRange)
@@ -669,6 +686,7 @@ namespace MatterSlice.ClipperLib
 			else return (cInt)(e1.Delta.Y) * (e2.Delta.X) ==
 			  (cInt)(e1.Delta.X) * (e2.Delta.Y);
 		}
+
 		//------------------------------------------------------------------------------
 
 		protected static bool SlopesEqual(IntPoint pt1, IntPoint pt2,
@@ -680,6 +698,7 @@ namespace MatterSlice.ClipperLib
 			else return
 			  (cInt)(pt1.Y - pt2.Y) * (pt2.X - pt3.X) - (cInt)(pt1.X - pt2.X) * (pt2.Y - pt3.Y) == 0;
 		}
+
 		//------------------------------------------------------------------------------
 
 		protected static bool SlopesEqual(IntPoint pt1, IntPoint pt2,
@@ -691,6 +710,7 @@ namespace MatterSlice.ClipperLib
 			else return
 			  (cInt)(pt1.Y - pt2.Y) * (pt3.X - pt4.X) - (cInt)(pt1.X - pt2.X) * (pt3.Y - pt4.Y) == 0;
 		}
+
 		//------------------------------------------------------------------------------
 
 		internal ClipperBase() //constructor (nb: no external instantiation)
@@ -700,6 +720,7 @@ namespace MatterSlice.ClipperLib
 			m_UseFullRange = false;
 			m_HasOpenPaths = false;
 		}
+
 		//------------------------------------------------------------------------------
 
 		public virtual void Clear()
@@ -714,6 +735,7 @@ namespace MatterSlice.ClipperLib
 			m_UseFullRange = false;
 			m_HasOpenPaths = false;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void DisposeLocalMinimaList()
@@ -726,9 +748,10 @@ namespace MatterSlice.ClipperLib
 			}
 			m_CurrentLM = null;
 		}
+
 		//------------------------------------------------------------------------------
 
-		void RangeTest(IntPoint Pt, ref bool useFullRange)
+		private void RangeTest(IntPoint Pt, ref bool useFullRange)
 		{
 			if (useFullRange)
 			{
@@ -741,6 +764,7 @@ namespace MatterSlice.ClipperLib
 				RangeTest(Pt, ref useFullRange);
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void InitEdge(TEdge e, TEdge eNext,
@@ -751,6 +775,7 @@ namespace MatterSlice.ClipperLib
 			e.Curr = pt;
 			e.OutIdx = Unassigned;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void InitEdge2(TEdge e, PolyType polyType)
@@ -768,6 +793,7 @@ namespace MatterSlice.ClipperLib
 			SetDx(e);
 			e.PolyTyp = polyType;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private TEdge FindNextLocMin(TEdge E)
@@ -786,6 +812,7 @@ namespace MatterSlice.ClipperLib
 			}
 			return E;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private TEdge ProcessBound(TEdge E, bool LeftBoundIsForward)
@@ -908,8 +935,8 @@ namespace MatterSlice.ClipperLib
 			}
 			return Result;
 		}
-		//------------------------------------------------------------------------------
 
+		//------------------------------------------------------------------------------
 
 		public bool AddPath(Path pg, PolyType polyType, bool Closed)
 		{
@@ -1079,8 +1106,8 @@ namespace MatterSlice.ClipperLib
 				if (!leftBoundIsForward) E = E2;
 			}
 			return true;
-
 		}
+
 		//------------------------------------------------------------------------------
 
 		public bool AddPaths(Paths ppg, PolyType polyType, bool closed)
@@ -1090,6 +1117,7 @@ namespace MatterSlice.ClipperLib
 				if (AddPath(ppg[i], polyType, closed)) result = true;
 			return result;
 		}
+
 		//------------------------------------------------------------------------------
 
 		internal bool Pt2IsBetweenPt1AndPt3(IntPoint pt1, IntPoint pt2, IntPoint pt3)
@@ -1098,9 +1126,10 @@ namespace MatterSlice.ClipperLib
 			else if (pt1.X != pt3.X) return (pt2.X > pt1.X) == (pt2.X < pt3.X);
 			else return (pt2.Y > pt1.Y) == (pt2.Y < pt3.Y);
 		}
+
 		//------------------------------------------------------------------------------
 
-		TEdge RemoveEdge(TEdge e)
+		private TEdge RemoveEdge(TEdge e)
 		{
 			//removes e from double_linked_list (but without removing from memory)
 			e.Prev.Next = e.Next;
@@ -1109,6 +1138,7 @@ namespace MatterSlice.ClipperLib
 			e.Prev = null; //flag as removed (see ClipperBase.Clear)
 			return result;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void SetDx(TEdge e)
@@ -1118,6 +1148,7 @@ namespace MatterSlice.ClipperLib
 			if (e.Delta.Y == 0) e.Dx = horizontal;
 			else e.Dx = (double)(e.Delta.X) / (e.Delta.Y);
 		}
+
 		//---------------------------------------------------------------------------
 
 		private void InsertLocalMinima(LocalMinima newLm)
@@ -1140,6 +1171,7 @@ namespace MatterSlice.ClipperLib
 				tmpLm.Next = newLm;
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		protected void PopLocalMinima()
@@ -1147,6 +1179,7 @@ namespace MatterSlice.ClipperLib
 			if (m_CurrentLM == null) return;
 			m_CurrentLM = m_CurrentLM.Next;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void ReverseHorizontal(TEdge e)
@@ -1159,6 +1192,7 @@ namespace MatterSlice.ClipperLib
       Swap(ref e.Top.Z, ref e.Bot.Z);
 #endif
 		}
+
 		//------------------------------------------------------------------------------
 
 		protected virtual void Reset()
@@ -1187,6 +1221,7 @@ namespace MatterSlice.ClipperLib
 				lm = lm.Next;
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		public static IntRect GetBounds(Paths paths)
@@ -1209,13 +1244,13 @@ namespace MatterSlice.ClipperLib
 				}
 			return result;
 		}
-
 	} //end ClipperBase
 
 	public class Clipper : ClipperBase
 	{
 		//InitOptions that can be passed to the constructor ...
 		public const int ioReverseSolution = 1;
+
 		public const int ioStrictlySimple = 2;
 		public const int ioPreserveCollinear = 4;
 
@@ -1226,7 +1261,7 @@ namespace MatterSlice.ClipperLib
 		private TEdge m_ActiveEdges;
 		private TEdge m_SortedEdges;
 		private List<IntersectNode> m_IntersectList;
-		IComparer<IntersectNode> m_IntersectNodeComparer;
+		private IComparer<IntersectNode> m_IntersectNodeComparer;
 		private bool m_ExecuteLocked;
 		private PolyFillType m_ClipFillType;
 		private PolyFillType m_SubjFillType;
@@ -1234,10 +1269,11 @@ namespace MatterSlice.ClipperLib
 		private List<Join> m_GhostJoins;
 		private bool m_UsingPolyTree;
 #if use_xyz
-      public delegate void ZFillCallback(IntPoint bot1, IntPoint top1, 
+      public delegate void ZFillCallback(IntPoint bot1, IntPoint top1,
         IntPoint bot2, IntPoint top2, ref IntPoint pt);
       public ZFillCallback ZFillFunction { get; set; }
 #endif
+
 		public Clipper(int InitOptions = 0)
 			: base() //constructor
 		{
@@ -1259,6 +1295,7 @@ namespace MatterSlice.ClipperLib
           ZFillFunction = null;
 #endif
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void InsertScanbeam(cInt Y)
@@ -1288,6 +1325,7 @@ namespace MatterSlice.ClipperLib
 				sb2.Next = newSb;
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void InsertMaxima(cInt X)
@@ -1319,6 +1357,7 @@ namespace MatterSlice.ClipperLib
 				m.Next = newMax;
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		protected override void Reset()
@@ -1335,6 +1374,7 @@ namespace MatterSlice.ClipperLib
 				lm = lm.Next;
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		public bool ReverseSolution
@@ -1342,6 +1382,7 @@ namespace MatterSlice.ClipperLib
 			get;
 			set;
 		}
+
 		//------------------------------------------------------------------------------
 
 		public bool StrictlySimple
@@ -1349,6 +1390,7 @@ namespace MatterSlice.ClipperLib
 			get;
 			set;
 		}
+
 		//------------------------------------------------------------------------------
 
 		public bool Execute(ClipType clipType, Paths solution,
@@ -1356,6 +1398,7 @@ namespace MatterSlice.ClipperLib
 		{
 			return Execute(clipType, solution, FillType, FillType);
 		}
+
 		//------------------------------------------------------------------------------
 
 		public bool Execute(ClipType clipType, PolyTree polytree,
@@ -1363,6 +1406,7 @@ namespace MatterSlice.ClipperLib
 		{
 			return Execute(clipType, polytree, FillType, FillType);
 		}
+
 		//------------------------------------------------------------------------------
 
 		public bool Execute(ClipType clipType, Paths solution,
@@ -1392,6 +1436,7 @@ namespace MatterSlice.ClipperLib
 			}
 			return succeeded;
 		}
+
 		//------------------------------------------------------------------------------
 
 		public bool Execute(ClipType clipType, PolyTree polytree,
@@ -1417,6 +1462,7 @@ namespace MatterSlice.ClipperLib
 			}
 			return succeeded;
 		}
+
 		//------------------------------------------------------------------------------
 
 		internal void FixHoleLinkage(OutRec outRec)
@@ -1432,6 +1478,7 @@ namespace MatterSlice.ClipperLib
 				orfl = orfl.FirstLeft;
 			outRec.FirstLeft = orfl;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private bool ExecuteInternal()
@@ -1482,6 +1529,7 @@ namespace MatterSlice.ClipperLib
 				m_GhostJoins.Clear();
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		private cInt PopScanbeam()
@@ -1490,6 +1538,7 @@ namespace MatterSlice.ClipperLib
 			m_Scanbeam = m_Scanbeam.Next;
 			return Y;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void DisposeAllPolyPts()
@@ -1497,15 +1546,17 @@ namespace MatterSlice.ClipperLib
 			for (int i = 0; i < m_PolyOuts.Count; ++i) DisposeOutRec(i);
 			m_PolyOuts.Clear();
 		}
+
 		//------------------------------------------------------------------------------
 
-		void DisposeOutRec(int index)
+		private void DisposeOutRec(int index)
 		{
 			OutRec outRec = m_PolyOuts[index];
 			outRec.Pts = null;
 			outRec = null;
 			m_PolyOuts[index] = null;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void AddJoin(OutPt Op1, OutPt Op2, IntPoint OffPt)
@@ -1516,6 +1567,7 @@ namespace MatterSlice.ClipperLib
 			j.OffPt = OffPt;
 			m_Joins.Add(j);
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void AddGhostJoin(OutPt Op, IntPoint OffPt)
@@ -1525,6 +1577,7 @@ namespace MatterSlice.ClipperLib
 			j.OffPt = OffPt;
 			m_GhostJoins.Add(j);
 		}
+
 		//------------------------------------------------------------------------------
 
 #if use_xyz
@@ -1612,7 +1665,6 @@ namespace MatterSlice.ClipperLib
 
 				if (lb.NextInAEL != rb)
 				{
-
 					if (rb.OutIdx >= 0 && rb.PrevInAEL.OutIdx >= 0 &&
 					  SlopesEqual(rb.PrevInAEL, rb, m_UseFullRange) &&
 					  rb.WindDelta != 0 && rb.PrevInAEL.WindDelta != 0)
@@ -1633,6 +1685,7 @@ namespace MatterSlice.ClipperLib
 				}
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void InsertEdgeIntoAEL(TEdge edge, TEdge startEdge)
@@ -1662,6 +1715,7 @@ namespace MatterSlice.ClipperLib
 				startEdge.NextInAEL = edge;
 			}
 		}
+
 		//----------------------------------------------------------------------
 
 		private bool E2InsertsBeforeE1(TEdge e1, TEdge e2)
@@ -1674,6 +1728,7 @@ namespace MatterSlice.ClipperLib
 			}
 			else return e2.Curr.X < e1.Curr.X;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private bool IsEvenOddFillType(TEdge edge)
@@ -1683,6 +1738,7 @@ namespace MatterSlice.ClipperLib
 			else
 				return m_ClipFillType == PolyFillType.pftEvenOdd;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private bool IsEvenOddAltFillType(TEdge edge)
@@ -1692,6 +1748,7 @@ namespace MatterSlice.ClipperLib
 			else
 				return m_SubjFillType == PolyFillType.pftEvenOdd;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private bool IsContributing(TEdge edge)
@@ -1714,12 +1771,15 @@ namespace MatterSlice.ClipperLib
 					//return false if a subj line has been flagged as inside a subj polygon
 					if (edge.WindDelta == 0 && edge.WindCnt != 1) return false;
 					break;
+
 				case PolyFillType.pftNonZero:
 					if (Math.Abs(edge.WindCnt) != 1) return false;
 					break;
+
 				case PolyFillType.pftPositive:
 					if (edge.WindCnt != 1) return false;
 					break;
+
 				default: //PolyFillType.pftNegative
 					if (edge.WindCnt != -1) return false;
 					break;
@@ -1733,8 +1793,10 @@ namespace MatterSlice.ClipperLib
 						case PolyFillType.pftEvenOdd:
 						case PolyFillType.pftNonZero:
 							return (edge.WindCnt2 != 0);
+
 						case PolyFillType.pftPositive:
 							return (edge.WindCnt2 > 0);
+
 						default:
 							return (edge.WindCnt2 < 0);
 					}
@@ -1744,8 +1806,10 @@ namespace MatterSlice.ClipperLib
 						case PolyFillType.pftEvenOdd:
 						case PolyFillType.pftNonZero:
 							return (edge.WindCnt2 == 0);
+
 						case PolyFillType.pftPositive:
 							return (edge.WindCnt2 <= 0);
+
 						default:
 							return (edge.WindCnt2 >= 0);
 					}
@@ -1756,8 +1820,10 @@ namespace MatterSlice.ClipperLib
 							case PolyFillType.pftEvenOdd:
 							case PolyFillType.pftNonZero:
 								return (edge.WindCnt2 == 0);
+
 							case PolyFillType.pftPositive:
 								return (edge.WindCnt2 <= 0);
+
 							default:
 								return (edge.WindCnt2 >= 0);
 						}
@@ -1767,8 +1833,10 @@ namespace MatterSlice.ClipperLib
 							case PolyFillType.pftEvenOdd:
 							case PolyFillType.pftNonZero:
 								return (edge.WindCnt2 != 0);
+
 							case PolyFillType.pftPositive:
 								return (edge.WindCnt2 > 0);
+
 							default:
 								return (edge.WindCnt2 < 0);
 						}
@@ -1779,8 +1847,10 @@ namespace MatterSlice.ClipperLib
 							case PolyFillType.pftEvenOdd:
 							case PolyFillType.pftNonZero:
 								return (edge.WindCnt2 == 0);
+
 							case PolyFillType.pftPositive:
 								return (edge.WindCnt2 <= 0);
+
 							default:
 								return (edge.WindCnt2 >= 0);
 						}
@@ -1789,6 +1859,7 @@ namespace MatterSlice.ClipperLib
 			}
 			return true;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void SetWindingCount(TEdge edge)
@@ -1841,7 +1912,7 @@ namespace MatterSlice.ClipperLib
 					if (Math.Abs(e.WindCnt) > 1)
 					{
 						//outside prev poly but still inside another.
-						//when reversing direction of prev poly use the same WC 
+						//when reversing direction of prev poly use the same WC
 						if (e.WindDelta * edge.WindDelta < 0) edge.WindCnt = e.WindCnt;
 						//otherwise continue to 'decrease' WC ...
 						else edge.WindCnt = e.WindCnt + edge.WindDelta;
@@ -1887,6 +1958,7 @@ namespace MatterSlice.ClipperLib
 				}
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void AddEdgeToSEL(TEdge edge)
@@ -1907,6 +1979,7 @@ namespace MatterSlice.ClipperLib
 				m_SortedEdges = edge;
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void CopyAELToSEL()
@@ -1920,6 +1993,7 @@ namespace MatterSlice.ClipperLib
 				e = e.NextInAEL;
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void SwapPositionsInAEL(TEdge edge1, TEdge edge2)
@@ -1977,6 +2051,7 @@ namespace MatterSlice.ClipperLib
 			else if (edge2.PrevInAEL == null)
 				m_ActiveEdges = edge2;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void SwapPositionsInSEL(TEdge edge1, TEdge edge2)
@@ -2035,8 +2110,8 @@ namespace MatterSlice.ClipperLib
 			else if (edge2.PrevInSEL == null)
 				m_SortedEdges = edge2;
 		}
-		//------------------------------------------------------------------------------
 
+		//------------------------------------------------------------------------------
 
 		private void AddLocalMaxPoly(TEdge e1, TEdge e2, IntPoint pt)
 		{
@@ -2052,6 +2127,7 @@ namespace MatterSlice.ClipperLib
 			else
 				AppendPolygon(e2, e1);
 		}
+
 		//------------------------------------------------------------------------------
 
 		private OutPt AddLocalMinPoly(TEdge e1, TEdge e2, IntPoint pt)
@@ -2093,6 +2169,7 @@ namespace MatterSlice.ClipperLib
 			}
 			return result;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private OutRec CreateOutRec()
@@ -2109,6 +2186,7 @@ namespace MatterSlice.ClipperLib
 			result.Idx = m_PolyOuts.Count - 1;
 			return result;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private OutPt AddOutPt(TEdge e, IntPoint pt)
@@ -2148,6 +2226,7 @@ namespace MatterSlice.ClipperLib
 				return newOp;
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		private OutPt GetLastOutPt(TEdge e)
@@ -2158,6 +2237,7 @@ namespace MatterSlice.ClipperLib
 			else
 				return outRec.Pts.Prev;
 		}
+
 		//------------------------------------------------------------------------------
 
 		internal void SwapPoints(ref IntPoint pt1, ref IntPoint pt2)
@@ -2166,6 +2246,7 @@ namespace MatterSlice.ClipperLib
 			pt1 = pt2;
 			pt2 = tmp;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private bool HorzSegmentsOverlap(cInt seg1a, cInt seg1b, cInt seg2a, cInt seg2b)
@@ -2174,6 +2255,7 @@ namespace MatterSlice.ClipperLib
 			if (seg2a > seg2b) Swap(ref seg2a, ref seg2b);
 			return (seg1a < seg2b) && (seg2a < seg1b);
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void SetHoleState(TEdge e, OutRec outRec)
@@ -2193,6 +2275,7 @@ namespace MatterSlice.ClipperLib
 			if (isHole)
 				outRec.IsHole = true;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private double GetDx(IntPoint pt1, IntPoint pt2)
@@ -2200,6 +2283,7 @@ namespace MatterSlice.ClipperLib
 			if (pt1.Y == pt2.Y) return horizontal;
 			else return (double)(pt2.X - pt1.X) / (pt2.Y - pt1.Y);
 		}
+
 		//---------------------------------------------------------------------------
 
 		private bool FirstIsBottomPt(OutPt btmPt1, OutPt btmPt2)
@@ -2219,6 +2303,7 @@ namespace MatterSlice.ClipperLib
 			double dx2n = Math.Abs(GetDx(btmPt2.Pt, p.Pt));
 			return (dx1p >= dx2p && dx1p >= dx2n) || (dx1n >= dx2p && dx1n >= dx2n);
 		}
+
 		//------------------------------------------------------------------------------
 
 		private OutPt GetBottomPt(OutPt pp)
@@ -2258,6 +2343,7 @@ namespace MatterSlice.ClipperLib
 			}
 			return pp;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private OutRec GetLowermostRec(OutRec outRec1, OutRec outRec2)
@@ -2278,9 +2364,10 @@ namespace MatterSlice.ClipperLib
 			else if (FirstIsBottomPt(bPt1, bPt2)) return outRec1;
 			else return outRec2;
 		}
+
 		//------------------------------------------------------------------------------
 
-		bool Param1RightOfParam2(OutRec outRec1, OutRec outRec2)
+		private bool Param1RightOfParam2(OutRec outRec1, OutRec outRec2)
 		{
 			do
 			{
@@ -2289,6 +2376,7 @@ namespace MatterSlice.ClipperLib
 			} while (outRec1 != null);
 			return false;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private OutRec GetOutRec(int idx)
@@ -2298,6 +2386,7 @@ namespace MatterSlice.ClipperLib
 				outrec = m_PolyOuts[outrec.Idx];
 			return outrec;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void AppendPolygon(TEdge e1, TEdge e2)
@@ -2397,6 +2486,7 @@ namespace MatterSlice.ClipperLib
 			}
 			outRec2.Idx = outRec1.Idx;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void ReversePolyPtLinks(OutPt pp)
@@ -2413,6 +2503,7 @@ namespace MatterSlice.ClipperLib
 				pp1 = pp2;
 			} while (pp1 != pp);
 		}
+
 		//------------------------------------------------------------------------------
 
 		private static void SwapSides(TEdge edge1, TEdge edge2)
@@ -2421,6 +2512,7 @@ namespace MatterSlice.ClipperLib
 			edge1.Side = edge2.Side;
 			edge2.Side = side;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private static void SwapPolyIndexes(TEdge edge1, TEdge edge2)
@@ -2429,6 +2521,7 @@ namespace MatterSlice.ClipperLib
 			edge1.OutIdx = edge2.OutIdx;
 			edge2.OutIdx = outIdx;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void IntersectEdges(TEdge e1, TEdge e2, IntPoint pt)
@@ -2575,7 +2668,6 @@ namespace MatterSlice.ClipperLib
 					SwapSides(e1, e2);
 					SwapPolyIndexes(e1, e2);
 				}
-
 			}
 			else if (e2Contributing)
 			{
@@ -2614,15 +2706,18 @@ namespace MatterSlice.ClipperLib
 							if (e1Wc2 > 0 && e2Wc2 > 0)
 								AddLocalMinPoly(e1, e2, pt);
 							break;
+
 						case ClipType.ctUnion:
 							if (e1Wc2 <= 0 && e2Wc2 <= 0)
 								AddLocalMinPoly(e1, e2, pt);
 							break;
+
 						case ClipType.ctDifference:
 							if (((e1.PolyTyp == PolyType.ptClip) && (e1Wc2 > 0) && (e2Wc2 > 0)) ||
 								((e1.PolyTyp == PolyType.ptSubject) && (e1Wc2 <= 0) && (e2Wc2 <= 0)))
 								AddLocalMinPoly(e1, e2, pt);
 							break;
+
 						case ClipType.ctXor:
 							AddLocalMinPoly(e1, e2, pt);
 							break;
@@ -2631,6 +2726,7 @@ namespace MatterSlice.ClipperLib
 					SwapSides(e1, e2);
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void DeleteFromAEL(TEdge e)
@@ -2647,6 +2743,7 @@ namespace MatterSlice.ClipperLib
 			e.NextInAEL = null;
 			e.PrevInAEL = null;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void DeleteFromSEL(TEdge e)
@@ -2663,6 +2760,7 @@ namespace MatterSlice.ClipperLib
 			e.NextInSEL = null;
 			e.PrevInSEL = null;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void UpdateEdgeIntoAEL(ref TEdge e)
@@ -2687,6 +2785,7 @@ namespace MatterSlice.ClipperLib
 			e.NextInAEL = AelNext;
 			if (!IsHorizontal(e)) InsertScanbeam(e.Top.Y);
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void ProcessHorizontals()
@@ -2699,9 +2798,10 @@ namespace MatterSlice.ClipperLib
 				horzEdge = m_SortedEdges;
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
-		void GetHorzDirection(TEdge HorzEdge, out Direction Dir, out cInt Left, out cInt Right)
+		private void GetHorzDirection(TEdge HorzEdge, out Direction Dir, out cInt Left, out cInt Right)
 		{
 			if (HorzEdge.Bot.X < HorzEdge.Top.X)
 			{
@@ -2716,6 +2816,7 @@ namespace MatterSlice.ClipperLib
 				Dir = Direction.dRightToLeft;
 			}
 		}
+
 		//------------------------------------------------------------------------
 
 		private void ProcessHorizontal(TEdge horzEdge)
@@ -2757,7 +2858,6 @@ namespace MatterSlice.ClipperLib
 				TEdge e = GetNextInAEL(horzEdge, dir);
 				while (e != null)
 				{
-
 					//this code block inserts extra coords into horizontal edges (in output
 					//polygons) whereever maxima touch these horizontal edges. This helps
 					//'simplifying' polygons (ie if the Simplify property is set).
@@ -2841,7 +2941,6 @@ namespace MatterSlice.ClipperLib
 				UpdateEdgeIntoAEL(ref horzEdge);
 				if (horzEdge.OutIdx >= 0) AddOutPt(horzEdge, horzEdge.Bot);
 				GetHorzDirection(horzEdge, out dir, out horzLeft, out horzRight);
-
 			} //end for (;;)
 
 			if (horzEdge.OutIdx >= 0 && op1 == null)
@@ -2899,30 +2998,35 @@ namespace MatterSlice.ClipperLib
 				DeleteFromAEL(horzEdge);
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		private TEdge GetNextInAEL(TEdge e, Direction Direction)
 		{
 			return Direction == Direction.dLeftToRight ? e.NextInAEL : e.PrevInAEL;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private bool IsMinima(TEdge e)
 		{
 			return e != null && (e.Prev.NextInLML != e) && (e.Next.NextInLML != e);
 		}
+
 		//------------------------------------------------------------------------------
 
 		private bool IsMaxima(TEdge e, double Y)
 		{
 			return (e != null && e.Top.Y == Y && e.NextInLML == null);
 		}
+
 		//------------------------------------------------------------------------------
 
 		private bool IsIntermediate(TEdge e, double Y)
 		{
 			return (e.Top.Y == Y && e.NextInLML != null);
 		}
+
 		//------------------------------------------------------------------------------
 
 		private TEdge GetMaximaPair(TEdge e)
@@ -2937,6 +3041,7 @@ namespace MatterSlice.ClipperLib
 				return null;
 			return result;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private bool ProcessIntersections(cInt topY)
@@ -2960,6 +3065,7 @@ namespace MatterSlice.ClipperLib
 			m_SortedEdges = null;
 			return true;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void BuildIntersectList(cInt topY)
@@ -3007,6 +3113,7 @@ namespace MatterSlice.ClipperLib
 			}
 			m_SortedEdges = null;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private bool EdgesAdjacent(IntersectNode inode)
@@ -3014,6 +3121,7 @@ namespace MatterSlice.ClipperLib
 			return (inode.Edge1.NextInSEL == inode.Edge2) ||
 			  (inode.Edge1.PrevInSEL == inode.Edge2);
 		}
+
 		//------------------------------------------------------------------------------
 
 		private static int IntersectNodeSort(IntersectNode node1, IntersectNode node2)
@@ -3022,6 +3130,7 @@ namespace MatterSlice.ClipperLib
 			//be limited to the height of the scanbeam.
 			return (int)(node2.Pt.Y - node1.Pt.Y);
 		}
+
 		//------------------------------------------------------------------------------
 
 		private bool FixupIntersectionOrder()
@@ -3044,12 +3153,12 @@ namespace MatterSlice.ClipperLib
 					IntersectNode tmp = m_IntersectList[i];
 					m_IntersectList[i] = m_IntersectList[j];
 					m_IntersectList[j] = tmp;
-
 				}
 				SwapPositionsInSEL(m_IntersectList[i].Edge1, m_IntersectList[i].Edge2);
 			}
 			return true;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void ProcessIntersectList()
@@ -3064,12 +3173,14 @@ namespace MatterSlice.ClipperLib
 			}
 			m_IntersectList.Clear();
 		}
+
 		//------------------------------------------------------------------------------
 
 		internal static cInt Round(double value)
 		{
 			return value < 0 ? (cInt)(value - 0.5) : (cInt)(value + 0.5);
 		}
+
 		//------------------------------------------------------------------------------
 
 		private static cInt TopX(TEdge edge, cInt currentY)
@@ -3078,13 +3189,14 @@ namespace MatterSlice.ClipperLib
 				return edge.Top.X;
 			return edge.Bot.X + Round(edge.Dx * (currentY - edge.Bot.Y));
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void IntersectPoint(TEdge edge1, TEdge edge2, out IntPoint ip)
 		{
 			ip = new IntPoint();
 			double b1, b2;
-			//nb: with very large coordinate values, it's possible for SlopesEqual() to 
+			//nb: with very large coordinate values, it's possible for SlopesEqual() to
 			//return false but for the edge.Dx value be equal due to double precision rounding.
 			if (edge1.Dx == edge2.Dx)
 			{
@@ -3153,6 +3265,7 @@ namespace MatterSlice.ClipperLib
 					ip.X = TopX(edge1, ip.Y);
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void ProcessEdgesAtTopOfScanbeam(cInt topY)
@@ -3257,6 +3370,7 @@ namespace MatterSlice.ClipperLib
 				e = e.NextInAEL;
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void DoMaxima(TEdge e)
@@ -3309,18 +3423,21 @@ namespace MatterSlice.ClipperLib
 #endif
 			else throw new ClipperException("DoMaxima error");
 		}
+
 		//------------------------------------------------------------------------------
 
 		public static void ReversePaths(Paths polys)
 		{
 			foreach (var poly in polys) { poly.Reverse(); }
 		}
+
 		//------------------------------------------------------------------------------
 
 		public static bool Orientation(Path poly)
 		{
 			return Area(poly) >= 0;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private int PointCount(OutPt pts)
@@ -3336,6 +3453,7 @@ namespace MatterSlice.ClipperLib
 			while (p != pts);
 			return result;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void BuildResult(Paths polyg)
@@ -3358,6 +3476,7 @@ namespace MatterSlice.ClipperLib
 				polyg.Add(pg);
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void BuildResult2(PolyTree polytree)
@@ -3403,6 +3522,7 @@ namespace MatterSlice.ClipperLib
 					polytree.AddChild(outRec.PolyNode);
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void FixupOutPolygon(OutRec outRec)
@@ -3439,9 +3559,10 @@ namespace MatterSlice.ClipperLib
 			}
 			outRec.Pts = pp;
 		}
+
 		//------------------------------------------------------------------------------
 
-		OutPt DupOutPt(OutPt outPt, bool InsertAfter)
+		private OutPt DupOutPt(OutPt outPt, bool InsertAfter)
 		{
 			OutPt result = new OutPt();
 			result.Pt = outPt.Pt;
@@ -3462,9 +3583,10 @@ namespace MatterSlice.ClipperLib
 			}
 			return result;
 		}
+
 		//------------------------------------------------------------------------------
 
-		bool GetOverlap(cInt a1, cInt a2, cInt b1, cInt b2, out cInt Left, out cInt Right)
+		private bool GetOverlap(cInt a1, cInt a2, cInt b1, cInt b2, out cInt Left, out cInt Right)
 		{
 			if (a1 < a2)
 			{
@@ -3478,9 +3600,10 @@ namespace MatterSlice.ClipperLib
 			}
 			return Left < Right;
 		}
+
 		//------------------------------------------------------------------------------
 
-		bool JoinHorz(OutPt op1, OutPt op1b, OutPt op2, OutPt op2b,
+		private bool JoinHorz(OutPt op1, OutPt op1b, OutPt op2, OutPt op2b,
 		  IntPoint Pt, bool DiscardLeft)
 		{
 			Direction Dir1 = (op1.Pt.X > op1b.Pt.X ?
@@ -3568,6 +3691,7 @@ namespace MatterSlice.ClipperLib
 			}
 			return true;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private bool JoinPoints(Join j, OutRec outRec1, OutRec outRec2)
@@ -3730,6 +3854,7 @@ namespace MatterSlice.ClipperLib
 				}
 			}
 		}
+
 		//----------------------------------------------------------------------
 
 		public static int PointInPolygon(IntPoint pt, Path path)
@@ -3776,6 +3901,7 @@ namespace MatterSlice.ClipperLib
 			}
 			return result;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private static int PointInPolygon(IntPoint pt, OutPt op)
@@ -3825,6 +3951,7 @@ namespace MatterSlice.ClipperLib
 			} while (startOp != op);
 			return result;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private static bool Poly2ContainsPoly1(OutPt outPt1, OutPt outPt2)
@@ -3840,6 +3967,7 @@ namespace MatterSlice.ClipperLib
 			while (op != outPt1);
 			return true;
 		}
+
 		//----------------------------------------------------------------------
 
 		private void FixupFirstLefts1(OutRec OldOutRec, OutRec NewOutRec)
@@ -3856,6 +3984,7 @@ namespace MatterSlice.ClipperLib
 				}
 			}
 		}
+
 		//----------------------------------------------------------------------
 
 		private void FixupFirstLefts2(OutRec OldOutRec, OutRec NewOutRec)
@@ -3863,6 +3992,7 @@ namespace MatterSlice.ClipperLib
 			foreach (OutRec outRec in m_PolyOuts)
 				if (outRec.FirstLeft == OldOutRec) outRec.FirstLeft = NewOutRec;
 		}
+
 		//----------------------------------------------------------------------
 
 		private static OutRec ParseFirstLeft(OutRec FirstLeft)
@@ -3871,6 +4001,7 @@ namespace MatterSlice.ClipperLib
 				FirstLeft = FirstLeft.FirstLeft;
 			return FirstLeft;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void JoinCommonEdges()
@@ -3930,7 +4061,6 @@ namespace MatterSlice.ClipperLib
 
 						if ((outRec2.IsHole ^ ReverseSolution) == (Area(outRec2) > 0))
 							ReversePolyPtLinks(outRec2.Pts);
-
 					}
 					else if (Poly2ContainsPoly1(outRec1.Pts, outRec2.Pts))
 					{
@@ -3955,7 +4085,6 @@ namespace MatterSlice.ClipperLib
 						//fixup FirstLeft pointers that may need reassigning to OutRec2
 						if (m_UsingPolyTree) FixupFirstLefts1(outRec1, outRec2);
 					}
-
 				}
 				else
 				{
@@ -3975,6 +4104,7 @@ namespace MatterSlice.ClipperLib
 				}
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void UpdateOutPtIdxs(OutRec outrec)
@@ -3987,6 +4117,7 @@ namespace MatterSlice.ClipperLib
 			}
 			while (op != outrec.Pts);
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void DoSimplePolygons()
@@ -4049,6 +4180,7 @@ namespace MatterSlice.ClipperLib
 				while (op != outrec.Pts);
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		public static double Area(Path poly)
@@ -4063,9 +4195,10 @@ namespace MatterSlice.ClipperLib
 			}
 			return -a * 0.5;
 		}
+
 		//------------------------------------------------------------------------------
 
-		double Area(OutRec outRec)
+		private double Area(OutRec outRec)
 		{
 			OutPt op = outRec.Pts;
 			if (op == null) return 0;
@@ -4093,6 +4226,7 @@ namespace MatterSlice.ClipperLib
 			c.Execute(ClipType.ctUnion, result, fillType, fillType);
 			return result;
 		}
+
 		//------------------------------------------------------------------------------
 
 		public static Paths SimplifyPolygons(Paths polys,
@@ -4105,6 +4239,7 @@ namespace MatterSlice.ClipperLib
 			c.Execute(ClipType.ctUnion, result, fillType, fillType);
 			return result;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private static double DistanceSqrd(IntPoint pt1, IntPoint pt2)
@@ -4113,6 +4248,7 @@ namespace MatterSlice.ClipperLib
 			double dy = ((double)pt1.Y - pt2.Y);
 			return (dx * dx + dy * dy);
 		}
+
 		//------------------------------------------------------------------------------
 
 		private static double DistanceFromLineSqrd(IntPoint pt, IntPoint ln1, IntPoint ln2)
@@ -4129,14 +4265,15 @@ namespace MatterSlice.ClipperLib
 			C = A * pt.X + B * pt.Y - C;
 			return (C * C) / (A * A + B * B);
 		}
+
 		//---------------------------------------------------------------------------
 
 		private static bool SlopesNearCollinear(IntPoint pt1,
 			IntPoint pt2, IntPoint pt3, double distSqrd)
 		{
-			//this function is more accurate when the point that's GEOMETRICALLY 
-			//between the other 2 points is the one that's tested for distance.  
-			//nb: with 'spikes', either pt1 or pt3 is geometrically between the other pts                    
+			//this function is more accurate when the point that's GEOMETRICALLY
+			//between the other 2 points is the one that's tested for distance.
+			//nb: with 'spikes', either pt1 or pt3 is geometrically between the other pts
 			if (Math.Abs(pt1.X - pt2.X) > Math.Abs(pt1.Y - pt2.Y))
 			{
 				if ((pt1.X > pt2.X) == (pt1.X < pt3.X))
@@ -4156,6 +4293,7 @@ namespace MatterSlice.ClipperLib
 					return DistanceFromLineSqrd(pt3, pt1, pt2) < distSqrd;
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		private static bool PointsAreClose(IntPoint pt1, IntPoint pt2, double distSqrd)
@@ -4164,6 +4302,7 @@ namespace MatterSlice.ClipperLib
 			double dy = (double)pt1.Y - pt2.Y;
 			return ((dx * dx) + (dy * dy) <= distSqrd);
 		}
+
 		//------------------------------------------------------------------------------
 
 		private static OutPt ExcludeOp(OutPt op)
@@ -4174,131 +4313,132 @@ namespace MatterSlice.ClipperLib
 			result.Idx = 0;
 			return result;
 		}
+
 		//------------------------------------------------------------------------------
 
 		public static Path CleanPolygon(Path path, double distance = 1.415)
 		{
-		  //distance = proximity in units/pixels below which vertices will be stripped. 
-		  //Default ~= sqrt(2) so when adjacent vertices or semi-adjacent vertices have 
-		  //both x & y coords within 1 unit, then the second vertex will be stripped.
+			//distance = proximity in units/pixels below which vertices will be stripped.
+			//Default ~= sqrt(2) so when adjacent vertices or semi-adjacent vertices have
+			//both x & y coords within 1 unit, then the second vertex will be stripped.
 
-		  int cnt = path.Count;
+			int cnt = path.Count;
 
-		  if (cnt == 0) return new Path();
+			if (cnt == 0) return new Path();
 
-		  OutPt[] outPts = new OutPt[cnt];
-		  for (int i = 0; i < cnt; ++i)
-		  {
-			  outPts[i] = new OutPt();
-		  }
-
-		  for (int i = 0; i < cnt; ++i)
-		  {
-			outPts[i].Pt = path[i];
-			outPts[i].Next = outPts[(i + 1) % cnt];
-			outPts[i].Next.Prev = outPts[i];
-			outPts[i].Idx = 0;
-		  }
-
-		  double distSqrd = distance * distance;
-		  OutPt currentOutPoint = outPts[0];
-		  while (currentOutPoint.Idx == 0 && currentOutPoint.Next != currentOutPoint.Prev)
-		  {
-			if (PointsAreClose(currentOutPoint.Pt, currentOutPoint.Prev.Pt, distSqrd))
+			OutPt[] outPts = new OutPt[cnt];
+			for (int i = 0; i < cnt; ++i)
 			{
-			  currentOutPoint = ExcludeOp(currentOutPoint);
-			  cnt--;
+				outPts[i] = new OutPt();
 			}
-			else if (PointsAreClose(currentOutPoint.Prev.Pt, currentOutPoint.Next.Pt, distSqrd))
-			{
-			  ExcludeOp(currentOutPoint.Next);
-			  currentOutPoint = ExcludeOp(currentOutPoint);
-			  cnt -= 2;
-			}
-			else
-			{
-			  currentOutPoint.Idx = 1;
-			  currentOutPoint = currentOutPoint.Next;
-			}
-		  }
 
-		  // We can't just merge each point in order or we can collapse curves that have small enough inter point deltas but large total curve.
-		  // Imagine a very tessellated circle. As we walk the edge each triple can be collinear within our error and so we remove the middle point and move on to
-		  // the next point. The new middle point is very close to the new third point and so we collapse and remove the second point. We can remove and create
-		  // a large flat on the edge of the circle.
-		  HashSet<OutPt> removePoints = new HashSet<OutPt>();
-		  OutPt loopStart = currentOutPoint;
-		  bool first = true;
-		  while ((first || currentOutPoint != loopStart)
-			  && currentOutPoint.Next != currentOutPoint.Prev)
-		  {
-			if (SlopesNearCollinear(currentOutPoint.Prev.Pt, currentOutPoint.Pt, currentOutPoint.Next.Pt, distSqrd))
+			for (int i = 0; i < cnt; ++i)
 			{
-			  // we check if the new end point is collinear with all the points we already have accumulated.
-			  // and colapse all the points in between
-			  OutPt start = currentOutPoint.Prev; // -1
-			  OutPt firstCheck = currentOutPoint; // 0
-			  OutPt currentCheck = firstCheck; // 0
-			  OutPt endCheck = currentOutPoint.Next; // 1
-			  bool foundEnd = false;
-			  while (!foundEnd 
-				  && endCheck != start)
-			  {
-				while (currentCheck != endCheck
-					&& (first || currentCheck != loopStart))
+				outPts[i].Pt = path[i];
+				outPts[i].Next = outPts[(i + 1) % cnt];
+				outPts[i].Next.Prev = outPts[i];
+				outPts[i].Idx = 0;
+			}
+
+			double distSqrd = distance * distance;
+			OutPt currentOutPoint = outPts[0];
+			while (currentOutPoint.Idx == 0 && currentOutPoint.Next != currentOutPoint.Prev)
+			{
+				if (PointsAreClose(currentOutPoint.Pt, currentOutPoint.Prev.Pt, distSqrd))
 				{
-				  bool collinear = SlopesNearCollinear(start.Pt, currentCheck.Pt, endCheck.Pt, distSqrd);
-				  if (collinear && endCheck != loopStart)
-				  {
-					if (!removePoints.Contains(currentCheck))
+					currentOutPoint = ExcludeOp(currentOutPoint);
+					cnt--;
+				}
+				else if (PointsAreClose(currentOutPoint.Prev.Pt, currentOutPoint.Next.Pt, distSqrd))
+				{
+					ExcludeOp(currentOutPoint.Next);
+					currentOutPoint = ExcludeOp(currentOutPoint);
+					cnt -= 2;
+				}
+				else
+				{
+					currentOutPoint.Idx = 1;
+					currentOutPoint = currentOutPoint.Next;
+				}
+			}
+
+			// We can't just merge each point in order or we can collapse curves that have small enough inter point deltas but large total curve.
+			// Imagine a very tessellated circle. As we walk the edge each triple can be collinear within our error and so we remove the middle point and move on to
+			// the next point. The new middle point is very close to the new third point and so we collapse and remove the second point. We can remove and create
+			// a large flat on the edge of the circle.
+			HashSet<OutPt> removePoints = new HashSet<OutPt>();
+			OutPt loopStart = currentOutPoint;
+			bool first = true;
+			while ((first || currentOutPoint != loopStart)
+				&& currentOutPoint.Next != currentOutPoint.Prev)
+			{
+				if (SlopesNearCollinear(currentOutPoint.Prev.Pt, currentOutPoint.Pt, currentOutPoint.Next.Pt, distSqrd))
+				{
+					// we check if the new end point is collinear with all the points we already have accumulated.
+					// and colapse all the points in between
+					OutPt start = currentOutPoint.Prev; // -1
+					OutPt firstCheck = currentOutPoint; // 0
+					OutPt currentCheck = firstCheck; // 0
+					OutPt endCheck = currentOutPoint.Next; // 1
+					bool foundEnd = false;
+					while (!foundEnd
+						&& endCheck != start)
 					{
-					  removePoints.Add(currentCheck);
+						while (currentCheck != endCheck
+							&& (first || currentCheck != loopStart))
+						{
+							bool collinear = SlopesNearCollinear(start.Pt, currentCheck.Pt, endCheck.Pt, distSqrd);
+							if (collinear && endCheck != loopStart)
+							{
+								if (!removePoints.Contains(currentCheck))
+								{
+									removePoints.Add(currentCheck);
+								}
+								currentCheck = currentCheck.Next;
+							}
+							else
+							{
+								// add all the points we found and we are done
+								foundEnd = true;
+								break;
+							}
+						}
+
+						if (!foundEnd)
+						{
+							currentCheck = firstCheck;
+							endCheck = endCheck.Next;
+						}
 					}
-					currentCheck = currentCheck.Next;
-				  }
-				  else
-				  {
-					// add all the points we found and we are done
-					foundEnd = true;
-					break;
-				  }
-				}
 
-				if (!foundEnd)
+					currentOutPoint = endCheck;
+				}
+				else
 				{
-				  currentCheck = firstCheck;
-				  endCheck = endCheck.Next;
+					currentOutPoint = currentOutPoint.Next;
 				}
-			  }
 
-			  currentOutPoint = endCheck;
+				first = false;
 			}
-			else
+
+			// remove all the points that were collinear
+			foreach (OutPt remove in removePoints)
 			{
-			  currentOutPoint = currentOutPoint.Next;
+				currentOutPoint = ExcludeOp(remove);
+				cnt--;
 			}
 
-			first = false;
-		  }
-
-		  // remove all the points that were collinear
-		  foreach (OutPt remove in removePoints)
-		  {
-		    currentOutPoint = ExcludeOp(remove);
-			cnt--;
-		  }
-
-
-		  if (cnt < 3) cnt = 0;
-		  Path result = new Path(cnt);
-		  for (int i = 0; i < cnt; ++i)
-		  {
-			result.Add(currentOutPoint.Pt);
-			currentOutPoint = currentOutPoint.Next;
-		  }
-		  outPts = null;
-		  return result;
+			if (cnt < 3) cnt = 0;
+			Path result = new Path(cnt);
+			for (int i = 0; i < cnt; ++i)
+			{
+				result.Add(currentOutPoint.Pt);
+				currentOutPoint = currentOutPoint.Next;
+			}
+			outPts = null;
+			return result;
 		}
+
 		//------------------------------------------------------------------------------
 
 		public static Paths CleanPolygons(Paths polys,
@@ -4309,6 +4449,7 @@ namespace MatterSlice.ClipperLib
 				result.Add(CleanPolygon(polys[i], distance));
 			return result;
 		}
+
 		//------------------------------------------------------------------------------
 
 		internal static Paths Minkowski(Path pattern, Path path, bool IsSum, bool IsClosed)
@@ -4348,6 +4489,7 @@ namespace MatterSlice.ClipperLib
 				}
 			return quads;
 		}
+
 		//------------------------------------------------------------------------------
 
 		public static Paths MinkowskiSum(Path pattern, Path path, bool pathIsClosed)
@@ -4358,6 +4500,7 @@ namespace MatterSlice.ClipperLib
 			c.Execute(ClipType.ctUnion, paths, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
 			return paths;
 		}
+
 		//------------------------------------------------------------------------------
 
 		private static Path TranslatePath(Path path, IntPoint delta)
@@ -4367,6 +4510,7 @@ namespace MatterSlice.ClipperLib
 				outPath.Add(new IntPoint(path[i].X + delta.X, path[i].Y + delta.Y));
 			return outPath;
 		}
+
 		//------------------------------------------------------------------------------
 
 		public static Paths MinkowskiSum(Path pattern, Paths paths, bool pathIsClosed)
@@ -4387,6 +4531,7 @@ namespace MatterSlice.ClipperLib
 			  PolyFillType.pftNonZero, PolyFillType.pftNonZero);
 			return solution;
 		}
+
 		//------------------------------------------------------------------------------
 
 		public static Paths MinkowskiDiff(Path poly1, Path poly2)
@@ -4397,18 +4542,19 @@ namespace MatterSlice.ClipperLib
 			c.Execute(ClipType.ctUnion, paths, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
 			return paths;
 		}
+
 		//------------------------------------------------------------------------------
 
 		internal enum NodeType { ntAny, ntOpen, ntClosed };
 
 		public static Paths PolyTreeToPaths(PolyTree polytree)
 		{
-
 			Paths result = new Paths();
 			result.Capacity = polytree.Total;
 			AddPolyNodeToPaths(polytree, NodeType.ntAny, result);
 			return result;
 		}
+
 		//------------------------------------------------------------------------------
 
 		internal static void AddPolyNodeToPaths(PolyNode polynode, NodeType nt, Paths paths)
@@ -4426,6 +4572,7 @@ namespace MatterSlice.ClipperLib
 			foreach (PolyNode pn in polynode.Childs)
 				AddPolyNodeToPaths(pn, nt, paths);
 		}
+
 		//------------------------------------------------------------------------------
 
 		public static Paths OpenPathsFromPolyTree(PolyTree polytree)
@@ -4437,6 +4584,7 @@ namespace MatterSlice.ClipperLib
 					result.Add(polytree.Childs[i].m_polygon);
 			return result;
 		}
+
 		//------------------------------------------------------------------------------
 
 		public static Paths ClosedPathsFromPolyTree(PolyTree polytree)
@@ -4446,8 +4594,8 @@ namespace MatterSlice.ClipperLib
 			AddPolyNodeToPaths(polytree, NodeType.ntClosed, result);
 			return result;
 		}
-		//------------------------------------------------------------------------------
 
+		//------------------------------------------------------------------------------
 	} //end Clipper
 
 	public class ClipperOffset
@@ -4463,6 +4611,7 @@ namespace MatterSlice.ClipperLib
 		private PolyNode m_polyNodes = new PolyNode();
 
 		public double ArcTolerance { get; set; }
+
 		public double MiterLimit { get; set; }
 
 		private const double two_pi = Math.PI * 2;
@@ -4475,6 +4624,7 @@ namespace MatterSlice.ClipperLib
 			ArcTolerance = arcTolerance;
 			m_lowest.X = -1;
 		}
+
 		//------------------------------------------------------------------------------
 
 		public void Clear()
@@ -4482,12 +4632,14 @@ namespace MatterSlice.ClipperLib
 			m_polyNodes.Childs.Clear();
 			m_lowest.X = -1;
 		}
+
 		//------------------------------------------------------------------------------
 
 		internal static cInt Round(double value)
 		{
 			return value < 0 ? (cInt)(value - 0.5) : (cInt)(value + 0.5);
 		}
+
 		//------------------------------------------------------------------------------
 
 		public void AddPath(Path path, JoinType joinType, EndType endType)
@@ -4530,6 +4682,7 @@ namespace MatterSlice.ClipperLib
 					m_lowest = new IntPoint(m_polyNodes.ChildCount - 1, k);
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		public void AddPaths(Paths paths, JoinType joinType, EndType endType)
@@ -4537,6 +4690,7 @@ namespace MatterSlice.ClipperLib
 			foreach (Path p in paths)
 				AddPath(p, joinType, endType);
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void FixOrientations()
@@ -4566,6 +4720,7 @@ namespace MatterSlice.ClipperLib
 				}
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		internal static DoublePoint GetUnitNormal(IntPoint pt1, IntPoint pt2)
@@ -4580,6 +4735,7 @@ namespace MatterSlice.ClipperLib
 
 			return new DoublePoint(dy, -dx);
 		}
+
 		//------------------------------------------------------------------------------
 
 		private void DoOffset(double delta)
@@ -4760,6 +4916,7 @@ namespace MatterSlice.ClipperLib
 				}
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		public void Execute(ref Paths solution, double delta)
@@ -4791,6 +4948,7 @@ namespace MatterSlice.ClipperLib
 				if (solution.Count > 0) solution.RemoveAt(0);
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
 		public void Execute(ref PolyTree solution, double delta)
@@ -4834,9 +4992,10 @@ namespace MatterSlice.ClipperLib
 					solution.Clear();
 			}
 		}
+
 		//------------------------------------------------------------------------------
 
-		void OffsetPoint(int j, ref int k, JoinType jointype)
+		private void OffsetPoint(int j, ref int k, JoinType jointype)
 		{
 			//cross product ...
 			m_sinA = (m_normals[k].X * m_normals[j].Y - m_normals[j].X * m_normals[k].Y);
@@ -4851,7 +5010,7 @@ namespace MatterSlice.ClipperLib
 					  Round(m_srcPoly[j].Y + m_normals[k].Y * m_delta)));
 					return;
 				}
-				//else angle ==> 180 degrees   
+				//else angle ==> 180 degrees
 			}
 			else if (m_sinA > 1.0) m_sinA = 1.0;
 			else if (m_sinA < -1.0) m_sinA = -1.0;
@@ -4879,6 +5038,7 @@ namespace MatterSlice.ClipperLib
 				}
 			k = j;
 		}
+
 		//------------------------------------------------------------------------------
 
 		internal void DoSquare(int j, int k)
@@ -4892,6 +5052,7 @@ namespace MatterSlice.ClipperLib
 				Round(m_srcPoly[j].X + m_delta * (m_normals[j].X + m_normals[j].Y * dx)),
 				Round(m_srcPoly[j].Y + m_delta * (m_normals[j].Y - m_normals[j].X * dx))));
 		}
+
 		//------------------------------------------------------------------------------
 
 		internal void DoMiter(int j, int k, double r)
@@ -4900,6 +5061,7 @@ namespace MatterSlice.ClipperLib
 			m_destPoly.Add(new IntPoint(Round(m_srcPoly[j].X + (m_normals[k].X + m_normals[j].X) * q),
 				Round(m_srcPoly[j].Y + (m_normals[k].Y + m_normals[j].Y) * q)));
 		}
+
 		//------------------------------------------------------------------------------
 
 		internal void DoRound(int j, int k)
@@ -4922,13 +5084,17 @@ namespace MatterSlice.ClipperLib
 			Round(m_srcPoly[j].X + m_normals[j].X * m_delta),
 			Round(m_srcPoly[j].Y + m_normals[j].Y * m_delta)));
 		}
+
 		//------------------------------------------------------------------------------
 	}
 
-	class ClipperException : Exception
+	internal class ClipperException : Exception
 	{
-		public ClipperException(string description) : base(description) { }
+		public ClipperException(string description)
+			: base(description)
+		{
+		}
 	}
-	//------------------------------------------------------------------------------
 
+	//------------------------------------------------------------------------------
 } //end ClipperLib namespace

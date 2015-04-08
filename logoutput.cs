@@ -1,5 +1,5 @@
 /*
-This file is part of MatterSlice. A commandline utility for 
+This file is part of MatterSlice. A commandline utility for
 generating 3D printing GCode.
 
 Copyright (C) 2013 David Braam
@@ -19,56 +19,51 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using MatterSlice.ClipperLib;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-
-using MatterSlice.ClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-    using Polygon = List<IntPoint>;
-    using Polygons = List<List<IntPoint>>;
+	public static class LogOutput
+	{
+		public static int verbose_level;
 
-    public static class LogOutput
-    {
-        public static int verbose_level;
+		public static void logError(string message)
+		{
+			Console.Write(message);
+		}
 
-        public static void logError(string message)
-        {
-            Console.Write(message);
-        }
+		public static void _log(string message)
+		{
+			if (verbose_level < 1)
+			{
+				return;
+			}
 
-        public static void _log(string message)
-        {
-            if (verbose_level < 1)
-            {
-                return;
-            }
+			Console.Write(message);
+		}
 
-            Console.Write(message);
-        }
+		public static EventHandler GetLogWrites;
 
-        public static EventHandler GetLogWrites;
+		public static void log(string output)
+		{
+			Console.Write(output);
 
-        public static void log(string output)
-        {
-            Console.Write(output);
+			if (GetLogWrites != null)
+			{
+				GetLogWrites(output, null);
+			}
+		}
 
-            if (GetLogWrites != null)
-            {
-                GetLogWrites(output, null);
-            }
-        }
+		public static void logProgress(string type, int value, int maxValue)
+		{
+			if (verbose_level < 2)
+			{
+				return;
+			}
 
-        public static void logProgress(string type, int value, int maxValue)
-        {
-            if (verbose_level < 2)
-            {
-                return;
-            }
-
-            Console.Write("Progress:{0}:{1}:{2}\n".FormatWith(type, value, maxValue));
-        }
-    }
+			Console.Write("Progress:{0}:{1}:{2}\n".FormatWith(type, value, maxValue));
+		}
+	}
 }
