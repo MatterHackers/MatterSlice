@@ -337,6 +337,13 @@ namespace MatterHackers.MatterSlice
         public static void generateConcentricInfill(ConfigSettings config, Polygons partOutline, ref Polygons fillPolygons, int extrusionWidth_um, double fillAngle)
         {
             Polygons outlineCopy = new Polygons(partOutline);
+			foreach (Polygon outline in outlineCopy)
+			{
+				if (outline.Count > 0)
+				{
+					outline.Add(outline[0]);
+				}
+			}
             int linespacing_um = (int)(config.extrusionWidth_um / (config.infillPercent / 100));
             while (outlineCopy.Count > 0)
             {
@@ -346,7 +353,14 @@ namespace MatterHackers.MatterSlice
                     fillPolygons.Add(r);
                 }
                 outlineCopy = outlineCopy.Offset(-linespacing_um);
-            }
+				foreach (Polygon outline in outlineCopy)
+				{
+					if (outline.Count > 0)
+					{
+						outline.Add(outline[0]);
+					}
+				}
+			}
         }
     }
 }
