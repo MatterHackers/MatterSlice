@@ -133,7 +133,7 @@ namespace MatterHackers.MatterSlice
 
 			if (totalTurns > 0)
 			{
-				if (bestNegativeTurnIndex > 0)
+				if (bestNegativeTurnIndex >= 0)
 				{
 					return bestNegativeTurnIndex;
 				}
@@ -141,7 +141,7 @@ namespace MatterHackers.MatterSlice
 			}
 			else
 			{
-				if (bestPositiveTurnIndex > 0)
+				if (bestPositiveTurnIndex >= 0)
 				{
 					return bestPositiveTurnIndex;
 				}

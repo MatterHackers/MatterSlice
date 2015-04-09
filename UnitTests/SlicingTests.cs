@@ -99,11 +99,30 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.AreEqual(-Math.PI / 4, PathOrderOptimizer.GetTurnAmount(p1, p2, p3), .001);
 			}
 
-			// find the right point
+			// find the right point wound ccw
 			{
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(10, 0), new IntPoint(9, 5), new IntPoint(10, 10), new IntPoint(0, 10) };
 				int betsPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
 				Assert.IsTrue(betsPoint == 2);
+			}
+
+			{
+				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(9, 5), new IntPoint(10, 10), new IntPoint(0, 10), new IntPoint(0, 0), new IntPoint(10, 0) };
+				int betsPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+				Assert.IsTrue(betsPoint == 0);
+			}
+
+			// find the right point wound cw
+			{
+				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(0, 10), new IntPoint(10, 10), new IntPoint(9, 5), new IntPoint(10, 0) };
+				int betsPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+				Assert.IsTrue(betsPoint == 3);
+			}
+
+			{
+				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(10, 0), new IntPoint(0, 0), new IntPoint(0, 10), new IntPoint(10, 10), new IntPoint(9, 5) };
+				int betsPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+				Assert.IsTrue(betsPoint == 4);
 			}
 		}
 	}
