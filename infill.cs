@@ -192,7 +192,7 @@ namespace MatterHackers.MatterSlice
 					AABB boundary = new AABB(outlines);
 
 					boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing;
-					boundary.min.Y = ((boundary.min.Y / perIncrementOffset) - 1) * perIncrementOffset;
+					boundary.min.Y = ((boundary.min.Y / perIncrementOffset) - 2) * perIncrementOffset;
 					boundary.max.X += lineSpacing;
 					boundary.max.Y += perIncrementOffset;
 					Polygons unclipedPatern = new Polygons();
