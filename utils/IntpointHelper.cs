@@ -28,9 +28,13 @@ using MatterSlice.ClipperLib;
 
 //Include Clipper to get the ClipperLib::IntPoint definition, which we reuse as Point definition.
 using System;
+using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
+	using Polygon = List<IntPoint>;
+	using Polygons = List<List<IntPoint>>;
+
 	public struct Point3
 	{
 		public int x, y, z;
@@ -47,19 +51,47 @@ namespace MatterHackers.MatterSlice
 			this.z = _z;
 		}
 
-		public static Point3 operator +(Point3 left, Point3 right)
-		{
-			return new Point3(left.x + right.x, left.y + right.y, left.z + right.z);
-		}
-
 		public static Point3 operator -(Point3 left, Point3 right)
 		{
 			return new Point3(left.x - right.x, left.y - right.y, left.z - right.z);
 		}
 
+		public static bool operator !=(Point3 left, Point3 right)
+		{
+			return left.x != right.x || left.y != right.y || left.z != right.z;
+		}
+
 		public static Point3 operator /(Point3 point, int i)
 		{
 			return new Point3((int)(point.x / i + .5), (int)(point.y / i + .5), (int)(point.z / i + .5));
+		}
+
+		public static Point3 operator +(Point3 left, Point3 right)
+		{
+			return new Point3(left.x + right.x, left.y + right.y, left.z + right.z);
+		}
+		public static bool operator ==(Point3 left, Point3 right)
+		{
+			return left.x == right.x && left.y == right.y && left.z == right.z;
+		}
+
+		public bool AbsLengthLEQ(long minLength)
+		{
+			if (x > minLength || x < -minLength)
+				return false;
+			if (y > minLength || y < -minLength)
+				return false;
+			if (z > minLength || z < -minLength)
+				return false;
+			return LengthSquared() <= minLength * minLength;
+		}
+
+		public Point3 Cross(Point3 p)
+		{
+			return new Point3(
+				y * p.z - z * p.y,
+				z * p.x - x * p.z,
+				x * p.y - y * p.x);
 		}
 
 		public override bool Equals(object obj)
@@ -71,20 +103,19 @@ namespace MatterHackers.MatterSlice
 
 			return this == (Point3)obj;
 		}
-
-		public static bool operator ==(Point3 left, Point3 right)
-		{
-			return left.x == right.x && left.y == right.y && left.z == right.z;
-		}
-
-		public static bool operator !=(Point3 left, Point3 right)
-		{
-			return left.x != right.x || left.y != right.y || left.z != right.z;
-		}
-
 		public override int GetHashCode()
 		{
 			return new { x, y, z }.GetHashCode();
+		}
+
+		public int Length()
+		{
+			return (int)Math.Sqrt(LengthSquared());
+		}
+
+		public long LengthSquared()
+		{
+			return (long)x * (long)x + (long)y * (long)y + (long)z * (long)z;
 		}
 
 		public int max()
@@ -99,150 +130,6 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return z;
-		}
-
-		public bool AbsLengthLEQ(long minLength)
-		{
-			if (x > minLength || x < -minLength)
-				return false;
-			if (y > minLength || y < -minLength)
-				return false;
-			if (z > minLength || z < -minLength)
-				return false;
-			return LengthSquared() <= minLength * minLength;
-		}
-
-		public long LengthSquared()
-		{
-			return (long)x * (long)x + (long)y * (long)y + (long)z * (long)z;
-		}
-
-		public int Length()
-		{
-			return (int)Math.Sqrt(LengthSquared());
-		}
-
-		public Point3 Cross(Point3 p)
-		{
-			return new Point3(
-				y * p.z - z * p.y,
-				z * p.x - x * p.z,
-				x * p.y - y * p.x);
-		}
-	}
-
-	internal static class IntPointHelper
-	{
-		public static bool IsShorterThen(this IntPoint thisPoint, long len)
-		{
-			if (thisPoint.X > len || thisPoint.X < -len)
-			{
-				return false;
-			}
-
-			if (thisPoint.Y > len || thisPoint.Y < -len)
-			{
-				return false;
-			}
-
-			return thisPoint.LengthSquared() <= len * len;
-		}
-
-		public static long Length(this IntPoint thisPoint)
-		{
-			return (long)Math.Sqrt(thisPoint.LengthSquared());
-		}
-
-		public static IntPoint GetRotated(this IntPoint thisPoint, double radians)
-		{
-			double Cos, Sin;
-
-			Cos = (double)System.Math.Cos(radians);
-			Sin = (double)System.Math.Sin(radians);
-
-			IntPoint output;
-			output.X = (long)(Math.Round(thisPoint.X * Cos - thisPoint.Y * Sin));
-			output.Y = (long)(Math.Round(thisPoint.Y * Cos + thisPoint.X * Sin));
-
-			return output;
-		}
-
-		public static long LengthSquared(this IntPoint thisPoint)
-		{
-			return thisPoint.X * thisPoint.X + thisPoint.Y * thisPoint.Y;
-		}
-
-		public static long Cross(this IntPoint left, IntPoint right)
-		{
-			return left.X * right.Y - left.Y * right.X;
-		}
-
-		public static IntPoint CrossZ(this IntPoint thisPoint)
-		{
-			return new IntPoint(-thisPoint.Y, thisPoint.X);
-		}
-
-		public static string OutputInMm(this IntPoint thisPoint)
-		{
-			return string.Format("[{0},{1}]", thisPoint.X / 1000.0, thisPoint.Y / 1000.0);
-		}
-
-		public static IntPoint SetLength(this IntPoint thisPoint, long len)
-		{
-			long _len = thisPoint.Length();
-			if (_len < 1)
-			{
-				return new IntPoint(len, 0);
-			}
-
-			return thisPoint * len / _len;
-		}
-
-		public static bool ShorterThen(this IntPoint thisPoint, long len)
-		{
-			if (thisPoint.X > len || thisPoint.X < -len)
-				return false;
-			if (thisPoint.Y > len || thisPoint.Y < -len)
-				return false;
-			return thisPoint.LengthSquared() <= len * len;
-		}
-
-		public static bool LongerThen(this IntPoint p0, long len)
-		{
-			return !ShorterThen(p0, len);
-		}
-
-		public static int vSize(this IntPoint thisPoint)
-		{
-			return (int)Math.Sqrt(thisPoint.LengthSquared());
-		}
-
-		public static double LengthMm(this IntPoint thisPoint)
-		{
-			double fx = (double)(thisPoint.X) / 1000.0;
-			double fy = (double)(thisPoint.Y) / 1000.0;
-			return Math.Sqrt(fx * fx + fy * fy);
-		}
-
-		public static IntPoint normal(this IntPoint thisPoint, int len)
-		{
-			int _len = thisPoint.vSize();
-			if (_len < 1)
-			{
-				return new IntPoint(len, 0);
-			}
-
-			return thisPoint * len / _len;
-		}
-
-		public static IntPoint GetPerpendicularLeft(this IntPoint thisPoint)
-		{
-			return new IntPoint(-thisPoint.Y, thisPoint.X);
-		}
-
-		public static long Dot(this IntPoint thisPoint, IntPoint p1)
-		{
-			return thisPoint.X * p1.X + thisPoint.Y * p1.Y;
 		}
 	}
 
@@ -288,4 +175,394 @@ namespace MatterHackers.MatterSlice
 			return new IntPoint(p.X * matrix[0] + p.Y * matrix[2], p.X * matrix[1] + p.Y * matrix[3]);
 		}
 	};
+
+	internal static class IntPointHelper
+	{
+		public static long Cross(this IntPoint left, IntPoint right)
+		{
+			return left.X * right.Y - left.Y * right.X;
+		}
+
+		public static IntPoint CrossZ(this IntPoint thisPoint)
+		{
+			return new IntPoint(-thisPoint.Y, thisPoint.X);
+		}
+
+		public static long Dot(this IntPoint thisPoint, IntPoint p1)
+		{
+			return thisPoint.X * p1.X + thisPoint.Y * p1.Y;
+		}
+
+		public static IntPoint GetPerpendicularLeft(this IntPoint thisPoint)
+		{
+			return new IntPoint(-thisPoint.Y, thisPoint.X);
+		}
+
+		public static IntPoint GetRotated(this IntPoint thisPoint, double radians)
+		{
+			double Cos, Sin;
+
+			Cos = (double)System.Math.Cos(radians);
+			Sin = (double)System.Math.Sin(radians);
+
+			IntPoint output;
+			output.X = (long)(Math.Round(thisPoint.X * Cos - thisPoint.Y * Sin));
+			output.Y = (long)(Math.Round(thisPoint.Y * Cos + thisPoint.X * Sin));
+
+			return output;
+		}
+
+		public static bool IsShorterThen(this IntPoint thisPoint, long len)
+		{
+			if (thisPoint.X > len || thisPoint.X < -len)
+			{
+				return false;
+			}
+
+			if (thisPoint.Y > len || thisPoint.Y < -len)
+			{
+				return false;
+			}
+
+			return thisPoint.LengthSquared() <= len * len;
+		}
+
+		public static long Length(this IntPoint thisPoint)
+		{
+			return (long)Math.Sqrt(thisPoint.LengthSquared());
+		}
+		public static double LengthMm(this IntPoint thisPoint)
+		{
+			double fx = (double)(thisPoint.X) / 1000.0;
+			double fy = (double)(thisPoint.Y) / 1000.0;
+			return Math.Sqrt(fx * fx + fy * fy);
+		}
+
+		public static long LengthSquared(this IntPoint thisPoint)
+		{
+			return thisPoint.X * thisPoint.X + thisPoint.Y * thisPoint.Y;
+		}
+		public static bool LongerThen(this IntPoint p0, long len)
+		{
+			return !ShorterThen(p0, len);
+		}
+
+		public static IntPoint normal(this IntPoint thisPoint, int len)
+		{
+			int _len = thisPoint.vSize();
+			if (_len < 1)
+			{
+				return new IntPoint(len, 0);
+			}
+
+			return thisPoint * len / _len;
+		}
+
+		public static string OutputInMm(this IntPoint thisPoint)
+		{
+			return string.Format("[{0},{1}]", thisPoint.X / 1000.0, thisPoint.Y / 1000.0);
+		}
+
+		public static IntPoint SetLength(this IntPoint thisPoint, long len)
+		{
+			long _len = thisPoint.Length();
+			if (_len < 1)
+			{
+				return new IntPoint(len, 0);
+			}
+
+			return thisPoint * len / _len;
+		}
+
+		public static bool ShorterThen(this IntPoint thisPoint, long len)
+		{
+			if (thisPoint.X > len || thisPoint.X < -len)
+				return false;
+			if (thisPoint.Y > len || thisPoint.Y < -len)
+				return false;
+			return thisPoint.LengthSquared() <= len * len;
+		}
+
+		public static int vSize(this IntPoint thisPoint)
+		{
+			return (int)Math.Sqrt(thisPoint.LengthSquared());
+		}
+
+		// true if p0 -> p1 -> p2 is strictly convex.
+		private static bool convex3(long x0, long y0, long x1, long y1, long x2, long y2)
+		{
+			return (y1 - y0) * (x1 - x2) > (x0 - x1) * (y2 - y1);
+		}
+
+		private static bool convex3(IntPoint p0, IntPoint p1, IntPoint p2)
+		{
+			return convex3(p0.X, p0.Y, p1.X, p1.Y, p2.X, p2.Y);
+		}
+
+		public static Polygon CreateConvexHull(Polygons polygons)
+		{
+			Polygon allPoints = new Polygon();
+			foreach (Polygon polygon in polygons)
+			{
+				allPoints.AddRange(polygon);
+			}
+
+			return CreateConvexHull(allPoints);
+		}
+
+		// Find the convex hull of a set of (x,y) points.
+		// returns a polygon which form the convex hull.
+		// Could be:
+		//     - empty (if input is empty, or if there is an internal error)
+		//     - single point (if all input points are identical)
+		//     - 2 points (if >=2 input points, but all collinear)
+		//     - 3 or more points forming a convex polygon in CCW order.
+		//
+		// Returns 0  (or -1 if an internal
+		// error occurs, in which case the result will be empty).
+		// No case has been found in testing which causes an internal error. It's
+		// possible that this could occur if 64-bit multplies and adds overflow.
+		public static Polygon CreateConvexHull(Polygon inPolygon)
+		{
+			Polygon points = new Polygon(inPolygon);
+			int count = points.Count;
+
+			if (count <= 2)
+			{
+				if (count == 2
+					&& points[0].X == points[1].X
+					&& points[1].Y == points[1].Y)
+				{
+					// remove one point if two are the same
+					points.RemoveAt(1);
+				}
+				return points;
+			}
+
+			// step 1: sort the values in order from min y to max y.
+			// (and increasing X where Y are equal)
+			points.Sort(new IntPointSorterYX());
+
+			long minY = points[0].Y;
+			long maxY = points[count - 1].Y;
+
+			// (2) make a pass, find the min and max x.
+			long minX = points[0].X;
+			long maxX = minX;
+			for (int i = 1; i < count; i++)
+			{
+				minX = Math.Min(minX, points[i].X);
+				maxX = Math.Max(maxX, points[i].X);
+			}
+
+			long upperLeftX;
+			long upperRightX;
+			
+			long DLy;
+			long DRy;
+			
+			long bottomLeftX;
+			long bottomRightX;
+			
+			int leftCount;
+			int rightCount;
+			int indexOfLowestPoint;
+
+			// OK next step is to find out if there's more than one identical
+			// 'y' value at the end of the list. Don't forget to
+			// consider the case where all of these are identical...
+			{
+				int sameYFromEndCount = 1;
+				int lastValidIndex = count - 1;
+				upperLeftX = upperRightX = points[lastValidIndex].X;
+				while (sameYFromEndCount < count && points[lastValidIndex - sameYFromEndCount].Y == maxY)
+				{
+					sameYFromEndCount++;
+				}
+
+				// if more than one, they will be sorted by increasing X.
+				// Delete any in the middle.
+				//
+				if (sameYFromEndCount >= 2)
+				{
+					int deleteCount = sameYFromEndCount - 2;	// always delete this many...
+					upperRightX = points[count - 1].X;
+					upperLeftX = points[count - sameYFromEndCount].X;
+					if (upperLeftX == upperRightX) deleteCount++;		// delete one more if all the same...
+					if (deleteCount > 0)
+					{
+						points[count - 1 - deleteCount] = points[count - 1];
+						count -= deleteCount;
+					}
+				}
+			}
+
+			// We may now have only 1 or 2 points.
+			if (count <= 2)
+			{
+				points = new Polygon();
+				return points;
+			}
+
+			// same thing at the bottoom
+			{
+				int sameYFromStartCount = 1;
+				bottomLeftX = bottomRightX = points[0].X;
+				while (sameYFromStartCount < count && points[sameYFromStartCount].Y == minY)
+				{
+					sameYFromStartCount++;
+				}
+
+				// if more than one, They will be sorted left to right. Delete any in the middle.
+				indexOfLowestPoint = 1;
+				if (sameYFromStartCount >= 2)
+				{
+					int deleteCount = sameYFromStartCount - 2;	// always delete this many...
+					bottomLeftX = points[0].X;
+					bottomRightX = points[sameYFromStartCount - 1].X;
+					if (bottomLeftX == bottomRightX)
+					{
+						deleteCount++; // delete one more if all the same...
+					}
+					else
+					{
+						indexOfLowestPoint = 2;			// otherwise we start with 2,
+					}
+
+					if (deleteCount > 0)
+					{
+						for (int i = 0; i < count - (deleteCount + 1); i++)
+						{
+							points[1 + i] = points[deleteCount + 1 + i];
+							count -= deleteCount;
+						}
+					}
+				}
+
+				// OK, we now have the 'UL/UR' points and the 'LL/LR' points.
+				// Make a left-side list and a right-side list, each
+				// of capacity 'num'.
+				// note that 'pleft' is in reverse order...
+				// pright grows up from 0, and pleft down from 'num+1',
+				// in the same array - they can't overlap.
+				Polygon temp_array = new Polygon(points);
+				temp_array.Add(new IntPoint());
+				temp_array.Add(new IntPoint());
+				int pleftIndex = count + 1;
+				int prightIndex = 0;
+
+				// set up left and right
+				temp_array[pleftIndex] = points[0];
+				leftCount = 1;
+				temp_array[prightIndex] = points[indexOfLowestPoint - 1];
+				rightCount = 1;
+
+				DLy = DRy = minY;
+
+				for (int ipos = indexOfLowestPoint; ipos < count; ipos++)
+				{
+					IntPoint newPt = temp_array[ipos];		// get new point.
+
+					// left side test:
+					// is the new point strictly to the left of a line from (DLx, DLy) to ( ULx, maxy )?
+					if (convex3(upperLeftX, maxY, newPt.X, newPt.Y, bottomLeftX, DLy))
+					{
+						// if so, append to the left side list, but first peel off any existing
+						// points there which would be  on or inside the new line.
+						while (leftCount > 1 && !convex3(newPt, temp_array[pleftIndex - (leftCount - 1)], temp_array[pleftIndex - (leftCount - 2)]))
+						{
+							--leftCount;
+						}
+						temp_array[pleftIndex - leftCount] = newPt;
+						leftCount++;
+						bottomLeftX = newPt.X;
+						DLy = newPt.Y;
+					}
+					else if (convex3(bottomRightX, DRy, newPt.X, newPt.Y, upperRightX, maxY)) // right side test is the new point strictly to the right of a line from (URx, maxy) to ( DRx, DRy )?
+					{
+						// if so, append to the right side list, but first peel off any existing
+						// points there which would be  on or inside the new line.
+						//
+						while (rightCount > 1 && !convex3(temp_array[prightIndex + rightCount - 2], temp_array[prightIndex + rightCount - 1], newPt))
+						{
+							--rightCount;
+						}
+						temp_array[prightIndex + rightCount] = newPt;
+						rightCount++;
+						bottomRightX = newPt.X;
+						DRy = newPt.Y;
+					}
+					// if neither of the above are true we throw out the point.
+				}
+
+				// now add the 'maxy' points to the lists (it will have failed the insert test)
+				temp_array[pleftIndex - leftCount] = new IntPoint(upperLeftX, maxY);
+				++leftCount;
+				if (upperRightX > upperLeftX)
+				{
+					temp_array[prightIndex + rightCount] = new IntPoint(upperRightX, maxY);
+					++rightCount;
+				}
+				// now copy the lists to the output area.
+				//
+				// if both lists have the same lower point, delete one now.
+				// (pleft could be empty as a result!)
+				if (indexOfLowestPoint == 1)
+				{
+					--pleftIndex;
+					--leftCount;
+				}
+
+				// this condition should be true now...
+				if (!(leftCount + rightCount <= count))
+				{
+					// failure...
+					points = new Polygon();
+					return points;
+				}
+
+				// now just pack the pright and pleft lists into the output.
+				count = leftCount + rightCount;
+
+				for (int i = 0; i < rightCount; i++)
+				{
+					points[i] = temp_array[i + prightIndex];
+				}
+
+				if (leftCount > 0)
+				{
+					for (int i = 0; i < leftCount; i++)
+					{
+						points[i + rightCount] = temp_array[i + pleftIndex - (leftCount - 1)];
+					}
+				}
+
+				if (points.Count > count)
+				{
+					Polygon newList = new Polygon();
+					newList.AddRange(points.GetRange(0, count));
+					points = newList;
+				}
+
+				return points;
+			}
+		}
+
+		// operator to sort IntPoint by y
+		// (and then by X, where Y are equal)
+		public class IntPointSorterYX : IComparer<IntPoint>
+		{
+			public virtual int Compare(IntPoint a, IntPoint b)
+			{
+				if (a.Y == b.Y)
+				{
+					return a.X.CompareTo(b.X);
+				}
+				else
+				{
+					return a.Y.CompareTo(b.Y);
+				}
+			}
+		}
+	}
 }
