@@ -60,6 +60,7 @@ namespace MatterHackers.MatterSlice
 						{
 							Polygons p = new Polygons();
 							p.Add(layer.parts[partIndex].outline[0]);
+							//p.Add(IntPointHelper.CreateConvexHull(layer.parts[partIndex].outline[0]));
 							skirtPolygons = skirtPolygons.CreateUnion(p.Offset(offsetDistance));
 						}
 						else

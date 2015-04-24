@@ -358,8 +358,8 @@ namespace MatterHackers.MatterSlice
 			long upperLeftX;
 			long upperRightX;
 			
-			long DLy;
-			long DRy;
+			long bottomLeftY;
+			long bottomRightY;
 			
 			long bottomLeftX;
 			long bottomRightX;
@@ -414,7 +414,7 @@ namespace MatterHackers.MatterSlice
 				}
 
 				// if more than one, They will be sorted left to right. Delete any in the middle.
-				indexOfLowestPoint = 1;
+				indexOfLowestPoint = 0;
 				if (sameYFromStartCount >= 2)
 				{
 					int deleteCount = sameYFromStartCount - 2;	// always delete this many...
@@ -426,7 +426,7 @@ namespace MatterHackers.MatterSlice
 					}
 					else
 					{
-						indexOfLowestPoint = 2;			// otherwise we start with 2,
+						indexOfLowestPoint = 1;			// otherwise we start with 1,
 					}
 
 					if (deleteCount > 0)
@@ -454,43 +454,43 @@ namespace MatterHackers.MatterSlice
 				// set up left and right
 				temp_array[pleftIndex] = points[0];
 				leftCount = 1;
-				temp_array[prightIndex] = points[indexOfLowestPoint - 1];
+				temp_array[prightIndex] = points[indexOfLowestPoint];
 				rightCount = 1;
 
-				DLy = DRy = minY;
+				bottomLeftY = bottomRightY = minY;
 
-				for (int ipos = indexOfLowestPoint; ipos < count; ipos++)
+				for (int ipos = indexOfLowestPoint + 1; ipos < count; ipos++)
 				{
-					IntPoint newPt = temp_array[ipos];		// get new point.
+					IntPoint pointToCheck = temp_array[ipos];		// get new point.
 
 					// left side test:
-					// is the new point strictly to the left of a line from (DLx, DLy) to ( ULx, maxy )?
-					if (convex3(upperLeftX, maxY, newPt.X, newPt.Y, bottomLeftX, DLy))
+					// is the new point is strictly to the left of a line from (bottomLeftX, BottomLeftY) to ( upperLeftX, maxy )?
+					if (convex3(upperLeftX, maxY, pointToCheck.X, pointToCheck.Y, bottomLeftX, bottomLeftY))
 					{
 						// if so, append to the left side list, but first peel off any existing
 						// points there which would be  on or inside the new line.
-						while (leftCount > 1 && !convex3(newPt, temp_array[pleftIndex - (leftCount - 1)], temp_array[pleftIndex - (leftCount - 2)]))
+						while (leftCount > 1 && !convex3(pointToCheck, temp_array[pleftIndex - (leftCount - 1)], temp_array[pleftIndex - (leftCount - 2)]))
 						{
 							--leftCount;
 						}
-						temp_array[pleftIndex - leftCount] = newPt;
+						temp_array[pleftIndex - leftCount] = pointToCheck;
 						leftCount++;
-						bottomLeftX = newPt.X;
-						DLy = newPt.Y;
+						bottomLeftX = pointToCheck.X;
+						bottomLeftY = pointToCheck.Y;
 					}
-					else if (convex3(bottomRightX, DRy, newPt.X, newPt.Y, upperRightX, maxY)) // right side test is the new point strictly to the right of a line from (URx, maxy) to ( DRx, DRy )?
+					else if (convex3(bottomRightX, bottomRightY, pointToCheck.X, pointToCheck.Y, upperRightX, maxY)) // right side test is the new point strictly to the right of a line from (URx, maxy) to ( DRx, DRy )?
 					{
 						// if so, append to the right side list, but first peel off any existing
 						// points there which would be  on or inside the new line.
 						//
-						while (rightCount > 1 && !convex3(temp_array[prightIndex + rightCount - 2], temp_array[prightIndex + rightCount - 1], newPt))
+						while (rightCount > 1 && !convex3(temp_array[prightIndex + rightCount - 2], temp_array[prightIndex + rightCount - 1], pointToCheck))
 						{
 							--rightCount;
 						}
-						temp_array[prightIndex + rightCount] = newPt;
+						temp_array[prightIndex + rightCount] = pointToCheck;
 						rightCount++;
-						bottomRightX = newPt.X;
-						DRy = newPt.Y;
+						bottomRightX = pointToCheck.X;
+						bottomRightY = pointToCheck.Y;
 					}
 					// if neither of the above are true we throw out the point.
 				}
@@ -507,7 +507,7 @@ namespace MatterHackers.MatterSlice
 				//
 				// if both lists have the same lower point, delete one now.
 				// (pleft could be empty as a result!)
-				if (indexOfLowestPoint == 1)
+				if (indexOfLowestPoint == 0)
 				{
 					--pleftIndex;
 					--leftCount;
@@ -516,9 +516,12 @@ namespace MatterHackers.MatterSlice
 				// this condition should be true now...
 				if (!(leftCount + rightCount <= count))
 				{
-					// failure...
-					points = new Polygon();
-					return points;
+					// failure... return the original concave list
+#if DEBUG
+					throw new Exception("Failure to create convex polygon.");
+#else
+					return inPolygon;
+#endif
 				}
 
 				// now just pack the pright and pleft lists into the output.
