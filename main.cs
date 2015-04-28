@@ -78,6 +78,7 @@ namespace MatterHackers.MatterSlice
 			pathOrderTests.CorrectSeamPlacement();
 
 			Tests.BridgeTests.Run();
+			Tests.PolygonTests.Run();
 #endif
 			if (args.Length == 0)
 			{
@@ -112,6 +113,7 @@ namespace MatterHackers.MatterSlice
 								Tests.SlicingTests.Run();
 								Tests.SettingsTests.Run();
 								Tests.BridgeTests.Run();
+								Tests.PolygonTests.Run();
 								break;
 
 							case 'o':

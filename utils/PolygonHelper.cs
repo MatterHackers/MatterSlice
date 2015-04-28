@@ -46,12 +46,12 @@ namespace MatterHackers.MatterSlice
 		public static long PolygonLength(this Polygon polygon)
 		{
 			long length = 0;
-			IntPoint p0 = polygon[polygon.Count - 1];
+			IntPoint previousPoint = polygon[polygon.Count - 1];
 			for (int n = 0; n < polygon.Count; n++)
 			{
-				IntPoint p1 = polygon[n];
-				length += (p0 - p1).Length();
-				p0 = p1;
+				IntPoint currentPoint = polygon[n];
+				length += (previousPoint - currentPoint).Length();
+				previousPoint = currentPoint;
 			}
 			return length;
 		}
@@ -69,12 +69,27 @@ namespace MatterHackers.MatterSlice
 			{
 				IntPoint currentPoint = polygon[pointIndex];
 
-				if ((previousPoint.Y >= testPoint.Y && currentPoint.Y < testPoint.Y) || (currentPoint.Y > testPoint.Y && previousPoint.Y <= testPoint.Y))
+				if ((previousPoint.Y >= testPoint.Y && currentPoint.Y <= testPoint.Y) || (currentPoint.Y >= testPoint.Y && previousPoint.Y <= testPoint.Y))
 				{
-					long x = previousPoint.X + (currentPoint.X - previousPoint.X) * (testPoint.Y - previousPoint.Y) / (currentPoint.Y - previousPoint.Y);
-					if (x >= testPoint.X)
+					if (previousPoint.X >= testPoint.X && currentPoint.X >= testPoint.X) // x will be in positive direction
 					{
 						crossings++;
+					}
+					else if (previousPoint.X <= testPoint.X && currentPoint.X <= testPoint.X) // x will be in negative direction
+					{
+						continue;
+					}
+					else if (currentPoint.Y == previousPoint.Y) // point is on border or we don't cross this line segment
+					{
+						continue;
+					}
+					else // x might be either in positive or in negative direction; compute x!
+					{
+						long x = previousPoint.X + (currentPoint.X - previousPoint.X) * (testPoint.Y - previousPoint.Y) / (currentPoint.Y - previousPoint.Y);
+						if (x >= testPoint.X)
+						{
+							crossings++;
+						}
 					}
 				}
 				previousPoint = currentPoint;
@@ -100,29 +115,29 @@ namespace MatterHackers.MatterSlice
 
 		public static void optimizePolygon(this Polygon polygon)
 		{
-			IntPoint p0 = polygon[polygon.Count - 1];
+			IntPoint previousPoint = polygon[polygon.Count - 1];
 			for (int i = 0; i < polygon.Count; i++)
 			{
-				IntPoint p1 = polygon[i];
-				if ((p0 - p1).IsShorterThen(10))
+				IntPoint currentPoint = polygon[i];
+				if ((previousPoint - currentPoint).IsShorterThen(10))
 				{
 					polygon.RemoveAt(i);
 					i--;
 				}
 				else
 				{
-					IntPoint p2;
+					IntPoint nextPoint;
 					if (i < polygon.Count - 1)
 					{
-						p2 = polygon[i + 1];
+						nextPoint = polygon[i + 1];
 					}
 					else
 					{
-						p2 = polygon[0];
+						nextPoint = polygon[0];
 					}
 
-					IntPoint diff0 = (p1 - p0).SetLength(1000000);
-					IntPoint diff2 = (p1 - p2).SetLength(1000000);
+					IntPoint diff0 = (currentPoint - previousPoint).SetLength(1000000);
+					IntPoint diff2 = (currentPoint - nextPoint).SetLength(1000000);
 
 					long d = diff0.Dot(diff2);
 					if (d < -999999000000)
@@ -132,7 +147,7 @@ namespace MatterHackers.MatterSlice
 					}
 					else
 					{
-						p0 = p1;
+						previousPoint = currentPoint;
 					}
 				}
 			}
@@ -476,12 +491,12 @@ namespace MatterHackers.MatterSlice
 			long length = 0;
 			for (int i = 0; i < polygons.Count; i++)
 			{
-				IntPoint p0 = polygons[i][polygons[i].Count - 1];
+				IntPoint previousPoint = polygons[i][polygons[i].Count - 1];
 				for (int n = 0; n < polygons[i].Count; n++)
 				{
-					IntPoint p1 = polygons[i][n];
-					length += (p0 - p1).vSize();
-					p0 = p1;
+					IntPoint currentPoint = polygons[i][n];
+					length += (previousPoint - currentPoint).vSize();
+					previousPoint = currentPoint;
 				}
 			}
 			return length;

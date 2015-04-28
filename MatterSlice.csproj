@@ -118,6 +118,7 @@
     <Compile Include="sliceDataStorage.cs" />
     <Compile Include="Slicer\SlicerLayer.cs" />
     <Compile Include="Slicer\Slicer.cs" />
+    <Compile Include="UnitTests\PolygonTests.cs" />
     <Compile Include="UnitTests\BridgeTests.cs" />
     <Compile Include="UnitTests\TestUtlities.cs" />
     <Compile Include="UnitTests\SettingsTests.cs" />
