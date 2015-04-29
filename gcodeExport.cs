@@ -41,6 +41,7 @@ namespace MatterHackers.MatterSlice
 		private double extruderSwitchRetraction_mm;
 		private double minimumExtrusionBeforeRetraction_mm;
 		private double extrusionAmountAtPreviousRetraction_mm;
+		private double unretractExtrusionExtra_mm;
 		private Point3 currentPosition_um;
 		private Point3[] extruderOffset_um = new Point3[ConfigConstants.MAX_EXTRUDERS];
 		private char[] extruderCharacter = new char[ConfigConstants.MAX_EXTRUDERS];
@@ -48,10 +49,12 @@ namespace MatterHackers.MatterSlice
 		private int retractionSpeed;
 		private int zPos_um;
 		private bool isRetracted;
+		private bool wipeAfterRetraction;
 		private int extruderIndex;
 		private int currentFanSpeed;
 		private ConfigConstants.OUTPUT_TYPE outputType;
 		private string toolChangeCode;
+		private List<IntPoint> retractionWipePath = new Polygon();
 
 		private double[] totalFilament_mm = new double[ConfigConstants.MAX_EXTRUDERS];
 		private double totalPrintTime;
@@ -146,8 +149,10 @@ namespace MatterHackers.MatterSlice
 			this.toolChangeCode = toolChangeCode;
 		}
 
-		public void SetRetractionSettings(double retractionAmount, int retractionSpeed, double extruderSwitchRetraction, double minimumExtrusionBeforeRetraction_mm, double retractionZHop_mm)
+		public void SetRetractionSettings(double retractionAmount, int retractionSpeed, double extruderSwitchRetraction, double minimumExtrusionBeforeRetraction_mm, double retractionZHop_mm, bool wipeAfterRetraction, double unretractExtrusionExtra_mm)
 		{
+			this.unretractExtrusionExtra_mm = unretractExtrusionExtra_mm;
+			this.wipeAfterRetraction = wipeAfterRetraction;
 			this.retractionAmount_mm = retractionAmount;
 			this.retractionSpeed = retractionSpeed;
 			this.extruderSwitchRetraction_mm = extruderSwitchRetraction;
@@ -356,6 +361,17 @@ namespace MatterHackers.MatterSlice
 				lastLineWriten = lineAsString;
 #endif
 			}
+
+			//If wipe enabled remember path, but stop at 100 moves to keep memory usage low
+			if (wipeAfterRetraction)
+			{
+				retractionWipePath.Add(movePosition_um);
+				if (retractionWipePath.Count > 100)
+				{
+					retractionWipePath.RemoveAt(0);
+				}
+			}
+
 			currentPosition_um = new Point3(movePosition_um.X, movePosition_um.Y, zPos_um);
 			estimateCalculator.plan(new TimeEstimateCalculator.Position(currentPosition_um.x / 1000.0, currentPosition_um.y / 1000.0, currentPosition_um.z / 1000.0, extrusionAmount_mm), speed);
 		}
@@ -366,12 +382,15 @@ namespace MatterHackers.MatterSlice
 
 		public void writeRetraction()
 		{
+			int initialSpeed = currentSpeed;
 			if (outputType == ConfigConstants.OUTPUT_TYPE.BFB)//BitsFromBytes does automatic retraction.
 			{
 				return;
 			}
 
-			if (retractionAmount_mm > 0 && !isRetracted && extrusionAmountAtPreviousRetraction_mm + minimumExtrusionBeforeRetraction_mm < extrusionAmount_mm)
+			if (retractionAmount_mm > 0 
+				&& !isRetracted 
+				&& extrusionAmountAtPreviousRetraction_mm + minimumExtrusionBeforeRetraction_mm < extrusionAmount_mm)
 			{
 				if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
 				{
@@ -383,13 +402,73 @@ namespace MatterHackers.MatterSlice
 					currentSpeed = retractionSpeed;
 					estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition_um.x) / 1000.0, (currentPosition_um.y) / 1000.0, (double)(currentPosition_um.z) / 1000.0, extrusionAmount_mm - retractionAmount_mm), currentSpeed);
 				}
+
+				AddRetractionWipeIfRequired(initialSpeed);
+
 				if (retractionZHop_mm > 0)
 				{
 					double zWritePosition = (double)(currentPosition_um.z - extruderOffset_um[extruderIndex].z) / 1000 + retractionZHop_mm;
 					gcodeFileStream.Write("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
 				}
+
+				// Make sure after a retraction that we will extrude the extra amount on unretraction that the settings want.
+				extrusionAmount_mm += unretractExtrusionExtra_mm;
+
 				extrusionAmountAtPreviousRetraction_mm = extrusionAmount_mm;
 				isRetracted = true;
+			}
+		}
+
+		private void AddRetractionWipeIfRequired(int initialSpeed)
+		{
+			//This wipes the extruder back along the previous path after retracting.
+			if (wipeAfterRetraction && retractionWipePath.Count >= 2)
+			{
+				IntPoint lastP = retractionWipePath[retractionWipePath.Count - 1];
+				int indexStepDirection = -1;
+				int i = retractionWipePath.Count - 2;
+				double wipeDistanceMm = 10;
+				long wipeLeft = (long)(wipeDistanceMm * 1000);
+
+				while (wipeLeft > 0)
+				{
+					IntPoint p = retractionWipePath[i];
+					long len = (lastP - p).Length();
+
+					//Check if we're out of moves
+					if (indexStepDirection > 0 && i == retractionWipePath.Count - 1)
+					{
+						break;
+					}
+					//Reverse direction (once) to get wipe length if required.
+					else if (indexStepDirection < 0 && i == 0)
+					{
+						indexStepDirection = 1;
+					}
+					i += indexStepDirection;
+
+					//If move is longer than wipe remaining, calculate angle and move along path but stop short.
+					if (len > wipeLeft)
+					{
+						IntPoint direction = p-lastP;
+						long directionLength = direction.Length();
+						direction *= wipeLeft;
+						direction /= directionLength;
+						p = lastP + direction;
+						len = wipeLeft;
+					}
+					wipeLeft -= len;
+					lastP = p;
+					gcodeFileStream.Write("G0 ");
+					if (currentSpeed != initialSpeed)
+					{
+						currentSpeed = initialSpeed;
+						gcodeFileStream.Write("F{0} ".FormatWith(currentSpeed * 60));
+					}
+					gcodeFileStream.Write("X{0:0.###} Y{1:0.###}\n".FormatWith((p.X - extruderOffset_um[extruderIndex].x) / 1000.0, (p.Y - extruderOffset_um[extruderIndex].y) / 1000.0));
+					estimateCalculator.plan(new TimeEstimateCalculator.Position(p.X / 1000.0, p.Y / 1000.0, currentPosition_um.z / 1000.0, 0), currentSpeed);
+				}
+				retractionWipePath.Clear();
 			}
 		}
 

@@ -154,6 +154,9 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("Avoid crossing any of the perimeters of a shape while printing its parts.")]
 		public bool avoidCrossingPerimeters;
 
+		[SettingDescription("If set will cause the head to try to wipe itself off after retracting.")]
+		public bool wipeAfterRetraction;
+
 		[SettingDescription("Print the outside perimeter before the inside ones. This can help with accuracy.")]
 		public bool outsidePerimetersFirst;
 
@@ -242,6 +245,9 @@ namespace MatterHackers.MatterSlice
 		// Raft settings
 		[SettingDescription("mm.")]
 		public bool enableRaft;
+
+		[SettingDescription("The amount of extra extrusion to do when unretracting (resume printing after retraction).")]
+		public double unretractExtraExtrusion = 0;
 
 		public double raftAirGap;
 
