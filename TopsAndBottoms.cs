@@ -27,15 +27,15 @@ namespace MatterHackers.MatterSlice
 {
 	using Polygons = List<List<IntPoint>>;
 
-	public static class Skin
+	public static class TopsAndBottoms
 	{
-		public static void generateTopAndBottomLayers(int layerIndex, SliceVolumeStorage storage, int extrusionWidth, int downSkinCount, int upSkinCount)
+		public static void Generate(int layerIndex, SliceVolumeStorage storage, int extrusionWidth, int downSkinCount, int upSkinCount)
 		{
 			SliceLayer layer = storage.layers[layerIndex];
 
-			for (int partNr = 0; partNr < layer.parts.Count; partNr++)
+			for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
 			{
-				SliceLayerPart part = layer.parts[partNr];
+				SliceLayerPart part = layer.parts[partIndex];
 
 				Polygons upskin = part.insets[part.insets.Count - 1].Offset(-extrusionWidth / 2);
 				Polygons downskin = upskin;
@@ -51,11 +51,11 @@ namespace MatterHackers.MatterSlice
 				if (layerIndex - downSkinCount >= 0)
 				{
 					SliceLayer layer2 = storage.layers[layerIndex - downSkinCount];
-					for (int partIndex = 0; partIndex < layer2.parts.Count; partIndex++)
+					for (int partIndex2 = 0; partIndex2 < layer2.parts.Count; partIndex2++)
 					{
-						if (part.boundaryBox.hit(layer2.parts[partIndex].boundaryBox))
+						if (part.boundaryBox.hit(layer2.parts[partIndex2].boundaryBox))
 						{
-							downskin = downskin.CreateDifference(layer2.parts[partIndex].insets[layer2.parts[partIndex].insets.Count - 1]);
+							downskin = downskin.CreateDifference(layer2.parts[partIndex2].insets[layer2.parts[partIndex2].insets.Count - 1]);
 						}
 					}
 				}
@@ -63,11 +63,11 @@ namespace MatterHackers.MatterSlice
 				if (layerIndex + upSkinCount < storage.layers.Count)
 				{
 					SliceLayer layer2 = storage.layers[layerIndex + upSkinCount];
-					for (int partIndex = 0; partIndex < layer2.parts.Count; partIndex++)
+					for (int partIndex2 = 0; partIndex2 < layer2.parts.Count; partIndex2++)
 					{
-						if (part.boundaryBox.hit(layer2.parts[partIndex].boundaryBox))
+						if (part.boundaryBox.hit(layer2.parts[partIndex2].boundaryBox))
 						{
-							upskin = upskin.CreateDifference(layer2.parts[partIndex].insets[layer2.parts[partIndex].insets.Count - 1]);
+							upskin = upskin.CreateDifference(layer2.parts[partIndex2].insets[layer2.parts[partIndex2].insets.Count - 1]);
 						}
 					}
 				}
@@ -87,7 +87,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static void generateSparse(int layerIndex, SliceVolumeStorage storage, int extrusionWidth, int downSkinCount, int upSkinCount)
+		public static void GenerateSparse(int layerIndex, SliceVolumeStorage storage, int extrusionWidth, int downSkinCount, int upSkinCount)
 		{
 			SliceLayer layer = storage.layers[layerIndex];
 

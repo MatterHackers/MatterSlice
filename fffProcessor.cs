@@ -273,6 +273,7 @@ namespace MatterHackers.MatterSlice
 				{
 					return;
 				}
+				
 				//Only generate bottom and top layers and infill for the first X layers when spiralize is choosen.
 				if (!config.continuousSpiralOuterPerimeter || (int)(layerIndex) < config.numberOfBottomLayers)
 				{
@@ -284,8 +285,8 @@ namespace MatterHackers.MatterSlice
 							extrusionWidth = config.firstLayerExtrusionWidth_um;
 						}
 
-						Skin.generateTopAndBottomLayers(layerIndex, storage.volumes[volumeIndex], extrusionWidth, config.numberOfBottomLayers, config.numberOfTopLayers);
-						Skin.generateSparse(layerIndex, storage.volumes[volumeIndex], extrusionWidth, config.numberOfBottomLayers, config.numberOfTopLayers);
+						TopsAndBottoms.Generate(layerIndex, storage.volumes[volumeIndex], extrusionWidth, config.numberOfBottomLayers, config.numberOfTopLayers);
+						TopsAndBottoms.GenerateSparse(layerIndex, storage.volumes[volumeIndex], extrusionWidth, config.numberOfBottomLayers, config.numberOfTopLayers);
 					}
 				}
 				LogOutput.log("Creating Top & Bottom Layers {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));

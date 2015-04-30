@@ -164,7 +164,7 @@
     <Compile Include="infill.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="skin.cs" />
+    <Compile Include="TopsAndBottoms.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="skirt.cs" />
