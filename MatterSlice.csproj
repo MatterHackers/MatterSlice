@@ -108,21 +108,14 @@
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="nunit.framework">
-      <HintPath>..\agg-sharp\AggTests\nunit.framework.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="layerPart.cs" />
     <Compile Include="sliceDataStorage.cs" />
     <Compile Include="Slicer\SlicerLayer.cs" />
     <Compile Include="Slicer\Slicer.cs" />
-    <Compile Include="UnitTests\PolygonTests.cs" />
-    <Compile Include="UnitTests\BridgeTests.cs" />
-    <Compile Include="UnitTests\TestUtlities.cs" />
-    <Compile Include="UnitTests\SettingsTests.cs" />
-    <Compile Include="UnitTests\SlicingTests.cs" />
     <Compile Include="utils\clipper.cs" />
     <Compile Include="utils\floatpoint.cs" />
     <Compile Include="main.cs" />
@@ -203,5 +196,6 @@
   <ItemGroup>
     <None Include="app.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

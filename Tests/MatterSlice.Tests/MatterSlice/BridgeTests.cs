@@ -35,7 +35,7 @@ namespace MatterHackers.MatterSlice.Tests
 {
 	using Polygons = List<List<IntPoint>>;
 
-	[TestFixture]
+	[TestFixture, Category("MatterSlice")]
 	public class BridgeAngleTests
 	{
 		[Test]
@@ -150,24 +150,6 @@ namespace MatterHackers.MatterSlice.Tests
 			double bridgeAngle;
 			Bridge.BridgeAngle(outline, prevLayer, out bridgeAngle, debugName);
 			return bridgeAngle;
-		}
-	}
-
-	public static class BridgeTests
-	{
-		private static bool ranTests = false;
-
-		public static bool RanTests { get { return ranTests; } }
-
-		public static void Run()
-		{
-			if (!ranTests)
-			{
-				BridgeAngleTests bridgeAngleTests = new BridgeAngleTests();
-				bridgeAngleTests.TestConvexBottomLayer();
-
-				ranTests = true;
-			}
 		}
 	}
 }
