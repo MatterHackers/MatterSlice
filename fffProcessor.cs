@@ -497,7 +497,7 @@ namespace MatterHackers.MatterSlice
 
 				gcode.setZ(z);
 
-				bool printSupportFirst = (storage.support.generated && config.supportExtruder > 0 && config.supportExtruder == gcodeLayer.getExtruder());
+				bool printSupportFirst = (storage.support.generated && config.supportExtruder >= 0 && config.supportExtruder == gcodeLayer.getExtruder());
 				if (printSupportFirst)
 				{
 					AddSupportToGCode(storage, gcodeLayer, layerIndex, config);
