@@ -34,29 +34,26 @@ using System.IO;
 
 namespace MatterHackers.MatterSlice.Tests
 {
+	// TODO: Rename after changes
 	public class TestUtlities
 	{
-		private static string tempGCodePath = "../../GCode_Test";
+		// HACK: Probably a way to do this via configuration rather than this fragile nonsense
+		static string matterSliceBaseDirectory = Path.Combine("..", "..", "..", "..", "..", "MatterSlice");
+		static string tempGCodePath = Path.Combine(matterSliceBaseDirectory, "GCode_Test");
 
 		public static string GetStlPath(string file)
 		{
-			return Path.ChangeExtension(Path.Combine("../../SampleSTLs", file), "stl");
+			return Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "SampleSTLs", file), "stl");
 		}
 
 		public static string GetTempGCodePath(string file)
 		{
-			return Path.ChangeExtension(Path.Combine(tempGCodePath, file), "gcode");
+			return Path.ChangeExtension(Path.Combine("..", "..", "..", "TestData", "Temp", file), "gcode");
 		}
 
 		public static string GetControlGCodePath(string file)
 		{
-			string fileAndPath = Path.ChangeExtension(Path.Combine("../../GCode_Control", file), "gcode");
-			return fileAndPath;
-		}
-
-		public static string GetTestGCodePath(string file)
-		{
-			string fileAndPath = Path.ChangeExtension(Path.Combine(tempGCodePath, file), "gocde");
+			string fileAndPath = Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "GCode_Control", file), "gcode");
 			return fileAndPath;
 		}
 

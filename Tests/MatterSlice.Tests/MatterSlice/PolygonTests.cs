@@ -35,30 +35,9 @@ namespace MatterHackers.MatterSlice.Tests
 {
 	using System;
 	using Polygon = List<IntPoint>;
+	using System.Reflection;
 
-	public static class PolygonTests
-	{
-		private static bool ranTests = false;
-
-		public static bool RanTests { get { return ranTests; } }
-
-		public static void Run()
-		{
-			if (!ranTests)
-			{
-				PolygonHelperTests polygonHelperTests = new PolygonHelperTests();
-				polygonHelperTests.findRefValues();
-				for (int i = 0; i < 64; i++)
-				{
-					//polygonHelperTests.polygonTest(i);
-				}
-
-				ranTests = true;
-			}
-		}
-	}
-
-	[TestFixture]
+	[TestFixture, Category("MatterSlice.PolygonHelpers")]
 	public class PolygonHelperTests
 	{
 		// currently this tests the 'area', 'centerOfMass', and 'inside'
@@ -188,6 +167,12 @@ namespace MatterHackers.MatterSlice.Tests
 			RefCenterOfMass = new IntPoint(com_x, com_y);
 		}
 
+		private static object InvokeExtensionMethod(object context, string methodName, object methodParameter)
+		{
+			MethodInfo method = typeof(Polygon).GetMethod(methodName, BindingFlags.Static | BindingFlags.NonPublic);
+			return method.Invoke(context, parameters: new object[] { methodParameter }) as string[];
+		}
+
 		[Test]
 		public void polygonTest(int xform_code)
 		{
@@ -197,16 +182,17 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				test_path.Add(transformPoint(new IntPoint(test_poly_points[i][0], test_poly_points[i][1]), xform_code));
 			}
+
 			Polygon tpoly = new Polygon(test_path);
 
 			// check area
 			//
-			double found_area = tpoly.Area();
+			double found_area = (double) InvokeExtensionMethod(tpoly, "Area", null);
 			double ref_area = RefArea * transform_area_factor[xform_code & 15];
 			Assert.IsTrue(found_area == ref_area);
 
 			// check center of mass
-			IntPoint found_com = tpoly.CenterOfMass();
+			IntPoint found_com = (IntPoint) InvokeExtensionMethod(tpoly, "CenterOfMass", null);
 			IntPoint ref_com = transformPoint(RefCenterOfMass, xform_code);
 			Assert.IsTrue(Math.Abs(found_com.X - ref_com.X) <= 1);
 			Assert.IsTrue(Math.Abs(found_com.Y - ref_com.Y) <= 1);
@@ -215,13 +201,13 @@ namespace MatterHackers.MatterSlice.Tests
 			for (int i = 0; i < test_points_inside.Length / test_points_inside[0].Length; i++)
 			{
 				IntPoint tpt = transformPoint(new IntPoint(test_points_inside[i][0], test_points_inside[i][1]), xform_code);
-				Assert.IsTrue(tpoly.Inside(tpt));
+				Assert.IsTrue((bool) InvokeExtensionMethod(tpoly, "CenterOfMass", tpt));
 			}
 
 			for (int i = 0; i < test_points_outside.Length / test_points_outside[0].Length; i++)
 			{
 				IntPoint tpt = transformPoint(new IntPoint(test_points_outside[i][0], test_points_outside[i][1]), xform_code);
-				Assert.IsFalse(tpoly.Inside(tpt));
+				Assert.IsFalse((bool)InvokeExtensionMethod(tpoly, "Inside", tpt));
 			}
 		}
 

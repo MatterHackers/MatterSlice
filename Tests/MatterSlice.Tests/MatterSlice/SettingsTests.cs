@@ -31,7 +31,7 @@ using NUnit.Framework;
 
 namespace MatterHackers.MatterSlice.Tests
 {
-	[TestFixture]
+    [TestFixture, Category("MatterSlice")]
 	public class SliceSettingsTests
 	{
 		private string CreateGCodeForLayerHeights(double firstLayerHeight, double otherLayerHeight, double bottomClip = 0)
@@ -112,26 +112,6 @@ namespace MatterHackers.MatterSlice.Tests
 			//test that file has raft
 			Assert.IsTrue(TestUtlities.CheckForRaft(TestUtlities.LoadGCodeFile(CreateGCodeWithRaft(true))) == true);
 			Assert.IsTrue(TestUtlities.CheckForRaft(TestUtlities.LoadGCodeFile(CreateGcodeWithoutRaft(false))) == false);
-		}
-	}
-
-	public static class SettingsTests
-	{
-		private static bool ranTests = false;
-
-		public static bool RanTests { get { return ranTests; } }
-
-		public static void Run()
-		{
-			if (!ranTests)
-			{
-				SliceSettingsTests settingsTests = new SliceSettingsTests();
-				settingsTests.CorrectNumberOfLayersForLayerHeights();
-				settingsTests.BottomClipCorrectNumberOfLayers();
-				settingsTests.ExportGCodeWithRaft();
-
-				ranTests = true;
-			}
 		}
 	}
 }

@@ -19,7 +19,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MatterHackers.MatterSlice.Tests;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -73,13 +72,6 @@ namespace MatterHackers.MatterSlice
 
 		public static int ProcessArgs(string[] args)
 		{
-#if DEBUG
-			PathOrderTests pathOrderTests = new PathOrderTests();
-			pathOrderTests.CorrectSeamPlacement();
-
-			Tests.BridgeTests.Run();
-			Tests.PolygonTests.Run();
-#endif
 			if (args.Length == 0)
 			{
 				print_usage();
@@ -106,14 +98,6 @@ namespace MatterHackers.MatterSlice
 
 							case 'v':
 								LogOutput.verbose_level++;
-								break;
-
-							case 't':
-								Tests.TestUtlities.ClearTempGCode();
-								Tests.SlicingTests.Run();
-								Tests.SettingsTests.Run();
-								Tests.BridgeTests.Run();
-								Tests.PolygonTests.Run();
 								break;
 
 							case 'o':
