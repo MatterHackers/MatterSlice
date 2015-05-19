@@ -29,7 +29,9 @@ namespace MatterHackers.MatterSlice
 
 	public static class TopsAndBottoms
 	{
-		public static void Generate(int layerIndex, SliceVolumeStorage storage, int extrusionWidth, int downSkinCount, int upSkinCount)
+		readonly static double cleanDistance_um = 10;
+
+		public static void Generate(int layerIndex, SliceVolumeStorage storage, int extrusionWidth, int downLayerCount, int upLayerCount)
 		{
 			SliceLayer layer = storage.layers[layerIndex];
 
@@ -48,26 +50,30 @@ namespace MatterHackers.MatterSlice
 					downOutlines.AddAll(thinWalls);
 				}
 
-				if (layerIndex - downSkinCount >= 0)
+				if (layerIndex - downLayerCount >= 0)
 				{
-					SliceLayer layer2 = storage.layers[layerIndex - downSkinCount];
+					SliceLayer layer2 = storage.layers[layerIndex - downLayerCount];
 					for (int partIndex2 = 0; partIndex2 < layer2.parts.Count; partIndex2++)
 					{
 						if (part.boundaryBox.hit(layer2.parts[partIndex2].boundaryBox))
 						{
 							downOutlines = downOutlines.CreateDifference(layer2.parts[partIndex2].insets[layer2.parts[partIndex2].insets.Count - 1]);
+
+							downOutlines = Clipper.CleanPolygons(downOutlines, cleanDistance_um);
 						}
 					}
 				}
 
-				if (layerIndex + upSkinCount < storage.layers.Count)
+				if (layerIndex + upLayerCount < storage.layers.Count)
 				{
-					SliceLayer layer2 = storage.layers[layerIndex + upSkinCount];
+					SliceLayer layer2 = storage.layers[layerIndex + upLayerCount];
 					for (int partIndex2 = 0; partIndex2 < layer2.parts.Count; partIndex2++)
 					{
 						if (part.boundaryBox.hit(layer2.parts[partIndex2].boundaryBox))
 						{
 							topOutlines = topOutlines.CreateDifference(layer2.parts[partIndex2].insets[layer2.parts[partIndex2].insets.Count - 1]);
+
+							topOutlines = Clipper.CleanPolygons(topOutlines, cleanDistance_um);
 						}
 					}
 				}
@@ -78,7 +84,7 @@ namespace MatterHackers.MatterSlice
 				for (int outlineIndex = 0; outlineIndex < part.topAndBottomOutlines.Count; outlineIndex++)
 				{
 					double area = Math.Abs(part.topAndBottomOutlines[outlineIndex].Area()) / 1000.0 / 1000.0;
-					if (area < minAreaSize) // Only create an up/down skin if the area is large enough. So you do not create tiny blobs of "trying to fill"
+					if (area < minAreaSize) // Only create an up/down Outline if the area is large enough. So you do not create tiny blobs of "trying to fill"
 					{
 						part.topAndBottomOutlines.RemoveAt(outlineIndex);
 						outlineIndex -= 1;
@@ -87,7 +93,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static void GenerateSparse(int layerIndex, SliceVolumeStorage storage, int extrusionWidth, int downSkinCount, int upSkinCount)
+		public static void GenerateSparse(int layerIndex, SliceVolumeStorage storage, int extrusionWidth, int downLayerCount, int upLayerCount)
 		{
 			SliceLayer layer = storage.layers[layerIndex];
 
@@ -96,53 +102,57 @@ namespace MatterHackers.MatterSlice
 				SliceLayerPart part = layer.parts[partNr];
 
 				Polygons sparse = part.insets[part.insets.Count - 1].Offset(-extrusionWidth / 2);
-				Polygons downskin = sparse;
-				Polygons upskin = sparse;
+				Polygons downOutlines = sparse;
+				Polygons upOutlines = sparse;
 
-				if ((int)(layerIndex - downSkinCount) >= 0)
+				if ((int)(layerIndex - downLayerCount) >= 0)
 				{
-					SliceLayer layer2 = storage.layers[layerIndex - downSkinCount];
+					SliceLayer layer2 = storage.layers[layerIndex - downLayerCount];
 					for (int partNr2 = 0; partNr2 < layer2.parts.Count; partNr2++)
 					{
 						if (part.boundaryBox.hit(layer2.parts[partNr2].boundaryBox))
 						{
 							if (layer2.parts[partNr2].insets.Count > 1)
 							{
-								downskin = downskin.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 2]);
+								downOutlines = downOutlines.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 2]);
 							}
 							else
 							{
-								downskin = downskin.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 1]);
+								downOutlines = downOutlines.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 1]);
 							}
 						}
+
+						downOutlines = Clipper.CleanPolygons(downOutlines, cleanDistance_um);
 					}
 				}
-				if ((int)(layerIndex + upSkinCount) < (int)storage.layers.Count)
+				if ((int)(layerIndex + upLayerCount) < (int)storage.layers.Count)
 				{
-					SliceLayer layer2 = storage.layers[layerIndex + upSkinCount];
+					SliceLayer layer2 = storage.layers[layerIndex + upLayerCount];
 					for (int partNr2 = 0; partNr2 < layer2.parts.Count; partNr2++)
 					{
 						if (part.boundaryBox.hit(layer2.parts[partNr2].boundaryBox))
 						{
 							if (layer2.parts[partNr2].insets.Count > 1)
 							{
-								upskin = upskin.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 2]);
+								upOutlines = upOutlines.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 2]);
 							}
 							else
 							{
-								upskin = upskin.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 1]);
+								upOutlines = upOutlines.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 1]);
 							}
 						}
+
+						upOutlines = Clipper.CleanPolygons(upOutlines, cleanDistance_um);
 					}
 				}
 
-				Polygons result = upskin.CreateUnion(downskin);
+				Polygons result = upOutlines.CreateUnion(downOutlines);
 
 				double minAreaSize = 3.0;//(2 * M_PI * ((double)(config.extrusionWidth) / 1000.0) * ((double)(config.extrusionWidth) / 1000.0)) * 3;
 				for (int i = 0; i < result.Count; i++)
 				{
 					double area = Math.Abs(result[i].Area()) / 1000.0 / 1000.0;
-					if (area < minAreaSize) /* Only create an up/down skin if the area is large enough. So you do not create tiny blobs of "trying to fill" */
+					if (area < minAreaSize) /* Only create an up/down outlines if the area is large enough. So you do not create tiny blobs of "trying to fill" */
 					{
 						result.RemoveAt(i);
 						i -= 1;
