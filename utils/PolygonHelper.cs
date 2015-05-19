@@ -442,13 +442,14 @@ namespace MatterHackers.MatterSlice
 			return solution;
 		}
 
-		public static List<Polygons> SplitIntoParts(this Polygons polygons, bool unionAll = false)
+		public enum LayerOpperation { EvenOdd, UnionAll };
+		public static List<Polygons> CreateLayerOutlines(this Polygons polygons, LayerOpperation opperation)
 		{
 			List<Polygons> ret = new List<Polygons>();
 			Clipper clipper = new Clipper();
 			PolyTree resultPolyTree = new PolyTree();
 			clipper.AddPaths(polygons, PolyType.ptSubject, true);
-			if (unionAll)
+			if (opperation == LayerOpperation.UnionAll)
 			{
 				clipper.Execute(ClipType.ctUnion, resultPolyTree, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
 			}

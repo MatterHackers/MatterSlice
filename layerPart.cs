@@ -57,11 +57,11 @@ namespace MatterHackers.MatterSlice
 			List<Polygons> result;
 			if ((unionAllType & ConfigConstants.REPAIR_OVERLAPS.UNION_ALL_TOGETHER) == ConfigConstants.REPAIR_OVERLAPS.UNION_ALL_TOGETHER)
 			{
-				result = layer.polygonList.Offset(1000).SplitIntoParts(unionAllType != 0);
+				result = layer.polygonList.Offset(1000).CreateLayerOutlines(PolygonsHelper.LayerOpperation.UnionAll);
 			}
 			else
 			{
-				result = layer.polygonList.SplitIntoParts(unionAllType != 0);
+				result = layer.polygonList.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd);
 			}
 
 			for (int i = 0; i < result.Count; i++)

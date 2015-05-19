@@ -640,9 +640,9 @@ namespace MatterHackers.MatterSlice
 				Polygons fillPolygons = new Polygons();
 				Polygons bridgePolygons = new Polygons();
 
-				CalculateInfillData(storage, volumeIndex, layerIndex, extrusionWidth_um, part, ref fillPolygons, ref bridgePolygons);
+				CalculateInfillData(storage, volumeIndex, layerIndex, part, ref fillPolygons, ref bridgePolygons);
 
-				// Write the bidge polgons out first so the perimeter will have more to hold to while bridging the gaps.
+				// Write the bridge polgons out first so the perimeter will have more to hold to while bridging the gaps.
 				// It would be even better to slow down the perimeters that are part of bridges but that is a bit harder.
 				if (bridgePolygons.Count > 0)
 				{
@@ -709,10 +709,10 @@ namespace MatterHackers.MatterSlice
 			gcodeLayer.SetOuterPerimetersToAvoidCrossing(null);
 		}
 
-		private void CalculateInfillData(SliceDataStorage storage, int volumeIndex, int layerIndex, int extrusionWidth_um, SliceLayerPart part, ref Polygons fillPolygons, ref Polygons bridgePolygons)
+		private void CalculateInfillData(SliceDataStorage storage, int volumeIndex, int layerIndex, SliceLayerPart part, ref Polygons fillPolygons, ref Polygons bridgePolygons)
 		{
 			// generate infill for outline including bridging
-			foreach (Polygons outline in part.skinOutline.SplitIntoParts())
+			foreach (Polygons outline in part.topAndBottomOutlines.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd))
 			{
 				double partFillAngle = config.infillStartingAngle;
 				if ((layerIndex & 1) == 1)
@@ -724,16 +724,26 @@ namespace MatterHackers.MatterSlice
 					double bridgeAngle;
 					if (Bridge.BridgeAngle(outline, storage.volumes[volumeIndex].layers[layerIndex - 1], out bridgeAngle))
 					{
-						Infill.GenerateLinePaths(outline, ref bridgePolygons, extrusionWidth_um, config.infillExtendIntoPerimeter_um, bridgeAngle);
+						Infill.GenerateLinePaths(outline, ref bridgePolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, bridgeAngle);
 					}
 					else
 					{
-						Infill.GenerateLinePaths(outline, ref fillPolygons, extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
+						if (true)
+						{
+							Infill.GenerateLinePaths(outline, ref fillPolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
+						}
+						else
+						{
+							double oldInfillPercent = config.infillPercent;
+							config.infillPercent = 100;
+							Infill.GenerateConcentricInfill(config, outline, ref fillPolygons, partFillAngle);
+							config.infillPercent = oldInfillPercent;
+						}
 					}
 				}
 				else
 				{
-					Infill.GenerateLinePaths(outline, ref fillPolygons, extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
+					Infill.GenerateLinePaths(outline, ref fillPolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
 				}
 			}
 
@@ -749,23 +759,23 @@ namespace MatterHackers.MatterSlice
 						{
 							fillAngle += 90;
 						}
-						Infill.GenerateLineInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle);
+						Infill.GenerateLineInfill(config, part.sparseOutline, ref fillPolygons, fillAngle);
 						break;
 
 					case ConfigConstants.INFILL_TYPE.GRID:
-						Infill.GenerateGridInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle);
+						Infill.GenerateGridInfill(config, part.sparseOutline, ref fillPolygons, fillAngle);
 						break;
 
 					case ConfigConstants.INFILL_TYPE.TRIANGLES:
-						Infill.GenerateTriangleInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle);
+						Infill.GenerateTriangleInfill(config, part.sparseOutline, ref fillPolygons, fillAngle);
 						break;
 
 					case ConfigConstants.INFILL_TYPE.HEXAGON:
-						Infill.GenerateHexagonInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle, layerIndex);
+						Infill.GenerateHexagonInfill(config, part.sparseOutline, ref fillPolygons, fillAngle, layerIndex);
 						break;
 
 					case ConfigConstants.INFILL_TYPE.CONCENTRIC:
-						Infill.generateConcentricInfill(config, part.sparseOutline, ref fillPolygons, extrusionWidth_um, fillAngle);
+						Infill.GenerateConcentricInfill(config, part.sparseOutline, ref fillPolygons, fillAngle);
 						break;
 
 					default:
@@ -840,7 +850,7 @@ namespace MatterHackers.MatterSlice
 			supportPolygons = supportPolygons.Offset(-config.extrusionWidth_um * 1);
 			supportPolygons = supportPolygons.Offset(config.extrusionWidth_um * 1);
 
-			List<Polygons> supportIslands = supportPolygons.SplitIntoParts();
+			List<Polygons> supportIslands = supportPolygons.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd);
 			PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(gcode.getPositionXY());
 
 			for (int islandIndex = 0; islandIndex < supportIslands.Count; islandIndex++)
@@ -858,18 +868,18 @@ namespace MatterHackers.MatterSlice
 					switch (interfaceLayer)
 					{
 						case SupportType.Interface:
-							Infill.GenerateLineInfill(config, island, ref supportLines, config.extrusionWidth_um, config.supportInfillStartingAngle + 90, config.extrusionWidth_um);
+							Infill.GenerateLineInfill(config, island, ref supportLines, config.supportInfillStartingAngle + 90, config.extrusionWidth_um);
 							break;
 
 						case SupportType.General:
 							switch (config.supportType)
 							{
 								case ConfigConstants.SUPPORT_TYPE.GRID:
-									Infill.GenerateGridInfill(config, island, ref supportLines, config.supportExtrusionWidth_um, config.supportInfillStartingAngle, config.supportLineSpacing_um);
+									Infill.GenerateGridInfill(config, island, ref supportLines, config.supportInfillStartingAngle, config.supportLineSpacing_um);
 									break;
 
 								case ConfigConstants.SUPPORT_TYPE.LINES:
-									Infill.GenerateLineInfill(config, island, ref supportLines, config.supportExtrusionWidth_um, config.supportInfillStartingAngle, config.supportLineSpacing_um);
+									Infill.GenerateLineInfill(config, island, ref supportLines, config.supportInfillStartingAngle, config.supportLineSpacing_um);
 									break;
 							}
 							break;

@@ -37,15 +37,15 @@ namespace MatterHackers.MatterSlice
 			{
 				SliceLayerPart part = layer.parts[partIndex];
 
-				Polygons upskin = part.insets[part.insets.Count - 1].Offset(-extrusionWidth / 2);
-				Polygons downskin = upskin;
+				Polygons topOutlines = part.insets[part.insets.Count - 1].Offset(-extrusionWidth / 2);
+				Polygons downOutlines = topOutlines;
 
 				if (part.insets.Count > 1)
 				{
 					// Add thin wall filling by taking the area between the insets.
 					Polygons thinWalls = part.insets[0].Offset(-extrusionWidth / 2).CreateDifference(part.insets[1].Offset(extrusionWidth / 2));
-					upskin.AddAll(thinWalls);
-					downskin.AddAll(thinWalls);
+					topOutlines.AddAll(thinWalls);
+					downOutlines.AddAll(thinWalls);
 				}
 
 				if (layerIndex - downSkinCount >= 0)
@@ -55,7 +55,7 @@ namespace MatterHackers.MatterSlice
 					{
 						if (part.boundaryBox.hit(layer2.parts[partIndex2].boundaryBox))
 						{
-							downskin = downskin.CreateDifference(layer2.parts[partIndex2].insets[layer2.parts[partIndex2].insets.Count - 1]);
+							downOutlines = downOutlines.CreateDifference(layer2.parts[partIndex2].insets[layer2.parts[partIndex2].insets.Count - 1]);
 						}
 					}
 				}
@@ -67,20 +67,20 @@ namespace MatterHackers.MatterSlice
 					{
 						if (part.boundaryBox.hit(layer2.parts[partIndex2].boundaryBox))
 						{
-							upskin = upskin.CreateDifference(layer2.parts[partIndex2].insets[layer2.parts[partIndex2].insets.Count - 1]);
+							topOutlines = topOutlines.CreateDifference(layer2.parts[partIndex2].insets[layer2.parts[partIndex2].insets.Count - 1]);
 						}
 					}
 				}
 
-				part.skinOutline = upskin.CreateUnion(downskin);
+				part.topAndBottomOutlines = topOutlines.CreateUnion(downOutlines);
 
 				double minAreaSize = (2 * Math.PI * (extrusionWidth / 1000.0) * (extrusionWidth / 1000.0)) * 0.3;
-				for (int outlineIndex = 0; outlineIndex < part.skinOutline.Count; outlineIndex++)
+				for (int outlineIndex = 0; outlineIndex < part.topAndBottomOutlines.Count; outlineIndex++)
 				{
-					double area = Math.Abs(part.skinOutline[outlineIndex].Area()) / 1000.0 / 1000.0;
+					double area = Math.Abs(part.topAndBottomOutlines[outlineIndex].Area()) / 1000.0 / 1000.0;
 					if (area < minAreaSize) // Only create an up/down skin if the area is large enough. So you do not create tiny blobs of "trying to fill"
 					{
-						part.skinOutline.RemoveAt(outlineIndex);
+						part.topAndBottomOutlines.RemoveAt(outlineIndex);
 						outlineIndex -= 1;
 					}
 				}

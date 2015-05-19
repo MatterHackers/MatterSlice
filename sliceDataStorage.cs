@@ -43,7 +43,7 @@ namespace MatterHackers.MatterSlice
 		public Polygons outline = new Polygons();
 		public Polygons combBoundery = new Polygons();
 		public List<Polygons> insets = new List<Polygons>();
-		public Polygons skinOutline = new Polygons();
+		public Polygons topAndBottomOutlines = new Polygons();
 		public Polygons sparseOutline = new Polygons();
 		public int bridgeAngle;
 	};
