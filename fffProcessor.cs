@@ -427,7 +427,7 @@ namespace MatterHackers.MatterSlice
 			// keep the raft generation code inside of raft
 			Raft.GenerateRaftGCodeIfRequired(storage, config, gcode);
 
-			int volumeIdx = 0;
+			int volumeIndex = 0;
 			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 			{
 				if (MatterSlice.Canceled)
@@ -497,6 +497,12 @@ namespace MatterHackers.MatterSlice
 
 				gcode.setZ(z);
 
+				// We only create the skirt if we are on layer 0 and the first volume and there is no raft.
+				if (layerIndex == 0 && volumeIndex == 0 && !Raft.ShouldGenerateRaft(config))
+				{
+					AddSkirtToGCode(storage, gcodeLayer);
+				}
+
 				bool printSupportFirst = (storage.support.generated && config.supportExtruder >= 0 && config.supportExtruder == gcodeLayer.getExtruder());
 				if (printSupportFirst)
 				{
@@ -509,10 +515,10 @@ namespace MatterHackers.MatterSlice
 				{
 					if (volumeCnt > 0)
 					{
-						volumeIdx = (volumeIdx + 1) % storage.volumes.Count;
+						volumeIndex = (volumeIndex + 1) % storage.volumes.Count;
 					}
 
-					AddVolumeLayerToGCode(storage, gcodeLayer, volumeIdx, layerIndex, extrusionWidth_um, fanSpeedPercent);
+					AddVolumeLayerToGCode(storage, gcodeLayer, volumeIndex, layerIndex, extrusionWidth_um, fanSpeedPercent);
 				}
 
 				if (!printSupportFirst)
@@ -564,35 +570,36 @@ namespace MatterHackers.MatterSlice
 			return fanSpeedPercent;
 		}
 
+		private void AddSkirtToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer)
+		{
+			if (storage.skirt.Count > 0
+				&& storage.skirt[0].Count > 0)
+			{
+				IntPoint lowestPoint = storage.skirt[0][0];
+
+				// lets make sure we start with the most outside loop
+				foreach (Polygon polygon in storage.skirt)
+				{
+					foreach (IntPoint position in polygon)
+					{
+						if (position.Y < lowestPoint.Y)
+						{
+							lowestPoint = polygon[0];
+						}
+					}
+				}
+
+				gcodeLayer.writeTravel(lowestPoint);
+			}
+
+			gcodeLayer.writePolygonsByOptimizer(storage.skirt, skirtConfig);
+		}
+
 		//Add a single layer from a single mesh-volume to the GCode
 		private void AddVolumeLayerToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int volumeIndex, int layerIndex, int extrusionWidth_um, int fanSpeedPercent)
 		{
 			int prevExtruder = gcodeLayer.getExtruder();
 			bool extruderChanged = gcodeLayer.setExtruder(volumeIndex);
-			if (layerIndex == 0 && volumeIndex == 0 && !Raft.ShouldGenerateRaft(config))
-			{
-				if (storage.skirt.Count > 0
-					&& storage.skirt[0].Count > 0)
-				{
-					IntPoint lowestPoint = storage.skirt[0][0];
-
-					// lets make sure we start with the most outside loop
-					foreach (Polygon polygon in storage.skirt)
-					{
-						foreach (IntPoint position in polygon)
-						{
-							if (position.Y < lowestPoint.Y)
-							{
-								lowestPoint = polygon[0];
-							}
-						}
-					}
-
-					gcodeLayer.writeTravel(lowestPoint);
-				}
-
-				gcodeLayer.writePolygonsByOptimizer(storage.skirt, skirtConfig);
-			}
 
 			SliceLayer layer = storage.volumes[volumeIndex].layers[layerIndex];
 			if (extruderChanged)
