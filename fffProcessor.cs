@@ -500,7 +500,7 @@ namespace MatterHackers.MatterSlice
 				// We only create the skirt if we are on layer 0 and the first volume and there is no raft.
 				if (layerIndex == 0 && volumeIndex == 0 && !Raft.ShouldGenerateRaft(config))
 				{
-					AddSkirtToGCode(storage, gcodeLayer);
+					AddSkirtToGCode(storage, gcodeLayer, volumeIndex, layerIndex);
 				}
 
 				bool printSupportFirst = (storage.support.generated && config.supportExtruder >= 0 && config.supportExtruder == gcodeLayer.getExtruder());
@@ -570,7 +570,7 @@ namespace MatterHackers.MatterSlice
 			return fanSpeedPercent;
 		}
 
-		private void AddSkirtToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer)
+		private void AddSkirtToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int volumeIndex, int layerIndex)
 		{
 			if (storage.skirt.Count > 0
 				&& storage.skirt[0].Count > 0)
