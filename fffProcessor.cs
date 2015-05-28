@@ -34,7 +34,7 @@ namespace MatterHackers.MatterSlice
 	public class fffProcessor
 	{
 		private int maxObjectHeight;
-		private int fileNr;
+		private int fileNumber;
 		private GCodeExport gcode = new GCodeExport();
 		private ConfigSettings config;
 		private Stopwatch timeKeeper = new Stopwatch();
@@ -54,7 +54,7 @@ namespace MatterHackers.MatterSlice
 		public fffProcessor(ConfigSettings config)
 		{
 			this.config = config;
-			fileNr = 1;
+			fileNumber = 1;
 			maxObjectHeight = 0;
 		}
 
@@ -368,7 +368,7 @@ namespace MatterHackers.MatterSlice
 			gcode.writeComment("layerThickness = {0}".FormatWith(config.layerThickness));
 			gcode.writeComment("firstLayerThickness = {0}".FormatWith(config.firstLayerThickness));
 
-			if (fileNr == 1)
+			if (fileNumber == 1)
 			{
 				if (gcode.GetOutputType() == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
 				{
@@ -393,7 +393,7 @@ namespace MatterHackers.MatterSlice
 				gcode.writeMove(gcode.getPositionXY(), config.travelSpeed, 0);
 				gcode.writeMove(new IntPoint(storage.modelMin.x, storage.modelMin.y), config.travelSpeed, 0);
 			}
-			fileNr++;
+			fileNumber++;
 
 			int totalLayers = storage.volumes[0].layers.Count;
 			// let's remove any of the layers on top that are empty
@@ -595,6 +595,7 @@ namespace MatterHackers.MatterSlice
 			gcodeLayer.writePolygonsByOptimizer(storage.skirt, skirtConfig);
 		}
 
+		int lastPartIndex = 0;
 		//Add a single layer from a single mesh-volume to the GCode
 		private void AddVolumeLayerToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int volumeIndex, int layerIndex, int extrusionWidth_um, int fanSpeedPercent)
 		{
@@ -660,9 +661,11 @@ namespace MatterHackers.MatterSlice
 
 				if (config.numberOfPerimeters > 0)
 				{
-					if (partIndex > 0)
+					if (partIndex != lastPartIndex)
 					{
-						gcodeLayer.forceRetract();
+						// force a retract if changing islands
+						gcodeLayer.ForceRetract();
+						lastPartIndex = partIndex;
 					}
 
 					if (config.continuousSpiralOuterPerimeter)

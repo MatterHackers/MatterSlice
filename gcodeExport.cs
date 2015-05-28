@@ -737,7 +737,7 @@ namespace MatterHackers.MatterSlice
 			this.alwaysRetract = alwaysRetract;
 		}
 
-		public void forceRetract()
+		public void ForceRetract()
 		{
 			forceRetraction = true;
 		}
