@@ -603,7 +603,7 @@ namespace MatterHackers.MatterSlice
 								do
 								{
 									string[] xyValues = intPointString.Split(',');
-									points.Add(new IntPoint(double.Parse(xyValues[0]), double.Parse(xyValues[1])));
+									points.Add(new IntPoint(double.Parse(xyValues[0]) * 1000, double.Parse(xyValues[1]) * 1000));
 
 									nextIndex = GetInsides(out intPointString, bracketContents, '[', ']', nextIndex);
 								} while (nextIndex != -1);
