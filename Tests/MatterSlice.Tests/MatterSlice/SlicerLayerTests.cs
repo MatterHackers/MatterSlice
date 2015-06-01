@@ -69,8 +69,8 @@ namespace MatterHackers.MatterSlice.Tests
 				for (int i = 1; i < numLayers - 1; i++)
 				{
 					string[] layer = TestUtlities.GetGCodeForLayer(gcodeContents, i);
-					int numRetractions = TestUtlities.CountRetractions(layer);
-					Assert.IsTrue(numRetractions == 4);
+					int totalRetractions = TestUtlities.CountRetractions(layer);
+					Assert.IsTrue(totalRetractions == 6);
 				}
 			}
 		}
