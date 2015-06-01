@@ -205,7 +205,7 @@ namespace MatterHackers.MatterSlice.Tests
 			for (int i = 0; i < test_points_inside.Length / test_points_inside[0].Length; i++)
 			{
 				IntPoint tpt = transformPoint(new IntPoint(test_points_inside[i][0], test_points_inside[i][1]), xform_code);
-				Assert.IsTrue(tpoly.CenterOfMass() == tpt);
+				Assert.IsTrue(tpoly.Inside(tpt));
 			}
 
 			for (int i = 0; i < test_points_outside.Length / test_points_outside[0].Length; i++)
