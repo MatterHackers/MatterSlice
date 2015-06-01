@@ -29,6 +29,7 @@ either expressed or implied, of the FreeBSD Project.
 
 using MatterSlice.ClipperLib;
 using NUnit.Framework;
+using MatterHackers.MatterSlice;
 using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice.Tests
@@ -167,13 +168,16 @@ namespace MatterHackers.MatterSlice.Tests
 			RefCenterOfMass = new IntPoint(com_x, com_y);
 		}
 
-		private static object InvokeExtensionMethod(object context, string methodName, object methodParameter)
+		[Test]
+		public void PolygonHelperTestCases()
 		{
-			MethodInfo method = typeof(Polygon).GetMethod(methodName, BindingFlags.Static | BindingFlags.NonPublic);
-			return method.Invoke(context, parameters: new object[] { methodParameter }) as string[];
+			findRefValues();
+			for (int i = 0; i < 64; i++)
+			{
+				polygonTest(i);
+			}
 		}
 
-		[Test]
 		public void polygonTest(int xform_code)
 		{
 			Polygon test_path = new Polygon();
@@ -187,12 +191,12 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// check area
 			//
-			double found_area = (double) InvokeExtensionMethod(tpoly, "Area", null);
+			double found_area = tpoly.Area();
 			double ref_area = RefArea * transform_area_factor[xform_code & 15];
 			Assert.IsTrue(found_area == ref_area);
 
 			// check center of mass
-			IntPoint found_com = (IntPoint) InvokeExtensionMethod(tpoly, "CenterOfMass", null);
+			IntPoint found_com = tpoly.CenterOfMass();
 			IntPoint ref_com = transformPoint(RefCenterOfMass, xform_code);
 			Assert.IsTrue(Math.Abs(found_com.X - ref_com.X) <= 1);
 			Assert.IsTrue(Math.Abs(found_com.Y - ref_com.Y) <= 1);
@@ -201,13 +205,13 @@ namespace MatterHackers.MatterSlice.Tests
 			for (int i = 0; i < test_points_inside.Length / test_points_inside[0].Length; i++)
 			{
 				IntPoint tpt = transformPoint(new IntPoint(test_points_inside[i][0], test_points_inside[i][1]), xform_code);
-				Assert.IsTrue((bool) InvokeExtensionMethod(tpoly, "CenterOfMass", tpt));
+				Assert.IsTrue(tpoly.Inside(tpt));
 			}
 
 			for (int i = 0; i < test_points_outside.Length / test_points_outside[0].Length; i++)
 			{
 				IntPoint tpt = transformPoint(new IntPoint(test_points_outside[i][0], test_points_outside[i][1]), xform_code);
-				Assert.IsFalse((bool)InvokeExtensionMethod(tpoly, "Inside", tpt));
+				Assert.IsFalse(tpoly.Inside(tpt));
 			}
 		}
 
