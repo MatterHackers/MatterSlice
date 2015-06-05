@@ -45,6 +45,7 @@ namespace MatterHackers.MatterSlice
 
 		private static int Main(string[] args)
 		{
+			CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
 			Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 			return ProcessArgs(args);
 		}
