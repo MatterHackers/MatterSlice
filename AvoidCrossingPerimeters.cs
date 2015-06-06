@@ -315,6 +315,7 @@ namespace MatterHackers.MatterSlice
 			}
 			return false;
 		}
+
 		private IntPoint getBounderyPointWithOffset(int polygonIndex, int pointIndex)
 		{
 			int previousIndex = pointIndex - 1;

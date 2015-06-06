@@ -39,7 +39,7 @@ namespace MatterHackers.MatterSlice
 
 	public class SliceLayerPart
 	{
-		public AABB boundaryBox = new AABB();
+		public Aabb boundaryBox = new Aabb();
 		public Polygons outline = new Polygons();
 		public Polygons combBoundery = new Polygons();
 		public List<Polygons> insets = new List<Polygons>();

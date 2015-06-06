@@ -31,29 +31,82 @@ namespace MatterHackers.MatterSlice
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
+	// Axis aligned boundary box
+	public class Aabb
+	{
+		public IntPoint min, max;
+
+		public Aabb()
+		{
+			min = new IntPoint(long.MinValue, long.MinValue);
+			max = new IntPoint(long.MinValue, long.MinValue);
+		}
+
+		public Aabb(Polygons polys)
+		{
+			min = new IntPoint(long.MinValue, long.MinValue);
+			max = new IntPoint(long.MinValue, long.MinValue);
+			Calculate(polys);
+		}
+
+		public void Calculate(Polygons polys)
+		{
+			min = new IntPoint(long.MaxValue, long.MaxValue);
+			max = new IntPoint(long.MinValue, long.MinValue);
+			for (int i = 0; i < polys.Count; i++)
+			{
+				for (int j = 0; j < polys[i].Count; j++)
+				{
+					if (min.X > polys[i][j].X) min.X = polys[i][j].X;
+					if (min.Y > polys[i][j].Y) min.Y = polys[i][j].Y;
+					if (max.X < polys[i][j].X) max.X = polys[i][j].X;
+					if (max.Y < polys[i][j].Y) max.Y = polys[i][j].Y;
+				}
+			}
+		}
+
+		public bool hit(Aabb other)
+		{
+			if (max.X < other.min.X) return false;
+			if (min.X > other.max.X) return false;
+			if (max.Y < other.min.Y) return false;
+			if (min.Y > other.max.Y) return false;
+			return true;
+		}
+	}
+
 	internal static class PolygonHelper
 	{
-		public static bool Orientation(this Polygon polygon)
+		public static double Area(this Polygon polygon)
 		{
-			return Clipper.Orientation(polygon);
+			return Clipper.Area(polygon);
 		}
 
-		public static void Reverse(this Polygon polygon)
+		public static IntPoint CenterOfMass(this Polygon polygon)
 		{
-			polygon.Reverse();
-		}
-
-		public static long PolygonLength(this Polygon polygon)
-		{
-			long length = 0;
-			IntPoint previousPoint = polygon[polygon.Count - 1];
-			for (int n = 0; n < polygon.Count; n++)
+			IntPoint center = new IntPoint();
+			for (int positionIndex = 0; positionIndex < polygon.Count; positionIndex++)
 			{
-				IntPoint currentPoint = polygon[n];
-				length += (previousPoint - currentPoint).Length();
-				previousPoint = currentPoint;
+				center += polygon[positionIndex];
 			}
-			return length;
+
+			center /= polygon.Count;
+			return center;
+		}
+
+		public static Polygon CreateFromString(string polygonString)
+		{
+			Polygon output = new Polygon();
+			string[] intPointData = polygonString.Split(',');
+			for (int i = 0; i < intPointData.Length - 1; i += 2)
+			{
+				string elementX = intPointData[i];
+				string elementY = intPointData[i + 1];
+				IntPoint nextIntPoint = new IntPoint(int.Parse(elementX.Substring(2)), int.Parse(elementY.Substring(3)));
+				output.Add(nextIntPoint);
+			}
+
+			return output;
 		}
 
 		public static bool Inside(this Polygon polygon, IntPoint testPoint)
@@ -98,22 +151,7 @@ namespace MatterHackers.MatterSlice
 			return (crossings % 2) == 1;
 		}
 
-		public static double Area(this Polygon polygon)
-		{
-			return Clipper.Area(polygon);
-		}
-
-		public static string WriteToString(this Polygon polygon)
-		{
-			string total = "";
-			foreach (IntPoint point in polygon)
-			{
-				total += point.ToString() + ",";
-			}
-			return total;
-		}
-
-		public static void optimizePolygon(this Polygon polygon)
+		public static void OptimizePolygon(this Polygon polygon)
 		{
 			IntPoint previousPoint = polygon[polygon.Count - 1];
 			for (int i = 0; i < polygon.Count; i++)
@@ -153,6 +191,28 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		public static bool Orientation(this Polygon polygon)
+		{
+			return Clipper.Orientation(polygon);
+		}
+
+		public static long PolygonLength(this Polygon polygon)
+		{
+			long length = 0;
+			IntPoint previousPoint = polygon[polygon.Count - 1];
+			for (int n = 0; n < polygon.Count; n++)
+			{
+				IntPoint currentPoint = polygon[n];
+				length += (previousPoint - currentPoint).Length();
+				previousPoint = currentPoint;
+			}
+			return length;
+		}
+
+		public static void Reverse(this Polygon polygon)
+		{
+			polygon.Reverse();
+		}
 		public static void SaveToGCode(this Polygon polygon, string filename)
 		{
 			double scale = 1000;
@@ -181,56 +241,61 @@ namespace MatterHackers.MatterSlice
 			stream.Close();
 		}
 
-		public static IntPoint CenterOfMass(this Polygon polygon)
+		public static string WriteToString(this Polygon polygon)
 		{
-#if true
-			IntPoint center = new IntPoint();
-			for (int positionIndex = 0; positionIndex < polygon.Count; positionIndex++)
+			string total = "";
+			foreach (IntPoint point in polygon)
 			{
-				center += polygon[positionIndex];
+				total += point.ToString() + ",";
 			}
-
-			center /= polygon.Count;
-			return center;
-#else
-            double x = 0, y = 0;
-            IntPoint prevPosition = polygon[polygon.Count - 1];
-            for (int positionIndex = 0; positionIndex < polygon.Count; positionIndex++)
-            {
-                IntPoint currentPosition = polygon[positionIndex];
-                double crossProduct = (prevPosition.X * currentPosition.Y) - (prevPosition.Y * currentPosition.X);
-
-                x += (double)(prevPosition.X + currentPosition.X) * crossProduct;
-                y += (double)(prevPosition.Y + currentPosition.Y) * crossProduct;
-                prevPosition = currentPosition;
-            }
-
-            double area = Clipper.Area(polygon);
-            x = x / 6 / area;
-            y = y / 6 / area;
-
-            return new IntPoint(x, y);
-#endif
-		}
-
-		public static Polygon CreateFromString(string polygonString)
-		{
-			Polygon output = new Polygon();
-			string[] intPointData = polygonString.Split(',');
-			for (int i = 0; i < intPointData.Length - 1; i += 2)
-			{
-				string elementX = intPointData[i];
-				string elementY = intPointData[i + 1];
-				IntPoint nextIntPoint = new IntPoint(int.Parse(elementX.Substring(2)), int.Parse(elementY.Substring(3)));
-				output.Add(nextIntPoint);
-			}
-
-			return output;
+			return total;
 		}
 	}
 
 	internal static class PolygonsHelper
 	{
+		public enum LayerOpperation { EvenOdd, UnionAll };
+
+		public static void AddAll(this Polygons polygons, Polygons other)
+		{
+			for (int n = 0; n < other.Count; n++)
+			{
+				polygons.Add(other[n]);
+			}
+		}
+
+		public static void ApplyMatrix(this Polygons polygons, PointMatrix matrix)
+		{
+			for (int i = 0; i < polygons.Count; i++)
+			{
+				for (int j = 0; j < polygons[i].Count; j++)
+				{
+					polygons[i][j] = matrix.apply(polygons[i][j]);
+				}
+			}
+		}
+
+		public static void ApplyTranslation(this Polygons polygons, IntPoint translation)
+		{
+			for (int i = 0; i < polygons.Count; i++)
+			{
+				for (int j = 0; j < polygons[i].Count; j++)
+				{
+					polygons[i][j] = polygons[i][j] + translation;
+				}
+			}
+		}
+
+		public static Polygons CreateDifference(this Polygons polygons, Polygons other)
+		{
+			Polygons ret = new Polygons();
+			Clipper clipper = new Clipper();
+			clipper.AddPaths(polygons, PolyType.ptSubject, true);
+			clipper.AddPaths(other, PolyType.ptClip, true);
+			clipper.Execute(ClipType.ctDifference, ret);
+			return ret;
+		}
+
 		public static Polygons CreateFromString(string polygonsPackedString)
 		{
 			Polygons output = new Polygons();
@@ -244,6 +309,133 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 			return output;
+		}
+
+		public static Polygons CreateIntersection(this Polygons polygons, Polygons other)
+		{
+			Polygons ret = new Polygons();
+			Clipper clipper = new Clipper();
+			clipper.AddPaths(polygons, PolyType.ptSubject, true);
+			clipper.AddPaths(other, PolyType.ptClip, true);
+			clipper.Execute(ClipType.ctIntersection, ret);
+			return ret;
+		}
+
+		public static List<Polygons> CreateLayerOutlines(this Polygons polygons, LayerOpperation opperation)
+		{
+			List<Polygons> ret = new List<Polygons>();
+			Clipper clipper = new Clipper();
+			PolyTree resultPolyTree = new PolyTree();
+			clipper.AddPaths(polygons, PolyType.ptSubject, true);
+			if (opperation == LayerOpperation.UnionAll)
+			{
+				clipper.Execute(ClipType.ctUnion, resultPolyTree, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
+			}
+			else
+			{
+				clipper.Execute(ClipType.ctUnion, resultPolyTree);
+			}
+
+			polygons._processPolyTreeNode(resultPolyTree, ret);
+			return ret;
+		}
+
+		public static Polygons CreateUnion(this Polygons polygons, Polygons other)
+		{
+			Polygons ret = new Polygons();
+			Clipper clipper = new Clipper();
+			clipper.AddPaths(polygons, PolyType.ptSubject, true);
+			clipper.AddPaths(other, PolyType.ptSubject, true);
+			clipper.Execute(ClipType.ctUnion, ret, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
+			return ret;
+		}
+
+		public static bool Inside(this Polygons polygons, IntPoint testPoint)
+		{
+			if (polygons.Count < 1)
+			{
+				return false;
+			}
+
+			// we can just test the first one first as we know that there is a special case in
+			// the silcer that all the other polygons are inside this one
+			if (!polygons[0].Inside(testPoint))
+			{
+				return false;
+			}
+
+			for (int polygonIndex = 1; polygonIndex < polygons.Count; polygonIndex++)
+			{
+				if (polygons[polygonIndex].Inside(testPoint))
+				{
+					return false;
+				}
+			}
+
+			return true;
+			/*
+			// this should work but it gives bad results on avoid crossing perimeters
+            // Check if we are inside the comb boundary.
+            for (int bounderyIndex = 0; bounderyIndex < polygons.Count; bounderyIndex++)
+            {
+                Polygon boundryPolygon = polygons[bounderyIndex];
+
+                int pointInPolygon = Clipper.PointInPolygon(testPoint, boundryPolygon);
+                if (pointInPolygon != 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+			*/
+		}
+
+		public static Polygons Offset(this Polygons polygons, int distance)
+		{
+			ClipperOffset offseter = new ClipperOffset();
+			offseter.AddPaths(polygons, JoinType.jtMiter, EndType.etClosedPolygon);
+			Paths solution = new Polygons();
+			offseter.Execute(ref solution, distance);
+			return solution;
+		}
+
+		public static void OptimizePolygons(this Polygons polygons)
+		{
+			for (int n = 0; n < polygons.Count; n++)
+			{
+				polygons[n].OptimizePolygon();
+				if (polygons[n].Count < 3)
+				{
+					polygons.RemoveAt(n);
+					n--;
+				}
+			}
+		}
+
+		public static long PolygonLength(this Polygons polygons)
+		{
+			long length = 0;
+			for (int i = 0; i < polygons.Count; i++)
+			{
+				IntPoint previousPoint = polygons[i][polygons[i].Count - 1];
+				for (int n = 0; n < polygons[i].Count; n++)
+				{
+					IntPoint currentPoint = polygons[i][n];
+					length += (previousPoint - currentPoint).vSize();
+					previousPoint = currentPoint;
+				}
+			}
+			return length;
+		}
+
+		public static Polygons ProcessEvenOdd(this Polygons polygons)
+		{
+			Polygons ret = new Polygons();
+			Clipper clipper = new Clipper();
+			clipper.AddPaths(polygons, PolyType.ptSubject, true);
+			clipper.Execute(ClipType.ctUnion, ret);
+			return ret;
 		}
 
 		public static void SaveToGCode(this Polygons polygons, string filename)
@@ -331,14 +523,6 @@ namespace MatterHackers.MatterSlice
 			stream.Close();
 		}
 
-		public static void AddAll(this Polygons polygons, Polygons other)
-		{
-			for (int n = 0; n < other.Count; n++)
-			{
-				polygons.Add(other[n]);
-			}
-		}
-
 		public static string WriteToString(this Polygons polygons)
 		{
 			string total = "";
@@ -347,119 +531,6 @@ namespace MatterHackers.MatterSlice
 				total += polygon.WriteToString() + "|";
 			}
 			return total;
-		}
-
-		public static Polygons CreateDifference(this Polygons polygons, Polygons other)
-		{
-			Polygons ret = new Polygons();
-			Clipper clipper = new Clipper();
-			clipper.AddPaths(polygons, PolyType.ptSubject, true);
-			clipper.AddPaths(other, PolyType.ptClip, true);
-			clipper.Execute(ClipType.ctDifference, ret);
-			return ret;
-		}
-
-		public static Polygons CreateUnion(this Polygons polygons, Polygons other)
-		{
-			Polygons ret = new Polygons();
-			Clipper clipper = new Clipper();
-			clipper.AddPaths(polygons, PolyType.ptSubject, true);
-			clipper.AddPaths(other, PolyType.ptSubject, true);
-			clipper.Execute(ClipType.ctUnion, ret, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
-			return ret;
-		}
-
-		public static Polygons CreateIntersection(this Polygons polygons, Polygons other)
-		{
-			Polygons ret = new Polygons();
-			Clipper clipper = new Clipper();
-			clipper.AddPaths(polygons, PolyType.ptSubject, true);
-			clipper.AddPaths(other, PolyType.ptClip, true);
-			clipper.Execute(ClipType.ctIntersection, ret);
-			return ret;
-		}
-
-		public static void optimizePolygons(this Polygons polygons)
-		{
-			for (int n = 0; n < polygons.Count; n++)
-			{
-				polygons[n].optimizePolygon();
-				if (polygons[n].Count < 3)
-				{
-					polygons.RemoveAt(n);
-					n--;
-				}
-			}
-		}
-
-		public static bool Inside(this Polygons polygons, IntPoint testPoint)
-		{
-#if true
-			if (polygons.Count < 1)
-			{
-				return false;
-			}
-
-			// we can just test the first one first as we know that there is a special case in
-			// the silcer that all the other polygons are inside this one
-			if (!polygons[0].Inside(testPoint))
-			{
-				return false;
-			}
-
-			for (int polygonIndex = 1; polygonIndex < polygons.Count; polygonIndex++)
-			{
-				if (polygons[polygonIndex].Inside(testPoint))
-				{
-					return false;
-				}
-			}
-
-			return true;
-#else // this should work but it gives bad results on avoid crossing perimeters
-            // Check if we are inside the comb boundary.
-            for (int bounderyIndex = 0; bounderyIndex < polygons.Count; bounderyIndex++)
-            {
-                Polygon boundryPolygon = polygons[bounderyIndex];
-
-                int pointInPolygon = Clipper.PointInPolygon(testPoint, boundryPolygon);
-                if (pointInPolygon != 0)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-#endif
-		}
-
-		public static Polygons Offset(this Polygons polygons, int distance)
-		{
-			ClipperOffset offseter = new ClipperOffset();
-			offseter.AddPaths(polygons, JoinType.jtMiter, EndType.etClosedPolygon);
-			Paths solution = new Polygons();
-			offseter.Execute(ref solution, distance);
-			return solution;
-		}
-
-		public enum LayerOpperation { EvenOdd, UnionAll };
-		public static List<Polygons> CreateLayerOutlines(this Polygons polygons, LayerOpperation opperation)
-		{
-			List<Polygons> ret = new List<Polygons>();
-			Clipper clipper = new Clipper();
-			PolyTree resultPolyTree = new PolyTree();
-			clipper.AddPaths(polygons, PolyType.ptSubject, true);
-			if (opperation == LayerOpperation.UnionAll)
-			{
-				clipper.Execute(ClipType.ctUnion, resultPolyTree, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
-			}
-			else
-			{
-				clipper.Execute(ClipType.ctUnion, resultPolyTree);
-			}
-
-			polygons._processPolyTreeNode(resultPolyTree, ret);
-			return ret;
 		}
 
 		private static void _processPolyTreeNode(this Polygons polygonsIn, PolyNode node, List<Polygons> ret)
@@ -476,97 +547,6 @@ namespace MatterHackers.MatterSlice
 				}
 				ret.Add(polygons);
 			}
-		}
-
-		public static Polygons processEvenOdd(this Polygons polygons)
-		{
-			Polygons ret = new Polygons();
-			Clipper clipper = new Clipper();
-			clipper.AddPaths(polygons, PolyType.ptSubject, true);
-			clipper.Execute(ClipType.ctUnion, ret);
-			return ret;
-		}
-
-		public static long polygonLength(this Polygons polygons)
-		{
-			long length = 0;
-			for (int i = 0; i < polygons.Count; i++)
-			{
-				IntPoint previousPoint = polygons[i][polygons[i].Count - 1];
-				for (int n = 0; n < polygons[i].Count; n++)
-				{
-					IntPoint currentPoint = polygons[i][n];
-					length += (previousPoint - currentPoint).vSize();
-					previousPoint = currentPoint;
-				}
-			}
-			return length;
-		}
-
-		public static void applyMatrix(this Polygons polygons, PointMatrix matrix)
-		{
-			for (int i = 0; i < polygons.Count; i++)
-			{
-				for (int j = 0; j < polygons[i].Count; j++)
-				{
-					polygons[i][j] = matrix.apply(polygons[i][j]);
-				}
-			}
-		}
-
-		public static void applyTranslation(this Polygons polygons, IntPoint translation)
-		{
-			for (int i = 0; i < polygons.Count; i++)
-			{
-				for (int j = 0; j < polygons[i].Count; j++)
-				{
-					polygons[i][j] = polygons[i][j] + translation;
-				}
-			}
-		}
-	}
-
-	// Axis aligned boundary box
-	public class AABB
-	{
-		public IntPoint min, max;
-
-		public AABB()
-		{
-			min = new IntPoint(long.MinValue, long.MinValue);
-			max = new IntPoint(long.MinValue, long.MinValue);
-		}
-
-		public AABB(Polygons polys)
-		{
-			min = new IntPoint(long.MinValue, long.MinValue);
-			max = new IntPoint(long.MinValue, long.MinValue);
-			calculate(polys);
-		}
-
-		public void calculate(Polygons polys)
-		{
-			min = new IntPoint(long.MaxValue, long.MaxValue);
-			max = new IntPoint(long.MinValue, long.MinValue);
-			for (int i = 0; i < polys.Count; i++)
-			{
-				for (int j = 0; j < polys[i].Count; j++)
-				{
-					if (min.X > polys[i][j].X) min.X = polys[i][j].X;
-					if (min.Y > polys[i][j].Y) min.Y = polys[i][j].Y;
-					if (max.X < polys[i][j].X) max.X = polys[i][j].X;
-					if (max.Y < polys[i][j].Y) max.Y = polys[i][j].Y;
-				}
-			}
-		}
-
-		public bool hit(AABB other)
-		{
-			if (max.X < other.min.X) return false;
-			if (min.X > other.max.X) return false;
-			if (max.Y < other.min.Y) return false;
-			if (min.Y > other.max.Y) return false;
-			return true;
 		}
 	}
 }

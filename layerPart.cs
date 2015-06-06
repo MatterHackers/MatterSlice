@@ -77,7 +77,7 @@ namespace MatterHackers.MatterSlice
 					storageLayer.parts[i].outline = result[i];
 				}
 
-				storageLayer.parts[i].boundaryBox.calculate(storageLayer.parts[i].outline);
+				storageLayer.parts[i].boundaryBox.Calculate(storageLayer.parts[i].outline);
 			}
 		}
 

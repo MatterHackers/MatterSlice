@@ -35,7 +35,7 @@ namespace MatterHackers.MatterSlice
 		public static bool BridgeAngle(Polygons outline, SliceLayer prevLayer, out double bridgeAngle, string debugName = "")
 		{
 			bridgeAngle = -1;
-			AABB boundaryBox = new AABB(outline);
+			Aabb boundaryBox = new Aabb(outline);
 			//To detect if we have a bridge, first calculate the intersection of the current layer with the previous layer.
 			// This gives us the islands that the layer rests on.
 			Polygons islands = new Polygons();

@@ -145,7 +145,7 @@ namespace MatterHackers.MatterSlice.Tests
 			SliceLayerPart part = new SliceLayerPart();
 			part.outline = PolygonsHelper.CreateFromString(partOutlineString);
 			prevLayer.parts.Add(part);
-			prevLayer.parts[0].boundaryBox.calculate(prevLayer.parts[0].outline);
+			prevLayer.parts[0].boundaryBox.Calculate(prevLayer.parts[0].outline);
 
 			double bridgeAngle;
 			Bridge.BridgeAngle(outline, prevLayer, out bridgeAngle, debugName);

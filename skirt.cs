@@ -85,7 +85,7 @@ namespace MatterHackers.MatterSlice
 
 				storage.skirt.AddAll(skirtPolygons);
 
-				int lenght = (int)storage.skirt.polygonLength();
+				int lenght = (int)storage.skirt.PolygonLength();
 				if (skirtLoop + 1 >= numberOfLoops && lenght > 0 && lenght < minLength)
 				{
 					// add more loops for as long as we have not extruded enough length

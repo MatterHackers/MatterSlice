@@ -40,9 +40,9 @@ namespace MatterHackers.MatterSlice
 				{
 					PointMatrix matrix = new PointMatrix(-(rotation + 90)); // we are rotating the part so we rotate by the negative so the lines go the way we expect
 
-					outlines.applyMatrix(matrix);
+					outlines.ApplyMatrix(matrix);
 
-					AABB boundary = new AABB(outlines);
+					Aabb boundary = new Aabb(outlines);
 
 					boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing - rotationOffset;
 					int xLineCount = (int)((boundary.max.X - boundary.min.X + (lineSpacing - 1)) / lineSpacing);
@@ -65,14 +65,14 @@ namespace MatterHackers.MatterSlice
 
 					Polygons newSegments = Clipper.OpenPathsFromPolyTree(ret);
 					PointMatrix inversematrix = new PointMatrix((rotation + 90));
-					newSegments.applyMatrix(inversematrix);
+					newSegments.ApplyMatrix(inversematrix);
 
 					result.AddRange(newSegments);
 				}
 			}
 		}
 
-		private static IEnumerable<IntPoint> StartPositionIterator(AABB boundary, int lineSpacing, int layerIndex)
+		private static IEnumerable<IntPoint> StartPositionIterator(Aabb boundary, int lineSpacing, int layerIndex)
 		{
 			int perIncrementOffset = (int)(lineSpacing * Math.Sqrt(3) / 2 + .5);
 			int yLineCount = (int)((boundary.max.Y - boundary.min.Y + perIncrementOffset) / perIncrementOffset) + 1;
@@ -147,7 +147,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private static IEnumerable<IntPoint> IncrementPositionIterator(IntPoint startPoint, AABB boundary, int lineSpacing, int layerIndex)
+		private static IEnumerable<IntPoint> IncrementPositionIterator(IntPoint startPoint, Aabb boundary, int lineSpacing, int layerIndex)
 		{
 			IntPoint positionAdd = new IntPoint(lineSpacing, 0);
 			int perIncrementOffset = (int)(lineSpacing * Math.Sqrt(3) / 2 + .5);
@@ -187,9 +187,9 @@ namespace MatterHackers.MatterSlice
 					int perIncrementOffset = (int)(lineSpacing * Math.Sqrt(3) / 2 + .5);
 					PointMatrix matrix = new PointMatrix(-(rotationDegrees + extraRotationAngle)); // we are rotating the part so we rotate by the negative so the lines go the way we expect
 
-					outlines.applyMatrix(matrix);
+					outlines.ApplyMatrix(matrix);
 
-					AABB boundary = new AABB(outlines);
+					Aabb boundary = new Aabb(outlines);
 
 					boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing;
 					boundary.min.Y = ((boundary.min.Y / perIncrementOffset) - 2) * perIncrementOffset;
@@ -247,7 +247,7 @@ namespace MatterHackers.MatterSlice
 
 					Polygons newSegments = Clipper.OpenPathsFromPolyTree(ret);
 					PointMatrix inversematrix = new PointMatrix((rotationDegrees + extraRotationAngle));
-					newSegments.applyMatrix(inversematrix);
+					newSegments.ApplyMatrix(inversematrix);
 
 					result.AddRange(newSegments);
 				}
