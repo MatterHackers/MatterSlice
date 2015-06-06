@@ -516,9 +516,9 @@ namespace MatterHackers.MatterSlice
 			return !ShorterThen(p0, len);
 		}
 
-		public static IntPoint normal(this IntPoint thisPoint, int len)
+		public static IntPoint Normal(this IntPoint thisPoint, int len)
 		{
-			int _len = thisPoint.vSize();
+			long _len = thisPoint.Length();
 			if (_len < 1)
 			{
 				return new IntPoint(len, 0);
@@ -550,11 +550,6 @@ namespace MatterHackers.MatterSlice
 			if (thisPoint.Y > len || thisPoint.Y < -len)
 				return false;
 			return thisPoint.LengthSquared() <= len * len;
-		}
-
-		public static int vSize(this IntPoint thisPoint)
-		{
-			return (int)Math.Sqrt(thisPoint.LengthSquared());
 		}
 
 		// true if p0 -> p1 -> p2 is strictly convex.

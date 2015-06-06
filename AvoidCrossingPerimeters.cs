@@ -100,7 +100,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// Calculate the minimum and maximum positions where we cross the comb boundary
-			calcMinMax();
+			CalcMinMax();
 
 			long nomalizedStartX = nomalizedStartPoint.X;
 			List<IntPoint> pointList = new List<IntPoint>();
@@ -208,7 +208,7 @@ namespace MatterHackers.MatterSlice
 
 					//Q = A + Normal( B - A ) * ((( B - A ) dot ( P - A )) / VSize( A - B ));
 					IntPoint deltaToCurrent = currentPoint - previousPoint;
-					long deltaLength = deltaToCurrent.vSize();
+					long deltaLength = deltaToCurrent.Length();
 					long distToBoundrySegment = deltaToCurrent.Dot(pointToMove - previousPoint) / deltaLength;
 					if (distToBoundrySegment < 10)
 					{
@@ -220,13 +220,13 @@ namespace MatterHackers.MatterSlice
 						distToBoundrySegment = deltaLength - 10;
 					}
 
-					IntPoint q = previousPoint + deltaToCurrent * distToBoundrySegment / deltaLength;
+					IntPoint pointAlongCurrentSegment = previousPoint + deltaToCurrent * distToBoundrySegment / deltaLength;
 
-					long dist = (q - pointToMove).LengthSquared();
+					long dist = (pointAlongCurrentSegment - pointToMove).LengthSquared();
 					if (dist < bestDist)
 					{
 						bestDist = dist;
-						newPosition = q + ((currentPoint - previousPoint).normal(maxDistanceToMove)).GetPerpendicularLeft();
+						newPosition = pointAlongCurrentSegment + ((currentPoint - previousPoint).Normal(maxDistanceToMove)).GetPerpendicularLeft();
 					}
 
 					previousPoint = currentPoint;
@@ -247,7 +247,7 @@ namespace MatterHackers.MatterSlice
 			return bounderyPolygons.Inside(pointToTest);
 		}
 
-		private void calcMinMax()
+		private void CalcMinMax()
 		{
 			for (int bounderyIndex = 0; bounderyIndex < bounderyPolygons.Count; bounderyIndex++)
 			{
@@ -339,9 +339,9 @@ namespace MatterHackers.MatterSlice
 			IntPoint nextPoint = bounderyPolygons[polygonIndex][nextIndex];
 
 			// assuming a ccw winding this will give us a point inside of the edge
-			IntPoint leftNormalOfPrevEdge = ((currentPoint - previousPoint).normal(1000)).GetPerpendicularLeft();
-			IntPoint leftNormalOfCurrentEdge = ((nextPoint - currentPoint).normal(1000)).GetPerpendicularLeft();
-			IntPoint offsetToBeInside = (leftNormalOfPrevEdge + leftNormalOfCurrentEdge).normal(200);
+			IntPoint leftNormalOfPrevEdge = ((currentPoint - previousPoint).Normal(1000)).GetPerpendicularLeft();
+			IntPoint leftNormalOfCurrentEdge = ((nextPoint - currentPoint).Normal(1000)).GetPerpendicularLeft();
+			IntPoint offsetToBeInside = (leftNormalOfPrevEdge + leftNormalOfCurrentEdge).Normal(200);
 
 			return currentPoint + offsetToBeInside;
 		}

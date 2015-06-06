@@ -406,11 +406,11 @@ namespace MatterHackers.MatterSlice
 			int minimumPerimeter = 1000;
 			for (int polygonIndex = 0; polygonIndex < polygonList.Count; polygonIndex++)
 			{
-				int perimeterLength = 0;
+				long perimeterLength = 0;
 
 				for (int intPointIndex = 1; intPointIndex < polygonList[polygonIndex].Count; intPointIndex++)
 				{
-					perimeterLength += (polygonList[polygonIndex][intPointIndex] - polygonList[polygonIndex][intPointIndex - 1]).vSize();
+					perimeterLength += (polygonList[polygonIndex][intPointIndex] - polygonList[polygonIndex][intPointIndex - 1]).Length();
 					if (perimeterLength > minimumPerimeter)
 					{
 						break;
@@ -446,30 +446,30 @@ namespace MatterHackers.MatterSlice
 			if (ret.pointIndexA == ret.pointIndexB)
 			{
 				//Connection points are on the same line segment.
-				ret.len = (ip0 - ip1).vSize();
+				ret.len = (ip0 - ip1).Length();
 			}
 			else
 			{
 				//Find out if we have should go from A to B or the other way around.
 				IntPoint p0 = polygonList[ret.polygonIndex][ret.pointIndexA];
-				long lenA = (p0 - ip0).vSize();
+				long lenA = (p0 - ip0).Length();
 				for (int i = ret.pointIndexA; i != ret.pointIndexB; i = (i + 1) % polygonList[ret.polygonIndex].Count)
 				{
 					IntPoint p1 = polygonList[ret.polygonIndex][i];
-					lenA += (p0 - p1).vSize();
+					lenA += (p0 - p1).Length();
 					p0 = p1;
 				}
-				lenA += (p0 - ip1).vSize();
+				lenA += (p0 - ip1).Length();
 
 				p0 = polygonList[ret.polygonIndex][ret.pointIndexB];
-				long lenB = (p0 - ip1).vSize();
+				long lenB = (p0 - ip1).Length();
 				for (int i = ret.pointIndexB; i != ret.pointIndexA; i = (i + 1) % polygonList[ret.polygonIndex].Count)
 				{
 					IntPoint p1 = polygonList[ret.polygonIndex][i];
-					lenB += (p0 - p1).vSize();
+					lenB += (p0 - p1).Length();
 					p0 = p1;
 				}
-				lenB += (p0 - ip0).vSize();
+				lenB += (p0 - ip0).Length();
 
 				if (lenA < lenB)
 				{
@@ -497,7 +497,7 @@ namespace MatterHackers.MatterSlice
 
 					//Q = A + Normal( B - A ) * ((( B - A ) dot ( P - A )) / VSize( A - B ));
 					IntPoint pDiff = p1 - p0;
-					long lineLength = (pDiff).vSize();
+					long lineLength = (pDiff).Length();
 					if (lineLength > 1)
 					{
 						long distOnLine = (pDiff).Dot(input - p0) / lineLength;

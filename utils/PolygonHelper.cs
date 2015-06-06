@@ -379,7 +379,7 @@ namespace MatterHackers.MatterSlice
 				for (int n = 0; n < polygons[i].Count; n++)
 				{
 					IntPoint currentPoint = polygons[i][n];
-					length += (previousPoint - currentPoint).vSize();
+					length += (previousPoint - currentPoint).Length();
 					previousPoint = currentPoint;
 				}
 			}

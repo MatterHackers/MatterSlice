@@ -872,9 +872,9 @@ namespace MatterHackers.MatterSlice
 						nextPosition = gcode.getPositionXY();
 						for (int x = pathIndex; x < i - 1; x += 2)
 						{
-							long oldLen = (nextPosition - paths[x].points[0]).vSize();
+							long oldLen = (nextPosition - paths[x].points[0]).Length();
 							IntPoint newPoint = (paths[x].points[0] + paths[x + 1].points[0]) / 2;
-							long newLen = (gcode.getPositionXY() - newPoint).vSize();
+							long newLen = (gcode.getPositionXY() - newPoint).Length();
 							if (newLen > 0)
 							{
 								gcode.writeMove(newPoint, speed, (int)(path.config.lineWidth * oldLen / newLen));
