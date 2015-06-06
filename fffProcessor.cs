@@ -68,7 +68,7 @@ namespace MatterHackers.MatterSlice
 
 		public void Cancel()
 		{
-			if (gcode.isOpened())
+			if (gcode.IsOpened())
 			{
 				gcode.Close();
 			}
@@ -76,13 +76,13 @@ namespace MatterHackers.MatterSlice
 
 		public void DoProcessing()
 		{
-			if (!gcode.isOpened())
+			if (!gcode.IsOpened())
 			{
 				return;
 			}
 
 			timeKeeper.Restart();
-			LogOutput.log("Analyzing and optimizing model...\n");
+			LogOutput.Log("Analyzing and optimizing model...\n");
 			optomizedModel = new OptimizedModel(simpleModel);
 			if (MatterSlice.Canceled)
 			{
@@ -91,11 +91,11 @@ namespace MatterHackers.MatterSlice
 			optomizedModel.SetPositionAndSize(simpleModel, config.positionToPlaceObjectCenter_um.X, config.positionToPlaceObjectCenter_um.Y, -config.bottomClipAmount_um, config.centerObjectInXy);
 			for (int volumeIndex = 0; volumeIndex < simpleModel.volumes.Count; volumeIndex++)
 			{
-				LogOutput.log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleModel.volumes[volumeIndex].faceTriangles.Count, (int)optomizedModel.volumes[volumeIndex].facesTriangle.Count, (double)(optomizedModel.volumes[volumeIndex].facesTriangle.Count) / (double)(simpleModel.volumes[volumeIndex].faceTriangles.Count) * 100));
-				LogOutput.log("  Vertex counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleModel.volumes[volumeIndex].faceTriangles.Count * 3, (int)optomizedModel.volumes[volumeIndex].vertices.Count, (double)(optomizedModel.volumes[volumeIndex].vertices.Count) / (double)(simpleModel.volumes[volumeIndex].faceTriangles.Count * 3) * 100));
+				LogOutput.Log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleModel.volumes[volumeIndex].faceTriangles.Count, (int)optomizedModel.volumes[volumeIndex].facesTriangle.Count, (double)(optomizedModel.volumes[volumeIndex].facesTriangle.Count) / (double)(simpleModel.volumes[volumeIndex].faceTriangles.Count) * 100));
+				LogOutput.Log("  Vertex counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleModel.volumes[volumeIndex].faceTriangles.Count * 3, (int)optomizedModel.volumes[volumeIndex].vertices.Count, (double)(optomizedModel.volumes[volumeIndex].vertices.Count) / (double)(simpleModel.volumes[volumeIndex].faceTriangles.Count * 3) * 100));
 			}
 
-			LogOutput.log("Optimize model {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.Seconds));
+			LogOutput.Log("Optimize model {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.Seconds));
 			timeKeeper.Reset();
 
 			Stopwatch timeKeeperTotal = new Stopwatch();
@@ -115,12 +115,12 @@ namespace MatterHackers.MatterSlice
 			}
 
 			LogOutput.logProgress("process", 1, 1); //Report to the GUI that a file has been fully processed.
-			LogOutput.log("Total time elapsed {0:0.00}s.\n".FormatWith(timeKeeperTotal.Elapsed.Seconds));
+			LogOutput.Log("Total time elapsed {0:0.00}s.\n".FormatWith(timeKeeperTotal.Elapsed.Seconds));
 		}
 
 		public void finalize()
 		{
-			if (!gcode.isOpened())
+			if (!gcode.IsOpened())
 			{
 				return;
 			}
@@ -134,24 +134,24 @@ namespace MatterHackers.MatterSlice
 		{
 			PreSetup(config.extrusionWidth_um);
 			timeKeeper.Restart();
-			LogOutput.log("Loading {0} from disk...\n".FormatWith(input_filename));
+			LogOutput.Log("Loading {0} from disk...\n".FormatWith(input_filename));
 			if (!SimpleModel.loadModelFromFile(simpleModel, input_filename, config.modelRotationMatrix))
 			{
-				LogOutput.logError("Failed to load model: {0}\n".FormatWith(input_filename));
+				LogOutput.LogError("Failed to load model: {0}\n".FormatWith(input_filename));
 				return false;
 			}
-			LogOutput.log("Loaded from disk in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
+			LogOutput.Log("Loaded from disk in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
 			return true;
 		}
 
-		public bool setTargetFile(string filename)
+		public bool SetTargetFile(string filename)
 		{
 			gcode.setFilename(filename);
 			{
 				gcode.writeComment("Generated with MatterSlice {0}".FormatWith(ConfigConstants.VERSION));
 			}
 
-			return gcode.isOpened();
+			return gcode.IsOpened();
 		}
 
 		private void AddSkirtToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int volumeIndex, int layerIndex)
@@ -176,7 +176,7 @@ namespace MatterHackers.MatterSlice
 				gcodeLayer.writeTravel(lowestPoint);
 			}
 
-			gcodeLayer.writePolygonsByOptimizer(storage.skirt, skirtConfig);
+			gcodeLayer.WritePolygonsByOptimizer(storage.skirt, skirtConfig);
 		}
 
 		private void AddSupportToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int layerIndex, ConfigSettings config)
@@ -189,16 +189,16 @@ namespace MatterHackers.MatterSlice
 			if (config.supportExtruder > -1)
 			{
 				int prevExtruder = gcodeLayer.getExtruder();
-				if (gcodeLayer.setExtruder(config.supportExtruder))
+				if (gcodeLayer.SetExtruder(config.supportExtruder))
 				{
 					AddWipeTower(storage, gcodeLayer, layerIndex, prevExtruder, config.extrusionWidth_um);
 				}
 
 				if (storage.wipeShield.Count > 0 && storage.volumes.Count == 1)
 				{
-					gcodeLayer.setAlwaysRetract(true);
-					gcodeLayer.writePolygonsByOptimizer(storage.wipeShield[layerIndex], skirtConfig);
-					gcodeLayer.setAlwaysRetract(config.avoidCrossingPerimeters);
+					gcodeLayer.SetAlwaysRetract(true);
+					gcodeLayer.WritePolygonsByOptimizer(storage.wipeShield[layerIndex], skirtConfig);
+					gcodeLayer.SetAlwaysRetract(config.avoidCrossingPerimeters);
 				}
 			}
 
@@ -223,7 +223,7 @@ namespace MatterHackers.MatterSlice
 			if (config.supportInterfaceExtruder != -1
 				&& config.supportInterfaceExtruder != config.supportExtruder)
 			{
-				gcodeLayer.setExtruder(config.supportInterfaceExtruder);
+				gcodeLayer.SetExtruder(config.supportInterfaceExtruder);
 			}
 			WriteSupportPolygons(storage, gcodeLayer, layerIndex, config, supportGenerator.interfacePolygons, SupportType.Interface);
 		}
@@ -232,7 +232,7 @@ namespace MatterHackers.MatterSlice
 		private void AddVolumeLayerToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int volumeIndex, int layerIndex, int extrusionWidth_um, int fanSpeedPercent)
 		{
 			int prevExtruder = gcodeLayer.getExtruder();
-			bool extruderChanged = gcodeLayer.setExtruder(volumeIndex);
+			bool extruderChanged = gcodeLayer.SetExtruder(volumeIndex);
 
 			SliceLayer layer = storage.volumes[volumeIndex].layers[layerIndex];
 			if (extruderChanged)
@@ -242,9 +242,9 @@ namespace MatterHackers.MatterSlice
 
 			if (storage.wipeShield.Count > 0 && storage.volumes.Count > 1)
 			{
-				gcodeLayer.setAlwaysRetract(true);
-				gcodeLayer.writePolygonsByOptimizer(storage.wipeShield[layerIndex], skirtConfig);
-				gcodeLayer.setAlwaysRetract(!config.avoidCrossingPerimeters);
+				gcodeLayer.SetAlwaysRetract(true);
+				gcodeLayer.WritePolygonsByOptimizer(storage.wipeShield[layerIndex], skirtConfig);
+				gcodeLayer.SetAlwaysRetract(!config.avoidCrossingPerimeters);
 			}
 
 			PathOrderOptimizer partOrderOptimizer = new PathOrderOptimizer(new IntPoint());
@@ -274,7 +274,7 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					gcodeLayer.setAlwaysRetract(true);
+					gcodeLayer.SetAlwaysRetract(true);
 				}
 
 				Polygons fillPolygons = new Polygons();
@@ -287,7 +287,7 @@ namespace MatterHackers.MatterSlice
 				if (bridgePolygons.Count > 0)
 				{
 					gcode.writeFanCommand(config.bridgeFanSpeedPercent);
-					gcodeLayer.writePolygonsByOptimizer(bridgePolygons, bridgConfig);
+					gcodeLayer.WritePolygonsByOptimizer(bridgePolygons, bridgConfig);
 					gcode.writeFanCommand(fanSpeedPercent);
 				}
 
@@ -314,14 +314,14 @@ namespace MatterHackers.MatterSlice
 						// First the outside (this helps with accuracy)
 						if (part.insets.Count > 0)
 						{
-							gcodeLayer.writePolygonsByOptimizer(part.insets[0], inset0Config);
+							gcodeLayer.WritePolygonsByOptimizer(part.insets[0], inset0Config);
 						}
 
 						if (!inset0Config.spiralize)
 						{
 							for (int perimeterIndex = 1; perimeterIndex < part.insets.Count; perimeterIndex++)
 							{
-								gcodeLayer.writePolygonsByOptimizer(part.insets[perimeterIndex], insetXConfig);
+								gcodeLayer.WritePolygonsByOptimizer(part.insets[perimeterIndex], insetXConfig);
 							}
 						}
 					}
@@ -330,17 +330,17 @@ namespace MatterHackers.MatterSlice
 						// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
 						for (int perimeterIndex = 1; perimeterIndex < part.insets.Count; perimeterIndex++)
 						{
-							gcodeLayer.writePolygonsByOptimizer(part.insets[perimeterIndex], insetXConfig);
+							gcodeLayer.WritePolygonsByOptimizer(part.insets[perimeterIndex], insetXConfig);
 						}
 						// then 0
 						if (part.insets.Count > 0)
 						{
-							gcodeLayer.writePolygonsByOptimizer(part.insets[0], inset0Config);
+							gcodeLayer.WritePolygonsByOptimizer(part.insets[0], inset0Config);
 						}
 					}
 				}
 
-				gcodeLayer.writePolygonsByOptimizer(fillPolygons, fillConfig);
+				gcodeLayer.WritePolygonsByOptimizer(fillPolygons, fillConfig);
 
 				//After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
 				if (!config.continuousSpiralOuterPerimeter || layerIndex < config.numberOfBottomLayers)
@@ -359,10 +359,10 @@ namespace MatterHackers.MatterSlice
 			}
 
 			//If we changed extruder, print the wipe/prime tower for this nozzle;
-			gcodeLayer.writePolygonsByOptimizer(storage.wipeTower, supportInterfaceConfig);
+			gcodeLayer.WritePolygonsByOptimizer(storage.wipeTower, supportInterfaceConfig);
 			Polygons fillPolygons = new Polygons();
 			Infill.GenerateLinePaths(storage.wipeTower, ref fillPolygons, extrusionWidth_um, config.infillExtendIntoPerimeter_um, 45 + 90 * (layerNr % 2));
-			gcodeLayer.writePolygonsByOptimizer(fillPolygons, supportInterfaceConfig);
+			gcodeLayer.WritePolygonsByOptimizer(fillPolygons, supportInterfaceConfig);
 
 			//Make sure we wipe the old extruder on the wipe tower.
 			gcodeLayer.writeTravel(storage.wipePoint - config.extruderOffsets[prevExtruder] + config.extruderOffsets[gcodeLayer.getExtruder()]);
@@ -445,14 +445,14 @@ namespace MatterHackers.MatterSlice
 
 		private void CreateWipeShields(SliceDataStorage storage, int totalLayers)
 		{
-			for (int layerNr = 0; layerNr < totalLayers; layerNr++)
+			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 			{
 				Polygons wipeShield = new Polygons();
-				for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
+				for (int volumeIndex = 0; volumeIndex < storage.volumes.Count; volumeIndex++)
 				{
-					for (int partNr = 0; partNr < storage.volumes[volumeIdx].layers[layerNr].parts.Count; partNr++)
+					for (int partNr = 0; partNr < storage.volumes[volumeIndex].layers[layerIndex].parts.Count; partNr++)
 					{
-						wipeShield = wipeShield.CreateUnion(storage.volumes[volumeIdx].layers[layerNr].parts[partNr].outline.Offset(config.wipeShieldDistanceFromShapes_um));
+						wipeShield = wipeShield.CreateUnion(storage.volumes[volumeIndex].layers[layerIndex].parts[partNr].outline.Offset(config.wipeShieldDistanceFromShapes_um));
 					}
 				}
 				storage.wipeShield.Add(wipeShield);
@@ -464,14 +464,14 @@ namespace MatterHackers.MatterSlice
 			}
 
 			int offsetAngle = (int)Math.Tan(60.0 * Math.PI / 180) * config.layerThickness_um;//Allow for a 60deg angle in the wipeShield.
-			for (int layerNr = 1; layerNr < totalLayers; layerNr++)
+			for (int layerIndex = 1; layerIndex < totalLayers; layerIndex++)
 			{
-				storage.wipeShield[layerNr] = storage.wipeShield[layerNr].CreateUnion(storage.wipeShield[layerNr - 1].Offset(-offsetAngle));
+				storage.wipeShield[layerIndex] = storage.wipeShield[layerIndex].CreateUnion(storage.wipeShield[layerIndex - 1].Offset(-offsetAngle));
 			}
 
-			for (int layerNr = totalLayers - 1; layerNr > 0; layerNr--)
+			for (int layerIndex = totalLayers - 1; layerIndex > 0; layerIndex--)
 			{
-				storage.wipeShield[layerNr - 1] = storage.wipeShield[layerNr - 1].CreateUnion(storage.wipeShield[layerNr].Offset(-offsetAngle));
+				storage.wipeShield[layerIndex - 1] = storage.wipeShield[layerIndex - 1].CreateUnion(storage.wipeShield[layerIndex].Offset(-offsetAngle));
 			}
 		}
 
@@ -563,7 +563,7 @@ namespace MatterHackers.MatterSlice
 					}
 					Inset.generateInsets(layer, extrusionWidth, insetCount);
 				}
-				LogOutput.log("Creating Insets {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
+				LogOutput.Log("Creating Insets {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
 			}
 
 			if (config.wipeShieldDistanceFromShapes_um > 0)
@@ -571,7 +571,7 @@ namespace MatterHackers.MatterSlice
 				CreateWipeShields(storage, totalLayers);
 			}
 
-			LogOutput.log("Generated inset in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
+			LogOutput.Log("Generated inset in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
 			timeKeeper.Restart();
 
 			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
@@ -596,9 +596,9 @@ namespace MatterHackers.MatterSlice
 						TopsAndBottoms.GenerateSparse(layerIndex, storage.volumes[volumeIndex], extrusionWidth, config.numberOfBottomLayers, config.numberOfTopLayers);
 					}
 				}
-				LogOutput.log("Creating Top & Bottom Layers {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
+				LogOutput.Log("Creating Top & Bottom Layers {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
 			}
-			LogOutput.log("Generated top bottom layers in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
+			LogOutput.Log("Generated top bottom layers in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
 			timeKeeper.Restart();
 
 			if (config.wipeTowerSize_um > 0)
@@ -640,7 +640,7 @@ namespace MatterHackers.MatterSlice
 			timeKeeper.Restart();
 			//optomizedModel.saveDebugSTL("debug_output.stl");
 
-			LogOutput.log("Slicing model...\n");
+			LogOutput.Log("Slicing model...\n");
 			List<Slicer> slicerList = new List<Slicer>();
 			for (int volumeIndex = 0; volumeIndex < optomizedModel.volumes.Count; volumeIndex++)
 			{
@@ -655,17 +655,17 @@ namespace MatterHackers.MatterSlice
 				slicerList[0].DumpPolygonsToHTML("Volume 0 Polygons.html");
 			}
 
-			LogOutput.log("Sliced model in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
+			LogOutput.Log("Sliced model in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
 			timeKeeper.Restart();
 
-			LogOutput.log("Generating support map...\n");
+			LogOutput.Log("Generating support map...\n");
 			storage.support.GenerateSupportGrid(optomizedModel, config);
 
 			storage.modelSize = optomizedModel.size_um;
 			storage.modelMin = optomizedModel.minXYZ_um;
 			storage.modelMax = optomizedModel.maxXYZ_um;
 
-			LogOutput.log("Generating layer parts...\n");
+			LogOutput.Log("Generating layer parts...\n");
 			for (int volumeIndex = 0; volumeIndex < slicerList.Count; volumeIndex++)
 			{
 				storage.volumes.Add(new SliceVolumeStorage());
@@ -680,7 +680,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 			}
-			LogOutput.log("Generated layer parts in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
+			LogOutput.Log("Generated layer parts in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
 			timeKeeper.Restart();
 		}
 
@@ -758,7 +758,7 @@ namespace MatterHackers.MatterSlice
 				{
 					return;
 				}
-				LogOutput.log("Writing Layers {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
+				LogOutput.Log("Writing Layers {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
 
 				LogOutput.logProgress("export", layerIndex + 1, totalLayers);
 
@@ -864,7 +864,7 @@ namespace MatterHackers.MatterSlice
 				gcodeLayer.writeGCode(config.doCoolHeadLift, currentLayerThickness_um);
 			}
 
-			LogOutput.log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.Seconds));
+			LogOutput.Log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.Seconds));
 			timeKeeper.Restart();
 			gcode.tellFileSize();
 			gcode.writeFanCommand(0);
@@ -935,15 +935,15 @@ namespace MatterHackers.MatterSlice
 				switch (interfaceLayer)
 				{
 					case SupportType.Interface:
-						gcodeLayer.writePolygonsByOptimizer(supportLines, supportInterfaceConfig);
+						gcodeLayer.WritePolygonsByOptimizer(supportLines, supportInterfaceConfig);
 						break;
 
 					case SupportType.General:
 						if (config.supportType == ConfigConstants.SUPPORT_TYPE.GRID)
 						{
-							gcodeLayer.writePolygonsByOptimizer(island, supportNormalConfig);
+							gcodeLayer.WritePolygonsByOptimizer(island, supportNormalConfig);
 						}
-						gcodeLayer.writePolygonsByOptimizer(supportLines, supportNormalConfig);
+						gcodeLayer.WritePolygonsByOptimizer(supportLines, supportNormalConfig);
 						break;
 
 					default:

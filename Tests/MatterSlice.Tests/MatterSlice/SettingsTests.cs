@@ -44,7 +44,7 @@ namespace MatterHackers.MatterSlice.Tests
 			config.layerThickness = otherLayerHeight;
 			config.bottomClipAmount = bottomClip;
 			fffProcessor processor = new fffProcessor(config);
-			processor.setTargetFile(boxGCodeFile);
+			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);
 			// slice and save it
 			processor.DoProcessing();
@@ -61,7 +61,7 @@ namespace MatterHackers.MatterSlice.Tests
 			ConfigSettings config = new ConfigSettings();
 			config.enableRaft = hasRaft;
 			fffProcessor processor = new fffProcessor(config);
-			processor.setTargetFile(boxGCodeFile);
+			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);
 			// slice and save it
 			processor.DoProcessing();
@@ -78,7 +78,7 @@ namespace MatterHackers.MatterSlice.Tests
 			ConfigSettings config = new ConfigSettings();
 			config.enableRaft = hasRaft;
 			fffProcessor processor = new fffProcessor(config);
-			processor.setTargetFile(boxGCodeFile);
+			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);
 			// slice and save it
 			processor.DoProcessing();

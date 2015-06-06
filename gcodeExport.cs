@@ -99,9 +99,9 @@ namespace MatterHackers.MatterSlice
 			writeComment("filament used extruder 2 (mm) = {0:0.0}".FormatWith(getTotalFilamentUsed(1)));
 			writeComment("total print time (s) = {0:0}".FormatWith(getTotalPrintTime()));
 
-			LogOutput.log("Print time: {0}\n".FormatWith((int)(getTotalPrintTime())));
-			LogOutput.log("Filament: {0}\n".FormatWith((int)(getTotalFilamentUsed(0))));
-			LogOutput.log("Filament2: {0}\n".FormatWith((int)(getTotalFilamentUsed(1))));
+			LogOutput.Log("Print time: {0}\n".FormatWith((int)(getTotalPrintTime())));
+			LogOutput.Log("Filament: {0}\n".FormatWith((int)(getTotalFilamentUsed(0))));
+			LogOutput.Log("Filament2: {0}\n".FormatWith((int)(getTotalFilamentUsed(1))));
 
 			if (GetOutputType() == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
 			{
@@ -155,7 +155,7 @@ namespace MatterHackers.MatterSlice
 			return totalPrintTime;
 		}
 
-		public bool isOpened()
+		public bool IsOpened()
 		{
 			return gcodeFileStream != null;
 		}
@@ -281,12 +281,12 @@ namespace MatterHackers.MatterSlice
 			if (fsize > 1024 * 1024)
 			{
 				fsize /= 1024.0 * 1024.0;
-				LogOutput.log("Wrote {0:0.0} MB.\n".FormatWith(fsize));
+				LogOutput.Log("Wrote {0:0.0} MB.\n".FormatWith(fsize));
 			}
 			if (fsize > 1024)
 			{
 				fsize /= 1024.0;
-				LogOutput.log("Wrote {0:0.0} kilobytes.\n".FormatWith(fsize));
+				LogOutput.Log("Wrote {0:0.0} kilobytes.\n".FormatWith(fsize));
 			}
 		}
 
@@ -770,12 +770,12 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void setAlwaysRetract(bool alwaysRetract)
+		public void SetAlwaysRetract(bool alwaysRetract)
 		{
 			this.alwaysRetract = alwaysRetract;
 		}
 
-		public bool setExtruder(int extruder)
+		public bool SetExtruder(int extruder)
 		{
 			if (extruder == currentExtruderIndex)
 			{
@@ -996,7 +996,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void writePolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
+		public void WritePolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
 		{
 			PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(lastPosition);
 			orderOptimizer.AddPolygons(polygons);

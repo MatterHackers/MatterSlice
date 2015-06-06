@@ -49,8 +49,14 @@ namespace MatterHackers.MatterSlice
 			indexOfMaxX = new int[bounderyPolygons.Count];
 		}
 
+		bool saveDebugData = false;
 		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, List<IntPoint> pathThatIsInside)
 		{
+			if (saveDebugData)
+			{
+				string boundryPolygons = bounderyPolygons.WriteToString();
+			}
+
 			if ((endPoint - startPoint).ShorterThen(1500))
 			{
 				// If the movement is very short (not a lot of time to ooze filament)
@@ -105,7 +111,7 @@ namespace MatterHackers.MatterSlice
 			while (true)
 			{
 				// if we go up enough we should run into the boundry
-				int abovePolyIndex = getPolygonIndexAbove(nomalizedStartX);
+				int abovePolyIndex = GetPolygonIndexAbove(nomalizedStartX);
 				if (abovePolyIndex < 0)
 				{
 					break;
@@ -116,7 +122,7 @@ namespace MatterHackers.MatterSlice
 				{
 					for (int i = indexOfMinX[abovePolyIndex]; i != indexOfMaxX[abovePolyIndex]; i = (i < bounderyPolygons[abovePolyIndex].Count - 1) ? (i + 1) : (0))
 					{
-						pointList.Add(getBounderyPointWithOffset(abovePolyIndex, i));
+						pointList.Add(GetBounderyPointWithOffset(abovePolyIndex, i));
 					}
 				}
 				else
@@ -135,7 +141,7 @@ namespace MatterHackers.MatterSlice
 
 					for (int i = indexOfMinX[abovePolyIndex]; i != indexOfMaxX[abovePolyIndex]; i = (i > 0) ? (i - 1) : (bounderyPolygons[abovePolyIndex].Count - 1))
 					{
-						pointList.Add(getBounderyPointWithOffset(abovePolyIndex, i));
+						pointList.Add(GetBounderyPointWithOffset(abovePolyIndex, i));
 					}
 				}
 				pointList.Add(matrix.unapply(new IntPoint(maxXPosition[abovePolyIndex] + 200, nomalizedStartPoint.Y)));
@@ -279,13 +285,31 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		int GetLineSide(IntPoint start, IntPoint end, IntPoint pointToTest)
+		{
+			//It is 0 on the line, and +1 on one side, -1 on the other side.
+			long distanceToLine = (end.Y - start.X) * (pointToTest.Y - start.Y) - (end.Y - start.Y) * (pointToTest.X - start.Y);
+			if(distanceToLine > 0)
+			{ 
+				return 1;
+			}
+			else if(distanceToLine < 0)
+			{
+				return -1;
+			}
+
+			return 0;
+		}
+
 		private bool collisionTest(IntPoint startPoint, IntPoint endPoint)
 		{
 			IntPoint diff = endPoint - startPoint;
 
-			matrix = new PointMatrix(diff);
-			this.nomalizedStartPoint = matrix.apply(startPoint);
-			this.normalizedEndPoint = matrix.apply(endPoint);
+			{
+				matrix = new PointMatrix(diff);
+				this.nomalizedStartPoint = matrix.apply(startPoint);
+				this.normalizedEndPoint = matrix.apply(endPoint);
+			}
 
 			for (int bounderyIndex = 0; bounderyIndex < bounderyPolygons.Count; bounderyIndex++)
 			{
@@ -295,19 +319,15 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				IntPoint lastPosition = matrix.apply(boundryPolygon[boundryPolygon.Count - 1]);
+				IntPoint lastPosition = boundryPolygon[boundryPolygon.Count - 1];
 				for (int pointIndex = 0; pointIndex < boundryPolygon.Count; pointIndex++)
 				{
-					IntPoint currentPosition = matrix.apply(boundryPolygon[pointIndex]);
-					if ((lastPosition.Y > nomalizedStartPoint.Y && currentPosition.Y < nomalizedStartPoint.Y)
-						|| (currentPosition.Y > nomalizedStartPoint.Y && lastPosition.Y < nomalizedStartPoint.Y))
+					IntPoint currentPosition = boundryPolygon[pointIndex];
+					int startSide = GetLineSide(lastPosition, currentPosition, startPoint);
+					int endSide = GetLineSide(lastPosition, currentPosition, endPoint);
+					if (startSide != 0 && startSide + endSide == 0)
 					{
-						long x = lastPosition.X + (currentPosition.X - lastPosition.X) * (nomalizedStartPoint.Y - lastPosition.Y) / (currentPosition.Y - lastPosition.Y);
-
-						if (x > nomalizedStartPoint.X && x < normalizedEndPoint.X)
-						{
-							return true;
-						}
+						return true;
 					}
 
 					lastPosition = currentPosition;
@@ -316,15 +336,15 @@ namespace MatterHackers.MatterSlice
 			return false;
 		}
 
-		private IntPoint getBounderyPointWithOffset(int polygonIndex, int pointIndex)
+		private IntPoint GetBounderyPointWithOffset(int polygonIndex, int pointIndex)
 		{
 			int previousIndex = pointIndex - 1;
 			if (previousIndex < 0)
 			{
 				previousIndex = bounderyPolygons[polygonIndex].Count - 1;
 			}
-			IntPoint previousPoint = bounderyPolygons[polygonIndex][previousIndex];
 
+			IntPoint previousPoint = bounderyPolygons[polygonIndex][previousIndex];
 			IntPoint currentPoint = bounderyPolygons[polygonIndex][pointIndex];
 
 			int nextIndex = pointIndex + 1;
@@ -334,14 +354,15 @@ namespace MatterHackers.MatterSlice
 			}
 			IntPoint nextPoint = bounderyPolygons[polygonIndex][nextIndex];
 
-			IntPoint off0 = ((currentPoint - previousPoint).normal(1000)).GetPerpendicularLeft();
-			IntPoint off1 = ((nextPoint - currentPoint).normal(1000)).GetPerpendicularLeft();
-			IntPoint n = (off0 + off1).normal(200);
+			// assuming a ccw winding this will give us a point inside of the edge
+			IntPoint leftNormalOfPrevEdge = ((currentPoint - previousPoint).normal(1000)).GetPerpendicularLeft();
+			IntPoint leftNormalOfCurrentEdge = ((nextPoint - currentPoint).normal(1000)).GetPerpendicularLeft();
+			IntPoint offsetToBeInside = (leftNormalOfPrevEdge + leftNormalOfCurrentEdge).normal(200);
 
-			return currentPoint + n;
+			return currentPoint + offsetToBeInside;
 		}
 
-		private int getPolygonIndexAbove(long startingPolygonIndex)
+		private int GetPolygonIndexAbove(long startingPolygonIndex)
 		{
 			long minXFound = long.MaxValue;
 			int abovePolyIndex = -1;

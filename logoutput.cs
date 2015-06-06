@@ -29,7 +29,7 @@ namespace MatterHackers.MatterSlice
 	{
 		public static int verbose_level;
 
-		public static void logError(string message)
+		public static void LogError(string message)
 		{
 			Console.Write(message);
 		}
@@ -46,7 +46,7 @@ namespace MatterHackers.MatterSlice
 
 		public static EventHandler GetLogWrites;
 
-		public static void log(string output)
+		public static void Log(string output)
 		{
 			Console.Write(output);
 

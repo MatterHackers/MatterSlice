@@ -30,17 +30,17 @@ namespace MatterHackers.MatterSlice
 	{
 		private static void print_usage()
 		{
-			LogOutput.logError("usage: MatterSlice [-h] [-d] [-v] [-m 3x3matrix] [-c <config file>]\n       [-s <settingkey>=<value>] -o <output.gcode> <model.stl>\n\n");
-			LogOutput.logError("    [] enclose optional settings, <> are required.\n\n");
-			LogOutput.logError("    -h Show this message.\n");
-			LogOutput.logError("    -d Save the currently loaded settings to settings.ini (usefull to see all settings).\n");
-			LogOutput.logError("    -v Increment verbose level.\n");
-			LogOutput.logError("    -m A 3x3 matrix for translating and rotating the layers.\n");
-			LogOutput.logError("    -c A config file to apply to the current settings.\n       Can be applyed multiple times.\n       Formated like the default.ini (partial settings are fine).\n");
-			LogOutput.logError("    -s Specify a setting on the command line.\n       Uses the same names and values as default.ini.\n");
-			LogOutput.logError("    -o Specify the path and filename to save 'output.gcode'.\n");
-			LogOutput.logError("    -t Run unit tests.\n");
-			LogOutput.logError("    model.stl, the file that will be loaded and sliced.\n");
+			LogOutput.LogError("usage: MatterSlice [-h] [-d] [-v] [-m 3x3matrix] [-c <config file>]\n       [-s <settingkey>=<value>] -o <output.gcode> <model.stl>\n\n");
+			LogOutput.LogError("    [] enclose optional settings, <> are required.\n\n");
+			LogOutput.LogError("    -h Show this message.\n");
+			LogOutput.LogError("    -d Save the currently loaded settings to settings.ini (usefull to see all settings).\n");
+			LogOutput.LogError("    -v Increment verbose level.\n");
+			LogOutput.LogError("    -m A 3x3 matrix for translating and rotating the layers.\n");
+			LogOutput.LogError("    -c A config file to apply to the current settings.\n       Can be applyed multiple times.\n       Formated like the default.ini (partial settings are fine).\n");
+			LogOutput.LogError("    -s Specify a setting on the command line.\n       Uses the same names and values as default.ini.\n");
+			LogOutput.LogError("    -o Specify the path and filename to save 'output.gcode'.\n");
+			LogOutput.LogError("    -t Run unit tests.\n");
+			LogOutput.LogError("    model.stl, the file that will be loaded and sliced.\n");
 		}
 
 		private static int Main(string[] args)
@@ -82,7 +82,7 @@ namespace MatterHackers.MatterSlice
 			ConfigSettings config = new ConfigSettings();
 			fffProcessor processor = new fffProcessor(config);
 
-			LogOutput.log("\nMatterSlice version {0}\n\n".FormatWith(ConfigConstants.VERSION));
+			LogOutput.Log("\nMatterSlice version {0}\n\n".FormatWith(ConfigConstants.VERSION));
 
 			for (int argn = 0; argn < args.Length; argn++)
 			{
@@ -103,9 +103,9 @@ namespace MatterHackers.MatterSlice
 
 							case 'o':
 								argn++;
-								if (!processor.setTargetFile(args[argn]))
+								if (!processor.SetTargetFile(args[argn]))
 								{
-									LogOutput.logError("Failed to open {0} for output.\n".FormatWith(args[argn]));
+									LogOutput.LogError("Failed to open {0} for output.\n".FormatWith(args[argn]));
 									return 1;
 								}
 								break;
@@ -116,7 +116,7 @@ namespace MatterHackers.MatterSlice
 									argn++;
 									if (!config.ReadSettings(args[argn]))
 									{
-										LogOutput.logError("Failed to read config '{0}'\n".FormatWith(args[argn]));
+										LogOutput.LogError("Failed to read config '{0}'\n".FormatWith(args[argn]));
 									}
 								}
 								break;
@@ -137,7 +137,7 @@ namespace MatterHackers.MatterSlice
 										{
 											if (!config.SetSetting(key, value))
 											{
-												LogOutput.logError("Setting not found: {0} {1}\n".FormatWith(key, value));
+												LogOutput.LogError("Setting not found: {0} {1}\n".FormatWith(key, value));
 											}
 										}
 									}

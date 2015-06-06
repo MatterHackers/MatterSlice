@@ -61,7 +61,7 @@ namespace MatterHackers.MatterSlice
 				layerCount++;
 			}
 
-			LogOutput.log(string.Format("Layer count: {0}\n", layerCount));
+			LogOutput.Log(string.Format("Layer count: {0}\n", layerCount));
 			layers.Capacity = layerCount;
 			for (int i = 0; i < layerCount; i++)
 			{

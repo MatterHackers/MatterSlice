@@ -58,7 +58,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// make sure no retractions are going to occure that are island crossing
 				config.minimumTravelToCauseRetraction = 2000;
 				fffProcessor processor = new fffProcessor(config);
-				processor.setTargetFile(gCodeWithIslands);
+				processor.SetTargetFile(gCodeWithIslands);
 				processor.LoadStlFile(meshWithIslands);
 				// slice and save it
 				processor.DoProcessing();
@@ -87,7 +87,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// load a model that is correctly manifold
 				ConfigSettings config = new ConfigSettings();
 				fffProcessor processor = new fffProcessor(config);
-				processor.setTargetFile(manifoldGCode);
+				processor.SetTargetFile(manifoldGCode);
 				processor.LoadStlFile(manifoldFile);
 				// slice and save it
 				processor.DoProcessing();
@@ -98,7 +98,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// load a model that has some faces pointing the wroing way
 				ConfigSettings config = new ConfigSettings();
 				fffProcessor processor = new fffProcessor(config);
-				processor.setTargetFile(nonManifoldGCode);
+				processor.SetTargetFile(nonManifoldGCode);
 				processor.LoadStlFile(nonManifoldFile);
 				// slice and save it
 				processor.DoProcessing();

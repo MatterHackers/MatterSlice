@@ -94,6 +94,17 @@ namespace MatterHackers.MatterSlice
 			return center;
 		}
 
+		public static bool Inside(this Polygon polygon, IntPoint testPoint)
+		{
+			int positionOnPolygon = Clipper.PointInPolygon(testPoint, polygon);
+			if (positionOnPolygon == 0) // not inside or on boundary
+			{
+				return false;
+			}
+
+			return true;
+		}
+
 		public static Polygon CreateFromString(string polygonString)
 		{
 			Polygon output = new Polygon();
@@ -107,48 +118,6 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return output;
-		}
-
-		public static bool Inside(this Polygon polygon, IntPoint testPoint)
-		{
-			if (polygon.Count < 1)
-			{
-				return false;
-			}
-
-			int crossings = 0;
-			IntPoint previousPoint = polygon[polygon.Count - 1];
-			for (int pointIndex = 0; pointIndex < polygon.Count; pointIndex++)
-			{
-				IntPoint currentPoint = polygon[pointIndex];
-
-				if ((previousPoint.Y >= testPoint.Y && currentPoint.Y <= testPoint.Y) || (currentPoint.Y >= testPoint.Y && previousPoint.Y <= testPoint.Y))
-				{
-					if (previousPoint.X >= testPoint.X && currentPoint.X >= testPoint.X) // x will be in positive direction
-					{
-						crossings++;
-					}
-					else if (previousPoint.X <= testPoint.X && currentPoint.X <= testPoint.X) // x will be in negative direction
-					{
-						continue;
-					}
-					else if (currentPoint.Y == previousPoint.Y) // point is on border or we don't cross this line segment
-					{
-						continue;
-					}
-					else // x might be either in positive or in negative direction; compute x!
-					{
-						long x = previousPoint.X + (currentPoint.X - previousPoint.X) * (testPoint.Y - previousPoint.Y) / (currentPoint.Y - previousPoint.Y);
-						if (x >= testPoint.X)
-						{
-							crossings++;
-						}
-					}
-				}
-				previousPoint = currentPoint;
-			}
-
-			return (crossings % 2) == 1;
 		}
 
 		public static void OptimizePolygon(this Polygon polygon)
@@ -213,6 +182,7 @@ namespace MatterHackers.MatterSlice
 		{
 			polygon.Reverse();
 		}
+
 		public static void SaveToGCode(this Polygon polygon, string filename)
 		{
 			double scale = 1000;
@@ -358,37 +328,24 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// we can just test the first one first as we know that there is a special case in
-			// the silcer that all the other polygons are inside this one
-			if (!polygons[0].Inside(testPoint))
+			// the silcer that all the other polygons are inside this one.
+			int positionOnOuterPerimeter = Clipper.PointInPolygon(testPoint, polygons[0]);
+			if (positionOnOuterPerimeter == 0) // not inside or on boundary
 			{
+				// If we are not inside the outer perimeter we are not inside.
 				return false;
 			}
 
 			for (int polygonIndex = 1; polygonIndex < polygons.Count; polygonIndex++)
 			{
-				if (polygons[polygonIndex].Inside(testPoint))
+				int positionOnHole = Clipper.PointInPolygon(testPoint, polygons[polygonIndex]);
+				if (positionOnHole == 1) // inside the hole
 				{
 					return false;
 				}
 			}
 
 			return true;
-			/*
-			// this should work but it gives bad results on avoid crossing perimeters
-            // Check if we are inside the comb boundary.
-            for (int bounderyIndex = 0; bounderyIndex < polygons.Count; bounderyIndex++)
-            {
-                Polygon boundryPolygon = polygons[bounderyIndex];
-
-                int pointInPolygon = Clipper.PointInPolygon(testPoint, boundryPolygon);
-                if (pointInPolygon != 0)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-			*/
 		}
 
 		public static Polygons Offset(this Polygons polygons, int distance)
