@@ -33,6 +33,7 @@ using System.Collections.Generic;
 namespace MatterHackers.MatterSlice
 {
 	using Polygon = List<IntPoint>;
+
 	using Polygons = List<List<IntPoint>>;
 
 	public struct Point3
@@ -70,6 +71,7 @@ namespace MatterHackers.MatterSlice
 		{
 			return new Point3(left.x + right.x, left.y + right.y, left.z + right.z);
 		}
+
 		public static bool operator ==(Point3 left, Point3 right)
 		{
 			return left.x == right.x && left.y == right.y && left.z == right.z;
@@ -103,6 +105,7 @@ namespace MatterHackers.MatterSlice
 
 			return this == (Point3)obj;
 		}
+
 		public override int GetHashCode()
 		{
 			return new { x, y, z }.GetHashCode();
@@ -178,127 +181,6 @@ namespace MatterHackers.MatterSlice
 
 	internal static class IntPointHelper
 	{
-		public static long Cross(this IntPoint left, IntPoint right)
-		{
-			return left.X * right.Y - left.Y * right.X;
-		}
-
-		public static IntPoint CrossZ(this IntPoint thisPoint)
-		{
-			return new IntPoint(-thisPoint.Y, thisPoint.X);
-		}
-
-		public static long Dot(this IntPoint thisPoint, IntPoint p1)
-		{
-			return thisPoint.X * p1.X + thisPoint.Y * p1.Y;
-		}
-
-		public static IntPoint GetPerpendicularLeft(this IntPoint thisPoint)
-		{
-			return new IntPoint(-thisPoint.Y, thisPoint.X);
-		}
-
-		public static IntPoint GetRotated(this IntPoint thisPoint, double radians)
-		{
-			double Cos, Sin;
-
-			Cos = (double)System.Math.Cos(radians);
-			Sin = (double)System.Math.Sin(radians);
-
-			IntPoint output;
-			output.X = (long)(Math.Round(thisPoint.X * Cos - thisPoint.Y * Sin));
-			output.Y = (long)(Math.Round(thisPoint.Y * Cos + thisPoint.X * Sin));
-
-			return output;
-		}
-
-		public static bool IsShorterThen(this IntPoint thisPoint, long len)
-		{
-			if (thisPoint.X > len || thisPoint.X < -len)
-			{
-				return false;
-			}
-
-			if (thisPoint.Y > len || thisPoint.Y < -len)
-			{
-				return false;
-			}
-
-			return thisPoint.LengthSquared() <= len * len;
-		}
-
-		public static long Length(this IntPoint thisPoint)
-		{
-			return (long)Math.Sqrt(thisPoint.LengthSquared());
-		}
-		public static double LengthMm(this IntPoint thisPoint)
-		{
-			double fx = (double)(thisPoint.X) / 1000.0;
-			double fy = (double)(thisPoint.Y) / 1000.0;
-			return Math.Sqrt(fx * fx + fy * fy);
-		}
-
-		public static long LengthSquared(this IntPoint thisPoint)
-		{
-			return thisPoint.X * thisPoint.X + thisPoint.Y * thisPoint.Y;
-		}
-		public static bool LongerThen(this IntPoint p0, long len)
-		{
-			return !ShorterThen(p0, len);
-		}
-
-		public static IntPoint normal(this IntPoint thisPoint, int len)
-		{
-			int _len = thisPoint.vSize();
-			if (_len < 1)
-			{
-				return new IntPoint(len, 0);
-			}
-
-			return thisPoint * len / _len;
-		}
-
-		public static string OutputInMm(this IntPoint thisPoint)
-		{
-			return string.Format("[{0},{1}]", thisPoint.X / 1000.0, thisPoint.Y / 1000.0);
-		}
-
-		public static IntPoint SetLength(this IntPoint thisPoint, long len)
-		{
-			long _len = thisPoint.Length();
-			if (_len < 1)
-			{
-				return new IntPoint(len, 0);
-			}
-
-			return thisPoint * len / _len;
-		}
-
-		public static bool ShorterThen(this IntPoint thisPoint, long len)
-		{
-			if (thisPoint.X > len || thisPoint.X < -len)
-				return false;
-			if (thisPoint.Y > len || thisPoint.Y < -len)
-				return false;
-			return thisPoint.LengthSquared() <= len * len;
-		}
-
-		public static int vSize(this IntPoint thisPoint)
-		{
-			return (int)Math.Sqrt(thisPoint.LengthSquared());
-		}
-
-		// true if p0 -> p1 -> p2 is strictly convex.
-		private static bool convex3(long x0, long y0, long x1, long y1, long x2, long y2)
-		{
-			return (y1 - y0) * (x1 - x2) > (x0 - x1) * (y2 - y1);
-		}
-
-		private static bool convex3(IntPoint p0, IntPoint p1, IntPoint p2)
-		{
-			return convex3(p0.X, p0.Y, p1.X, p1.Y, p2.X, p2.Y);
-		}
-
 		public static Polygon CreateConvexHull(Polygons polygons)
 		{
 			Polygon allPoints = new Polygon();
@@ -357,13 +239,13 @@ namespace MatterHackers.MatterSlice
 
 			long upperLeftX;
 			long upperRightX;
-			
+
 			long bottomLeftY;
 			long bottomRightY;
-			
+
 			long bottomLeftX;
 			long bottomRightX;
-			
+
 			int leftCount;
 			int rightCount;
 			int indexOfLowestPoint;
@@ -517,11 +399,7 @@ namespace MatterHackers.MatterSlice
 				if (!(leftCount + rightCount <= count))
 				{
 					// failure... return the original concave list
-#if DEBUG
-					throw new Exception("Failure to create convex polygon.");
-#else
 					return inPolygon;
-#endif
 				}
 
 				// now just pack the pright and pleft lists into the output.
@@ -549,6 +427,145 @@ namespace MatterHackers.MatterSlice
 
 				return points;
 			}
+		}
+
+		public static long Cross(this IntPoint left, IntPoint right)
+		{
+			return left.X * right.Y - left.Y * right.X;
+		}
+
+		public static IntPoint CrossZ(this IntPoint thisPoint)
+		{
+			return new IntPoint(-thisPoint.Y, thisPoint.X);
+		}
+
+		public static long Dot(this IntPoint thisPoint, IntPoint p1)
+		{
+			return thisPoint.X * p1.X + thisPoint.Y * p1.Y;
+		}
+
+		public static int GetLineSide(this IntPoint pointToTest, IntPoint start, IntPoint end)
+		{
+			//It is 0 on the line, and +1 on one side, -1 on the other side.
+			long distanceToLine = (end.Y - start.X) * (pointToTest.Y - start.Y) - (end.Y - start.Y) * (pointToTest.X - start.Y);
+			if (distanceToLine > 0)
+			{
+				return 1;
+			}
+			else if (distanceToLine < 0)
+			{
+				return -1;
+			}
+
+			return 0;
+		}
+
+		public static IntPoint GetPerpendicularLeft(this IntPoint thisPoint)
+		{
+			return new IntPoint(-thisPoint.Y, thisPoint.X);
+		}
+
+		public static IntPoint GetRotated(this IntPoint thisPoint, double radians)
+		{
+			double Cos, Sin;
+
+			Cos = (double)System.Math.Cos(radians);
+			Sin = (double)System.Math.Sin(radians);
+
+			IntPoint output;
+			output.X = (long)(Math.Round(thisPoint.X * Cos - thisPoint.Y * Sin));
+			output.Y = (long)(Math.Round(thisPoint.Y * Cos + thisPoint.X * Sin));
+
+			return output;
+		}
+
+		public static bool IsShorterThen(this IntPoint thisPoint, long len)
+		{
+			if (thisPoint.X > len || thisPoint.X < -len)
+			{
+				return false;
+			}
+
+			if (thisPoint.Y > len || thisPoint.Y < -len)
+			{
+				return false;
+			}
+
+			return thisPoint.LengthSquared() <= len * len;
+		}
+
+		public static long Length(this IntPoint thisPoint)
+		{
+			return (long)Math.Sqrt(thisPoint.LengthSquared());
+		}
+
+		public static double LengthMm(this IntPoint thisPoint)
+		{
+			double fx = (double)(thisPoint.X) / 1000.0;
+			double fy = (double)(thisPoint.Y) / 1000.0;
+			return Math.Sqrt(fx * fx + fy * fy);
+		}
+
+		public static long LengthSquared(this IntPoint thisPoint)
+		{
+			return thisPoint.X * thisPoint.X + thisPoint.Y * thisPoint.Y;
+		}
+
+		public static bool LongerThen(this IntPoint p0, long len)
+		{
+			return !ShorterThen(p0, len);
+		}
+
+		public static IntPoint normal(this IntPoint thisPoint, int len)
+		{
+			int _len = thisPoint.vSize();
+			if (_len < 1)
+			{
+				return new IntPoint(len, 0);
+			}
+
+			return thisPoint * len / _len;
+		}
+
+		public static string OutputInMm(this IntPoint thisPoint)
+		{
+			return string.Format("[{0},{1}]", thisPoint.X / 1000.0, thisPoint.Y / 1000.0);
+		}
+
+		public static IntPoint SetLength(this IntPoint thisPoint, long len)
+		{
+			long _len = thisPoint.Length();
+			if (_len < 1)
+			{
+				return new IntPoint(len, 0);
+			}
+
+			return thisPoint * len / _len;
+		}
+
+		public static bool ShorterThen(this IntPoint thisPoint, long len)
+		{
+			if (thisPoint.X > len || thisPoint.X < -len)
+				return false;
+			if (thisPoint.Y > len || thisPoint.Y < -len)
+				return false;
+			return thisPoint.LengthSquared() <= len * len;
+		}
+
+		public static int vSize(this IntPoint thisPoint)
+		{
+			return (int)Math.Sqrt(thisPoint.LengthSquared());
+		}
+
+		// true if p0 -> p1 -> p2 is strictly convex.
+		private static bool convex3(long x0, long y0, long x1, long y1, long x2, long y2)
+		{
+			return (y1 - y0) * (x1 - x2) > (x0 - x1) * (y2 - y1);
+		}
+
+		private static bool convex3(IntPoint p0, IntPoint p1, IntPoint p2)
+		{
+			return convex3(p0.X, p0.Y, p1.X, p1.Y, p2.X, p2.Y);
 		}
 
 		// operator to sort IntPoint by y

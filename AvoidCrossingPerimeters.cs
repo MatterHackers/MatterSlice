@@ -89,7 +89,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// Check if we are crossing any bounderies, and pre-calculate some values.
-			if (!collisionTest(startPoint, endPoint))
+			if (!DoesLineCrossBoundery(startPoint, endPoint))
 			{
 				//We're not crossing any boundaries. So skip the comb generation.
 				if (!addEndpoint && pathThatIsInside.Count == 0)
@@ -165,7 +165,7 @@ namespace MatterHackers.MatterSlice
 					for (int checkIndex = pointList.Count - 1; checkIndex > startIndex + 1; checkIndex--)
 					{
 						IntPoint checkPosition = pointList[checkIndex];
-						if (!collisionTest(startPosition, checkPosition))
+						if (!DoesLineCrossBoundery(startPosition, checkPosition))
 						{
 							// Remove all the points from startIndex+1 to checkIndex-1, inclusive.
 							for (int i = startIndex + 1; i < checkIndex; i++)
@@ -285,23 +285,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		int GetLineSide(IntPoint start, IntPoint end, IntPoint pointToTest)
-		{
-			//It is 0 on the line, and +1 on one side, -1 on the other side.
-			long distanceToLine = (end.Y - start.X) * (pointToTest.Y - start.Y) - (end.Y - start.Y) * (pointToTest.X - start.Y);
-			if(distanceToLine > 0)
-			{ 
-				return 1;
-			}
-			else if(distanceToLine < 0)
-			{
-				return -1;
-			}
-
-			return 0;
-		}
-
-		private bool collisionTest(IntPoint startPoint, IntPoint endPoint)
+		private bool DoesLineCrossBoundery(IntPoint startPoint, IntPoint endPoint)
 		{
 			IntPoint diff = endPoint - startPoint;
 
@@ -323,8 +307,8 @@ namespace MatterHackers.MatterSlice
 				for (int pointIndex = 0; pointIndex < boundryPolygon.Count; pointIndex++)
 				{
 					IntPoint currentPosition = boundryPolygon[pointIndex];
-					int startSide = GetLineSide(lastPosition, currentPosition, startPoint);
-					int endSide = GetLineSide(lastPosition, currentPosition, endPoint);
+					int startSide = startPoint.GetLineSide(lastPosition, currentPosition);
+					int endSide = endPoint.GetLineSide(lastPosition, currentPosition);
 					if (startSide != 0 && startSide + endSide == 0)
 					{
 						return true;
