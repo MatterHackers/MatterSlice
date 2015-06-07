@@ -259,14 +259,14 @@ namespace MatterHackers.MatterSlice
 				for (int pointIndex = 0; pointIndex < boundryPolygon.Count; pointIndex++)
 				{
 					IntPoint currentPosition = matrix.apply(boundryPolygon[pointIndex]);
-					if ((previousPosition.Y > nomalizedStartPoint.Y && currentPosition.Y < nomalizedStartPoint.Y)
-						|| (currentPosition.Y > nomalizedStartPoint.Y && previousPosition.Y < nomalizedStartPoint.Y))
+					if ((previousPosition.Y >= nomalizedStartPoint.Y && currentPosition.Y <= nomalizedStartPoint.Y)
+						|| (currentPosition.Y >= nomalizedStartPoint.Y && previousPosition.Y <= nomalizedStartPoint.Y))
 					{
 						long x = previousPosition.X + (currentPosition.X - previousPosition.X) * (nomalizedStartPoint.Y - previousPosition.Y) / (currentPosition.Y - previousPosition.Y);
 
 						if (x >= nomalizedStartPoint.X && x <= normalizedEndPoint.X)
 						{
-							if (x < minXPosition[bounderyIndex])
+							if (x <= minXPosition[bounderyIndex])
 							{
 								minXPosition[bounderyIndex] = x;
 								indexOfMinX[bounderyIndex] = pointIndex;
