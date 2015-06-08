@@ -24,8 +24,8 @@ using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
+	using System.IO;
 	using Polygon = List<IntPoint>;
-
 	using Polygons = List<List<IntPoint>>;
 
 	public class AvoidCrossingPerimeters
@@ -34,11 +34,11 @@ namespace MatterHackers.MatterSlice
 
 		private int[] indexOfMaxX;
 		private int[] indexOfMinX;
-		private PointMatrix matrix;
+		private PointMatrix lineToSameYMatrix;
 		private long[] maxXPosition;
 		private long[] minXPosition;
-		private IntPoint nomalizedStartPoint;
-		private IntPoint normalizedEndPoint;
+		private IntPoint rotatedStartPoint;
+		private IntPoint rotatedEndPoint;
 
 		public AvoidCrossingPerimeters(Polygons bounderyPolygons)
 		{
@@ -49,12 +49,21 @@ namespace MatterHackers.MatterSlice
 			indexOfMaxX = new int[bounderyPolygons.Count];
 		}
 
-		bool saveDebugData = false;
+		static bool saveDebugData = false;
+		bool boundry = false;
 		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, List<IntPoint> pathThatIsInside)
 		{
 			if (saveDebugData)
 			{
-				string boundryPolygons = bounderyPolygons.WriteToString();
+				using (StreamWriter sw = File.AppendText("test.txt"))
+				{
+					if (boundry)
+					{
+						string pointsString = bounderyPolygons.WriteToString();
+						sw.WriteLine(pointsString);
+					}
+					sw.WriteLine(startPoint.ToString() + "  " + endPoint.ToString());
+				}
 			}
 
 			if ((endPoint - startPoint).ShorterThen(1500))
@@ -88,7 +97,7 @@ namespace MatterHackers.MatterSlice
 				addEndpoint = true;
 			}
 
-			// Check if we are crossing any bounderies, and pre-calculate some values.
+			// Check if we are crossing any bounderies
 			if (!DoesLineCrossBoundery(startPoint, endPoint))
 			{
 				//We're not crossing any boundaries. So skip the comb generation.
@@ -99,10 +108,20 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
+			// Calculate the matrix to change points so they are in the direction of the line segment.
+			{
+				IntPoint diff = endPoint - startPoint;
+
+				lineToSameYMatrix = new PointMatrix(diff);
+				this.rotatedStartPoint = lineToSameYMatrix.apply(startPoint);
+				this.rotatedEndPoint = lineToSameYMatrix.apply(endPoint);
+			}
+
+
 			// Calculate the minimum and maximum positions where we cross the comb boundary
 			CalcMinMax();
 
-			long nomalizedStartX = nomalizedStartPoint.X;
+			long nomalizedStartX = rotatedStartPoint.X;
 			List<IntPoint> pointList = new List<IntPoint>();
 			// Now walk trough the crossings, for every boundary we cross, find the initial cross point and the exit point.
 			// Then add all the points in between to the pointList and continue with the next boundary we will cross,
@@ -117,7 +136,7 @@ namespace MatterHackers.MatterSlice
 					break;
 				}
 
-				pointList.Add(matrix.unapply(new IntPoint(minXPosition[abovePolyIndex] - 200, nomalizedStartPoint.Y)));
+				pointList.Add(lineToSameYMatrix.unapply(new IntPoint(minXPosition[abovePolyIndex] - 200, rotatedStartPoint.Y)));
 				if ((indexOfMinX[abovePolyIndex] - indexOfMaxX[abovePolyIndex] + bounderyPolygons[abovePolyIndex].Count) % bounderyPolygons[abovePolyIndex].Count > (indexOfMaxX[abovePolyIndex] - indexOfMinX[abovePolyIndex] + bounderyPolygons[abovePolyIndex].Count) % bounderyPolygons[abovePolyIndex].Count)
 				{
 					for (int i = indexOfMinX[abovePolyIndex]; i != indexOfMaxX[abovePolyIndex]; i = (i < bounderyPolygons[abovePolyIndex].Count - 1) ? (i + 1) : (0))
@@ -144,7 +163,7 @@ namespace MatterHackers.MatterSlice
 						pointList.Add(GetBounderyPointWithOffset(abovePolyIndex, i));
 					}
 				}
-				pointList.Add(matrix.unapply(new IntPoint(maxXPosition[abovePolyIndex] + 200, nomalizedStartPoint.Y)));
+				pointList.Add(lineToSameYMatrix.unapply(new IntPoint(maxXPosition[abovePolyIndex] + 200, rotatedStartPoint.Y)));
 
 				nomalizedStartX = maxXPosition[abovePolyIndex];
 			}
@@ -155,6 +174,7 @@ namespace MatterHackers.MatterSlice
 				pointList.Add(endPoint);
 			}
 
+#if false
 			// Optimize the pointList, skip each point we could already reach by connecting directly to the next point.
 			for (int startIndex = 0; startIndex < pointList.Count - 2; startIndex++)
 			{
@@ -179,6 +199,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 			}
+#endif
 
 			foreach (IntPoint point in pointList)
 			{
@@ -249,33 +270,37 @@ namespace MatterHackers.MatterSlice
 
 		private void CalcMinMax()
 		{
+			int errorDist = 100;
 			for (int bounderyIndex = 0; bounderyIndex < bounderyPolygons.Count; bounderyIndex++)
 			{
 				Polygon boundryPolygon = bounderyPolygons[bounderyIndex];
 
 				minXPosition[bounderyIndex] = long.MaxValue;
 				maxXPosition[bounderyIndex] = long.MinValue;
-				IntPoint previousPosition = matrix.apply(boundryPolygon[boundryPolygon.Count - 1]);
+				IntPoint previousPosition = lineToSameYMatrix.apply(boundryPolygon[boundryPolygon.Count - 1]);
 				for (int pointIndex = 0; pointIndex < boundryPolygon.Count; pointIndex++)
 				{
-					IntPoint currentPosition = matrix.apply(boundryPolygon[pointIndex]);
-					if ((previousPosition.Y >= nomalizedStartPoint.Y && currentPosition.Y <= nomalizedStartPoint.Y)
-						|| (currentPosition.Y >= nomalizedStartPoint.Y && previousPosition.Y <= nomalizedStartPoint.Y))
+					IntPoint currentPosition = lineToSameYMatrix.apply(boundryPolygon[pointIndex]);
+					if ((previousPosition.Y + errorDist >= rotatedStartPoint.Y && currentPosition.Y - errorDist <= rotatedStartPoint.Y)
+						|| (currentPosition.Y + errorDist >= rotatedStartPoint.Y && previousPosition.Y - errorDist <= rotatedStartPoint.Y)) // prev -> current crosses the start -> end
 					{
-						long x = previousPosition.X + (currentPosition.X - previousPosition.X) * (nomalizedStartPoint.Y - previousPosition.Y) / (currentPosition.Y - previousPosition.Y);
-
-						if (x >= nomalizedStartPoint.X && x <= normalizedEndPoint.X)
+						if (currentPosition.Y != previousPosition.Y)
 						{
-							if (x <= minXPosition[bounderyIndex])
-							{
-								minXPosition[bounderyIndex] = x;
-								indexOfMinX[bounderyIndex] = pointIndex;
-							}
+							long x = previousPosition.X + (currentPosition.X - previousPosition.X) * (rotatedStartPoint.Y - previousPosition.Y) / (currentPosition.Y - previousPosition.Y);
 
-							if (x > maxXPosition[bounderyIndex])
+							if (x + errorDist >= rotatedStartPoint.X && x - errorDist <= rotatedEndPoint.X)
 							{
-								maxXPosition[bounderyIndex] = x;
-								indexOfMaxX[bounderyIndex] = pointIndex;
+								if (x - errorDist <= minXPosition[bounderyIndex])
+								{
+									minXPosition[bounderyIndex] = x;
+									indexOfMinX[bounderyIndex] = pointIndex;
+								}
+
+								if (x + errorDist > maxXPosition[bounderyIndex])
+								{
+									maxXPosition[bounderyIndex] = x;
+									indexOfMaxX[bounderyIndex] = pointIndex;
+								}
 							}
 						}
 					}
@@ -287,14 +312,6 @@ namespace MatterHackers.MatterSlice
 
 		private bool DoesLineCrossBoundery(IntPoint startPoint, IntPoint endPoint)
 		{
-			IntPoint diff = endPoint - startPoint;
-
-			{
-				matrix = new PointMatrix(diff);
-				this.nomalizedStartPoint = matrix.apply(startPoint);
-				this.normalizedEndPoint = matrix.apply(endPoint);
-			}
-
 			for (int bounderyIndex = 0; bounderyIndex < bounderyPolygons.Count; bounderyIndex++)
 			{
 				Polygon boundryPolygon = bounderyPolygons[bounderyIndex];
@@ -309,8 +326,23 @@ namespace MatterHackers.MatterSlice
 					IntPoint currentPosition = boundryPolygon[pointIndex];
 					int startSide = startPoint.GetLineSide(lastPosition, currentPosition);
 					int endSide = endPoint.GetLineSide(lastPosition, currentPosition);
-					if (startSide != 0 && startSide + endSide == 0)
+					if (startSide != 0)
 					{
+						if (startSide + endSide == 0)
+						{
+							// each point is distinctly on a different side
+							return true;
+						}
+					}
+					else
+					{
+						// if we terminate on the line that will count as crossing
+						return true;
+					}
+					
+					if (endSide == 0)
+					{
+						// if we terminate on the line that will count as crossing
 						return true;
 					}
 
