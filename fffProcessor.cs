@@ -753,7 +753,7 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					Infill.GenerateLinePaths(outline, ref fillPolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
+					Infill.GenerateLinePaths(outline, ref fillPolygons, config.firstLayerExtrusionWidth_um, config.infillExtendIntoPerimeter_um, partFillAngle);
 				}
 			}
 
