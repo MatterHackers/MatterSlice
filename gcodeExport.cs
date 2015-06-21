@@ -58,6 +58,7 @@ namespace MatterHackers.MatterSlice
 		private double unretractExtrusionExtra_mm;
 		private bool wipeAfterRetraction;
 		private int zPos_um;
+
 		public GCodeExport()
 		{
 			extrusionAmount_mm = 0;
@@ -92,7 +93,7 @@ namespace MatterHackers.MatterSlice
 			writeFanCommand(0);
 			writeRetraction();
 			setZ(maxObjectHeight + 5000);
-			writeMove(getPositionXY(), moveSpeed, 0);
+			WriteMove(getPositionXY(), moveSpeed, 0);
 			writeCode(endCode);
 			writeComment("filament used = {0:0.0}".FormatWith(getTotalFilamentUsed(0) + getTotalFilamentUsed(1)));
 			writeComment("filament used extruder 1 (mm) = {0:0.0}".FormatWith(getTotalFilamentUsed(0)));
@@ -215,6 +216,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 		}
+
 		public void SetRetractionSettings(double retractionAmount, int retractionSpeed, double extruderSwitchRetraction, double minimumExtrusionBeforeRetraction_mm, double retractionZHop_mm, bool wipeAfterRetraction, double unretractExtrusionExtra_mm)
 		{
 			this.unretractExtrusionExtra_mm = unretractExtrusionExtra_mm;
@@ -230,10 +232,12 @@ namespace MatterHackers.MatterSlice
 		{
 			this.toolChangeCode = toolChangeCode;
 		}
+
 		public void setZ(int z)
 		{
 			this.zPos_um = z;
 		}
+
 		public void switchExtruder(int newExtruder)
 		{
 			if (extruderIndex == newExtruder)
@@ -348,53 +352,13 @@ namespace MatterHackers.MatterSlice
 		{
 			gcodeFileStream.Write("{0}\n".FormatWith(line));
 		}
-		public void writeMove(IntPoint movePosition_um, int speed, int lineWidth_um)
+
+		public void WriteMove(IntPoint movePosition_um, int speed, int lineWidth_um)
 		{
 			StringBuilder lineToWrite = new StringBuilder();
 			if (outputType == ConfigConstants.OUTPUT_TYPE.BFB)
 			{
-				//For Bits From Bytes machines, we need to handle this completely differently. As they do not use E values, they use RPM values
-				double fspeed = speed * 60;
-				double rpm = (extrusionPerMm * (double)(lineWidth_um) / 1000.0) * speed * 60;
-
-				//All BFB machines have 4mm per RPM extrusion.
-				const double mm_per_rpm = 4.0;
-				rpm /= mm_per_rpm;
-				if (rpm > 0)
-				{
-					if (isRetracted)
-					{
-						if (currentSpeed != (int)(rpm * 10))
-						{
-							//lineToWrite.Append("; %f e-per-mm %d mm-width %d mm/s\n", extrusionPerMM, lineWidth, speed);
-							lineToWrite.Append("M108 S{0:0.0}\n".FormatWith(rpm * 10));
-							currentSpeed = (int)(rpm * 10);
-						}
-						lineToWrite.Append("M101\n");
-						isRetracted = false;
-					}
-					// Fix the speed by the actual RPM we are asking, because of rounding errors we cannot get all RPM values, but we have a lot more resolution in the feedrate value.
-					// (Trick copied from KISSlicer, thanks Jonathan)
-					fspeed *= (rpm / (Round(rpm * 100) / 100));
-
-					//Increase the extrusion amount to calculate the amount of filament used.
-					IntPoint diff = movePosition_um - getPositionXY();
-					extrusionAmount_mm += extrusionPerMm * lineWidth_um / 1000.0 * diff.LengthMm();
-				}
-				else
-				{
-					//If we are not extruding, check if we still need to disable the extruder. This causes a retraction due to auto-retraction.
-					if (!isRetracted)
-					{
-						lineToWrite.Append("M103\n");
-						isRetracted = true;
-					}
-				}
-				double xWritePosition = (double)(movePosition_um.X - extruderOffset_um[extruderIndex].x) / 1000.0;
-				double yWritePosition = (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].y) / 1000.0;
-				double zWritePosition = (double)(zPos_um - extruderOffset_um[extruderIndex].z) / 1000.0;
-				// These values exist in microns (integer) so there is an absolute limit to precision of 1/1000th.
-				lineToWrite.Append("G1 X{0:0.###} Y{1:0.###} Z{2:0.###} F{3:0.#}\n".FormatWith(xWritePosition, yWritePosition, zWritePosition, fspeed));
+				movePosition_um = writeMoveBFBPartial(movePosition_um, speed, lineWidth_um, lineToWrite);
 			}
 			else
 			{
@@ -435,6 +399,7 @@ namespace MatterHackers.MatterSlice
 
 						isRetracted = false;
 					}
+
 					extrusionAmount_mm += extrusionPerMm * lineWidth_um / 1000.0 * diff.LengthMm();
 					lineToWrite.Append("G1");
 				}
@@ -448,18 +413,22 @@ namespace MatterHackers.MatterSlice
 					lineToWrite.Append(" F{0}".FormatWith(speed * 60));
 					currentSpeed = speed;
 				}
+
 				double xWritePosition = (double)(movePosition_um.X - extruderOffset_um[extruderIndex].x) / 1000.0;
 				double yWritePosition = (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].y) / 1000.0;
 				lineToWrite.Append(" X{0:0.###} Y{1:0.###}".FormatWith(xWritePosition, yWritePosition));
+
 				if (zPos_um != currentPosition_um.z)
 				{
 					double zWritePosition = (double)(zPos_um - extruderOffset_um[extruderIndex].z) / 1000.0;
 					lineToWrite.Append(" Z{0:0.###}".FormatWith(zWritePosition));
 				}
+
 				if (lineWidth_um != 0)
 				{
 					lineToWrite.Append(" {0}{1:0.#####}".FormatWith(extruderCharacter[extruderIndex], extrusionAmount_mm));
 				}
+
 				lineToWrite.Append("\n");
 			}
 
@@ -481,6 +450,53 @@ namespace MatterHackers.MatterSlice
 
 			currentPosition_um = new Point3(movePosition_um.X, movePosition_um.Y, zPos_um);
 			estimateCalculator.plan(new TimeEstimateCalculator.Position(currentPosition_um.x / 1000.0, currentPosition_um.y / 1000.0, currentPosition_um.z / 1000.0, extrusionAmount_mm), speed);
+		}
+
+		private IntPoint writeMoveBFBPartial(IntPoint movePosition_um, int speed, int lineWidth_um, StringBuilder lineToWrite)
+		{
+			//For Bits From Bytes machines, we need to handle this completely differently. As they do not use E values, they use RPM values
+			double fspeed = speed * 60;
+			double rpm = (extrusionPerMm * (double)(lineWidth_um) / 1000.0) * speed * 60;
+
+			//All BFB machines have 4mm per RPM extrusion.
+			const double mm_per_rpm = 4.0;
+			rpm /= mm_per_rpm;
+			if (rpm > 0)
+			{
+				if (isRetracted)
+				{
+					if (currentSpeed != (int)(rpm * 10))
+					{
+						//lineToWrite.Append("; %f e-per-mm %d mm-width %d mm/s\n", extrusionPerMM, lineWidth, speed);
+						lineToWrite.Append("M108 S{0:0.0}\n".FormatWith(rpm * 10));
+						currentSpeed = (int)(rpm * 10);
+					}
+					lineToWrite.Append("M101\n");
+					isRetracted = false;
+				}
+				// Fix the speed by the actual RPM we are asking, because of rounding errors we cannot get all RPM values, but we have a lot more resolution in the feedrate value.
+				// (Trick copied from KISSlicer, thanks Jonathan)
+				fspeed *= (rpm / (Round(rpm * 100) / 100));
+
+				//Increase the extrusion amount to calculate the amount of filament used.
+				IntPoint diff = movePosition_um - getPositionXY();
+				extrusionAmount_mm += extrusionPerMm * lineWidth_um / 1000.0 * diff.LengthMm();
+			}
+			else
+			{
+				//If we are not extruding, check if we still need to disable the extruder. This causes a retraction due to auto-retraction.
+				if (!isRetracted)
+				{
+					lineToWrite.Append("M103\n");
+					isRetracted = true;
+				}
+			}
+			double xWritePosition = (double)(movePosition_um.X - extruderOffset_um[extruderIndex].x) / 1000.0;
+			double yWritePosition = (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].y) / 1000.0;
+			double zWritePosition = (double)(zPos_um - extruderOffset_um[extruderIndex].z) / 1000.0;
+			// These values exist in microns (integer) so there is an absolute limit to precision of 1/1000th.
+			lineToWrite.Append("G1 X{0:0.###} Y{1:0.###} Z{2:0.###} F{3:0.#}\n".FormatWith(xWritePosition, yWritePosition, zWritePosition, fspeed));
+			return movePosition_um;
 		}
 
 		public void writeRetraction()
@@ -590,6 +606,7 @@ namespace MatterHackers.MatterSlice
 		public bool retract;
 
 		public bool Retract { get { return retract; } set { retract = value; } }
+
 		//Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
 	}
 
@@ -601,6 +618,7 @@ namespace MatterHackers.MatterSlice
 		public string name;
 		public int speed;
 		public bool spiralize;
+
 		public GCodePathConfig()
 		{
 		}
@@ -620,6 +638,7 @@ namespace MatterHackers.MatterSlice
 			this.name = name;
 		}
 	}
+
 	//The GCodePlanner class stores multiple moves that are planned.
 	// It facilitates the avoidCrossingPerimeters to keep the head inside the print.
 	// It also keeps track of the print time estimate for this planning so speed adjustments can be made for the minimum-layer-time.
@@ -639,6 +658,7 @@ namespace MatterHackers.MatterSlice
 		private double totalPrintTime;
 		private GCodePathConfig travelConfig = new GCodePathConfig();
 		private int travelSpeedFactor;
+
 		public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance)
 		{
 			this.gcode = gcode;
@@ -877,12 +897,13 @@ namespace MatterHackers.MatterSlice
 							long newLen = (gcode.getPositionXY() - newPoint).Length();
 							if (newLen > 0)
 							{
-								gcode.writeMove(newPoint, speed, (int)(path.config.lineWidth * oldLen / newLen));
+								gcode.WriteMove(newPoint, speed, (int)(path.config.lineWidth * oldLen / newLen));
 							}
 
 							nextPosition = paths[x + 1].points[0];
 						}
-						gcode.writeMove(paths[i - 1].points[0], speed, path.config.lineWidth);
+
+						gcode.WriteMove(paths[i - 1].points[0], speed, path.config.lineWidth);
 						pathIndex = i - 1;
 						continue;
 					}
@@ -921,16 +942,16 @@ namespace MatterHackers.MatterSlice
 						length += (currentPosition - nextPosition).LengthMm();
 						currentPosition = nextPosition;
 						gcode.setZ((int)(z + layerThickness * length / totalLength + .5));
-						gcode.writeMove(path.points[i], speed, path.config.lineWidth);
+						gcode.WriteMove(path.points[i], speed, path.config.lineWidth);
 					}
 				}
 				else
 				{
-					TrimPerimeterIfNeeded(path);
+					//TrimPerimeterIfNeeded(path);
 
 					for (int i = 0; i < path.points.Count; i++)
 					{
-						gcode.writeMove(path.points[i], speed, path.config.lineWidth);
+						gcode.WriteMove(path.points[i], speed, path.config.lineWidth);
 					}
 				}
 			}
@@ -941,8 +962,8 @@ namespace MatterHackers.MatterSlice
 				gcode.writeComment("Small layer, adding delay of {0}".FormatWith(extraTime));
 				gcode.writeRetraction();
 				gcode.setZ(gcode.getPositionZ() + 3000);
-				gcode.writeMove(gcode.getPositionXY(), travelConfig.speed, 0);
-				gcode.writeMove(gcode.getPositionXY() - new IntPoint(-20000, 0), travelConfig.speed, 0);
+				gcode.WriteMove(gcode.getPositionXY(), travelConfig.speed, 0);
+				gcode.WriteMove(gcode.getPositionXY() - new IntPoint(-20000, 0), travelConfig.speed, 0);
 				gcode.WriteDelay(extraTime);
 			}
 		}
@@ -1077,7 +1098,6 @@ namespace MatterHackers.MatterSlice
 						currentDistance = (path.points[pointIndex] - path.points[pointIndex - 1]).Length();
 
 						// If distance exceeds clip distance:
-						// - Stores last point to do a fast move after the clip
 						//  - Sets the new last path point
 						if (currentDistance > targetDistance)
 						{
@@ -1094,13 +1114,13 @@ namespace MatterHackers.MatterSlice
 						}
 						else if (currentDistance == targetDistance)
 						{
-							//Pops up last point because it is at the limit distance
+							// Pops off last point because it is at the limit distance
 							path.points.RemoveAt(path.points.Count - 1);
 							break;
 						}
 						else
 						{
-							//Pops last point and reduces distance remaining to target
+							// Pops last point and reduces distance remaining to target
 							targetDistance = targetDistance - currentDistance;
 							path.points.RemoveAt(path.points.Count - 1);
 						}
