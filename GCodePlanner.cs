@@ -166,7 +166,30 @@ namespace MatterHackers.MatterSlice
 
 		public Polygons GetPathsWithOverlapsRemoved(Polygon perimeter, int overlapMergeAmount_um)
 		{
-			throw new System.NotImplementedException();
+			// make a copy that has every point duplicatiod (so that we have them as segments).
+			Polygon polySegments = new Polygon(perimeter.Count * 2);
+			bool first = true;
+			for (int i = 0; i < perimeter.Count; i++)
+			{
+				IntPoint point = perimeter[i];
+				if (!first)
+				{
+					IntPoint lastPoint = perimeter[i-1];
+					polySegments.Add(lastPoint);
+				}
+				
+				polySegments.Add(point);
+				first = false;
+			}
+
+			// now walk every segment and check if there is another segment that is similar enough to merge them together
+			// if the segmets are similar enough
+			// move the first segments points to the average of the merge positions 
+			// remove the second segment
+
+			// go through the polySegmets and create a new polygon for every connected set of segmets
+
+			return null;
 		}
 
 		public int getTravelSpeedFactor()
