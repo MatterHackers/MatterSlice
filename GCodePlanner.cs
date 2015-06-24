@@ -172,24 +172,68 @@ namespace MatterHackers.MatterSlice
 			for (int i = 0; i < perimeter.Count; i++)
 			{
 				IntPoint point = perimeter[i];
-				if (!first)
+				IntPoint previousPoint;
+				if (first)
 				{
-					IntPoint lastPoint = perimeter[i-1];
-					polySegments.Add(lastPoint);
+					previousPoint = perimeter[perimeter.Count - 1];
+					first = false;
 				}
+				else
+				{
+					previousPoint = perimeter[i - 1];
+				}
+				polySegments.Add(previousPoint);
 				
 				polySegments.Add(point);
-				first = false;
 			}
 
 			// now walk every segment and check if there is another segment that is similar enough to merge them together
-			// if the segmets are similar enough
-			// move the first segments points to the average of the merge positions 
-			// remove the second segment
+			for (int firstSegmentIndex = 0; firstSegmentIndex < polySegments.Count; firstSegmentIndex += 2)
+			{
+				for (int checkSegmentIndex = firstSegmentIndex + 2; checkSegmentIndex < polySegments.Count; checkSegmentIndex += 2)
+				{
+					long startDelta = (polySegments[firstSegmentIndex] - polySegments[checkSegmentIndex]).Length();
+					// if the segmets are similar enough
+					if (startDelta < overlapMergeAmount_um)
+					{
+						long endDelta = (polySegments[firstSegmentIndex + 1] - polySegments[checkSegmentIndex + 1]).Length();
+						if (endDelta < overlapMergeAmount_um)
+						{
+							// move the first segments points to the average of the merge positions
+							polySegments[firstSegmentIndex] = (polySegments[firstSegmentIndex] + polySegments[checkSegmentIndex]) / 2; // the start
+							polySegments[firstSegmentIndex+1] = (polySegments[firstSegmentIndex+1] + polySegments[checkSegmentIndex+1]) / 2; // the end
+
+							// remove the second segment
+							polySegments.RemoveRange(checkSegmentIndex, 2);
+							// We only expect to find one match for each segment, so move on to the next segment
+							break;
+						}
+					}
+				}
+			}
+
 
 			// go through the polySegmets and create a new polygon for every connected set of segmets
+			Polygons separatedPolygons = new Polygons();
+			Polygon currentPolygon = new Polygon();
+			separatedPolygons.Add(currentPolygon);
+			// put in the first point
+			for (int segmentIndex = 0; segmentIndex < polySegments.Count; segmentIndex += 2)
+			{
+				// if the next segment is not connected to this one
+				if (segmentIndex < polySegments.Count-2
+					&& polySegments[segmentIndex + 1] != polySegments[segmentIndex + 2])
+				{
+					// create a new polygon
+					currentPolygon = new Polygon();
+					separatedPolygons.Add(currentPolygon);
+				}
 
-			return null;
+				// add the end point
+				currentPolygon.Add(polySegments[segmentIndex + 1]);
+			}
+
+			return separatedPolygons;
 		}
 
 		public int getTravelSpeedFactor()

@@ -55,8 +55,8 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5, 0), new IntPoint(5, 5), new IntPoint(0, 5) };
-				Polygons correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400);
+				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 5000), new IntPoint(0, 5000) };
+				Polygons correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400/4);
 				Assert.IsTrue(correctedPath.Count == 1);
 				Assert.IsTrue(correctedPath[0].Count == 4);
 			}
