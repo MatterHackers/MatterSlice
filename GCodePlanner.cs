@@ -168,23 +168,13 @@ namespace MatterHackers.MatterSlice
 		{
 			// make a copy that has every point duplicatiod (so that we have them as segments).
 			Polygon polySegments = new Polygon(perimeter.Count * 2);
-			bool first = true;
-			for (int i = 0; i < perimeter.Count; i++)
+			for (int i = 0; i < perimeter.Count-1; i++)
 			{
 				IntPoint point = perimeter[i];
-				IntPoint previousPoint;
-				if (first)
-				{
-					previousPoint = perimeter[perimeter.Count - 1];
-					first = false;
-				}
-				else
-				{
-					previousPoint = perimeter[i - 1];
-				}
-				polySegments.Add(previousPoint);
-				
+				IntPoint nextPoint = perimeter[i+1];
+
 				polySegments.Add(point);
+				polySegments.Add(nextPoint);
 			}
 
 			// now walk every segment and check if there is another segment that is similar enough to merge them together
@@ -192,16 +182,18 @@ namespace MatterHackers.MatterSlice
 			{
 				for (int checkSegmentIndex = firstSegmentIndex + 2; checkSegmentIndex < polySegments.Count; checkSegmentIndex += 2)
 				{
-					long startDelta = (polySegments[firstSegmentIndex] - polySegments[checkSegmentIndex]).Length();
+					// The first point of start and the last point of check (the path will be coming back on itself).
+					long startDelta = (polySegments[firstSegmentIndex] - polySegments[checkSegmentIndex+1]).Length();
 					// if the segmets are similar enough
 					if (startDelta < overlapMergeAmount_um)
 					{
-						long endDelta = (polySegments[firstSegmentIndex + 1] - polySegments[checkSegmentIndex + 1]).Length();
+						// The last point of start and the first point of check (the path will be coming back on itself).
+						long endDelta = (polySegments[firstSegmentIndex + 1] - polySegments[checkSegmentIndex]).Length();
 						if (endDelta < overlapMergeAmount_um)
 						{
 							// move the first segments points to the average of the merge positions
-							polySegments[firstSegmentIndex] = (polySegments[firstSegmentIndex] + polySegments[checkSegmentIndex]) / 2; // the start
-							polySegments[firstSegmentIndex+1] = (polySegments[firstSegmentIndex+1] + polySegments[checkSegmentIndex+1]) / 2; // the end
+							polySegments[firstSegmentIndex] = (polySegments[firstSegmentIndex] + polySegments[checkSegmentIndex + 1]) / 2; // the start
+							polySegments[firstSegmentIndex + 1] = (polySegments[firstSegmentIndex + 1] + polySegments[checkSegmentIndex]) / 2; // the end
 
 							// remove the second segment
 							polySegments.RemoveRange(checkSegmentIndex, 2);
@@ -212,7 +204,6 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-
 			// go through the polySegmets and create a new polygon for every connected set of segmets
 			Polygons separatedPolygons = new Polygons();
 			Polygon currentPolygon = new Polygon();
@@ -220,18 +211,24 @@ namespace MatterHackers.MatterSlice
 			// put in the first point
 			for (int segmentIndex = 0; segmentIndex < polySegments.Count; segmentIndex += 2)
 			{
+				// add the start point
+				currentPolygon.Add(polySegments[segmentIndex]);
+
 				// if the next segment is not connected to this one
-				if (segmentIndex < polySegments.Count-2
+				if (segmentIndex < polySegments.Count - 2
 					&& polySegments[segmentIndex + 1] != polySegments[segmentIndex + 2])
 				{
+					// add the end point
+					currentPolygon.Add(polySegments[segmentIndex + 1]);
+
 					// create a new polygon
 					currentPolygon = new Polygon();
 					separatedPolygons.Add(currentPolygon);
 				}
-
-				// add the end point
-				currentPolygon.Add(polySegments[segmentIndex + 1]);
 			}
+
+			// add the end point
+			currentPolygon.Add(polySegments[polySegments.Count - 1]);
 
 			return separatedPolygons;
 		}
@@ -419,23 +416,28 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					/*
-					Polygons pathsWithOverlapsRemoved = GetPathsWithOverlapsRemoved(path.points, path.config.lineWidth / 4);
-					if (pathsWithOverlapsRemoved.Count > 1)
+					/* // This is test code to remove double drawn small perimeter lines.
+					if (path.config.lineWidth > 0
+						&& path.points.Count > 2 // If the count is not greater than 2 there is no way it can ovelap itself.
+						&& gcode.GetPositionXY() == path.points[path.points.Count - 1])
 					{
-						for (int polygonIndex = 0; polygonIndex < pathsWithOverlapsRemoved.Count; polygonIndex++)
+						Polygons pathsWithOverlapsRemoved = GetPathsWithOverlapsRemoved(path.points, path.config.lineWidth / 2);
+						if (pathsWithOverlapsRemoved.Count > 0)
 						{
-							int startIndex = 0;
-							Polygon polygon = pathsWithOverlapsRemoved[polygonIndex];
-							if (polygonIndex > 0)
+							for (int polygonIndex = 0; polygonIndex < pathsWithOverlapsRemoved.Count; polygonIndex++)
 							{
-								gcode.WriteMove(polygon[0], travelConfig.speed, 0);
-								startIndex = 1;
-							}
+								int startIndex = 0;
+								Polygon polygon = pathsWithOverlapsRemoved[polygonIndex];
+								if (polygonIndex > 0)
+								{
+									gcode.WriteMove(polygon[0], travelConfig.speed, 0);
+									startIndex = 1; // We skip the first point in the next extrusion, because we just moved to it.
+								}
 
-							for (int pointIndex = startIndex; pointIndex < polygon.Count; pointIndex++)
-							{
-								gcode.WriteMove(polygon[pointIndex], speed, path.config.lineWidth);
+								for (int pointIndex = startIndex; pointIndex < polygon.Count; pointIndex++)
+								{
+									gcode.WriteMove(polygon[pointIndex], speed, path.config.lineWidth);
+								}
 							}
 						}
 					}
@@ -463,6 +465,7 @@ namespace MatterHackers.MatterSlice
 				gcode.WriteDelay(extraTime);
 			}
 		}
+
 		public void WritePolygon(Polygon polygon, int startIndex, GCodePathConfig config)
 		{
 			IntPoint currentPosition = polygon[startIndex];

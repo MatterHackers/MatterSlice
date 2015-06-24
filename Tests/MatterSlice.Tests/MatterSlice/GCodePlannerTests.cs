@@ -55,29 +55,60 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 5000), new IntPoint(0, 5000) };
-				Polygons correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400/4);
+				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 5000), new IntPoint(0, 5000), new IntPoint(0, 0) };
+				Assert.IsTrue(perimeter.Count == 5);
+				Polygons correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4);
 				Assert.IsTrue(correctedPath.Count == 1);
-				Assert.IsTrue(correctedPath[0].Count == 4);
+				Assert.IsTrue(correctedPath[0].Count == 5);
+				for (int i = 0; i < perimeter.Count; i++)
+				{
+					Assert.IsTrue(perimeter[i] == correctedPath[0][i]);
+				}
 			}
 
-			// Simple overlap
+			// A very simple collapse
 			{
-				// _____    _____                       _____    _____
-				// |   |    |   |					    |   |    |   |
-				// |   |____|   |					    |   |    |   |
-				// |    ____    |    this is too thin   |    ----    | 
-				// |   |    |   |		and goes to ->  |   |    |   |
-				// |___|    |___|					    |___|    |___|
+				// ____________   
+				// |__________|	  very simple  -> |----------|
 
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5, 0), new IntPoint(5, 5), new IntPoint(0, 5) };
+				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0) };
+				Polygons correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4);
+				Assert.IsTrue(correctedPath.Count == 3);
+				Assert.IsTrue(correctedPath[0].Count == 2);
+				Assert.IsTrue(correctedPath[1].Count == 2);
+				Assert.IsTrue(correctedPath[2].Count == 2);
+			}
+
+			// Simple overlap (s is the start runing ccw)
+			{
+				//     _____    _____ 5000,5000             _____    _____
+				//     |   |    |   |					    |   |    |   |
+				//     |   |____|   |					    |   |    |   |
+				//     |   s____    |    this is too thin   |    ----    | 5000,2500
+				//     |   |    |   |		and goes to ->  |   |    |   |
+				// 0,0 |___|    |___|					    |___|    |___|
+
+				int travelSpeed = 50;
+				int retractionMinimumDistance = 20;
+				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
+				Polygon perimeter = new Polygon() 
+				{ 
+					// bottom of center line
+					new IntPoint(1000, 2500-25), new IntPoint(4000, 2500-25),
+					// right leg
+					new IntPoint(4000, 0), new IntPoint(5000, 0), new IntPoint(5000, 5000), new IntPoint(4000, 5000), 
+					// top of center line
+					new IntPoint(4000, 2500+25), new IntPoint(1000, 2500+25),
+					// left leg
+					new IntPoint(1000, 5000), new IntPoint(0, 5000), new IntPoint(0, 0), new IntPoint(1000, 0), new IntPoint(1000, 2500-25), 
+				};
 				Polygons correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400);
 				Assert.IsTrue(correctedPath.Count == 3);
-				Assert.IsTrue(correctedPath[0].Count == 6);
-				Assert.IsTrue(correctedPath[1].Count == 2);
+				Assert.IsTrue(correctedPath[0].Count == 2);
+				Assert.IsTrue(correctedPath[1].Count == 6);
 				Assert.IsTrue(correctedPath[2].Count == 6);
 			}
 		}
