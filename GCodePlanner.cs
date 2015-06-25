@@ -19,6 +19,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using MatterSlice.ClipperLib;
 using System.Collections.Generic;
 
@@ -164,43 +165,76 @@ namespace MatterHackers.MatterSlice
 			return this.extrudeSpeedFactor;
 		}
 
+		[Flags]
+		enum Altered { remove = 1, merged = 2 };
+
 		public Polygons GetPathsWithOverlapsRemoved(Polygon perimeter, int overlapMergeAmount_um)
 		{
 			// make a copy that has every point duplicatiod (so that we have them as segments).
 			Polygon polySegments = new Polygon(perimeter.Count * 2);
-			for (int i = 0; i < perimeter.Count-1; i++)
+			for (int i = 0; i < perimeter.Count - 1; i++)
 			{
 				IntPoint point = perimeter[i];
-				IntPoint nextPoint = perimeter[i+1];
+				IntPoint nextPoint = perimeter[i + 1];
 
 				polySegments.Add(point);
 				polySegments.Add(nextPoint);
 			}
 
+			Altered[] markedAltered = new Altered[polySegments.Count/2];
+
+			int segmentCount = polySegments.Count / 2;
 			// now walk every segment and check if there is another segment that is similar enough to merge them together
-			for (int firstSegmentIndex = 0; firstSegmentIndex < polySegments.Count; firstSegmentIndex += 2)
+			for (int firstSegmentIndex = 0; firstSegmentIndex < segmentCount; firstSegmentIndex++)
 			{
-				for (int checkSegmentIndex = firstSegmentIndex + 2; checkSegmentIndex < polySegments.Count; checkSegmentIndex += 2)
+				int firstPointIndex = firstSegmentIndex * 2;
+				for (int checkSegmentIndex = firstSegmentIndex + 1; checkSegmentIndex < segmentCount; checkSegmentIndex++)
 				{
+					int checkPointIndex = checkSegmentIndex * 2;
 					// The first point of start and the last point of check (the path will be coming back on itself).
-					long startDelta = (polySegments[firstSegmentIndex] - polySegments[checkSegmentIndex+1]).Length();
+					long startDelta = (polySegments[firstPointIndex] - polySegments[checkPointIndex + 1]).Length();
 					// if the segmets are similar enough
 					if (startDelta < overlapMergeAmount_um)
 					{
 						// The last point of start and the first point of check (the path will be coming back on itself).
-						long endDelta = (polySegments[firstSegmentIndex + 1] - polySegments[checkSegmentIndex]).Length();
+						long endDelta = (polySegments[firstPointIndex + 1] - polySegments[checkPointIndex]).Length();
 						if (endDelta < overlapMergeAmount_um)
 						{
 							// move the first segments points to the average of the merge positions
-							polySegments[firstSegmentIndex] = (polySegments[firstSegmentIndex] + polySegments[checkSegmentIndex + 1]) / 2; // the start
-							polySegments[firstSegmentIndex + 1] = (polySegments[firstSegmentIndex + 1] + polySegments[checkSegmentIndex]) / 2; // the end
+							polySegments[firstPointIndex] = (polySegments[firstPointIndex] + polySegments[checkPointIndex + 1]) / 2; // the start
+							polySegments[firstPointIndex + 1] = (polySegments[firstPointIndex + 1] + polySegments[checkPointIndex]) / 2; // the end
 
-							// remove the second segment
-							polySegments.RemoveRange(checkSegmentIndex, 2);
+							markedAltered[firstSegmentIndex] = Altered.merged;
+							// mark this segment for removal
+							markedAltered[checkSegmentIndex] = Altered.remove;
 							// We only expect to find one match for each segment, so move on to the next segment
 							break;
 						}
 					}
+				}
+			}
+
+			// Check for perimeter edeges that need to be removed that are the u turns of sectons that go back on themselves.
+			//  __________
+			// |__________|	->  |--------|  the 2 vertical sections should be removed
+			for (int segmentIndex = 0; segmentIndex < segmentCount; segmentIndex++)
+			{
+				int prevSegmentIndex = (int)((uint)(segmentIndex - 1) % (uint)segmentCount);
+				int nextSegmentIndex = (segmentIndex + 1) % segmentCount;
+				if ((markedAltered[nextSegmentIndex] == Altered.merged && markedAltered[prevSegmentIndex] == Altered.remove)
+					|| (markedAltered[nextSegmentIndex] == Altered.remove && markedAltered[prevSegmentIndex] == Altered.merged))
+				{
+					markedAltered[segmentIndex] = Altered.remove;
+				}
+			}
+
+			// remove the marked segments
+			for (int segmentIndex = segmentCount - 1; segmentIndex >= 0; segmentIndex--)
+			{
+				int pointIndex = segmentIndex * 2;
+				if (markedAltered[segmentIndex] == Altered.remove)
+				{
+					polySegments.RemoveRange(pointIndex, 2);
 				}
 			}
 
@@ -416,7 +450,8 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					/* // This is test code to remove double drawn small perimeter lines.
+#if false
+					// This is test code to remove double drawn small perimeter lines.
 					if (path.config.lineWidth > 0
 						&& path.points.Count > 2 // If the count is not greater than 2 there is no way it can ovelap itself.
 						&& gcode.GetPositionXY() == path.points[path.points.Count - 1])
@@ -442,7 +477,7 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 					else
-					 */
+#endif
 					{
 						//TrimPerimeterIfNeeded(path);
 
@@ -664,6 +699,11 @@ namespace MatterHackers.MatterSlice
 			internal bool Retract { get { return retract; } set { retract = value; } }
 
 			//Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
+		}
+
+		public Polygon MakeCloseSegmentsMergable(Polygon perimeter, int distanceNeedingAdd)
+		{
+			throw new System.NotImplementedException();
 		}
 	}
 }
