@@ -131,7 +131,7 @@
     <Compile Include="fffProcessor.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GCodeExport.cs" />
+    <Compile Include="gcodeExport.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="optimizedModel.cs" />
