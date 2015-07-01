@@ -161,7 +161,7 @@ namespace MatterHackers.MatterSlice
 
 		public void ResetExtrusionValue(double extraExtrudeAmount_mm = 0)
 		{
-			if (extrusionAmount_mm != 0.0 && outputType != ConfigConstants.OUTPUT_TYPE.MAKERBOT)
+			if (extrusionAmount_mm != 0.0)
 			{
 				gcodeFileStream.Write("G92 {0}0\n".FormatWith(extruderCharacter[extruderIndex]));
 				totalFilament_mm[extruderIndex] += extrusionAmount_mm;
@@ -262,14 +262,7 @@ namespace MatterHackers.MatterSlice
 
 			isRetracted = true;
 			extrusionAmount_mm = extruderSwitchRetraction_mm;
-			if (outputType == ConfigConstants.OUTPUT_TYPE.MAKERBOT)
-			{
-				gcodeFileStream.Write("M135 T{0}\n".FormatWith(extruderIndex));
-			}
-			else
-			{
-				gcodeFileStream.Write("T{0}\n".FormatWith(extruderIndex));
-			}
+			gcodeFileStream.Write("T{0}\n".FormatWith(extruderIndex));
 
 			if (toolChangeCode != null && toolChangeCode != "")
 			{
@@ -323,25 +316,11 @@ namespace MatterHackers.MatterSlice
 
 			if (speed > 0)
 			{
-				if (outputType == ConfigConstants.OUTPUT_TYPE.MAKERBOT)
-				{
-					gcodeFileStream.Write("M126 T0 ; value = {0}\n".FormatWith(speed * 255 / 100));
-				}
-				else
-				{
-					gcodeFileStream.Write("M106 S{0}\n".FormatWith(speed * 255 / 100));
-				}
+				gcodeFileStream.Write("M106 S{0}\n".FormatWith(speed * 255 / 100));
 			}
 			else
 			{
-				if (outputType == ConfigConstants.OUTPUT_TYPE.MAKERBOT)
-				{
-					gcodeFileStream.Write("M127 T0\n");
-				}
-				else
-				{
-					gcodeFileStream.Write("M107\n");
-				}
+				gcodeFileStream.Write("M107\n");
 			}
 			currentFanSpeed = speed;
 		}
