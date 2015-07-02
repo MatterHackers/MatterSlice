@@ -60,17 +60,17 @@ namespace MatterHackers.MatterSlice
 
 		public bool setTargetFile(string filename)
 		{
-			gcode.setFilename(filename);
+			gcode.SetFilename(filename);
 			{
-				gcode.writeComment("Generated with MatterSlice {0}".FormatWith(ConfigConstants.VERSION));
+				gcode.WriteComment("Generated with MatterSlice {0}".FormatWith(ConfigConstants.VERSION));
 			}
 
-			return gcode.isOpened();
+			return gcode.IsOpened();
 		}
 
 		public void DoProcessing()
 		{
-			if (!gcode.isOpened())
+			if (!gcode.IsOpened())
 			{
 				return;
 			}
@@ -128,12 +128,12 @@ namespace MatterHackers.MatterSlice
 
 		public void finalize()
 		{
-			if (!gcode.isOpened())
+			if (!gcode.IsOpened())
 			{
 				return;
 			}
 
-			gcode.finalize(maxObjectHeight, config.travelSpeed, config.endCode);
+			gcode.Finalize(maxObjectHeight, config.travelSpeed, config.endCode);
 
 			gcode.Close();
 		}
@@ -150,7 +150,7 @@ namespace MatterHackers.MatterSlice
 
 			for (int extruderIndex = 0; extruderIndex < ConfigConstants.MAX_EXTRUDERS; extruderIndex++)
 			{
-				gcode.setExtruderOffset(extruderIndex, config.extruderOffsets[extruderIndex], -config.zOffset_um);
+				gcode.SetExtruderOffset(extruderIndex, config.extruderOffsets[extruderIndex], -config.zOffset_um);
 			}
 
 			gcode.SetOutputType(config.outputType);
@@ -362,35 +362,35 @@ namespace MatterHackers.MatterSlice
 
 		private void writeGCode(SliceDataStorage storage)
 		{
-			gcode.writeComment("filamentDiameter = {0}".FormatWith(config.filamentDiameter));
-			gcode.writeComment("extrusionWidth = {0}".FormatWith(config.extrusionWidth));
-			gcode.writeComment("firstLayerExtrusionWidth = {0}".FormatWith(config.firstLayerExtrusionWidth));
-			gcode.writeComment("layerThickness = {0}".FormatWith(config.layerThickness));
-			gcode.writeComment("firstLayerThickness = {0}".FormatWith(config.firstLayerThickness));
+			gcode.WriteComment("filamentDiameter = {0}".FormatWith(config.filamentDiameter));
+			gcode.WriteComment("extrusionWidth = {0}".FormatWith(config.extrusionWidth));
+			gcode.WriteComment("firstLayerExtrusionWidth = {0}".FormatWith(config.firstLayerExtrusionWidth));
+			gcode.WriteComment("layerThickness = {0}".FormatWith(config.layerThickness));
+			gcode.WriteComment("firstLayerThickness = {0}".FormatWith(config.firstLayerThickness));
 
 			if (fileNumber == 1)
 			{
 				if (gcode.GetOutputType() == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
 				{
-					gcode.writeComment("TYPE:UltiGCode");
-					gcode.writeComment("TIME:<__TIME__>");
-					gcode.writeComment("MATERIAL:<FILAMENT>");
-					gcode.writeComment("MATERIAL2:<FILAMEN2>");
+					gcode.WriteComment("TYPE:UltiGCode");
+					gcode.WriteComment("TIME:<__TIME__>");
+					gcode.WriteComment("MATERIAL:<FILAMENT>");
+					gcode.WriteComment("MATERIAL2:<FILAMEN2>");
 				}
-				gcode.writeCode(config.startCode);
+				gcode.WriteCode(config.startCode);
 				if (gcode.GetOutputType() == ConfigConstants.OUTPUT_TYPE.BFB)
 				{
-					gcode.writeComment("enable auto-retraction");
-					gcode.writeLine("M227 S{0} P{1}".FormatWith(config.retractionOnTravel * 2560, config.retractionOnTravel * 2560));
+					gcode.WriteComment("enable auto-retraction");
+					gcode.WriteLine("M227 S{0} P{1}".FormatWith(config.retractionOnTravel * 2560, config.retractionOnTravel * 2560));
 				}
 			}
 			else
 			{
-				gcode.writeFanCommand(0);
+				gcode.WriteFanCommand(0);
 				gcode.ResetExtrusionValue();
-				gcode.writeRetraction();
+				gcode.WriteRetraction();
 				gcode.setZ(maxObjectHeight + 5000);
-				gcode.WriteMove(gcode.getPositionXY(), config.travelSpeed, 0);
+				gcode.WriteMove(gcode.GetPositionXY(), config.travelSpeed, 0);
 				gcode.WriteMove(new IntPoint(storage.modelMin.x, storage.modelMin.y), config.travelSpeed, 0);
 			}
 			fileNumber++;
@@ -422,7 +422,7 @@ namespace MatterHackers.MatterSlice
 					totalLayers--;
 				}
 			}
-			gcode.writeComment("Layer count: {0}".FormatWith(totalLayers));
+			gcode.WriteComment("Layer count: {0}".FormatWith(totalLayers));
 
 			// keep the raft generation code inside of raft
 			Raft.GenerateRaftGCodeIfRequired(storage, config, gcode);
@@ -467,14 +467,14 @@ namespace MatterHackers.MatterSlice
 					supportInterfaceConfig.setData(config.supportMaterialSpeed, config.extrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 
-				gcode.writeComment("LAYER:{0}".FormatWith(layerIndex));
+				gcode.WriteComment("LAYER:{0}".FormatWith(layerIndex));
 				if (layerIndex == 0)
 				{
-					gcode.setExtrusion(config.firstLayerThickness_um, config.filamentDiameter_um, config.extrusionMultiplier);
+					gcode.SetExtrusion(config.firstLayerThickness_um, config.filamentDiameter_um, config.extrusionMultiplier);
 				}
 				else
 				{
-					gcode.setExtrusion(config.layerThickness_um, config.filamentDiameter_um, config.extrusionMultiplier);
+					gcode.SetExtrusion(config.layerThickness_um, config.filamentDiameter_um, config.extrusionMultiplier);
 				}
 
 				GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_um);
@@ -527,9 +527,9 @@ namespace MatterHackers.MatterSlice
 				}
 
 				//Finish the layer by applying speed corrections for minimum layer times.
-				gcodeLayer.forceMinimumLayerTime(config.minimumLayerTimeSeconds, config.minimumPrintingSpeed);
+				gcodeLayer.ForceMinimumLayerTime(config.minimumLayerTimeSeconds, config.minimumPrintingSpeed);
 
-				gcode.writeFanCommand(fanSpeedPercent);
+				gcode.WriteFanCommand(fanSpeedPercent);
 
 				int currentLayerThickness_um = config.layerThickness_um;
 				if (layerIndex <= 0)
@@ -537,13 +537,13 @@ namespace MatterHackers.MatterSlice
 					currentLayerThickness_um = config.firstLayerThickness_um;
 				}
 
-				gcodeLayer.writeGCode(config.doCoolHeadLift, currentLayerThickness_um);
+				gcodeLayer.WriteGCode(config.doCoolHeadLift, currentLayerThickness_um);
 			}
 
 			LogOutput.log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.Seconds));
 			timeKeeper.Restart();
-			gcode.tellFileSize();
-			gcode.writeFanCommand(0);
+			gcode.TellFileSize();
+			gcode.WriteFanCommand(0);
 
 			//Store the object height for when we are printing multiple objects, as we need to clear every one of them when moving to the next position.
 			maxObjectHeight = Math.Max(maxObjectHeight, storage.modelSize.z);
@@ -589,10 +589,10 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				gcodeLayer.writeTravel(lowestPoint);
+				gcodeLayer.WriteTravel(lowestPoint);
 			}
 
-			gcodeLayer.writePolygonsByOptimizer(storage.skirt, skirtConfig);
+			gcodeLayer.WritePolygonsByOptimizer(storage.skirt, skirtConfig);
 		}
 
 		int lastPartIndex = 0;
@@ -600,7 +600,7 @@ namespace MatterHackers.MatterSlice
 		private void AddVolumeLayerToGCode(SliceDataStorage storage, GCodePlanner gcodeLayer, int volumeIndex, int layerIndex, int extrusionWidth_um, int fanSpeedPercent)
 		{
 			int prevExtruder = gcodeLayer.getExtruder();
-			bool extruderChanged = gcodeLayer.setExtruder(volumeIndex);
+			bool extruderChanged = gcodeLayer.SetExtruder(volumeIndex);
 
 			SliceLayer layer = storage.volumes[volumeIndex].layers[layerIndex];
 			if (extruderChanged)
@@ -610,9 +610,9 @@ namespace MatterHackers.MatterSlice
 
 			if (storage.wipeShield.Count > 0 && storage.volumes.Count > 1)
 			{
-				gcodeLayer.setAlwaysRetract(true);
-				gcodeLayer.writePolygonsByOptimizer(storage.wipeShield[layerIndex], skirtConfig);
-				gcodeLayer.setAlwaysRetract(!config.avoidCrossingPerimeters);
+				gcodeLayer.SetAlwaysRetract(true);
+				gcodeLayer.WritePolygonsByOptimizer(storage.wipeShield[layerIndex], skirtConfig);
+				gcodeLayer.SetAlwaysRetract(!config.avoidCrossingPerimeters);
 			}
 
 			PathOrderOptimizer partOrderOptimizer = new PathOrderOptimizer(new IntPoint());
@@ -642,7 +642,7 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					gcodeLayer.setAlwaysRetract(true);
+					gcodeLayer.SetAlwaysRetract(true);
 				}
 
 				Polygons fillPolygons = new Polygons();
@@ -654,9 +654,9 @@ namespace MatterHackers.MatterSlice
 				// It would be even better to slow down the perimeters that are part of bridges but that is a bit harder.
 				if (bridgePolygons.Count > 0)
 				{
-					gcode.writeFanCommand(config.bridgeFanSpeedPercent);
-					gcodeLayer.writePolygonsByOptimizer(bridgePolygons, bridgConfig);
-					gcode.writeFanCommand(fanSpeedPercent);
+					gcode.WriteFanCommand(config.bridgeFanSpeedPercent);
+					gcodeLayer.WritePolygonsByOptimizer(bridgePolygons, bridgConfig);
+					gcode.WriteFanCommand(fanSpeedPercent);
 				}
 
 				if (config.numberOfPerimeters > 0)
@@ -682,14 +682,14 @@ namespace MatterHackers.MatterSlice
 						// First the outside (this helps with accuracy)
 						if (part.insets.Count > 0)
 						{
-							gcodeLayer.writePolygonsByOptimizer(part.insets[0], inset0Config);
+							gcodeLayer.WritePolygonsByOptimizer(part.insets[0], inset0Config);
 						}
 
 						if (!inset0Config.spiralize)
 						{
 							for (int perimeterIndex = 1; perimeterIndex < part.insets.Count; perimeterIndex++)
 							{
-								gcodeLayer.writePolygonsByOptimizer(part.insets[perimeterIndex], insetXConfig);
+								gcodeLayer.WritePolygonsByOptimizer(part.insets[perimeterIndex], insetXConfig);
 							}
 						}
 					}
@@ -698,17 +698,17 @@ namespace MatterHackers.MatterSlice
 						// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
 						for (int perimeterIndex = 1; perimeterIndex < part.insets.Count; perimeterIndex++)
 						{
-							gcodeLayer.writePolygonsByOptimizer(part.insets[perimeterIndex], insetXConfig);
+							gcodeLayer.WritePolygonsByOptimizer(part.insets[perimeterIndex], insetXConfig);
 						}
 						// then 0
 						if (part.insets.Count > 0)
 						{
-							gcodeLayer.writePolygonsByOptimizer(part.insets[0], inset0Config);
+							gcodeLayer.WritePolygonsByOptimizer(part.insets[0], inset0Config);
 						}
 					}
 				}
 
-				gcodeLayer.writePolygonsByOptimizer(fillPolygons, fillConfig);
+				gcodeLayer.WritePolygonsByOptimizer(fillPolygons, fillConfig);
 
 				//After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
 				if (!config.continuousSpiralOuterPerimeter || layerIndex < config.numberOfBottomLayers)
@@ -804,16 +804,16 @@ namespace MatterHackers.MatterSlice
 			if (config.supportExtruder > -1)
 			{
 				int prevExtruder = gcodeLayer.getExtruder();
-				if (gcodeLayer.setExtruder(config.supportExtruder))
+				if (gcodeLayer.SetExtruder(config.supportExtruder))
 				{
 					addWipeTower(storage, gcodeLayer, layerIndex, prevExtruder, config.extrusionWidth_um);
 				}
 
 				if (storage.wipeShield.Count > 0 && storage.volumes.Count == 1)
 				{
-					gcodeLayer.setAlwaysRetract(true);
-					gcodeLayer.writePolygonsByOptimizer(storage.wipeShield[layerIndex], skirtConfig);
-					gcodeLayer.setAlwaysRetract(config.avoidCrossingPerimeters);
+					gcodeLayer.SetAlwaysRetract(true);
+					gcodeLayer.WritePolygonsByOptimizer(storage.wipeShield[layerIndex], skirtConfig);
+					gcodeLayer.SetAlwaysRetract(config.avoidCrossingPerimeters);
 				}
 			}
 
@@ -838,7 +838,7 @@ namespace MatterHackers.MatterSlice
 			if (config.supportInterfaceExtruder != -1
 				&& config.supportInterfaceExtruder != config.supportExtruder)
 			{
-				gcodeLayer.setExtruder(config.supportInterfaceExtruder);
+				gcodeLayer.SetExtruder(config.supportInterfaceExtruder);
 			}
 			WriteSupportPolygons(storage, gcodeLayer, layerIndex, config, supportGenerator.interfacePolygons, SupportType.Interface);
 		}
@@ -861,7 +861,7 @@ namespace MatterHackers.MatterSlice
 			supportPolygons = supportPolygons.Offset(config.extrusionWidth_um * 1);
 
 			List<Polygons> supportIslands = supportPolygons.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd);
-			PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(gcode.getPositionXY());
+			PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(gcode.GetPositionXY());
 
 			for (int islandIndex = 0; islandIndex < supportIslands.Count; islandIndex++)
 			{
@@ -907,15 +907,15 @@ namespace MatterHackers.MatterSlice
 				switch (interfaceLayer)
 				{
 					case SupportType.Interface:
-						gcodeLayer.writePolygonsByOptimizer(supportLines, supportInterfaceConfig);
+						gcodeLayer.WritePolygonsByOptimizer(supportLines, supportInterfaceConfig);
 						break;
 
 					case SupportType.General:
 						if (config.supportType == ConfigConstants.SUPPORT_TYPE.GRID)
 						{
-							gcodeLayer.writePolygonsByOptimizer(island, supportNormalConfig);
+							gcodeLayer.WritePolygonsByOptimizer(island, supportNormalConfig);
 						}
-						gcodeLayer.writePolygonsByOptimizer(supportLines, supportNormalConfig);
+						gcodeLayer.WritePolygonsByOptimizer(supportLines, supportNormalConfig);
 						break;
 
 					default:
@@ -934,18 +934,18 @@ namespace MatterHackers.MatterSlice
 			}
 
 			//If we changed extruder, print the wipe/prime tower for this nozzle;
-			gcodeLayer.writePolygonsByOptimizer(storage.wipeTower, supportInterfaceConfig);
+			gcodeLayer.WritePolygonsByOptimizer(storage.wipeTower, supportInterfaceConfig);
 			Polygons fillPolygons = new Polygons();
 			Infill.GenerateLinePaths(storage.wipeTower, ref fillPolygons, extrusionWidth_um, config.infillExtendIntoPerimeter_um, 45 + 90 * (layerNr % 2));
-			gcodeLayer.writePolygonsByOptimizer(fillPolygons, supportInterfaceConfig);
+			gcodeLayer.WritePolygonsByOptimizer(fillPolygons, supportInterfaceConfig);
 
 			//Make sure we wipe the old extruder on the wipe tower.
-			gcodeLayer.writeTravel(storage.wipePoint - config.extruderOffsets[prevExtruder] + config.extruderOffsets[gcodeLayer.getExtruder()]);
+			gcodeLayer.WriteTravel(storage.wipePoint - config.extruderOffsets[prevExtruder] + config.extruderOffsets[gcodeLayer.getExtruder()]);
 		}
 
 		public void Cancel()
 		{
-			if (gcode.isOpened())
+			if (gcode.IsOpened())
 			{
 				gcode.Close();
 			}

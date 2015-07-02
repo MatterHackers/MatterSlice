@@ -61,6 +61,7 @@
     <Compile Include="MatterSlice\PathOrderTests.cs" />
     <Compile Include="MatterSlice\PolygonTests.cs" />
     <Compile Include="MatterSlice\SettingsTests.cs" />
+    <Compile Include="MatterSlice\GCodePlannerTests.cs" />
     <Compile Include="MatterSlice\SlicerLayerTests.cs" />
     <Compile Include="MatterSlice\TestUtlities.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

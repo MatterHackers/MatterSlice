@@ -111,6 +111,8 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GCodePathConfig.cs" />
+    <Compile Include="GCodePlanner.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="layerPart.cs" />
     <Compile Include="sliceDataStorage.cs" />
