@@ -98,9 +98,9 @@ namespace MatterHackers.MatterSlice
 			WriteComment("filament used extruder 2 (mm) = {0:0.0}".FormatWith(GetTotalFilamentUsed(1)));
 			WriteComment("total print time (s) = {0:0}".FormatWith(GetTotalPrintTime()));
 
-			LogOutput.log("Print time: {0}\n".FormatWith((int)(GetTotalPrintTime())));
-			LogOutput.log("Filament: {0}\n".FormatWith((int)(GetTotalFilamentUsed(0))));
-			LogOutput.log("Filament2: {0}\n".FormatWith((int)(GetTotalFilamentUsed(1))));
+			LogOutput.Log("Print time: {0}\n".FormatWith((int)(GetTotalPrintTime())));
+			LogOutput.Log("Filament: {0}\n".FormatWith((int)(GetTotalFilamentUsed(0))));
+			LogOutput.Log("Filament2: {0}\n".FormatWith((int)(GetTotalFilamentUsed(1))));
 
 			if (GetOutputType() == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
 			{
@@ -276,12 +276,12 @@ namespace MatterHackers.MatterSlice
 			if (fsize > 1024 * 1024)
 			{
 				fsize /= 1024.0 * 1024.0;
-				LogOutput.log("Wrote {0:0.0} MB.\n".FormatWith(fsize));
+				LogOutput.Log("Wrote {0:0.0} MB.\n".FormatWith(fsize));
 			}
 			if (fsize > 1024)
 			{
 				fsize /= 1024.0;
-				LogOutput.log("Wrote {0:0.0} kilobytes.\n".FormatWith(fsize));
+				LogOutput.Log("Wrote {0:0.0} kilobytes.\n".FormatWith(fsize));
 			}
 		}
 
