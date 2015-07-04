@@ -47,6 +47,21 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void TwoRingSegmentsCreatedCorrectly()
+		{
+			string pathToData = Path.Combine("..", "..", "..", "TestData", "TwoRingSegmentsTestData.txt");
+
+			string[] segmentsToCheck = File.ReadAllLines(pathToData);
+			foreach (string line in segmentsToCheck)
+			{
+				SlicerLayer layer = new SlicerLayer(1, line);
+				layer.MakePolygons(ConfigConstants.REPAIR_OUTLINES.NONE);
+
+				Assert.IsTrue(layer.PolygonList.Count == 2);
+			}
+		}
+		
+		[Test]
 		public void DumpSegmentsWorks()
 		{
 			List<SlicerSegment> testSegments = new List<SlicerSegment>();

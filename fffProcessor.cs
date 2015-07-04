@@ -161,7 +161,7 @@ namespace MatterHackers.MatterSlice
 		private void sliceModels(SliceDataStorage storage)
 		{
 			timeKeeper.Restart();
-#if False
+#if false
             optomizedModel.saveDebugSTL("debug_output.stl");
 #endif
 
@@ -176,7 +176,7 @@ namespace MatterHackers.MatterSlice
 #if false
             slicerList[0].DumpSegmentsToGcode("Volume 0 Segments.gcode");
             slicerList[0].DumpPolygonsToGcode("Volume 0 Polygons.gcode");
-            slicerList[0].DumpPolygonsToHTML("Volume 0 Polygons.html");
+            //slicerList[0].DumpPolygonsToHTML("Volume 0 Polygons.html");
 #endif
 
 			LogOutput.Log("Sliced model in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
@@ -193,7 +193,7 @@ namespace MatterHackers.MatterSlice
 			for (int volumeIndex = 0; volumeIndex < slicerList.Count; volumeIndex++)
 			{
 				storage.volumes.Add(new SliceVolumeStorage());
-				LayerPart.createLayerParts(storage.volumes[volumeIndex], slicerList[volumeIndex], config.repairOverlaps);
+				LayerPart.CreateLayerParts(storage.volumes[volumeIndex], slicerList[volumeIndex], config.repairOverlaps);
 
 				if (config.enableRaft)
 				{

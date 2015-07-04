@@ -24,8 +24,8 @@ using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
+	using System.IO;
 	using Polygon = List<IntPoint>;
-
 	using Polygons = List<List<IntPoint>>;
 
 	public class ClosePolygonResult
@@ -66,6 +66,8 @@ namespace MatterHackers.MatterSlice
 			SegmentList = CreateSegmentListFromString(segmentListData);
 		}
 
+		public int Z { get { return z; } }
+
 		public static List<SlicerSegment> CreateSegmentListFromString(string segmentListData)
 		{
 			List<SlicerSegment> output = new List<SlicerSegment>();
@@ -100,9 +102,6 @@ namespace MatterHackers.MatterSlice
 			}
 			return total;
 		}
-
-		public int Z { get { return z; } }
-
 		public void DumpPolygonsToGcode(System.IO.StreamWriter stream, double scale, double extrudeAmount)
 		{
 			for (int openPolygonIndex = 0; openPolygonIndex < openPolygonList.Count; openPolygonIndex++)
@@ -129,6 +128,14 @@ namespace MatterHackers.MatterSlice
 
 		public void MakePolygons(ConfigConstants.REPAIR_OUTLINES outlineRepairTypes)
 		{
+			if (false) // you can use this output segments for debugging
+			{
+				using (StreamWriter stream = File.AppendText("segments.txt"))
+				{
+					stream.WriteLine(DumpSegmentListToString(SegmentList));
+				}
+			}
+
 			for (int startingSegmentIndex = 0; startingSegmentIndex < SegmentList.Count; startingSegmentIndex++)
 			{
 				if (SegmentList[startingSegmentIndex].hasBeenAddedToPolygon)
