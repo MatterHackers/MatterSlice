@@ -41,15 +41,15 @@ namespace MatterHackers.MatterSlice
 		It's also the first step that stores the result in the "data storage" so all other steps can access it.
 		*/
 
-		private static void createLayerWithParts(SliceLayer storageLayer, SlicerLayer layer, ConfigConstants.REPAIR_OVERLAPS unionAllType)
+		private static void CreateLayerWithParts(SliceLayer storageLayer, SlicerLayer layer, ConfigConstants.REPAIR_OVERLAPS unionAllType)
 		{
 			if ((unionAllType & ConfigConstants.REPAIR_OVERLAPS.REVERSE_ORIENTATION) == ConfigConstants.REPAIR_OVERLAPS.REVERSE_ORIENTATION)
 			{
-				for (int i = 0; i < layer.polygonList.Count; i++)
+				for (int i = 0; i < layer.PolygonList.Count; i++)
 				{
-					if (layer.polygonList[i].Orientation())
+					if (layer.PolygonList[i].Orientation())
 					{
-						layer.polygonList[i].Reverse();
+						layer.PolygonList[i].Reverse();
 					}
 				}
 			}
@@ -57,11 +57,11 @@ namespace MatterHackers.MatterSlice
 			List<Polygons> result;
 			if ((unionAllType & ConfigConstants.REPAIR_OVERLAPS.UNION_ALL_TOGETHER) == ConfigConstants.REPAIR_OVERLAPS.UNION_ALL_TOGETHER)
 			{
-				result = layer.polygonList.Offset(1000).CreateLayerOutlines(PolygonsHelper.LayerOpperation.UnionAll);
+				result = layer.PolygonList.Offset(1000).CreateLayerOutlines(PolygonsHelper.LayerOpperation.UnionAll);
 			}
 			else
 			{
-				result = layer.polygonList.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd);
+				result = layer.PolygonList.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd);
 			}
 
 			for (int i = 0; i < result.Count; i++)
@@ -81,17 +81,17 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static void createLayerParts(SliceVolumeStorage storage, Slicer slicer, ConfigConstants.REPAIR_OVERLAPS unionAllType)
+		public static void CreateLayerParts(SliceVolumeStorage storage, Slicer slicer, ConfigConstants.REPAIR_OVERLAPS unionAllType)
 		{
 			for (int layerIndex = 0; layerIndex < slicer.layers.Count; layerIndex++)
 			{
 				storage.layers.Add(new SliceLayer());
-				storage.layers[layerIndex].printZ = slicer.layers[layerIndex].z;
-				LayerPart.createLayerWithParts(storage.layers[layerIndex], slicer.layers[layerIndex], unionAllType);
+				storage.layers[layerIndex].printZ = slicer.layers[layerIndex].Z;
+				LayerPart.CreateLayerWithParts(storage.layers[layerIndex], slicer.layers[layerIndex], unionAllType);
 			}
 		}
 
-		public static void dumpLayerparts(SliceDataStorage storage, string filename)
+		public static void DumpLayerparts(SliceDataStorage storage, string filename)
 		{
 			StreamWriter streamToWriteTo = new StreamWriter(filename);
 			streamToWriteTo.Write("<!DOCTYPE html><html><body>");

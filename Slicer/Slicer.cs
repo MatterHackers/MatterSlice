@@ -32,8 +32,17 @@ namespace MatterHackers.MatterSlice
 	{
 		public IntPoint start;
 		public IntPoint end;
-		public int faceIndex;
 		public bool hasBeenAddedToPolygon;
+
+		public SlicerSegment()
+		{
+		}
+
+		public SlicerSegment(IntPoint start, IntPoint end)
+		{
+			this.start = start;
+			this.end = end;
+		}
 	}
 
 	public class Slicer
@@ -63,21 +72,18 @@ namespace MatterHackers.MatterSlice
 
 			LogOutput.Log(string.Format("Layer count: {0}\n", layerCount));
 			layers.Capacity = layerCount;
-			for (int i = 0; i < layerCount; i++)
-			{
-				layers.Add(new SlicerLayer());
-			}
-
 			for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
 			{
+				int z;
 				if (layerIndex == 0)
 				{
-					layers[layerIndex].z = initialLayerThickness_um / 2;
+					z = initialLayerThickness_um / 2;
 				}
 				else
 				{
-					layers[layerIndex].z = initialLayerThickness_um + layerThickness_um / 2 + layerThickness_um * (layerIndex - 1);
+					z = initialLayerThickness_um + layerThickness_um / 2 + layerThickness_um * (layerIndex - 1);
 				}
+				layers.Add(new SlicerLayer(z));
 			}
 
 			for (int faceIndex = 0; faceIndex < ov.facesTriangle.Count; faceIndex++)
@@ -94,7 +100,7 @@ namespace MatterHackers.MatterSlice
 
 				for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
 				{
-					int z = layers[layerIndex].z;
+					int z = layers[layerIndex].Z;
 					if (z < minZ || z > maxZ)
 					{
 						continue;
@@ -149,16 +155,15 @@ namespace MatterHackers.MatterSlice
 						//  on the slice would create two segments
 						continue;
 					}
-					layers[layerIndex].faceTo2DSegmentIndex[faceIndex] = layers[layerIndex].segmentList.Count;
-					polyCrossingAtThisZ.faceIndex = faceIndex;
+
 					polyCrossingAtThisZ.hasBeenAddedToPolygon = false;
-					layers[layerIndex].segmentList.Add(polyCrossingAtThisZ);
+					layers[layerIndex].SegmentList.Add(polyCrossingAtThisZ);
 				}
 			}
 
 			for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
 			{
-				layers[layerIndex].MakePolygons(ov, outlineRepairTypes);
+				layers[layerIndex].MakePolygons(outlineRepairTypes);
 			}
 		}
 
@@ -181,7 +186,7 @@ namespace MatterHackers.MatterSlice
 			for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
 			{
 				stream.Write("; LAYER:{0}\n".FormatWith(layerIndex));
-				List<SlicerSegment> segmentList = layers[layerIndex].segmentList;
+				List<SlicerSegment> segmentList = layers[layerIndex].SegmentList;
 				for (int segmentIndex = 0; segmentIndex < segmentList.Count; segmentIndex++)
 				{
 					stream.Write("G1 X{0}Y{1}\n", (double)(segmentList[segmentIndex].start.X) / scale,
@@ -203,9 +208,9 @@ namespace MatterHackers.MatterSlice
 			for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
 			{
 				stream.Write("; LAYER:{0}\n".FormatWith(layerIndex));
-				for (int polygonIndex = 0; polygonIndex < layers[layerIndex].polygonList.Count; polygonIndex++)
+				for (int polygonIndex = 0; polygonIndex < layers[layerIndex].PolygonList.Count; polygonIndex++)
 				{
-					Polygon polygon = layers[layerIndex].polygonList[polygonIndex];
+					Polygon polygon = layers[layerIndex].PolygonList[polygonIndex];
 					if (polygon.Count > 0)
 					{
 						// move to the start without extruding (so it is a move)
@@ -223,77 +228,8 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				for (int openPolygonIndex = 0; openPolygonIndex < layers[layerIndex].openPolygonList.Count; openPolygonIndex++)
-				{
-					Polygon openPolygon = layers[layerIndex].openPolygonList[openPolygonIndex];
-
-					if (openPolygon.Count > 0)
-					{
-						// move to the start without extruding (so it is a move)
-						stream.Write("G1 X{0}Y{1}\n", (double)(openPolygon[0].X) / scale,
-							(double)(openPolygon[0].Y) / scale);
-						for (int intPointIndex = 1; intPointIndex < openPolygon.Count; intPointIndex++)
-						{
-							// do all the points with extruding
-							stream.Write("G1 X{0}Y{1}E{2}\n", (double)(openPolygon[intPointIndex].X) / scale,
-								(double)(openPolygon[intPointIndex].Y) / scale, extrudeAmount++);
-						}
-						// go back to the start extruding
-						stream.Write("G1 X{0}Y{1}E{2}\n", (double)(openPolygon[0].X) / scale,
-							(double)(openPolygon[0].Y) / scale, extrudeAmount++);
-					}
-				}
+				layers[layerIndex].DumpPolygonsToGcode(stream, scale, extrudeAmount);
 			}
-			stream.Close();
-		}
-
-		public void DumpPolygonsToHTML(string filename)
-		{
-			double scaleDenominator = 150;
-			double scale = Math.Max(modelSize.x, modelSize.y) / scaleDenominator;
-			StreamWriter stream = new StreamWriter(filename);
-			stream.Write("<!DOCTYPE html><html><body>\n");
-			for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
-			{
-				stream.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style='width:{0}px;height:{1}px'>\n".FormatWith((int)(modelSize.x / scale), (int)(modelSize.y / scale)));
-				stream.Write("<marker id='MidMarker' viewBox='0 0 10 10' refX='5' refY='5' markerUnits='strokeWidth' markerWidth='10' markerHeight='10' stroke='lightblue' stroke-width='2' fill='none' orient='auto'>");
-				stream.Write("<path d='M 0 0 L 10 5 M 0 10 L 10 5'/>");
-				stream.Write("</marker>");
-				stream.Write("<g fill-rule='evenodd' style=\"fill: gray; stroke:black;stroke-width:1\">\n");
-				stream.Write("<path marker-mid='url(#MidMarker)' d=\"");
-				for (int polygonIndex = 0; polygonIndex < layers[layerIndex].polygonList.Count; polygonIndex++)
-				{
-					Polygon polygon = layers[layerIndex].polygonList[polygonIndex];
-					for (int intPointIndex = 0; intPointIndex < polygon.Count; intPointIndex++)
-					{
-						if (intPointIndex == 0)
-						{
-							stream.Write("M");
-						}
-						else
-						{
-							stream.Write("L");
-						}
-						stream.Write("{0},{1} ", (double)(polygon[intPointIndex].X - modelMin.x) / scale, (double)(polygon[intPointIndex].Y - modelMin.y) / scale);
-					}
-					stream.Write("Z\n");
-				}
-				stream.Write("\"/>");
-				stream.Write("</g>\n");
-				for (int openPolygonIndex = 0; openPolygonIndex < layers[layerIndex].openPolygonList.Count; openPolygonIndex++)
-				{
-					Polygon openPolygon = layers[layerIndex].openPolygonList[openPolygonIndex];
-					if (openPolygon.Count < 1) continue;
-					stream.Write("<polyline marker-mid='url(#MidMarker)' points=\"");
-					for (int n = 0; n < openPolygon.Count; n++)
-					{
-						stream.Write("{0},{1} ", (double)(openPolygon[n].X - modelMin.x) / scale, (double)(openPolygon[n].Y - modelMin.y) / scale);
-					}
-					stream.Write("\" style=\"fill: none; stroke:red;stroke-width:1\" />\n");
-				}
-				stream.Write("</svg>\n");
-			}
-			stream.Write("</body></html>");
 			stream.Close();
 		}
 	}

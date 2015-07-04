@@ -47,6 +47,26 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void DumpSegmentsWorks()
+		{
+			List<SlicerSegment> testSegments = new List<SlicerSegment>();
+			testSegments.Add(new SlicerSegment(new IntPoint(1, 2), new IntPoint(3, 4)));
+			testSegments.Add(new SlicerSegment(new IntPoint(4, 2), new IntPoint(5, 4)));
+			testSegments.Add(new SlicerSegment(new IntPoint(3, 2), new IntPoint(9, 4)));
+			testSegments.Add(new SlicerSegment(new IntPoint(6, 2), new IntPoint(3, 7)));
+
+			string segmentsString = SlicerLayer.DumpSegmentListToString(testSegments);
+			List<SlicerSegment> outSegments = SlicerLayer.CreateSegmentListFromString(segmentsString);
+
+			Assert.True(testSegments.Count == outSegments.Count);
+			for (int i = 0; i < testSegments.Count; i++)
+			{
+				Assert.True(testSegments[i].start == outSegments[i].start);
+				Assert.True(testSegments[i].end == outSegments[i].end);
+			}
+		}
+
+		[Test]
 		public void AlwaysRetractOnIslandChange()
 		{
 			string meshWithIslands = TestUtlities.GetStlPath("comb");

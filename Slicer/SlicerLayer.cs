@@ -28,46 +28,117 @@ namespace MatterHackers.MatterSlice
 
 	using Polygons = List<List<IntPoint>>;
 
-	public class GapCloserResult
-	{
-		public long len;
-		public int polygonIndex;
-		public int pointIndexA;
-		public int pointIndexB;
-		public bool AtoB;
-	}
-
 	public class ClosePolygonResult
 	{
 		//The result of trying to find a point on a closed polygon line. This gives back the point index, the polygon index, and the point of the connection.
 		//The line on which the point lays is between pointIdx-1 and pointIdx
 		public IntPoint intersectionPoint;
 
-		public int polygonIdx;
 		public int pointIdx;
+		public int polygonIdx;
+	}
+
+	public class GapCloserResult
+	{
+		public bool AtoB;
+		public long len;
+		public int pointIndexA;
+		public int pointIndexB;
+		public int polygonIndex;
 	}
 
 	public class SlicerLayer
 	{
-		public List<SlicerSegment> segmentList = new List<SlicerSegment>();
-		public Dictionary<int, int> faceTo2DSegmentIndex = new Dictionary<int, int>();
+		public Polygons PolygonList = new Polygons();
+		public List<SlicerSegment> SegmentList = new List<SlicerSegment>();
 
-		public int z;
-		public Polygons polygonList = new Polygons();
-		public Polygons openPolygonList = new Polygons();
+		private Polygons openPolygonList = new Polygons();
+		private int z;
 
-		public void MakePolygons(OptimizedVolume optomizedMesh, ConfigConstants.REPAIR_OUTLINES outlineRepairTypes)
+		public SlicerLayer(int z)
 		{
-			for (int startingSegmentIndex = 0; startingSegmentIndex < segmentList.Count; startingSegmentIndex++)
+			this.z = z;
+		}
+
+		public SlicerLayer(int z, string segmentListData)
+		{
+			this.z = z;
+			SegmentList = CreateSegmentListFromString(segmentListData);
+		}
+
+		public static List<SlicerSegment> CreateSegmentListFromString(string segmentListData)
+		{
+			List<SlicerSegment> output = new List<SlicerSegment>();
+			string[] segmentData = segmentListData.Split('|');
+			foreach (string segment in segmentData)
 			{
-				if (segmentList[startingSegmentIndex].hasBeenAddedToPolygon)
+				if (segment != "")
+				{
+					List<IntPoint> outPoints = new Polygon();
+					string[] points = segment.Split('&');
+					foreach (string point in points)
+					{
+						string[] coordinates = point.Split(',');
+						string elementX = coordinates[0];
+						string elementY = coordinates[1];
+						outPoints.Add(new IntPoint(int.Parse(elementX.Substring(2)), int.Parse(elementY.Substring(3))));
+					}
+					output.Add(new SlicerSegment(outPoints[0], outPoints[1]));
+				}
+			}
+
+			return output;
+		}
+
+		public static string DumpSegmentListToString(List<SlicerSegment> segmentList)
+		{
+			string total = "";
+			foreach (SlicerSegment point in segmentList)
+			{
+				total += point.start.ToString() + "&";
+				total += point.end.ToString() + "|";
+			}
+			return total;
+		}
+
+		public int Z { get { return z; } }
+
+		public void DumpPolygonsToGcode(System.IO.StreamWriter stream, double scale, double extrudeAmount)
+		{
+			for (int openPolygonIndex = 0; openPolygonIndex < openPolygonList.Count; openPolygonIndex++)
+			{
+				Polygon openPolygon = openPolygonList[openPolygonIndex];
+
+				if (openPolygon.Count > 0)
+				{
+					// move to the start without extruding (so it is a move)
+					stream.Write("G1 X{0}Y{1}\n", (double)(openPolygon[0].X) / scale,
+						(double)(openPolygon[0].Y) / scale);
+					for (int intPointIndex = 1; intPointIndex < openPolygon.Count; intPointIndex++)
+					{
+						// do all the points with extruding
+						stream.Write("G1 X{0}Y{1}E{2}\n", (double)(openPolygon[intPointIndex].X) / scale,
+							(double)(openPolygon[intPointIndex].Y) / scale, extrudeAmount++);
+					}
+					// go back to the start extruding
+					stream.Write("G1 X{0}Y{1}E{2}\n", (double)(openPolygon[0].X) / scale,
+						(double)(openPolygon[0].Y) / scale, extrudeAmount++);
+				}
+			}
+		}
+
+		public void MakePolygons(ConfigConstants.REPAIR_OUTLINES outlineRepairTypes)
+		{
+			for (int startingSegmentIndex = 0; startingSegmentIndex < SegmentList.Count; startingSegmentIndex++)
+			{
+				if (SegmentList[startingSegmentIndex].hasBeenAddedToPolygon)
 				{
 					continue;
 				}
 
 				Polygon poly = new Polygon();
 				// We start by adding the start, as we will add ends from now on.
-				IntPoint polygonStartPosition = segmentList[startingSegmentIndex].start;
+				IntPoint polygonStartPosition = SegmentList[startingSegmentIndex].start;
 				poly.Add(polygonStartPosition);
 
 				int segmentIndexBeingAdded = startingSegmentIndex;
@@ -78,65 +149,60 @@ namespace MatterHackers.MatterSlice
 				while (true)
 				{
 					canClose = false;
-					segmentList[segmentIndexBeingAdded].hasBeenAddedToPolygon = true;
-					IntPoint addedSegmentEndPoint = segmentList[segmentIndexBeingAdded].end;
+					SegmentList[segmentIndexBeingAdded].hasBeenAddedToPolygon = true;
+					IntPoint addedSegmentEndPoint = SegmentList[segmentIndexBeingAdded].end;
 					if (!lastAddWasAStart)
 					{
-						// the last added point was an end so add the start as the text end point
-						addedSegmentEndPoint = segmentList[segmentIndexBeingAdded].start;
+						// the last added point was an end so add the start as the next end point
+						addedSegmentEndPoint = SegmentList[segmentIndexBeingAdded].start;
 					}
 
 					poly.Add(addedSegmentEndPoint);
 					int nextSegmentToCheckIndex = -1;
-					OptimizedFace face = optomizedMesh.facesTriangle[segmentList[segmentIndexBeingAdded].faceIndex];
 					for (int connectedFaceIndex = 0; connectedFaceIndex < 3; connectedFaceIndex++)
 					{
-						int testFaceIndex = face.touchingFaces[connectedFaceIndex];
-						if (testFaceIndex > -1)
+						int touchingSegmentIndex = GetTouchingSegmentIndex(addedSegmentEndPoint);
+						if (touchingSegmentIndex == -1)
 						{
-							// If the connected face has an edge that is in the segment list
-							if (faceTo2DSegmentIndex.ContainsKey(testFaceIndex))
+							continue;
+						}
+						IntPoint foundSegmentStart = SegmentList[touchingSegmentIndex].start;
+						if (addedSegmentEndPoint == foundSegmentStart)
+						{
+							// if we have looped back around to where we started
+							if (addedSegmentEndPoint == polygonStartPosition)
 							{
-								int touchingSegmentIndex = faceTo2DSegmentIndex[testFaceIndex];
-								IntPoint foundSegmentStart = segmentList[touchingSegmentIndex].start;
-								if (addedSegmentEndPoint == foundSegmentStart)
+								canClose = true;
+							}
+
+							// If this segment has already been added
+							if (SegmentList[touchingSegmentIndex].hasBeenAddedToPolygon)
+							{
+								continue;
+							}
+
+							nextSegmentToCheckIndex = touchingSegmentIndex;
+							lastAddWasAStart = true;
+						}
+						else // let's check if the other side of this segment can hook up (the normal is facing the wrong way)
+						{
+							IntPoint foundSegmentEnd = SegmentList[touchingSegmentIndex].end;
+							if (addedSegmentEndPoint == foundSegmentEnd)
+							{
+								// if we have looped back around to where we started
+								if (addedSegmentEndPoint == polygonStartPosition)
 								{
-									// if we have looped back around to where we started
-									if (addedSegmentEndPoint == polygonStartPosition)
-									{
-										canClose = true;
-									}
-
-									// If this segment has already been added
-									if (segmentList[touchingSegmentIndex].hasBeenAddedToPolygon)
-									{
-										continue;
-									}
-
-									nextSegmentToCheckIndex = touchingSegmentIndex;
-									lastAddWasAStart = true;
+									canClose = true;
 								}
-								else // let's check if the other side of this segment can hook up (the normal is facing the wrong way)
+
+								// If this segment has already been added
+								if (SegmentList[touchingSegmentIndex].hasBeenAddedToPolygon)
 								{
-									IntPoint foundSegmentEnd = segmentList[touchingSegmentIndex].end;
-									if (addedSegmentEndPoint == foundSegmentEnd)
-									{
-										// if we have looped back around to where we started
-										if (addedSegmentEndPoint == polygonStartPosition)
-										{
-											canClose = true;
-										}
-
-										// If this segment has already been added
-										if (segmentList[touchingSegmentIndex].hasBeenAddedToPolygon)
-										{
-											continue;
-										}
-
-										nextSegmentToCheckIndex = touchingSegmentIndex;
-										lastAddWasAStart = false;
-									}
+									continue;
 								}
+
+								nextSegmentToCheckIndex = touchingSegmentIndex;
+								lastAddWasAStart = false;
 							}
 						}
 					}
@@ -151,7 +217,7 @@ namespace MatterHackers.MatterSlice
 
 				if (canClose)
 				{
-					polygonList.Add(poly);
+					PolygonList.Add(poly);
 				}
 				else
 				{
@@ -228,10 +294,10 @@ namespace MatterHackers.MatterSlice
 					break;
 				}
 
-				if (bestA == bestB)
+				if (bestA == bestB) // This loop connects to itself, close the polygon.
 				{
-					polygonList.Add(new Polygon(openPolygonList[bestA]));
-					openPolygonList[bestA].Clear();
+					PolygonList.Add(new Polygon(openPolygonList[bestA]));
+					openPolygonList[bestA].Clear(); // B is cleared as it is A
 				}
 				else
 				{
@@ -239,21 +305,13 @@ namespace MatterHackers.MatterSlice
 					{
 						if (openPolygonList[bestA].PolygonLength() > openPolygonList[bestB].PolygonLength())
 						{
-							if (openPolygonList[bestA].PolygonLength() > openPolygonList[bestB].PolygonLength())
-							{
-								openPolygonList[bestA].AddRange(openPolygonList[bestB]);
-								openPolygonList[bestB].Clear();
-							}
-							else
-							{
-								openPolygonList[bestB].AddRange(openPolygonList[bestA]);
-								openPolygonList[bestA].Clear();
-							}
+							openPolygonList[bestA].AddRange(openPolygonList[bestB]);
+							openPolygonList[bestB].Clear();
 						}
 						else
 						{
 							openPolygonList[bestB].AddRange(openPolygonList[bestA]);
-							openPolygonList[bestB].Clear();
+							openPolygonList[bestA].Clear();
 						}
 					}
 					else
@@ -315,16 +373,16 @@ namespace MatterHackers.MatterSlice
 						{
 							if (bestResult.pointIndexA == bestResult.pointIndexB)
 							{
-								polygonList.Add(new Polygon(openPolygonList[bestA]));
+								PolygonList.Add(new Polygon(openPolygonList[bestA]));
 								openPolygonList[bestA].Clear();
 							}
 							else if (bestResult.AtoB)
 							{
 								Polygon poly = new Polygon();
-								polygonList.Add(poly);
-								for (int j = bestResult.pointIndexA; j != bestResult.pointIndexB; j = (j + 1) % polygonList[bestResult.polygonIndex].Count)
+								PolygonList.Add(poly);
+								for (int j = bestResult.pointIndexA; j != bestResult.pointIndexB; j = (j + 1) % PolygonList[bestResult.polygonIndex].Count)
 								{
-									poly.Add(polygonList[bestResult.polygonIndex][j]);
+									poly.Add(PolygonList[bestResult.polygonIndex][j]);
 								}
 
 								poly.AddRange(openPolygonList[bestA]);
@@ -332,11 +390,11 @@ namespace MatterHackers.MatterSlice
 							}
 							else
 							{
-								int n = polygonList.Count;
-								polygonList.Add(new Polygon(openPolygonList[bestA]));
-								for (int j = bestResult.pointIndexB; j != bestResult.pointIndexA; j = (j + 1) % polygonList[bestResult.polygonIndex].Count)
+								int n = PolygonList.Count;
+								PolygonList.Add(new Polygon(openPolygonList[bestA]));
+								for (int j = bestResult.pointIndexB; j != bestResult.pointIndexA; j = (j + 1) % PolygonList[bestResult.polygonIndex].Count)
 								{
-									polygonList[n].Add(polygonList[bestResult.polygonIndex][j]);
+									PolygonList[n].Add(PolygonList[bestResult.polygonIndex][j]);
 								}
 								openPolygonList[bestA].Clear();
 							}
@@ -351,9 +409,9 @@ namespace MatterHackers.MatterSlice
 							else if (bestResult.AtoB)
 							{
 								Polygon poly = new Polygon();
-								for (int n = bestResult.pointIndexA; n != bestResult.pointIndexB; n = (n + 1) % polygonList[bestResult.polygonIndex].Count)
+								for (int n = bestResult.pointIndexA; n != bestResult.pointIndexB; n = (n + 1) % PolygonList[bestResult.polygonIndex].Count)
 								{
-									poly.Add(polygonList[bestResult.polygonIndex][n]);
+									poly.Add(PolygonList[bestResult.polygonIndex][n]);
 								}
 
 								for (int n = poly.Count - 1; (int)(n) >= 0; n--)
@@ -370,9 +428,9 @@ namespace MatterHackers.MatterSlice
 							}
 							else
 							{
-								for (int n = bestResult.pointIndexB; n != bestResult.pointIndexA; n = (n + 1) % polygonList[bestResult.polygonIndex].Count)
+								for (int n = bestResult.pointIndexB; n != bestResult.pointIndexA; n = (n + 1) % PolygonList[bestResult.polygonIndex].Count)
 								{
-									openPolygonList[bestB].Add(polygonList[bestResult.polygonIndex][n]);
+									openPolygonList[bestB].Add(PolygonList[bestResult.polygonIndex][n]);
 								}
 
 								for (int n = openPolygonList[bestA].Count - 1; n >= 0; n--)
@@ -397,20 +455,20 @@ namespace MatterHackers.MatterSlice
 				{
 					if (openPolygonList[n].Count > 0)
 					{
-						polygonList.Add(new Polygon(openPolygonList[n]));
+						PolygonList.Add(new Polygon(openPolygonList[n]));
 					}
 				}
 			}
 
 			//Remove all the tiny polygons, or polygons that are not closed. As they do not contribute to the actual print.
 			int minimumPerimeter = 1000;
-			for (int polygonIndex = 0; polygonIndex < polygonList.Count; polygonIndex++)
+			for (int polygonIndex = 0; polygonIndex < PolygonList.Count; polygonIndex++)
 			{
 				long perimeterLength = 0;
 
-				for (int intPointIndex = 1; intPointIndex < polygonList[polygonIndex].Count; intPointIndex++)
+				for (int intPointIndex = 1; intPointIndex < PolygonList[polygonIndex].Count; intPointIndex++)
 				{
-					perimeterLength += (polygonList[polygonIndex][intPointIndex] - polygonList[polygonIndex][intPointIndex - 1]).Length();
+					perimeterLength += (PolygonList[polygonIndex][intPointIndex] - PolygonList[polygonIndex][intPointIndex - 1]).Length();
 					if (perimeterLength > minimumPerimeter)
 					{
 						break;
@@ -418,14 +476,14 @@ namespace MatterHackers.MatterSlice
 				}
 				if (perimeterLength < minimumPerimeter)
 				{
-					polygonList.RemoveAt(polygonIndex);
+					PolygonList.RemoveAt(polygonIndex);
 					polygonIndex--;
 				}
 			}
 
 			//Finally optimize all the polygons. Every point removed saves time in the long run.
 			double minimumDistanceToCreateNewPosition = 10;
-			polygonList = Clipper.CleanPolygons(polygonList, minimumDistanceToCreateNewPosition);
+			PolygonList = Clipper.CleanPolygons(PolygonList, minimumDistanceToCreateNewPosition);
 		}
 
 		private GapCloserResult FindPolygonGapCloser(IntPoint ip0, IntPoint ip1)
@@ -451,21 +509,21 @@ namespace MatterHackers.MatterSlice
 			else
 			{
 				//Find out if we have should go from A to B or the other way around.
-				IntPoint p0 = polygonList[ret.polygonIndex][ret.pointIndexA];
+				IntPoint p0 = PolygonList[ret.polygonIndex][ret.pointIndexA];
 				long lenA = (p0 - ip0).Length();
-				for (int i = ret.pointIndexA; i != ret.pointIndexB; i = (i + 1) % polygonList[ret.polygonIndex].Count)
+				for (int i = ret.pointIndexA; i != ret.pointIndexB; i = (i + 1) % PolygonList[ret.polygonIndex].Count)
 				{
-					IntPoint p1 = polygonList[ret.polygonIndex][i];
+					IntPoint p1 = PolygonList[ret.polygonIndex][i];
 					lenA += (p0 - p1).Length();
 					p0 = p1;
 				}
 				lenA += (p0 - ip1).Length();
 
-				p0 = polygonList[ret.polygonIndex][ret.pointIndexB];
+				p0 = PolygonList[ret.polygonIndex][ret.pointIndexB];
 				long lenB = (p0 - ip1).Length();
-				for (int i = ret.pointIndexB; i != ret.pointIndexA; i = (i + 1) % polygonList[ret.polygonIndex].Count)
+				for (int i = ret.pointIndexB; i != ret.pointIndexA; i = (i + 1) % PolygonList[ret.polygonIndex].Count)
 				{
-					IntPoint p1 = polygonList[ret.polygonIndex][i];
+					IntPoint p1 = PolygonList[ret.polygonIndex][i];
 					lenB += (p0 - p1).Length();
 					p0 = p1;
 				}
@@ -488,12 +546,12 @@ namespace MatterHackers.MatterSlice
 		private ClosePolygonResult FindPolygonPointClosestTo(IntPoint input)
 		{
 			ClosePolygonResult ret = new ClosePolygonResult();
-			for (int n = 0; n < polygonList.Count; n++)
+			for (int n = 0; n < PolygonList.Count; n++)
 			{
-				IntPoint p0 = polygonList[n][polygonList[n].Count - 1];
-				for (int i = 0; i < polygonList[n].Count; i++)
+				IntPoint p0 = PolygonList[n][PolygonList[n].Count - 1];
+				for (int i = 0; i < PolygonList[n].Count; i++)
 				{
-					IntPoint p1 = polygonList[n][i];
+					IntPoint p1 = PolygonList[n][i];
 
 					//Q = A + Normal( B - A ) * ((( B - A ) dot ( P - A )) / VSize( A - B ));
 					IntPoint pDiff = p1 - p0;
@@ -518,6 +576,23 @@ namespace MatterHackers.MatterSlice
 			}
 			ret.polygonIdx = -1;
 			return ret;
+		}
+
+		private int GetTouchingSegmentIndex(IntPoint addedSegmentEndPoint)
+		{
+			for (int segmentIndex = 0; segmentIndex < SegmentList.Count; segmentIndex++)
+			{
+				if (!SegmentList[segmentIndex].hasBeenAddedToPolygon)
+				{
+					if (SegmentList[segmentIndex].start == addedSegmentEndPoint
+						|| SegmentList[segmentIndex].end == addedSegmentEndPoint)
+					{
+						return segmentIndex;
+					}
+				}
+			}
+
+			return -1;
 		}
 	}
 }
