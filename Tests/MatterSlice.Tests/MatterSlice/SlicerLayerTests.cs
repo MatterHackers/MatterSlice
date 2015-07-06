@@ -54,6 +54,7 @@ namespace MatterHackers.MatterSlice.Tests
 			string[] segmentsToCheck = File.ReadAllLines(pathToData);
 			foreach (string line in segmentsToCheck)
 			{
+				List<SlicerSegment> segmentsList = SlicerLayer.CreateSegmentListFromString(line);
 				SlicerLayer layer = new SlicerLayer(1, line);
 				layer.MakePolygons(ConfigConstants.REPAIR_OUTLINES.NONE);
 

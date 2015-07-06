@@ -151,29 +151,22 @@ namespace MatterHackers.MatterSlice
 				int segmentIndexBeingAdded = startingSegmentIndex;
 				bool canClose;
 
-				bool lastAddWasAStart = true;
-
 				while (true)
 				{
 					canClose = false;
 					SegmentList[segmentIndexBeingAdded].hasBeenAddedToPolygon = true;
 					IntPoint addedSegmentEndPoint = SegmentList[segmentIndexBeingAdded].end;
-					if (!lastAddWasAStart)
-					{
-						// the last added point was an end so add the start as the next end point
-						addedSegmentEndPoint = SegmentList[segmentIndexBeingAdded].start;
-					}
 
 					poly.Add(addedSegmentEndPoint);
-					int nextSegmentToCheckIndex = -1;
-					for (int connectedFaceIndex = 0; connectedFaceIndex < 3; connectedFaceIndex++)
+					segmentIndexBeingAdded = GetTouchingSegmentIndex(addedSegmentEndPoint);
+					if (segmentIndexBeingAdded == -1)
 					{
-						int touchingSegmentIndex = GetTouchingSegmentIndex(addedSegmentEndPoint);
-						if (touchingSegmentIndex == -1)
-						{
-							continue;
-						}
-						IntPoint foundSegmentStart = SegmentList[touchingSegmentIndex].start;
+						break;
+					}
+					else
+					{
+
+						IntPoint foundSegmentStart = SegmentList[segmentIndexBeingAdded].start;
 						if (addedSegmentEndPoint == foundSegmentStart)
 						{
 							// if we have looped back around to where we started
@@ -181,45 +174,8 @@ namespace MatterHackers.MatterSlice
 							{
 								canClose = true;
 							}
-
-							// If this segment has already been added
-							if (SegmentList[touchingSegmentIndex].hasBeenAddedToPolygon)
-							{
-								continue;
-							}
-
-							nextSegmentToCheckIndex = touchingSegmentIndex;
-							lastAddWasAStart = true;
-						}
-						else // let's check if the other side of this segment can hook up (the normal is facing the wrong way)
-						{
-							IntPoint foundSegmentEnd = SegmentList[touchingSegmentIndex].end;
-							if (addedSegmentEndPoint == foundSegmentEnd)
-							{
-								// if we have looped back around to where we started
-								if (addedSegmentEndPoint == polygonStartPosition)
-								{
-									canClose = true;
-								}
-
-								// If this segment has already been added
-								if (SegmentList[touchingSegmentIndex].hasBeenAddedToPolygon)
-								{
-									continue;
-								}
-
-								nextSegmentToCheckIndex = touchingSegmentIndex;
-								lastAddWasAStart = false;
-							}
 						}
 					}
-
-					if (nextSegmentToCheckIndex == -1)
-					{
-						break;
-					}
-
-					segmentIndexBeingAdded = nextSegmentToCheckIndex;
 				}
 
 				if (canClose)
@@ -591,8 +547,7 @@ namespace MatterHackers.MatterSlice
 			{
 				if (!SegmentList[segmentIndex].hasBeenAddedToPolygon)
 				{
-					if (SegmentList[segmentIndex].start == addedSegmentEndPoint
-						|| SegmentList[segmentIndex].end == addedSegmentEndPoint)
+					if (SegmentList[segmentIndex].start == addedSegmentEndPoint)
 					{
 						return segmentIndex;
 					}
