@@ -59,13 +59,13 @@ namespace MatterHackers.MatterSlice
 						if (externalOnly)
 						{
 							Polygons p = new Polygons();
-							p.Add(layer.parts[partIndex].totalOutline[0]);
+							p.Add(layer.parts[partIndex].TotalOutline[0]);
 							//p.Add(IntPointHelper.CreateConvexHull(layer.parts[partIndex].outline[0]));
 							skirtPolygons = skirtPolygons.CreateUnion(p.Offset(offsetDistance));
 						}
 						else
 						{
-							skirtPolygons = skirtPolygons.CreateUnion(layer.parts[partIndex].totalOutline.Offset(offsetDistance));
+							skirtPolygons = skirtPolygons.CreateUnion(layer.parts[partIndex].TotalOutline.Offset(offsetDistance));
 						}
 					}
 				}

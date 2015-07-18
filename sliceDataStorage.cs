@@ -39,12 +39,14 @@ namespace MatterHackers.MatterSlice
 
 	public class SliceLayerPart
 	{
-		public Aabb boundingBox = new Aabb();
-		public Polygons totalOutline = new Polygons();
-		public Polygons avoidCrossingBoundery = new Polygons();
-		public List<Polygons> insets = new List<Polygons>();
-		public Polygons solidTopAndBottomOutlines = new Polygons();
-		public Polygons infillOutline = new Polygons();
+		public Aabb BoundingBox = new Aabb();
+		public Polygons TotalOutline = new Polygons();
+		public Polygons AvoidCrossingBoundery = new Polygons();
+		public List<Polygons> Insets = new List<Polygons>();
+		public Polygons SolidTopOutlines = new Polygons();
+		public Polygons SolidBottomOutlines = new Polygons();
+		public Polygons SolidInfillOutlines = new Polygons();
+		public Polygons InfillOutlines = new Polygons();
 	};
 
 	public class SliceLayer

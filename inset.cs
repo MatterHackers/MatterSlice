@@ -30,25 +30,25 @@ namespace MatterHackers.MatterSlice
 	{
 		public static void GenerateInsets(SliceLayerPart part, int offset, int insetCount)
 		{
-			part.avoidCrossingBoundery = part.totalOutline.Offset(-offset);
+			part.AvoidCrossingBoundery = part.TotalOutline.Offset(-offset);
 			if (insetCount == 0)
 			{
 				// if we have no insets defined still create one
-				part.insets.Add(part.totalOutline);
+				part.Insets.Add(part.TotalOutline);
 			}
 			else // generate the insets
 			{
 				for (int i = 0; i < insetCount; i++)
 				{
-					part.insets.Add(new Polygons());
-					part.insets[i] = part.totalOutline.Offset(-offset * i - offset / 2);
+					part.Insets.Add(new Polygons());
+					part.Insets[i] = part.TotalOutline.Offset(-offset * i - offset / 2);
 
 					double minimumDistanceToCreateNewPosition = 10;
-					part.insets[i] = Clipper.CleanPolygons(part.insets[i], minimumDistanceToCreateNewPosition);
+					part.Insets[i] = Clipper.CleanPolygons(part.Insets[i], minimumDistanceToCreateNewPosition);
 
-					if (part.insets[i].Count < 1)
+					if (part.Insets[i].Count < 1)
 					{
-						part.insets.RemoveAt(part.insets.Count - 1);
+						part.Insets.RemoveAt(part.Insets.Count - 1);
 						break;
 					}
 				}
@@ -66,7 +66,7 @@ namespace MatterHackers.MatterSlice
 			// and later code can now assume that there is always minimum 1 inset line.
 			for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
 			{
-				if (layer.parts[partIndex].insets.Count < 1)
+				if (layer.parts[partIndex].Insets.Count < 1)
 				{
 					layer.parts.RemoveAt(partIndex);
 					partIndex -= 1;

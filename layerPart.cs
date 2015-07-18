@@ -69,15 +69,15 @@ namespace MatterHackers.MatterSlice
 				storageLayer.parts.Add(new SliceLayerPart());
 				if ((unionAllType & ConfigConstants.REPAIR_OVERLAPS.UNION_ALL_TOGETHER) == ConfigConstants.REPAIR_OVERLAPS.UNION_ALL_TOGETHER)
 				{
-					storageLayer.parts[i].totalOutline.Add(result[i][0]);
-					storageLayer.parts[i].totalOutline = storageLayer.parts[i].totalOutline.Offset(-1000);
+					storageLayer.parts[i].TotalOutline.Add(result[i][0]);
+					storageLayer.parts[i].TotalOutline = storageLayer.parts[i].TotalOutline.Offset(-1000);
 				}
 				else
 				{
-					storageLayer.parts[i].totalOutline = result[i];
+					storageLayer.parts[i].TotalOutline = result[i];
 				}
 
-				storageLayer.parts[i].boundingBox.Calculate(storageLayer.parts[i].totalOutline);
+				storageLayer.parts[i].BoundingBox.Calculate(storageLayer.parts[i].TotalOutline);
 			}
 		}
 
@@ -107,11 +107,11 @@ namespace MatterHackers.MatterSlice
 					for (int i = 0; i < layer.parts.Count; i++)
 					{
 						SliceLayerPart part = layer.parts[i];
-						for (int j = 0; j < part.totalOutline.Count; j++)
+						for (int j = 0; j < part.TotalOutline.Count; j++)
 						{
 							streamToWriteTo.Write("<polygon points=\"");
-							for (int k = 0; k < part.totalOutline[j].Count; k++)
-								streamToWriteTo.Write("{0},{1} ".FormatWith((float)(part.totalOutline[j][k].X - modelMin.x) / modelSize.x * 500, (float)(part.totalOutline[j][k].Y - modelMin.y) / modelSize.y * 500));
+							for (int k = 0; k < part.TotalOutline[j].Count; k++)
+								streamToWriteTo.Write("{0},{1} ".FormatWith((float)(part.TotalOutline[j][k].X - modelMin.x) / modelSize.x * 500, (float)(part.TotalOutline[j][k].Y - modelMin.y) / modelSize.y * 500));
 							if (j == 0)
 								streamToWriteTo.Write("\" style=\"fill:gray; stroke:black;stroke-width:1\" />\n");
 							else
