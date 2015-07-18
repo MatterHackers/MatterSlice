@@ -139,7 +139,7 @@ namespace MatterHackers.MatterSlice
 						continue;
 					}
 
-					storage.raftOutline = storage.raftOutline.CreateUnion(layer.parts[partIndex].outline.Offset(extraDistanceAroundPart_um));
+					storage.raftOutline = storage.raftOutline.CreateUnion(layer.parts[partIndex].totalOutline.Offset(extraDistanceAroundPart_um));
 				}
 			}
 

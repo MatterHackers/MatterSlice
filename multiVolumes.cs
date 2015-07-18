@@ -43,7 +43,7 @@ namespace MatterHackers.MatterSlice
 						{
 							for (int partToRemove = 0; partToRemove < layerToRemove.parts.Count; partToRemove++)
 							{
-								layerToRemoveFrom.parts[partToRemoveFromIndex].outline = layerToRemoveFrom.parts[partToRemoveFromIndex].outline.CreateDifference(layerToRemove.parts[partToRemove].outline);
+								layerToRemoveFrom.parts[partToRemoveFromIndex].totalOutline = layerToRemoveFrom.parts[partToRemoveFromIndex].totalOutline.CreateDifference(layerToRemove.parts[partToRemove].totalOutline);
 							}
 						}
 					}
@@ -68,7 +68,7 @@ namespace MatterHackers.MatterSlice
 					SliceLayer layer1 = volumes[volIdx].layers[layerIndex];
 					for (int p1 = 0; p1 < layer1.parts.Count; p1++)
 					{
-						fullLayer = fullLayer.CreateUnion(layer1.parts[p1].outline.Offset(20));
+						fullLayer = fullLayer.CreateUnion(layer1.parts[p1].totalOutline.Offset(20));
 					}
 				}
 				fullLayer = fullLayer.Offset(-20);
@@ -78,7 +78,7 @@ namespace MatterHackers.MatterSlice
 					SliceLayer layer1 = volumes[volumeIndex].layers[layerIndex];
 					for (int partIndex = 0; partIndex < layer1.parts.Count; partIndex++)
 					{
-						layer1.parts[partIndex].outline = fullLayer.CreateIntersection(layer1.parts[partIndex].outline.Offset(overlap / 2));
+						layer1.parts[partIndex].totalOutline = fullLayer.CreateIntersection(layer1.parts[partIndex].totalOutline.Offset(overlap / 2));
 					}
 				}
 			}

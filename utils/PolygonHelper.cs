@@ -65,7 +65,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public bool hit(Aabb other)
+		public bool Hit(Aabb other)
 		{
 			if (max.X < other.min.X) return false;
 			if (min.X > other.max.X) return false;

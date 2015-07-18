@@ -286,7 +286,7 @@ namespace MatterHackers.MatterSlice
 						}
 
 						TopsAndBottoms.Generate(layerIndex, storage.volumes[volumeIndex], extrusionWidth, config.numberOfBottomLayers, config.numberOfTopLayers);
-						TopsAndBottoms.GenerateSparse(layerIndex, storage.volumes[volumeIndex], extrusionWidth, config.numberOfBottomLayers, config.numberOfTopLayers);
+						TopsAndBottoms.GenerateInfillAreas(layerIndex, storage.volumes[volumeIndex], extrusionWidth, config.numberOfBottomLayers, config.numberOfTopLayers);
 					}
 				}
 				LogOutput.Log("Creating Top & Bottom Layers {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
@@ -337,7 +337,7 @@ namespace MatterHackers.MatterSlice
 				{
 					for (int partNr = 0; partNr < storage.volumes[volumeIdx].layers[layerNr].parts.Count; partNr++)
 					{
-						wipeShield = wipeShield.CreateUnion(storage.volumes[volumeIdx].layers[layerNr].parts[partNr].outline.Offset(config.wipeShieldDistanceFromShapes_um));
+						wipeShield = wipeShield.CreateUnion(storage.volumes[volumeIdx].layers[layerNr].parts[partNr].totalOutline.Offset(config.wipeShieldDistanceFromShapes_um));
 					}
 				}
 				storage.wipeShield.Add(wipeShield);
@@ -407,7 +407,7 @@ namespace MatterHackers.MatterSlice
 						for (int partIndex = 0; partIndex < currentVolume.layers[layerIndex].parts.Count; partIndex++)
 						{
 							SliceLayerPart currentPart = currentLayer.parts[partIndex];
-							if (currentPart.outline.Count > 0)
+							if (currentPart.totalOutline.Count > 0)
 							{
 								layerHasData = true;
 								break;
@@ -638,7 +638,7 @@ namespace MatterHackers.MatterSlice
 
 				if (config.avoidCrossingPerimeters)
 				{
-					gcodeLayer.SetOuterPerimetersToAvoidCrossing(part.combBoundery);
+					gcodeLayer.SetOuterPerimetersToAvoidCrossing(part.avoidCrossingBoundery);
 				}
 				else
 				{
@@ -722,7 +722,7 @@ namespace MatterHackers.MatterSlice
 		private void CalculateInfillData(SliceDataStorage storage, int volumeIndex, int layerIndex, SliceLayerPart part, ref Polygons fillPolygons, ref Polygons bridgePolygons)
 		{
 			// generate infill for outline including bridging
-			foreach (Polygons outline in part.topAndBottomOutlines.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd))
+			foreach (Polygons outline in part.solidTopAndBottomOutlines.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd))
 			{
 				double partFillAngle = config.infillStartingAngle;
 				if ((layerIndex & 1) == 1)
@@ -769,23 +769,23 @@ namespace MatterHackers.MatterSlice
 						{
 							fillAngle += 90;
 						}
-						Infill.GenerateLineInfill(config, part.sparseOutline, ref fillPolygons, fillAngle);
+						Infill.GenerateLineInfill(config, part.infillOutline, ref fillPolygons, fillAngle);
 						break;
 
 					case ConfigConstants.INFILL_TYPE.GRID:
-						Infill.GenerateGridInfill(config, part.sparseOutline, ref fillPolygons, fillAngle);
+						Infill.GenerateGridInfill(config, part.infillOutline, ref fillPolygons, fillAngle);
 						break;
 
 					case ConfigConstants.INFILL_TYPE.TRIANGLES:
-						Infill.GenerateTriangleInfill(config, part.sparseOutline, ref fillPolygons, fillAngle);
+						Infill.GenerateTriangleInfill(config, part.infillOutline, ref fillPolygons, fillAngle);
 						break;
 
 					case ConfigConstants.INFILL_TYPE.HEXAGON:
-						Infill.GenerateHexagonInfill(config, part.sparseOutline, ref fillPolygons, fillAngle, layerIndex);
+						Infill.GenerateHexagonInfill(config, part.infillOutline, ref fillPolygons, fillAngle, layerIndex);
 						break;
 
 					case ConfigConstants.INFILL_TYPE.CONCENTRIC:
-						Infill.GenerateConcentricInfill(config, part.sparseOutline, ref fillPolygons, fillAngle);
+						Infill.GenerateConcentricInfill(config, part.infillOutline, ref fillPolygons, fillAngle);
 						break;
 
 					default:
@@ -852,7 +852,7 @@ namespace MatterHackers.MatterSlice
 				SliceLayer layer = storage.volumes[volumeIndex].layers[layerIndex];
 				for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
 				{
-					supportPolygons = supportPolygons.CreateDifference(layer.parts[partIndex].outline.Offset(config.supportXYDistance_um));
+					supportPolygons = supportPolygons.CreateDifference(layer.parts[partIndex].totalOutline.Offset(config.supportXYDistance_um));
 				}
 			}
 

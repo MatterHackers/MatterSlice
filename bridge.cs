@@ -41,12 +41,12 @@ namespace MatterHackers.MatterSlice
 			Polygons islands = new Polygons();
 			foreach (SliceLayerPart prevLayerPart in prevLayer.parts)
 			{
-				if (!boundaryBox.hit(prevLayerPart.boundaryBox))
+				if (!boundaryBox.Hit(prevLayerPart.boundingBox))
 				{
 					continue;
 				}
 
-				islands.AddRange(outline.CreateIntersection(prevLayerPart.outline));
+				islands.AddRange(outline.CreateIntersection(prevLayerPart.totalOutline));
 			}
 
 #if OUTPUT_DEBUG_DATA

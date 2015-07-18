@@ -30,18 +30,18 @@ namespace MatterHackers.MatterSlice
 	{
 		public static void GenerateInsets(SliceLayerPart part, int offset, int insetCount)
 		{
-			part.combBoundery = part.outline.Offset(-offset);
+			part.avoidCrossingBoundery = part.totalOutline.Offset(-offset);
 			if (insetCount == 0)
 			{
 				// if we have no insets defined still create one
-				part.insets.Add(part.outline);
+				part.insets.Add(part.totalOutline);
 			}
 			else // generate the insets
 			{
 				for (int i = 0; i < insetCount; i++)
 				{
 					part.insets.Add(new Polygons());
-					part.insets[i] = part.outline.Offset(-offset * i - offset / 2);
+					part.insets[i] = part.totalOutline.Offset(-offset * i - offset / 2);
 
 					double minimumDistanceToCreateNewPosition = 10;
 					part.insets[i] = Clipper.CleanPolygons(part.insets[i], minimumDistanceToCreateNewPosition);

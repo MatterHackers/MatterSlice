@@ -52,12 +52,12 @@ namespace MatterHackers.MatterSlice
 
 				if (layerIndex - downLayerCount >= 0)
 				{
-					SliceLayer layer2 = storage.layers[layerIndex - downLayerCount];
-					for (int partIndex2 = 0; partIndex2 < layer2.parts.Count; partIndex2++)
+					SliceLayer bottomLayer = storage.layers[layerIndex - downLayerCount];
+					for (int bottomLayerPartIndex = 0; bottomLayerPartIndex < bottomLayer.parts.Count; bottomLayerPartIndex++)
 					{
-						if (part.boundaryBox.hit(layer2.parts[partIndex2].boundaryBox))
+						if (part.boundingBox.Hit(bottomLayer.parts[bottomLayerPartIndex].boundingBox))
 						{
-							downOutlines = downOutlines.CreateDifference(layer2.parts[partIndex2].insets[layer2.parts[partIndex2].insets.Count - 1]);
+							downOutlines = downOutlines.CreateDifference(bottomLayer.parts[bottomLayerPartIndex].insets[bottomLayer.parts[bottomLayerPartIndex].insets.Count - 1]);
 
 							downOutlines = Clipper.CleanPolygons(downOutlines, cleanDistance_um);
 						}
@@ -66,79 +66,80 @@ namespace MatterHackers.MatterSlice
 
 				if (layerIndex + upLayerCount < storage.layers.Count)
 				{
-					SliceLayer layer2 = storage.layers[layerIndex + upLayerCount];
-					for (int partIndex2 = 0; partIndex2 < layer2.parts.Count; partIndex2++)
+					SliceLayer upLayer = storage.layers[layerIndex + upLayerCount];
+					for (int upLayerPartIndex = 0; upLayerPartIndex < upLayer.parts.Count; upLayerPartIndex++)
 					{
-						if (part.boundaryBox.hit(layer2.parts[partIndex2].boundaryBox))
+						if (part.boundingBox.Hit(upLayer.parts[upLayerPartIndex].boundingBox))
 						{
-							topOutlines = topOutlines.CreateDifference(layer2.parts[partIndex2].insets[layer2.parts[partIndex2].insets.Count - 1]);
+							topOutlines = topOutlines.CreateDifference(upLayer.parts[upLayerPartIndex].insets[upLayer.parts[upLayerPartIndex].insets.Count - 1]);
 
 							topOutlines = Clipper.CleanPolygons(topOutlines, cleanDistance_um);
 						}
 					}
 				}
 
-				part.topAndBottomOutlines = topOutlines.CreateUnion(downOutlines);
+				part.solidTopAndBottomOutlines = topOutlines.CreateUnion(downOutlines);
 
 				double minAreaSize = (2 * Math.PI * (extrusionWidth / 1000.0) * (extrusionWidth / 1000.0)) * 0.3;
-				for (int outlineIndex = 0; outlineIndex < part.topAndBottomOutlines.Count; outlineIndex++)
+				for (int outlineIndex = 0; outlineIndex < part.solidTopAndBottomOutlines.Count; outlineIndex++)
 				{
-					double area = Math.Abs(part.topAndBottomOutlines[outlineIndex].Area()) / 1000.0 / 1000.0;
+					double area = Math.Abs(part.solidTopAndBottomOutlines[outlineIndex].Area()) / 1000.0 / 1000.0;
 					if (area < minAreaSize) // Only create an up/down Outline if the area is large enough. So you do not create tiny blobs of "trying to fill"
 					{
-						part.topAndBottomOutlines.RemoveAt(outlineIndex);
+						part.solidTopAndBottomOutlines.RemoveAt(outlineIndex);
 						outlineIndex -= 1;
 					}
 				}
 			}
 		}
 
-		public static void GenerateSparse(int layerIndex, SliceVolumeStorage storage, int extrusionWidth, int downLayerCount, int upLayerCount)
+		public static void GenerateInfillAreas(int layerIndex, SliceVolumeStorage storage, int extrusionWidth, int downLayerCount, int upLayerCount)
 		{
 			SliceLayer layer = storage.layers[layerIndex];
 
-			for (int partNr = 0; partNr < layer.parts.Count; partNr++)
+			for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
 			{
-				SliceLayerPart part = layer.parts[partNr];
+				SliceLayerPart part = layer.parts[partIndex];
 
-				Polygons sparse = part.insets[part.insets.Count - 1].Offset(-extrusionWidth / 2);
-				Polygons downOutlines = sparse;
-				Polygons upOutlines = sparse;
+				Polygons infillOutlines = part.insets[part.insets.Count - 1].Offset(-extrusionWidth / 2);
+				Polygons downOutlines = infillOutlines;
+				Polygons upOutlines = infillOutlines;
 
 				if ((int)(layerIndex - downLayerCount) >= 0)
 				{
-					SliceLayer layer2 = storage.layers[layerIndex - downLayerCount];
-					for (int partNr2 = 0; partNr2 < layer2.parts.Count; partNr2++)
+					SliceLayer downLayer = storage.layers[layerIndex - downLayerCount];
+					for (int downLayerPartIndex = 0; downLayerPartIndex < downLayer.parts.Count; downLayerPartIndex++)
 					{
-						if (part.boundaryBox.hit(layer2.parts[partNr2].boundaryBox))
+						if (part.boundingBox.Hit(downLayer.parts[downLayerPartIndex].boundingBox))
 						{
-							if (layer2.parts[partNr2].insets.Count > 1)
+							if (downLayer.parts[downLayerPartIndex].insets.Count > 1)
 							{
-								downOutlines = downOutlines.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 2]);
+								downOutlines = downOutlines.CreateDifference(downLayer.parts[downLayerPartIndex].insets[downLayer.parts[downLayerPartIndex].insets.Count - 2]);
 							}
 							else
 							{
-								downOutlines = downOutlines.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 1]);
+								downOutlines = downOutlines.CreateDifference(downLayer.parts[downLayerPartIndex].insets[downLayer.parts[downLayerPartIndex].insets.Count - 1]);
 							}
 						}
 
 						downOutlines = Clipper.CleanPolygons(downOutlines, cleanDistance_um);
 					}
 				}
+
 				if ((int)(layerIndex + upLayerCount) < (int)storage.layers.Count)
 				{
-					SliceLayer layer2 = storage.layers[layerIndex + upLayerCount];
-					for (int partNr2 = 0; partNr2 < layer2.parts.Count; partNr2++)
+					SliceLayer upLayer = storage.layers[layerIndex + upLayerCount];
+					for (int upLayerPartIndex = 0; upLayerPartIndex < upLayer.parts.Count; upLayerPartIndex++)
 					{
-						if (part.boundaryBox.hit(layer2.parts[partNr2].boundaryBox))
+						if (part.boundingBox.Hit(upLayer.parts[upLayerPartIndex].boundingBox))
 						{
-							if (layer2.parts[partNr2].insets.Count > 1)
+							if (upLayer.parts[upLayerPartIndex].insets.Count > 1)
 							{
-								upOutlines = upOutlines.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 2]);
+								upOutlines = upOutlines.CreateDifference(upLayer.parts[upLayerPartIndex].insets[upLayer.parts[upLayerPartIndex].insets.Count - 2]);
 							}
 							else
 							{
-								upOutlines = upOutlines.CreateDifference(layer2.parts[partNr2].insets[layer2.parts[partNr2].insets.Count - 1]);
+								upOutlines = upOutlines.CreateDifference(upLayer.parts[upLayerPartIndex].insets[upLayer.parts[upLayerPartIndex].insets.Count - 1]);
 							}
 						}
 
@@ -149,17 +150,17 @@ namespace MatterHackers.MatterSlice
 				Polygons result = upOutlines.CreateUnion(downOutlines);
 
 				double minAreaSize = 3.0;//(2 * M_PI * ((double)(config.extrusionWidth) / 1000.0) * ((double)(config.extrusionWidth) / 1000.0)) * 3;
-				for (int i = 0; i < result.Count; i++)
+				for (int polygonIndex = 0; polygonIndex < result.Count; polygonIndex++)
 				{
-					double area = Math.Abs(result[i].Area()) / 1000.0 / 1000.0;
+					double area = Math.Abs(result[polygonIndex].Area()) / 1000.0 / 1000.0;
 					if (area < minAreaSize) /* Only create an up/down outlines if the area is large enough. So you do not create tiny blobs of "trying to fill" */
 					{
-						result.RemoveAt(i);
-						i -= 1;
+						result.RemoveAt(polygonIndex);
+						polygonIndex -= 1;
 					}
 				}
 
-				part.sparseOutline = sparse.CreateDifference(result);
+				part.infillOutline = infillOutlines.CreateDifference(result);
 			}
 		}
 	}
