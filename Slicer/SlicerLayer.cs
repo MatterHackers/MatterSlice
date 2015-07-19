@@ -26,6 +26,7 @@ namespace MatterHackers.MatterSlice
 {
 	using System.IO;
 	using Polygon = List<IntPoint>;
+
 	using Polygons = List<List<IntPoint>>;
 
 	public class ClosePolygonResult
@@ -102,6 +103,7 @@ namespace MatterHackers.MatterSlice
 			}
 			return total;
 		}
+
 		public void DumpPolygonsToGcode(System.IO.StreamWriter stream, double scale, double extrudeAmount)
 		{
 			for (int openPolygonIndex = 0; openPolygonIndex < openPolygonList.Count; openPolygonIndex++)
@@ -136,6 +138,8 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
+			CreateFastIndexLookup();
+
 			for (int startingSegmentIndex = 0; startingSegmentIndex < SegmentList.Count; startingSegmentIndex++)
 			{
 				if (SegmentList[startingSegmentIndex].hasBeenAddedToPolygon)
@@ -165,7 +169,6 @@ namespace MatterHackers.MatterSlice
 					}
 					else
 					{
-
 						IntPoint foundSegmentStart = SegmentList[segmentIndexBeingAdded].start;
 						if (addedSegmentEndPoint == foundSegmentStart)
 						{
@@ -541,20 +544,69 @@ namespace MatterHackers.MatterSlice
 			return ret;
 		}
 
+		Dictionary<long, List<int>> startIndexes = new Dictionary<long, List<int>>();
+		private void CreateFastIndexLookup()
+		{
+			for (int startingSegmentIndex = 0; startingSegmentIndex < SegmentList.Count; startingSegmentIndex++)
+			{
+				long positionKey = GetPositionKey(SegmentList[startingSegmentIndex].start);
+				if (!startIndexes.ContainsKey(positionKey))
+				{
+					startIndexes.Add(positionKey, new List<int>());
+				}
+
+				startIndexes[positionKey].Add(startingSegmentIndex);
+			}
+		}
+
+		private long GetPositionKey(IntPoint intPoint)
+		{
+			return intPoint.X + (intPoint.Y << 31);
+		}
+
+		static readonly bool runLookupTest = false;
 		private int GetTouchingSegmentIndex(IntPoint addedSegmentEndPoint)
 		{
-			for (int segmentIndex = 0; segmentIndex < SegmentList.Count; segmentIndex++)
+			int searchSegmentIndex = -1;
+			if (runLookupTest)
 			{
-				if (!SegmentList[segmentIndex].hasBeenAddedToPolygon)
+				for (int segmentIndex = 0; segmentIndex < SegmentList.Count; segmentIndex++)
 				{
-					if (SegmentList[segmentIndex].start == addedSegmentEndPoint)
+					if (!SegmentList[segmentIndex].hasBeenAddedToPolygon)
 					{
-						return segmentIndex;
+						if (SegmentList[segmentIndex].start == addedSegmentEndPoint)
+						{
+							searchSegmentIndex = segmentIndex;
+						}
 					}
 				}
 			}
 
-			return -1;
+			int lookupSegmentIndex = -1;
+			long positionKey = GetPositionKey(addedSegmentEndPoint);
+			if (startIndexes.ContainsKey(positionKey))
+			{
+				foreach (int index in startIndexes[positionKey])
+				{
+					if (!SegmentList[index].hasBeenAddedToPolygon)
+					{
+						if (SegmentList[index].start == addedSegmentEndPoint)
+						{
+							lookupSegmentIndex = index;
+						}
+					}
+				}
+			}
+
+			if (runLookupTest)
+			{
+				if (lookupSegmentIndex != searchSegmentIndex)
+				{
+					int a = 0;
+				}
+			}
+
+			return lookupSegmentIndex;
 		}
 	}
 }

@@ -93,7 +93,7 @@ namespace MatterHackers.MatterSlice
 					solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
 
 					int upEnd = layerIndex + upLayerCount + 1;
-					if (upEnd < storage.layers.Count && layerIndex - downLayerCount >= 0)
+					if (upEnd <= storage.layers.Count && layerIndex - downLayerCount >= 0)
 					{
 						Polygons totalPartsToRemove = part.Insets[part.Insets.Count - 1].Offset(-extrusionWidth / 2);
 
