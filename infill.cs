@@ -334,7 +334,7 @@ namespace MatterHackers.MatterSlice
 			Infill.GenerateLinePaths(partOutline, ref fillPolygons, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle, offset);
 		}
 
-		public static void GenerateConcentricInfill(ConfigSettings config, Polygons partOutline, ref Polygons fillPolygons, double fillAngle, long extrusionWidthOverride_um = 0)
+		public static void GenerateConcentricInfill(ConfigSettings config, Polygons partOutline, ref Polygons fillPolygons, long extrusionWidthOverride_um = 0)
 		{
 			if (extrusionWidthOverride_um == 0)
 			{

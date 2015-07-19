@@ -720,12 +720,6 @@ namespace MatterHackers.MatterSlice
 
 		private void CalculateInfillData(SliceDataStorage storage, int volumeIndex, int layerIndex, SliceLayerPart part, ref Polygons fillPolygons, ref Polygons bridgePolygons)
 		{
-			double solidLayerFillAngle = config.infillStartingAngle;
-			if ((layerIndex & 1) == 1)
-			{
-				solidLayerFillAngle += 90;
-			}
-
 			// generate infill the bottom layers including bridging
 			foreach (Polygons outline in part.SolidBottomOutlines.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd))
 			{
@@ -738,19 +732,19 @@ namespace MatterHackers.MatterSlice
 					}
 					else
 					{
-						Infill.GenerateLinePaths(outline, ref fillPolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, solidLayerFillAngle);
+						Infill.GenerateLinePaths(outline, ref fillPolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle);
 					}
 				}
 				else
 				{
-					Infill.GenerateLinePaths(outline, ref fillPolygons, config.firstLayerExtrusionWidth_um, config.infillExtendIntoPerimeter_um, solidLayerFillAngle);
+					Infill.GenerateLinePaths(outline, ref fillPolygons, config.firstLayerExtrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle);
 				}
 			}
 
 			// generate infill for the top layers
 			foreach (Polygons outline in part.SolidTopOutlines.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd))
 			{
-				Infill.GenerateLinePaths(outline, ref fillPolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, solidLayerFillAngle);
+				Infill.GenerateLinePaths(outline, ref fillPolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle);
 			}
 
 			// generate infill intermediate layers
@@ -758,7 +752,7 @@ namespace MatterHackers.MatterSlice
 			{
 				double oldInfillPercent = config.infillPercent;
 				config.infillPercent = 100;
-				Infill.GenerateConcentricInfill(config, outline, ref fillPolygons, solidLayerFillAngle);
+				Infill.GenerateConcentricInfill(config, outline, ref fillPolygons);
 				config.infillPercent = oldInfillPercent;
 			}
 
@@ -790,7 +784,7 @@ namespace MatterHackers.MatterSlice
 						break;
 
 					case ConfigConstants.INFILL_TYPE.CONCENTRIC:
-						Infill.GenerateConcentricInfill(config, part.InfillOutlines, ref fillPolygons, fillAngle);
+						Infill.GenerateConcentricInfill(config, part.InfillOutlines, ref fillPolygons);
 						break;
 
 					default:
