@@ -92,47 +92,40 @@ namespace MatterHackers.MatterSlice
 					solidInfillOutlines = solidInfillOutlines.CreateDifference(part.SolidTopOutlines);
 					solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
 
-					bool haveAddedAnything = false;
-					Polygons partsToRemove = new Polygons();
-
-					int upStart = layerIndex + 2;
-					int upEnd = Math.Min(layerIndex + upLayerCount + 1, storage.layers.Count);
-
-					for (int layerToTest = upStart; layerToTest < upEnd; layerToTest++)
+					int upEnd = layerIndex + upLayerCount + 1;
+					if (upEnd < storage.layers.Count && layerIndex - downLayerCount >= 0)
 					{
-						partsToRemove = AddAllOutlines(storage.layers[layerToTest], part, partsToRemove, ref haveAddedAnything);
-						partsToRemove = Clipper.CleanPolygons(partsToRemove, cleanDistance_um);
+						Polygons totalPartsToRemove = part.Insets[part.Insets.Count - 1].Offset(-extrusionWidth / 2);
+
+						int upStart = layerIndex + 2;
+
+						for (int layerToTest = upStart; layerToTest < upEnd; layerToTest++)
+						{
+							totalPartsToRemove = AddAllOutlines(storage.layers[layerToTest], part, totalPartsToRemove);
+							totalPartsToRemove = Clipper.CleanPolygons(totalPartsToRemove, cleanDistance_um);
+						}
+
+						int downStart = layerIndex - 1;
+						int downEnd = layerIndex - downLayerCount;
+
+						for (int layerToTest = downStart; layerToTest >= downEnd; layerToTest--)
+						{
+							totalPartsToRemove = AddAllOutlines(storage.layers[layerToTest], part, totalPartsToRemove);
+							totalPartsToRemove = Clipper.CleanPolygons(totalPartsToRemove, cleanDistance_um);
+						}
+
+						solidInfillOutlines = solidInfillOutlines.CreateDifference(totalPartsToRemove);
+						RemoveSmallAreas(extrusionWidth, solidInfillOutlines);
+
+						solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
 					}
 
-					solidInfillOutlines = solidInfillOutlines.CreateDifference(partsToRemove);
-					solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
-
-					int downStart = layerIndex - 1;
-					int downEnd = Math.Max(layerIndex - downLayerCount, downLayerCount - 1);
-
-					for (int layerToTest = downStart; layerToTest >= downEnd; layerToTest--)
-					{
-						partsToRemove = AddAllOutlines(storage.layers[layerToTest], part, partsToRemove, ref haveAddedAnything);
-						partsToRemove = Clipper.CleanPolygons(partsToRemove, cleanDistance_um);
-					}
-
-					solidInfillOutlines = solidInfillOutlines.CreateDifference(partsToRemove);
-					RemoveSmallAreas(extrusionWidth, solidInfillOutlines);
-					solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
 					part.SolidInfillOutlines = solidInfillOutlines;
-
 					infillOutlines = infillOutlines.CreateDifference(solidInfillOutlines);
-					RemoveSmallAreas(extrusionWidth, infillOutlines);
-					infillOutlines = Clipper.CleanPolygons(infillOutlines, cleanDistance_um);
-					part.InfillOutlines = infillOutlines;
-				}
-				else
-				{
-					RemoveSmallAreas(extrusionWidth, infillOutlines);
-					infillOutlines = Clipper.CleanPolygons(infillOutlines, cleanDistance_um);
-					part.InfillOutlines = infillOutlines;
 				}
 
+				RemoveSmallAreas(extrusionWidth, infillOutlines);
+				infillOutlines = Clipper.CleanPolygons(infillOutlines, cleanDistance_um);
 				part.InfillOutlines = infillOutlines;
 			}
 		}
@@ -166,10 +159,9 @@ namespace MatterHackers.MatterSlice
 			return polygonsToSubtractFrom;
 		}
 
-		private static Polygons AddAllOutlines(SliceLayer layerToAdd, SliceLayerPart partToUseAsBounds, Polygons polysToAddTo, ref bool haveAddedAnything)
+		private static Polygons AddAllOutlines(SliceLayer layerToAdd, SliceLayerPart partToUseAsBounds, Polygons polysToAddTo)
 		{
 			Polygons polysToIntersect = new Polygons();
-			bool didAdd = false;
 			for (int partIndex = 0; partIndex < layerToAdd.parts.Count; partIndex++)
 			{
 				if (partToUseAsBounds.BoundingBox.Hit(layerToAdd.parts[partIndex].BoundingBox))
@@ -179,15 +171,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			if (haveAddedAnything)
-			{
-				polysToAddTo = polysToAddTo.CreateIntersection(polysToIntersect);
-			}
-			else
-			{
-				polysToAddTo = polysToIntersect;
-				haveAddedAnything = true;
-			}
+			polysToAddTo = polysToAddTo.CreateIntersection(polysToIntersect);
 
 			return polysToAddTo;
 		}
