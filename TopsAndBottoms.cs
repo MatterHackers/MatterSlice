@@ -38,12 +38,13 @@ namespace MatterHackers.MatterSlice
 			for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
 			{
 				SliceLayerPart part = layer.parts[partIndex];
-				Polygons infillOutlines = part.Insets[part.Insets.Count - 1].Offset(-extrusionWidth / 2);
+				Polygons insetWithOffset = part.Insets[part.Insets.Count - 1].Offset(-extrusionWidth / 2);
+				Polygons infillOutlines = new Polygons(insetWithOffset);
 
 				// calculate the bottom outlines
 				if (downLayerCount > 0)
 				{
-					Polygons bottomOutlines = part.Insets[part.Insets.Count - 1].Offset(-extrusionWidth / 2);
+					Polygons bottomOutlines = new Polygons(insetWithOffset);
 
 					if (layerIndex - 1 >= 0)
 					{
@@ -60,7 +61,7 @@ namespace MatterHackers.MatterSlice
 				// calculate the top outlines
 				if(upLayerCount > 0)
 				{
-					Polygons topOutlines = part.Insets[part.Insets.Count - 1].Offset(-extrusionWidth / 2);
+					Polygons topOutlines = new Polygons(insetWithOffset);
 					topOutlines = topOutlines.CreateDifference(part.SolidBottomOutlines);
 					topOutlines = Clipper.CleanPolygons(topOutlines, cleanDistance_um);
 
@@ -86,7 +87,7 @@ namespace MatterHackers.MatterSlice
 				// calculate the solid infill outlines
 				if (upLayerCount > 1 || downLayerCount > 1)
 				{
-					Polygons solidInfillOutlines = part.Insets[part.Insets.Count - 1].Offset(-extrusionWidth / 2);
+					Polygons solidInfillOutlines = new Polygons(insetWithOffset);
 					solidInfillOutlines = solidInfillOutlines.CreateDifference(part.SolidBottomOutlines);
 					solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
 					solidInfillOutlines = solidInfillOutlines.CreateDifference(part.SolidTopOutlines);
@@ -95,7 +96,7 @@ namespace MatterHackers.MatterSlice
 					int upEnd = layerIndex + upLayerCount + 1;
 					if (upEnd <= storage.layers.Count && layerIndex - downLayerCount >= 0)
 					{
-						Polygons totalPartsToRemove = part.Insets[part.Insets.Count - 1].Offset(-extrusionWidth / 2);
+						Polygons totalPartsToRemove = new Polygons(insetWithOffset);
 
 						int upStart = layerIndex + 2;
 
