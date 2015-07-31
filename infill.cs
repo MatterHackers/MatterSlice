@@ -299,7 +299,7 @@ namespace MatterHackers.MatterSlice
 				throw new Exception("infillPercent must be gerater than 0.");
 			}
 
-			int linespacing_um = (int)(config.extrusionWidth_um / (config.infillPercent / 100) * 3);
+			int linespacing_um = (int)(config.extrusionWidth_um / (config.infillPercent / 100) * 3 * .66);
 
 			Infill.GenerateHexLinePaths(partOutline, ref fillPolygons, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle, layerIndex);
 		}
