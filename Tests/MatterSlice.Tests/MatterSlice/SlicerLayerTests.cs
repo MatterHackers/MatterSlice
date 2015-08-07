@@ -47,6 +47,22 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void CubePolygonWindingDirectionDoesNotMatter()
+		{
+			string pathToData = Path.Combine("..", "..", "..", "TestData", "CubeSegmentsX2.txt");
+
+			string[] segmentsToCheck = File.ReadAllLines(pathToData);
+			foreach (string line in segmentsToCheck)
+			{
+				List<SlicerSegment> segmentsList = SlicerLayer.CreateSegmentListFromString(line);
+				SlicerLayer layer = new SlicerLayer(1, line);
+				layer.MakePolygons(ConfigConstants.REPAIR_OUTLINES.NONE);
+
+				Assert.IsTrue(layer.PolygonList.Count == 1);
+			}
+		}
+
+		[Test]
 		public void TwoRingSegmentsCreatedCorrectly()
 		{
 			string pathToData = Path.Combine("..", "..", "..", "TestData", "TwoRingSegmentsTestData.txt");
