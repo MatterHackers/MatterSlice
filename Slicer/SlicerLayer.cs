@@ -130,7 +130,7 @@ namespace MatterHackers.MatterSlice
 
 		public void MakePolygons(ConfigConstants.REPAIR_OUTLINES outlineRepairTypes)
 		{
-			if (true) // you can use this output segments for debugging
+			if (false) // you can use this output segments for debugging
 			{
 				using (StreamWriter stream = File.AppendText("segments.txt"))
 				{
