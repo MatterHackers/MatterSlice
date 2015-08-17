@@ -224,7 +224,7 @@ namespace MatterHackers.MatterSlice
 			else // we still need to put in the bottom clip
 			{
 				// Ofset by bed center and correctly position in z
-				Point3 modelZBottom_um = new Point3(-xCenter_um, -yCenter_um, minXYZ_um.z - zClip_um);
+				Point3 modelZBottom_um = new Point3(0, 0, minXYZ_um.z - zClip_um);
 				for (int i = 0; i < volumes.Count; i++)
 				{
 					for (int n = 0; n < volumes[i].vertices.Count; n++)
