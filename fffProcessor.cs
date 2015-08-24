@@ -750,10 +750,17 @@ namespace MatterHackers.MatterSlice
 			// generate infill intermediate layers
 			foreach (Polygons outline in part.SolidInfillOutlines.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd))
 			{
-				double oldInfillPercent = config.infillPercent;
-				config.infillPercent = 100;
-				Infill.GenerateConcentricInfill(config, outline, ref fillPolygons);
-				config.infillPercent = oldInfillPercent;
+				if (true) // use the old infill method
+				{
+					Infill.GenerateLinePaths(outline, ref fillPolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle + 90 * (layerIndex % 2));
+				}
+				else // use the new concentric infill (not tested enough yet) have to handle some bad casses better
+				{
+					double oldInfillPercent = config.infillPercent;
+					config.infillPercent = 100;
+					Infill.GenerateConcentricInfill(config, outline, ref fillPolygons);
+					config.infillPercent = oldInfillPercent;
+				}
 			}
 
 			double fillAngle = config.infillStartingAngle;
