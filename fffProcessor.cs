@@ -285,12 +285,12 @@ namespace MatterHackers.MatterSlice
 							extrusionWidth = config.firstLayerExtrusionWidth_um;
 						}
 
-						TopsAndBottoms.GenerateTopAndBottom(layerIndex, storage.volumes[volumeIndex], extrusionWidth, config.numberOfBottomLayers, config.numberOfTopLayers);
+						TopsAndBottoms.GenerateTopAndBottom(layerIndex, storage.volumes[volumeIndex], extrusionWidth, config);
 					}
 				}
 				LogOutput.Log("Creating Top & Bottom Layers {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
 			}
-			LogOutput.Log("Generated top bottom layers in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
+			LogOutput.Log("Generated top bottom layers in {0:0.000}s\n".FormatWith(timeKeeper.Elapsed.Milliseconds/1000));
 			timeKeeper.Restart();
 
 			if (config.wipeTowerSize_um > 0)
@@ -541,7 +541,7 @@ namespace MatterHackers.MatterSlice
 
 			LogOutput.Log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.Seconds));
 			timeKeeper.Restart();
-			gcode.TellFileSize();
+//			gcode.TellFileSize();
 			gcode.WriteFanCommand(0);
 
 			//Store the object height for when we are printing multiple objects, as we need to clear every one of them when moving to the next position.
@@ -750,17 +750,10 @@ namespace MatterHackers.MatterSlice
 			// generate infill intermediate layers
 			foreach (Polygons outline in part.SolidInfillOutlines.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd))
 			{
-				if (true) // use the old infill method
-				{
-					Infill.GenerateLinePaths(outline, ref fillPolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle + 90 * (layerIndex % 2));
-				}
-				else // use the new concentric infill (not tested enough yet) have to handle some bad casses better
-				{
-					double oldInfillPercent = config.infillPercent;
-					config.infillPercent = 100;
-					Infill.GenerateConcentricInfill(config, outline, ref fillPolygons);
-					config.infillPercent = oldInfillPercent;
-				}
+				double oldInfillPercent = config.infillPercent;
+				config.infillPercent = 100;
+				Infill.GenerateConcentricInfill(config, outline, ref fillPolygons);
+				config.infillPercent = oldInfillPercent;
 			}
 
 			double fillAngle = config.infillStartingAngle;

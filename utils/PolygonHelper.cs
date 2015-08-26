@@ -19,6 +19,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System.Linq;
 using MatterSlice.ClipperLib;
 using System;
 using System.Collections.Generic;
@@ -105,7 +106,7 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public static Polygon CreateFromString(string polygonString)
+	    public static Polygon CreateFromString(string polygonString)
 		{
 			Polygon output = new Polygon();
 			string[] intPointData = polygonString.Split(',');
@@ -505,5 +506,10 @@ namespace MatterHackers.MatterSlice
 				ret.Add(polygons);
 			}
 		}
+
+        public static double TotalArea(this Polygons polygons)
+        {
+            return polygons.Sum(polygon => polygon.Area());
+        }
 	}
 }

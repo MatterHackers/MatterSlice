@@ -109,6 +109,13 @@ namespace MatterHackers.MatterSlice
 		public int numberOfBottomLayers;
 		public int numberOfTopLayers;
 
+        [SettingDescription("If this layer is much smaller than the ones below or above it make it solid. Helps with bolt or screw head torque problems.")]
+        public double smallProtrusionProportion;
+        [SettingDescription("If the infill and solid infill areas combined are smaller than this proportion of the solid top make it all solid top. Helps with bolt or screw head torque problems.")]
+        public double infillTotalProportion;
+        [SettingDescription("If the solid infill area is less than this proportion of the total infill area make it all solid. Helps with bolt or screw head torque problems.")]
+        public double infillSolidProportion;
+
 		[SettingDescription("The percent of filled space to open space while infilling.")]
 		public double infillPercent;
 
@@ -340,6 +347,11 @@ namespace MatterHackers.MatterSlice
 			numberOfPerimeters = 2;
 			numberOfBottomLayers = 6;
 			numberOfTopLayers = 6;
+
+            infillSolidProportion = 0.0;
+            infillTotalProportion = 0.0;
+		    smallProtrusionProportion = 0.0;
+
 			firstLayerSpeed = 20;
 			supportMaterialSpeed = 40;
 			infillSpeed = 50;
