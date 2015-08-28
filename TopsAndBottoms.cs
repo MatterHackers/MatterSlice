@@ -162,6 +162,16 @@ namespace MatterHackers.MatterSlice
                             infillOutlines = part.InfillOutlines = new Polygons();
                         }
                     }
+                    if (config.minInfillArea_mm2 > 0)
+                    {
+                        var infillArea = infillOutlines.TotalArea()/1e6; // convert from um2 to mm2
+                        if (infillArea < config.minInfillArea_mm2)
+                        {
+                            solidInfillOutlines = solidInfillOutlines.CreateUnion(infillOutlines);
+                            infillOutlines = new Polygons();
+                            part.SolidInfillOutlines = solidInfillOutlines;
+                        }
+                    }
                 }
 
                 RemoveSmallAreas(extrusionWidth, infillOutlines);

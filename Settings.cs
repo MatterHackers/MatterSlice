@@ -115,6 +115,8 @@ namespace MatterHackers.MatterSlice
         public double infillTotalProportion;
         [SettingDescription("If the solid infill area is less than this proportion of the total infill area make it all solid. Helps with bolt or screw head torque problems.")]
         public double infillSolidProportion;
+        [SettingDescription("If the infill area (not solid infill) is smaller than this amount make it solid.")]
+	    public double minInfillArea_mm2;
 
 		[SettingDescription("The percent of filled space to open space while infilling.")]
 		public double infillPercent;
@@ -351,6 +353,7 @@ namespace MatterHackers.MatterSlice
             infillSolidProportion = 0.0;
             infillTotalProportion = 0.0;
 		    smallProtrusionProportion = 0.0;
+		    minInfillArea_mm2 = 0.0;
 
 			firstLayerSpeed = 20;
 			supportMaterialSpeed = 40;
