@@ -111,8 +111,6 @@ namespace MatterHackers.MatterSlice
 
         [SettingDescription("If this layer is much smaller than the ones below or above it make it solid. Helps with bolt or screw head torque problems.")]
         public double smallProtrusionProportion;
-        [SettingDescription("If the infill and solid infill areas combined are smaller than this proportion of the solid top make it all solid top. Helps with bolt or screw head torque problems.")]
-        public double infillTotalProportion;
         [SettingDescription("If the solid infill area is less than this proportion of the total infill area make it all solid. Helps with bolt or screw head torque problems.")]
         public double infillSolidProportion;
         [SettingDescription("If the infill area (not solid infill) is smaller than this amount make it solid.")]
@@ -351,7 +349,6 @@ namespace MatterHackers.MatterSlice
 			numberOfTopLayers = 6;
 
             infillSolidProportion = 0.0;
-            infillTotalProportion = 0.0;
 		    smallProtrusionProportion = 0.0;
 		    minInfillArea_mm2 = 0.0;
 

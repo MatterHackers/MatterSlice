@@ -135,7 +135,7 @@ namespace MatterHackers.MatterSlice
                     Polygons totalInfillOutlines = null;
                     double totalInfillArea = 0.0;
 
-                    if (config.infillSolidProportion > 0 || config.infillTotalProportion > 0)
+                    if (config.infillSolidProportion > 0)
                     {
                         totalInfillOutlines = infillOutlines.CreateUnion(solidInfillOutlines);
                         totalInfillArea = totalInfillOutlines.TotalArea();
@@ -150,11 +150,8 @@ namespace MatterHackers.MatterSlice
                             infillOutlines = new Polygons();
                             part.SolidInfillOutlines = solidInfillOutlines;
                         }
-                    }
-                    if (config.infillTotalProportion > 0)
-                    {
                         var solidTopOutlinesArea = part.SolidTopOutlines.TotalArea();
-                        if (totalInfillArea < solidTopOutlinesArea * config.infillTotalProportion)
+                        if (totalInfillArea < solidTopOutlinesArea * config.infillSolidProportion / 2)
                         {
                             var totalSolidTop = totalInfillOutlines.CreateUnion(part.SolidTopOutlines);
                             part.SolidTopOutlines = totalSolidTop;
