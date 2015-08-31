@@ -130,9 +130,10 @@ namespace MatterHackers.MatterSlice.Tests
 		private static void GenerateLayers(SliceVolumeStorage layerData, int extrusionWidth, int bottomLayers, int topLayers)
 		{
 			int numLayers = layerData.layers.Count;
+		    ConfigSettings config = new ConfigSettings {numberOfBottomLayers = bottomLayers, numberOfTopLayers = topLayers};
 			for (int i = 0; i < numLayers; i++)
 			{
-				TopsAndBottoms.GenerateTopAndBottom(i, layerData, extrusionWidth, bottomLayers, topLayers);
+				TopsAndBottoms.GenerateTopAndBottom(i, layerData, extrusionWidth, config);
 			}
 		}
 
