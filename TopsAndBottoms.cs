@@ -108,14 +108,14 @@ namespace MatterHackers.MatterSlice
 
                         for (var layerToTest = upStart; layerToTest < upEnd; layerToTest++)
                         {
-                            totalPartsToRemove = AddAllOutlines(storage.layers[layerToTest], part, totalPartsToRemove, out makeInfillSolid, config);
+                            totalPartsToRemove = AddAllOutlines(storage.layers[layerToTest], part, totalPartsToRemove, ref makeInfillSolid, config);
                             totalPartsToRemove = Clipper.CleanPolygons(totalPartsToRemove, cleanDistance_um);
                             if (makeInfillSolid) break;
                         }
 
                         for (var layerToTest = downStart; layerToTest >= downEnd; layerToTest--)
                         {
-                            totalPartsToRemove = AddAllOutlines(storage.layers[layerToTest], part, totalPartsToRemove, out makeInfillSolid, config);
+                            totalPartsToRemove = AddAllOutlines(storage.layers[layerToTest], part, totalPartsToRemove, ref makeInfillSolid, config);
                             totalPartsToRemove = Clipper.CleanPolygons(totalPartsToRemove, cleanDistance_um);
                             if (makeInfillSolid) break;
                         }
@@ -155,6 +155,14 @@ namespace MatterHackers.MatterSlice
                         {
                             var totalSolidTop = totalInfillOutlines.CreateUnion(part.SolidTopOutlines);
                             part.SolidTopOutlines = totalSolidTop;
+                            part.SolidInfillOutlines = new Polygons();
+                            infillOutlines = part.InfillOutlines = new Polygons();
+                        }
+                        var solidBottomOutlinesArea = part.SolidBottomOutlines.TotalArea();
+                        if (totalInfillArea < solidBottomOutlinesArea * config.infillSolidProportion / 2)
+                        {
+                            var totalSolidBottom = totalInfillOutlines.CreateUnion(part.SolidBottomOutlines);
+                            part.SolidBottomOutlines = totalSolidBottom;
                             part.SolidInfillOutlines = new Polygons();
                             infillOutlines = part.InfillOutlines = new Polygons();
                         }
@@ -207,10 +215,8 @@ namespace MatterHackers.MatterSlice
 			return polygonsToSubtractFrom;
 		}
 
-        private static Polygons AddAllOutlines(SliceLayer layerToAdd, SliceLayerPart partToUseAsBounds, Polygons polysToAddTo, out bool makeInfillSolid, ConfigSettings config)
-        {
-            makeInfillSolid = false;
-            
+        private static Polygons AddAllOutlines(SliceLayer layerToAdd, SliceLayerPart partToUseAsBounds, Polygons polysToAddTo, ref bool makeInfillSolid, ConfigSettings config)
+        {           
             Polygons polysToIntersect = new Polygons();
 			for (int partIndex = 0; partIndex < layerToAdd.parts.Count; partIndex++)
 			{
