@@ -31,9 +31,12 @@ namespace MatterHackers.MatterSlice
 	{
 		readonly static double cleanDistance_um = 10;
 
-		public static void GenerateTopAndBottom(int layerIndex, SliceVolumeStorage storage, int extrusionWidth, int downLayerCount, int upLayerCount)
-		{
-			SliceLayer layer = storage.layers[layerIndex];
+        public static void GenerateTopAndBottom(int layerIndex, SliceVolumeStorage storage, int extrusionWidth, ConfigSettings config)
+        {
+            var downLayerCount = config.numberOfBottomLayers;
+            var upLayerCount = config.numberOfTopLayers; 
+            
+            SliceLayer layer = storage.layers[layerIndex];
 
 			for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
 			{
@@ -84,52 +87,104 @@ namespace MatterHackers.MatterSlice
 					part.SolidTopOutlines = topOutlines;
 				}
 
-				// calculate the solid infill outlines
-				if (upLayerCount > 1 || downLayerCount > 1)
-				{
-					Polygons solidInfillOutlines = new Polygons(insetWithOffset);
-					solidInfillOutlines = solidInfillOutlines.CreateDifference(part.SolidBottomOutlines);
-					solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
-					solidInfillOutlines = solidInfillOutlines.CreateDifference(part.SolidTopOutlines);
-					solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
+                // calculate the solid infill outlines
+                if (upLayerCount > 1 || downLayerCount > 1)
+                {
+                    var solidInfillOutlines = new Polygons(insetWithOffset);
+                    solidInfillOutlines = solidInfillOutlines.CreateDifference(part.SolidBottomOutlines);
+                    solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
+                    solidInfillOutlines = solidInfillOutlines.CreateDifference(part.SolidTopOutlines);
+                    solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
 
-					int upEnd = layerIndex + upLayerCount + 1;
-					if (upEnd <= storage.layers.Count && layerIndex - downLayerCount >= 0)
-					{
-						Polygons totalPartsToRemove = new Polygons(insetWithOffset);
+                    var upStart = layerIndex + 2;
+                    var upEnd = layerIndex + upLayerCount + 1;
+                    var downStart = layerIndex - 1;
+                    var downEnd = layerIndex - downLayerCount;
 
-						int upStart = layerIndex + 2;
+                    if (upEnd <= storage.layers.Count && downEnd >= 0)
+                    {
+                        var makeInfillSolid = false;
+                        var totalPartsToRemove = new Polygons(insetWithOffset);
 
-						for (int layerToTest = upStart; layerToTest < upEnd; layerToTest++)
-						{
-							totalPartsToRemove = AddAllOutlines(storage.layers[layerToTest], part, totalPartsToRemove);
-							totalPartsToRemove = Clipper.CleanPolygons(totalPartsToRemove, cleanDistance_um);
-						}
+                        for (var layerToTest = upStart; layerToTest < upEnd; layerToTest++)
+                        {
+                            totalPartsToRemove = AddAllOutlines(storage.layers[layerToTest], part, totalPartsToRemove, ref makeInfillSolid, config);
+                            totalPartsToRemove = Clipper.CleanPolygons(totalPartsToRemove, cleanDistance_um);
+                            if (makeInfillSolid) break;
+                        }
 
-						int downStart = layerIndex - 1;
-						int downEnd = layerIndex - downLayerCount;
+                        for (var layerToTest = downStart; layerToTest >= downEnd; layerToTest--)
+                        {
+                            totalPartsToRemove = AddAllOutlines(storage.layers[layerToTest], part, totalPartsToRemove, ref makeInfillSolid, config);
+                            totalPartsToRemove = Clipper.CleanPolygons(totalPartsToRemove, cleanDistance_um);
+                            if (makeInfillSolid) break;
+                        }
 
-						for (int layerToTest = downStart; layerToTest >= downEnd; layerToTest--)
-						{
-							totalPartsToRemove = AddAllOutlines(storage.layers[layerToTest], part, totalPartsToRemove);
-							totalPartsToRemove = Clipper.CleanPolygons(totalPartsToRemove, cleanDistance_um);
-						}
+                        if (!makeInfillSolid)
+                        {
+                            solidInfillOutlines = solidInfillOutlines.CreateDifference(totalPartsToRemove);
+                            RemoveSmallAreas(extrusionWidth, solidInfillOutlines);
+                        }
 
-						solidInfillOutlines = solidInfillOutlines.CreateDifference(totalPartsToRemove);
-						RemoveSmallAreas(extrusionWidth, solidInfillOutlines);
+                        solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
+                    }
 
-						solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
-					}
+                    part.SolidInfillOutlines = solidInfillOutlines;
+                    infillOutlines = infillOutlines.CreateDifference(solidInfillOutlines);
 
-					part.SolidInfillOutlines = solidInfillOutlines;
-					infillOutlines = infillOutlines.CreateDifference(solidInfillOutlines);
-				}
+                    Polygons totalInfillOutlines = null;
+                    double totalInfillArea = 0.0;
 
-				RemoveSmallAreas(extrusionWidth, infillOutlines);
-				infillOutlines = Clipper.CleanPolygons(infillOutlines, cleanDistance_um);
-				part.InfillOutlines = infillOutlines;
-			}
-		}
+                    if (config.infillSolidProportion > 0)
+                    {
+                        totalInfillOutlines = infillOutlines.CreateUnion(solidInfillOutlines);
+                        totalInfillArea = totalInfillOutlines.TotalArea();
+                    }
+
+                    if (config.infillSolidProportion > 0)
+                    {
+                        var solidInfillArea = solidInfillOutlines.TotalArea();
+                        if (solidInfillArea > totalInfillArea * config.infillSolidProportion)
+                        {
+                            solidInfillOutlines = solidInfillOutlines.CreateUnion(infillOutlines);
+                            infillOutlines = new Polygons();
+                            part.SolidInfillOutlines = solidInfillOutlines;
+                        }
+                        var solidTopOutlinesArea = part.SolidTopOutlines.TotalArea();
+                        if (totalInfillArea < solidTopOutlinesArea * config.infillSolidProportion / 2)
+                        {
+                            var totalSolidTop = totalInfillOutlines.CreateUnion(part.SolidTopOutlines);
+                            part.SolidTopOutlines = totalSolidTop;
+                            part.SolidInfillOutlines = new Polygons();
+                            infillOutlines = part.InfillOutlines = new Polygons();
+                        }
+                        var solidBottomOutlinesArea = part.SolidBottomOutlines.TotalArea();
+                        if (totalInfillArea < solidBottomOutlinesArea * config.infillSolidProportion / 2)
+                        {
+                            var totalSolidBottom = totalInfillOutlines.CreateUnion(part.SolidBottomOutlines);
+                            part.SolidBottomOutlines = totalSolidBottom;
+                            part.SolidInfillOutlines = new Polygons();
+                            infillOutlines = part.InfillOutlines = new Polygons();
+                        }
+                    }
+                    if (config.minInfillArea_mm2 > 0)
+                    {
+                        var infillArea = infillOutlines.TotalArea()/1e6; // convert from um2 to mm2
+                        if (infillArea < config.minInfillArea_mm2)
+                        {
+                            solidInfillOutlines = solidInfillOutlines.CreateUnion(infillOutlines);
+                            infillOutlines = new Polygons();
+                            part.SolidInfillOutlines = solidInfillOutlines;
+                        }
+                    }
+                }
+
+                RemoveSmallAreas(extrusionWidth, infillOutlines);
+                infillOutlines = Clipper.CleanPolygons(infillOutlines, cleanDistance_um);
+                part.InfillOutlines = infillOutlines;
+            }
+        }
+
 
 		private static void RemoveSmallAreas(int extrusionWidth, Polygons solidInfillOutlinesUp)
 		{
@@ -160,17 +215,36 @@ namespace MatterHackers.MatterSlice
 			return polygonsToSubtractFrom;
 		}
 
-		private static Polygons AddAllOutlines(SliceLayer layerToAdd, SliceLayerPart partToUseAsBounds, Polygons polysToAddTo)
-		{
-			Polygons polysToIntersect = new Polygons();
+        private static Polygons AddAllOutlines(SliceLayer layerToAdd, SliceLayerPart partToUseAsBounds, Polygons polysToAddTo, ref bool makeInfillSolid, ConfigSettings config)
+        {           
+            Polygons polysToIntersect = new Polygons();
 			for (int partIndex = 0; partIndex < layerToAdd.parts.Count; partIndex++)
 			{
-				if (partToUseAsBounds.BoundingBox.Hit(layerToAdd.parts[partIndex].BoundingBox))
-				{
-					polysToIntersect = polysToIntersect.CreateUnion(layerToAdd.parts[partIndex].Insets[layerToAdd.parts[partIndex].Insets.Count - 1]);
-					polysToIntersect = Clipper.CleanPolygons(polysToIntersect, cleanDistance_um);
-				}
-			}
+                var partToConsider = layerToAdd.parts[partIndex];
+
+                if (config.smallProtrusionProportion > 0)
+                {
+                    // If the part under consideration intersects the part from the current layer and 
+                    // the area of that intersection is less than smallProtrusionProportion % of the part under consideration solidify the infill
+                    var intersection = partToUseAsBounds.TotalOutline.CreateIntersection(partToConsider.TotalOutline);
+                    if (intersection.Count > 0) // They do intersect
+                    {
+                        if (intersection.TotalArea() < partToConsider.TotalOutline.TotalArea() * config.smallProtrusionProportion)
+                        {
+                            makeInfillSolid = true;
+                            return polysToAddTo;
+                        }
+                    }
+                }
+
+                if (partToUseAsBounds.BoundingBox.Hit(partToConsider.BoundingBox))
+                {
+                    polysToIntersect =
+                        polysToIntersect.CreateUnion(
+                            layerToAdd.parts[partIndex].Insets[partToConsider.Insets.Count - 1]);
+                    polysToIntersect = Clipper.CleanPolygons(polysToIntersect, cleanDistance_um);
+                }
+            }
 
 			polysToAddTo = polysToAddTo.CreateIntersection(polysToIntersect);
 
