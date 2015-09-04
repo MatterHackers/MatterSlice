@@ -89,7 +89,7 @@ namespace MatterHackers.MatterSlice
 				LogOutput.Log("  Vertex counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleModel.volumes[volumeIndex].faceTriangles.Count * 3, (int)optomizedModel.volumes[volumeIndex].vertices.Count, (double)(optomizedModel.volumes[volumeIndex].vertices.Count) / (double)(simpleModel.volumes[volumeIndex].faceTriangles.Count * 3) * 100));
 			}
 
-			LogOutput.Log("Optimize model {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.Seconds));
+			LogOutput.Log("Optimize model {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Reset();
 
 			Stopwatch timeKeeperTotal = new Stopwatch();
@@ -109,7 +109,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			LogOutput.logProgress("process", 1, 1); //Report to the GUI that a file has been fully processed.
-			LogOutput.Log("Total time elapsed {0:0.00}s.\n".FormatWith(timeKeeperTotal.Elapsed.Seconds));
+			LogOutput.Log("Total time elapsed {0:0.00}s.\n".FormatWith(timeKeeperTotal.Elapsed.TotalSeconds));
 		}
 
 		public bool LoadStlFile(string input_filename)
@@ -122,7 +122,7 @@ namespace MatterHackers.MatterSlice
 				LogOutput.LogError("Failed to load model: {0}\n".FormatWith(input_filename));
 				return false;
 			}
-			LogOutput.Log("Loaded from disk in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
+			LogOutput.Log("Loaded from disk in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			return true;
 		}
 
@@ -179,7 +179,7 @@ namespace MatterHackers.MatterSlice
             //slicerList[0].DumpPolygonsToHTML("Volume 0 Polygons.html");
 #endif
 
-			LogOutput.Log("Sliced model in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
+			LogOutput.Log("Sliced model in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Restart();
 
 			LogOutput.Log("Generating support map...\n");
@@ -204,7 +204,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 			}
-			LogOutput.Log("Generated layer parts in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
+			LogOutput.Log("Generated layer parts in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Restart();
 		}
 
@@ -264,7 +264,7 @@ namespace MatterHackers.MatterSlice
 				CreateWipeShields(storage, totalLayers);
 			}
 
-			LogOutput.Log("Generated inset in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
+			LogOutput.Log("Generated inset in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Restart();
 
 			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
@@ -290,7 +290,7 @@ namespace MatterHackers.MatterSlice
 				}
 				LogOutput.Log("Creating Top & Bottom Layers {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
 			}
-			LogOutput.Log("Generated top bottom layers in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.Seconds));
+			LogOutput.Log("Generated top bottom layers in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Restart();
 
 			if (config.wipeTowerSize_um > 0)
@@ -539,7 +539,7 @@ namespace MatterHackers.MatterSlice
 				gcodeLayer.WriteGCode(config.doCoolHeadLift, currentLayerThickness_um);
 			}
 
-			LogOutput.Log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.Seconds));
+			LogOutput.Log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Restart();
 			gcode.TellFileSize();
 			gcode.WriteFanCommand(0);

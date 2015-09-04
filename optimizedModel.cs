@@ -70,7 +70,7 @@ namespace MatterHackers.MatterSlice
 					return;
 				}
 				OptimizedFace optimizedFace = new OptimizedFace();
-				if ((faceIndex % 1000 == 0) && t.Elapsed.Seconds > 2)
+				if ((faceIndex % 1000 == 0) && t.Elapsed.TotalSeconds > 2)
 				{
 					LogOutput.logProgress("optimized", faceIndex + 1, volume.faceTriangles.Count);
 				}
