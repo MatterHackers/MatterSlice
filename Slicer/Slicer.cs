@@ -61,7 +61,7 @@ namespace MatterHackers.MatterSlice
 			modelMin = ov.parentModel.minXYZ_um;
 
 			int heightWithoutFirstLayer = modelSize.z - initialLayerThickness_um - config.bottomClipAmount_um;
-			int countOfNormalThicknessLayers = (int)((heightWithoutFirstLayer / (double)layerThickness_um) + .5);
+			int countOfNormalThicknessLayers = Math.Max(0, (int)((heightWithoutFirstLayer / (double)layerThickness_um) + .5));
 
 			int layerCount = countOfNormalThicknessLayers;
 			if (initialLayerThickness_um > 0)
