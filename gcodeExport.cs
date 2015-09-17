@@ -33,7 +33,7 @@ namespace MatterHackers.MatterSlice
 	{
 		private int currentFanSpeed;
 		private Point3 currentPosition_um;
-		private int currentSpeed;
+		private double currentSpeed;
 		private TimeEstimateCalculator estimateCalculator = new TimeEstimateCalculator();
 		private char[] extruderCharacter = new char[ConfigConstants.MAX_EXTRUDERS];
 		private int extruderIndex;
@@ -330,7 +330,7 @@ namespace MatterHackers.MatterSlice
 			gcodeFileStream.Write("{0}\n".FormatWith(line));
 		}
 
-		public void WriteMove(IntPoint movePosition_um, int speed, int lineWidth_um)
+		public void WriteMove(IntPoint movePosition_um, double speed, int lineWidth_um)
 		{
 			StringBuilder lineToWrite = new StringBuilder();
 			if (outputType == ConfigConstants.OUTPUT_TYPE.BFB)
@@ -431,7 +431,7 @@ namespace MatterHackers.MatterSlice
 
 		public void WriteRetraction()
 		{
-			int initialSpeed = currentSpeed;
+			double initialSpeed = currentSpeed;
 			if (outputType == ConfigConstants.OUTPUT_TYPE.BFB)//BitsFromBytes does automatic retraction.
 			{
 				return;
@@ -473,7 +473,7 @@ namespace MatterHackers.MatterSlice
 			return value < 0 ? (int)(value - 0.5) : (int)(value + 0.5);
 		}
 
-		private void AddRetractionWipeIfRequired(int initialSpeed)
+		private void AddRetractionWipeIfRequired(double initialSpeed)
 		{
 			//This wipes the extruder back along the previous path after retracting.
 			if (wipeAfterRetraction && retractionWipePath.Count >= 2)
@@ -526,7 +526,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private IntPoint WriteMoveBFBPartial(IntPoint movePosition_um, int speed, int lineWidth_um, StringBuilder lineToWrite)
+		private IntPoint WriteMoveBFBPartial(IntPoint movePosition_um, double speed, int lineWidth_um, StringBuilder lineToWrite)
 		{
 			//For Bits From Bytes machines, we need to handle this completely differently. As they do not use E values, they use RPM values
 			double fspeed = speed * 60;

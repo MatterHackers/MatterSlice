@@ -37,21 +37,21 @@ namespace MatterHackers.MatterSlice
 		public bool closedLoop = true;
 		public int lineWidth;
 		public string name;
-		public int speed;
+		public double speed;
 		public bool spiralize;
 
 		public GCodePathConfig()
 		{
 		}
 
-		public GCodePathConfig(int speed, int lineWidth, string name)
+		public GCodePathConfig(double speed, int lineWidth, string name)
 		{
 			this.speed = speed;
 			this.lineWidth = lineWidth;
 			this.name = name;
 		}
 
-		public void setData(int speed, int lineWidth, string name, bool closedLoop = true)
+		public void setData(double speed, int lineWidth, string name, bool closedLoop = true)
 		{
 			this.closedLoop = closedLoop;
 			this.speed = speed;

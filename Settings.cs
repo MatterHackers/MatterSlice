@@ -174,7 +174,7 @@ namespace MatterHackers.MatterSlice
 
 		// speed settings
 		[SettingDescription("This is the speed to print everything on the first layer, mm/s.")]
-		public int firstLayerSpeed;
+		public double firstLayerSpeed;
 
 		[SettingDescription("mm/s.")]
 		public int supportMaterialSpeed;

@@ -362,7 +362,7 @@ namespace MatterHackers.MatterSlice
 					lastConfig = path.config;
 				}
 
-				int speed = path.config.speed;
+				double speed = path.config.speed;
 				if (path.config.lineWidth != 0)
 				{
 					// Only apply the extrudeSpeedFactor to extrusion moves
