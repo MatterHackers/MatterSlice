@@ -47,6 +47,7 @@ namespace MatterHackers.MatterSlice
 		private GCodePathConfig inset0Config = new GCodePathConfig();
 		private GCodePathConfig insetXConfig = new GCodePathConfig();
 		private GCodePathConfig fillConfig = new GCodePathConfig();
+		private GCodePathConfig topFillConfig = new GCodePathConfig();
 		private GCodePathConfig bridgConfig = new GCodePathConfig();
 		private GCodePathConfig supportNormalConfig = new GCodePathConfig();
 		private GCodePathConfig supportInterfaceConfig = new GCodePathConfig();
@@ -140,13 +141,14 @@ namespace MatterHackers.MatterSlice
 
 		private void preSetup(int extrusionWidth)
 		{
-			skirtConfig.setData(config.insidePerimetersSpeed, extrusionWidth, "SKIRT");
-			inset0Config.setData(config.outsidePerimeterSpeed, extrusionWidth, "WALL-OUTER");
-			insetXConfig.setData(config.insidePerimetersSpeed, extrusionWidth, "WALL-INNER");
-			fillConfig.setData(config.infillSpeed, extrusionWidth, "FILL", false);
-			bridgConfig.setData(config.bridgeSpeed, extrusionWidth, "BRIDGE");
-			supportNormalConfig.setData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT");
-			supportInterfaceConfig.setData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT-INTERFACE");
+			skirtConfig.SetData(config.insidePerimetersSpeed, extrusionWidth, "SKIRT");
+			inset0Config.SetData(config.outsidePerimeterSpeed, extrusionWidth, "WALL-OUTER");
+			insetXConfig.SetData(config.insidePerimetersSpeed, extrusionWidth, "WALL-INNER");
+			fillConfig.SetData(config.infillSpeed, extrusionWidth, "FILL", false);
+			topFillConfig.SetData(config.topInfillSpeed, extrusionWidth, "TOP-FILL", false);
+			bridgConfig.SetData(config.bridgeSpeed, extrusionWidth, "BRIDGE");
+			supportNormalConfig.SetData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT");
+			supportInterfaceConfig.SetData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT-INTERFACE");
 
 			for (int extruderIndex = 0; extruderIndex < ConfigConstants.MAX_EXTRUDERS; extruderIndex++)
 			{
@@ -445,25 +447,27 @@ namespace MatterHackers.MatterSlice
 
 				if (layerIndex == 0)
 				{
-					skirtConfig.setData(config.firstLayerSpeed, extrusionWidth_um, "SKIRT");
-					inset0Config.setData(config.firstLayerSpeed, extrusionWidth_um, "WALL-OUTER");
-					insetXConfig.setData(config.firstLayerSpeed, extrusionWidth_um, "WALL-INNER");
-					fillConfig.setData(config.firstLayerSpeed, extrusionWidth_um, "FILL", false);
-					bridgConfig.setData(config.firstLayerSpeed, extrusionWidth_um, "BRIDGE");
+					skirtConfig.SetData(config.firstLayerSpeed, extrusionWidth_um, "SKIRT");
+					inset0Config.SetData(config.firstLayerSpeed, extrusionWidth_um, "WALL-OUTER");
+					insetXConfig.SetData(config.firstLayerSpeed, extrusionWidth_um, "WALL-INNER");
+					fillConfig.SetData(config.firstLayerSpeed, extrusionWidth_um, "FILL", false);
+					topFillConfig.SetData(config.firstLayerSpeed, extrusionWidth_um, "TOP-FILL", false);
+					bridgConfig.SetData(config.firstLayerSpeed, extrusionWidth_um, "BRIDGE");
 
-					supportNormalConfig.setData(config.firstLayerSpeed, config.supportExtrusionWidth_um, "SUPPORT");
-					supportInterfaceConfig.setData(config.firstLayerSpeed, config.extrusionWidth_um, "SUPPORT-INTERFACE");
+					supportNormalConfig.SetData(config.firstLayerSpeed, config.supportExtrusionWidth_um, "SUPPORT");
+					supportInterfaceConfig.SetData(config.firstLayerSpeed, config.extrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 				else
 				{
-					skirtConfig.setData(config.insidePerimetersSpeed, extrusionWidth_um, "SKIRT");
-					inset0Config.setData(config.outsidePerimeterSpeed, extrusionWidth_um, "WALL-OUTER");
-					insetXConfig.setData(config.insidePerimetersSpeed, extrusionWidth_um, "WALL-INNER");
-					fillConfig.setData(config.infillSpeed, extrusionWidth_um, "FILL", false);
-					bridgConfig.setData(config.bridgeSpeed, extrusionWidth_um, "BRIDGE");
+					skirtConfig.SetData(config.insidePerimetersSpeed, extrusionWidth_um, "SKIRT");
+					inset0Config.SetData(config.outsidePerimeterSpeed, extrusionWidth_um, "WALL-OUTER");
+					insetXConfig.SetData(config.insidePerimetersSpeed, extrusionWidth_um, "WALL-INNER");
+					fillConfig.SetData(config.infillSpeed, extrusionWidth_um, "FILL", false);
+					topFillConfig.SetData(config.topInfillSpeed, extrusionWidth_um, "TOP-FILL", false);
+					bridgConfig.SetData(config.bridgeSpeed, extrusionWidth_um, "BRIDGE");
 
-					supportNormalConfig.setData(config.supportMaterialSpeed, config.supportExtrusionWidth_um, "SUPPORT");
-					supportInterfaceConfig.setData(config.supportMaterialSpeed, config.extrusionWidth_um, "SUPPORT-INTERFACE");
+					supportNormalConfig.SetData(config.supportMaterialSpeed, config.supportExtrusionWidth_um, "SUPPORT");
+					supportInterfaceConfig.SetData(config.supportMaterialSpeed, config.extrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 
 				gcode.WriteComment("LAYER:{0}".FormatWith(layerIndex));
@@ -645,9 +649,10 @@ namespace MatterHackers.MatterSlice
 				}
 
 				Polygons fillPolygons = new Polygons();
+				Polygons topFillPolygons = new Polygons();
 				Polygons bridgePolygons = new Polygons();
 
-				CalculateInfillData(storage, volumeIndex, layerIndex, part, ref fillPolygons, ref bridgePolygons);
+				CalculateInfillData(storage, volumeIndex, layerIndex, part, ref fillPolygons, ref topFillPolygons, ref bridgePolygons);
 
 				// Write the bridge polgons out first so the perimeter will have more to hold to while bridging the gaps.
 				// It would be even better to slow down the perimeters that are part of bridges but that is a bit harder.
@@ -708,6 +713,7 @@ namespace MatterHackers.MatterSlice
 				}
 
 				gcodeLayer.WritePolygonsByOptimizer(fillPolygons, fillConfig);
+				gcodeLayer.WritePolygonsByOptimizer(topFillPolygons, topFillConfig);
 
 				//After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
 				if (!config.continuousSpiralOuterPerimeter || layerIndex < config.numberOfBottomLayers)
@@ -718,9 +724,9 @@ namespace MatterHackers.MatterSlice
 			gcodeLayer.SetOuterPerimetersToAvoidCrossing(null);
 		}
 
-		private void CalculateInfillData(SliceDataStorage storage, int volumeIndex, int layerIndex, SliceLayerPart part, ref Polygons fillPolygons, ref Polygons bridgePolygons)
+		private void CalculateInfillData(SliceDataStorage storage, int volumeIndex, int layerIndex, SliceLayerPart part, ref Polygons fillPolygons, ref Polygons topFillPolygons, ref Polygons bridgePolygons)
 		{
-			// generate infill the bottom layers including bridging
+			// generate infill the bottom layer including bridging
 			foreach (Polygons outline in part.SolidBottomOutlines.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd))
 			{
 				if (layerIndex > 0)
@@ -741,10 +747,10 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			// generate infill for the top layers
+			// generate infill for the top layer
 			foreach (Polygons outline in part.SolidTopOutlines.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd))
 			{
-				Infill.GenerateLinePaths(outline, ref fillPolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle);
+				Infill.GenerateLinePaths(outline, ref topFillPolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle);
 			}
 
 			// generate infill intermediate layers
@@ -765,7 +771,7 @@ namespace MatterHackers.MatterSlice
 
 			double fillAngle = config.infillStartingAngle;
 
-			// generate the infill for this part on this layer
+			// generate the sparse infill for this part on this layer
 			if (config.infillPercent > 0)
 			{
 				switch (config.infillType)

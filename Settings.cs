@@ -176,6 +176,9 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("This is the speed to print everything on the first layer, mm/s.")]
 		public double firstLayerSpeed;
 
+		[SettingDescription("This is the speed to print the top layer infill, mm/s.")]
+		public double topInfillSpeed;
+
 		[SettingDescription("mm/s.")]
 		public int supportMaterialSpeed;
 
@@ -341,6 +344,7 @@ namespace MatterHackers.MatterSlice
 			numberOfBottomLayers = 6;
 			numberOfTopLayers = 6;
 			firstLayerSpeed = 20;
+			topInfillSpeed = 20;
 			supportMaterialSpeed = 40;
 			infillSpeed = 50;
 			bridgeSpeed = 20;

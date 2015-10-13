@@ -358,7 +358,7 @@ namespace MatterHackers.MatterSlice
 				}
 				if (path.config != travelConfig && lastConfig != path.config)
 				{
-					gcode.WriteComment("TYPE:{0}".FormatWith(path.config.name));
+					gcode.WriteComment("TYPE:{0}".FormatWith(path.config.gcodeComment));
 					lastConfig = path.config;
 				}
 
@@ -618,7 +618,7 @@ namespace MatterHackers.MatterSlice
 
 		private static void TrimPerimeterIfNeeded(GCodePath path)
 		{
-			if (path.config.name == "WALL-OUTER" || path.config.name == "WALL-INNER")
+			if (path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER")
 			{
 				double currentDistance = 0;
 				double targetDistance = (long)(path.config.lineWidth * .90);
