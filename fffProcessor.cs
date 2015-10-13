@@ -251,12 +251,15 @@ namespace MatterHackers.MatterSlice
 					}
 
 					SliceLayer layer = storage.volumes[volumeIndex].layers[layerIndex];
-					int extrusionWidth = config.extrusionWidth_um;
+
 					if (layerIndex == 0)
 					{
-						extrusionWidth = config.firstLayerExtrusionWidth_um;
+						Inset.generateInsets(layer, config.firstLayerExtrusionWidth_um, config.firstLayerExtrusionWidth_um, insetCount);
 					}
-					Inset.generateInsets(layer, extrusionWidth, insetCount);
+					else
+					{
+						Inset.generateInsets(layer, config.extrusionWidth_um, config.extrusionWidth_um, insetCount);
+					}
 				}
 				LogOutput.Log("Creating Insets {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
 			}

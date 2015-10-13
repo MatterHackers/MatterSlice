@@ -28,9 +28,14 @@ namespace MatterHackers.MatterSlice
 
 	public static class Inset
 	{
-		public static void GenerateInsets(SliceLayerPart part, int offset, int insetCount)
+		public static void GenerateInsets(SliceLayerPart part, int offset_um, int outerPerimeterOffset_um, int insetCount)
 		{
-			part.AvoidCrossingBoundery = part.TotalOutline.Offset(-offset);
+			double minimumDistanceToCreateNewPosition = 10;
+
+			int currentOffset = outerPerimeterOffset_um / 2;
+			int nextHalfOffset = outerPerimeterOffset_um / 2;
+		
+			part.AvoidCrossingBoundery = part.TotalOutline.Offset(-offset_um);
 			if (insetCount == 0)
 			{
 				// if we have no insets defined still create one
@@ -40,26 +45,31 @@ namespace MatterHackers.MatterSlice
 			{
 				for (int i = 0; i < insetCount; i++)
 				{
-					part.Insets.Add(new Polygons());
-					part.Insets[i] = part.TotalOutline.Offset(-offset * i - offset / 2);
+					Polygons currentInset = part.TotalOutline.Offset(-currentOffset);
+					// make sure our polygon data is reasonable
+					currentInset = Clipper.CleanPolygons(currentInset, minimumDistanceToCreateNewPosition);
 
-					double minimumDistanceToCreateNewPosition = 10;
-					part.Insets[i] = Clipper.CleanPolygons(part.Insets[i], minimumDistanceToCreateNewPosition);
-
-					if (part.Insets[i].Count < 1)
+					// check that we have actuall paths
+					if (currentInset.Count > 0)
 					{
-						part.Insets.RemoveAt(part.Insets.Count - 1);
+						part.Insets.Add(currentInset);
+						currentOffset -= (nextHalfOffset + offset_um / 2);
+						nextHalfOffset = offset_um / 2;
+					}
+					else
+					{
+						// we are done making insets as we have no arrea left
 						break;
 					}
 				}
 			}
 		}
 
-		public static void generateInsets(SliceLayer layer, int offset, int insetCount)
+		public static void generateInsets(SliceLayer layer, int offset_um, int outerPerimeterOffset_um, int insetCount)
 		{
 			for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
 			{
-				GenerateInsets(layer.parts[partIndex], offset, insetCount);
+				GenerateInsets(layer.parts[partIndex], offset_um, outerPerimeterOffset_um, insetCount);
 			}
 
 			//Remove the parts which did not generate an inset. As these parts are too small to print,
