@@ -31,14 +31,14 @@ namespace MatterHackers.MatterSlice
 	{
 		readonly static double cleanDistance_um = 10;
 
-		public static void GenerateTopAndBottom(int layerIndex, SliceVolumeStorage storage, int extrusionWidth, int downLayerCount, int upLayerCount)
+		public static void GenerateTopAndBottom(int layerIndex, SliceVolumeStorage storage, int extrusionWidth_um, int outerPerimeterWidth_um, int downLayerCount, int upLayerCount)
 		{
 			SliceLayer layer = storage.layers[layerIndex];
 
 			for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
 			{
 				SliceLayerPart part = layer.parts[partIndex];
-				Polygons insetWithOffset = part.Insets[part.Insets.Count - 1].Offset(-extrusionWidth / 2);
+				Polygons insetWithOffset = part.Insets[part.Insets.Count - 1].Offset(-extrusionWidth_um / 2);
 				Polygons infillOutlines = new Polygons(insetWithOffset);
 
 				// calculate the bottom outlines
@@ -49,7 +49,7 @@ namespace MatterHackers.MatterSlice
 					if (layerIndex - 1 >= 0)
 					{
 						bottomOutlines = RemoveAdditionalOutlinesForPart(storage.layers[layerIndex - 1], part, bottomOutlines);
-						RemoveSmallAreas(extrusionWidth, bottomOutlines);
+						RemoveSmallAreas(extrusionWidth_um, bottomOutlines);
 					}
 
 					infillOutlines = infillOutlines.CreateDifference(bottomOutlines);
@@ -68,15 +68,23 @@ namespace MatterHackers.MatterSlice
 					if (part.Insets.Count > 1)
 					{
 						// Add thin wall filling by taking the area between the insets.
-						Polygons thinWalls = part.Insets[0].Offset(-extrusionWidth / 2).CreateDifference(part.Insets[1].Offset(extrusionWidth / 2));
+						Polygons thinWalls = part.Insets[0].Offset(-outerPerimeterWidth_um / 2).CreateDifference(part.Insets[1].Offset(extrusionWidth_um / 2));
+						topOutlines.AddAll(thinWalls);
+					}
+
+					for (int insetIndex = 1; insetIndex < part.Insets.Count-1; insetIndex++)
+					{
+						Polygons thinWalls = part.Insets[insetIndex].Offset(-extrusionWidth_um / 2).CreateDifference(part.Insets[insetIndex+1].Offset(extrusionWidth_um / 2));
 						topOutlines.AddAll(thinWalls);
 					}
 
 					if (layerIndex + 1 < storage.layers.Count)
 					{
+						// Remove the top layer that is above this one to get only the data that is a top layer on this layer.
 						topOutlines = RemoveAdditionalOutlinesForPart(storage.layers[layerIndex + 1], part, topOutlines);
-						RemoveSmallAreas(extrusionWidth, topOutlines);
 					}
+
+					RemoveSmallAreas(extrusionWidth_um, topOutlines);
 
 					infillOutlines = infillOutlines.CreateDifference(topOutlines);
 					infillOutlines = Clipper.CleanPolygons(infillOutlines, cleanDistance_um);
@@ -116,7 +124,7 @@ namespace MatterHackers.MatterSlice
 						}
 
 						solidInfillOutlines = solidInfillOutlines.CreateDifference(totalPartsToRemove);
-						RemoveSmallAreas(extrusionWidth, solidInfillOutlines);
+						RemoveSmallAreas(extrusionWidth_um, solidInfillOutlines);
 
 						solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
 					}
@@ -125,7 +133,7 @@ namespace MatterHackers.MatterSlice
 					infillOutlines = infillOutlines.CreateDifference(solidInfillOutlines);
 				}
 
-				RemoveSmallAreas(extrusionWidth, infillOutlines);
+				RemoveSmallAreas(extrusionWidth_um, infillOutlines);
 				infillOutlines = Clipper.CleanPolygons(infillOutlines, cleanDistance_um);
 				part.InfillOutlines = infillOutlines;
 			}

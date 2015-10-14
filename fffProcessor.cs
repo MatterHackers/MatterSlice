@@ -258,7 +258,7 @@ namespace MatterHackers.MatterSlice
 					}
 					else
 					{
-						Inset.generateInsets(layer, config.extrusionWidth_um, config.extrusionWidth_um, insetCount);
+						Inset.generateInsets(layer, config.extrusionWidth_um, config.outsideExtrusionWidth_um, insetCount);
 					}
 				}
 				LogOutput.Log("Creating Insets {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
@@ -284,13 +284,14 @@ namespace MatterHackers.MatterSlice
 				{
 					for (int volumeIndex = 0; volumeIndex < storage.volumes.Count; volumeIndex++)
 					{
-						int extrusionWidth = config.extrusionWidth_um;
 						if (layerIndex == 0)
 						{
-							extrusionWidth = config.firstLayerExtrusionWidth_um;
+							TopsAndBottoms.GenerateTopAndBottom(layerIndex, storage.volumes[volumeIndex], config.firstLayerExtrusionWidth_um, config.firstLayerExtrusionWidth_um, config.numberOfBottomLayers, config.numberOfTopLayers);
 						}
-
-						TopsAndBottoms.GenerateTopAndBottom(layerIndex, storage.volumes[volumeIndex], extrusionWidth, config.numberOfBottomLayers, config.numberOfTopLayers);
+						else
+						{
+							TopsAndBottoms.GenerateTopAndBottom(layerIndex, storage.volumes[volumeIndex], config.extrusionWidth_um, config.outsideExtrusionWidth_um, config.numberOfBottomLayers, config.numberOfTopLayers);
+						}
 					}
 				}
 				LogOutput.Log("Creating Top & Bottom Layers {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
