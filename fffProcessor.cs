@@ -142,7 +142,7 @@ namespace MatterHackers.MatterSlice
 		private void preSetup(int extrusionWidth)
 		{
 			skirtConfig.SetData(config.insidePerimetersSpeed, extrusionWidth, "SKIRT");
-			inset0Config.SetData(config.outsidePerimeterSpeed, extrusionWidth, "WALL-OUTER");
+			inset0Config.SetData(config.outsidePerimeterSpeed, config.outsideExtrusionWidth_um, "WALL-OUTER");
 			insetXConfig.SetData(config.insidePerimetersSpeed, extrusionWidth, "WALL-INNER");
 			fillConfig.SetData(config.infillSpeed, extrusionWidth, "FILL", false);
 			topFillConfig.SetData(config.topInfillSpeed, extrusionWidth, "TOP-FILL", false);
@@ -230,7 +230,7 @@ namespace MatterHackers.MatterSlice
 			{
 				if (totalLayers != storage.volumes[volumeIndex].layers.Count)
 				{
-					throw new Exception("All the valumes must have the same number of layers (they just can have empty layers).");
+					throw new Exception("All the volumes must have the same number of layers (they just can have empty layers).");
 				}
 			}
 #endif
@@ -441,33 +441,25 @@ namespace MatterHackers.MatterSlice
 				LogOutput.Log("Writing Layers {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
 
 				LogOutput.logProgress("export", layerIndex + 1, totalLayers);
-
-				int extrusionWidth_um = config.extrusionWidth_um;
+				
 				if (layerIndex == 0)
 				{
-					extrusionWidth_um = config.firstLayerExtrusionWidth_um;
-				}
-
-				if (layerIndex == 0)
-				{
-					skirtConfig.SetData(config.firstLayerSpeed, extrusionWidth_um, "SKIRT");
-					inset0Config.SetData(config.firstLayerSpeed, extrusionWidth_um, "WALL-OUTER");
-					insetXConfig.SetData(config.firstLayerSpeed, extrusionWidth_um, "WALL-INNER");
-					fillConfig.SetData(config.firstLayerSpeed, extrusionWidth_um, "FILL", false);
-					topFillConfig.SetData(config.firstLayerSpeed, extrusionWidth_um, "TOP-FILL", false);
-					bridgConfig.SetData(config.firstLayerSpeed, extrusionWidth_um, "BRIDGE");
+					skirtConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "SKIRT");
+					inset0Config.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "WALL-OUTER");
+					insetXConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "WALL-INNER");
+					fillConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "FILL", false);
+					bridgConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "BRIDGE");
 
 					supportNormalConfig.SetData(config.firstLayerSpeed, config.supportExtrusionWidth_um, "SUPPORT");
 					supportInterfaceConfig.SetData(config.firstLayerSpeed, config.extrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 				else
 				{
-					skirtConfig.SetData(config.insidePerimetersSpeed, extrusionWidth_um, "SKIRT");
-					inset0Config.SetData(config.outsidePerimeterSpeed, extrusionWidth_um, "WALL-OUTER");
-					insetXConfig.SetData(config.insidePerimetersSpeed, extrusionWidth_um, "WALL-INNER");
-					fillConfig.SetData(config.infillSpeed, extrusionWidth_um, "FILL", false);
-					topFillConfig.SetData(config.topInfillSpeed, extrusionWidth_um, "TOP-FILL", false);
-					bridgConfig.SetData(config.bridgeSpeed, extrusionWidth_um, "BRIDGE");
+					skirtConfig.SetData(config.insidePerimetersSpeed, config.extrusionWidth_um, "SKIRT");
+					inset0Config.SetData(config.outsidePerimeterSpeed, config.outsideExtrusionWidth_um, "WALL-OUTER");
+					insetXConfig.SetData(config.insidePerimetersSpeed, config.extrusionWidth_um, "WALL-INNER");
+					fillConfig.SetData(config.infillSpeed, config.extrusionWidth_um, "FILL", false);
+					bridgConfig.SetData(config.bridgeSpeed, config.extrusionWidth_um, "BRIDGE");
 
 					supportNormalConfig.SetData(config.supportMaterialSpeed, config.supportExtrusionWidth_um, "SUPPORT");
 					supportInterfaceConfig.SetData(config.supportMaterialSpeed, config.extrusionWidth_um, "SUPPORT-INTERFACE");
@@ -524,7 +516,14 @@ namespace MatterHackers.MatterSlice
 						volumeIndex = (volumeIndex + 1) % storage.volumes.Count;
 					}
 
-					AddVolumeLayerToGCode(storage, gcodeLayer, volumeIndex, layerIndex, extrusionWidth_um, fanSpeedPercent);
+					if(layerIndex == 0)
+					{
+						AddVolumeLayerToGCode(storage, gcodeLayer, volumeIndex, layerIndex, config.firstLayerExtrusionWidth_um, fanSpeedPercent);
+					}
+					else
+					{
+						AddVolumeLayerToGCode(storage, gcodeLayer, volumeIndex, layerIndex, config.extrusionWidth_um, fanSpeedPercent);
+					}
 				}
 
 				if (!printSupportFirst)
