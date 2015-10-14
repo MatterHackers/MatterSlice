@@ -32,8 +32,8 @@ namespace MatterHackers.MatterSlice
 		{
 			double minimumDistanceToCreateNewPosition = 10;
 
-			int currentOffset = outerPerimeterOffset_um / 2;
-			int nextHalfOffset = outerPerimeterOffset_um / 2;
+			int currentOffset = 0;
+			int offsetBy = outerPerimeterOffset_um / 2;
 		
 			part.AvoidCrossingBoundery = part.TotalOutline.Offset(-offset_um);
 			if (insetCount == 0)
@@ -45,6 +45,8 @@ namespace MatterHackers.MatterSlice
 			{
 				for (int i = 0; i < insetCount; i++)
 				{
+					currentOffset += offsetBy;
+		
 					Polygons currentInset = part.TotalOutline.Offset(-currentOffset);
 					// make sure our polygon data is reasonable
 					currentInset = Clipper.CleanPolygons(currentInset, minimumDistanceToCreateNewPosition);
@@ -53,13 +55,20 @@ namespace MatterHackers.MatterSlice
 					if (currentInset.Count > 0)
 					{
 						part.Insets.Add(currentInset);
-						currentOffset -= (nextHalfOffset + offset_um / 2);
-						nextHalfOffset = offset_um / 2;
+						currentOffset += (offsetBy + offset_um / 2);
+						offsetBy = offset_um / 2;
 					}
 					else
 					{
 						// we are done making insets as we have no arrea left
 						break;
+					}
+
+					currentOffset += offsetBy;
+
+					if (i == 0)
+					{
+						offsetBy = offset_um / 2;
 					}
 				}
 			}
