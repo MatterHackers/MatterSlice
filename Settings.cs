@@ -100,6 +100,11 @@ namespace MatterHackers.MatterSlice
 
 		public int extrusionWidth_um { get { return (int)(extrusionWidth * 1000); } }
 
+		public int outsideExtrusionWidth_um
+		{
+			get { return (int)(outsidePerimeterExtrusionWidth * 1000); }
+		}
+
 		[SettingDescription("Support extrusion percent.")]
 		public double supportExtrusionPercent;
 
@@ -193,6 +198,9 @@ namespace MatterHackers.MatterSlice
 
 		[SettingDescription("The speed of the first perimeter. mm/s.")]
 		public int outsidePerimeterSpeed;
+
+		[SettingDescription("The extrusion width of all outside perimeters")]
+		public double outsidePerimeterExtrusionWidth;
 
 		[SettingDescription("The speed of all perimeters but the outside one. mm/s.")]
 		public int insidePerimetersSpeed;
@@ -351,6 +359,7 @@ namespace MatterHackers.MatterSlice
 			bridgeFanSpeedPercent = 100;
 			raftFanSpeedPercent = 100;
 			outsidePerimeterSpeed = 50;
+			outsidePerimeterExtrusionWidth = extrusionWidth;
 			insidePerimetersSpeed = 50;
 			travelSpeed = 200;
 			firstLayerToAllowFan = 2;

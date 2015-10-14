@@ -28,14 +28,11 @@ namespace MatterHackers.MatterSlice
 
 	public static class Inset
 	{
-		public static void GenerateInsets(SliceLayerPart part, int offset_um, int outerPerimeterOffset_um, int insetCount)
-		{
-			double minimumDistanceToCreateNewPosition = 10;
+		private static readonly double minimumDistanceToCreateNewPosition = 10;
 
-			int currentOffset = 0;
-			int offsetBy = outerPerimeterOffset_um / 2;
-		
-			part.AvoidCrossingBoundery = part.TotalOutline.Offset(-offset_um);
+		public static void GenerateInsets(SliceLayerPart part, int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
+		{
+			part.AvoidCrossingBoundery = part.TotalOutline.Offset(-extrusionWidth_um);
 			if (insetCount == 0)
 			{
 				// if we have no insets defined still create one
@@ -43,8 +40,14 @@ namespace MatterHackers.MatterSlice
 			}
 			else // generate the insets
 			{
+				int currentOffset = 0;
+
+				// Inset 0 will use the outerExtrusionWidth_um, everyone else will use extrusionWidth_um
+				int offsetBy = outerExtrusionWidth_um / 2;
+
 				for (int i = 0; i < insetCount; i++)
 				{
+					// Incriment by half the offset amount
 					currentOffset += offsetBy;
 		
 					Polygons currentInset = part.TotalOutline.Offset(-currentOffset);
@@ -55,8 +58,9 @@ namespace MatterHackers.MatterSlice
 					if (currentInset.Count > 0)
 					{
 						part.Insets.Add(currentInset);
-						currentOffset += (offsetBy + offset_um / 2);
-						offsetBy = offset_um / 2;
+
+						// Incriment by the second half
+						currentOffset += offsetBy;
 					}
 					else
 					{
@@ -64,21 +68,20 @@ namespace MatterHackers.MatterSlice
 						break;
 					}
 
-					currentOffset += offsetBy;
-
 					if (i == 0)
 					{
-						offsetBy = offset_um / 2;
+						// Reset offset amount to half the standard extrusion width
+						offsetBy = extrusionWidth_um / 2;
 					}
 				}
 			}
 		}
 
-		public static void generateInsets(SliceLayer layer, int offset_um, int outerPerimeterOffset_um, int insetCount)
+		public static void generateInsets(SliceLayer layer, int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
 		{
 			for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
 			{
-				GenerateInsets(layer.parts[partIndex], offset_um, outerPerimeterOffset_um, insetCount);
+				GenerateInsets(layer.parts[partIndex], extrusionWidth_um, outerExtrusionWidth_um, insetCount);
 			}
 
 			//Remove the parts which did not generate an inset. As these parts are too small to print,
