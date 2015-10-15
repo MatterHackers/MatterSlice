@@ -141,7 +141,7 @@ namespace MatterHackers.MatterSlice
 
 		private static void RemoveSmallAreas(int extrusionWidth, Polygons solidInfillOutlinesUp)
 		{
-			double minAreaSize = (2 * Math.PI * (extrusionWidth / 1000.0) * (extrusionWidth / 1000.0)) * 0.3;
+			double minAreaSize = (2 * Math.PI * (extrusionWidth / 1000.0) * (extrusionWidth / 1000.0)) * 0.1;
 			for (int outlineIndex = 0; outlineIndex < solidInfillOutlinesUp.Count; outlineIndex++)
 			{
 				double area = Math.Abs(solidInfillOutlinesUp[outlineIndex].Area()) / 1000.0 / 1000.0;

@@ -516,7 +516,7 @@ namespace MatterHackers.MatterSlice
 			return !ShorterThen(p0, len);
 		}
 
-		public static IntPoint Normal(this IntPoint thisPoint, int len)
+		public static IntPoint Normal(this IntPoint thisPoint, long len)
 		{
 			long _len = thisPoint.Length();
 			if (_len < 1)
