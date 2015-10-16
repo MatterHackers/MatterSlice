@@ -38,7 +38,8 @@ namespace MatterHackers.MatterSlice
 			for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
 			{
 				SliceLayerPart part = layer.parts[partIndex];
-				Polygons insetWithOffset = part.Insets[part.Insets.Count - 1].Offset(-extrusionWidth_um / 2);
+				// this is the entire extrusion width to make sure we our outside of the extrusion line
+				Polygons insetWithOffset = part.Insets[part.Insets.Count - 1].Offset(-extrusionWidth_um);
 				Polygons infillOutlines = new Polygons(insetWithOffset);
 
 				// calculate the bottom outlines
