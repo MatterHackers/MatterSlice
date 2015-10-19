@@ -41,8 +41,6 @@ namespace MatterHackers.MatterSlice
 
             // create starting support outlines
             CreateAllPossibleSupport(numLayers, config, storage);
-            // remove any portion that will be sitting on existing parts
-            RemoveExistingIntersection(numLayers, storage);
             // clip to xy distance from all parts
             // change top layers into interface layers
             // expand interface layers to be grabable outside the mesh
@@ -57,6 +55,8 @@ namespace MatterHackers.MatterSlice
 
         private void CreateAllPossibleSupport(int numLayers, ConfigSettings config, SliceVolumeStorage storage)
         {
+            int selfSupportDistance = config.outsideExtrusionWidth_um / 2;
+
             Polygons accumulatedBottoms = new Polygons();
 
             // calculate all the non-supported areas
@@ -73,6 +73,19 @@ namespace MatterHackers.MatterSlice
                         SliceLayerPart belowPart = belowLayer.parts[0];
                         Polygons belowLayerPolys = belowPart.TotalOutline.Offset(-config.outsideExtrusionWidth_um / 2);
                         Polygons activeLayerPolys = curLayerPolys.CreateDifference(belowLayerPolys);
+
+                        // remove anything that is less than the selfSupportDistance
+                        {
+                            Polygons noSelfSupportPolys = activeLayerPolys.Offset(-selfSupportDistance);
+                            // expand it back out
+                            activeLayerPolys = noSelfSupportPolys.Offset(selfSupportDistance);
+                        }
+
+                        // remove any portion that will be sitting on existing parts
+                        {
+                            accumulatedBottoms = accumulatedBottoms.CreateDifference(curLayerPolys);
+                            accumulatedBottoms = Clipper.CleanPolygons(accumulatedBottoms, cleanDistance_um);
+                        }
 
                         accumulatedBottoms = accumulatedBottoms.CreateUnion(activeLayerPolys);
                         accumulatedBottoms = Clipper.CleanPolygons(accumulatedBottoms, cleanDistance_um);
