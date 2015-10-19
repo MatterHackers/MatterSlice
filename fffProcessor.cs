@@ -18,6 +18,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+//#define createNewSupports
 
 using MatterSlice.ClipperLib;
 using System;
@@ -432,7 +433,14 @@ namespace MatterHackers.MatterSlice
 			// keep the raft generation code inside of raft
 			Raft.GenerateRaftGCodeIfRequired(storage, config, gcode);
 
-			int volumeIndex = 0;
+            NewSupport newSupport = null;
+#if createNewSupports
+            {
+                newSupport = new NewSupport(totalLayers, config, storage.volumes[0]);
+            }
+#endif
+
+            int volumeIndex = 0;
 			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 			{
 				if (MatterSlice.Canceled)
@@ -508,7 +516,13 @@ namespace MatterHackers.MatterSlice
 					AddSupportToGCode(storage, gcodeLayer, layerIndex, config);
 				}
 
-				int fanSpeedPercent = GetFanSpeed(layerIndex, gcodeLayer);
+#if createNewSupports
+                {
+                    newSupport.AddSupportToGCode(gcodeLayer, layerIndex, supportNormalConfig);
+                }
+#endif
+
+                int fanSpeedPercent = GetFanSpeed(layerIndex, gcodeLayer);
 
 				for (int volumeCnt = 0; volumeCnt < storage.volumes.Count; volumeCnt++)
 				{

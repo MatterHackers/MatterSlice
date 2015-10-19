@@ -118,6 +118,7 @@
     <Compile Include="sliceDataStorage.cs" />
     <Compile Include="Slicer\SlicerLayer.cs" />
     <Compile Include="Slicer\Slicer.cs" />
+    <Compile Include="NewSupport.cs" />
     <Compile Include="utils\clipper.cs" />
     <Compile Include="utils\floatpoint.cs" />
     <Compile Include="main.cs" />
