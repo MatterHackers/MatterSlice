@@ -32,7 +32,7 @@ namespace MatterHackers.MatterSlice
 
 	public static class Bridge
 	{
-		public static bool BridgeAngle(Polygons outline, SliceLayer prevLayer, out double bridgeAngle, string debugName = "")
+		public static bool BridgeAngle(Polygons outline, SliceLayerParts prevLayer, out double bridgeAngle, string debugName = "")
 		{
 			bridgeAngle = -1;
 			Aabb boundaryBox = new Aabb(outline);

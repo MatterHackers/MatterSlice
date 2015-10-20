@@ -54,8 +54,8 @@ namespace MatterHackers.MatterSlice.Tests
 			string[] segmentsToCheck = File.ReadAllLines(pathToData);
 			foreach (string line in segmentsToCheck)
 			{
-				List<SlicerSegment> segmentsList = SlicerLayer.CreateSegmentListFromString(line);
-				SlicerLayer layer = new SlicerLayer(1, line);
+				List<SlicePerimeterSegment> segmentsList = SliceLayer.CreateSegmentListFromString(line);
+				SliceLayer layer = new SliceLayer(1, line);
 				layer.MakePolygons(ConfigConstants.REPAIR_OUTLINES.NONE);
 
 				Assert.IsTrue(layer.PolygonList.Count == 1);
@@ -70,8 +70,8 @@ namespace MatterHackers.MatterSlice.Tests
 			string[] segmentsToCheck = File.ReadAllLines(pathToData);
 			foreach (string line in segmentsToCheck)
 			{
-				List<SlicerSegment> segmentsList = SlicerLayer.CreateSegmentListFromString(line);
-				SlicerLayer layer = new SlicerLayer(1, line);
+				List<SlicePerimeterSegment> segmentsList = SliceLayer.CreateSegmentListFromString(line);
+				SliceLayer layer = new SliceLayer(1, line);
 				layer.MakePolygons(ConfigConstants.REPAIR_OUTLINES.NONE);
 
 				Assert.IsTrue(layer.PolygonList.Count == 2);
@@ -81,14 +81,14 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void DumpSegmentsWorks()
 		{
-			List<SlicerSegment> testSegments = new List<SlicerSegment>();
-			testSegments.Add(new SlicerSegment(new IntPoint(1, 2), new IntPoint(3, 4)));
-			testSegments.Add(new SlicerSegment(new IntPoint(4, 2), new IntPoint(5, 4)));
-			testSegments.Add(new SlicerSegment(new IntPoint(3, 2), new IntPoint(9, 4)));
-			testSegments.Add(new SlicerSegment(new IntPoint(6, 2), new IntPoint(3, 7)));
+			List<SlicePerimeterSegment> testSegments = new List<SlicePerimeterSegment>();
+			testSegments.Add(new SlicePerimeterSegment(new IntPoint(1, 2), new IntPoint(3, 4)));
+			testSegments.Add(new SlicePerimeterSegment(new IntPoint(4, 2), new IntPoint(5, 4)));
+			testSegments.Add(new SlicePerimeterSegment(new IntPoint(3, 2), new IntPoint(9, 4)));
+			testSegments.Add(new SlicePerimeterSegment(new IntPoint(6, 2), new IntPoint(3, 7)));
 
-			string segmentsString = SlicerLayer.DumpSegmentListToString(testSegments);
-			List<SlicerSegment> outSegments = SlicerLayer.CreateSegmentListFromString(segmentsString);
+			string segmentsString = SliceLayer.DumpSegmentListToString(testSegments);
+			List<SlicePerimeterSegment> outSegments = SliceLayer.CreateSegmentListFromString(segmentsString);
 
 			Assert.True(testSegments.Count == outSegments.Count);
 			for (int i = 0; i < testSegments.Count; i++)

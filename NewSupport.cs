@@ -32,7 +32,7 @@ namespace MatterHackers.MatterSlice
         readonly static double cleanDistance_um = 10;
         public List<Polygons> supportPolygons = new List<Polygons>();
 
-        public NewSupport(int numLayers, ConfigSettings config, SliceVolumeStorage storage)
+        public NewSupport(int numLayers, ConfigSettings config, PartLayers storage)
         {
             for (int i = 0; i < numLayers; i++)
             {
@@ -53,7 +53,7 @@ namespace MatterHackers.MatterSlice
         }
 
 
-        private void CreateAllPossibleSupport(int numLayers, ConfigSettings config, SliceVolumeStorage storage)
+        private void CreateAllPossibleSupport(int numLayers, ConfigSettings config, PartLayers storage)
         {
             int selfSupportDistance = config.outsideExtrusionWidth_um / 2;
 
@@ -62,8 +62,8 @@ namespace MatterHackers.MatterSlice
             // calculate all the non-supported areas
             for (int layerIndex = numLayers - 1; layerIndex > 0; layerIndex--)
             {
-                SliceLayer belowLayer = storage.layers[layerIndex - 1];
-                SliceLayer curLayer = storage.layers[layerIndex];
+                SliceLayerParts belowLayer = storage.Layers[layerIndex - 1];
+                SliceLayerParts curLayer = storage.Layers[layerIndex];
                 for (int partIndex = 0; partIndex < curLayer.parts.Count; partIndex++)
                 {
                     SliceLayerPart curPart = curLayer.parts[partIndex];
@@ -71,14 +71,14 @@ namespace MatterHackers.MatterSlice
                     if (belowLayer.parts.Count > 0)
                     {
                         SliceLayerPart belowPart = belowLayer.parts[0];
-                        Polygons belowLayerPolys = belowPart.TotalOutline.Offset(-config.outsideExtrusionWidth_um / 2);
+                        Polygons belowLayerPolys = belowPart.TotalOutline;//.Offset(-config.outsideExtrusionWidth_um / 2);
                         Polygons activeLayerPolys = curLayerPolys.CreateDifference(belowLayerPolys);
 
                         // remove anything that is less than the selfSupportDistance
                         {
-                            Polygons noSelfSupportPolys = activeLayerPolys.Offset(-selfSupportDistance);
+                            //Polygons noSelfSupportPolys = activeLayerPolys.Offset(-selfSupportDistance);
                             // expand it back out
-                            activeLayerPolys = noSelfSupportPolys.Offset(selfSupportDistance);
+                            //activeLayerPolys = noSelfSupportPolys.Offset(selfSupportDistance);
                         }
 
                         // remove any portion that will be sitting on existing parts
@@ -105,11 +105,11 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        private void RemoveExistingIntersection(int numLayers, SliceVolumeStorage storage)
+        private void RemoveExistingIntersection(int numLayers, PartLayers storage)
         {
             for (int layerIndex = numLayers - 1; layerIndex > 0; layerIndex--)
             {
-                SliceLayer curLayer = storage.layers[layerIndex];
+                SliceLayerParts curLayer = storage.Layers[layerIndex];
                 for (int partIndex = 0; partIndex < curLayer.parts.Count; partIndex++)
                 {
                     SliceLayerPart curPart = curLayer.parts[partIndex];

@@ -77,7 +77,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static void generateInsets(SliceLayer layer, int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
+		public static void generateInsets(SliceLayerParts layer, int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
 		{
 			for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
 			{

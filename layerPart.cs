@@ -41,7 +41,7 @@ namespace MatterHackers.MatterSlice
 		It's also the first step that stores the result in the "data storage" so all other steps can access it.
 		*/
 
-		private static void CreateLayerWithParts(SliceLayer storageLayer, SlicerLayer layer, ConfigConstants.REPAIR_OVERLAPS unionAllType)
+		private static void CreateLayerWithParts(SliceLayerParts storageLayer, SliceLayer layer, ConfigConstants.REPAIR_OVERLAPS unionAllType)
 		{
 			if ((unionAllType & ConfigConstants.REPAIR_OVERLAPS.REVERSE_ORIENTATION) == ConfigConstants.REPAIR_OVERLAPS.REVERSE_ORIENTATION)
 			{
@@ -81,13 +81,13 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static void CreateLayerParts(SliceVolumeStorage storage, Slicer slicer, ConfigConstants.REPAIR_OVERLAPS unionAllType)
+		public static void CreateLayerParts(PartLayers storage, Slicer slicer, ConfigConstants.REPAIR_OVERLAPS unionAllType)
 		{
 			for (int layerIndex = 0; layerIndex < slicer.layers.Count; layerIndex++)
 			{
-				storage.layers.Add(new SliceLayer());
-				storage.layers[layerIndex].printZ = slicer.layers[layerIndex].Z;
-				LayerPart.CreateLayerWithParts(storage.layers[layerIndex], slicer.layers[layerIndex], unionAllType);
+				storage.Layers.Add(new SliceLayerParts());
+				storage.Layers[layerIndex].printZ = slicer.layers[layerIndex].Z;
+				LayerPart.CreateLayerWithParts(storage.Layers[layerIndex], slicer.layers[layerIndex], unionAllType);
 			}
 		}
 
@@ -98,12 +98,12 @@ namespace MatterHackers.MatterSlice
 			Point3 modelSize = storage.modelSize;
 			Point3 modelMin = storage.modelMin;
 
-			for (int volumeIdx = 0; volumeIdx < storage.volumes.Count; volumeIdx++)
+			for (int volumeIdx = 0; volumeIdx < storage.AllPartsLayers.Count; volumeIdx++)
 			{
-				for (int layerNr = 0; layerNr < storage.volumes[volumeIdx].layers.Count; layerNr++)
+				for (int layerNr = 0; layerNr < storage.AllPartsLayers[volumeIdx].Layers.Count; layerNr++)
 				{
 					streamToWriteTo.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style=\"width: 500px; height:500px\">\n");
-					SliceLayer layer = storage.volumes[volumeIdx].layers[layerNr];
+					SliceLayerParts layer = storage.AllPartsLayers[volumeIdx].Layers[layerNr];
 					for (int i = 0; i < layer.parts.Count; i++)
 					{
 						SliceLayerPart part = layer.parts[i];

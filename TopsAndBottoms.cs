@@ -31,9 +31,9 @@ namespace MatterHackers.MatterSlice
 	{
 		readonly static double cleanDistance_um = 10;
 
-		public static void GenerateTopAndBottom(int layerIndex, SliceVolumeStorage storage, int extrusionWidth_um, int outerPerimeterWidth_um, int downLayerCount, int upLayerCount)
+		public static void GenerateTopAndBottom(int layerIndex, PartLayers storage, int extrusionWidth_um, int outerPerimeterWidth_um, int downLayerCount, int upLayerCount)
 		{
-			SliceLayer layer = storage.layers[layerIndex];
+			SliceLayerParts layer = storage.Layers[layerIndex];
 
 			for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
 			{
@@ -49,7 +49,7 @@ namespace MatterHackers.MatterSlice
 
 					if (layerIndex - 1 >= 0)
 					{
-						bottomOutlines = RemoveAdditionalOutlinesForPart(storage.layers[layerIndex - 1], part, bottomOutlines);
+						bottomOutlines = RemoveAdditionalOutlinesForPart(storage.Layers[layerIndex - 1], part, bottomOutlines);
 						RemoveSmallAreas(extrusionWidth_um, bottomOutlines);
 					}
 
@@ -79,10 +79,10 @@ namespace MatterHackers.MatterSlice
 						topOutlines.AddAll(thinWalls);
 					}
 
-					if (layerIndex + 1 < storage.layers.Count)
+					if (layerIndex + 1 < storage.Layers.Count)
 					{
 						// Remove the top layer that is above this one to get only the data that is a top layer on this layer.
-						topOutlines = RemoveAdditionalOutlinesForPart(storage.layers[layerIndex + 1], part, topOutlines);
+						topOutlines = RemoveAdditionalOutlinesForPart(storage.Layers[layerIndex + 1], part, topOutlines);
 					}
 
 					RemoveSmallAreas(extrusionWidth_um, topOutlines);
@@ -103,7 +103,7 @@ namespace MatterHackers.MatterSlice
 					solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
 
 					int upEnd = layerIndex + upLayerCount + 1;
-					if (upEnd <= storage.layers.Count && layerIndex - downLayerCount >= 0)
+					if (upEnd <= storage.Layers.Count && layerIndex - downLayerCount >= 0)
 					{
 						Polygons totalPartsToRemove = new Polygons(insetWithOffset);
 
@@ -111,7 +111,7 @@ namespace MatterHackers.MatterSlice
 
 						for (int layerToTest = upStart; layerToTest < upEnd; layerToTest++)
 						{
-							totalPartsToRemove = AddAllOutlines(storage.layers[layerToTest], part, totalPartsToRemove);
+							totalPartsToRemove = AddAllOutlines(storage.Layers[layerToTest], part, totalPartsToRemove);
 							totalPartsToRemove = Clipper.CleanPolygons(totalPartsToRemove, cleanDistance_um);
 						}
 
@@ -120,7 +120,7 @@ namespace MatterHackers.MatterSlice
 
 						for (int layerToTest = downStart; layerToTest >= downEnd; layerToTest--)
 						{
-							totalPartsToRemove = AddAllOutlines(storage.layers[layerToTest], part, totalPartsToRemove);
+							totalPartsToRemove = AddAllOutlines(storage.Layers[layerToTest], part, totalPartsToRemove);
 							totalPartsToRemove = Clipper.CleanPolygons(totalPartsToRemove, cleanDistance_um);
 						}
 
@@ -154,7 +154,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private static Polygons RemoveAdditionalOutlinesForPart(SliceLayer layerToSubtract, SliceLayerPart partToUseAsBounds, Polygons polygonsToSubtractFrom)
+		private static Polygons RemoveAdditionalOutlinesForPart(SliceLayerParts layerToSubtract, SliceLayerPart partToUseAsBounds, Polygons polygonsToSubtractFrom)
 		{
 			for (int partIndex = 0; partIndex < layerToSubtract.parts.Count; partIndex++)
 			{
@@ -169,7 +169,7 @@ namespace MatterHackers.MatterSlice
 			return polygonsToSubtractFrom;
 		}
 
-		private static Polygons AddAllOutlines(SliceLayer layerToAdd, SliceLayerPart partToUseAsBounds, Polygons polysToAddTo)
+		private static Polygons AddAllOutlines(SliceLayerParts layerToAdd, SliceLayerPart partToUseAsBounds, Polygons polysToAddTo)
 		{
 			Polygons polysToIntersect = new Polygons();
 			for (int partIndex = 0; partIndex < layerToAdd.parts.Count; partIndex++)

@@ -28,17 +28,17 @@ namespace MatterHackers.MatterSlice
 {
 	using Polygon = List<IntPoint>;
 
-	public class SlicerSegment
+	public class SlicePerimeterSegment
 	{
 		public IntPoint start;
 		public IntPoint end;
 		public bool hasBeenAddedToPolygon;
 
-		public SlicerSegment()
+		public SlicePerimeterSegment()
 		{
 		}
 
-		public SlicerSegment(IntPoint start, IntPoint end)
+		public SlicePerimeterSegment(IntPoint start, IntPoint end)
 		{
 			this.start = start;
 			this.end = end;
@@ -47,7 +47,7 @@ namespace MatterHackers.MatterSlice
 
 	public class Slicer
 	{
-		public List<SlicerLayer> layers = new List<SlicerLayer>();
+		public List<SliceLayer> layers = new List<SliceLayer>();
 		public Point3 modelSize;
 		public Point3 modelMin;
 
@@ -83,7 +83,7 @@ namespace MatterHackers.MatterSlice
 				{
 					z = initialLayerThickness_um + layerThickness_um / 2 + layerThickness_um * (layerIndex - 1);
 				}
-				layers.Add(new SlicerLayer(z));
+				layers.Add(new SliceLayer(z));
 			}
 
 			for (int faceIndex = 0; faceIndex < ov.facesTriangle.Count; faceIndex++)
@@ -106,7 +106,7 @@ namespace MatterHackers.MatterSlice
 						continue;
 					}
 
-					SlicerSegment polyCrossingAtThisZ;
+					SlicePerimeterSegment polyCrossingAtThisZ;
 					if (p0.z < z && p1.z >= z && p2.z >= z)
 					{
 						// p1   p2
@@ -167,9 +167,9 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public SlicerSegment GetCrossingAtZ(Point3 singlePointOnSide, Point3 otherSide1, Point3 otherSide2, int z)
+		public SlicePerimeterSegment GetCrossingAtZ(Point3 singlePointOnSide, Point3 otherSide1, Point3 otherSide2, int z)
 		{
-			SlicerSegment seg = new SlicerSegment();
+			SlicePerimeterSegment seg = new SlicePerimeterSegment();
 			seg.start.X = (long)(singlePointOnSide.x + (double)(otherSide1.x - singlePointOnSide.x) * (double)(z - singlePointOnSide.z) / (double)(otherSide1.z - singlePointOnSide.z) + .5);
 			seg.start.Y = (long)(singlePointOnSide.y + (double)(otherSide1.y - singlePointOnSide.y) * (double)(z - singlePointOnSide.z) / (double)(otherSide1.z - singlePointOnSide.z) + .5);
 			seg.end.X = (long)(singlePointOnSide.x + (double)(otherSide2.x - singlePointOnSide.x) * (double)(z - singlePointOnSide.z) / (double)(otherSide2.z - singlePointOnSide.z) + .5);
@@ -186,7 +186,7 @@ namespace MatterHackers.MatterSlice
 			for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
 			{
 				stream.Write("; LAYER:{0}\n".FormatWith(layerIndex));
-				List<SlicerSegment> segmentList = layers[layerIndex].SegmentList;
+				List<SlicePerimeterSegment> segmentList = layers[layerIndex].SegmentList;
 				for (int segmentIndex = 0; segmentIndex < segmentList.Count; segmentIndex++)
 				{
 					stream.Write("G1 X{0}Y{1}\n", (double)(segmentList[segmentIndex].start.X) / scale,

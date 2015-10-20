@@ -49,13 +49,11 @@ namespace MatterHackers.MatterSlice
 		public Polygons InfillOutlines = new Polygons();
 	};
 
-	public class SliceLayer
+	public class SliceLayerParts
 	{
 		public long printZ;
 		public List<SliceLayerPart> parts = new List<SliceLayerPart>();
 	};
-
-	/******************/
 
 	public class SupportPoint
 	{
@@ -240,11 +238,9 @@ namespace MatterHackers.MatterSlice
 		}
 	}
 
-	/******************/
-
-	public class SliceVolumeStorage
+	public class PartLayers
 	{
-		public List<SliceLayer> layers = new List<SliceLayer>();
+		public List<SliceLayerParts> Layers = new List<SliceLayerParts>();
 	}
 
 	public class SliceDataStorage
@@ -253,7 +249,7 @@ namespace MatterHackers.MatterSlice
 		public Polygons skirt = new Polygons();
 		public Polygons raftOutline = new Polygons();
 		public List<Polygons> wipeShield = new List<Polygons>();
-		public List<SliceVolumeStorage> volumes = new List<SliceVolumeStorage>();
+		public List<PartLayers> AllPartsLayers = new List<PartLayers>();
 
 		public SupportStorage support = new SupportStorage();
 		public Polygons wipeTower = new Polygons();

@@ -140,7 +140,7 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			Polygons outline = PolygonsHelper.CreateFromString(outlineString);
 
-			SliceLayer prevLayer = new SliceLayer();
+			SliceLayerParts prevLayer = new SliceLayerParts();
 			prevLayer.parts = new List<SliceLayerPart>();
 			SliceLayerPart part = new SliceLayerPart();
 			part.TotalOutline = PolygonsHelper.CreateFromString(partOutlineString);

@@ -36,19 +36,19 @@ namespace MatterHackers.MatterSlice
 				int offsetDistance = distance + extrusionWidth_um * skirtLoop + extrusionWidth_um / 2;
 
 				Polygons skirtPolygons = new Polygons(storage.wipeTower.Offset(offsetDistance));
-				for (int volumeIndex = 0; volumeIndex < storage.volumes.Count; volumeIndex++)
+				for (int volumeIndex = 0; volumeIndex < storage.AllPartsLayers.Count; volumeIndex++)
 				{
 					if (config.continuousSpiralOuterPerimeter && volumeIndex > 0)
 					{
 						continue;
 					}
 
-					if (storage.volumes[volumeIndex].layers.Count < 1)
+					if (storage.AllPartsLayers[volumeIndex].Layers.Count < 1)
 					{
 						continue;
 					}
 
-					SliceLayer layer = storage.volumes[volumeIndex].layers[0];
+					SliceLayerParts layer = storage.AllPartsLayers[volumeIndex].Layers[0];
 					for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
 					{
 						if (config.continuousSpiralOuterPerimeter && partIndex > 0)

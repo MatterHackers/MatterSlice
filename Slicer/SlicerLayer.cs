@@ -48,20 +48,20 @@ namespace MatterHackers.MatterSlice
 		public int polygonIndex;
 	}
 
-	public class SlicerLayer
+	public class SliceLayer
 	{
 		public Polygons PolygonList = new Polygons();
-		public List<SlicerSegment> SegmentList = new List<SlicerSegment>();
+		public List<SlicePerimeterSegment> SegmentList = new List<SlicePerimeterSegment>();
 
 		private Polygons openPolygonList = new Polygons();
 		private int z;
 
-		public SlicerLayer(int z)
+		public SliceLayer(int z)
 		{
 			this.z = z;
 		}
 
-		public SlicerLayer(int z, string segmentListData)
+		public SliceLayer(int z, string segmentListData)
 		{
 			this.z = z;
 			SegmentList = CreateSegmentListFromString(segmentListData);
@@ -69,9 +69,9 @@ namespace MatterHackers.MatterSlice
 
 		public int Z { get { return z; } }
 
-		public static List<SlicerSegment> CreateSegmentListFromString(string segmentListData)
+		public static List<SlicePerimeterSegment> CreateSegmentListFromString(string segmentListData)
 		{
-			List<SlicerSegment> output = new List<SlicerSegment>();
+			List<SlicePerimeterSegment> output = new List<SlicePerimeterSegment>();
 			string[] segmentData = segmentListData.Split('|');
 			foreach (string segment in segmentData)
 			{
@@ -86,17 +86,17 @@ namespace MatterHackers.MatterSlice
 						string elementY = coordinates[1];
 						outPoints.Add(new IntPoint(int.Parse(elementX.Substring(2)), int.Parse(elementY.Substring(3))));
 					}
-					output.Add(new SlicerSegment(outPoints[0], outPoints[1]));
+					output.Add(new SlicePerimeterSegment(outPoints[0], outPoints[1]));
 				}
 			}
 
 			return output;
 		}
 
-		public static string DumpSegmentListToString(List<SlicerSegment> segmentList)
+		public static string DumpSegmentListToString(List<SlicePerimeterSegment> segmentList)
 		{
 			string total = "";
-			foreach (SlicerSegment point in segmentList)
+			foreach (SlicePerimeterSegment point in segmentList)
 			{
 				total += point.start.ToString() + "&";
 				total += point.end.ToString() + "|";

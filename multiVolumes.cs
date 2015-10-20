@@ -28,17 +28,17 @@ namespace MatterHackers.MatterSlice
 
 	public static class MultiVolumes
 	{
-		public static void RemoveVolumesIntersections(List<SliceVolumeStorage> volumes)
+		public static void RemoveVolumesIntersections(List<PartLayers> volumes)
 		{
 			//Go trough all the volumes, and remove the previous volume outlines from our own outline, so we never have overlapped areas.
 			for (int volumeToRemoveFromIndex = volumes.Count - 1; volumeToRemoveFromIndex >= 0; volumeToRemoveFromIndex--)
 			{
 				for (int volumeToRemoveIndex = volumeToRemoveFromIndex - 1; volumeToRemoveIndex >= 0; volumeToRemoveIndex--)
 				{
-					for (int layerIndex = 0; layerIndex < volumes[volumeToRemoveFromIndex].layers.Count; layerIndex++)
+					for (int layerIndex = 0; layerIndex < volumes[volumeToRemoveFromIndex].Layers.Count; layerIndex++)
 					{
-						SliceLayer layerToRemoveFrom = volumes[volumeToRemoveFromIndex].layers[layerIndex];
-						SliceLayer layerToRemove = volumes[volumeToRemoveIndex].layers[layerIndex];
+						SliceLayerParts layerToRemoveFrom = volumes[volumeToRemoveFromIndex].Layers[layerIndex];
+						SliceLayerParts layerToRemove = volumes[volumeToRemoveIndex].Layers[layerIndex];
 						for (int partToRemoveFromIndex = 0; partToRemoveFromIndex < layerToRemoveFrom.parts.Count; partToRemoveFromIndex++)
 						{
 							for (int partToRemove = 0; partToRemove < layerToRemove.parts.Count; partToRemove++)
@@ -53,19 +53,19 @@ namespace MatterHackers.MatterSlice
 
 		//Expand each layer a bit and then keep the extra overlapping parts that overlap with other volumes.
 		//This generates some overlap in dual extrusion, for better bonding in touching parts.
-		public static void OverlapMultipleVolumesSlightly(List<SliceVolumeStorage> volumes, int overlap)
+		public static void OverlapMultipleVolumesSlightly(List<PartLayers> volumes, int overlap)
 		{
 			if (volumes.Count < 2 || overlap <= 0)
 			{
 				return;
 			}
 
-			for (int layerIndex = 0; layerIndex < volumes[0].layers.Count; layerIndex++)
+			for (int layerIndex = 0; layerIndex < volumes[0].Layers.Count; layerIndex++)
 			{
 				Polygons fullLayer = new Polygons();
 				for (int volIdx = 0; volIdx < volumes.Count; volIdx++)
 				{
-					SliceLayer layer1 = volumes[volIdx].layers[layerIndex];
+					SliceLayerParts layer1 = volumes[volIdx].Layers[layerIndex];
 					for (int p1 = 0; p1 < layer1.parts.Count; p1++)
 					{
 						fullLayer = fullLayer.CreateUnion(layer1.parts[p1].TotalOutline.Offset(20));
@@ -75,7 +75,7 @@ namespace MatterHackers.MatterSlice
 
 				for (int volumeIndex = 0; volumeIndex < volumes.Count; volumeIndex++)
 				{
-					SliceLayer layer1 = volumes[volumeIndex].layers[layerIndex];
+					SliceLayerParts layer1 = volumes[volumeIndex].Layers[layerIndex];
 					for (int partIndex = 0; partIndex < layer1.parts.Count; partIndex++)
 					{
 						layer1.parts[partIndex].TotalOutline = fullLayer.CreateIntersection(layer1.parts[partIndex].TotalOutline.Offset(overlap / 2));
