@@ -35,6 +35,9 @@ using System.IO;
 
 namespace MatterHackers.MatterSlice.Tests
 {
+	using Polygon = List<IntPoint>;
+	using Polygons = List<List<IntPoint>>;
+
 	[TestFixture, Category("MatterSlice.PathOrderTests")]
 	public class PathOrderTests
 	{
@@ -101,28 +104,61 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// find the right point wound ccw
 			{
+				// 4________3
+				// |       /
+				// |      /2
+				// |      \
+				// |o______\1
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(10, 0), new IntPoint(9, 5), new IntPoint(10, 10), new IntPoint(0, 10) };
-				int betsPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
-				Assert.IsTrue(betsPoint == 2);
+				int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+				Assert.IsTrue(bestPoint == 2);
+			}
+
+			// find the right point wound ccw
+			{
+				// 4________3
+				// |       /
+				// |      /2
+				// |      \
+				// |o______\1
+				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(1000, 0), new IntPoint(900, 500), new IntPoint(1000, 1000), new IntPoint(0, 1000) };
+				int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+				Assert.IsTrue(bestPoint == 2);
 			}
 
 			{
+				// 2________1
+				// |       /
+				// |      /0
+				// |      \
+				// |3______\4
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(9, 5), new IntPoint(10, 10), new IntPoint(0, 10), new IntPoint(0, 0), new IntPoint(10, 0) };
-				int betsPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
-				Assert.IsTrue(betsPoint == 0);
+				int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+				Assert.IsTrue(bestPoint == 0);
 			}
 
 			// find the right point wound cw
 			{
+				// 1________2
+				// |       /
+				// |      /3
+				// |      \
+				// |0______\4
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(0, 10), new IntPoint(10, 10), new IntPoint(9, 5), new IntPoint(10, 0) };
-				int betsPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
-				Assert.IsTrue(betsPoint == 3);
+				int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+				Assert.IsTrue(bestPoint == 3);
 			}
 
 			{
+				// 2________3
+				// |       /
+				// |      /4
+				// |      \
+				// |1______\0
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(10, 0), new IntPoint(0, 0), new IntPoint(0, 10), new IntPoint(10, 10), new IntPoint(9, 5) };
-				int betsPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
-				Assert.IsTrue(betsPoint == 4);
+				int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+				Assert.IsTrue(bestPoint == 4);
+			}
 			}
 		}
 	}

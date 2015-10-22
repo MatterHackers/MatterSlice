@@ -168,8 +168,13 @@ namespace MatterHackers.MatterSlice
 				}
 				else // This is a closed loop.
 				{
-					//int bestPointIndex = GetBestEdgeIndex(currentPolygon);
-					int bestPointIndex = GetClosestIndex(currentPolygon, startPosition);
+					// some code for helping create unit tests
+					//string polyString = currentPolygon.WriteToString();
+					//currentPolygon.SaveToGCode("perimeter.gcode");
+
+					// this is our new seam hiding code
+					int bestPointIndex = GetBestEdgeIndex(currentPolygon);
+					//int bestPointIndex = GetClosestIndex(currentPolygon, startPosition);
 					startIndexInPolygon.Add(bestPointIndex);
 				}
 			}
@@ -259,6 +264,8 @@ namespace MatterHackers.MatterSlice
 						bestStartPoint = endIndex;
 						bestDist = dist;
 					}
+
+					startIndexInPolygon[bestPolygonIndex] = bestStartPoint;
 				}
 				else
 				{
@@ -272,7 +279,7 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 				}
-				startIndexInPolygon[bestPolygonIndex] = bestStartPoint;
+
 				if (polygons[bestPolygonIndex].Count == 2 || canTravelForwardOrBackward)
 				{
 					if (bestStartPoint == 0)
