@@ -159,7 +159,6 @@ namespace MatterHackers.MatterSlice.Tests
 				int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
 				Assert.IsTrue(bestPoint == 4);
 			}
-			}
 		}
 	}
 }
