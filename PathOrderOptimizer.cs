@@ -95,8 +95,86 @@ namespace MatterHackers.MatterSlice
 
 		internal struct CandidatePoint
 		{
-			int turnValue = 0;
-			int turnIndex = -1;
+			internal double turnAmount;
+			internal int turnIndex;
+			internal IntPoint position;
+
+			internal CandidatePoint(double turnAmount, int turnIndex, IntPoint position)
+			{
+				this.turnIndex = turnIndex;
+				this.turnAmount = turnAmount;
+				this.position = position;
+			}
+		}
+
+		public static double DegreesToRadians(double degrees)
+		{
+			const double degToRad = System.Math.PI / 180.0f;
+			return degrees * degToRad;
+		}
+
+		internal class CandidateGroup : List<CandidatePoint>
+		{
+			double sameTurn = DegreesToRadians(10);
+
+			public int BestIndex 
+			{
+				get
+				{
+					IntPoint currentFurthestBack = new IntPoint(long.MaxValue, long.MaxValue);
+					int furthestBackIndex = 0;
+
+					for (int i = 0; i < Count; i++)
+					{
+						IntPoint currentPoint = this[i].position;
+						if (currentPoint.Y <= currentFurthestBack.Y)
+						{
+							if (currentPoint.Y < currentFurthestBack.Y
+								|| currentPoint.X < currentFurthestBack.X)
+							{
+								furthestBackIndex = this[i].turnIndex;
+								currentFurthestBack = currentPoint;
+							}
+						}
+					}
+
+					return furthestBackIndex;
+				}
+			}
+
+			internal void ConditionalAdd(CandidatePoint point)
+			{
+				// If this is better than our worst point
+				if (Count == 0
+					|| Math.Abs(point.turnAmount) <= Math.Abs(this[Count-1].turnAmount))
+				{
+					// remove all points that are worse than the new one
+					for (int i = Count-1; i >= 0; i--)
+					{
+						if (Math.Abs(this[i].turnAmount) + sameTurn < Math.Abs(point.turnAmount))
+						{
+							RemoveAt(i);
+						}
+					}
+
+					if (Count > 0)
+					{
+						for (int i = 0; i < Count; i++)
+						{
+							if (Math.Abs(point.turnAmount) >= this[i].turnAmount)
+							{
+								// insert it sorted
+								Insert(i, point);
+								break;
+							}
+						}
+					}
+					else
+					{
+						Add(point);
+					}
+				}
+			}
 		}
 
 		public static int GetBestEdgeIndex(Polygon currentPolygon)
@@ -105,15 +183,13 @@ namespace MatterHackers.MatterSlice
 			// collect & bucket options and then choos the closest
 
 			double totalTurns = 0;
-			double bestPositiveTurn = double.MinValue;
-			int bestPositiveTurnIndex = -1;
-			double bestNegativeTurn = double.MaxValue;
-			int bestNegativeTurnIndex = -1;
+			CandidateGroup positiveGroup = new CandidateGroup();
+			CandidateGroup negativeGroup = new CandidateGroup();
 
 			IntPoint currentFurthestBack = new IntPoint(long.MaxValue, long.MaxValue);
 			int furthestBackIndex = 0;
 
-			double minTurnToChoose = Math.PI / 16;
+			double minTurnToChoose = DegreesToRadians(15);
 			long minSegmentLengthToConsiderSquared = 50 * 50;
 
 			int pointCount = currentPolygon.Count;
@@ -146,35 +222,31 @@ namespace MatterHackers.MatterSlice
 				{
 					// threshold angles, don't pick angles that are too shallow
 					// thershold line lengths, don't pick big angles hiding in TINY lines
-					if (turnAmount < bestNegativeTurn
-						&& Math.Abs(turnAmount ) > minTurnToChoose
+					if (Math.Abs(turnAmount ) > minTurnToChoose
 						&& distanceLongeEnough)
 					{
-						bestNegativeTurn = turnAmount;
-						bestNegativeTurnIndex = pointIndex;
+						negativeGroup.ConditionalAdd(new CandidatePoint(turnAmount, pointIndex, currentPoint));
 					}
 				}
 				else
 				{
-					if (turnAmount > bestPositiveTurn
-						&& Math.Abs(turnAmount ) > minTurnToChoose
+					if (Math.Abs(turnAmount ) > minTurnToChoose
 						&& distanceLongeEnough)
 					{
-						bestPositiveTurn = turnAmount;
-						bestPositiveTurnIndex = pointIndex;
+						positiveGroup.ConditionalAdd(new CandidatePoint(turnAmount, pointIndex, currentPoint));
 					}
 				}
 			}
 
 			if (totalTurns > 0) // ccw
 			{
-				if (bestNegativeTurnIndex >= 0)
+				if (negativeGroup.Count > 0)
 				{
-					return bestNegativeTurnIndex;
+					return negativeGroup.BestIndex;
 				}
-				if (bestPositiveTurnIndex >= 0)
+				if (positiveGroup.Count > 0)
 				{
-					return bestPositiveTurnIndex;
+					return positiveGroup.BestIndex;
 				}
 				else
 				{
@@ -184,13 +256,13 @@ namespace MatterHackers.MatterSlice
 			}
 			else // cw
 			{
-				if (bestPositiveTurnIndex >= 0)
+				if (negativeGroup.Count > 0)
 				{
-					return bestPositiveTurnIndex;
+					return negativeGroup.BestIndex;
 				}
-				if (bestNegativeTurnIndex >= 0)
+				if (positiveGroup.Count > 0)
 				{
-					return bestNegativeTurnIndex;
+					return positiveGroup.BestIndex;
 				}
 				else
 				{
