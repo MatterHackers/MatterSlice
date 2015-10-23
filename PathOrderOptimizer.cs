@@ -93,6 +93,12 @@ namespace MatterHackers.MatterSlice
 			return 0;
 		}
 
+		internal struct CandidatePoint
+		{
+			int turnValue = 0;
+			int turnIndex = -1;
+		}
+
 		public static int GetBestEdgeIndex(Polygon currentPolygon)
 		{
 			// TODO: other considerations
@@ -103,6 +109,9 @@ namespace MatterHackers.MatterSlice
 			int bestPositiveTurnIndex = -1;
 			double bestNegativeTurn = double.MaxValue;
 			int bestNegativeTurnIndex = -1;
+
+			IntPoint currentFurthestBack = new IntPoint(long.MaxValue, long.MaxValue);
+			int furthestBackIndex = 0;
 
 			double minTurnToChoose = Math.PI / 16;
 			long minSegmentLengthToConsiderSquared = 50 * 50;
@@ -115,6 +124,15 @@ namespace MatterHackers.MatterSlice
 				IntPoint prevPoint = currentPolygon[prevIndex];
 				IntPoint currentPoint = currentPolygon[pointIndex];
 				IntPoint nextPoint = currentPolygon[nextIndex];
+
+				if(currentPoint.Y <= currentFurthestBack.Y)
+				{
+					if(currentPoint.Y < currentFurthestBack.Y
+						|| currentPoint.X < currentFurthestBack.X)
+					{
+						furthestBackIndex = pointIndex;
+					}
+				}
 
 				long lengthPrevToCurSquared = (prevPoint - currentPoint).LengthSquared();
 				long lengthCurToNextSquared = (nextPoint - currentPoint).LengthSquared();
@@ -148,7 +166,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			if (totalTurns > 0)
+			if (totalTurns > 0) // ccw
 			{
 				if (bestNegativeTurnIndex >= 0)
 				{
@@ -161,10 +179,10 @@ namespace MatterHackers.MatterSlice
 				else
 				{
 					// If can't find good candidate go with vertex most in a single direction
-					return 0;
+					return furthestBackIndex;
 				}
 			}
-			else
+			else // cw
 			{
 				if (bestPositiveTurnIndex >= 0)
 				{
@@ -177,7 +195,7 @@ namespace MatterHackers.MatterSlice
 				else
 				{
 					// If can't find good candidate go with vertex most in a single direction
-					return 0;
+					return furthestBackIndex;
 				}
 			}
 		}
