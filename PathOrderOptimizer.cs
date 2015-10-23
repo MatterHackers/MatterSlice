@@ -95,11 +95,17 @@ namespace MatterHackers.MatterSlice
 
 		public static int GetBestEdgeIndex(Polygon currentPolygon)
 		{
+			// TODO: other considerations
+			// collect & bucket options and then choos the closest
+
 			double totalTurns = 0;
 			double bestPositiveTurn = double.MinValue;
 			int bestPositiveTurnIndex = -1;
 			double bestNegativeTurn = double.MaxValue;
 			int bestNegativeTurnIndex = -1;
+
+			double minTurnToChoose = Math.PI / 16;
+			long minSegmentLengthToConsiderSquared = 50 * 50;
 
 			int pointCount = currentPolygon.Count;
 			for (int pointIndex = 0; pointIndex < pointCount; pointIndex++)
@@ -110,12 +116,21 @@ namespace MatterHackers.MatterSlice
 				IntPoint currentPoint = currentPolygon[pointIndex];
 				IntPoint nextPoint = currentPolygon[nextIndex];
 
+				long lengthPrevToCurSquared = (prevPoint - currentPoint).LengthSquared();
+				long lengthCurToNextSquared = (nextPoint - currentPoint).LengthSquared();
+				bool distanceLongeEnough = lengthCurToNextSquared > minSegmentLengthToConsiderSquared && lengthPrevToCurSquared > minSegmentLengthToConsiderSquared;
+
 				double turnAmount = GetTurnAmount(prevPoint, currentPoint, nextPoint);
+
 				totalTurns += turnAmount;
 
 				if (turnAmount < 0)
 				{
-					if (turnAmount < bestNegativeTurn)
+					// threshold angles, don't pick angles that are too shallow
+					// thershold line lengths, don't pick big angles hiding in TINY lines
+					if (turnAmount < bestNegativeTurn
+						&& Math.Abs(turnAmount ) > minTurnToChoose
+						&& distanceLongeEnough)
 					{
 						bestNegativeTurn = turnAmount;
 						bestNegativeTurnIndex = pointIndex;
@@ -123,7 +138,9 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					if (turnAmount > bestPositiveTurn)
+					if (turnAmount > bestPositiveTurn
+						&& Math.Abs(turnAmount ) > minTurnToChoose
+						&& distanceLongeEnough)
 					{
 						bestPositiveTurn = turnAmount;
 						bestPositiveTurnIndex = pointIndex;
@@ -137,7 +154,15 @@ namespace MatterHackers.MatterSlice
 				{
 					return bestNegativeTurnIndex;
 				}
-				return bestPositiveTurnIndex;
+				if (bestPositiveTurnIndex >= 0)
+				{
+					return bestPositiveTurnIndex;
+				}
+				else
+				{
+					// If can't find good candidate go with vertex most in a single direction
+					return 0;
+				}
 			}
 			else
 			{
@@ -145,13 +170,16 @@ namespace MatterHackers.MatterSlice
 				{
 					return bestPositiveTurnIndex;
 				}
-				return bestNegativeTurnIndex;
+				if (bestNegativeTurnIndex >= 0)
+				{
+					return bestNegativeTurnIndex;
+				}
+				else
+				{
+					// If can't find good candidate go with vertex most in a single direction
+					return 0;
+				}
 			}
-		}
-
-		private static double GetAngle(IntPoint prevPoint, IntPoint currentPoint, IntPoint nextPoint)
-		{
-			throw new NotImplementedException();
 		}
 
 		public void Optimize(GCodePathConfig config = null)
