@@ -113,69 +113,74 @@ namespace MatterHackers.MatterSlice
 			return degrees * degToRad;
 		}
 
-		internal class CandidateGroup : List<CandidatePoint>
-		{
-			double sameTurn = DegreesToRadians(10);
+        internal class CandidateGroup : List<CandidatePoint>
+        {
+            double sameTurn = DegreesToRadians(10);
 
-			public int BestIndex 
-			{
-				get
-				{
-					IntPoint currentFurthestBack = new IntPoint(long.MaxValue, long.MaxValue);
-					int furthestBackIndex = 0;
+            public int BestIndex
+            {
+                get
+                {
+                    IntPoint currentFurthestBack = new IntPoint(long.MaxValue, long.MinValue);
+                    int furthestBackIndex = 0;
 
-					for (int i = 0; i < Count; i++)
-					{
-						IntPoint currentPoint = this[i].position;
-						if (currentPoint.Y <= currentFurthestBack.Y)
-						{
-							if (currentPoint.Y < currentFurthestBack.Y
-								|| currentPoint.X < currentFurthestBack.X)
-							{
-								furthestBackIndex = this[i].turnIndex;
-								currentFurthestBack = currentPoint;
-							}
-						}
-					}
+                    for (int i = 0; i < Count; i++)
+                    {
+                        IntPoint currentPoint = this[i].position;
+                        if (currentPoint.Y >= currentFurthestBack.Y)
+                        {
+                            if (currentPoint.Y > currentFurthestBack.Y
+                                || currentPoint.X < currentFurthestBack.X)
+                            {
+                                furthestBackIndex = this[i].turnIndex;
+                                currentFurthestBack = currentPoint;
+                            }
+                        }
+                    }
 
-					return furthestBackIndex;
-				}
-			}
+                    return furthestBackIndex;
+                }
+            }
 
-			internal void ConditionalAdd(CandidatePoint point)
-			{
-				// If this is better than our worst point
-				if (Count == 0
-					|| Math.Abs(point.turnAmount) <= Math.Abs(this[Count-1].turnAmount))
-				{
-					// remove all points that are worse than the new one
-					for (int i = Count-1; i >= 0; i--)
-					{
-						if (Math.Abs(this[i].turnAmount) + sameTurn < Math.Abs(point.turnAmount))
-						{
-							RemoveAt(i);
-						}
-					}
+            internal void ConditionalAdd(CandidatePoint point)
+            {
+                // If this is better than our worst point
+                // or it is within sameTurn of our best point
+                if (Count == 0
+                    || Math.Abs(point.turnAmount) >= Math.Abs(this[Count - 1].turnAmount)
+                    || Math.Abs(point.turnAmount) >= Math.Abs(this[0].turnAmount) - sameTurn)
+                {
+                    // remove all points that are worse than the new one
+                    for (int i = Count - 1; i >= 0; i--)
+                    {
+                        if (Math.Abs(this[i].turnAmount) + sameTurn < Math.Abs(point.turnAmount))
+                        {
+                            RemoveAt(i);
+                        }
+                    }
 
-					if (Count > 0)
-					{
-						for (int i = 0; i < Count; i++)
-						{
-							if (Math.Abs(point.turnAmount) >= this[i].turnAmount)
-							{
-								// insert it sorted
-								Insert(i, point);
-								break;
-							}
-						}
-					}
-					else
-					{
-						Add(point);
-					}
-				}
-			}
-		}
+                    if (Count > 0)
+                    {
+                        for (int i = 0; i < Count; i++)
+                        {
+                            if (Math.Abs(point.turnAmount) >= Math.Abs(this[i].turnAmount))
+                            {
+                                // insert it sorted
+                                Insert(i, point);
+                                return;
+                            }
+                        }
+
+                        // still insert it at the end
+                        Add(point);
+                    }
+                    else
+                    {
+                        Add(point);
+                    }
+                }
+            }
+        }
 
 		public static int GetBestEdgeIndex(Polygon currentPolygon)
 		{
@@ -183,10 +188,10 @@ namespace MatterHackers.MatterSlice
 			// collect & bucket options and then choos the closest
 
 			double totalTurns = 0;
-			CandidateGroup positiveGroup = new CandidateGroup();
-			CandidateGroup negativeGroup = new CandidateGroup();
+            CandidateGroup positiveGroup = new CandidateGroup();
+            CandidateGroup negativeGroup = new CandidateGroup();
 
-			IntPoint currentFurthestBack = new IntPoint(long.MaxValue, long.MaxValue);
+            IntPoint currentFurthestBack = new IntPoint(long.MaxValue, long.MinValue);
 			int furthestBackIndex = 0;
 
 			double minTurnToChoose = DegreesToRadians(15);
@@ -201,9 +206,9 @@ namespace MatterHackers.MatterSlice
 				IntPoint currentPoint = currentPolygon[pointIndex];
 				IntPoint nextPoint = currentPolygon[nextIndex];
 
-				if(currentPoint.Y <= currentFurthestBack.Y)
+				if(currentPoint.Y >= currentFurthestBack.Y)
 				{
-					if(currentPoint.Y < currentFurthestBack.Y
+					if(currentPoint.Y > currentFurthestBack.Y
 						|| currentPoint.X < currentFurthestBack.X)
 					{
 						furthestBackIndex = pointIndex;
@@ -225,7 +230,7 @@ namespace MatterHackers.MatterSlice
 					if (Math.Abs(turnAmount ) > minTurnToChoose
 						&& distanceLongeEnough)
 					{
-						negativeGroup.ConditionalAdd(new CandidatePoint(turnAmount, pointIndex, currentPoint));
+                        negativeGroup.ConditionalAdd(new CandidatePoint(turnAmount, pointIndex, currentPoint));
 					}
 				}
 				else
@@ -233,7 +238,7 @@ namespace MatterHackers.MatterSlice
 					if (Math.Abs(turnAmount ) > minTurnToChoose
 						&& distanceLongeEnough)
 					{
-						positiveGroup.ConditionalAdd(new CandidatePoint(turnAmount, pointIndex, currentPoint));
+                        positiveGroup.ConditionalAdd(new CandidatePoint(turnAmount, pointIndex, currentPoint));
 					}
 				}
 			}
