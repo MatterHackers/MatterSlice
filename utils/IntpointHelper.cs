@@ -30,6 +30,8 @@ using MatterSlice.ClipperLib;
 using System;
 using System.Collections.Generic;
 
+using static System.Math;
+
 namespace MatterHackers.MatterSlice
 {
 	using Polygon = List<IntPoint>;
@@ -113,7 +115,7 @@ namespace MatterHackers.MatterSlice
 
 		public int Length()
 		{
-			return (int)Math.Sqrt(LengthSquared());
+			return (int)Sqrt(LengthSquared());
 		}
 
 		public long LengthSquared()
@@ -150,9 +152,9 @@ namespace MatterHackers.MatterSlice
 
 		public PointMatrix(double rotation)
 		{
-			rotation = rotation / 180 * Math.PI;
-			matrix[0] = Math.Cos(rotation);
-			matrix[1] = -Math.Sin(rotation);
+			rotation = rotation / 180 * PI;
+			matrix[0] = Cos(rotation);
+			matrix[1] = -Sin(rotation);
 			matrix[2] = -matrix[1];
 			matrix[3] = matrix[0];
 		}
@@ -161,7 +163,7 @@ namespace MatterHackers.MatterSlice
 		{
 			matrix[0] = p.X;
 			matrix[1] = p.Y;
-			double f = Math.Sqrt((matrix[0] * matrix[0]) + (matrix[1] * matrix[1]));
+			double f = Sqrt((matrix[0] * matrix[0]) + (matrix[1] * matrix[1]));
 			matrix[0] /= f;
 			matrix[1] /= f;
 			matrix[2] = -matrix[1];
@@ -233,8 +235,8 @@ namespace MatterHackers.MatterSlice
 			long maxX = minX;
 			for (int i = 1; i < count; i++)
 			{
-				minX = Math.Min(minX, points[i].X);
-				maxX = Math.Max(maxX, points[i].X);
+				minX = Min(minX, points[i].X);
+				maxX = Max(maxX, points[i].X);
 			}
 
 			long upperLeftX;
@@ -467,14 +469,14 @@ namespace MatterHackers.MatterSlice
 
 		public static IntPoint GetRotated(this IntPoint thisPoint, double radians)
 		{
-			double Cos, Sin;
+			double CosVal, SinVal;
 
-			Cos = (double)System.Math.Cos(radians);
-			Sin = (double)System.Math.Sin(radians);
+			CosVal = (double)Cos(radians);
+			SinVal = (double)Sin(radians);
 
 			IntPoint output;
-			output.X = (long)(Math.Round(thisPoint.X * Cos - thisPoint.Y * Sin));
-			output.Y = (long)(Math.Round(thisPoint.Y * Cos + thisPoint.X * Sin));
+			output.X = (long)(Round(thisPoint.X * CosVal - thisPoint.Y * SinVal));
+			output.Y = (long)(Round(thisPoint.Y * CosVal + thisPoint.X * SinVal));
 
 			return output;
 		}
@@ -496,14 +498,14 @@ namespace MatterHackers.MatterSlice
 
 		public static long Length(this IntPoint thisPoint)
 		{
-			return (long)Math.Sqrt(thisPoint.LengthSquared());
+			return (long)Sqrt(thisPoint.LengthSquared());
 		}
 
 		public static double LengthMm(this IntPoint thisPoint)
 		{
 			double fx = (double)(thisPoint.X) / 1000.0;
 			double fy = (double)(thisPoint.Y) / 1000.0;
-			return Math.Sqrt(fx * fx + fy * fy);
+			return Sqrt(fx * fx + fy * fy);
 		}
 
 		public static long LengthSquared(this IntPoint thisPoint)

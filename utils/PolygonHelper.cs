@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using MatterSlice.ClipperLib;
 using System;
+using static System.Math;
 using System.Collections.Generic;
 using System.IO;
 
@@ -435,7 +436,7 @@ namespace MatterHackers.MatterSlice
 			bounds.bottom = bounds.top;
 			bounds.top = temp;
 			IntPoint size = new IntPoint(bounds.right - bounds.left, bounds.top - bounds.bottom);
-			double scale = Math.Max(size.X, size.Y) / scaleDenominator;
+			double scale = Max(size.X, size.Y) / scaleDenominator;
 			StreamWriter stream = new StreamWriter(filename);
 			stream.Write("<!DOCTYPE html><html><body>\n");
 			stream.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style='width:{0}px;height:{1}px'>\n".FormatWith((int)(size.X / scale), (int)(size.Y / scale)));
