@@ -122,9 +122,11 @@ namespace MatterHackers.MatterSlice
 
 		public int infillExtendIntoPerimeter_um { get { return (int)(infillExtendIntoPerimeter * 1000); } }
 
-		public double infillStartingAngle = 45;
+        [SettingDescription("The starting angle that infill lines will be drawn at (angle in x y).")]
+        public double infillStartingAngle = 45;
 
-		public double supportInfillStartingAngle;
+        [SettingDescription("The starting angle that the support lines will be drawn at (similar to infill start angle).")]
+        public double supportInfillStartingAngle;
 
 		[SettingDescription("How far from objects the first skirt loop should be, in millimeters.")]
 		public double skirtDistanceFromObject;
