@@ -189,7 +189,7 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					openPolygonList.Add(poly);
+					openPolygonList.Add(new Polygon(poly));
 				}
 			}
 
@@ -271,14 +271,20 @@ namespace MatterHackers.MatterSlice
 				{
 					if (reversed)
 					{
-						if (openPolygonList[bestA].PolygonLength() > openPolygonList[bestB].PolygonLength())
+						if (openPolygonList[bestA].Count > openPolygonList[bestB].Count)
 						{
-							openPolygonList[bestA].AddRange(openPolygonList[bestB]);
+							for (int indexB = openPolygonList[bestB].Count-1; indexB >=0; indexB--)
+							{
+								openPolygonList[bestA].Add(openPolygonList[bestB][indexB]);
+							}
 							openPolygonList[bestB].Clear();
 						}
 						else
 						{
-							openPolygonList[bestB].AddRange(openPolygonList[bestA]);
+							for (int indexA = openPolygonList[bestA].Count - 1; indexA >= 0; indexA--)
+							{
+								openPolygonList[bestB].Add(openPolygonList[bestA][indexA]);
+							}
 							openPolygonList[bestA].Clear();
 						}
 					}
