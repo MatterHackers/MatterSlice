@@ -59,6 +59,7 @@
     <Compile Include="MatterSlice\BridgeTests.cs" />
     <Compile Include="MatterSlice\ClipperTests.cs" />
     <Compile Include="MatterSlice\PathOrderTests.cs" />
+    <Compile Include="MatterSlice\SupportTests.cs" />
     <Compile Include="MatterSlice\PolygonTests.cs" />
     <Compile Include="MatterSlice\SettingsTests.cs" />
     <Compile Include="MatterSlice\GCodePlannerTests.cs" />

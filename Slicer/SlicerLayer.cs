@@ -84,7 +84,9 @@ namespace MatterHackers.MatterSlice
 						string[] coordinates = point.Split(',');
 						string elementX = coordinates[0];
 						string elementY = coordinates[1];
-						outPoints.Add(new IntPoint(int.Parse(elementX.Substring(2)), int.Parse(elementY.Substring(3))));
+                        int xIndex = elementX.IndexOf("x:");
+                        int yIndex = elementY.IndexOf("y:");
+						outPoints.Add(new IntPoint(int.Parse(elementX.Substring(xIndex+2)), int.Parse(elementY.Substring(yIndex+2))));
 					}
 					output.Add(new SlicePerimeterSegment(outPoints[0], outPoints[1]));
 				}
