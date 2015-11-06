@@ -39,6 +39,7 @@ namespace MatterHackers.MatterSlice
 		public string gcodeComment;
 		public double speed;
 		public bool spiralize;
+		public bool doSeamHiding;
 
 		public GCodePathConfig()
 		{

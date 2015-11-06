@@ -45,7 +45,10 @@ namespace MatterHackers.MatterSlice
 		private SliceDataStorage slicingData = new SliceDataStorage();
 
 		private GCodePathConfig skirtConfig = new GCodePathConfig();
-		private GCodePathConfig inset0Config = new GCodePathConfig();
+		private GCodePathConfig inset0Config = new GCodePathConfig()
+		{
+			doSeamHiding = true,
+		};
 		private GCodePathConfig insetXConfig = new GCodePathConfig();
 		private GCodePathConfig fillConfig = new GCodePathConfig();
 		private GCodePathConfig topFillConfig = new GCodePathConfig();

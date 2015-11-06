@@ -296,8 +296,16 @@ namespace MatterHackers.MatterSlice
 					//currentPolygon.SaveToGCode("perimeter.gcode");
 
 					// this is our new seam hiding code
-					int bestPointIndex = GetBestEdgeIndex(currentPolygon);
-					//int bestPointIndex = GetClosestIndex(currentPolygon, startPosition);
+					int bestPointIndex;
+                    if (config != null && config.doSeamHiding)
+					{
+						bestPointIndex = GetBestEdgeIndex(currentPolygon);
+					}
+					else
+					{
+						bestPointIndex = GetClosestIndex(currentPolygon, startPosition);
+					}
+
 					startIndexInPolygon.Add(bestPointIndex);
 				}
 			}
