@@ -111,6 +111,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Comb.cs" />
     <Compile Include="GCodePathConfig.cs" />
     <Compile Include="GCodePlanner.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
