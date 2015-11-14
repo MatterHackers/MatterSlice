@@ -95,6 +95,66 @@ namespace MatterHackers.MatterSlice
 			return center;
 		}
 
+		public static bool polygonCollidesWithlineSegment(Polygon poly, IntPoint startPoint, IntPoint endPoint)
+		{
+			IntPoint diff = endPoint - startPoint;
+
+			PointMatrix transformation_matrix = new PointMatrix(diff);
+			IntPoint transformed_startPoint = transformation_matrix.apply(startPoint);
+			IntPoint transformed_endPoint = transformation_matrix.apply(endPoint);
+
+			return polygonCollidesWithlineSegment(poly, transformed_startPoint, transformed_endPoint, transformation_matrix);
+		}
+
+		public static bool polygonCollidesWithlineSegment(Polygon poly, IntPoint transformed_startPoint, IntPoint transformed_endPoint, PointMatrix transformation_matrix)
+		{
+			IntPoint p0 = transformation_matrix.apply(poly.back());
+			foreach (IntPoint p1_ in poly)
+			{
+				IntPoint p1 = transformation_matrix.apply(p1_);
+				if ((p0.Y >= transformed_startPoint.Y && p1.Y <= transformed_startPoint.Y) || (p1.Y >= transformed_startPoint.Y && p0.Y <= transformed_startPoint.Y))
+				{
+					long x;
+					if (p1.Y == p0.Y)
+					{
+						x = p0.X;
+					}
+					else
+					{
+						x = p0.X + (p1.X - p0.X) * (transformed_startPoint.Y - p0.Y) / (p1.Y - p0.Y);
+					}
+
+					if (x >= transformed_startPoint.X && x <= transformed_endPoint.X)
+						return true;
+				}
+				p0 = p1;
+			}
+			return false;
+		}
+
+		public static IntPoint getBoundaryPointWithOffset(Polygon poly, int point_idx, long offset)
+		{
+			IntPoint p0 = poly[(point_idx > 0) ? (point_idx - 1) : (poly.size() - 1)];
+			IntPoint p1 = poly[point_idx];
+			IntPoint p2 = poly[(point_idx < (poly.size() - 1)) ? (point_idx + 1) : 0];
+
+			IntPoint off0 = ((p1 - p0).Normal(1000)).CrossZ(); // 1.0 for some precision
+			IntPoint off1 = ((p2 - p1).Normal(1000)).CrossZ(); // 1.0 for some precision
+			IntPoint n = (off0 + off1).Normal(-offset);
+
+			return p1 + n;
+		}
+
+		public static int size(this Polygon polygon)
+		{
+			return polygon.Count;
+		}
+
+		public static IntPoint back(this Polygon polygon)
+		{
+			return polygon[polygon.Count-1];
+		}
+
 		public static bool Inside(this Polygon polygon, IntPoint testPoint)
 		{
 			int positionOnPolygon = Clipper.PointInPolygon(testPoint, polygon);
@@ -321,6 +381,32 @@ namespace MatterHackers.MatterSlice
 			return ret;
 		}
 
+		public static bool polygonCollidesWithlineSegment(Polygons polys, IntPoint transformed_startPoint, IntPoint transformed_endPoint, PointMatrix transformation_matrix)
+		{
+			foreach (Polygon poly in polys)
+			{
+				if (poly.size() == 0) { continue; }
+				if (PolygonHelper.polygonCollidesWithlineSegment(poly, transformed_startPoint, transformed_endPoint, transformation_matrix))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+
+		public static bool polygonCollidesWithlineSegment(Polygons polys, IntPoint startPoint, IntPoint endPoint)
+		{
+			IntPoint diff = endPoint - startPoint;
+
+			PointMatrix transformation_matrix = new PointMatrix(diff);
+			IntPoint transformed_startPoint = transformation_matrix.apply(startPoint);
+			IntPoint transformed_endPoint = transformation_matrix.apply(endPoint);
+
+			return polygonCollidesWithlineSegment(polys, transformed_startPoint, transformed_endPoint, transformation_matrix);
+		}
+
 		public static bool Inside(this Polygons polygons, IntPoint testPoint)
 		{
 			if (polygons.Count < 1)
@@ -356,6 +442,11 @@ namespace MatterHackers.MatterSlice
 			Paths solution = new Polygons();
 			offseter.Execute(ref solution, distance);
 			return solution;
+		}
+
+		public static int size(this Polygons polygons)
+		{
+			return polygons.Count;
 		}
 
 		public static void OptimizePolygons(this Polygons polygons)

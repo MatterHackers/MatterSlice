@@ -436,6 +436,26 @@ namespace MatterHackers.MatterSlice
 			return left.X * right.Y - left.Y * right.X;
 		}
 
+		public static bool shorterThen(this IntPoint polygon, long length)
+		{
+			if (polygon.X > length || polygon.X < -length)
+			{
+				return false;
+			}
+
+			if (polygon.Y > length || polygon.Y < -length)
+			{
+				return false;
+			}
+
+			return vSize2(polygon) <= length * length;
+		}
+
+		public static long vSize2(this IntPoint polygon)
+		{
+			return polygon.LengthSquared();
+		}
+
 		public static IntPoint CrossZ(this IntPoint thisPoint)
 		{
 			return new IntPoint(-thisPoint.Y, thisPoint.X);
