@@ -37,6 +37,11 @@ namespace MatterHackers.MatterSlice
 		{
 			this.Add(point);
 		}
+
+		public void pop_back()
+		{
+			this.RemoveAt(this.Count-1);
+		}
 	}
 
 	public class CombPaths : List<CombPath> //!< A list of paths alternating between inside a part and outside a part
@@ -695,6 +700,146 @@ namespace MatterHackers.MatterSlice
 			return PolygonUtils::moveInside(boundary_inside, p, distance) != Crossing.NO_INDEX;
 		}
 	}
+
+	/*!
+ * Extension of vector<vector<unsigned int>> which is similar to a vector of PolygonParts, except the base of the container is indices to polygons into the original Polygons, instead of the polygons themselves
+ */
+	public class PartsView : List<List<int>>
+	{
+		Polygons polygons;
+		publci PartsView(Polygons polygons)
+		{
+			this.polygons = polygons;
+		}
+		/*!
+		 * Get the index of the PolygonsPart of which the polygon with index \p poly_idx is part.
+		 * 
+		 * \param poly_idx The index of the polygon in \p polygons
+		 * \param boundary_poly_idx Optional output parameter: The index of the boundary polygon of the part in \p polygons
+		 * \return The PolygonsPart containing the polygon with index \p poly_idx
+		 */
+		unsigned int getPartContaining(unsigned int poly_idx, unsigned int* boundary_poly_idx = nullptr)
+		{
+			PartsView & partsView = *this;
+			for (unsigned int part_idx_now = 0; part_idx_now < partsView.size(); part_idx_now++)
+			{
+				std::vector < unsigned int> &partView = partsView[part_idx_now];
+				if (partView.size() == 0) { continue; }
+				std::vector < unsigned int>::iterator result = std::find(partView.begin(), partView.end(), poly_idx);
+				if (result != partView.end())
+				{
+					if (boundary_poly_idx) { *boundary_poly_idx = partView[0]; }
+					return part_idx_now;
+				}
+			}
+			return NO_INDEX;
+		}
+		/*!
+		 * Assemble the PolygonsPart of which the polygon with index \p poly_idx is part.
+		 * 
+		 * \param poly_idx The index of the polygon in \p polygons
+		 * \param boundary_poly_idx Optional output parameter: The index of the boundary polygon of the part in \p polygons
+		 * \return The PolygonsPart containing the polygon with index \p poly_idx
+		 */
+		PolygonsPart PartsView::assemblePartContaining(unsigned int poly_idx, unsigned int* boundary_poly_idx)
+		{
+			PolygonsPart ret;
+			unsigned int part_idx = getPartContaining(poly_idx, boundary_poly_idx);
+			if (part_idx != NO_INDEX)
+			{
+				return assemblePart(part_idx);
+			}
+			return ret;
+		}
+
+		/*!
+		 * Assemble the PolygonsPart of which the polygon with index \p poly_idx is part.
+		 * 
+		 * \param part_idx The index of the part
+		 * \return The PolygonsPart with index \p poly_idx
+		 */
+		PolygonsPart assemblePart(unsigned int part_idx)
+		{
+			PartsView & partsView = *this;
+			PolygonsPart ret;
+			if (part_idx != NO_INDEX)
+			{
+				for (unsigned int poly_idx_ff : partsView[part_idx])
+				{
+					ret.add(polygons[poly_idx_ff]);
+				}
+			}
+			return ret;
+		}
+
+		unsigned int PartsView::getPartContaining(unsigned int poly_idx, unsigned int* boundary_poly_idx)
+		{
+			PartsView & partsView = *this;
+			for (unsigned int part_idx_now = 0; part_idx_now < partsView.size(); part_idx_now++)
+			{
+				std::vector < unsigned int> &partView = partsView[part_idx_now];
+				if (partView.size() == 0) { continue; }
+				std::vector < unsigned int>::iterator result = std::find(partView.begin(), partView.end(), poly_idx);
+				if (result != partView.end())
+				{
+					if (boundary_poly_idx) { *boundary_poly_idx = partView[0]; }
+					return part_idx_now;
+				}
+			}
+			return NO_INDEX;
+		}
+
+		PolygonsPart PartsView::assemblePart(unsigned int part_idx)
+		{
+			PartsView & partsView = *this;
+			PolygonsPart ret;
+			if (part_idx != NO_INDEX)
+			{
+				for (unsigned int poly_idx_ff : partsView[part_idx])
+				{
+					ret.add(polygons[poly_idx_ff]);
+				}
+			}
+			return ret;
+		}
+
+		PartsView Polygons::splitIntoPartsView(bool unionAll)
+		{
+			Polygons reordered;
+			PartsView partsView(*this);
+			ClipperLib::Clipper clipper(clipper_init);
+			ClipperLib::PolyTree resultPolyTree;
+			clipper.AddPaths(polygons, ClipperLib::ptSubject, true);
+			if (unionAll)
+				clipper.Execute(ClipperLib::ctUnion, resultPolyTree, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
+			else
+				clipper.Execute(ClipperLib::ctUnion, resultPolyTree);
+
+			splitIntoPartsView_processPolyTreeNode(partsView, reordered, &resultPolyTree);
+
+			(*this) = reordered;
+			return partsView;
+		}
+
+		void Polygons::splitIntoPartsView_processPolyTreeNode(PartsView& partsView, Polygons& reordered, ClipperLib::PolyNode* node)
+		{
+			for (int n = 0; n < node->ChildCount(); n++)
+			{
+				ClipperLib::PolyNode* child = node->Childs[n];
+				partsView.emplace_back();
+				unsigned int pos = partsView.size() - 1;
+				partsView[pos].push_back(reordered.size());
+				reordered.add(child->Contour);
+				for (int i = 0; i < child->ChildCount(); i++)
+				{
+					partsView[pos].push_back(reordered.size());
+					reordered.add(child->Childs[i]->Contour);
+					splitIntoPartsView_processPolyTreeNode(partsView, reordered, child->Childs[i]);
+				}
+			}
+		}
+	};
+
 }
 
 #endif
