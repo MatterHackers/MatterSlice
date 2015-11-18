@@ -700,7 +700,7 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 
-					// If we are on the very first layer we start with the outside in so that we can stick to the bed better.
+					// If we are on the very first layer we start with the outside so that we can stick to the bed better.
 					if (config.outsidePerimetersFirst || layerIndex == 0 || inset0Config.spiralize)
 					{
 						// First the outside (this helps with accuracy)
@@ -719,6 +719,14 @@ namespace MatterHackers.MatterSlice
 					}
 					else // This is so we can do overhanges better (the outside can stick a bit to the inside).
 					{
+						// Figure out where the seam hiding start point is for inset 0 and move to that spot so
+						// we have the minimum travel while starting inset 0 after printing the rest of the insets
+						if (part?.Insets?[0]?[0]?.Count > 0)
+						{
+							int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(part.Insets[0][0]);
+							gcodeLayer.WriteTravel(part.Insets[0][0][bestPoint]);
+						}
+
 						// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
 						for (int perimeterIndex = 1; perimeterIndex < part.Insets.Count; perimeterIndex++)
 						{
