@@ -40,72 +40,104 @@ namespace MatterHackers.MatterSlice
             }
 
             // create starting support outlines
-            CreateAllPossibleSupport(numLayers, config, storage);
-            // clip to xy distance from all parts
-            // change top layers into interface layers
-            // expand interface layers to be grabable outside the mesh
-            // clip expanded interface layers to existing parts xy
+            FindAllPossibleSupport(numLayers, config, storage);
+			// clip to xy distance from all parts
+			// change top layers into interface layers
+			// expand interface layers to be grabable outside the mesh
+			// clip expanded interface layers to existing parts xy
 
-            // reduce columns by nozzel width to make them shrink to minimum volume as they decend towards the bottom
-            // make support sparse (slice lines and stop extrusion to make weak)
+			// reduce columns by nozzel width to make them shrink to minimum volume as they decend towards the bed
+			// grow columns by nozzel width to make them expand to minimum volume as they decend towards the bed
+			// expand columns towards the bed so they have a good hold area on the bed
+			// clip expanded interface layers to existing parts xy
+			// make support sparse (slice lines and stop extrusion to make weak)
+		}
 
-            // remove top layers that are in the air gap range
-        }
 
-
-        private void CreateAllPossibleSupport(int numLayers, ConfigSettings config, PartLayers storage)
+		private void FindAllPossibleSupport(int numLayers, ConfigSettings config, PartLayers storage)
         {
-            int selfSupportDistance = config.outsideExtrusionWidth_um / 2;
-
-            Polygons accumulatedBottoms = new Polygons();
-
             // calculate all the non-supported areas
-            for (int layerIndex = numLayers - 1; layerIndex > 0; layerIndex--)
+            for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
             {
-                SliceLayerParts belowLayer = storage.Layers[layerIndex - 1];
+				Polygons allSupportAreas = new Polygons();
+
+				SliceLayerParts aboveLayer = storage.Layers[layerIndex + 1];
                 SliceLayerParts curLayer = storage.Layers[layerIndex];
-                for (int partIndex = 0; partIndex < curLayer.parts.Count; partIndex++)
-                {
-                    SliceLayerPart curPart = curLayer.parts[partIndex];
-                    Polygons curLayerPolys = curPart.TotalOutline.Offset(-config.outsideExtrusionWidth_um/2);
-                    if (belowLayer.parts.Count > 0)
-                    {
-                        SliceLayerPart belowPart = belowLayer.parts[0];
-                        Polygons belowLayerPolys = belowPart.TotalOutline;//.Offset(-config.outsideExtrusionWidth_um / 2);
-                        Polygons activeLayerPolys = curLayerPolys.CreateDifference(belowLayerPolys);
+				for (int aboveLayerPartIndex = 0; aboveLayerPartIndex < aboveLayer.parts.Count; aboveLayerPartIndex++)
+				{
+					SliceLayerPart abovePart = aboveLayer.parts[aboveLayerPartIndex];
+					Polygons aboveLayerPolys = abovePart.TotalOutline;
+					if (curLayer.parts.Count > 0)
+					{
+						for (int curLayerPartIndex = 0; curLayerPartIndex < curLayer.parts.Count; curLayerPartIndex++)
+						{
+							SliceLayerPart curPart = curLayer.parts[curLayerPartIndex];
+							Polygons curLayerPolys = curPart.TotalOutline;
+							aboveLayerPolys = aboveLayerPolys.CreateDifference(curLayerPolys.Offset(10));
+						}
+					}
 
-                        // remove anything that is less than the selfSupportDistance
-                        {
-                            //Polygons noSelfSupportPolys = activeLayerPolys.Offset(-selfSupportDistance);
-                            // expand it back out
-                            //activeLayerPolys = noSelfSupportPolys.Offset(selfSupportDistance);
-                        }
+					allSupportAreas = allSupportAreas.CreateUnion(aboveLayerPolys);
+					allSupportAreas = Clipper.CleanPolygons(allSupportAreas, cleanDistance_um);
+				}
 
-                        // remove any portion that will be sitting on existing parts
-                        {
-                            accumulatedBottoms = accumulatedBottoms.CreateDifference(curLayerPolys);
-                            accumulatedBottoms = Clipper.CleanPolygons(accumulatedBottoms, cleanDistance_um);
-                        }
-
-                        accumulatedBottoms = accumulatedBottoms.CreateUnion(activeLayerPolys);
-                        accumulatedBottoms = Clipper.CleanPolygons(accumulatedBottoms, cleanDistance_um);
-                    }
-                    else // have to add everything from this layer
-                    {
-                        accumulatedBottoms = accumulatedBottoms.CreateUnion(curLayerPolys);
-                        accumulatedBottoms = Clipper.CleanPolygons(accumulatedBottoms, cleanDistance_um);
-                    }
-                }
-
-                supportPolygons[layerIndex] = new Polygons();
-                foreach (Polygon poly in accumulatedBottoms)
-                {
-                    supportPolygons[layerIndex].Add(new Polygon(poly));
-                }
+				supportPolygons[layerIndex] = allSupportAreas.DeepCopy();
             }
         }
 
-        private void RemoveExistingIntersection(int numLayers, PartLayers storage)
+		private void WorkingTotal(int numLayers, ConfigSettings config, PartLayers storage)
+		{
+			int selfSupportDistance = config.outsideExtrusionWidth_um / 2;
+
+			Polygons accumulatedBottoms = new Polygons();
+
+			// calculate all the non-supported areas
+			for (int layerIndex = numLayers - 1; layerIndex > 0; layerIndex--)
+			{
+				SliceLayerParts belowLayer = storage.Layers[layerIndex - 1];
+				SliceLayerParts curLayer = storage.Layers[layerIndex];
+				for (int partIndex = 0; partIndex < curLayer.parts.Count; partIndex++)
+				{
+					SliceLayerPart curPart = curLayer.parts[partIndex];
+					Polygons curLayerPolys = curPart.TotalOutline.Offset(-config.outsideExtrusionWidth_um / 2);
+					if (belowLayer.parts.Count > 0)
+					{
+						SliceLayerPart belowPart = belowLayer.parts[0];
+						Polygons belowLayerPolys = belowPart.TotalOutline;//.Offset(-config.outsideExtrusionWidth_um / 2);
+						Polygons activeLayerPolys = curLayerPolys.CreateDifference(belowLayerPolys);
+
+						// remove anything that is less than the selfSupportDistance
+						{
+							//Polygons noSelfSupportPolys = activeLayerPolys.Offset(-selfSupportDistance);
+							// expand it back out
+							//activeLayerPolys = noSelfSupportPolys.Offset(selfSupportDistance);
+						}
+
+						// remove any portion that will be sitting on existing parts
+						{
+							accumulatedBottoms = accumulatedBottoms.CreateDifference(curLayerPolys);
+							accumulatedBottoms = Clipper.CleanPolygons(accumulatedBottoms, cleanDistance_um);
+						}
+
+						accumulatedBottoms = accumulatedBottoms.CreateUnion(activeLayerPolys);
+						accumulatedBottoms = Clipper.CleanPolygons(accumulatedBottoms, cleanDistance_um);
+					}
+					else // have to add everything from this layer
+					{
+						accumulatedBottoms = accumulatedBottoms.CreateUnion(curLayerPolys);
+						accumulatedBottoms = Clipper.CleanPolygons(accumulatedBottoms, cleanDistance_um);
+					}
+				}
+
+				supportPolygons[layerIndex] = new Polygons();
+				foreach (Polygon poly in accumulatedBottoms)
+				{
+					supportPolygons[layerIndex].Add(new Polygon(poly));
+				}
+			}
+		}
+
+		private void RemoveExistingIntersection(int numLayers, PartLayers storage)
         {
             for (int layerIndex = numLayers - 1; layerIndex > 0; layerIndex--)
             {

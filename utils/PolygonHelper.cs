@@ -435,7 +435,19 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public static Polygons Offset(this Polygons polygons, int distance)
+		public static Polygons DeepCopy(this Polygons polygons)
+		{
+			Polygons deepCopy = new Polygons();
+			foreach (Polygon poly in polygons)
+			{
+				deepCopy.Add(new Polygon(poly));
+			}
+
+			return deepCopy;
+        }
+
+
+	public static Polygons Offset(this Polygons polygons, long distance)
 		{
 			ClipperOffset offseter = new ClipperOffset();
 			offseter.AddPaths(polygons, JoinType.jtMiter, EndType.etClosedPolygon);
