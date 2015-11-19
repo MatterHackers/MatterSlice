@@ -39,8 +39,9 @@ namespace MatterHackers.MatterSlice
                 supportPolygons.Add(null);
             }
 
-            // create starting support outlines
-            FindAllPossibleSupport(numLayers, config, storage);
+			// create starting support outlines
+			FindAllPossibleSupportOutlines(numLayers, config, storage);
+			RemoveSelfSupportedSections(numLayers, config, storage);
 			// clip to xy distance from all parts
 			// change top layers into interface layers
 			// expand interface layers to be grabable outside the mesh
@@ -54,7 +55,7 @@ namespace MatterHackers.MatterSlice
 		}
 
 
-		private void FindAllPossibleSupport(int numLayers, ConfigSettings config, PartLayers storage)
+		private void FindAllPossibleSupportOutlines(int numLayers, ConfigSettings config, PartLayers storage)
         {
             // calculate all the non-supported areas
             for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
@@ -84,6 +85,19 @@ namespace MatterHackers.MatterSlice
 				supportPolygons[layerIndex] = allSupportAreas.DeepCopy();
             }
         }
+
+		private void RemoveSelfSupportedSections(int numLayers, ConfigSettings config, PartLayers storage)
+		{
+			// calculate all the non-supported areas
+			for(int i=0; i<supportPolygons.Count; i++)
+			{
+				if (supportPolygons[i] != null)
+				{
+					supportPolygons[i] = supportPolygons[i].Offset(-config.extrusionWidth_um / 2);
+					supportPolygons[i] = supportPolygons[i].Offset(config.extrusionWidth_um / 2);
+				}
+			}
+		}
 
 		private void WorkingTotal(int numLayers, ConfigSettings config, PartLayers storage)
 		{
