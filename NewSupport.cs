@@ -33,7 +33,8 @@ namespace MatterHackers.MatterSlice
         List<Polygons> allPartOutlines = new List<Polygons>();
 		List<Polygons> allPotentialSupportOutlines = new List<Polygons>();
 		List<Polygons> allRequiredSupportOutlines = new List<Polygons>();
-		List<Polygons> allDownOutlines = new List<Polygons>();
+        List<Polygons> easyGrabDistanceOutlines = new List<Polygons>();
+        List<Polygons> allDownOutlines = new List<Polygons>();
 
 		public NewSupport(int numLayers, ConfigSettings config, PartLayers storage)
         {
@@ -43,12 +44,14 @@ namespace MatterHackers.MatterSlice
                 allPartOutlines.Add(new Polygons());
 				allRequiredSupportOutlines.Add(new Polygons());
 				allDownOutlines.Add(new Polygons());
+                easyGrabDistanceOutlines.Add(new Polygons());
             }
 
             // create starting support outlines
             CalculateAllPartOutlines(numLayers, config, storage);
             FindAllPotentialSupportOutlines(numLayers, config, storage);
-			RemoveSelfSupportedSections(numLayers, config, storage);
+            RemoveSelfSupportedSections(numLayers, config, storage);
+            ExpandToEasyGrabDistance(numLayers, config, storage);
 			AccumulateDownPolygons(numLayers, config, storage);
 			// clip to xy distance from all parts
 			// change top layers into interface layers
@@ -95,7 +98,7 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-		private void RemoveSelfSupportedSections(int numLayers, ConfigSettings config, PartLayers storage)
+        private void RemoveSelfSupportedSections(int numLayers, ConfigSettings config, PartLayers storage)
 		{
 			// calculate all the non-supported areas
 			for (int layerIndex = numLayers - 1; layerIndex > 0; layerIndex--)
@@ -116,17 +119,27 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void AccumulateDownPolygons(int numLayers, ConfigSettings config, PartLayers storage)
+        private void ExpandToEasyGrabDistance(int numLayers, ConfigSettings config, PartLayers storage)
+        {
+            // calculate all the non-supported areas
+            for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
+            {
+                Polygons curLayerPolys = allRequiredSupportOutlines[layerIndex];
+                easyGrabDistanceOutlines[layerIndex] = Clipper.CleanPolygons(curLayerPolys.Offset(config.extrusionWidth_um * 2 + config.supportXYDistance_um), cleanDistance_um);
+            }
+        }
+
+        public void AccumulateDownPolygons(int numLayers, ConfigSettings config, PartLayers storage)
 		{
 			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
 			{
-				Polygons aboveRequiredSupport = allRequiredSupportOutlines[layerIndex + 1];
+				Polygons aboveRequiredSupport = easyGrabDistanceOutlines[layerIndex + 1];
 			
 				// get all the polygons above us
                 Polygons accumulatedAbove = allDownOutlines[layerIndex+1].CreateUnion(aboveRequiredSupport);
 				
 				// add in the support on this level
-				Polygons curRequiredSupport = allRequiredSupportOutlines[layerIndex];
+				Polygons curRequiredSupport = easyGrabDistanceOutlines[layerIndex];
 				Polygons totalSupportThisLayer = accumulatedAbove.CreateUnion(curRequiredSupport);
 
 				// remove the solid polys on this level
