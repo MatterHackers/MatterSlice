@@ -34,25 +34,23 @@ namespace MatterHackers.MatterSlice
 		List<Polygons> allPotentialSupportOutlines = new List<Polygons>();
 		List<Polygons> allRequiredSupportOutlines = new List<Polygons>();
         List<Polygons> easyGrabDistanceOutlines = new List<Polygons>();
-        List<Polygons> allDownOutlines = new List<Polygons>();
+		List<Polygons> allDownOutlines = new List<Polygons>();
+		List<Polygons> clippedToXyOutlines = new List<Polygons>();
 
 		public NewSupport(int numLayers, ConfigSettings config, PartLayers storage)
         {
-            for (int i = 0; i < numLayers; i++)
-            {
-                allPotentialSupportOutlines.Add(new Polygons());
-                allPartOutlines.Add(new Polygons());
-				allRequiredSupportOutlines.Add(new Polygons());
-				allDownOutlines.Add(new Polygons());
-                easyGrabDistanceOutlines.Add(new Polygons());
-            }
+			// create starting support outlines
+			allPartOutlines = CalculateAllPartOutlines(numLayers, config, storage);
 
-            // create starting support outlines
-            CalculateAllPartOutlines(numLayers, config, storage);
-            FindAllPotentialSupportOutlines(numLayers, config, storage);
-            RemoveSelfSupportedSections(numLayers, config, storage);
-            ExpandToEasyGrabDistance(numLayers, config, storage);
-			AccumulateDownPolygons(numLayers, config, storage);
+			allPotentialSupportOutlines = FindAllPotentialSupportOutlines(allPartOutlines, numLayers, config, storage);
+
+            allRequiredSupportOutlines = RemoveSelfSupportedSections(allPotentialSupportOutlines, numLayers, config, storage);
+
+			easyGrabDistanceOutlines = ExpandToEasyGrabDistance(allRequiredSupportOutlines, numLayers, config, storage);
+
+			allDownOutlines = AccumulateDownPolygons(easyGrabDistanceOutlines, allPartOutlines, numLayers, config, storage);
+
+			clippedToXyOutlines = ClipToXyDistance(allDownOutlines, allPartOutlines, numLayers, config, storage);
 			// clip to xy distance from all parts
 			// change top layers into interface layers
 			// expand interface layers to be grabable outside the mesh
@@ -65,9 +63,20 @@ namespace MatterHackers.MatterSlice
 			// make support sparse (slice lines and stop extrusion to make weak)
 		}
 
+		static List<Polygons> CreateEmptyPolygons(int numLayers)
+		{
+			List<Polygons> polygonsList = new List<Polygons>();
+            for (int i = 0; i < numLayers; i++)
+			{
+				polygonsList.Add(new Polygons());
+			}
 
-        private void CalculateAllPartOutlines(int numLayers, ConfigSettings config, PartLayers storage)
+			return polygonsList;
+        }
+
+		private static List<Polygons> CalculateAllPartOutlines(int numLayers, ConfigSettings config, PartLayers storage)
         {
+			List<Polygons> allPartOutlines = CreateEmptyPolygons(numLayers);
             // calculate the combind outlines for everything
             for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
             {
@@ -84,62 +93,74 @@ namespace MatterHackers.MatterSlice
 
                 allPartOutlines[layerIndex] = allOutlines.DeepCopy();
             }
+
+			return allPartOutlines;
         }
 
-        private void FindAllPotentialSupportOutlines(int numLayers, ConfigSettings config, PartLayers storage)
+		private static List<Polygons> FindAllPotentialSupportOutlines(List<Polygons> inputPolys, int numLayers, ConfigSettings config, PartLayers storage)
         {
-            // calculate all the non-supported areas
-            for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
+			List<Polygons> allPotentialSupportOutlines = CreateEmptyPolygons(numLayers);
+			// calculate all the non-supported areas
+			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
             {
-                Polygons aboveLayerPolys = allPartOutlines[layerIndex+1];
-                Polygons curLayerPolys = allPartOutlines[layerIndex];
+                Polygons aboveLayerPolys = inputPolys[layerIndex+1];
+                Polygons curLayerPolys = inputPolys[layerIndex];
                 Polygons supportedAreas = aboveLayerPolys.CreateDifference(curLayerPolys.Offset(10));
                 allPotentialSupportOutlines[layerIndex] = Clipper.CleanPolygons(supportedAreas, cleanDistance_um);
             }
+
+			return allPotentialSupportOutlines;
         }
 
-        private void RemoveSelfSupportedSections(int numLayers, ConfigSettings config, PartLayers storage)
+		private static List<Polygons> RemoveSelfSupportedSections(List<Polygons> inputPolys, int numLayers, ConfigSettings config, PartLayers storage)
 		{
+			List<Polygons> allRequiredSupportOutlines = CreateEmptyPolygons(numLayers);
 			// calculate all the non-supported areas
 			for (int layerIndex = numLayers - 1; layerIndex > 0; layerIndex--)
 			{
-				if (allPotentialSupportOutlines[layerIndex - 1].Count > 0)
+				if (inputPolys[layerIndex - 1].Count > 0)
 				{
-					if (allPotentialSupportOutlines[layerIndex].Count > 0)
+					if (inputPolys[layerIndex].Count > 0)
 					{
-						allRequiredSupportOutlines[layerIndex] = allPotentialSupportOutlines[layerIndex].Offset(-config.extrusionWidth_um / 2);
+						allRequiredSupportOutlines[layerIndex] = inputPolys[layerIndex].Offset(-config.extrusionWidth_um / 2);
 						allRequiredSupportOutlines[layerIndex] = allRequiredSupportOutlines[layerIndex].Offset(config.extrusionWidth_um / 2);
 						allRequiredSupportOutlines[layerIndex] = Clipper.CleanPolygons(allRequiredSupportOutlines[layerIndex], cleanDistance_um);
 					}
 				}
 				else
 				{
-					allRequiredSupportOutlines[layerIndex] = allPotentialSupportOutlines[layerIndex].DeepCopy();
+					allRequiredSupportOutlines[layerIndex] = inputPolys[layerIndex].DeepCopy();
 				}
 			}
-		}
 
-        private void ExpandToEasyGrabDistance(int numLayers, ConfigSettings config, PartLayers storage)
-        {
-            // calculate all the non-supported areas
-            for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
-            {
-                Polygons curLayerPolys = allRequiredSupportOutlines[layerIndex];
-                easyGrabDistanceOutlines[layerIndex] = Clipper.CleanPolygons(curLayerPolys.Offset(config.extrusionWidth_um * 2 + config.supportXYDistance_um), cleanDistance_um);
-            }
+			return allRequiredSupportOutlines;
         }
 
-        public void AccumulateDownPolygons(int numLayers, ConfigSettings config, PartLayers storage)
+		private static List<Polygons> ExpandToEasyGrabDistance(List<Polygons> inputPolys, int numLayers, ConfigSettings config, PartLayers storage)
+        {
+			List<Polygons> easyGrabDistanceOutlines = CreateEmptyPolygons(numLayers);
+			// calculate all the non-supported areas
+			for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
+            {
+                Polygons curLayerPolys = inputPolys[layerIndex];
+                easyGrabDistanceOutlines[layerIndex] = Clipper.CleanPolygons(curLayerPolys.Offset(config.extrusionWidth_um + config.supportXYDistance_um), cleanDistance_um);
+            }
+
+			return easyGrabDistanceOutlines;
+        }
+
+		private static List<Polygons> AccumulateDownPolygons(List<Polygons> inputPolys, List<Polygons> allPartOutlines, int numLayers, ConfigSettings config, PartLayers storage)
 		{
+			List<Polygons> allDownOutlines = CreateEmptyPolygons(numLayers);
 			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
 			{
-				Polygons aboveRequiredSupport = easyGrabDistanceOutlines[layerIndex + 1];
+				Polygons aboveRequiredSupport = inputPolys[layerIndex + 1];
 			
 				// get all the polygons above us
                 Polygons accumulatedAbove = allDownOutlines[layerIndex+1].CreateUnion(aboveRequiredSupport);
 				
 				// add in the support on this level
-				Polygons curRequiredSupport = easyGrabDistanceOutlines[layerIndex];
+				Polygons curRequiredSupport = inputPolys[layerIndex];
 				Polygons totalSupportThisLayer = accumulatedAbove.CreateUnion(curRequiredSupport);
 
 				// remove the solid polys on this level
@@ -147,6 +168,24 @@ namespace MatterHackers.MatterSlice
 
 				allDownOutlines[layerIndex] = Clipper.CleanPolygons(remainingAbove, cleanDistance_um);
 			}
+
+			return allDownOutlines;
+        }
+
+		private static List<Polygons> ClipToXyDistance(List<Polygons> inputPolys, List<Polygons> allPartOutlines, int numLayers, ConfigSettings config, PartLayers storage)
+		{
+			List<Polygons> clippedToXyOutlines = CreateEmptyPolygons(numLayers);
+			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
+			{
+				// add in the support on this level
+				Polygons curRequiredSupport = inputPolys[layerIndex];
+				Polygons expandedlayerPolys = allPartOutlines[layerIndex].Offset(config.supportXYDistance_um);
+				Polygons totalSupportThisLayer = curRequiredSupport.CreateDifference(expandedlayerPolys);
+
+				clippedToXyOutlines[layerIndex] = Clipper.CleanPolygons(totalSupportThisLayer, cleanDistance_um);
+			}
+
+			return clippedToXyOutlines;
 		}
 
 		public void AddSupports(GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, GCodePathConfig supportInterfaceConfig)
@@ -155,7 +194,8 @@ namespace MatterHackers.MatterSlice
 			//outlinesToRender = allPartOutlines;
 			//outlinesToRender = allPotentialSupportOutlines;
 			//outlinesToRender = allRequiredSupportOutlines;
-            outlinesToRender = allDownOutlines;
+            //outlinesToRender = allDownOutlines;
+			outlinesToRender = clippedToXyOutlines;
 
 			if (outlinesToRender[layerIndex] != null)
 			{
