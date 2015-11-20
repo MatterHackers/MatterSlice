@@ -31,21 +31,25 @@ namespace MatterHackers.MatterSlice
 	{
         readonly static double cleanDistance_um = 10;
         List<Polygons> allPartOutlines = new List<Polygons>();
-        List<Polygons> allPossibleSupportOutlines = new List<Polygons>();
-        List<Polygons> minimumSupportOutlines = new List<Polygons>();
+		List<Polygons> allPotentialSupportOutlines = new List<Polygons>();
+		List<Polygons> allRequiredSupportOutlines = new List<Polygons>();
+		List<Polygons> allDownOutlines = new List<Polygons>();
 
-        public NewSupport(int numLayers, ConfigSettings config, PartLayers storage)
+		public NewSupport(int numLayers, ConfigSettings config, PartLayers storage)
         {
             for (int i = 0; i < numLayers; i++)
             {
-                allPossibleSupportOutlines.Add(null);
-                allPartOutlines.Add(null);
+                allPotentialSupportOutlines.Add(new Polygons());
+                allPartOutlines.Add(new Polygons());
+				allRequiredSupportOutlines.Add(new Polygons());
+				allDownOutlines.Add(new Polygons());
             }
 
             // create starting support outlines
             CalculateAllPartOutlines(numLayers, config, storage);
-            FindAllPossibleSupportOutlines(numLayers, config, storage);
+            FindAllPotentialSupportOutlines(numLayers, config, storage);
 			RemoveSelfSupportedSections(numLayers, config, storage);
+			AccumulateDownPolygons(numLayers, config, storage);
 			// clip to xy distance from all parts
 			// change top layers into interface layers
 			// expand interface layers to be grabable outside the mesh
@@ -79,7 +83,7 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-        private void FindAllPossibleSupportOutlines(int numLayers, ConfigSettings config, PartLayers storage)
+        private void FindAllPotentialSupportOutlines(int numLayers, ConfigSettings config, PartLayers storage)
         {
             // calculate all the non-supported areas
             for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
@@ -87,30 +91,77 @@ namespace MatterHackers.MatterSlice
                 Polygons aboveLayerPolys = allPartOutlines[layerIndex+1];
                 Polygons curLayerPolys = allPartOutlines[layerIndex];
                 Polygons supportedAreas = aboveLayerPolys.CreateDifference(curLayerPolys.Offset(10));
-                allPossibleSupportOutlines[layerIndex] = Clipper.CleanPolygons(supportedAreas, cleanDistance_um);
+                allPotentialSupportOutlines[layerIndex] = Clipper.CleanPolygons(supportedAreas, cleanDistance_um);
             }
         }
 
-        private void RemoveSelfSupportedSections(int numLayers, ConfigSettings config, PartLayers storage)
+		private void RemoveSelfSupportedSections(int numLayers, ConfigSettings config, PartLayers storage)
 		{
 			// calculate all the non-supported areas
-			for(int i=0; i<allPossibleSupportOutlines.Count; i++)
+			for (int layerIndex = numLayers - 1; layerIndex > 0; layerIndex--)
 			{
-				if (allPossibleSupportOutlines[i] != null)
+				if (allPotentialSupportOutlines[layerIndex - 1].Count > 0)
 				{
-					allPossibleSupportOutlines[i] = allPossibleSupportOutlines[i].Offset(-config.extrusionWidth_um / 2);
-					allPossibleSupportOutlines[i] = allPossibleSupportOutlines[i].Offset(config.extrusionWidth_um / 2);
+					if (allPotentialSupportOutlines[layerIndex].Count > 0)
+					{
+						allRequiredSupportOutlines[layerIndex] = allPotentialSupportOutlines[layerIndex].Offset(-config.extrusionWidth_um / 2);
+						allRequiredSupportOutlines[layerIndex] = allRequiredSupportOutlines[layerIndex].Offset(config.extrusionWidth_um / 2);
+						allRequiredSupportOutlines[layerIndex] = Clipper.CleanPolygons(allRequiredSupportOutlines[layerIndex], cleanDistance_um);
+					}
+				}
+				else
+				{
+					allRequiredSupportOutlines[layerIndex] = allPotentialSupportOutlines[layerIndex].DeepCopy();
 				}
 			}
 		}
 
-        internal void AddSupportToGCode(GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig)
-        {
-            if (allPossibleSupportOutlines[layerIndex] != null)
-            {
-                // make sure last top layer is correct height to leave air gap
-                gcodeLayer.WritePolygonsByOptimizer(allPossibleSupportOutlines[layerIndex], supportNormalConfig);
-            }
-        }
-    }
+		public void AccumulateDownPolygons(int numLayers, ConfigSettings config, PartLayers storage)
+		{
+			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
+			{
+				Polygons aboveRequiredSupport = allRequiredSupportOutlines[layerIndex + 1];
+				if (aboveRequiredSupport.Count > 0)
+				{
+					int a = 0;
+				}
+				
+				// get all the polygons above us
+                Polygons accumulatedAbove = allDownOutlines[layerIndex+1].CreateUnion(aboveRequiredSupport);
+				
+				// add in the support on this level
+				Polygons curRequiredSupport = allRequiredSupportOutlines[layerIndex];
+				Polygons totalSupportThisLayer = accumulatedAbove.CreateUnion(curRequiredSupport);
+
+				// remove the solid polys on this level
+				Polygons remainingAbove = totalSupportThisLayer.CreateDifference(allPartOutlines[layerIndex]);
+
+				allDownOutlines[layerIndex] = Clipper.CleanPolygons(remainingAbove, cleanDistance_um);
+			}
+		}
+
+		public void AddSupports(GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, GCodePathConfig supportInterfaceConfig)
+		{
+			List<Polygons> outlinesToRender = null;
+			//outlinesToRender = allPartOutlines;
+			//outlinesToRender = allPotentialSupportOutlines;
+			//outlinesToRender = allRequiredSupportOutlines;
+            outlinesToRender = allDownOutlines;
+
+			if (outlinesToRender[layerIndex] != null)
+			{
+				gcodeLayer.WritePolygonsByOptimizer(outlinesToRender[layerIndex], supportNormalConfig);
+			}
+		}
+
+		public void AddAirGappedBottomLayers(GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, GCodePathConfig supportInterfaceConfig)
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool HaveBottomLayers(int layerIndex)
+		{
+			return false;
+		}
+	}
 }

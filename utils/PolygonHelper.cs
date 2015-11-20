@@ -450,7 +450,7 @@ namespace MatterHackers.MatterSlice
 	public static Polygons Offset(this Polygons polygons, long distance)
 		{
 			ClipperOffset offseter = new ClipperOffset();
-			offseter.AddPaths(polygons, JoinType.jtMiter, EndType.etClosedPolygon);
+			offseter.AddPaths(polygons, JoinType.jtRound, EndType.etClosedPolygon);
 			Paths solution = new Polygons();
 			offseter.Execute(ref solution, distance);
 			return solution;
