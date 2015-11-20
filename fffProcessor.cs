@@ -434,13 +434,13 @@ namespace MatterHackers.MatterSlice
 			// keep the raft generation code inside of raft
 			Raft.GenerateRaftGCodeIfRequired(slicingData, config, gcode);
 
-            NewSupport newSupport = null;
+			NewSupport newSupport = null;
 			if (false)
 			{
 				newSupport = new NewSupport(totalLayers, config, slicingData.AllPartsLayers[0]);
 			}
 
-            int volumeIndex = 0;
+			int volumeIndex = 0;
 			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 			{
 				if (MatterSlice.Canceled)
@@ -450,7 +450,7 @@ namespace MatterHackers.MatterSlice
 				LogOutput.Log("Writing Layers {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
 
 				LogOutput.logProgress("export", layerIndex + 1, totalLayers);
-				
+
 				if (layerIndex == 0)
 				{
 					skirtConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "SKIRT");
@@ -518,10 +518,10 @@ namespace MatterHackers.MatterSlice
 
 				if (newSupport != null)
 				{
-					newSupport.AddSupportToGCode(gcodeLayer, layerIndex, supportNormalConfig);
+					newSupport.AddSupports(gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
 				}
 
-                int fanSpeedPercent = GetFanSpeed(layerIndex, gcodeLayer);
+				int fanSpeedPercent = GetFanSpeed(layerIndex, gcodeLayer);
 
 				for (int volumeCnt = 0; volumeCnt < slicingData.AllPartsLayers.Count; volumeCnt++)
 				{
@@ -530,7 +530,7 @@ namespace MatterHackers.MatterSlice
 						volumeIndex = (volumeIndex + 1) % slicingData.AllPartsLayers.Count;
 					}
 
-					if(layerIndex == 0)
+					if (layerIndex == 0)
 					{
 						AddVolumeLayerToGCode(slicingData, gcodeLayer, volumeIndex, layerIndex, config.firstLayerExtrusionWidth_um, fanSpeedPercent);
 					}
@@ -543,6 +543,20 @@ namespace MatterHackers.MatterSlice
 				if (!printSupportFirst)
 				{
 					AddSupportToGCode(slicingData, gcodeLayer, layerIndex, config);
+				}
+
+				if (newSupport != null)
+				{
+					if (newSupport.HaveBottomLayers(layerIndex))
+					{
+						if (!config.enableRaft || layerIndex > 0)
+						{
+							z += config.raftAirGap_um;
+							gcode.setZ(z);
+						}
+
+						newSupport.AddAirGappedBottomLayers(gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
+					}
 				}
 
 				//Finish the layer by applying speed corrections for minimum layer times.

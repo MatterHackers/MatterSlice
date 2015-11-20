@@ -121,11 +121,7 @@ namespace MatterHackers.MatterSlice
 			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
 			{
 				Polygons aboveRequiredSupport = allRequiredSupportOutlines[layerIndex + 1];
-				if (aboveRequiredSupport.Count > 0)
-				{
-					int a = 0;
-				}
-				
+			
 				// get all the polygons above us
                 Polygons accumulatedAbove = allDownOutlines[layerIndex+1].CreateUnion(aboveRequiredSupport);
 				
