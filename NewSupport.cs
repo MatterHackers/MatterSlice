@@ -39,6 +39,16 @@ namespace MatterHackers.MatterSlice
 		List<Polygons> interfaceLayers = new List<Polygons>();
 		List<Polygons> risingSupports = new List<Polygons>();
 
+		public Polygons GetRequiredSupportAreas(int layerIndex)
+		{
+			if (layerIndex < allRequiredSupportOutlines.Count && layerIndex >= 0)
+			{
+				return allRequiredSupportOutlines[layerIndex];
+			}
+
+			return new Polygons();
+        }
+
 		public NewSupport(int numLayers, ConfigSettings config, PartLayers storage)
         {
 			// create starting support outlines
