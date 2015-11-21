@@ -54,6 +54,8 @@ namespace MatterHackers.MatterSlice
 		private GCodePathConfig supportNormalConfig = new GCodePathConfig();
 		private GCodePathConfig supportInterfaceConfig = new GCodePathConfig();
 
+		NewSupport newSupport = null;
+
 		public fffProcessor(ConfigSettings config)
 		{
 			this.config = config;
@@ -150,7 +152,7 @@ namespace MatterHackers.MatterSlice
 			topFillConfig.SetData(config.topInfillSpeed, extrusionWidth, "TOP-FILL", false);
 			bridgConfig.SetData(config.bridgeSpeed, extrusionWidth, "BRIDGE");
 			supportNormalConfig.SetData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT");
-			supportInterfaceConfig.SetData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT-INTERFACE");
+			supportInterfaceConfig.SetData(config.supportMaterialSpeed - 5, extrusionWidth, "SUPPORT-INTERFACE");
 
 			for (int extruderIndex = 0; extruderIndex < ConfigConstants.MAX_EXTRUDERS; extruderIndex++)
 			{
@@ -434,8 +436,7 @@ namespace MatterHackers.MatterSlice
 			// keep the raft generation code inside of raft
 			Raft.GenerateRaftGCodeIfRequired(slicingData, config, gcode);
 
-			NewSupport newSupport = null;
-			if (false)
+			if (config.useNewSupport)
 			{
 				newSupport = new NewSupport(totalLayers, config, slicingData.AllPartsLayers[0]);
 			}
@@ -471,7 +472,7 @@ namespace MatterHackers.MatterSlice
 					bridgConfig.SetData(config.bridgeSpeed, config.extrusionWidth_um, "BRIDGE");
 
 					supportNormalConfig.SetData(config.supportMaterialSpeed, config.supportExtrusionWidth_um, "SUPPORT");
-					supportInterfaceConfig.SetData(config.supportMaterialSpeed, config.extrusionWidth_um, "SUPPORT-INTERFACE");
+					supportInterfaceConfig.SetData(config.supportMaterialSpeed - 5, config.extrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 
 				gcode.WriteComment("LAYER:{0}".FormatWith(layerIndex));
@@ -519,7 +520,7 @@ namespace MatterHackers.MatterSlice
 				if (newSupport != null)
 				{
 					newSupport.AddSupports(gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
-				}
+                }
 
 				int fanSpeedPercent = GetFanSpeed(layerIndex, gcodeLayer);
 
@@ -679,10 +680,11 @@ namespace MatterHackers.MatterSlice
 				}
 
 				Polygons fillPolygons = new Polygons();
+				Polygons bottomFillPolygons = new Polygons();
 				Polygons topFillPolygons = new Polygons();
 				Polygons bridgePolygons = new Polygons();
 
-				CalculateInfillData(slicingData, volumeIndex, layerIndex, part, ref fillPolygons, ref topFillPolygons, ref bridgePolygons);
+				CalculateInfillData(slicingData, volumeIndex, layerIndex, part, ref bottomFillPolygons, ref fillPolygons, ref topFillPolygons, ref bridgePolygons);
 
 				// Write the bridge polgons out first so the perimeter will have more to hold to while bridging the gaps.
 				// It would be even better to slow down the perimeters that are part of bridges but that is a bit harder.
@@ -751,7 +753,17 @@ namespace MatterHackers.MatterSlice
 				}
 
 				gcodeLayer.WritePolygonsByOptimizer(fillPolygons, fillConfig);
-				gcodeLayer.WritePolygonsByOptimizer(topFillPolygons, topFillConfig);
+				if (config.useNewSupport)
+				{
+					// don't write the bottoms that are sitting on supported areas (they will be written at air gap distance later).
+					Polygons bottomsNotNeedingSupport = bottomFillPolygons.CreateDifference(newSupport.GetRequiredSupportAreas(layerIndex));
+                    gcodeLayer.WritePolygonsByOptimizer(bottomsNotNeedingSupport, fillConfig);
+				}
+				else
+				{
+					gcodeLayer.WritePolygonsByOptimizer(bottomFillPolygons, fillConfig);
+				}
+                gcodeLayer.WritePolygonsByOptimizer(topFillPolygons, topFillConfig);
 
 				//After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
 				if (!config.continuousSpiralOuterPerimeter || layerIndex < config.numberOfBottomLayers)
@@ -762,7 +774,7 @@ namespace MatterHackers.MatterSlice
 			gcodeLayer.SetOuterPerimetersToAvoidCrossing(null);
 		}
 
-		private void CalculateInfillData(SliceDataStorage slicingData, int volumeIndex, int layerIndex, SliceLayerPart part, ref Polygons fillPolygons, ref Polygons topFillPolygons, ref Polygons bridgePolygons)
+		private void CalculateInfillData(SliceDataStorage slicingData, int volumeIndex, int layerIndex, SliceLayerPart part, ref Polygons bottomFillPolygons, ref Polygons fillPolygons, ref Polygons topFillPolygons, ref Polygons bridgePolygons)
 		{
 			// generate infill the bottom layer including bridging
 			foreach (Polygons outline in part.SolidBottomOutlines.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd))
@@ -770,18 +782,19 @@ namespace MatterHackers.MatterSlice
 				if (layerIndex > 0)
 				{
 					double bridgeAngle;
-					if (Bridge.BridgeAngle(outline, slicingData.AllPartsLayers[volumeIndex].Layers[layerIndex - 1], out bridgeAngle))
+					if (!config.useNewSupport && 
+						Bridge.BridgeAngle(outline, slicingData.AllPartsLayers[volumeIndex].Layers[layerIndex - 1], out bridgeAngle))
 					{
 						Infill.GenerateLinePaths(outline, ref bridgePolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, bridgeAngle);
 					}
 					else
 					{
-						Infill.GenerateLinePaths(outline, ref fillPolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle);
+						Infill.GenerateLinePaths(outline, ref bottomFillPolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle);
 					}
 				}
 				else
 				{
-					Infill.GenerateLinePaths(outline, ref fillPolygons, config.firstLayerExtrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle);
+					Infill.GenerateLinePaths(outline, ref bottomFillPolygons, config.firstLayerExtrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle);
 				}
 			}
 

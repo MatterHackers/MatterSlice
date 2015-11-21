@@ -262,6 +262,8 @@ namespace MatterHackers.MatterSlice
         [SettingDescription("The ending angle at which support material will be generated. Larger numbers will result in more support, degrees.")]
         public int supportEndAngle;
 
+		public bool useNewSupport;
+
         public int supportExtruder;
 
         [SettingDescription("Support extrusion percent.")]
@@ -638,7 +640,8 @@ namespace MatterHackers.MatterSlice
 
             supportType = ConfigConstants.SUPPORT_TYPE.GRID;
             supportEndAngle = 0;
-            generateInternalSupport = true;
+			useNewSupport = true;
+			generateInternalSupport = true;
             raftExtruder = -1;
             supportLineSpacing = extrusionWidth * 5;
             supportExtruder = -1;
