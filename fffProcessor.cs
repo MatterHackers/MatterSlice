@@ -718,14 +718,14 @@ namespace MatterHackers.MatterSlice
 						// First the outside (this helps with accuracy)
 						if (part.Insets.Count > 0)
 						{
-							gcodeLayer.WritePolygonsByOptimizer(part.Insets[0], inset0Config);
+							WritePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[0], inset0Config, SupportWriteType.UnsuportedAreas);
 						}
 
 						if (!inset0Config.spiralize)
 						{
 							for (int perimeterIndex = 1; perimeterIndex < part.Insets.Count; perimeterIndex++)
 							{
-								gcodeLayer.WritePolygonsByOptimizer(part.Insets[perimeterIndex], insetXConfig);
+								WritePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[perimeterIndex], insetXConfig, SupportWriteType.UnsuportedAreas);
 							}
 						}
 					}
@@ -742,28 +742,38 @@ namespace MatterHackers.MatterSlice
 						// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
 						for (int perimeterIndex = 1; perimeterIndex < part.Insets.Count; perimeterIndex++)
 						{
-							gcodeLayer.WritePolygonsByOptimizer(part.Insets[perimeterIndex], insetXConfig);
+							WritePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[perimeterIndex], insetXConfig, SupportWriteType.UnsuportedAreas);
 						}
 						// then 0
 						if (part.Insets.Count > 0)
 						{
-							gcodeLayer.WritePolygonsByOptimizer(part.Insets[0], inset0Config);
+							WritePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[0], inset0Config, SupportWriteType.UnsuportedAreas);
 						}
 					}
 				}
 
 				gcodeLayer.WritePolygonsByOptimizer(fillPolygons, fillConfig);
-				if (config.useNewSupport)
+
+				WritePolygonsConsideringSupport(layerIndex, gcodeLayer, bottomFillPolygons, fillConfig, SupportWriteType.UnsuportedAreas);
+
+				gcodeLayer.WritePolygonsByOptimizer(topFillPolygons, topFillConfig);
+
+				// Now write any areas that need to be on support at the air gap height
+				if(false)
 				{
-					// don't write the bottoms that are sitting on supported areas (they will be written at air gap distance later).
-					Polygons bottomsNotNeedingSupport = bottomFillPolygons.CreateDifference(newSupport.GetRequiredSupportAreas(layerIndex));
-                    gcodeLayer.WritePolygonsByOptimizer(bottomsNotNeedingSupport, fillConfig);
+					// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
+					for (int perimeterIndex = 1; perimeterIndex < part.Insets.Count; perimeterIndex++)
+					{
+						WritePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[perimeterIndex], insetXConfig, SupportWriteType.SupportedAreas);
+					}
+					// then 0
+					if (part.Insets.Count > 0)
+					{
+						WritePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[0], inset0Config, SupportWriteType.SupportedAreas);
+					}
+
+					WritePolygonsConsideringSupport(layerIndex, gcodeLayer, bottomFillPolygons, fillConfig, SupportWriteType.SupportedAreas);
 				}
-				else
-				{
-					gcodeLayer.WritePolygonsByOptimizer(bottomFillPolygons, fillConfig);
-				}
-                gcodeLayer.WritePolygonsByOptimizer(topFillPolygons, topFillConfig);
 
 				//After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
 				if (!config.continuousSpiralOuterPerimeter || layerIndex < config.numberOfBottomLayers)
@@ -772,6 +782,31 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 			gcodeLayer.SetOuterPerimetersToAvoidCrossing(null);
+		}
+
+		enum SupportWriteType { UnsuportedAreas, SupportedAreas };
+
+		private void WritePolygonsConsideringSupport(int layerIndex, GCodePlanner gcodeLayer, Polygons polygonsToWrite, GCodePathConfig fillConfig, SupportWriteType supportWriteType)
+		{
+			if (config.useNewSupport)
+			{
+				if (supportWriteType == SupportWriteType.UnsuportedAreas)
+				{
+					// don't write the bottoms that are sitting on supported areas (they will be written at air gap distance later).
+					Polygons polygonsNotOnSupport = polygonsToWrite.CreateDifference(newSupport.GetRequiredSupportAreas(layerIndex));
+					gcodeLayer.WritePolygonsByOptimizer(polygonsNotOnSupport, fillConfig);
+				}
+				else
+				{
+					// write the bottoms that are sitting on supported areas.
+					Polygons polygonsOnSupport = polygonsToWrite.CreateDifference(newSupport.GetRequiredSupportAreas(layerIndex));
+					gcodeLayer.WritePolygonsByOptimizer(polygonsOnSupport, fillConfig);
+				}
+			}
+			else if(supportWriteType == SupportWriteType.UnsuportedAreas)
+            {
+				gcodeLayer.WritePolygonsByOptimizer(polygonsToWrite, fillConfig);
+			}
 		}
 
 		private void CalculateInfillData(SliceDataStorage slicingData, int volumeIndex, int layerIndex, SliceLayerPart part, ref Polygons bottomFillPolygons, ref Polygons fillPolygons, ref Polygons topFillPolygons, ref Polygons bridgePolygons)
