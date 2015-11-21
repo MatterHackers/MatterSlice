@@ -250,10 +250,10 @@ namespace MatterHackers.MatterSlice
 			List<Polygons> outlinesToRender = null;
 			//outlinesToRender = allPartOutlines;
 			//outlinesToRender = allPotentialSupportOutlines;
-			//outlinesToRender = allRequiredSupportOutlines;
+			outlinesToRender = allRequiredSupportOutlines;
 			//outlinesToRender = allDownOutlines;
 			//outlinesToRender = pushedUpTopOutlines;
-			outlinesToRender = risingSupports;
+			//outlinesToRender = risingSupports;
 			//outlinesToRender = interfaceLayers;
 
 			gcodeLayer.WritePolygonsByOptimizer(outlinesToRender[layerIndex], supportNormalConfig);
