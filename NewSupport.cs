@@ -37,7 +37,7 @@ namespace MatterHackers.MatterSlice
 		//List<Polygons> pushedUpTopOutlines = new List<Polygons>();
 		List<Polygons> supportOutlines = new List<Polygons>();
 		List<Polygons> interfaceLayers = new List<Polygons>();
-		List<Polygons> nonInterfaceSupports = new List<Polygons>();
+		List<Polygons> risingSupports = new List<Polygons>();
 
 		public NewSupport(int numLayers, ConfigSettings config, PartLayers storage)
         {
@@ -57,8 +57,8 @@ namespace MatterHackers.MatterSlice
 			interfaceLayers = ClipToXyDistance(interfaceLayers, allPartOutlines, numLayers, config, storage);
 
 			supportOutlines = AccumulateDownPolygons(easyGrabDistanceOutlines, allPartOutlines, numLayers, config, storage);
-			nonInterfaceSupports = ClipToXyDistance(supportOutlines, allPartOutlines, numLayers, config, storage);
-			nonInterfaceSupports = DifferenceAllLayers(nonInterfaceSupports, interfaceLayers, numLayers);
+			risingSupports = ClipToXyDistance(supportOutlines, allPartOutlines, numLayers, config, storage);
+			risingSupports = DifferenceAllLayers(risingSupports, interfaceLayers, numLayers);
         }
 
 		static List<Polygons> CreateEmptyPolygons(int numLayers)
@@ -243,7 +243,7 @@ namespace MatterHackers.MatterSlice
 			//outlinesToRender = allRequiredSupportOutlines;
 			//outlinesToRender = allDownOutlines;
 			//outlinesToRender = pushedUpTopOutlines;
-			outlinesToRender = nonInterfaceSupports;
+			outlinesToRender = risingSupports;
 			//outlinesToRender = interfaceLayers;
 
 			gcodeLayer.WritePolygonsByOptimizer(outlinesToRender[layerIndex], supportNormalConfig);
