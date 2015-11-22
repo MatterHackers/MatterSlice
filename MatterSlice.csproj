@@ -126,6 +126,7 @@
     <Compile Include="Settings.cs" />
     <Compile Include="timeEstimate.cs" />
     <Compile Include="utils\IntpointHelper.cs" />
+    <Compile Include="utils\PolygonsHelper.cs" />
     <Compile Include="utils\SplitCommandLine.cs" />
     <Compile Include="utils\StringHelper.cs" />
   </ItemGroup>

@@ -30,14 +30,15 @@ namespace MatterHackers.MatterSlice
 	public class NewSupport
 	{
         readonly static double cleanDistance_um = 10;
-        List<Polygons> allPartOutlines = new List<Polygons>();
-		List<Polygons> allPotentialSupportOutlines = new List<Polygons>();
-		List<Polygons> allRequiredSupportOutlines = new List<Polygons>();
-		List<Polygons> easyGrabDistanceOutlines = new List<Polygons>();
-		//List<Polygons> pushedUpTopOutlines = new List<Polygons>();
-		List<Polygons> supportOutlines = new List<Polygons>();
-		List<Polygons> interfaceLayers = new List<Polygons>();
-		List<Polygons> risingSupports = new List<Polygons>();
+
+        internal List<Polygons> allPartOutlines = new List<Polygons>();
+        internal List<Polygons> allPotentialSupportOutlines = new List<Polygons>();
+        internal List<Polygons> allRequiredSupportOutlines = new List<Polygons>();
+        internal List<Polygons> easyGrabDistanceOutlines = new List<Polygons>();
+        //List<Polygons> pushedUpTopOutlines = new List<Polygons>();
+        internal List<Polygons> supportOutlines = new List<Polygons>();
+        internal List<Polygons> interfaceLayers = new List<Polygons>();
+        internal List<Polygons> risingSupports = new List<Polygons>();
 
 		public Polygons GetRequiredSupportAreas(int layerIndex)
 		{
@@ -245,7 +246,7 @@ namespace MatterHackers.MatterSlice
 			return diferenceLayers;
 		}
 
-		public void AddSupports(GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, GCodePathConfig supportInterfaceConfig)
+		public void WriteNormalSupportLayer(GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, GCodePathConfig supportInterfaceConfig)
 		{
 			List<Polygons> outlinesToRender = null;
 			//outlinesToRender = allPartOutlines;
@@ -261,14 +262,14 @@ namespace MatterHackers.MatterSlice
 			gcodeLayer.WritePolygonsByOptimizer(interfaceLayers[layerIndex], supportInterfaceConfig);
 		}
 
-		public void AddAirGappedBottomLayers(GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, GCodePathConfig supportInterfaceConfig)
+		public void WriteAirGappedBottomLayer(GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, GCodePathConfig supportInterfaceConfig)
 		{
 			throw new NotImplementedException();
 		}
 
-		public bool HaveBottomLayers(int layerIndex)
-		{
-			return false;
-		}
-	}
+        public bool HaveBottomLayers(int layerIndex)
+        {
+            return false;
+        }
+    }
 }

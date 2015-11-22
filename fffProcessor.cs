@@ -519,7 +519,7 @@ namespace MatterHackers.MatterSlice
 
 				if (newSupport != null)
 				{
-					newSupport.AddSupports(gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
+					newSupport.WriteNormalSupportLayer(gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
                 }
 
 				int fanSpeedPercent = GetFanSpeed(layerIndex, gcodeLayer);
@@ -556,7 +556,7 @@ namespace MatterHackers.MatterSlice
 							gcode.setZ(z);
 						}
 
-						newSupport.AddAirGappedBottomLayers(gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
+						newSupport.WriteAirGappedBottomLayer(gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
 					}
 				}
 

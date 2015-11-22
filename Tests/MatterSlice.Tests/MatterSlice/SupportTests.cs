@@ -41,27 +41,80 @@ namespace MatterHackers.MatterSlice.Tests
     public class SupportTests
     {
         [Test]
-        public void TestInfillAngles()
+        public void TestCorrectSupportLayer()
         {
             {
                 ConfigSettings config = new ConfigSettings();
-                config.supportEndAngle = 45;
-                config.layerThickness = .1;
+
+                List<Polygons> partOutlines = new List<Polygons>();
+                for(int i=0; i<5; i++)
+                    partOutlines.Add(new Polygons());
+
+                Polygons cubeOutline = PolygonsHelper.CreateFromString("x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|");
+                for (int i = 0; i < 5; i++)
+                    partOutlines.Add(cubeOutline);
+
+                PartLayers layerData = CreateLayerData(partOutlines);
+                NewSupport supportGenerator = new NewSupport(10, config, layerData);
+
+                // check the all part outlines
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        Assert.IsTrue(supportGenerator.allPartOutlines[i].Count == 0);
+                    }
+
+                    for (int i = 5; i < 10; i++)
+                    {
+                        Assert.IsTrue(supportGenerator.allPartOutlines[i].Count == 1);
+                        Assert.IsTrue(supportGenerator.allPartOutlines[i][0].Count == 4);
+                        Assert.IsTrue(supportGenerator.allPartOutlines[i][0].DescribesSameShape(cubeOutline[0]));
+                    }
+                }
+
+                // check the potential support outlines
+                {
+                    for (int i = 0; i < 4; i++)
+                    {
+                        Assert.IsTrue(supportGenerator.allPotentialSupportOutlines[i].Count == 0);
+                    }
+                    Assert.IsTrue(supportGenerator.allPotentialSupportOutlines[4].Count == 1);
+                    Assert.IsTrue(supportGenerator.allPotentialSupportOutlines[4][0].Count == 4);
+                    Assert.IsTrue(supportGenerator.allPotentialSupportOutlines[4][0].DescribesSameShape(cubeOutline[0]));
+                    for (int i = 5; i < 10; i++)
+                    {
+                        Assert.IsTrue(supportGenerator.allPotentialSupportOutlines[i].Count == 0);
+                    }
+                }
+
+                // check the required support outlines
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        Assert.IsTrue(supportGenerator.allPotentialSupportOutlines[i].Count == 1);
+                        Assert.IsTrue(supportGenerator.allPotentialSupportOutlines[i][0].Count == 4);
+                        Assert.IsTrue(supportGenerator.allPotentialSupportOutlines[i][0].DescribesSameShape(cubeOutline[0]));
+                    }
+                    for (int i = 5; i < 10; i++)
+                    {
+                        Assert.IsTrue(supportGenerator.allPotentialSupportOutlines[i].Count == 0);
+                    }
+                }
             }
         }
 
-        private static PartLayers CreateLayerData(Polygons inset0Outline, int numLayers)
+        private static PartLayers CreateLayerData(List<Polygons> totalLayerOutlines)
         {
+            int numLayers = totalLayerOutlines.Count;
             PartLayers layerData = new PartLayers();
             layerData.Layers = new List<SliceLayerParts>();
-            for (int i = 0; i < numLayers; i++)
+            for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
             {
                 SliceLayerParts layer = new SliceLayerParts();
                 layer.parts = new List<SliceLayerPart>();
                 SliceLayerPart part = new SliceLayerPart();
-                part.Insets = new List<Polygons>();
-                part.Insets.Add(inset0Outline);
-                part.BoundingBox = new Aabb(inset0Outline);
+                part.TotalOutline = totalLayerOutlines[layerIndex];
+                Inset.GenerateInsets(part, 500, 500, 2);
                 layer.parts.Add(part);
                 layerData.Layers.Add(layer);
             }
