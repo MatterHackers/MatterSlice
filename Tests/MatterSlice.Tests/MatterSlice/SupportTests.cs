@@ -34,6 +34,7 @@ using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice.Tests
 {
+    using System;
     using Polygon = List<IntPoint>;
     using Polygons = List<List<IntPoint>>;
 
@@ -43,62 +44,78 @@ namespace MatterHackers.MatterSlice.Tests
         [Test]
         public void TestCorrectSupportLayer()
         {
+            // test the supports for a simple cube in the air
             {
                 ConfigSettings config = new ConfigSettings();
+                config.layerThickness = .5;
+                config.supportXYDistanceFromObject = 0;
 
                 List<Polygons> partOutlines = new List<Polygons>();
-                for(int i=0; i<5; i++)
+                for (int i = 0; i < 5; i++)
+                {
                     partOutlines.Add(new Polygons());
+                }
 
                 Polygons cubeOutline = PolygonsHelper.CreateFromString("x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|");
                 for (int i = 0; i < 5; i++)
+                {
                     partOutlines.Add(cubeOutline);
+                }
 
                 PartLayers layerData = CreateLayerData(partOutlines);
-                NewSupport supportGenerator = new NewSupport(10, config, layerData);
+                NewSupport supportGenerator = new NewSupport(10, config, layerData, 0, 0);
 
                 // check the all part outlines
                 {
-                    for (int i = 0; i < 5; i++)
-                    {
-                        Assert.IsTrue(supportGenerator.allPartOutlines[i].Count == 0);
-                    }
-
-                    for (int i = 5; i < 10; i++)
-                    {
-                        Assert.IsTrue(supportGenerator.allPartOutlines[i].Count == 1);
-                        Assert.IsTrue(supportGenerator.allPartOutlines[i][0].Count == 4);
-                        Assert.IsTrue(supportGenerator.allPartOutlines[i][0].DescribesSameShape(cubeOutline[0]));
-                    }
+                    List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, };
+                    List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 0, 4, 4, 4, 4, 4, };
+                    List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null, cubeOutline, cubeOutline, cubeOutline, cubeOutline, cubeOutline, };
+                    CheckLayers(supportGenerator.allPartOutlines, polygonsCounts, polygon0Counts, poly0Paths);
                 }
 
                 // check the potential support outlines
                 {
-                    for (int i = 0; i < 4; i++)
-                    {
-                        Assert.IsTrue(supportGenerator.allPotentialSupportOutlines[i].Count == 0);
-                    }
-                    Assert.IsTrue(supportGenerator.allPotentialSupportOutlines[4].Count == 1);
-                    Assert.IsTrue(supportGenerator.allPotentialSupportOutlines[4][0].Count == 4);
-                    Assert.IsTrue(supportGenerator.allPotentialSupportOutlines[4][0].DescribesSameShape(cubeOutline[0]));
-                    for (int i = 5; i < 10; i++)
-                    {
-                        Assert.IsTrue(supportGenerator.allPotentialSupportOutlines[i].Count == 0);
-                    }
+                    List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
+                    List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
+                    List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, cubeOutline, null, null, null, null, null };
+                    CheckLayers(supportGenerator.allPotentialSupportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
                 }
 
                 // check the required support outlines
                 {
-                    for (int i = 0; i < 5; i++)
-                    {
-                        Assert.IsTrue(supportGenerator.allPotentialSupportOutlines[i].Count == 1);
-                        Assert.IsTrue(supportGenerator.allPotentialSupportOutlines[i][0].Count == 4);
-                        Assert.IsTrue(supportGenerator.allPotentialSupportOutlines[i][0].DescribesSameShape(cubeOutline[0]));
-                    }
-                    for (int i = 5; i < 10; i++)
-                    {
-                        Assert.IsTrue(supportGenerator.allPotentialSupportOutlines[i].Count == 0);
-                    }
+                    List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
+                    List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
+                    List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, cubeOutline, null, null, null, null, null };
+                    CheckLayers(supportGenerator.allRequiredSupportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
+                }
+
+                // check the generated support outlines
+                {
+                    List<int> polygonsCounts = new List<int> { 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, };
+                    List<int> polygon0Counts = new List<int> { 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, };
+                    List<Polygons> poly0Paths = new List<Polygons>() { cubeOutline, cubeOutline, cubeOutline, cubeOutline, cubeOutline, null, null, null, null, null };
+                    CheckLayers(supportGenerator.supportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
+                }
+
+                // check the interface support outlines
+                {
+                    List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
+                    List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
+                    List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null, null, null, null, null, null };
+                    CheckLayers(supportGenerator.interfaceLayers, polygonsCounts, polygon0Counts, poly0Paths);
+                }
+            }
+        }
+
+        private void CheckLayers(List<Polygons> polygonsToValidate, List<int> polygonsCounts, List<int> polygon0Counts, List<Polygons> poly0Paths)
+        {
+            for (int i = 0; i < polygonsToValidate.Count; i++)
+            {
+                Assert.IsTrue(polygonsToValidate[i].Count == polygonsCounts[i]);
+                if (polygonsToValidate[i].Count > 0)
+                {
+                    Assert.IsTrue(polygonsToValidate[i][0].Count == polygon0Counts[i]);
+                    Assert.IsTrue(polygonsToValidate[i][0].DescribesSameShape(poly0Paths[i][0]));
                 }
             }
         }

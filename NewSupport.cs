@@ -38,9 +38,11 @@ namespace MatterHackers.MatterSlice
         //List<Polygons> pushedUpTopOutlines = new List<Polygons>();
         internal List<Polygons> supportOutlines = new List<Polygons>();
         internal List<Polygons> interfaceLayers = new List<Polygons>();
-        internal List<Polygons> risingSupports = new List<Polygons>();
 
-		public Polygons GetRequiredSupportAreas(int layerIndex)
+        double interfaceLayersMm;
+        double grabDistanceMm;
+
+        public Polygons GetRequiredSupportAreas(int layerIndex)
 		{
 			if (layerIndex < allRequiredSupportOutlines.Count && layerIndex >= 0)
 			{
@@ -50,26 +52,29 @@ namespace MatterHackers.MatterSlice
 			return new Polygons();
         }
 
-		public NewSupport(int numLayers, ConfigSettings config, PartLayers storage)
+		public NewSupport(int numLayers, ConfigSettings config, PartLayers storage, double interfaceLayersMm, double grabDistanceMm)
         {
-			// create starting support outlines
-			allPartOutlines = CalculateAllPartOutlines(numLayers, config, storage);
+            this.interfaceLayersMm = interfaceLayersMm;
+            this.grabDistanceMm = grabDistanceMm;
+            // create starting support outlines
+            allPartOutlines = CalculateAllPartOutlines(numLayers, config, storage);
 
 			allPotentialSupportOutlines = FindAllPotentialSupportOutlines(allPartOutlines, numLayers, config, storage);
 
             allRequiredSupportOutlines = RemoveSelfSupportedSections(allPotentialSupportOutlines, numLayers, config, storage);
 
-			easyGrabDistanceOutlines = ExpandToEasyGrabDistance(allRequiredSupportOutlines, numLayers, config, storage);
+			easyGrabDistanceOutlines = ExpandToEasyGrabDistance(allRequiredSupportOutlines, numLayers, config, storage, (int)(grabDistanceMm*1000));
 
 			//pushedUpTopOutlines = PushUpTops(easyGrabDistanceOutlines, numLayers, config, storage);
 
-            int numInterfaceLayers = 1000 / config.layerThickness_um;
+            int numInterfaceLayers = (int)(interfaceLayersMm*1000) / config.layerThickness_um;
 			interfaceLayers = CreateInterfacelayers(easyGrabDistanceOutlines, numLayers, config, storage, numInterfaceLayers);
 			interfaceLayers = ClipToXyDistance(interfaceLayers, allPartOutlines, numLayers, config, storage);
 
 			supportOutlines = AccumulateDownPolygons(easyGrabDistanceOutlines, allPartOutlines, numLayers, config, storage);
-			risingSupports = ClipToXyDistance(supportOutlines, allPartOutlines, numLayers, config, storage);
-			risingSupports = DifferenceAllLayers(risingSupports, interfaceLayers, numLayers);
+            supportOutlines = ClipToXyDistance(supportOutlines, allPartOutlines, numLayers, config, storage);
+
+            supportOutlines = CalculateDifferencePerLayer(supportOutlines, interfaceLayers, numLayers);
         }
 
 		static List<Polygons> CreateEmptyPolygons(int numLayers)
@@ -145,13 +150,13 @@ namespace MatterHackers.MatterSlice
 			return allRequiredSupportOutlines;
         }
 
-		private static List<Polygons> ExpandToEasyGrabDistance(List<Polygons> inputPolys, int numLayers, ConfigSettings config, PartLayers storage)
+		private static List<Polygons> ExpandToEasyGrabDistance(List<Polygons> inputPolys, int numLayers, ConfigSettings config, PartLayers storage, long grabDistance_um)
 		{
 			List<Polygons> easyGrabDistanceOutlines = CreateEmptyPolygons(numLayers);
 			for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
 			{
 				Polygons curLayerPolys = inputPolys[layerIndex];
-				easyGrabDistanceOutlines[layerIndex] = Clipper.CleanPolygons(curLayerPolys.Offset(config.extrusionWidth_um + config.supportXYDistance_um), cleanDistance_um);
+				easyGrabDistanceOutlines[layerIndex] = Clipper.CleanPolygons(curLayerPolys.Offset(grabDistance_um), cleanDistance_um);
 			}
 
 			return easyGrabDistanceOutlines;
@@ -198,24 +203,27 @@ namespace MatterHackers.MatterSlice
 			return allDownOutlines;
         }
 
-		private static List<Polygons> CreateInterfacelayers(List<Polygons> inputPolys, int numLayers, ConfigSettings config, PartLayers storage, int numInterfaceLayers)
-		{
-			List<Polygons> allInterfaceLayers = CreateEmptyPolygons(numLayers);
-			for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
-			{
-				Polygons accumulatedAbove = inputPolys[layerIndex].DeepCopy();
+        private static List<Polygons> CreateInterfacelayers(List<Polygons> inputPolys, int numLayers, ConfigSettings config, PartLayers storage, int numInterfaceLayers)
+        {
+            List<Polygons> allInterfaceLayers = CreateEmptyPolygons(numLayers);
+            if (numInterfaceLayers > 0)
+            {
+                for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
+                {
+                    Polygons accumulatedAbove = inputPolys[layerIndex].DeepCopy();
 
-				for (int addIndex = layerIndex + 1; addIndex < Math.Min(layerIndex + numInterfaceLayers, numLayers - 2); addIndex++)
-				{
-					accumulatedAbove = accumulatedAbove.CreateUnion(inputPolys[addIndex]);
-					accumulatedAbove = Clipper.CleanPolygons(accumulatedAbove, cleanDistance_um);
-				}
+                    for (int addIndex = layerIndex + 1; addIndex < Math.Min(layerIndex + numInterfaceLayers, numLayers - 2); addIndex++)
+                    {
+                        accumulatedAbove = accumulatedAbove.CreateUnion(inputPolys[addIndex]);
+                        accumulatedAbove = Clipper.CleanPolygons(accumulatedAbove, cleanDistance_um);
+                    }
 
-				allInterfaceLayers[layerIndex] = accumulatedAbove;
-			}
+                    allInterfaceLayers[layerIndex] = accumulatedAbove;
+                }
+            }
 
-			return allInterfaceLayers;
-		}
+            return allInterfaceLayers;
+        }
 
 		private static List<Polygons> ClipToXyDistance(List<Polygons> inputPolys, List<Polygons> allPartOutlines, int numLayers, ConfigSettings config, PartLayers storage)
 		{
@@ -232,7 +240,7 @@ namespace MatterHackers.MatterSlice
 			return clippedToXyOutlines;
 		}
 
-		private static List<Polygons> DifferenceAllLayers(List<Polygons> inputPolys, List<Polygons> outlinesToRemove, int numLayers)
+		private static List<Polygons> CalculateDifferencePerLayer(List<Polygons> inputPolys, List<Polygons> outlinesToRemove, int numLayers)
 		{
 			List<Polygons> diferenceLayers = CreateEmptyPolygons(numLayers);
 			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
@@ -248,18 +256,25 @@ namespace MatterHackers.MatterSlice
 
 		public void WriteNormalSupportLayer(GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, GCodePathConfig supportInterfaceConfig)
 		{
-			List<Polygons> outlinesToRender = null;
-			//outlinesToRender = allPartOutlines;
-			//outlinesToRender = allPotentialSupportOutlines;
-			outlinesToRender = allRequiredSupportOutlines;
-			//outlinesToRender = allDownOutlines;
-			//outlinesToRender = pushedUpTopOutlines;
-			//outlinesToRender = risingSupports;
-			//outlinesToRender = interfaceLayers;
+            if (false)
+            {
+                List<Polygons> outlinesToRender = null;
+                //outlinesToRender = allPartOutlines;
+                //outlinesToRender = allPotentialSupportOutlines;
+                //outlinesToRender = allRequiredSupportOutlines;
+                //outlinesToRender = allDownOutlines;
+                //outlinesToRender = pushedUpTopOutlines;
+                outlinesToRender = supportOutlines;
+                //outlinesToRender = interfaceLayers;
 
-			gcodeLayer.WritePolygonsByOptimizer(outlinesToRender[layerIndex], supportNormalConfig);
+                gcodeLayer.WritePolygonsByOptimizer(outlinesToRender[layerIndex], supportNormalConfig);
+            }
+            else
+            {
+                gcodeLayer.WritePolygonsByOptimizer(supportOutlines[layerIndex], supportNormalConfig);
 
-			gcodeLayer.WritePolygonsByOptimizer(interfaceLayers[layerIndex], supportInterfaceConfig);
+                gcodeLayer.WritePolygonsByOptimizer(interfaceLayers[layerIndex], supportInterfaceConfig);
+            }
 		}
 
 		public void WriteAirGappedBottomLayer(GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, GCodePathConfig supportInterfaceConfig)
