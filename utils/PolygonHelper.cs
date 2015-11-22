@@ -115,8 +115,37 @@ namespace MatterHackers.MatterSlice
 			return output;
 		}
 
-		public static IntPoint getBoundaryPointWithOffset(Polygon poly, int point_idx, long offset)
-		{
+        public static bool DescribesSameShape(this Polygon a, Polygon b)
+        {
+            if(a.Count != b.Count)
+            {
+                return false;
+            }
+
+            // find first same point
+            for(int indexB = 0; indexB < b.Count; indexB++)
+            {
+                if(a[0] == b[indexB])
+                {
+                    // check if any point are different
+                    for(int indexA = 1; indexA < a.Count; indexA++)
+                    {
+                        if(a[indexA] != b[(indexB + indexA)%b.Count])
+                        {
+                            return false;
+                        }
+                    }
+
+                    // they are all the same
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static IntPoint getBoundaryPointWithOffset(Polygon poly, int point_idx, long offset)
+        {
 			IntPoint p0 = poly[(point_idx > 0) ? (point_idx - 1) : (poly.size() - 1)];
 			IntPoint p1 = poly[point_idx];
 			IntPoint p2 = poly[(point_idx < (poly.size() - 1)) ? (point_idx + 1) : 0];
@@ -233,8 +262,7 @@ namespace MatterHackers.MatterSlice
 			}
 			return length;
 		}
-
-		public static void Reverse(this Polygon polygon)
+        public static void Reverse(this Polygon polygon)
 		{
 			polygon.Reverse();
 		}
@@ -280,332 +308,6 @@ namespace MatterHackers.MatterSlice
 				total += point.ToString() + ",";
 			}
 			return total;
-		}
-	}
-
-	internal static class PolygonsHelper
-	{
-		public enum LayerOpperation { EvenOdd, UnionAll };
-
-		public static void AddAll(this Polygons polygons, Polygons other)
-		{
-			for (int n = 0; n < other.Count; n++)
-			{
-				polygons.Add(other[n]);
-			}
-		}
-
-		public static void ApplyMatrix(this Polygons polygons, PointMatrix matrix)
-		{
-			for (int i = 0; i < polygons.Count; i++)
-			{
-				for (int j = 0; j < polygons[i].Count; j++)
-				{
-					polygons[i][j] = matrix.apply(polygons[i][j]);
-				}
-			}
-		}
-
-		public static void ApplyTranslation(this Polygons polygons, IntPoint translation)
-		{
-			for (int i = 0; i < polygons.Count; i++)
-			{
-				for (int j = 0; j < polygons[i].Count; j++)
-				{
-					polygons[i][j] = polygons[i][j] + translation;
-				}
-			}
-		}
-
-		public static Polygons CreateDifference(this Polygons polygons, Polygons other)
-		{
-			Polygons ret = new Polygons();
-			Clipper clipper = new Clipper();
-			clipper.AddPaths(polygons, PolyType.ptSubject, true);
-			clipper.AddPaths(other, PolyType.ptClip, true);
-			clipper.Execute(ClipType.ctDifference, ret);
-			return ret;
-		}
-
-		public static Polygons CreateFromString(string polygonsPackedString)
-		{
-			Polygons output = new Polygons();
-			string[] polygons = polygonsPackedString.Split('|');
-			foreach (string polygonString in polygons)
-			{
-				Polygon nextPoly = PolygonHelper.CreateFromString(polygonString);
-				if (nextPoly.Count > 0)
-				{
-					output.Add(nextPoly);
-				}
-			}
-			return output;
-		}
-
-		public static Polygons CreateIntersection(this Polygons polygons, Polygons other)
-		{
-			Polygons ret = new Polygons();
-			Clipper clipper = new Clipper();
-			clipper.AddPaths(polygons, PolyType.ptSubject, true);
-			clipper.AddPaths(other, PolyType.ptClip, true);
-			clipper.Execute(ClipType.ctIntersection, ret);
-			return ret;
-		}
-
-		public static List<Polygons> CreateLayerOutlines(this Polygons polygons, LayerOpperation opperation)
-		{
-			List<Polygons> ret = new List<Polygons>();
-			Clipper clipper = new Clipper();
-			PolyTree resultPolyTree = new PolyTree();
-			clipper.AddPaths(polygons, PolyType.ptSubject, true);
-			if (opperation == LayerOpperation.UnionAll)
-			{
-				clipper.Execute(ClipType.ctUnion, resultPolyTree, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
-			}
-			else
-			{
-				clipper.Execute(ClipType.ctUnion, resultPolyTree);
-			}
-
-			polygons._processPolyTreeNode(resultPolyTree, ret);
-			return ret;
-		}
-
-		public static Polygons CreateUnion(this Polygons polygons, Polygons other)
-		{
-			Polygons ret = new Polygons();
-			Clipper clipper = new Clipper();
-			clipper.AddPaths(polygons, PolyType.ptSubject, true);
-			clipper.AddPaths(other, PolyType.ptSubject, true);
-			clipper.Execute(ClipType.ctUnion, ret, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
-			return ret;
-		}
-
-		public static Polygons DeepCopy(this Polygons polygons)
-		{
-			Polygons deepCopy = new Polygons();
-			foreach (Polygon poly in polygons)
-			{
-				deepCopy.Add(new Polygon(poly));
-			}
-
-			return deepCopy;
-		}
-
-		public static bool Inside(this Polygons polygons, IntPoint testPoint)
-		{
-			if (polygons.Count < 1)
-			{
-				return false;
-			}
-
-			// we can just test the first one first as we know that there is a special case in
-			// the silcer that all the other polygons are inside this one.
-			int positionOnOuterPerimeter = Clipper.PointInPolygon(testPoint, polygons[0]);
-			if (positionOnOuterPerimeter == 0) // not inside or on boundary
-			{
-				// If we are not inside the outer perimeter we are not inside.
-				return false;
-			}
-
-			for (int polygonIndex = 1; polygonIndex < polygons.Count; polygonIndex++)
-			{
-				int positionOnHole = Clipper.PointInPolygon(testPoint, polygons[polygonIndex]);
-				if (positionOnHole == 1) // inside the hole
-				{
-					return false;
-				}
-			}
-
-			return true;
-		}
-
-		public static Polygons Offset(this Polygons polygons, long distance)
-		{
-			ClipperOffset offseter = new ClipperOffset();
-			offseter.AddPaths(polygons, JoinType.jtRound, EndType.etClosedPolygon);
-			Paths solution = new Polygons();
-			offseter.Execute(ref solution, distance);
-			return solution;
-		}
-
-		public static void OptimizePolygons(this Polygons polygons)
-		{
-			for (int n = 0; n < polygons.Count; n++)
-			{
-				polygons[n].OptimizePolygon();
-				if (polygons[n].Count < 3)
-				{
-					polygons.RemoveAt(n);
-					n--;
-				}
-			}
-		}
-
-		public static bool polygonCollidesWithlineSegment(Polygons polys, IntPoint transformed_startPoint, IntPoint transformed_endPoint, PointMatrix transformation_matrix)
-		{
-			foreach (Polygon poly in polys)
-			{
-				if (poly.size() == 0) { continue; }
-				if (PolygonHelper.polygonCollidesWithlineSegment(poly, transformed_startPoint, transformed_endPoint, transformation_matrix))
-				{
-					return true;
-				}
-			}
-
-			return false;
-		}
-
-		public static bool polygonCollidesWithlineSegment(Polygons polys, IntPoint startPoint, IntPoint endPoint)
-		{
-			IntPoint diff = endPoint - startPoint;
-
-			PointMatrix transformation_matrix = new PointMatrix(diff);
-			IntPoint transformed_startPoint = transformation_matrix.apply(startPoint);
-			IntPoint transformed_endPoint = transformation_matrix.apply(endPoint);
-
-			return polygonCollidesWithlineSegment(polys, transformed_startPoint, transformed_endPoint, transformation_matrix);
-		}
-
-		public static long PolygonLength(this Polygons polygons)
-		{
-			long length = 0;
-			for (int i = 0; i < polygons.Count; i++)
-			{
-				IntPoint previousPoint = polygons[i][polygons[i].Count - 1];
-				for (int n = 0; n < polygons[i].Count; n++)
-				{
-					IntPoint currentPoint = polygons[i][n];
-					length += (previousPoint - currentPoint).Length();
-					previousPoint = currentPoint;
-				}
-			}
-			return length;
-		}
-
-		public static Polygons ProcessEvenOdd(this Polygons polygons)
-		{
-			Polygons ret = new Polygons();
-			Clipper clipper = new Clipper();
-			clipper.AddPaths(polygons, PolyType.ptSubject, true);
-			clipper.Execute(ClipType.ctUnion, ret);
-			return ret;
-		}
-
-		public static void SaveToGCode(this Polygons polygons, string filename)
-		{
-			double scale = 1000;
-			StreamWriter stream = new StreamWriter(filename);
-			stream.Write("; some gcode to look at the layer segments\n");
-			int extrudeAmount = 0;
-			double firstX = 0;
-			double firstY = 0;
-			for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
-			{
-				Polygon polygon = polygons[polygonIndex];
-
-				for (int intPointIndex = 0; intPointIndex < polygon.Count; intPointIndex++)
-				{
-					double x = (double)(polygon[intPointIndex].X) / scale;
-					double y = (double)(polygon[intPointIndex].Y) / scale;
-					if (intPointIndex == 0)
-					{
-						firstX = x;
-						firstY = y;
-						stream.Write("G1 X{0} Y{1}\n", x, y);
-					}
-					else
-					{
-						stream.Write("G1 X{0} Y{1} E{2}\n", x, y, ++extrudeAmount);
-					}
-				}
-				stream.Write("G1 X{0} Y{1} E{2}\n", firstX, firstY, ++extrudeAmount);
-			}
-			stream.Close();
-		}
-
-		public static void SaveToSvg(this Polygons polygons, string filename)
-		{
-			double scaleDenominator = 150;
-			IntRect bounds = Clipper.GetBounds(polygons);
-			long temp = bounds.bottom;
-			bounds.bottom = bounds.top;
-			bounds.top = temp;
-			IntPoint size = new IntPoint(bounds.right - bounds.left, bounds.top - bounds.bottom);
-			double scale = Max(size.X, size.Y) / scaleDenominator;
-			StreamWriter stream = new StreamWriter(filename);
-			stream.Write("<!DOCTYPE html><html><body>\n");
-			stream.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style='width:{0}px;height:{1}px'>\n".FormatWith((int)(size.X / scale), (int)(size.Y / scale)));
-			stream.Write("<marker id='MidMarker' viewBox='0 0 10 10' refX='5' refY='5' markerUnits='strokeWidth' markerWidth='10' markerHeight='10' stroke='lightblue' stroke-width='2' fill='none' orient='auto'>");
-			stream.Write("<path d='M 0 0 L 10 5 M 0 10 L 10 5'/>");
-			stream.Write("</marker>");
-			stream.Write("<g fill-rule='evenodd' style=\"fill: gray; stroke:black;stroke-width:1\">\n");
-			stream.Write("<path marker-mid='url(#MidMarker)' d=\"");
-			for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
-			{
-				Polygon polygon = polygons[polygonIndex];
-				for (int intPointIndex = 0; intPointIndex < polygon.Count; intPointIndex++)
-				{
-					if (intPointIndex == 0)
-					{
-						stream.Write("M");
-					}
-					else
-					{
-						stream.Write("L");
-					}
-					stream.Write("{0},{1} ", (double)(polygon[intPointIndex].X - bounds.left) / scale, (double)(polygon[intPointIndex].Y - bounds.bottom) / scale);
-				}
-				stream.Write("Z\n");
-			}
-			stream.Write("\"/>");
-			stream.Write("</g>\n");
-			for (int openPolygonIndex = 0; openPolygonIndex < polygons.Count; openPolygonIndex++)
-			{
-				Polygon openPolygon = polygons[openPolygonIndex];
-				if (openPolygon.Count < 1) continue;
-				stream.Write("<polyline marker-mid='url(#MidMarker)' points=\"");
-				for (int n = 0; n < openPolygon.Count; n++)
-				{
-					stream.Write("{0},{1} ", (double)(openPolygon[n].X - bounds.left) / scale, (double)(openPolygon[n].Y - bounds.bottom) / scale);
-				}
-				stream.Write("\" style=\"fill: none; stroke:red;stroke-width:1\" />\n");
-			}
-			stream.Write("</svg>\n");
-
-			stream.Write("</body></html>");
-			stream.Close();
-		}
-
-		public static int size(this Polygons polygons)
-		{
-			return polygons.Count;
-		}
-
-		public static string WriteToString(this Polygons polygons)
-		{
-			string total = "";
-			foreach (Polygon polygon in polygons)
-			{
-				total += polygon.WriteToString() + "|";
-			}
-			return total;
-		}
-
-		private static void _processPolyTreeNode(this Polygons polygonsIn, PolyNode node, List<Polygons> ret)
-		{
-			for (int n = 0; n < node.ChildCount; n++)
-			{
-				PolyNode child = node.Childs[n];
-				Polygons polygons = new Polygons();
-				polygons.Add(child.Contour);
-				for (int i = 0; i < child.ChildCount; i++)
-				{
-					polygons.Add(child.Childs[i].Contour);
-					polygonsIn._processPolyTreeNode(child.Childs[i], ret);
-				}
-				ret.Add(polygons);
-			}
 		}
 	}
 }

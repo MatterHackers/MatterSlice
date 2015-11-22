@@ -46,9 +46,9 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				// A simple cube that should have enough bottom layers
 				string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
-				Polygons inset0Outline = PolygonsHelper.CreateFromString(inset0OutlineString);
+				Polygons partOutline = PolygonsHelper.CreateFromString(inset0OutlineString);
 				int numLayers = 10;
-				PartLayers layerData = CreateLayerData(inset0Outline, numLayers);
+				PartLayers layerData = CreateLayerData(partOutline, numLayers);
 				GenerateLayers(layerData, 400, 3, 0);
 				Assert.IsTrue(OnlyHasBottom(layerData, 0));
 				Assert.IsTrue(OnlyHasSolidInfill(layerData, 1));
