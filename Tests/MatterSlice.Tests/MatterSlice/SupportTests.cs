@@ -63,7 +63,7 @@ namespace MatterHackers.MatterSlice.Tests
                 }
 
                 PartLayers layerData = CreateLayerData(partOutlines);
-                NewSupport supportGenerator = new NewSupport(10, config, layerData, 0, 0);
+                NewSupport supportGenerator = new NewSupport(config, layerData, 0, 0);
 
                 // check the all part outlines
                 {
@@ -93,6 +93,97 @@ namespace MatterHackers.MatterSlice.Tests
                 {
                     List<int> polygonsCounts = new List<int> { 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, };
                     List<int> polygon0Counts = new List<int> { 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, };
+                    List<Polygons> poly0Paths = new List<Polygons>() { cubeOutline, cubeOutline, cubeOutline, cubeOutline, cubeOutline, null, null, null, null, null };
+                    CheckLayers(supportGenerator.supportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
+                }
+
+                // check the interface support outlines
+                {
+                    List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
+                    List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
+                    List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null, null, null, null, null, null };
+                    CheckLayers(supportGenerator.interfaceLayers, polygonsCounts, polygon0Counts, poly0Paths);
+                }
+            }
+
+            // test the supports for a cube that is 1/2 width just under the main part
+            {
+                ConfigSettings config = new ConfigSettings();
+                config.layerThickness = .5;
+                config.supportXYDistanceFromObject = .1;
+
+                // 14 XXXXXXXXXXXXXXXXXXXX
+                // 13 XXXXXXXXXXXXXXXXXXXX
+                // 12 XXXXXXXXXXXXXXXXXXXX
+                // 11 XXXXXXXXXXXXXXXXXXXX
+                // 10 XXXXXXXXXXXXXXXXXXXX
+                // 9  XXXXXXXXXX           <- interface layer
+                // 8  XXXXXXXXXX           <- interface layer
+                // 7  XXXXXXXXXX     ^ - requires support  
+                // 6  XXXXXXXXXX
+                // 5  XXXXXXXXXX
+                // 4             <- interface layer
+                // 3             <- interface layer
+                // 2      ^ - requires support  
+                // 1 
+                // 0 
+
+                List<Polygons> partOutlines = new List<Polygons>();
+                for (int i = 0; i < 5; i++)
+                {
+                    partOutlines.Add(new Polygons());
+                }
+
+                Polygons halfCubeOutline = PolygonsHelper.CreateFromString("x:0, y:0,x:5000, y:0,x:5000, y:10000,x:0, y:10000,|");
+                for (int i = 0; i < 5; i++)
+                {
+                    partOutlines.Add(halfCubeOutline);
+                }
+
+                Polygons cubeOutline = PolygonsHelper.CreateFromString("x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|");
+                for (int i = 0; i < 5; i++)
+                {
+                    partOutlines.Add(cubeOutline);
+                }
+
+                PartLayers layerData = CreateLayerData(partOutlines);
+                NewSupport supportGenerator = new NewSupport(config, layerData, 1, .2);
+
+                // check the all part outlines
+                {
+                    List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 0,
+                        1, 1, 1, 1, 1,
+                        1, 1, 1, 1, 1,};
+                    List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 0,
+                        4, 4, 4, 4, 4,
+                        4, 4, 4, 4, 4,};
+                    List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null,
+                        halfCubeOutline, halfCubeOutline, halfCubeOutline, halfCubeOutline, halfCubeOutline,
+                        cubeOutline, cubeOutline, cubeOutline, cubeOutline, cubeOutline, };
+                    CheckLayers(supportGenerator.allPartOutlines, polygonsCounts, polygon0Counts, poly0Paths);
+                }
+
+                Polygons layer9Support = PolygonsHelper.CreateFromString("x:5000, y:0,x:10000, y:0,x:10000, y:10000,x:5000, y:10000,|");
+                // check the potential support outlines
+                {
+                    List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
+                    List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
+                    List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, halfCubeOutline, null, null, null, null, layer9Support, null, null, null, null, null };
+                    CheckLayers(supportGenerator.allPotentialSupportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
+                }
+
+                // check the required support outlines
+                {
+                    List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
+                    List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
+                    List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, halfCubeOutline, null, null, null, null, layer9Support, null, null, null, null, null };
+                    CheckLayers(supportGenerator.allRequiredSupportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
+                }
+
+                // check the generated support outlines
+                {
+                    List<int> polygonsCounts = new List<int> { 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, };
+                    List<int> polygon0Counts = new List<int> { 4, 4, 4, 4, 4, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0,};
                     List<Polygons> poly0Paths = new List<Polygons>() { cubeOutline, cubeOutline, cubeOutline, cubeOutline, cubeOutline, null, null, null, null, null };
                     CheckLayers(supportGenerator.supportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
                 }
