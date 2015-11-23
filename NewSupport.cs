@@ -44,7 +44,8 @@ namespace MatterHackers.MatterSlice
 
         public Polygons GetRequiredSupportAreas(int layerIndex)
 		{
-			if (layerIndex < allRequiredSupportOutlines.Count && layerIndex >= 0)
+            layerIndex--;
+            if (layerIndex < allRequiredSupportOutlines.Count && layerIndex >= 0)
 			{
 				return allRequiredSupportOutlines[layerIndex];
 			}

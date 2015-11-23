@@ -533,11 +533,11 @@ namespace MatterHackers.MatterSlice
 
 					if (layerIndex == 0)
 					{
-						AddVolumeLayerToGCode(slicingData, gcodeLayer, volumeIndex, layerIndex, config.firstLayerExtrusionWidth_um, fanSpeedPercent);
+						AddVolumeLayerToGCode(slicingData, gcodeLayer, volumeIndex, layerIndex, config.firstLayerExtrusionWidth_um, fanSpeedPercent, z);
 					}
 					else
 					{
-						AddVolumeLayerToGCode(slicingData, gcodeLayer, volumeIndex, layerIndex, config.extrusionWidth_um, fanSpeedPercent);
+						AddVolumeLayerToGCode(slicingData, gcodeLayer, volumeIndex, layerIndex, config.extrusionWidth_um, fanSpeedPercent, z);
 					}
 				}
 
@@ -631,7 +631,7 @@ namespace MatterHackers.MatterSlice
 
 		int lastPartIndex = 0;
 		//Add a single layer from a single mesh-volume to the GCode
-		private void AddVolumeLayerToGCode(SliceDataStorage slicingData, GCodePlanner gcodeLayer, int volumeIndex, int layerIndex, int extrusionWidth_um, int fanSpeedPercent)
+		private void AddVolumeLayerToGCode(SliceDataStorage slicingData, GCodePlanner gcodeLayer, int volumeIndex, int layerIndex, int extrusionWidth_um, int fanSpeedPercent, long currentZ_um)
 		{
 			int prevExtruder = gcodeLayer.getExtruder();
 			bool extruderChanged = gcodeLayer.SetExtruder(volumeIndex);
@@ -661,6 +661,8 @@ namespace MatterHackers.MatterSlice
 			}
 			partOrderOptimizer.Optimize();
 
+            List<Polygons> airGapBottomFillPolygons = new List<Polygons>(); ;
+
 			for (int partIndex = 0; partIndex < partOrderOptimizer.bestPolygonOrderIndex.Count; partIndex++)
 			{
 				if (config.continuousSpiralOuterPerimeter && partIndex > 0)
@@ -686,9 +688,11 @@ namespace MatterHackers.MatterSlice
 
 				CalculateInfillData(slicingData, volumeIndex, layerIndex, part, ref bottomFillPolygons, ref fillPolygons, ref topFillPolygons, ref bridgePolygons);
 
-				// Write the bridge polgons out first so the perimeter will have more to hold to while bridging the gaps.
-				// It would be even better to slow down the perimeters that are part of bridges but that is a bit harder.
-				if (bridgePolygons.Count > 0)
+                airGapBottomFillPolygons.Add(bottomFillPolygons);
+
+                // Write the bridge polgons out first so the perimeter will have more to hold to while bridging the gaps.
+                // It would be even better to slow down the perimeters that are part of bridges but that is a bit harder.
+                if (bridgePolygons.Count > 0)
 				{
 					gcode.WriteFanCommand(config.bridgeFanSpeedPercent);
 					gcodeLayer.WritePolygonsByOptimizer(bridgePolygons, bridgConfig);
@@ -758,37 +762,48 @@ namespace MatterHackers.MatterSlice
 
 				gcodeLayer.WritePolygonsByOptimizer(topFillPolygons, topFillConfig);
 
-				// Now write any areas that need to be on support at the air gap height
-				if(false)
-				{
-					// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
-					for (int perimeterIndex = 1; perimeterIndex < part.Insets.Count; perimeterIndex++)
-					{
-						WritePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[perimeterIndex], insetXConfig, SupportWriteType.SupportedAreas);
-					}
-					// then 0
-					if (part.Insets.Count > 0)
-					{
-						WritePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[0], inset0Config, SupportWriteType.SupportedAreas);
-					}
-
-					WritePolygonsConsideringSupport(layerIndex, gcodeLayer, bottomFillPolygons, fillConfig, SupportWriteType.SupportedAreas);
-				}
-
 				//After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
 				if (!config.continuousSpiralOuterPerimeter || layerIndex < config.numberOfBottomLayers)
 				{
 					gcodeLayer.MoveInsideTheOuterPerimeter(extrusionWidth_um * 2);
 				}
 			}
-			gcodeLayer.SetOuterPerimetersToAvoidCrossing(null);
+
+            if(false)
+            for (int partIndex = 0; partIndex < partOrderOptimizer.bestPolygonOrderIndex.Count; partIndex++)
+            {
+                // Now write any areas that need to be on support at the air gap height
+                if (config.useNewSupport 
+                    && !config.continuousSpiralOuterPerimeter
+                    && layerIndex > 0)
+                {
+                    SliceLayerPart part = layer.parts[partOrderOptimizer.bestPolygonOrderIndex[partIndex]];
+
+                    gcode.setZ(currentZ_um + config.raftAirGap_um);
+
+                    // Print everything but the first perimeter from the outside in so the little parts have more to stick to.
+                    for (int perimeterIndex = 1; perimeterIndex < part.Insets.Count; perimeterIndex++)
+                    {
+                        WritePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[perimeterIndex], insetXConfig, SupportWriteType.SupportedAreas);
+                    }
+                    // then 0
+                    if (part.Insets.Count > 0)
+                    {
+                        WritePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[0], inset0Config, SupportWriteType.SupportedAreas);
+                    }
+
+                    WritePolygonsConsideringSupport(layerIndex, gcodeLayer, airGapBottomFillPolygons[partIndex], fillConfig, SupportWriteType.SupportedAreas);
+                }
+            }
+
+            gcodeLayer.SetOuterPerimetersToAvoidCrossing(null);
 		}
 
 		enum SupportWriteType { UnsuportedAreas, SupportedAreas };
 
 		private void WritePolygonsConsideringSupport(int layerIndex, GCodePlanner gcodeLayer, Polygons polygonsToWrite, GCodePathConfig fillConfig, SupportWriteType supportWriteType)
 		{
-			if (config.useNewSupport)
+			if (config.useNewSupport && layerIndex > 0)
 			{
 				if (supportWriteType == SupportWriteType.UnsuportedAreas)
 				{
@@ -799,7 +814,7 @@ namespace MatterHackers.MatterSlice
 				else
 				{
 					// write the bottoms that are sitting on supported areas.
-					Polygons polygonsOnSupport = polygonsToWrite.CreateDifference(newSupport.GetRequiredSupportAreas(layerIndex));
+					Polygons polygonsOnSupport = polygonsToWrite.CreateIntersection(newSupport.GetRequiredSupportAreas(layerIndex));
 					gcodeLayer.WritePolygonsByOptimizer(polygonsOnSupport, fillConfig);
 				}
 			}
