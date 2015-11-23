@@ -55,7 +55,7 @@ namespace MatterHackers.MatterSlice
 		private double totalPrintTime;
 		private double unretractExtrusionExtra_mm;
 		private bool wipeAfterRetraction;
-		private int zPos_um;
+		private long zPos_um;
 
 		public GCodeExport()
 		{
@@ -231,7 +231,7 @@ namespace MatterHackers.MatterSlice
 			this.toolChangeCode = toolChangeCode;
 		}
 
-		public void setZ(int z)
+		public void setZ(long z)
 		{
 			this.zPos_um = z;
 		}
