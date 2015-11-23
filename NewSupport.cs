@@ -52,29 +52,29 @@ namespace MatterHackers.MatterSlice
 			return new Polygons();
         }
 
-		public NewSupport(int numLayers, ConfigSettings config, PartLayers storage, double interfaceLayersMm, double grabDistanceMm)
+		public NewSupport(ConfigSettings config, PartLayers storage, double interfaceLayersMm, double grabDistanceMm)
         {
             this.interfaceLayersMm = interfaceLayersMm;
             this.grabDistanceMm = grabDistanceMm;
             // create starting support outlines
-            allPartOutlines = CalculateAllPartOutlines(numLayers, config, storage);
+            allPartOutlines = CalculateAllPartOutlines(config, storage);
 
-			allPotentialSupportOutlines = FindAllPotentialSupportOutlines(allPartOutlines, numLayers, config, storage);
+			allPotentialSupportOutlines = FindAllPotentialSupportOutlines(allPartOutlines, config);
 
-            allRequiredSupportOutlines = RemoveSelfSupportedSections(allPotentialSupportOutlines, numLayers, config, storage);
+            allRequiredSupportOutlines = RemoveSelfSupportedSections(allPotentialSupportOutlines, config);
 
-			easyGrabDistanceOutlines = ExpandToEasyGrabDistance(allRequiredSupportOutlines, numLayers, config, storage, (int)(grabDistanceMm*1000));
+			easyGrabDistanceOutlines = ExpandToEasyGrabDistance(allRequiredSupportOutlines, (int)(grabDistanceMm*1000));
 
-			//pushedUpTopOutlines = PushUpTops(easyGrabDistanceOutlines, numLayers, config, storage);
+			//pushedUpTopOutlines = PushUpTops(easyGrabDistanceOutlines, numLayers, config);
 
             int numInterfaceLayers = (int)(interfaceLayersMm*1000) / config.layerThickness_um;
-			interfaceLayers = CreateInterfacelayers(easyGrabDistanceOutlines, numLayers, config, storage, numInterfaceLayers);
-			interfaceLayers = ClipToXyDistance(interfaceLayers, allPartOutlines, numLayers, config, storage);
+			interfaceLayers = CreateInterfacelayers(easyGrabDistanceOutlines, numInterfaceLayers);
+			interfaceLayers = ClipToXyDistance(interfaceLayers, allPartOutlines, config);
 
-			supportOutlines = AccumulateDownPolygons(easyGrabDistanceOutlines, allPartOutlines, numLayers, config, storage);
-            supportOutlines = ClipToXyDistance(supportOutlines, allPartOutlines, numLayers, config, storage);
+			supportOutlines = AccumulateDownPolygons(easyGrabDistanceOutlines, allPartOutlines);
+            supportOutlines = ClipToXyDistance(supportOutlines, allPartOutlines, config);
 
-            supportOutlines = CalculateDifferencePerLayer(supportOutlines, interfaceLayers, numLayers);
+            supportOutlines = CalculateDifferencePerLayer(supportOutlines, interfaceLayers);
         }
 
 		static List<Polygons> CreateEmptyPolygons(int numLayers)
@@ -88,9 +88,11 @@ namespace MatterHackers.MatterSlice
 			return polygonsList;
         }
 
-		private static List<Polygons> CalculateAllPartOutlines(int numLayers, ConfigSettings config, PartLayers storage)
+		private static List<Polygons> CalculateAllPartOutlines(ConfigSettings config, PartLayers storage)
         {
-			List<Polygons> allPartOutlines = CreateEmptyPolygons(numLayers);
+            int numLayers = storage.Layers.Count;
+
+            List<Polygons> allPartOutlines = CreateEmptyPolygons(numLayers);
             // calculate the combind outlines for everything
             for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
             {
@@ -111,24 +113,27 @@ namespace MatterHackers.MatterSlice
 			return allPartOutlines;
         }
 
-		private static List<Polygons> FindAllPotentialSupportOutlines(List<Polygons> inputPolys, int numLayers, ConfigSettings config, PartLayers storage)
+		private static List<Polygons> FindAllPotentialSupportOutlines(List<Polygons> inputPolys, ConfigSettings config)
         {
-			List<Polygons> allPotentialSupportOutlines = CreateEmptyPolygons(numLayers);
+            int numLayers = inputPolys.Count;
+            List<Polygons> allPotentialSupportOutlines = CreateEmptyPolygons(numLayers);
 			// calculate all the non-supported areas
 			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
             {
                 Polygons aboveLayerPolys = inputPolys[layerIndex+1];
                 Polygons curLayerPolys = inputPolys[layerIndex];
-                Polygons supportedAreas = aboveLayerPolys.CreateDifference(curLayerPolys.Offset(10));
+                Polygons supportedAreas = aboveLayerPolys.CreateDifference(curLayerPolys);
                 allPotentialSupportOutlines[layerIndex] = Clipper.CleanPolygons(supportedAreas, cleanDistance_um);
             }
 
 			return allPotentialSupportOutlines;
         }
 
-		private static List<Polygons> RemoveSelfSupportedSections(List<Polygons> inputPolys, int numLayers, ConfigSettings config, PartLayers storage)
+		private static List<Polygons> RemoveSelfSupportedSections(List<Polygons> inputPolys, ConfigSettings config)
 		{
-			List<Polygons> allRequiredSupportOutlines = CreateEmptyPolygons(numLayers);
+            int numLayers = inputPolys.Count;
+
+            List<Polygons> allRequiredSupportOutlines = CreateEmptyPolygons(numLayers);
 			// calculate all the non-supported areas
 			for (int layerIndex = numLayers - 1; layerIndex > 0; layerIndex--)
 			{
@@ -150,9 +155,11 @@ namespace MatterHackers.MatterSlice
 			return allRequiredSupportOutlines;
         }
 
-		private static List<Polygons> ExpandToEasyGrabDistance(List<Polygons> inputPolys, int numLayers, ConfigSettings config, PartLayers storage, long grabDistance_um)
+		private static List<Polygons> ExpandToEasyGrabDistance(List<Polygons> inputPolys, long grabDistance_um)
 		{
-			List<Polygons> easyGrabDistanceOutlines = CreateEmptyPolygons(numLayers);
+            int numLayers = inputPolys.Count;
+
+            List<Polygons> easyGrabDistanceOutlines = CreateEmptyPolygons(numLayers);
 			for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
 			{
 				Polygons curLayerPolys = inputPolys[layerIndex];
@@ -162,9 +169,11 @@ namespace MatterHackers.MatterSlice
 			return easyGrabDistanceOutlines;
 		}
 
-		private static List<Polygons> PushUpTops(List<Polygons> inputPolys, int numLayers, ConfigSettings config, PartLayers storage)
+		private static List<Polygons> PushUpTops(List<Polygons> inputPolys, ConfigSettings config)
 		{
-			return inputPolys;
+            int numLayers = inputPolys.Count;
+
+            return inputPolys;
 			int layersFor2Mm = 2000 / config.layerThickness_um;
 			List<Polygons> pushedUpPolys = CreateEmptyPolygons(numLayers);
 			for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
@@ -180,9 +189,11 @@ namespace MatterHackers.MatterSlice
 			return pushedUpPolys;
 		}
 
-		private static List<Polygons> AccumulateDownPolygons(List<Polygons> inputPolys, List<Polygons> allPartOutlines, int numLayers, ConfigSettings config, PartLayers storage)
+		private static List<Polygons> AccumulateDownPolygons(List<Polygons> inputPolys, List<Polygons> allPartOutlines)
 		{
-			List<Polygons> allDownOutlines = CreateEmptyPolygons(numLayers);
+            int numLayers = inputPolys.Count;
+
+            List<Polygons> allDownOutlines = CreateEmptyPolygons(numLayers);
 			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
 			{
 				Polygons aboveRequiredSupport = inputPolys[layerIndex + 1];
@@ -203,8 +214,10 @@ namespace MatterHackers.MatterSlice
 			return allDownOutlines;
         }
 
-        private static List<Polygons> CreateInterfacelayers(List<Polygons> inputPolys, int numLayers, ConfigSettings config, PartLayers storage, int numInterfaceLayers)
+        private static List<Polygons> CreateInterfacelayers(List<Polygons> inputPolys, int numInterfaceLayers)
         {
+            int numLayers = inputPolys.Count;
+
             List<Polygons> allInterfaceLayers = CreateEmptyPolygons(numLayers);
             if (numInterfaceLayers > 0)
             {
@@ -225,9 +238,11 @@ namespace MatterHackers.MatterSlice
             return allInterfaceLayers;
         }
 
-		private static List<Polygons> ClipToXyDistance(List<Polygons> inputPolys, List<Polygons> allPartOutlines, int numLayers, ConfigSettings config, PartLayers storage)
+		private static List<Polygons> ClipToXyDistance(List<Polygons> inputPolys, List<Polygons> allPartOutlines, ConfigSettings config)
 		{
-			List<Polygons> clippedToXyOutlines = CreateEmptyPolygons(numLayers);
+            int numLayers = inputPolys.Count;
+
+            List<Polygons> clippedToXyOutlines = CreateEmptyPolygons(numLayers);
 			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
 			{
 				Polygons curRequiredSupport = inputPolys[layerIndex];
@@ -240,9 +255,11 @@ namespace MatterHackers.MatterSlice
 			return clippedToXyOutlines;
 		}
 
-		private static List<Polygons> CalculateDifferencePerLayer(List<Polygons> inputPolys, List<Polygons> outlinesToRemove, int numLayers)
+		private static List<Polygons> CalculateDifferencePerLayer(List<Polygons> inputPolys, List<Polygons> outlinesToRemove)
 		{
-			List<Polygons> diferenceLayers = CreateEmptyPolygons(numLayers);
+            int numLayers = inputPolys.Count;
+
+            List<Polygons> diferenceLayers = CreateEmptyPolygons(numLayers);
 			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
 			{
 				Polygons curRequiredSupport = inputPolys[layerIndex];

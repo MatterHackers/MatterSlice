@@ -438,7 +438,7 @@ namespace MatterHackers.MatterSlice
 
 			if (config.useNewSupport)
 			{
-				newSupport = new NewSupport(totalLayers, config, slicingData.AllPartsLayers[0], 1, 1);
+				newSupport = new NewSupport(config, slicingData.AllPartsLayers[0], 1, 1);
 			}
 
 			int volumeIndex = 0;
