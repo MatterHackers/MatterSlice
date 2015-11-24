@@ -286,7 +286,7 @@ namespace MatterHackers.MatterSlice
 				outerPerimetersToAvoidCrossing.MovePointInsideBoundary(ref p, distance);
 				if (outerPerimetersToAvoidCrossing.PointIsInsideBoundary(p))
 				{
-					WriteTravel(p);
+					QueueTravel(p);
 					//Make sure the that any retraction happens after this move, not before it by starting a new move path.
 					ForceNewPathStart();
 				}
@@ -333,13 +333,13 @@ namespace MatterHackers.MatterSlice
 			this.travelSpeedFactor = speedFactor;
 		}
 
-		public void WriteExtrusionMove(IntPoint destination, GCodePathConfig config)
+		public void QueueExtrusionMove(IntPoint destination, GCodePathConfig config)
 		{
 			GetLatestPathWithConfig(config).points.Add(destination);
 			lastPosition = destination;
 		}
 
-		public void WriteGCode(bool liftHeadIfNeeded, int layerThickness)
+		public void WriteQueuedGCode(int layerThickness)
 		{
 			GCodePathConfig lastConfig = null;
 			int extruderIndex = gcode.GetExtruderIndex();
@@ -490,18 +490,9 @@ namespace MatterHackers.MatterSlice
 			}
 
 			gcode.UpdateTotalPrintTime();
-			if (liftHeadIfNeeded && extraTime > 0.0)
-			{
-				gcode.WriteComment("Small layer, adding delay of {0}".FormatWith(extraTime));
-				gcode.WriteRetraction();
-				gcode.setZ(gcode.GetPositionZ() + 3000);
-				gcode.WriteMove(gcode.GetPositionXY(), travelConfig.speed, 0);
-				gcode.WriteMove(gcode.GetPositionXY() - new IntPoint(-20000, 0), travelConfig.speed, 0);
-				gcode.WriteDelay(extraTime);
-			}
 		}
 
-		public void WritePolygon(Polygon polygon, int startIndex, GCodePathConfig config)
+		public void QueuePolygon(Polygon polygon, int startIndex, GCodePathConfig config)
 		{
 			IntPoint currentPosition = polygon[startIndex];
 
@@ -509,7 +500,7 @@ namespace MatterHackers.MatterSlice
 				&& (lastPosition.X != currentPosition.X
 				|| lastPosition.Y != currentPosition.Y))
 			{
-				WriteTravel(currentPosition);
+				QueueTravel(currentPosition);
 			}
 
 			if (config.closedLoop)
@@ -517,14 +508,14 @@ namespace MatterHackers.MatterSlice
 				for (int positionIndex = 1; positionIndex < polygon.Count; positionIndex++)
 				{
 					IntPoint destination = polygon[(startIndex + positionIndex) % polygon.Count];
-					WriteExtrusionMove(destination, config);
+					QueueExtrusionMove(destination, config);
 					currentPosition = destination;
 				}
 
 				// We need to actually close the polygon so go back to the first point
 				if (polygon.Count > 2)
 				{
-					WriteExtrusionMove(polygon[startIndex], config);
+					QueueExtrusionMove(polygon[startIndex], config);
 				}
 			}
 			else // we are not closed
@@ -534,7 +525,7 @@ namespace MatterHackers.MatterSlice
 					for (int positionIndex = 1; positionIndex < polygon.Count; positionIndex++)
 					{
 						IntPoint destination = polygon[positionIndex];
-						WriteExtrusionMove(destination, config);
+						QueueExtrusionMove(destination, config);
 						currentPosition = destination;
 					}
 				}
@@ -543,14 +534,14 @@ namespace MatterHackers.MatterSlice
 					for (int positionIndex = polygon.Count - 1; positionIndex >= 1; positionIndex--)
 					{
 						IntPoint destination = polygon[(startIndex + positionIndex) % polygon.Count];
-						WriteExtrusionMove(destination, config);
+						QueueExtrusionMove(destination, config);
 						currentPosition = destination;
 					}
 				}
 			}
 		}
 
-		public void WritePolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
+		public void QueuePolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
 		{
 			PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(lastPosition);
 			orderOptimizer.AddPolygons(polygons);
@@ -560,11 +551,11 @@ namespace MatterHackers.MatterSlice
 			for (int i = 0; i < orderOptimizer.bestPolygonOrderIndex.Count; i++)
 			{
 				int polygonIndex = orderOptimizer.bestPolygonOrderIndex[i];
-				WritePolygon(polygons[polygonIndex], orderOptimizer.startIndexInPolygon[polygonIndex], config);
+				QueuePolygon(polygons[polygonIndex], orderOptimizer.startIndexInPolygon[polygonIndex], config);
 			}
 		}
 
-		public void WriteTravel(IntPoint positionToMoveTo)
+		public void QueueTravel(IntPoint positionToMoveTo)
 		{
 			GCodePath path = GetLatestPathWithConfig(travelConfig);
 

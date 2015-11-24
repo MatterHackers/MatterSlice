@@ -387,11 +387,6 @@ namespace MatterHackers.MatterSlice
 					gcode.WriteComment("MATERIAL2:<FILAMEN2>");
 				}
 				gcode.WriteCode(config.startCode);
-				if (gcode.GetOutputType() == ConfigConstants.OUTPUT_TYPE.BFB)
-				{
-					gcode.WriteComment("enable auto-retraction");
-					gcode.WriteLine("M227 S{0} P{1}".FormatWith(config.retractionOnTravel * 2560, config.retractionOnTravel * 2560));
-				}
 			}
 			else
 			{
@@ -434,7 +429,7 @@ namespace MatterHackers.MatterSlice
 			gcode.WriteComment("Layer count: {0}".FormatWith(totalLayers));
 
 			// keep the raft generation code inside of raft
-			Raft.GenerateRaftGCodeIfRequired(slicingData, config, gcode);
+			Raft.WriteRaftGCodeIfRequired(slicingData, config, gcode);
 
 			if (config.useNewSupport)
 			{
@@ -508,18 +503,18 @@ namespace MatterHackers.MatterSlice
 				// We only create the skirt if we are on layer 0 and the first volume and there is no raft.
 				if (layerIndex == 0 && volumeIndex == 0 && !Raft.ShouldGenerateRaft(config))
 				{
-					AddSkirtToGCode(slicingData, gcodeLayer, volumeIndex, layerIndex);
+					QueueSkirtToGCode(slicingData, gcodeLayer, volumeIndex, layerIndex);
 				}
 
 				bool printSupportFirst = (slicingData.support.generated && config.supportExtruder >= 0 && config.supportExtruder == gcodeLayer.getExtruder());
 				if (printSupportFirst)
 				{
-					AddSupportToGCode(slicingData, gcodeLayer, layerIndex, config);
+					QueueSupportToGCode(slicingData, gcodeLayer, layerIndex, config);
 				}
 
 				if (newSupport != null)
 				{
-					newSupport.WriteNormalSupportLayer(gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
+					newSupport.QueueNormalSupportLayer(gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
                 }
 
 				int fanSpeedPercent = GetFanSpeed(layerIndex, gcodeLayer);
@@ -533,17 +528,17 @@ namespace MatterHackers.MatterSlice
 
 					if (layerIndex == 0)
 					{
-						AddVolumeLayerToGCode(slicingData, gcodeLayer, volumeIndex, layerIndex, config.firstLayerExtrusionWidth_um, fanSpeedPercent, z);
+						QueueVolumeLayerToGCode(slicingData, gcodeLayer, volumeIndex, layerIndex, config.firstLayerExtrusionWidth_um, fanSpeedPercent, z);
 					}
 					else
 					{
-						AddVolumeLayerToGCode(slicingData, gcodeLayer, volumeIndex, layerIndex, config.extrusionWidth_um, fanSpeedPercent, z);
+						QueueVolumeLayerToGCode(slicingData, gcodeLayer, volumeIndex, layerIndex, config.extrusionWidth_um, fanSpeedPercent, z);
 					}
 				}
 
 				if (!printSupportFirst)
 				{
-					AddSupportToGCode(slicingData, gcodeLayer, layerIndex, config);
+					QueueSupportToGCode(slicingData, gcodeLayer, layerIndex, config);
 				}
 
 				if (newSupport != null)
@@ -556,7 +551,7 @@ namespace MatterHackers.MatterSlice
 							gcode.setZ(z);
 						}
 
-						newSupport.WriteAirGappedBottomLayer(gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
+						newSupport.QueueAirGappedBottomLayer(gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
 					}
 				}
 
@@ -571,7 +566,7 @@ namespace MatterHackers.MatterSlice
 					currentLayerThickness_um = config.firstLayerThickness_um;
 				}
 
-				gcodeLayer.WriteGCode(config.doCoolHeadLift, currentLayerThickness_um);
+				gcodeLayer.WriteQueuedGCode(currentLayerThickness_um);
 			}
 
 			LogOutput.Log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
@@ -604,7 +599,7 @@ namespace MatterHackers.MatterSlice
 			return fanSpeedPercent;
 		}
 
-		private void AddSkirtToGCode(SliceDataStorage slicingData, GCodePlanner gcodeLayer, int volumeIndex, int layerIndex)
+		private void QueueSkirtToGCode(SliceDataStorage slicingData, GCodePlanner gcodeLayer, int volumeIndex, int layerIndex)
 		{
 			if (slicingData.skirt.Count > 0
 				&& slicingData.skirt[0].Count > 0)
@@ -623,15 +618,15 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				gcodeLayer.WriteTravel(lowestPoint);
+				gcodeLayer.QueueTravel(lowestPoint);
 			}
 
-			gcodeLayer.WritePolygonsByOptimizer(slicingData.skirt, skirtConfig);
+			gcodeLayer.QueuePolygonsByOptimizer(slicingData.skirt, skirtConfig);
 		}
 
 		int lastPartIndex = 0;
 		//Add a single layer from a single mesh-volume to the GCode
-		private void AddVolumeLayerToGCode(SliceDataStorage slicingData, GCodePlanner gcodeLayer, int volumeIndex, int layerIndex, int extrusionWidth_um, int fanSpeedPercent, long currentZ_um)
+		private void QueueVolumeLayerToGCode(SliceDataStorage slicingData, GCodePlanner gcodeLayer, int volumeIndex, int layerIndex, int extrusionWidth_um, int fanSpeedPercent, long currentZ_um)
 		{
 			int prevExtruder = gcodeLayer.getExtruder();
 			bool extruderChanged = gcodeLayer.SetExtruder(volumeIndex);
@@ -645,7 +640,7 @@ namespace MatterHackers.MatterSlice
 			if (slicingData.wipeShield.Count > 0 && slicingData.AllPartsLayers.Count > 1)
 			{
 				gcodeLayer.SetAlwaysRetract(true);
-				gcodeLayer.WritePolygonsByOptimizer(slicingData.wipeShield[layerIndex], skirtConfig);
+				gcodeLayer.QueuePolygonsByOptimizer(slicingData.wipeShield[layerIndex], skirtConfig);
 				gcodeLayer.SetAlwaysRetract(!config.avoidCrossingPerimeters);
 			}
 
@@ -695,8 +690,7 @@ namespace MatterHackers.MatterSlice
                 if (bridgePolygons.Count > 0)
 				{
 					gcode.WriteFanCommand(config.bridgeFanSpeedPercent);
-					gcodeLayer.WritePolygonsByOptimizer(bridgePolygons, bridgConfig);
-					gcode.WriteFanCommand(fanSpeedPercent);
+					gcodeLayer.QueuePolygonsByOptimizer(bridgePolygons, bridgConfig);
 				}
 
 				if (config.numberOfPerimeters > 0)
@@ -722,14 +716,14 @@ namespace MatterHackers.MatterSlice
 						// First the outside (this helps with accuracy)
 						if (part.Insets.Count > 0)
 						{
-							WritePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[0], inset0Config, SupportWriteType.UnsuportedAreas);
+							QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[0], inset0Config, SupportWriteType.UnsuportedAreas);
 						}
 
 						if (!inset0Config.spiralize)
 						{
 							for (int perimeterIndex = 1; perimeterIndex < part.Insets.Count; perimeterIndex++)
 							{
-								WritePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[perimeterIndex], insetXConfig, SupportWriteType.UnsuportedAreas);
+								QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[perimeterIndex], insetXConfig, SupportWriteType.UnsuportedAreas);
 							}
 						}
 					}
@@ -740,27 +734,27 @@ namespace MatterHackers.MatterSlice
 						if (part?.Insets?[0]?[0]?.Count > 0)
 						{
 							int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(part.Insets[0][0]);
-							gcodeLayer.WriteTravel(part.Insets[0][0][bestPoint]);
+							gcodeLayer.QueueTravel(part.Insets[0][0][bestPoint]);
 						}
 
 						// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
 						for (int perimeterIndex = 1; perimeterIndex < part.Insets.Count; perimeterIndex++)
 						{
-							WritePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[perimeterIndex], insetXConfig, SupportWriteType.UnsuportedAreas);
+							QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[perimeterIndex], insetXConfig, SupportWriteType.UnsuportedAreas);
 						}
 						// then 0
 						if (part.Insets.Count > 0)
 						{
-							WritePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[0], inset0Config, SupportWriteType.UnsuportedAreas);
+							QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[0], inset0Config, SupportWriteType.UnsuportedAreas);
 						}
 					}
 				}
 
-				gcodeLayer.WritePolygonsByOptimizer(fillPolygons, fillConfig);
+				gcodeLayer.QueuePolygonsByOptimizer(fillPolygons, fillConfig);
 
-				WritePolygonsConsideringSupport(layerIndex, gcodeLayer, bottomFillPolygons, fillConfig, SupportWriteType.UnsuportedAreas);
+				QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bottomFillPolygons, fillConfig, SupportWriteType.UnsuportedAreas);
 
-				gcodeLayer.WritePolygonsByOptimizer(topFillPolygons, topFillConfig);
+				gcodeLayer.QueuePolygonsByOptimizer(topFillPolygons, topFillConfig);
 
 				//After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
 				if (!config.continuousSpiralOuterPerimeter || layerIndex < config.numberOfBottomLayers)
@@ -769,30 +763,32 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-            if(false)
-            for (int partIndex = 0; partIndex < partOrderOptimizer.bestPolygonOrderIndex.Count; partIndex++)
+            if (false)
             {
-                // Now write any areas that need to be on support at the air gap height
-                if (config.useNewSupport 
-                    && !config.continuousSpiralOuterPerimeter
-                    && layerIndex > 0)
+                for (int partIndex = 0; partIndex < partOrderOptimizer.bestPolygonOrderIndex.Count; partIndex++)
                 {
-                    SliceLayerPart part = layer.parts[partOrderOptimizer.bestPolygonOrderIndex[partIndex]];
-
-                    gcode.setZ(currentZ_um + config.raftAirGap_um);
-
-                    // Print everything but the first perimeter from the outside in so the little parts have more to stick to.
-                    for (int perimeterIndex = 1; perimeterIndex < part.Insets.Count; perimeterIndex++)
+                    // Now write any areas that need to be on support at the air gap height
+                    if (config.useNewSupport
+                        && !config.continuousSpiralOuterPerimeter
+                        && layerIndex > 0)
                     {
-                        WritePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[perimeterIndex], insetXConfig, SupportWriteType.SupportedAreas);
-                    }
-                    // then 0
-                    if (part.Insets.Count > 0)
-                    {
-                        WritePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[0], inset0Config, SupportWriteType.SupportedAreas);
-                    }
+                        SliceLayerPart part = layer.parts[partOrderOptimizer.bestPolygonOrderIndex[partIndex]];
 
-                    WritePolygonsConsideringSupport(layerIndex, gcodeLayer, airGapBottomFillPolygons[partIndex], fillConfig, SupportWriteType.SupportedAreas);
+                        gcode.setZ(currentZ_um + config.raftAirGap_um);
+
+                        // Print everything but the first perimeter from the outside in so the little parts have more to stick to.
+                        for (int perimeterIndex = 1; perimeterIndex < part.Insets.Count; perimeterIndex++)
+                        {
+                            QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[perimeterIndex], insetXConfig, SupportWriteType.SupportedAreas);
+                        }
+                        // then 0
+                        if (part.Insets.Count > 0)
+                        {
+                            QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.Insets[0], inset0Config, SupportWriteType.SupportedAreas);
+                        }
+
+                        QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, airGapBottomFillPolygons[partIndex], fillConfig, SupportWriteType.SupportedAreas);
+                    }
                 }
             }
 
@@ -801,7 +797,7 @@ namespace MatterHackers.MatterSlice
 
 		enum SupportWriteType { UnsuportedAreas, SupportedAreas };
 
-		private void WritePolygonsConsideringSupport(int layerIndex, GCodePlanner gcodeLayer, Polygons polygonsToWrite, GCodePathConfig fillConfig, SupportWriteType supportWriteType)
+		private void QueuePolygonsConsideringSupport(int layerIndex, GCodePlanner gcodeLayer, Polygons polygonsToWrite, GCodePathConfig fillConfig, SupportWriteType supportWriteType)
 		{
 			if (config.useNewSupport && layerIndex > 0)
 			{
@@ -809,18 +805,18 @@ namespace MatterHackers.MatterSlice
 				{
 					// don't write the bottoms that are sitting on supported areas (they will be written at air gap distance later).
 					Polygons polygonsNotOnSupport = polygonsToWrite.CreateDifference(newSupport.GetRequiredSupportAreas(layerIndex));
-					gcodeLayer.WritePolygonsByOptimizer(polygonsNotOnSupport, fillConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(polygonsNotOnSupport, fillConfig);
 				}
 				else
 				{
 					// write the bottoms that are sitting on supported areas.
 					Polygons polygonsOnSupport = polygonsToWrite.CreateIntersection(newSupport.GetRequiredSupportAreas(layerIndex));
-					gcodeLayer.WritePolygonsByOptimizer(polygonsOnSupport, fillConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(polygonsOnSupport, fillConfig);
 				}
 			}
 			else if(supportWriteType == SupportWriteType.UnsuportedAreas)
             {
-				gcodeLayer.WritePolygonsByOptimizer(polygonsToWrite, fillConfig);
+				gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, fillConfig);
 			}
 		}
 
@@ -907,7 +903,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private void AddSupportToGCode(SliceDataStorage slicingData, GCodePlanner gcodeLayer, int layerIndex, ConfigSettings config)
+		private void QueueSupportToGCode(SliceDataStorage slicingData, GCodePlanner gcodeLayer, int layerIndex, ConfigSettings config)
 		{
 			if (!slicingData.support.generated)
 			{
@@ -925,7 +921,7 @@ namespace MatterHackers.MatterSlice
 				if (slicingData.wipeShield.Count > 0 && slicingData.AllPartsLayers.Count == 1)
 				{
 					gcodeLayer.SetAlwaysRetract(true);
-					gcodeLayer.WritePolygonsByOptimizer(slicingData.wipeShield[layerIndex], skirtConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(slicingData.wipeShield[layerIndex], skirtConfig);
 					gcodeLayer.SetAlwaysRetract(config.avoidCrossingPerimeters);
 				}
 			}
@@ -946,19 +942,19 @@ namespace MatterHackers.MatterSlice
 
 			SupportPolyGenerator supportGenerator = new SupportPolyGenerator(slicingData.support, currentZHeight_um);
 
-			WriteSupportPolygons(slicingData, gcodeLayer, layerIndex, config, supportGenerator.supportPolygons, SupportType.General);
+			QueueSupportPolygons(slicingData, gcodeLayer, layerIndex, config, supportGenerator.supportPolygons, SupportType.General);
 
 			if (config.supportInterfaceExtruder != -1
 				&& config.supportInterfaceExtruder != config.supportExtruder)
 			{
 				gcodeLayer.SetExtruder(config.supportInterfaceExtruder);
 			}
-			WriteSupportPolygons(slicingData, gcodeLayer, layerIndex, config, supportGenerator.interfacePolygons, SupportType.Interface);
+			QueueSupportPolygons(slicingData, gcodeLayer, layerIndex, config, supportGenerator.interfacePolygons, SupportType.Interface);
 		}
 
 		private enum SupportType { General, Interface };
 
-		private void WriteSupportPolygons(SliceDataStorage slicingData, GCodePlanner gcodeLayer, int layerIndex, ConfigSettings config, Polygons supportPolygons, SupportType interfaceLayer)
+		private void QueueSupportPolygons(SliceDataStorage slicingData, GCodePlanner gcodeLayer, int layerIndex, ConfigSettings config, Polygons supportPolygons, SupportType interfaceLayer)
 		{
 			for (int volumeIndex = 0; volumeIndex < slicingData.AllPartsLayers.Count; volumeIndex++)
 			{
@@ -1020,15 +1016,15 @@ namespace MatterHackers.MatterSlice
 				switch (interfaceLayer)
 				{
 					case SupportType.Interface:
-						gcodeLayer.WritePolygonsByOptimizer(supportLines, supportInterfaceConfig);
+						gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportInterfaceConfig);
 						break;
 
 					case SupportType.General:
 						if (config.supportType == ConfigConstants.SUPPORT_TYPE.GRID)
 						{
-							gcodeLayer.WritePolygonsByOptimizer(island, supportNormalConfig);
+							gcodeLayer.QueuePolygonsByOptimizer(island, supportNormalConfig);
 						}
-						gcodeLayer.WritePolygonsByOptimizer(supportLines, supportNormalConfig);
+						gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportNormalConfig);
 						break;
 
 					default:
@@ -1047,13 +1043,13 @@ namespace MatterHackers.MatterSlice
 			}
 
 			//If we changed extruder, print the wipe/prime tower for this nozzle;
-			gcodeLayer.WritePolygonsByOptimizer(slicingData.wipeTower, supportInterfaceConfig);
+			gcodeLayer.QueuePolygonsByOptimizer(slicingData.wipeTower, supportInterfaceConfig);
 			Polygons fillPolygons = new Polygons();
 			Infill.GenerateLinePaths(slicingData.wipeTower, ref fillPolygons, extrusionWidth_um, config.infillExtendIntoPerimeter_um, 45 + 90 * (layerNr % 2));
-			gcodeLayer.WritePolygonsByOptimizer(fillPolygons, supportInterfaceConfig);
+			gcodeLayer.QueuePolygonsByOptimizer(fillPolygons, supportInterfaceConfig);
 
 			//Make sure we wipe the old extruder on the wipe tower.
-			gcodeLayer.WriteTravel(slicingData.wipePoint - config.extruderOffsets[prevExtruder] + config.extruderOffsets[gcodeLayer.getExtruder()]);
+			gcodeLayer.QueueTravel(slicingData.wipePoint - config.extruderOffsets[prevExtruder] + config.extruderOffsets[gcodeLayer.getExtruder()]);
 		}
 
 		public void Cancel()

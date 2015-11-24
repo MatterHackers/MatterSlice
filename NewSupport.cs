@@ -272,7 +272,7 @@ namespace MatterHackers.MatterSlice
 			return diferenceLayers;
 		}
 
-		public void WriteNormalSupportLayer(GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, GCodePathConfig supportInterfaceConfig)
+		public void QueueNormalSupportLayer(GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, GCodePathConfig supportInterfaceConfig)
 		{
             if (false)
             {
@@ -285,17 +285,17 @@ namespace MatterHackers.MatterSlice
                 outlinesToRender = supportOutlines;
                 //outlinesToRender = interfaceLayers;
 
-                gcodeLayer.WritePolygonsByOptimizer(outlinesToRender[layerIndex], supportNormalConfig);
+                gcodeLayer.QueuePolygonsByOptimizer(outlinesToRender[layerIndex], supportNormalConfig);
             }
             else
             {
-                gcodeLayer.WritePolygonsByOptimizer(supportOutlines[layerIndex], supportNormalConfig);
+                gcodeLayer.QueuePolygonsByOptimizer(supportOutlines[layerIndex], supportNormalConfig);
 
-                gcodeLayer.WritePolygonsByOptimizer(interfaceLayers[layerIndex], supportInterfaceConfig);
+                gcodeLayer.QueuePolygonsByOptimizer(interfaceLayers[layerIndex], supportInterfaceConfig);
             }
 		}
 
-		public void WriteAirGappedBottomLayer(GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, GCodePathConfig supportInterfaceConfig)
+		public void QueueAirGappedBottomLayer(GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, GCodePathConfig supportInterfaceConfig)
 		{
 			throw new NotImplementedException();
 		}

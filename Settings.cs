@@ -64,14 +64,6 @@ namespace MatterHackers.MatterSlice
             ULTIGCODE,
 
             /**
-			 * Bits From Bytes GCode.
-			 *  BFB machines use RPM instead of E. Which is coupled to the F instead of independed. (M108 S[deciRPM])
-			 *  Need X,Y,Z,F on every line.
-			 *  Needs extruder ON/OFF (M101, M103), has auto-retrection (M227 S[2560*mm] P[2560*mm])
-			 **/
-            BFB,
-
-            /**
 			  * MACH3 GCode
 			  *  MACH3 is CNC control software, which expects A/B/C/D for extruders, instead of E.
 			  **/
@@ -128,9 +120,6 @@ namespace MatterHackers.MatterSlice
         // other
         [SettingDescription("This will cause the z height to raise continuously while on the outer perimeter.")]
         public bool continuousSpiralOuterPerimeter;
-
-        [SettingDescription("Will cause the head to be raised in z until the min layer time is reached.")]
-        public bool doCoolHeadLift;
 
         // Raft settings
         [SettingDescription("mm.")]
@@ -661,7 +650,6 @@ namespace MatterHackers.MatterSlice
 
             minimumLayerTimeSeconds = 5;
             minimumPrintingSpeed = 10;
-            doCoolHeadLift = false;
             fanSpeedMinPercent = 100;
             fanSpeedMaxPercent = 100;
 

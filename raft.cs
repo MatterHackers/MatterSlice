@@ -28,7 +28,7 @@ namespace MatterHackers.MatterSlice
 
 	public static class Raft
 	{
-		public static void GenerateRaftGCodeIfRequired(SliceDataStorage storage, ConfigSettings config, GCodeExport gcode)
+		public static void WriteRaftGCodeIfRequired(SliceDataStorage storage, ConfigSettings config, GCodeExport gcode)
 		{
 			if (ShouldGenerateRaft(config))
 			{
@@ -59,15 +59,15 @@ namespace MatterHackers.MatterSlice
 					Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftBaseLineSpacing_um, config.infillExtendIntoPerimeter_um, 0);
 
 					// write the skirt around the raft
-					gcodeLayer.WritePolygonsByOptimizer(storage.skirt, raftBaseConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(storage.skirt, raftBaseConfig);
 
 					// write the outline of the raft
-					gcodeLayer.WritePolygonsByOptimizer(storage.raftOutline, raftBaseConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(storage.raftOutline, raftBaseConfig);
 
 					// write the inside of the raft base
-					gcodeLayer.WritePolygonsByOptimizer(raftLines, raftBaseConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftBaseConfig);
 
-					gcodeLayer.WriteGCode(false, config.raftBaseThickness_um);
+					gcodeLayer.WriteQueuedGCode(config.raftBaseThickness_um);
 				}
 
 				if (config.raftFanSpeedPercent > 0)
@@ -85,9 +85,9 @@ namespace MatterHackers.MatterSlice
 
 					Polygons raftLines = new Polygons();
 					Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftInterfaceLineSpacing_um, config.infillExtendIntoPerimeter_um, 45);
-					gcodeLayer.WritePolygonsByOptimizer(raftLines, raftMiddleConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftMiddleConfig);
 
-					gcodeLayer.WriteGCode(false, config.raftInterfaceThicknes_um);
+					gcodeLayer.WriteQueuedGCode(config.raftInterfaceThicknes_um);
 				}
 
 				for (int raftSurfaceIndex = 1; raftSurfaceIndex <= config.raftSurfaceLayers; raftSurfaceIndex++)
@@ -108,9 +108,9 @@ namespace MatterHackers.MatterSlice
 					{
 						Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftSurfaceLineSpacing_um, config.infillExtendIntoPerimeter_um, 90 * raftSurfaceIndex);
 					}
-					gcodeLayer.WritePolygonsByOptimizer(raftLines, raftSurfaceConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftSurfaceConfig);
 
-					gcodeLayer.WriteGCode(false, config.raftInterfaceThicknes_um);
+					gcodeLayer.WriteQueuedGCode(config.raftInterfaceThicknes_um);
 				}
 			}
 		}
