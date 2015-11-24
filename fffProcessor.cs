@@ -752,7 +752,7 @@ namespace MatterHackers.MatterSlice
 
 				gcodeLayer.QueuePolygonsByOptimizer(fillPolygons, fillConfig);
 
-				QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bottomFillPolygons, fillConfig, SupportWriteType.UnsuportedAreas);
+                QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bottomFillPolygons, fillConfig, SupportWriteType.UnsuportedAreas);
 
 				gcodeLayer.QueuePolygonsByOptimizer(topFillPolygons, topFillConfig);
 
@@ -763,7 +763,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-            if (false)
+            if (true)
             {
                 for (int partIndex = 0; partIndex < partOrderOptimizer.bestPolygonOrderIndex.Count; partIndex++)
                 {
@@ -809,9 +809,21 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					// write the bottoms that are sitting on supported areas.
-					Polygons polygonsOnSupport = polygonsToWrite.CreateIntersection(newSupport.GetRequiredSupportAreas(layerIndex));
-					gcodeLayer.QueuePolygonsByOptimizer(polygonsOnSupport, fillConfig);
+					Polygons supportOutlines = newSupport.GetRequiredSupportAreas(layerIndex);
+					if (supportOutlines.Count > 0)
+					{
+						// write the bottoms that are sitting on supported areas.
+						Polygons polygonsOnSupport;
+						if (polygonsToWrite.Count == 1)
+						{
+							polygonsOnSupport = supportOutlines.CreateIntersection(polygonsToWrite);
+						}
+						else
+						{
+							polygonsOnSupport = supportOutlines.CreateLineIntersections(polygonsToWrite);
+						}
+						gcodeLayer.QueuePolygonsByOptimizer(polygonsOnSupport, fillConfig);
+					}
 				}
 			}
 			else if(supportWriteType == SupportWriteType.UnsuportedAreas)

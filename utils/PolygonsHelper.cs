@@ -101,6 +101,21 @@ namespace MatterHackers.MatterSlice
 			return ret;
 		}
 
+		public static Polygons CreateLineIntersections(this Polygons polygons, Polygons other)
+		{
+			Clipper clipper = new Clipper();
+
+			clipper.AddPaths(other, PolyType.ptSubject, false);
+			clipper.AddPaths(polygons, PolyType.ptClip, true);
+
+			PolyTree clippedLines = new PolyTree();
+
+			clipper.Execute(ClipType.ctIntersection, clippedLines);
+
+			return Clipper.OpenPathsFromPolyTree(clippedLines);
+		}
+
+
 		public static List<Polygons> CreateLayerOutlines(this Polygons polygons, LayerOpperation opperation)
 		{
 			List<Polygons> ret = new List<Polygons>();
@@ -122,14 +137,14 @@ namespace MatterHackers.MatterSlice
 
 		public static Polygons CreateUnion(this Polygons polygons, Polygons other)
 		{
-			Polygons ret = new Polygons();
 			Clipper clipper = new Clipper();
 			clipper.AddPaths(polygons, PolyType.ptSubject, true);
 			clipper.AddPaths(other, PolyType.ptSubject, true);
+
+			Polygons ret = new Polygons();
 			clipper.Execute(ClipType.ctUnion, ret, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
 			return ret;
 		}
-
 		public static Polygons DeepCopy(this Polygons polygons)
 		{
 			Polygons deepCopy = new Polygons();
