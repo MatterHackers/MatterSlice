@@ -48,7 +48,19 @@ namespace MatterHackers.MatterSlice
 				n = m;
 		}
 
+		private void SET_MIN(ref long n, long m)
+		{
+			if ((m) < (n))
+				n = m;
+		}
+
 		private void SET_MAX(ref int n, int m)
+		{
+			if ((m) > (n))
+				n = m;
+		}
+
+		private void SET_MAX(ref long n, long m)
 		{
 			if ((m) > (n))
 				n = m;

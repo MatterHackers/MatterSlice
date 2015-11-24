@@ -79,7 +79,7 @@ namespace MatterHackers.MatterSlice
 
 		public IntPoint gridOffset;
 		public int gridScale;
-		public int gridWidth, gridHeight;
+		public long gridWidth, gridHeight;
 		public List<List<SupportPoint>> xYGridOfSupportPoints = new List<List<SupportPoint>>();
 
 		private static void swap(ref int p0, ref int p1)
@@ -123,7 +123,7 @@ namespace MatterHackers.MatterSlice
 			this.gridScale = 200;
 			this.gridWidth = (model.size_um.x / this.gridScale) + 1;
 			this.gridHeight = (model.size_um.y / this.gridScale) + 1;
-			int gridSize = this.gridWidth * this.gridHeight;
+			int gridSize = (int)(this.gridWidth * this.gridHeight);
 			this.xYGridOfSupportPoints = new List<List<SupportPoint>>(gridSize);
 			for (int i = 0; i < gridSize; i++)
 			{
@@ -191,7 +191,7 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 
-					for (int x = v1.x; x < v2.x; x++)
+					for (long x = v1.x; x < v2.x; x++)
 					{
 						long y0 = (long)(v1.y + (v2.y - v1.y) * (x - v1.x) / (double)(v2.x - v1.x) + .5);
 						long y1 = (long)(v0.y + (v2.y - v0.y) * (x - v0.x) / (double)(v2.x - v0.x) + .5);
@@ -206,7 +206,7 @@ namespace MatterHackers.MatterSlice
 
 						for (int y = (int)y0; y < y1; y++)
 						{
-							this.xYGridOfSupportPoints[x + y * this.gridWidth].Add(new SupportPoint((int)(z0 + (z1 - z0) * (double)(y - y0) / (double)(y1 - y0) + .5), angleFromHorizon));
+							this.xYGridOfSupportPoints[(int)(x + y * this.gridWidth)].Add(new SupportPoint((int)(z0 + (z1 - z0) * (double)(y - y0) / (double)(y1 - y0) + .5), angleFromHorizon));
 						}
 					}
 				}
@@ -216,7 +216,7 @@ namespace MatterHackers.MatterSlice
 			{
 				for (int y = 0; y < this.gridHeight; y++)
 				{
-					int gridIndex = x + y * this.gridWidth;
+					int gridIndex = (int)(x + y * this.gridWidth);
 					List<SupportPoint> currentList = this.xYGridOfSupportPoints[gridIndex];
 					currentList.Sort(SortSupportsOnZ);
 

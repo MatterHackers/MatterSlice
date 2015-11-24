@@ -125,6 +125,7 @@
     <Compile Include="main.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="timeEstimate.cs" />
+    <Compile Include="utils\Point3.cs" />
     <Compile Include="utils\IntpointHelper.cs" />
     <Compile Include="utils\PolygonsHelper.cs" />
     <Compile Include="utils\SplitCommandLine.cs" />

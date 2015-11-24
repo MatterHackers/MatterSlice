@@ -60,7 +60,7 @@ namespace MatterHackers.MatterSlice
 			modelSize = ov.parentModel.size_um;
 			modelMin = ov.parentModel.minXYZ_um;
 
-			int heightWithoutFirstLayer = modelSize.z - initialLayerThickness_um - config.bottomClipAmount_um;
+			long heightWithoutFirstLayer = modelSize.z - initialLayerThickness_um - config.bottomClipAmount_um;
 			int countOfNormalThicknessLayers = Math.Max(0, (int)((heightWithoutFirstLayer / (double)layerThickness_um) + .5));
 
 			int layerCount = countOfNormalThicknessLayers;
@@ -91,8 +91,8 @@ namespace MatterHackers.MatterSlice
 				Point3 p0 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[0]].position;
 				Point3 p1 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[1]].position;
 				Point3 p2 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[2]].position;
-				int minZ = p0.z;
-				int maxZ = p0.z;
+				long minZ = p0.z;
+				long maxZ = p0.z;
 				if (p1.z < minZ) minZ = p1.z;
 				if (p2.z < minZ) minZ = p2.z;
 				if (p1.z > maxZ) maxZ = p1.z;

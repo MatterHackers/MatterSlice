@@ -48,7 +48,7 @@ namespace MatterHackers.MatterSlice
 		private ConfigConstants.OUTPUT_TYPE outputType;
 		private double retractionAmount_mm;
 		private int retractionSpeed;
-		private List<IntPoint> retractionWipePath = new Polygon();
+		private List<Point3> retractionWipePath = new List<Point3>();
 		private double retractionZHop_mm;
 		private string toolChangeCode;
 		private double[] totalFilament_mm = new double[ConfigConstants.MAX_EXTRUDERS];
@@ -56,6 +56,8 @@ namespace MatterHackers.MatterSlice
 		private double unretractExtrusionExtra_mm;
 		private bool wipeAfterRetraction;
 		private long zPos_um;
+
+		public long CurrentZ { get { return zPos_um; } }
 
 		public GCodeExport()
 		{
@@ -86,12 +88,9 @@ namespace MatterHackers.MatterSlice
 			gcodeFileStream.Close();
 		}
 
-		public void Finalize(int maxObjectHeight, int moveSpeed, string endCode)
+		public void Finalize(long maxObjectHeight, int moveSpeed, string endCode)
 		{
 			WriteFanCommand(0);
-			WriteRetraction();
-			setZ(maxObjectHeight + 5000);
-			WriteMove(GetPositionXY(), moveSpeed, 0);
 			WriteCode(endCode);
 			WriteComment("filament used = {0:0.0}".FormatWith(GetTotalFilamentUsed(0) + GetTotalFilamentUsed(1)));
 			WriteComment("filament used extruder 1 (mm) = {0:0.0}".FormatWith(GetTotalFilamentUsed(0)));
@@ -129,12 +128,17 @@ namespace MatterHackers.MatterSlice
 			return this.outputType;
 		}
 
+		public Point3 GetPosition()
+		{
+			return currentPosition_um;
+		}
+
 		public IntPoint GetPositionXY()
 		{
 			return new IntPoint(currentPosition_um.x, currentPosition_um.y);
 		}
 
-		public int GetPositionZ()
+		public long GetPositionZ()
 		{
 			return currentPosition_um.z;
 		}
@@ -330,13 +334,13 @@ namespace MatterHackers.MatterSlice
 			gcodeFileStream.Write("{0}\n".FormatWith(line));
 		}
 
-        public void WriteMove(IntPoint movePosition_um, double speed, int lineWidth_um)
+        public void WriteMove(Point3 movePosition_um, double speed, int lineWidth_um)
         {
             StringBuilder lineToWrite = new StringBuilder();
             //Normal E handling.
             if (lineWidth_um != 0)
             {
-                IntPoint diff = movePosition_um - GetPositionXY();
+                Point3 diff = movePosition_um - GetPosition();
                 if (isRetracted)
                 {
                     if (retractionZHop_mm > 0)
@@ -385,13 +389,13 @@ namespace MatterHackers.MatterSlice
                 currentSpeed = speed;
             }
 
-            double xWritePosition = (double)(movePosition_um.X - extruderOffset_um[extruderIndex].x) / 1000.0;
-            double yWritePosition = (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].y) / 1000.0;
+            double xWritePosition = (double)(movePosition_um.x - extruderOffset_um[extruderIndex].x) / 1000.0;
+            double yWritePosition = (double)(movePosition_um.y - extruderOffset_um[extruderIndex].y) / 1000.0;
             lineToWrite.Append(" X{0:0.###} Y{1:0.###}".FormatWith(xWritePosition, yWritePosition));
 
-            if (zPos_um != currentPosition_um.z)
+            if (movePosition_um.z != currentPosition_um.z)
             {
-                double zWritePosition = (double)(zPos_um - extruderOffset_um[extruderIndex].z) / 1000.0;
+                double zWritePosition = (double)(movePosition_um.z - extruderOffset_um[extruderIndex].z) / 1000.0;
                 lineToWrite.Append(" Z{0:0.###}".FormatWith(zWritePosition));
             }
 
@@ -418,7 +422,7 @@ namespace MatterHackers.MatterSlice
                 }
             }
 
-            currentPosition_um = new Point3(movePosition_um.X, movePosition_um.Y, zPos_um);
+            currentPosition_um = movePosition_um;
             estimateCalculator.plan(new TimeEstimateCalculator.Position(currentPosition_um.x / 1000.0, currentPosition_um.y / 1000.0, currentPosition_um.z / 1000.0, extrusionAmount_mm), speed);
         }
 
@@ -467,7 +471,7 @@ namespace MatterHackers.MatterSlice
 			//This wipes the extruder back along the previous path after retracting.
 			if (wipeAfterRetraction && retractionWipePath.Count >= 2)
 			{
-				IntPoint lastP = retractionWipePath[retractionWipePath.Count - 1];
+				Point3 lastP = retractionWipePath[retractionWipePath.Count - 1];
 				int indexStepDirection = -1;
 				int i = retractionWipePath.Count - 2;
 				double wipeDistanceMm = 10;
@@ -475,7 +479,7 @@ namespace MatterHackers.MatterSlice
 
 				while (wipeLeft > 0)
 				{
-					IntPoint p = retractionWipePath[i];
+					Point3 p = retractionWipePath[i];
 					long len = (lastP - p).Length();
 
 					//Check if we're out of moves
@@ -493,7 +497,7 @@ namespace MatterHackers.MatterSlice
 					//If move is longer than wipe remaining, calculate angle and move along path but stop short.
 					if (len > wipeLeft)
 					{
-						IntPoint direction = p - lastP;
+						Point3 direction = p - lastP;
 						long directionLength = direction.Length();
 						direction *= wipeLeft;
 						direction /= directionLength;
@@ -508,8 +512,8 @@ namespace MatterHackers.MatterSlice
 						currentSpeed = initialSpeed;
 						gcodeFileStream.Write("F{0} ".FormatWith(currentSpeed * 60));
 					}
-					gcodeFileStream.Write("X{0:0.###} Y{1:0.###}\n".FormatWith((p.X - extruderOffset_um[extruderIndex].x) / 1000.0, (p.Y - extruderOffset_um[extruderIndex].y) / 1000.0));
-					estimateCalculator.plan(new TimeEstimateCalculator.Position(p.X / 1000.0, p.Y / 1000.0, currentPosition_um.z / 1000.0, 0), currentSpeed);
+					gcodeFileStream.Write("X{0:0.###} Y{1:0.###}\n".FormatWith((p.x - extruderOffset_um[extruderIndex].x) / 1000.0, (p.y - extruderOffset_um[extruderIndex].y) / 1000.0));
+					estimateCalculator.plan(new TimeEstimateCalculator.Position(p.x / 1000.0, p.y / 1000.0, currentPosition_um.z / 1000.0, 0), currentSpeed);
 				}
 				retractionWipePath.Clear();
 			}

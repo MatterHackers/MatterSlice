@@ -32,7 +32,7 @@ namespace MatterHackers.MatterSlice
 	// Fused Filament Fabrication processor.
 	public class fffProcessor
 	{
-		private int maxObjectHeight;
+		private long maxObjectHeight;
 		private int fileNumber;
 		private GCodeExport gcode = new GCodeExport();
 		private ConfigSettings config;
@@ -394,8 +394,8 @@ namespace MatterHackers.MatterSlice
 				gcode.ResetExtrusionValue();
 				gcode.WriteRetraction();
 				gcode.setZ(maxObjectHeight + 5000);
-				gcode.WriteMove(gcode.GetPositionXY(), config.travelSpeed, 0);
-				gcode.WriteMove(new IntPoint(slicingData.modelMin.x, slicingData.modelMin.y), config.travelSpeed, 0);
+				gcode.WriteMove(gcode.GetPosition(), config.travelSpeed, 0);
+				gcode.WriteMove(new Point3(slicingData.modelMin.x, slicingData.modelMin.y, gcode.CurrentZ), config.travelSpeed, 0);
 			}
 			fileNumber++;
 
