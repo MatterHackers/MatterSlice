@@ -152,7 +152,7 @@ namespace MatterHackers.MatterSlice
 
 		public PointMatrix(double rotation)
 		{
-			rotation = rotation / 180 * PI;
+			rotation = rotation / 180 * Math.PI;
 			matrix[0] = Cos(rotation);
 			matrix[1] = -Sin(rotation);
 			matrix[2] = -matrix[1];
