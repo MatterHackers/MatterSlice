@@ -39,7 +39,6 @@ namespace MatterHackers.MatterSlice
         internal List<Polygons> supportOutlines = new List<Polygons>();
         internal List<Polygons> interfaceLayers = new List<Polygons>();
 
-        double interfaceLayersMm;
         double grabDistanceMm;
 
         public Polygons GetRequiredSupportAreas(int layerIndex)
@@ -53,9 +52,8 @@ namespace MatterHackers.MatterSlice
 			return new Polygons();
         }
 
-		public NewSupport(ConfigSettings config, PartLayers storage, double interfaceLayersMm, double grabDistanceMm)
+		public NewSupport(ConfigSettings config, PartLayers storage, double grabDistanceMm)
         {
-            this.interfaceLayersMm = interfaceLayersMm;
             this.grabDistanceMm = grabDistanceMm;
             // create starting support outlines
             allPartOutlines = CalculateAllPartOutlines(config, storage);
@@ -68,8 +66,7 @@ namespace MatterHackers.MatterSlice
 
 			//pushedUpTopOutlines = PushUpTops(easyGrabDistanceOutlines, numLayers, config);
 
-            int numInterfaceLayers = (int)(interfaceLayersMm*1000) / config.layerThickness_um;
-			interfaceLayers = CreateInterfacelayers(easyGrabDistanceOutlines, numInterfaceLayers);
+			interfaceLayers = CreateInterfacelayers(easyGrabDistanceOutlines, config.supportInterfaceLayers);
 			interfaceLayers = ClipToXyDistance(interfaceLayers, allPartOutlines, config);
 
 			supportOutlines = AccumulateDownPolygons(easyGrabDistanceOutlines, allPartOutlines);
@@ -272,27 +269,50 @@ namespace MatterHackers.MatterSlice
 			return diferenceLayers;
 		}
 
-		public void QueueNormalSupportLayer(GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, GCodePathConfig supportInterfaceConfig)
+		public void QueueNormalSupportLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, GCodePathConfig supportInterfaceConfig)
 		{
-            if (false)
-            {
-                List<Polygons> outlinesToRender = null;
-                //outlinesToRender = allPartOutlines;
-                //outlinesToRender = allPotentialSupportOutlines;
-                //outlinesToRender = allRequiredSupportOutlines;
-                //outlinesToRender = allDownOutlines;
-                //outlinesToRender = pushedUpTopOutlines;
-                outlinesToRender = supportOutlines;
-                //outlinesToRender = interfaceLayers;
+			if (false)
+			{
+				List<Polygons> outlinesToRender = null;
+				//outlinesToRender = allPartOutlines;
+				//outlinesToRender = allPotentialSupportOutlines;
+				//outlinesToRender = allRequiredSupportOutlines;
+				//outlinesToRender = allDownOutlines;
+				//outlinesToRender = pushedUpTopOutlines;
+				outlinesToRender = supportOutlines;
+				//outlinesToRender = interfaceLayers;
 
-                gcodeLayer.QueuePolygonsByOptimizer(outlinesToRender[layerIndex], supportNormalConfig);
-            }
-            else
-            {
-                gcodeLayer.QueuePolygonsByOptimizer(supportOutlines[layerIndex], supportNormalConfig);
+				gcodeLayer.QueuePolygonsByOptimizer(outlinesToRender[layerIndex], supportNormalConfig);
+			}
+			else
+			{
+				// normal support
+				{
+					Polygons currentSupportOutlines = supportOutlines[layerIndex];
+					Polygons supportLines = new Polygons();
+					// render a grid of support
+					gcodeLayer.QueuePolygonsByOptimizer(currentSupportOutlines, supportNormalConfig);
+					switch (config.supportType)
+					{
+						case ConfigConstants.SUPPORT_TYPE.GRID:
+							Infill.GenerateGridInfill(config, currentSupportOutlines, ref supportLines, config.supportInfillStartingAngle, config.supportLineSpacing_um);
+							break;
 
-                gcodeLayer.QueuePolygonsByOptimizer(interfaceLayers[layerIndex], supportInterfaceConfig);
-            }
+						case ConfigConstants.SUPPORT_TYPE.LINES:
+							Infill.GenerateLineInfill(config, currentSupportOutlines, ref supportLines, config.supportInfillStartingAngle, config.supportLineSpacing_um);
+							break;
+					}
+					gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportNormalConfig);
+				}
+
+				// interface
+				{
+					Polygons currentInterfaceOutlines = interfaceLayers[layerIndex];
+					Polygons supportLines = new Polygons();
+					Infill.GenerateLineInfill(config, currentInterfaceOutlines, ref supportLines, config.supportInfillStartingAngle + 90, config.extrusionWidth_um);
+					gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportInterfaceConfig);
+				}
+			}
 		}
 
 		public void QueueAirGappedBottomLayer(GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, GCodePathConfig supportInterfaceConfig)

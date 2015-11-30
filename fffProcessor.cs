@@ -433,7 +433,7 @@ namespace MatterHackers.MatterSlice
 
 			if (config.useNewSupport)
 			{
-				newSupport = new NewSupport(config, slicingData.AllPartsLayers[0], 1, 1);
+				newSupport = new NewSupport(config, slicingData.AllPartsLayers[0], 1);
 			}
 
 			int volumeIndex = 0;
@@ -514,7 +514,7 @@ namespace MatterHackers.MatterSlice
 
 				if (newSupport != null)
 				{
-					newSupport.QueueNormalSupportLayer(gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
+					newSupport.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
                 }
 
 				int fanSpeedPercent = GetFanSpeed(layerIndex, gcodeLayer);
