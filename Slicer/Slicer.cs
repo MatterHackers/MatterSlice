@@ -51,14 +51,14 @@ namespace MatterHackers.MatterSlice
 		public Point3 modelSize;
 		public Point3 modelMin;
 
-		public Slicer(OptimizedVolume ov, ConfigSettings config)
+		public Slicer(OptimizedMesh ov, ConfigSettings config)
 		{
 			int initialLayerThickness_um = config.firstLayerThickness_um;
 			int layerThickness_um = config.layerThickness_um;
 			ConfigConstants.REPAIR_OUTLINES outlineRepairTypes = config.repairOutlines;
 
-			modelSize = ov.parentModel.size_um;
-			modelMin = ov.parentModel.minXYZ_um;
+			modelSize = ov.containingCollection.size_um;
+			modelMin = ov.containingCollection.minXYZ_um;
 
 			long heightWithoutFirstLayer = modelSize.z - initialLayerThickness_um - config.bottomClipAmount_um;
 			int countOfNormalThicknessLayers = Math.Max(0, (int)((heightWithoutFirstLayer / (double)layerThickness_um) + .5));

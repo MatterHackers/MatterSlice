@@ -138,10 +138,10 @@
     <Compile Include="gcodeExport.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="optimizedModel.cs" />
+    <Compile Include="OptimizedMesh.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SimpleModel.cs" />
+    <Compile Include="SimpleMesh.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AvoidCrossingPerimeters.cs" />

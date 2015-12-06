@@ -38,8 +38,8 @@ namespace MatterHackers.MatterSlice
 		private ConfigSettings config;
 		private Stopwatch timeKeeper = new Stopwatch();
 
-		private SimpleModel simpleModel = new SimpleModel();
-		private OptimizedModel optomizedModel;
+		private SimpleMeshCollection simpleMeshCollection = new SimpleMeshCollection();
+		private OptimizedMeshCollection optomizedMeshCollection;
 		private SliceDataStorage slicingData = new SliceDataStorage();
 
 		private GCodePathConfig skirtConfig = new GCodePathConfig();
@@ -82,16 +82,16 @@ namespace MatterHackers.MatterSlice
 
 			timeKeeper.Restart();
 			LogOutput.Log("Analyzing and optimizing model...\n");
-			optomizedModel = new OptimizedModel(simpleModel);
+			optomizedMeshCollection = new OptimizedMeshCollection(simpleMeshCollection);
 			if (MatterSlice.Canceled)
 			{
 				return;
 			}
-			optomizedModel.SetPositionAndSize(simpleModel, config.positionToPlaceObjectCenter_um.X, config.positionToPlaceObjectCenter_um.Y, -config.bottomClipAmount_um, config.centerObjectInXy);
-			for (int volumeIndex = 0; volumeIndex < simpleModel.volumes.Count; volumeIndex++)
+			optomizedMeshCollection.SetPositionAndSize(simpleMeshCollection, config.positionToPlaceObjectCenter_um.X, config.positionToPlaceObjectCenter_um.Y, -config.bottomClipAmount_um, config.centerObjectInXy);
+			for (int volumeIndex = 0; volumeIndex < simpleMeshCollection.SimpleMeshes.Count; volumeIndex++)
 			{
-				LogOutput.Log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleModel.volumes[volumeIndex].faceTriangles.Count, (int)optomizedModel.volumes[volumeIndex].facesTriangle.Count, (double)(optomizedModel.volumes[volumeIndex].facesTriangle.Count) / (double)(simpleModel.volumes[volumeIndex].faceTriangles.Count) * 100));
-				LogOutput.Log("  Vertex counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleModel.volumes[volumeIndex].faceTriangles.Count * 3, (int)optomizedModel.volumes[volumeIndex].vertices.Count, (double)(optomizedModel.volumes[volumeIndex].vertices.Count) / (double)(simpleModel.volumes[volumeIndex].faceTriangles.Count * 3) * 100));
+				LogOutput.Log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleMeshCollection.SimpleMeshes[volumeIndex].faceTriangles.Count, (int)optomizedMeshCollection.OptimizedMeshes[volumeIndex].facesTriangle.Count, (double)(optomizedMeshCollection.OptimizedMeshes[volumeIndex].facesTriangle.Count) / (double)(simpleMeshCollection.SimpleMeshes[volumeIndex].faceTriangles.Count) * 100));
+				LogOutput.Log("  Vertex counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleMeshCollection.SimpleMeshes[volumeIndex].faceTriangles.Count * 3, (int)optomizedMeshCollection.OptimizedMeshes[volumeIndex].vertices.Count, (double)(optomizedMeshCollection.OptimizedMeshes[volumeIndex].vertices.Count) / (double)(simpleMeshCollection.SimpleMeshes[volumeIndex].faceTriangles.Count * 3) * 100));
 			}
 
 			LogOutput.Log("Optimize model {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
@@ -122,7 +122,7 @@ namespace MatterHackers.MatterSlice
 			preSetup(config.extrusionWidth_um);
 			timeKeeper.Restart();
 			LogOutput.Log("Loading {0} from disk...\n".FormatWith(input_filename));
-			if (!SimpleModel.loadModelFromFile(simpleModel, input_filename, config.modelRotationMatrix))
+			if (!SimpleMeshCollection.LoadModelFromFile(simpleMeshCollection, input_filename, config.modelRotationMatrix))
 			{
 				LogOutput.LogError("Failed to load model: {0}\n".FormatWith(input_filename));
 				return false;
@@ -173,9 +173,9 @@ namespace MatterHackers.MatterSlice
 
 			LogOutput.Log("Slicing model...\n");
 			List<Slicer> slicerList = new List<Slicer>();
-			for (int volumeIndex = 0; volumeIndex < optomizedModel.volumes.Count; volumeIndex++)
+			for (int optimizedMeshIndex = 0; optimizedMeshIndex < optomizedMeshCollection.OptimizedMeshes.Count; optimizedMeshIndex++)
 			{
-				Slicer slicer = new Slicer(optomizedModel.volumes[volumeIndex], config);
+				Slicer slicer = new Slicer(optomizedMeshCollection.OptimizedMeshes[optimizedMeshIndex], config);
 				slicerList.Add(slicer);
 			}
 
@@ -189,11 +189,11 @@ namespace MatterHackers.MatterSlice
 			timeKeeper.Restart();
 
 			LogOutput.Log("Generating support map...\n");
-			slicingData.support.GenerateSupportGrid(optomizedModel, config);
+			slicingData.support.GenerateSupportGrid(optomizedMeshCollection, config);
 
-			slicingData.modelSize = optomizedModel.size_um;
-			slicingData.modelMin = optomizedModel.minXYZ_um;
-			slicingData.modelMax = optomizedModel.maxXYZ_um;
+			slicingData.modelSize = optomizedMeshCollection.size_um;
+			slicingData.modelMin = optomizedMeshCollection.minXYZ_um;
+			slicingData.modelMax = optomizedMeshCollection.maxXYZ_um;
 
 			LogOutput.Log("Generating layer parts...\n");
 			for (int partIndex = 0; partIndex < slicerList.Count; partIndex++)

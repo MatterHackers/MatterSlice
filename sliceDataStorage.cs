@@ -108,7 +108,7 @@ namespace MatterHackers.MatterSlice
 			return one.z.CompareTo(two.z);
 		}
 
-		public void GenerateSupportGrid(OptimizedModel model, ConfigSettings config)
+		public void GenerateSupportGrid(OptimizedMeshCollection model, ConfigSettings config)
 		{
 			this.generated = false;
 			if (config.supportEndAngle < 0)
@@ -139,9 +139,9 @@ namespace MatterHackers.MatterSlice
 
 			// This should really be a ray intersection as later code is going to count on it being an even odd list of bottoms and tops.
 			// As it is we are finding the hit on the plane but not checking for good intersection with the triangle.
-			for (int volumeIndex = 0; volumeIndex < model.volumes.Count; volumeIndex++)
+			for (int volumeIndex = 0; volumeIndex < model.OptimizedMeshes.Count; volumeIndex++)
 			{
-				OptimizedVolume vol = model.volumes[volumeIndex];
+				OptimizedMesh vol = model.OptimizedMeshes[volumeIndex];
 				for (int faceIndex = 0; faceIndex < vol.facesTriangle.Count; faceIndex++)
 				{
 					OptimizedFace faceTriangle = vol.facesTriangle[faceIndex];
