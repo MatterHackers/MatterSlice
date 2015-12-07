@@ -182,7 +182,7 @@ namespace MatterHackers.MatterSlice.Tests
             {
                 List<SlicePerimeterSegment> segmentsList = SliceLayer.CreateSegmentListFromString(line);
                 SliceLayer layer = new SliceLayer(1, line);
-                layer.MakePolygons(ConfigConstants.REPAIR_OUTLINES.NONE);
+                layer.MakePolygons();
 
                 Assert.IsTrue(layer.PolygonList.Count == expectedCount);
             }

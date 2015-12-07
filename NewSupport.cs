@@ -96,10 +96,10 @@ namespace MatterHackers.MatterSlice
             {
                 Polygons allOutlines = new Polygons();
 
-                SliceLayerParts curLayer = storage.Layers[layerIndex];
-                for (int curLayerPartIndex = 0; curLayerPartIndex < curLayer.parts.Count; curLayerPartIndex++)
+                MeshLayers curLayer = storage.Layers[layerIndex];
+                for (int curLayerPartIndex = 0; curLayerPartIndex < curLayer.layerData.Count; curLayerPartIndex++)
                 {
-                    SliceLayerPart curPart = curLayer.parts[curLayerPartIndex];
+                    MeshLayerData curPart = curLayer.layerData[curLayerPartIndex];
                     Polygons curLayerPolys = curPart.TotalOutline;
                     allOutlines = allOutlines.CreateUnion(curLayerPolys);
                     allOutlines = Clipper.CleanPolygons(allOutlines, cleanDistance_um);

@@ -37,13 +37,13 @@ namespace MatterHackers.MatterSlice
 				{
 					for (int layerIndex = 0; layerIndex < volumes[volumeToRemoveFromIndex].Layers.Count; layerIndex++)
 					{
-						SliceLayerParts layerToRemoveFrom = volumes[volumeToRemoveFromIndex].Layers[layerIndex];
-						SliceLayerParts layerToRemove = volumes[volumeToRemoveIndex].Layers[layerIndex];
-						for (int partToRemoveFromIndex = 0; partToRemoveFromIndex < layerToRemoveFrom.parts.Count; partToRemoveFromIndex++)
+						MeshLayers layerToRemoveFrom = volumes[volumeToRemoveFromIndex].Layers[layerIndex];
+						MeshLayers layerToRemove = volumes[volumeToRemoveIndex].Layers[layerIndex];
+						for (int partToRemoveFromIndex = 0; partToRemoveFromIndex < layerToRemoveFrom.layerData.Count; partToRemoveFromIndex++)
 						{
-							for (int partToRemove = 0; partToRemove < layerToRemove.parts.Count; partToRemove++)
+							for (int partToRemove = 0; partToRemove < layerToRemove.layerData.Count; partToRemove++)
 							{
-								layerToRemoveFrom.parts[partToRemoveFromIndex].TotalOutline = layerToRemoveFrom.parts[partToRemoveFromIndex].TotalOutline.CreateDifference(layerToRemove.parts[partToRemove].TotalOutline);
+								layerToRemoveFrom.layerData[partToRemoveFromIndex].TotalOutline = layerToRemoveFrom.layerData[partToRemoveFromIndex].TotalOutline.CreateDifference(layerToRemove.layerData[partToRemove].TotalOutline);
 							}
 						}
 					}
@@ -65,20 +65,20 @@ namespace MatterHackers.MatterSlice
 				Polygons fullLayer = new Polygons();
 				for (int volIdx = 0; volIdx < volumes.Count; volIdx++)
 				{
-					SliceLayerParts layer1 = volumes[volIdx].Layers[layerIndex];
-					for (int p1 = 0; p1 < layer1.parts.Count; p1++)
+					MeshLayers layer1 = volumes[volIdx].Layers[layerIndex];
+					for (int p1 = 0; p1 < layer1.layerData.Count; p1++)
 					{
-						fullLayer = fullLayer.CreateUnion(layer1.parts[p1].TotalOutline.Offset(20));
+						fullLayer = fullLayer.CreateUnion(layer1.layerData[p1].TotalOutline.Offset(20));
 					}
 				}
 				fullLayer = fullLayer.Offset(-20);
 
 				for (int volumeIndex = 0; volumeIndex < volumes.Count; volumeIndex++)
 				{
-					SliceLayerParts layer1 = volumes[volumeIndex].Layers[layerIndex];
-					for (int partIndex = 0; partIndex < layer1.parts.Count; partIndex++)
+					MeshLayers layer1 = volumes[volumeIndex].Layers[layerIndex];
+					for (int partIndex = 0; partIndex < layer1.layerData.Count; partIndex++)
 					{
-						layer1.parts[partIndex].TotalOutline = fullLayer.CreateIntersection(layer1.parts[partIndex].TotalOutline.Offset(overlap / 2));
+						layer1.layerData[partIndex].TotalOutline = fullLayer.CreateIntersection(layer1.layerData[partIndex].TotalOutline.Offset(overlap / 2));
 					}
 				}
 			}

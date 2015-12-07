@@ -70,22 +70,6 @@ namespace MatterHackers.MatterSlice
             MACH3,
         }
 
-        [Flags]
-        public enum REPAIR_OUTLINES
-        {
-            NONE,
-            EXTENSIVE_STITCHING = 0x01,
-            KEEP_OPEN = 0x02,
-        }
-
-        [Flags]
-        public enum REPAIR_OVERLAPS
-        {
-            NONE,
-            REVERSE_ORIENTATION = 0x01,
-            UNION_ALL_TOGETHER = 0x02,
-        }
-
         /**
 		 * * Type of support material.
 		 * * Grid is a X/Y grid with an outline, which is very strong, provides good support. But in some cases is hard to remove.
@@ -225,12 +209,6 @@ namespace MatterHackers.MatterSlice
         public int raftPrintSpeed;
 
         // repair settings
-        [SettingDescription("You can or them together using '|'.")]
-        public ConfigConstants.REPAIR_OUTLINES repairOutlines;
-
-        [SettingDescription("You can or them together using '|'.")]
-        public ConfigConstants.REPAIR_OVERLAPS repairOverlaps;
-
         public double retractionOnExtruderSwitch;
         public double retractionOnTravel;
 

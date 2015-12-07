@@ -87,14 +87,15 @@ namespace MatterHackers.MatterSlice
 			{
 				return;
 			}
-			optomizedMeshCollection.SetPositionAndSize(simpleMeshCollection, config.positionToPlaceObjectCenter_um.X, config.positionToPlaceObjectCenter_um.Y, -config.bottomClipAmount_um, config.centerObjectInXy);
+
+            optomizedMeshCollection.SetPositionAndSize(simpleMeshCollection, config.positionToPlaceObjectCenter_um.X, config.positionToPlaceObjectCenter_um.Y, -config.bottomClipAmount_um, config.centerObjectInXy);
 			for (int volumeIndex = 0; volumeIndex < simpleMeshCollection.SimpleMeshes.Count; volumeIndex++)
 			{
 				LogOutput.Log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleMeshCollection.SimpleMeshes[volumeIndex].faceTriangles.Count, (int)optomizedMeshCollection.OptimizedMeshes[volumeIndex].facesTriangle.Count, (double)(optomizedMeshCollection.OptimizedMeshes[volumeIndex].facesTriangle.Count) / (double)(simpleMeshCollection.SimpleMeshes[volumeIndex].faceTriangles.Count) * 100));
 				LogOutput.Log("  Vertex counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleMeshCollection.SimpleMeshes[volumeIndex].faceTriangles.Count * 3, (int)optomizedMeshCollection.OptimizedMeshes[volumeIndex].vertices.Count, (double)(optomizedMeshCollection.OptimizedMeshes[volumeIndex].vertices.Count) / (double)(simpleMeshCollection.SimpleMeshes[volumeIndex].faceTriangles.Count * 3) * 100));
 			}
 
-			LogOutput.Log("Optimize model {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
+            LogOutput.Log("Optimize model {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Reset();
 
 			Stopwatch timeKeeperTotal = new Stopwatch();
@@ -199,7 +200,7 @@ namespace MatterHackers.MatterSlice
 			for (int partIndex = 0; partIndex < slicerList.Count; partIndex++)
 			{
 				slicingData.AllPartsLayers.Add(new PartLayers());
-				LayerPart.CreateLayerParts(slicingData.AllPartsLayers[partIndex], slicerList[partIndex], config.repairOverlaps);
+				LayerPart.CreateLayerParts(slicingData.AllPartsLayers[partIndex], slicerList[partIndex]);
 
 				if (config.enableRaft)
 				{
@@ -254,7 +255,7 @@ namespace MatterHackers.MatterSlice
 						insetCount += 5;
 					}
 
-					SliceLayerParts layer = slicingData.AllPartsLayers[volumeIndex].Layers[layerIndex];
+					MeshLayers layer = slicingData.AllPartsLayers[volumeIndex].Layers[layerIndex];
 
 					if (layerIndex == 0)
 					{
@@ -344,9 +345,9 @@ namespace MatterHackers.MatterSlice
 				Polygons wipeShield = new Polygons();
 				for (int volumeIdx = 0; volumeIdx < slicingData.AllPartsLayers.Count; volumeIdx++)
 				{
-					for (int partNr = 0; partNr < slicingData.AllPartsLayers[volumeIdx].Layers[layerNr].parts.Count; partNr++)
+					for (int partNr = 0; partNr < slicingData.AllPartsLayers[volumeIdx].Layers[layerNr].layerData.Count; partNr++)
 					{
-						wipeShield = wipeShield.CreateUnion(slicingData.AllPartsLayers[volumeIdx].Layers[layerNr].parts[partNr].TotalOutline.Offset(config.wipeShieldDistanceFromShapes_um));
+						wipeShield = wipeShield.CreateUnion(slicingData.AllPartsLayers[volumeIdx].Layers[layerNr].layerData[partNr].TotalOutline.Offset(config.wipeShieldDistanceFromShapes_um));
 					}
 				}
 				slicingData.wipeShield.Add(wipeShield);
@@ -407,10 +408,10 @@ namespace MatterHackers.MatterSlice
 					bool layerHasData = false;
 					foreach (PartLayers currentVolume in slicingData.AllPartsLayers)
 					{
-						SliceLayerParts currentLayer = currentVolume.Layers[layerIndex];
-						for (int partIndex = 0; partIndex < currentVolume.Layers[layerIndex].parts.Count; partIndex++)
+						MeshLayers currentLayer = currentVolume.Layers[layerIndex];
+						for (int partIndex = 0; partIndex < currentVolume.Layers[layerIndex].layerData.Count; partIndex++)
 						{
-							SliceLayerPart currentPart = currentLayer.parts[partIndex];
+							MeshLayerData currentPart = currentLayer.layerData[partIndex];
 							if (currentPart.TotalOutline.Count > 0)
 							{
 								layerHasData = true;
@@ -631,7 +632,7 @@ namespace MatterHackers.MatterSlice
 			int prevExtruder = gcodeLayer.getExtruder();
 			bool extruderChanged = gcodeLayer.SetExtruder(volumeIndex);
 
-			SliceLayerParts layer = slicingData.AllPartsLayers[volumeIndex].Layers[layerIndex];
+			MeshLayers layer = slicingData.AllPartsLayers[volumeIndex].Layers[layerIndex];
 			if (extruderChanged)
 			{
 				addWipeTower(slicingData, gcodeLayer, layerIndex, prevExtruder, extrusionWidth_um);
@@ -645,14 +646,14 @@ namespace MatterHackers.MatterSlice
 			}
 
 			PathOrderOptimizer partOrderOptimizer = new PathOrderOptimizer(new IntPoint());
-			for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
+			for (int partIndex = 0; partIndex < layer.layerData.Count; partIndex++)
 			{
 				if (config.continuousSpiralOuterPerimeter && partIndex > 0)
 				{
 					continue;
 				}
 
-				partOrderOptimizer.AddPolygon(layer.parts[partIndex].Insets[0][0]);
+				partOrderOptimizer.AddPolygon(layer.layerData[partIndex].Insets[0][0]);
 			}
 			partOrderOptimizer.Optimize();
 
@@ -665,7 +666,7 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				SliceLayerPart part = layer.parts[partOrderOptimizer.bestPolygonOrderIndex[partIndex]];
+				MeshLayerData part = layer.layerData[partOrderOptimizer.bestPolygonOrderIndex[partIndex]];
 
 				if (config.avoidCrossingPerimeters)
 				{
@@ -772,7 +773,7 @@ namespace MatterHackers.MatterSlice
                         && !config.continuousSpiralOuterPerimeter
                         && layerIndex > 0)
                     {
-                        SliceLayerPart part = layer.parts[partOrderOptimizer.bestPolygonOrderIndex[partIndex]];
+                        MeshLayerData part = layer.layerData[partOrderOptimizer.bestPolygonOrderIndex[partIndex]];
 
                         gcode.setZ(currentZ_um + config.raftAirGap_um);
 
@@ -832,7 +833,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private void CalculateInfillData(SliceDataStorage slicingData, int volumeIndex, int layerIndex, SliceLayerPart part, ref Polygons bottomFillPolygons, ref Polygons fillPolygons, ref Polygons topFillPolygons, ref Polygons bridgePolygons)
+		private void CalculateInfillData(SliceDataStorage slicingData, int volumeIndex, int layerIndex, MeshLayerData part, ref Polygons bottomFillPolygons, ref Polygons fillPolygons, ref Polygons topFillPolygons, ref Polygons bridgePolygons)
 		{
 			// generate infill the bottom layer including bridging
 			foreach (Polygons outline in part.SolidBottomOutlines.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd))
@@ -970,10 +971,10 @@ namespace MatterHackers.MatterSlice
 		{
 			for (int volumeIndex = 0; volumeIndex < slicingData.AllPartsLayers.Count; volumeIndex++)
 			{
-				SliceLayerParts layer = slicingData.AllPartsLayers[volumeIndex].Layers[layerIndex];
-				for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
+				MeshLayers layer = slicingData.AllPartsLayers[volumeIndex].Layers[layerIndex];
+				for (int partIndex = 0; partIndex < layer.layerData.Count; partIndex++)
 				{
-					supportPolygons = supportPolygons.CreateDifference(layer.parts[partIndex].TotalOutline.Offset(config.supportXYDistance_um));
+					supportPolygons = supportPolygons.CreateDifference(layer.layerData[partIndex].TotalOutline.Offset(config.supportXYDistance_um));
 				}
 			}
 

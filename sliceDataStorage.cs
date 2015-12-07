@@ -37,7 +37,7 @@ namespace MatterHackers.MatterSlice
 		+ SkinPolygons[]
 	*/
 
-	public class SliceLayerPart
+	public class MeshLayerData
 	{
 		public Aabb BoundingBox = new Aabb();
 		public Polygons TotalOutline = new Polygons();
@@ -49,10 +49,10 @@ namespace MatterHackers.MatterSlice
 		public Polygons InfillOutlines = new Polygons();
 	};
 
-	public class SliceLayerParts
+	public class MeshLayers
 	{
 		public long printZ;
-		public List<SliceLayerPart> parts = new List<SliceLayerPart>();
+		public List<MeshLayerData> layerData = new List<MeshLayerData>();
 	};
 
 	public class SupportPoint
@@ -240,7 +240,7 @@ namespace MatterHackers.MatterSlice
 
 	public class PartLayers
 	{
-		public List<SliceLayerParts> Layers = new List<SliceLayerParts>();
+		public List<MeshLayers> Layers = new List<MeshLayers>();
 	}
 
 	public class SliceDataStorage

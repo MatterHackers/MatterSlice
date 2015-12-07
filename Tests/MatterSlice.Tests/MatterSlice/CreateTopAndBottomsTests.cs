@@ -139,16 +139,16 @@ namespace MatterHackers.MatterSlice.Tests
 		private static PartLayers CreateLayerData(Polygons inset0Outline, int numLayers)
 		{
 			PartLayers layerData = new PartLayers();
-			layerData.Layers = new List<SliceLayerParts>();
+			layerData.Layers = new List<MeshLayers>();
 			for (int i = 0; i < numLayers; i++)
 			{
-				SliceLayerParts layer = new SliceLayerParts();
-				layer.parts = new List<SliceLayerPart>();
-				SliceLayerPart part = new SliceLayerPart();
+				MeshLayers layer = new MeshLayers();
+				layer.layerData = new List<MeshLayerData>();
+				MeshLayerData part = new MeshLayerData();
 				part.Insets = new List<Polygons>();
 				part.Insets.Add(inset0Outline);
 				part.BoundingBox = new Aabb(inset0Outline);
-				layer.parts.Add(part);
+				layer.layerData.Add(part);
 				layerData.Layers.Add(layer);
 			}
 			return layerData;
@@ -156,38 +156,38 @@ namespace MatterHackers.MatterSlice.Tests
 
 		private static bool OnlyHasBottom(PartLayers layerData, int layerToCheck)
 		{
-			return layerData.Layers[layerToCheck].parts.Count == 1
-				&& layerData.Layers[layerToCheck].parts[0].SolidBottomOutlines.Count == 1
-				&& layerData.Layers[layerToCheck].parts[0].SolidTopOutlines.Count == 0
-				&& layerData.Layers[layerToCheck].parts[0].SolidInfillOutlines.Count == 0
-				&& layerData.Layers[layerToCheck].parts[0].InfillOutlines.Count == 0;
+			return layerData.Layers[layerToCheck].layerData.Count == 1
+				&& layerData.Layers[layerToCheck].layerData[0].SolidBottomOutlines.Count == 1
+				&& layerData.Layers[layerToCheck].layerData[0].SolidTopOutlines.Count == 0
+				&& layerData.Layers[layerToCheck].layerData[0].SolidInfillOutlines.Count == 0
+				&& layerData.Layers[layerToCheck].layerData[0].InfillOutlines.Count == 0;
 		}
 
 		private static bool OnlyHasTop(PartLayers layerData, int layerToCheck)
 		{
-			return layerData.Layers[layerToCheck].parts.Count == 1
-				&& layerData.Layers[layerToCheck].parts[0].SolidBottomOutlines.Count == 0
-				&& layerData.Layers[layerToCheck].parts[0].SolidTopOutlines.Count == 1
-				&& layerData.Layers[layerToCheck].parts[0].SolidInfillOutlines.Count == 0
-				&& layerData.Layers[layerToCheck].parts[0].InfillOutlines.Count == 0;
+			return layerData.Layers[layerToCheck].layerData.Count == 1
+				&& layerData.Layers[layerToCheck].layerData[0].SolidBottomOutlines.Count == 0
+				&& layerData.Layers[layerToCheck].layerData[0].SolidTopOutlines.Count == 1
+				&& layerData.Layers[layerToCheck].layerData[0].SolidInfillOutlines.Count == 0
+				&& layerData.Layers[layerToCheck].layerData[0].InfillOutlines.Count == 0;
 		}
 
 		private static bool OnlyHasSolidInfill(PartLayers layerData, int layerToCheck)
 		{
-			return layerData.Layers[layerToCheck].parts.Count == 1
-				&& layerData.Layers[layerToCheck].parts[0].SolidBottomOutlines.Count == 0
-				&& layerData.Layers[layerToCheck].parts[0].SolidTopOutlines.Count == 0
-				&& layerData.Layers[layerToCheck].parts[0].SolidInfillOutlines.Count == 1
-				&& layerData.Layers[layerToCheck].parts[0].InfillOutlines.Count == 0;
+			return layerData.Layers[layerToCheck].layerData.Count == 1
+				&& layerData.Layers[layerToCheck].layerData[0].SolidBottomOutlines.Count == 0
+				&& layerData.Layers[layerToCheck].layerData[0].SolidTopOutlines.Count == 0
+				&& layerData.Layers[layerToCheck].layerData[0].SolidInfillOutlines.Count == 1
+				&& layerData.Layers[layerToCheck].layerData[0].InfillOutlines.Count == 0;
 		}
 
 		private static bool OnlyHasInfill(PartLayers layerData, int layerToCheck)
 		{
-			return layerData.Layers[layerToCheck].parts.Count == 1
-				&& layerData.Layers[layerToCheck].parts[0].SolidBottomOutlines.Count == 0
-				&& layerData.Layers[layerToCheck].parts[0].SolidTopOutlines.Count == 0
-				&& layerData.Layers[layerToCheck].parts[0].SolidInfillOutlines.Count == 0
-				&& layerData.Layers[layerToCheck].parts[0].InfillOutlines.Count == 1;
+			return layerData.Layers[layerToCheck].layerData.Count == 1
+				&& layerData.Layers[layerToCheck].layerData[0].SolidBottomOutlines.Count == 0
+				&& layerData.Layers[layerToCheck].layerData[0].SolidTopOutlines.Count == 0
+				&& layerData.Layers[layerToCheck].layerData[0].SolidInfillOutlines.Count == 0
+				&& layerData.Layers[layerToCheck].layerData[0].InfillOutlines.Count == 1;
 		}
 	}
 }

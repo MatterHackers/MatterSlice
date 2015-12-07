@@ -319,15 +319,15 @@ namespace MatterHackers.MatterSlice.Tests
         {
             int numLayers = totalLayerOutlines.Count;
             PartLayers layerData = new PartLayers();
-            layerData.Layers = new List<SliceLayerParts>();
+            layerData.Layers = new List<MeshLayers>();
             for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
             {
-                SliceLayerParts layer = new SliceLayerParts();
-                layer.parts = new List<SliceLayerPart>();
-                SliceLayerPart part = new SliceLayerPart();
+                MeshLayers layer = new MeshLayers();
+                layer.layerData = new List<MeshLayerData>();
+                MeshLayerData part = new MeshLayerData();
                 part.TotalOutline = totalLayerOutlines[layerIndex];
                 Inset.GenerateInsets(part, 500, 500, 2);
-                layer.parts.Add(part);
+                layer.layerData.Add(part);
                 layerData.Layers.Add(layer);
             }
             return layerData;

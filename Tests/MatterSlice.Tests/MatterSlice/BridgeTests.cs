@@ -140,12 +140,12 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			Polygons outline = PolygonsHelper.CreateFromString(outlineString);
 
-			SliceLayerParts prevLayer = new SliceLayerParts();
-			prevLayer.parts = new List<SliceLayerPart>();
-			SliceLayerPart part = new SliceLayerPart();
+			MeshLayers prevLayer = new MeshLayers();
+			prevLayer.layerData = new List<MeshLayerData>();
+			MeshLayerData part = new MeshLayerData();
 			part.TotalOutline = PolygonsHelper.CreateFromString(partOutlineString);
-			prevLayer.parts.Add(part);
-			prevLayer.parts[0].BoundingBox.Calculate(prevLayer.parts[0].TotalOutline);
+			prevLayer.layerData.Add(part);
+			prevLayer.layerData[0].BoundingBox.Calculate(prevLayer.layerData[0].TotalOutline);
 
 			double bridgeAngle;
 			Bridge.BridgeAngle(outline, prevLayer, out bridgeAngle, debugName);

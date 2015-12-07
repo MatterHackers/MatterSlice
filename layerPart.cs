@@ -41,53 +41,27 @@ namespace MatterHackers.MatterSlice
 		It's also the first step that stores the result in the "data storage" so all other steps can access it.
 		*/
 
-		private static void CreateLayerWithParts(SliceLayerParts storageLayer, SliceLayer layer, ConfigConstants.REPAIR_OVERLAPS unionAllType)
+		private static void CreateLayerWithParts(MeshLayers storageLayer, SliceLayer layer)
 		{
-			if ((unionAllType & ConfigConstants.REPAIR_OVERLAPS.REVERSE_ORIENTATION) == ConfigConstants.REPAIR_OVERLAPS.REVERSE_ORIENTATION)
-			{
-				for (int i = 0; i < layer.PolygonList.Count; i++)
-				{
-					if (layer.PolygonList[i].Orientation())
-					{
-						layer.PolygonList[i].Reverse();
-					}
-				}
-			}
-
 			List<Polygons> result;
-			if ((unionAllType & ConfigConstants.REPAIR_OVERLAPS.UNION_ALL_TOGETHER) == ConfigConstants.REPAIR_OVERLAPS.UNION_ALL_TOGETHER)
-			{
-				result = layer.PolygonList.Offset(1000).CreateLayerOutlines(PolygonsHelper.LayerOpperation.UnionAll);
-			}
-			else
-			{
-				result = layer.PolygonList.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd);
-			}
+			result = layer.PolygonList.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd);
 
 			for (int i = 0; i < result.Count; i++)
 			{
-				storageLayer.parts.Add(new SliceLayerPart());
-				if ((unionAllType & ConfigConstants.REPAIR_OVERLAPS.UNION_ALL_TOGETHER) == ConfigConstants.REPAIR_OVERLAPS.UNION_ALL_TOGETHER)
-				{
-					storageLayer.parts[i].TotalOutline.Add(result[i][0]);
-					storageLayer.parts[i].TotalOutline = storageLayer.parts[i].TotalOutline.Offset(-1000);
-				}
-				else
-				{
-					storageLayer.parts[i].TotalOutline = result[i];
-				}
+				storageLayer.layerData.Add(new MeshLayerData());
+				storageLayer.layerData[i].TotalOutline = result[i];
 
-				storageLayer.parts[i].BoundingBox.Calculate(storageLayer.parts[i].TotalOutline);
+				storageLayer.layerData[i].BoundingBox.Calculate(storageLayer.layerData[i].TotalOutline);
 			}
 		}
 
-		public static void CreateLayerParts(PartLayers storage, Slicer slicer, ConfigConstants.REPAIR_OVERLAPS unionAllType)
+		public static void CreateLayerParts(PartLayers storage, Slicer slicer)
 		{
 			for (int layerIndex = 0; layerIndex < slicer.layers.Count; layerIndex++)
 			{
-				storage.Layers.Add(new SliceLayerParts());
+				storage.Layers.Add(new MeshLayers());
 				storage.Layers[layerIndex].printZ = slicer.layers[layerIndex].Z;
-				LayerPart.CreateLayerWithParts(storage.Layers[layerIndex], slicer.layers[layerIndex], unionAllType);
+				LayerPart.CreateLayerWithParts(storage.Layers[layerIndex], slicer.layers[layerIndex]);
 			}
 		}
 
@@ -103,10 +77,10 @@ namespace MatterHackers.MatterSlice
 				for (int layerNr = 0; layerNr < storage.AllPartsLayers[volumeIdx].Layers.Count; layerNr++)
 				{
 					streamToWriteTo.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style=\"width: 500px; height:500px\">\n");
-					SliceLayerParts layer = storage.AllPartsLayers[volumeIdx].Layers[layerNr];
-					for (int i = 0; i < layer.parts.Count; i++)
+					MeshLayers layer = storage.AllPartsLayers[volumeIdx].Layers[layerNr];
+					for (int i = 0; i < layer.layerData.Count; i++)
 					{
-						SliceLayerPart part = layer.parts[i];
+						MeshLayerData part = layer.layerData[i];
 						for (int j = 0; j < part.TotalOutline.Count; j++)
 						{
 							streamToWriteTo.Write("<polygon points=\"");

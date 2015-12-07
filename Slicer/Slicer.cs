@@ -55,7 +55,6 @@ namespace MatterHackers.MatterSlice
 		{
 			int initialLayerThickness_um = config.firstLayerThickness_um;
 			int layerThickness_um = config.layerThickness_um;
-			ConfigConstants.REPAIR_OUTLINES outlineRepairTypes = config.repairOutlines;
 
 			modelSize = ov.containingCollection.size_um;
 			modelMin = ov.containingCollection.minXYZ_um;
@@ -163,7 +162,7 @@ namespace MatterHackers.MatterSlice
 
 			for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
 			{
-				layers[layerIndex].MakePolygons(outlineRepairTypes);
+				layers[layerIndex].MakePolygons();
 			}
 		}
 
