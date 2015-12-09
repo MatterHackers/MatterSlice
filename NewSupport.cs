@@ -25,7 +25,7 @@ using System.Collections.Generic;
 // TODO:
 // Make from bed only work (no internal support)
 // Make the on model materila be air gapped
-// Offset the output data to account for nozel diameter (currenly they are just the outlines not the extrude positions)
+// Offset the output data to account for nozzle diameter (currenly they are just the outlines not the extrude positions)
 // Make sure we work correctly with the support extruder set.
 // Create extra upward suport for small features (tip of a rotated box)
 
