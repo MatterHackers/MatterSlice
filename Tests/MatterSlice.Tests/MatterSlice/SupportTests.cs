@@ -57,12 +57,12 @@ namespace MatterHackers.MatterSlice.Tests
             for (int i = 0; i < numLayers; i++)
             {
                 SliceLayerParts layer = new SliceLayerParts();
-                layer.parts = new List<SliceLayerPart>();
+                layer.layerSliceData = new List<SliceLayerPart>();
                 SliceLayerPart part = new SliceLayerPart();
                 part.Insets = new List<Polygons>();
                 part.Insets.Add(inset0Outline);
                 part.BoundingBox = new Aabb(inset0Outline);
-                layer.parts.Add(part);
+                layer.layerSliceData.Add(part);
                 layerData.Layers.Add(layer);
             }
             return layerData;

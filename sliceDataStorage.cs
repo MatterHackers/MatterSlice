@@ -52,7 +52,7 @@ namespace MatterHackers.MatterSlice
 	public class SliceLayerParts
 	{
 		public long printZ;
-		public List<SliceLayerPart> parts = new List<SliceLayerPart>();
+		public List<SliceLayerPart> layerSliceData = new List<SliceLayerPart>();
 	};
 
 	public class SupportPoint

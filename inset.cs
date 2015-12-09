@@ -79,18 +79,18 @@ namespace MatterHackers.MatterSlice
 
 		public static void generateInsets(SliceLayerParts layer, int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
 		{
-			for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
+			for (int partIndex = 0; partIndex < layer.layerSliceData.Count; partIndex++)
 			{
-				GenerateInsets(layer.parts[partIndex], extrusionWidth_um, outerExtrusionWidth_um, insetCount);
+				GenerateInsets(layer.layerSliceData[partIndex], extrusionWidth_um, outerExtrusionWidth_um, insetCount);
 			}
 
 			//Remove the parts which did not generate an inset. As these parts are too small to print,
 			// and later code can now assume that there is always minimum 1 inset line.
-			for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
+			for (int partIndex = 0; partIndex < layer.layerSliceData.Count; partIndex++)
 			{
-				if (layer.parts[partIndex].Insets.Count < 1)
+				if (layer.layerSliceData[partIndex].Insets.Count < 1)
 				{
-					layer.parts.RemoveAt(partIndex);
+					layer.layerSliceData.RemoveAt(partIndex);
 					partIndex -= 1;
 				}
 			}

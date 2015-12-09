@@ -66,18 +66,18 @@ namespace MatterHackers.MatterSlice
 
 			for (int i = 0; i < result.Count; i++)
 			{
-				storageLayer.parts.Add(new SliceLayerPart());
+				storageLayer.layerSliceData.Add(new SliceLayerPart());
 				if ((unionAllType & ConfigConstants.REPAIR_OVERLAPS.UNION_ALL_TOGETHER) == ConfigConstants.REPAIR_OVERLAPS.UNION_ALL_TOGETHER)
 				{
-					storageLayer.parts[i].TotalOutline.Add(result[i][0]);
-					storageLayer.parts[i].TotalOutline = storageLayer.parts[i].TotalOutline.Offset(-1000);
+					storageLayer.layerSliceData[i].TotalOutline.Add(result[i][0]);
+					storageLayer.layerSliceData[i].TotalOutline = storageLayer.layerSliceData[i].TotalOutline.Offset(-1000);
 				}
 				else
 				{
-					storageLayer.parts[i].TotalOutline = result[i];
+					storageLayer.layerSliceData[i].TotalOutline = result[i];
 				}
 
-				storageLayer.parts[i].BoundingBox.Calculate(storageLayer.parts[i].TotalOutline);
+				storageLayer.layerSliceData[i].BoundingBox.Calculate(storageLayer.layerSliceData[i].TotalOutline);
 			}
 		}
 
@@ -104,9 +104,9 @@ namespace MatterHackers.MatterSlice
 				{
 					streamToWriteTo.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style=\"width: 500px; height:500px\">\n");
 					SliceLayerParts layer = storage.AllPartsLayers[volumeIdx].Layers[layerNr];
-					for (int i = 0; i < layer.parts.Count; i++)
+					for (int i = 0; i < layer.layerSliceData.Count; i++)
 					{
-						SliceLayerPart part = layer.parts[i];
+						SliceLayerPart part = layer.layerSliceData[i];
 						for (int j = 0; j < part.TotalOutline.Count; j++)
 						{
 							streamToWriteTo.Write("<polygon points=\"");

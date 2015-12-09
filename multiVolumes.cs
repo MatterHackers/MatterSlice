@@ -28,7 +28,30 @@ namespace MatterHackers.MatterSlice
 
 	public static class MultiVolumes
 	{
-		public static void RemoveVolumesIntersections(List<PartLayers> volumes)
+        public static void ProcessBooleans(List<PartLayers> allPartsLayers, string booleanOpperations)
+        {
+            // parse the boolean operations into a new output list and replace the current list
+            int indexToAddTo = 0;
+            for (int partToAddToUnionIndex = indexToAddTo + 1; partToAddToUnionIndex < allPartsLayers.Count; partToAddToUnionIndex++)
+            {
+                for (int layerIndex = 0; layerIndex < allPartsLayers[indexToAddTo].Layers.Count; layerIndex++)
+                {
+                    SliceLayerParts layersToUnionInto = allPartsLayers[indexToAddTo].Layers[layerIndex];
+                    SliceLayerParts layersToAddToUnion = allPartsLayers[partToAddToUnionIndex].Layers[layerIndex];
+                    for (int layerDataToAddToUnionIndex = 0; layerDataToAddToUnionIndex < layersToUnionInto.layerSliceData.Count; layerDataToAddToUnionIndex++)
+                    {
+                        layersToUnionInto.layerSliceData[indexToAddTo].TotalOutline = layersToUnionInto.layerSliceData[indexToAddTo].TotalOutline.CreateUnion(layersToAddToUnion.layerSliceData[layerDataToAddToUnionIndex].TotalOutline);
+                    }
+                }
+            }
+
+            while (allPartsLayers.Count > 1)
+            {
+                allPartsLayers.RemoveAt(1);
+            }
+        }
+
+        public static void RemoveVolumesIntersections(List<PartLayers> volumes)
 		{
 			//Go trough all the volumes, and remove the previous volume outlines from our own outline, so we never have overlapped areas.
 			for (int volumeToRemoveFromIndex = volumes.Count - 1; volumeToRemoveFromIndex >= 0; volumeToRemoveFromIndex--)
@@ -39,11 +62,11 @@ namespace MatterHackers.MatterSlice
 					{
 						SliceLayerParts layerToRemoveFrom = volumes[volumeToRemoveFromIndex].Layers[layerIndex];
 						SliceLayerParts layerToRemove = volumes[volumeToRemoveIndex].Layers[layerIndex];
-						for (int partToRemoveFromIndex = 0; partToRemoveFromIndex < layerToRemoveFrom.parts.Count; partToRemoveFromIndex++)
+						for (int partToRemoveFromIndex = 0; partToRemoveFromIndex < layerToRemoveFrom.layerSliceData.Count; partToRemoveFromIndex++)
 						{
-							for (int partToRemove = 0; partToRemove < layerToRemove.parts.Count; partToRemove++)
+							for (int partToRemove = 0; partToRemove < layerToRemove.layerSliceData.Count; partToRemove++)
 							{
-								layerToRemoveFrom.parts[partToRemoveFromIndex].TotalOutline = layerToRemoveFrom.parts[partToRemoveFromIndex].TotalOutline.CreateDifference(layerToRemove.parts[partToRemove].TotalOutline);
+								layerToRemoveFrom.layerSliceData[partToRemoveFromIndex].TotalOutline = layerToRemoveFrom.layerSliceData[partToRemoveFromIndex].TotalOutline.CreateDifference(layerToRemove.layerSliceData[partToRemove].TotalOutline);
 							}
 						}
 					}
@@ -66,9 +89,9 @@ namespace MatterHackers.MatterSlice
 				for (int volIdx = 0; volIdx < volumes.Count; volIdx++)
 				{
 					SliceLayerParts layer1 = volumes[volIdx].Layers[layerIndex];
-					for (int p1 = 0; p1 < layer1.parts.Count; p1++)
+					for (int p1 = 0; p1 < layer1.layerSliceData.Count; p1++)
 					{
-						fullLayer = fullLayer.CreateUnion(layer1.parts[p1].TotalOutline.Offset(20));
+						fullLayer = fullLayer.CreateUnion(layer1.layerSliceData[p1].TotalOutline.Offset(20));
 					}
 				}
 				fullLayer = fullLayer.Offset(-20);
@@ -76,9 +99,9 @@ namespace MatterHackers.MatterSlice
 				for (int volumeIndex = 0; volumeIndex < volumes.Count; volumeIndex++)
 				{
 					SliceLayerParts layer1 = volumes[volumeIndex].Layers[layerIndex];
-					for (int partIndex = 0; partIndex < layer1.parts.Count; partIndex++)
+					for (int partIndex = 0; partIndex < layer1.layerSliceData.Count; partIndex++)
 					{
-						layer1.parts[partIndex].TotalOutline = fullLayer.CreateIntersection(layer1.parts[partIndex].TotalOutline.Offset(overlap / 2));
+						layer1.layerSliceData[partIndex].TotalOutline = fullLayer.CreateIntersection(layer1.layerSliceData[partIndex].TotalOutline.Offset(overlap / 2));
 					}
 				}
 			}

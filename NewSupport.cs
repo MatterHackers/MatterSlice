@@ -81,9 +81,9 @@ namespace MatterHackers.MatterSlice
                 Polygons allOutlines = new Polygons();
 
                 SliceLayerParts curLayer = storage.Layers[layerIndex];
-                for (int curLayerPartIndex = 0; curLayerPartIndex < curLayer.parts.Count; curLayerPartIndex++)
+                for (int curLayerPartIndex = 0; curLayerPartIndex < curLayer.layerSliceData.Count; curLayerPartIndex++)
                 {
-                    SliceLayerPart curPart = curLayer.parts[curLayerPartIndex];
+                    SliceLayerPart curPart = curLayer.layerSliceData[curLayerPartIndex];
                     Polygons curLayerPolys = curPart.TotalOutline;
                     allOutlines = allOutlines.CreateUnion(curLayerPolys);
                     allOutlines = Clipper.CleanPolygons(allOutlines, cleanDistance_um);

@@ -39,7 +39,7 @@ namespace MatterHackers.MatterSlice
 			//To detect if we have a bridge, first calculate the intersection of the current layer with the previous layer.
 			// This gives us the islands that the layer rests on.
 			Polygons islands = new Polygons();
-			foreach (SliceLayerPart prevLayerPart in prevLayer.parts)
+			foreach (SliceLayerPart prevLayerPart in prevLayer.layerSliceData)
 			{
 				if (!boundaryBox.Hit(prevLayerPart.BoundingBox))
 				{

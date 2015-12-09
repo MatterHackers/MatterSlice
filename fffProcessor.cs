@@ -220,7 +220,10 @@ namespace MatterHackers.MatterSlice
 				config.infillPercent = 0;
 			}
 
-			MultiVolumes.RemoveVolumesIntersections(slicingData.AllPartsLayers);
+            string booleanOpperations = "(0,1)";
+            MultiVolumes.ProcessBooleans(slicingData.AllPartsLayers, booleanOpperations);
+
+            MultiVolumes.RemoveVolumesIntersections(slicingData.AllPartsLayers);
 			MultiVolumes.OverlapMultipleVolumesSlightly(slicingData.AllPartsLayers, config.multiVolumeOverlapPercent);
 #if False
             LayerPart.dumpLayerparts(slicingData, "output.html");
@@ -342,9 +345,9 @@ namespace MatterHackers.MatterSlice
 				Polygons wipeShield = new Polygons();
 				for (int volumeIdx = 0; volumeIdx < slicingData.AllPartsLayers.Count; volumeIdx++)
 				{
-					for (int partNr = 0; partNr < slicingData.AllPartsLayers[volumeIdx].Layers[layerNr].parts.Count; partNr++)
+					for (int partNr = 0; partNr < slicingData.AllPartsLayers[volumeIdx].Layers[layerNr].layerSliceData.Count; partNr++)
 					{
-						wipeShield = wipeShield.CreateUnion(slicingData.AllPartsLayers[volumeIdx].Layers[layerNr].parts[partNr].TotalOutline.Offset(config.wipeShieldDistanceFromShapes_um));
+						wipeShield = wipeShield.CreateUnion(slicingData.AllPartsLayers[volumeIdx].Layers[layerNr].layerSliceData[partNr].TotalOutline.Offset(config.wipeShieldDistanceFromShapes_um));
 					}
 				}
 				slicingData.wipeShield.Add(wipeShield);
@@ -411,9 +414,9 @@ namespace MatterHackers.MatterSlice
 					foreach (PartLayers currentVolume in slicingData.AllPartsLayers)
 					{
 						SliceLayerParts currentLayer = currentVolume.Layers[layerIndex];
-						for (int partIndex = 0; partIndex < currentVolume.Layers[layerIndex].parts.Count; partIndex++)
+						for (int partIndex = 0; partIndex < currentVolume.Layers[layerIndex].layerSliceData.Count; partIndex++)
 						{
-							SliceLayerPart currentPart = currentLayer.parts[partIndex];
+							SliceLayerPart currentPart = currentLayer.layerSliceData[partIndex];
 							if (currentPart.TotalOutline.Count > 0)
 							{
 								layerHasData = true;
@@ -649,14 +652,14 @@ namespace MatterHackers.MatterSlice
 			}
 
 			PathOrderOptimizer partOrderOptimizer = new PathOrderOptimizer(new IntPoint());
-			for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
+			for (int partIndex = 0; partIndex < layer.layerSliceData.Count; partIndex++)
 			{
 				if (config.continuousSpiralOuterPerimeter && partIndex > 0)
 				{
 					continue;
 				}
 
-				partOrderOptimizer.AddPolygon(layer.parts[partIndex].Insets[0][0]);
+				partOrderOptimizer.AddPolygon(layer.layerSliceData[partIndex].Insets[0][0]);
 			}
 			partOrderOptimizer.Optimize();
 
@@ -667,7 +670,7 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				SliceLayerPart part = layer.parts[partOrderOptimizer.bestPolygonOrderIndex[partIndex]];
+				SliceLayerPart part = layer.layerSliceData[partOrderOptimizer.bestPolygonOrderIndex[partIndex]];
 
 				if (config.avoidCrossingPerimeters)
 				{
@@ -900,9 +903,9 @@ namespace MatterHackers.MatterSlice
 			for (int volumeIndex = 0; volumeIndex < slicingData.AllPartsLayers.Count; volumeIndex++)
 			{
 				SliceLayerParts layer = slicingData.AllPartsLayers[volumeIndex].Layers[layerIndex];
-				for (int partIndex = 0; partIndex < layer.parts.Count; partIndex++)
+				for (int partIndex = 0; partIndex < layer.layerSliceData.Count; partIndex++)
 				{
-					supportPolygons = supportPolygons.CreateDifference(layer.parts[partIndex].TotalOutline.Offset(config.supportXYDistance_um));
+					supportPolygons = supportPolygons.CreateDifference(layer.layerSliceData[partIndex].TotalOutline.Offset(config.supportXYDistance_um));
 				}
 			}
 
