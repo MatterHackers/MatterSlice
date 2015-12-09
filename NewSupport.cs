@@ -22,6 +22,17 @@ using MatterSlice.ClipperLib;
 using System;
 using System.Collections.Generic;
 
+// TODO:
+// Make from bed only work (no internal support)
+// Make the on model materila be air gapped
+// Offset the output data to account for nozel diameter (currenly they are just the outlines not the extrude positions)
+// Make sure we work correctly with the support extruder set.
+// Create extra upward suport for small features (tip of a rotated box)
+
+// DONE:
+// Make skirt consider these outlines
+// Make raft consider these outlines
+
 namespace MatterHackers.MatterSlice
 {
 	using Polygon = List<IntPoint>;
@@ -167,7 +178,12 @@ namespace MatterHackers.MatterSlice
 			return easyGrabDistanceOutlines;
 		}
 
-		private static List<Polygons> PushUpTops(List<Polygons> inputPolys, ConfigSettings config)
+        public Polygons GetBedOutlines()
+        {
+            return easyGrabDistanceOutlines[0];
+        }
+
+        private static List<Polygons> PushUpTops(List<Polygons> inputPolys, ConfigSettings config)
 		{
             int numLayers = inputPolys.Count;
 

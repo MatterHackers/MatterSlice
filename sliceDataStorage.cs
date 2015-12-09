@@ -251,8 +251,8 @@ namespace MatterHackers.MatterSlice
 		public List<Polygons> wipeShield = new List<Polygons>();
 		public List<PartLayers> AllPartsLayers = new List<PartLayers>();
 
-		public SupportStorage support = new SupportStorage();
-		public Polygons wipeTower = new Polygons();
+        public NewSupport newSupport = null;
+        public Polygons wipeTower = new Polygons();
 		public IntPoint wipePoint;
 	}
 }

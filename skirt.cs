@@ -70,8 +70,10 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, initialLayerHeight);
-				skirtPolygons = skirtPolygons.CreateUnion(supportGenerator.supportPolygons.Offset(offsetDistance));
+                if (storage.newSupport != null)
+                {
+                    skirtPolygons = skirtPolygons.CreateUnion(storage.newSupport.GetBedOutlines().Offset(offsetDistance));
+                }
 
 				//Remove small inner skirt holes. Holes have a negative area, remove anything smaller then 100x extrusion "area"
 				for (int n = 0; n < skirtPolygons.Count; n++)

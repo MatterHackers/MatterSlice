@@ -153,9 +153,6 @@
     <Compile Include="PathOrderOptimizer.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="support.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="bridge.cs" />
     <Compile Include="logoutput.cs" />
   </ItemGroup>
