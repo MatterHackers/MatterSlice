@@ -220,8 +220,8 @@ namespace MatterHackers.MatterSlice
 				config.infillPercent = 0;
 			}
 
-            string booleanOpperations = "(0,1)";
-            MultiVolumes.ProcessBooleans(slicingData.AllPartsLayers, booleanOpperations);
+            //string booleanOpperations = "(0,1)";
+            //MultiVolumes.ProcessBooleans(slicingData.AllPartsLayers, booleanOpperations);
 
             MultiVolumes.RemoveVolumesIntersections(slicingData.AllPartsLayers);
 			MultiVolumes.OverlapMultipleVolumesSlightly(slicingData.AllPartsLayers, config.multiVolumeOverlapPercent);
