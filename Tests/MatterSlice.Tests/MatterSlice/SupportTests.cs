@@ -204,6 +204,40 @@ namespace MatterHackers.MatterSlice.Tests
         }
 
         [Test]
+        public void TestInternalSupportCanBeDisabled()
+        {
+            // test the supports for a cube that is 1/2 width just under the main part
+            {
+                ConfigSettings config = new ConfigSettings();
+                config.supportInterfaceLayers = 0;
+                config.layerThickness = .5;
+                config.supportXYDistanceFromObject = .1;
+                config.generateInternalSupport = false;
+
+                // 19      XXXXXXXXXX
+                // 18      XXXXXXXXXX
+                // 17      XXXXXXXXXX
+                // 16      XXXXXXXXXX
+                // 15      XXXXXXXXXX  
+                // 14            ^ - no support, internal
+                // 13
+                // 12
+                // 11 
+                // 10
+                // 9  XXXXXXXXXXXXXXXXXXXX
+                // 8  XXXXXXXXXXXXXXXXXXXX
+                // 7  XXXXXXXXXXXXXXXXXXXX
+                // 6  XXXXXXXXXXXXXXXXXXXX
+                // 5  XXXXXXXXXXXXXXXXXXXX <- at air gap height
+                // 4                        <- interface layer
+                // 3                        <- interface layer
+                // 2            ^ - requires support  
+                // 1 
+                // 0
+            }
+        }
+
+        [Test]
         public void TestBottomLayerAirGap()
         {
             // test the supports for a cube that is 1/2 width just under the main part
