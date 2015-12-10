@@ -47,6 +47,7 @@ namespace MatterHackers.MatterSlice
         internal List<Polygons> allRequiredSupportOutlines = new List<Polygons>();
         internal List<Polygons> easyGrabDistanceOutlines = new List<Polygons>();
         //List<Polygons> pushedUpTopOutlines = new List<Polygons>();
+        internal List<Polygons> airGappedBottomOutlines = new List<Polygons>();
         internal List<Polygons> supportOutlines = new List<Polygons>();
         internal List<Polygons> interfaceLayers = new List<Polygons>();
 
@@ -77,10 +78,12 @@ namespace MatterHackers.MatterSlice
 
 			//pushedUpTopOutlines = PushUpTops(easyGrabDistanceOutlines, numLayers, config);
 
-			interfaceLayers = CreateInterfacelayers(easyGrabDistanceOutlines, config.supportInterfaceLayers);
+			interfaceLayers = CreateInterfaceLayers(easyGrabDistanceOutlines, config.supportInterfaceLayers);
 			interfaceLayers = ClipToXyDistance(interfaceLayers, allPartOutlines, config);
 
-			supportOutlines = AccumulateDownPolygons(easyGrabDistanceOutlines, allPartOutlines);
+            airGappedBottomOutlines = CreateAirGappedBottomLayers(easyGrabDistanceOutlines, config.supportInterfaceLayers);
+
+            supportOutlines = AccumulateDownPolygons(easyGrabDistanceOutlines, allPartOutlines);
             supportOutlines = ClipToXyDistance(supportOutlines, allPartOutlines, config);
 
             supportOutlines = CalculateDifferencePerLayer(supportOutlines, interfaceLayers);
@@ -228,7 +231,31 @@ namespace MatterHackers.MatterSlice
 			return allDownOutlines;
         }
 
-        private static List<Polygons> CreateInterfacelayers(List<Polygons> inputPolys, int numInterfaceLayers)
+        private static List<Polygons> CreateAirGappedBottomLayers(List<Polygons> inputPolys, int numInterfaceLayers)
+        {
+			throw new NotImplementedException();
+            int numLayers = inputPolys.Count;
+
+            List<Polygons> allInterfaceLayers = CreateEmptyPolygons(numLayers);
+            if (numInterfaceLayers > 0)
+            {
+                for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
+                {
+                    Polygons accumulatedAbove = inputPolys[layerIndex].DeepCopy();
+
+                    for (int addIndex = layerIndex + 1; addIndex < Math.Min(layerIndex + numInterfaceLayers, numLayers - 2); addIndex++)
+                    {
+                        accumulatedAbove = accumulatedAbove.CreateUnion(inputPolys[addIndex]);
+                        accumulatedAbove = Clipper.CleanPolygons(accumulatedAbove, cleanDistance_um);
+                    }
+
+                    allInterfaceLayers[layerIndex] = accumulatedAbove;
+                }
+            }
+			return allInterfaceLayers;
+		}
+
+		private static List<Polygons> CreateInterfaceLayers(List<Polygons> inputPolys, int numInterfaceLayers)
         {
             int numLayers = inputPolys.Count;
 
@@ -336,7 +363,7 @@ namespace MatterHackers.MatterSlice
 			throw new NotImplementedException();
 		}
 
-        public bool HaveBottomLayers(int layerIndex)
+        public bool HaveAirGappedBottomLayers(int layerIndex)
         {
             return false;
         }

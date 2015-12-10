@@ -243,15 +243,15 @@ namespace MatterHackers.MatterSlice.Tests
             // test the supports for a cube that is 1/2 width just under the main part
             {
                 ConfigSettings config = new ConfigSettings();
-                config.supportInterfaceLayers = 0;
+                config.supportInterfaceLayers = 2;
                 config.layerThickness = .5;
                 config.supportXYDistanceFromObject = .1;
 
-                // 14 XXXXXXXXXXXXXXXXXXXX
-                // 13 XXXXXXXXXXXXXXXXXXXX
-                // 12 XXXXXXXXXXXXXXXXXXXX
-                // 11 XXXXXXXXXXXXXXXXXXXX
-                // 10 XXXXXXXXXXXXXXXXXXXX  <- at air gap height
+                // 14      XXXXXXXXXX
+                // 13      XXXXXXXXXX
+                // 12      XXXXXXXXXX
+                // 11      XXXXXXXXXX
+                // 10      XXXXXXXXXX  <- at air gap height
                 // 9                        <- interface layer
                 // 8                        <- interface layer
                 // 7            ^ - requires support  
@@ -264,10 +264,10 @@ namespace MatterHackers.MatterSlice.Tests
                 // 0  XXXXXXXXXXXXXXXXXXXX
 
                 List<Polygons> partOutlines = new List<Polygons>();
-                Polygons cubeOutline = PolygonsHelper.CreateFromString("x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|");
+                Polygons bottomCubeOutline = PolygonsHelper.CreateFromString("x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|");
                 for (int i = 0; i < 5; i++)
                 {
-                    partOutlines.Add(cubeOutline);
+                    partOutlines.Add(bottomCubeOutline);
                 }
 
                 for (int i = 0; i < 5; i++)
@@ -275,65 +275,72 @@ namespace MatterHackers.MatterSlice.Tests
                     partOutlines.Add(new Polygons());
                 }
 
+                Polygons topCubeOutline = PolygonsHelper.CreateFromString("x:2500, y:2500,x:7500, y:2500,x:7500, y:7500,x:2500, y:7500,|");
                 for (int i = 0; i < 5; i++)
                 {
-                    partOutlines.Add(cubeOutline);
+                    partOutlines.Add(topCubeOutline);
                 }
 
                 PartLayers layerData = CreateLayerData(partOutlines);
                 NewSupport supportGenerator = new NewSupport(config, layerData, 1);
 
-                /*
                 // check the all part outlines
                 {
-                    List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 0,
-                        1, 1, 1, 1, 1,
+                    List<int> polygonsCounts = new List<int> {1, 1, 1, 1, 1,
+                        0, 0, 0, 0, 0,
                         1, 1, 1, 1, 1,};
-                    List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 0,
-                        4, 4, 4, 4, 4,
+                    List<int> polygon0Counts = new List<int> { 4, 4, 4, 4, 4,
+                        0, 0, 0, 0, 0,
                         4, 4, 4, 4, 4,};
-                    List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null,
-                        halfCubeOutline, halfCubeOutline, halfCubeOutline, halfCubeOutline, halfCubeOutline,
-                        cubeOutline, cubeOutline, cubeOutline, cubeOutline, cubeOutline, };
+                    List<Polygons> poly0Paths = new List<Polygons>() {bottomCubeOutline, bottomCubeOutline, bottomCubeOutline, bottomCubeOutline, bottomCubeOutline,
+                        null, null, null, null, null,
+                        topCubeOutline, topCubeOutline, topCubeOutline, topCubeOutline, topCubeOutline, };
                     CheckLayers(supportGenerator.allPartOutlines, polygonsCounts, polygon0Counts, poly0Paths);
                 }
 
-                Polygons layer9Support = PolygonsHelper.CreateFromString("x:5000, y:0,x:10000, y:0,x:10000, y:10000,x:5000, y:10000,|");
                 // check the potential support outlines
                 {
-                    List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
-                    List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
-                    List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, halfCubeOutline, null, null, null, null, layer9Support, null, null, null, null, null };
+                    List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
+                    List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
+                    List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null, null, null, null, null, topCubeOutline, null, null, null, null, null };
                     CheckLayers(supportGenerator.allPotentialSupportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
                 }
 
                 // check the required support outlines
                 {
-                    List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
-                    List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
-                    List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, halfCubeOutline, null, null, null, null, layer9Support, null, null, null, null, null };
+                    List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
+                    List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
+                    List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null, null, null, null, null, topCubeOutline, null, null, null, null, null };
                     CheckLayers(supportGenerator.allRequiredSupportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
                 }
 
-                if (false)
                 {
-                    // check the generated support outlines
+                    Polygons expectedSupportOutlines = topCubeOutline.Offset(1000);
+                    // check the air gapped bottom support outlines (only 5)
                     {
-                        List<int> polygonsCounts = new List<int> { 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, };
-                        List<int> polygon0Counts = new List<int> { 4, 4, 4, 4, 4, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0, };
-                        List<Polygons> poly0Paths = new List<Polygons>() { cubeOutline, cubeOutline, cubeOutline, cubeOutline, cubeOutline, null, null, null, null, null };
+                        List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
+                        List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
+                        List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null, expectedSupportOutlines, null, null, null, null, null, null };
                         CheckLayers(supportGenerator.supportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
                     }
 
-                    // check the interface support outlines
+
+                    // check the generated support outlines (only 6 and 7)
                     {
-                        List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
-                        List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
-                        List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null, null, null, null, null, null };
+                        List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, };
+                        List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 0, 0, 4, 4, 0, 0, 0, 0, 0, 0, 0, };
+                        List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null, null, expectedSupportOutlines, expectedSupportOutlines, null, null, null, null };
+                        CheckLayers(supportGenerator.supportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
+                    }
+
+                    // check the interface support outlines (8 and 9)
+                    {
+                        List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, };
+                        List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 4, 4, 0, 0, 0, 0, 0, 0, };
+                        List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null, null, null, null, expectedSupportOutlines, expectedSupportOutlines, null, null, null, null, null, };
                         CheckLayers(supportGenerator.interfaceLayers, polygonsCounts, polygon0Counts, poly0Paths);
                     }
                 }
-                */
             }
         }
         private void CheckLayers(List<Polygons> polygonsToValidate, List<int> polygonsCounts, List<int> polygon0Counts, List<Polygons> poly0Paths)

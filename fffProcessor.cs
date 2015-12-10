@@ -544,7 +544,7 @@ namespace MatterHackers.MatterSlice
 
                 if (slicingData.newSupport != null)
                 {
-                    if (slicingData.newSupport.HaveBottomLayers(layerIndex))
+                    if (slicingData.newSupport.HaveAirGappedBottomLayers(layerIndex))
                     {
                         if (!config.enableRaft || layerIndex > 0)
                         {
