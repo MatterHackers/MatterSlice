@@ -32,7 +32,7 @@ namespace MatterHackers.MatterSlice
 
 		public static void GenerateInsets(SliceLayerPart part, int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
 		{
-			part.AvoidCrossingBoundery = part.TotalOutline.Offset(-extrusionWidth_um);
+            part.AvoidCrossingBoundery = part.TotalOutline;//.Offset(-extrusionWidth_um);
 			if (insetCount == 0)
 			{
 				// if we have no insets defined still create one
