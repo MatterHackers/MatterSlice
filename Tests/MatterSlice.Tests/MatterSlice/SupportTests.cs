@@ -360,15 +360,15 @@ namespace MatterHackers.MatterSlice.Tests
         {
             int numLayers = totalLayerOutlines.Count;
             PartLayers layerData = new PartLayers();
-            layerData.Layers = new List<MeshLayers>();
+            layerData.Layers = new List<SliceLayerParts>();
             for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
             {
-                MeshLayers layer = new MeshLayers();
-                layer.layerData = new List<MeshLayerData>();
+                SliceLayerParts layer = new SliceLayerParts();
+                layer.layerSliceData = new List<MeshLayerData>();
                 MeshLayerData part = new MeshLayerData();
                 part.TotalOutline = totalLayerOutlines[layerIndex];
                 Inset.GenerateInsets(part, 500, 500, 2);
-                layer.layerData.Add(part);
+                layer.layerSliceData.Add(part);
                 layerData.Layers.Add(layer);
             }
             return layerData;

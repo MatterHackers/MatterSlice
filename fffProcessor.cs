@@ -227,7 +227,10 @@ namespace MatterHackers.MatterSlice
                 config.infillPercent = 0;
             }
 
-            MultiVolumes.RemoveVolumesIntersections(slicingData.AllPartsLayers);
+			//string booleanOpperations = "(0,1)";
+			//MultiVolumes.ProcessBooleans(slicingData.AllPartsLayers, booleanOpperations);
+
+			MultiVolumes.RemoveVolumesIntersections(slicingData.AllPartsLayers);
             MultiVolumes.OverlapMultipleVolumesSlightly(slicingData.AllPartsLayers, config.multiVolumeOverlapPercent);
 #if False
             LayerPart.dumpLayerparts(slicingData, "output.html");
@@ -259,7 +262,7 @@ namespace MatterHackers.MatterSlice
                         insetCount += 5;
                     }
 
-                    MeshLayers layer = slicingData.AllPartsLayers[volumeIndex].Layers[layerIndex];
+                    SliceLayerParts layer = slicingData.AllPartsLayers[volumeIndex].Layers[layerIndex];
 
                     if (layerIndex == 0)
                     {
@@ -349,9 +352,9 @@ namespace MatterHackers.MatterSlice
                 Polygons wipeShield = new Polygons();
                 for (int volumeIdx = 0; volumeIdx < slicingData.AllPartsLayers.Count; volumeIdx++)
                 {
-                    for (int partNr = 0; partNr < slicingData.AllPartsLayers[volumeIdx].Layers[layerNr].layerData.Count; partNr++)
+                    for (int partNr = 0; partNr < slicingData.AllPartsLayers[volumeIdx].Layers[layerNr].layerSliceData.Count; partNr++)
                     {
-                        wipeShield = wipeShield.CreateUnion(slicingData.AllPartsLayers[volumeIdx].Layers[layerNr].layerData[partNr].TotalOutline.Offset(config.wipeShieldDistanceFromShapes_um));
+                        wipeShield = wipeShield.CreateUnion(slicingData.AllPartsLayers[volumeIdx].Layers[layerNr].layerSliceData[partNr].TotalOutline.Offset(config.wipeShieldDistanceFromShapes_um));
                     }
                 }
                 slicingData.wipeShield.Add(wipeShield);
@@ -412,10 +415,10 @@ namespace MatterHackers.MatterSlice
                     bool layerHasData = false;
                     foreach (PartLayers currentVolume in slicingData.AllPartsLayers)
                     {
-                        MeshLayers currentLayer = currentVolume.Layers[layerIndex];
-                        for (int partIndex = 0; partIndex < currentVolume.Layers[layerIndex].layerData.Count; partIndex++)
+                        SliceLayerParts currentLayer = currentVolume.Layers[layerIndex];
+                        for (int partIndex = 0; partIndex < currentVolume.Layers[layerIndex].layerSliceData.Count; partIndex++)
                         {
-                            MeshLayerData currentPart = currentLayer.layerData[partIndex];
+                            MeshLayerData currentPart = currentLayer.layerSliceData[partIndex];
                             if (currentPart.TotalOutline.Count > 0)
                             {
                                 layerHasData = true;
@@ -633,7 +636,7 @@ namespace MatterHackers.MatterSlice
             int prevExtruder = gcodeLayer.getExtruder();
             bool extruderChanged = gcodeLayer.SetExtruder(volumeIndex);
 
-            MeshLayers layer = slicingData.AllPartsLayers[volumeIndex].Layers[layerIndex];
+            SliceLayerParts layer = slicingData.AllPartsLayers[volumeIndex].Layers[layerIndex];
             if (extruderChanged)
             {
                 addWipeTower(slicingData, gcodeLayer, layerIndex, prevExtruder, extrusionWidth_um);
@@ -647,14 +650,14 @@ namespace MatterHackers.MatterSlice
             }
 
             PathOrderOptimizer partOrderOptimizer = new PathOrderOptimizer(new IntPoint());
-            for (int partIndex = 0; partIndex < layer.layerData.Count; partIndex++)
+            for (int partIndex = 0; partIndex < layer.layerSliceData.Count; partIndex++)
             {
                 if (config.continuousSpiralOuterPerimeter && partIndex > 0)
                 {
                     continue;
                 }
 
-                partOrderOptimizer.AddPolygon(layer.layerData[partIndex].Insets[0][0]);
+                partOrderOptimizer.AddPolygon(layer.layerSliceData[partIndex].Insets[0][0]);
             }
             partOrderOptimizer.Optimize();
 
@@ -667,7 +670,7 @@ namespace MatterHackers.MatterSlice
                     continue;
                 }
 
-                MeshLayerData part = layer.layerData[partOrderOptimizer.bestPolygonOrderIndex[partIndex]];
+                MeshLayerData part = layer.layerSliceData[partOrderOptimizer.bestPolygonOrderIndex[partIndex]];
 
                 if (config.avoidCrossingPerimeters)
                 {
@@ -774,7 +777,7 @@ namespace MatterHackers.MatterSlice
                         && !config.continuousSpiralOuterPerimeter
                         && layerIndex > 0)
                     {
-                        MeshLayerData part = layer.layerData[partOrderOptimizer.bestPolygonOrderIndex[partIndex]];
+                        MeshLayerData part = layer.layerSliceData[partOrderOptimizer.bestPolygonOrderIndex[partIndex]];
 
                         gcode.setZ(currentZ_um + config.raftAirGap_um);
 

@@ -34,7 +34,7 @@ namespace MatterHackers.MatterSlice
 		{
             part.BoundingBox.Calculate(part.TotalOutline);
 
-            part.AvoidCrossingBoundery = part.TotalOutline.Offset(-extrusionWidth_um);
+			part.AvoidCrossingBoundery = part.TotalOutline;//.Offset(-extrusionWidth_um);
 			if (insetCount == 0)
 			{
 				// if we have no insets defined still create one
@@ -79,20 +79,20 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static void generateInsets(MeshLayers layer, int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
+		public static void generateInsets(SliceLayerParts layer, int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
 		{
-			for (int partIndex = 0; partIndex < layer.layerData.Count; partIndex++)
+			for (int partIndex = 0; partIndex < layer.layerSliceData.Count; partIndex++)
 			{
-				GenerateInsets(layer.layerData[partIndex], extrusionWidth_um, outerExtrusionWidth_um, insetCount);
+				GenerateInsets(layer.layerSliceData[partIndex], extrusionWidth_um, outerExtrusionWidth_um, insetCount);
 			}
 
 			//Remove the parts which did not generate an inset. As these parts are too small to print,
 			// and later code can now assume that there is always minimum 1 inset line.
-			for (int partIndex = 0; partIndex < layer.layerData.Count; partIndex++)
+			for (int partIndex = 0; partIndex < layer.layerSliceData.Count; partIndex++)
 			{
-				if (layer.layerData[partIndex].Insets.Count < 1)
+				if (layer.layerSliceData[partIndex].Insets.Count < 1)
 				{
-					layer.layerData.RemoveAt(partIndex);
+					layer.layerSliceData.RemoveAt(partIndex);
 					partIndex -= 1;
 				}
 			}

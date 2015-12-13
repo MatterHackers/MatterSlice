@@ -48,8 +48,8 @@ namespace MatterHackers.MatterSlice
 						continue;
 					}
 
-					MeshLayers layer = storage.AllPartsLayers[volumeIndex].Layers[0];
-					for (int partIndex = 0; partIndex < layer.layerData.Count; partIndex++)
+					SliceLayerParts layer = storage.AllPartsLayers[volumeIndex].Layers[0];
+					for (int partIndex = 0; partIndex < layer.layerSliceData.Count; partIndex++)
 					{
 						if (config.continuousSpiralOuterPerimeter && partIndex > 0)
 						{
@@ -59,13 +59,13 @@ namespace MatterHackers.MatterSlice
 						if (externalOnly)
 						{
 							Polygons p = new Polygons();
-							p.Add(layer.layerData[partIndex].TotalOutline[0]);
+							p.Add(layer.layerSliceData[partIndex].TotalOutline[0]);
 							//p.Add(IntPointHelper.CreateConvexHull(layer.parts[partIndex].outline[0]));
 							skirtPolygons = skirtPolygons.CreateUnion(p.Offset(offsetDistance));
 						}
 						else
 						{
-							skirtPolygons = skirtPolygons.CreateUnion(layer.layerData[partIndex].TotalOutline.Offset(offsetDistance));
+							skirtPolygons = skirtPolygons.CreateUnion(layer.layerSliceData[partIndex].TotalOutline.Offset(offsetDistance));
 						}
 					}
 				}

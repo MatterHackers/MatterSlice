@@ -129,17 +129,17 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				MeshLayers layer = storage.AllPartsLayers[volumeIndex].Layers[0];
+				SliceLayerParts layer = storage.AllPartsLayers[volumeIndex].Layers[0];
 				// let's find the first layer that has something in it for the raft rather than a zero layer
-				if (layer.layerData.Count == 0 && storage.AllPartsLayers[volumeIndex].Layers.Count > 2) layer = storage.AllPartsLayers[volumeIndex].Layers[1];
-				for (int partIndex = 0; partIndex < layer.layerData.Count; partIndex++)
+				if (layer.layerSliceData.Count == 0 && storage.AllPartsLayers[volumeIndex].Layers.Count > 2) layer = storage.AllPartsLayers[volumeIndex].Layers[1];
+				for (int partIndex = 0; partIndex < layer.layerSliceData.Count; partIndex++)
 				{
 					if (config.continuousSpiralOuterPerimeter && partIndex > 0)
 					{
 						continue;
 					}
 
-					storage.raftOutline = storage.raftOutline.CreateUnion(layer.layerData[partIndex].TotalOutline.Offset(extraDistanceAroundPart_um));
+					storage.raftOutline = storage.raftOutline.CreateUnion(layer.layerSliceData[partIndex].TotalOutline.Offset(extraDistanceAroundPart_um));
 				}
 			}
 

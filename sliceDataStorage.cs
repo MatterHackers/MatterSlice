@@ -49,10 +49,10 @@ namespace MatterHackers.MatterSlice
 		public Polygons InfillOutlines = new Polygons();
 	};
 
-	public class MeshLayers
+	public class SliceLayerParts
 	{
 		public long printZ;
-		public List<MeshLayerData> layerData = new List<MeshLayerData>();
+		public List<MeshLayerData> layerSliceData = new List<MeshLayerData>();
 	};
 
 	public class SupportPoint
@@ -240,7 +240,7 @@ namespace MatterHackers.MatterSlice
 
 	public class PartLayers
 	{
-		public List<MeshLayers> Layers = new List<MeshLayers>();
+		public List<SliceLayerParts> Layers = new List<SliceLayerParts>();
 	}
 
 	public class SliceDataStorage

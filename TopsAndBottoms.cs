@@ -33,11 +33,11 @@ namespace MatterHackers.MatterSlice
 
 		public static void GenerateTopAndBottom(int layerIndex, PartLayers storage, int extrusionWidth_um, int outerPerimeterWidth_um, int downLayerCount, int upLayerCount)
 		{
-			MeshLayers layer = storage.Layers[layerIndex];
+			SliceLayerParts layer = storage.Layers[layerIndex];
 
-			for (int partIndex = 0; partIndex < layer.layerData.Count; partIndex++)
+			for (int partIndex = 0; partIndex < layer.layerSliceData.Count; partIndex++)
 			{
-				MeshLayerData part = layer.layerData[partIndex];
+				MeshLayerData part = layer.layerSliceData[partIndex];
 				// this is the entire extrusion width to make sure we are outside of the extrusion line
 				Polygons insetWithOffset = part.Insets[part.Insets.Count - 1].Offset(-extrusionWidth_um);
 				Polygons infillOutlines = new Polygons(insetWithOffset);
@@ -154,13 +154,13 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private static Polygons RemoveAdditionalOutlinesForPart(MeshLayers layerToSubtract, MeshLayerData partToUseAsBounds, Polygons polygonsToSubtractFrom)
+		private static Polygons RemoveAdditionalOutlinesForPart(SliceLayerParts layerToSubtract, MeshLayerData partToUseAsBounds, Polygons polygonsToSubtractFrom)
 		{
-			for (int partIndex = 0; partIndex < layerToSubtract.layerData.Count; partIndex++)
+			for (int partIndex = 0; partIndex < layerToSubtract.layerSliceData.Count; partIndex++)
 			{
-				if (partToUseAsBounds.BoundingBox.Hit(layerToSubtract.layerData[partIndex].BoundingBox))
+				if (partToUseAsBounds.BoundingBox.Hit(layerToSubtract.layerSliceData[partIndex].BoundingBox))
 				{
-					polygonsToSubtractFrom = polygonsToSubtractFrom.CreateDifference(layerToSubtract.layerData[partIndex].Insets[layerToSubtract.layerData[partIndex].Insets.Count - 1]);
+					polygonsToSubtractFrom = polygonsToSubtractFrom.CreateDifference(layerToSubtract.layerSliceData[partIndex].Insets[layerToSubtract.layerSliceData[partIndex].Insets.Count - 1]);
 
 					polygonsToSubtractFrom = Clipper.CleanPolygons(polygonsToSubtractFrom, cleanDistance_um);
 				}
@@ -169,14 +169,14 @@ namespace MatterHackers.MatterSlice
 			return polygonsToSubtractFrom;
 		}
 
-		private static Polygons AddAllOutlines(MeshLayers layerToAdd, MeshLayerData partToUseAsBounds, Polygons polysToAddTo)
+		private static Polygons AddAllOutlines(SliceLayerParts layerToAdd, MeshLayerData partToUseAsBounds, Polygons polysToAddTo)
 		{
 			Polygons polysToIntersect = new Polygons();
-			for (int partIndex = 0; partIndex < layerToAdd.layerData.Count; partIndex++)
+			for (int partIndex = 0; partIndex < layerToAdd.layerSliceData.Count; partIndex++)
 			{
-				if (partToUseAsBounds.BoundingBox.Hit(layerToAdd.layerData[partIndex].BoundingBox))
+				if (partToUseAsBounds.BoundingBox.Hit(layerToAdd.layerSliceData[partIndex].BoundingBox))
 				{
-					polysToIntersect = polysToIntersect.CreateUnion(layerToAdd.layerData[partIndex].Insets[layerToAdd.layerData[partIndex].Insets.Count - 1]);
+					polysToIntersect = polysToIntersect.CreateUnion(layerToAdd.layerSliceData[partIndex].Insets[layerToAdd.layerSliceData[partIndex].Insets.Count - 1]);
 					polysToIntersect = Clipper.CleanPolygons(polysToIntersect, cleanDistance_um);
 				}
 			}

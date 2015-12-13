@@ -253,13 +253,17 @@ namespace MatterHackers.MatterSlice
 		public static long PolygonLength(this Polygon polygon)
 		{
 			long length = 0;
-			IntPoint previousPoint = polygon[polygon.Count - 1];
-			for (int n = 0; n < polygon.Count; n++)
+			if (polygon.Count > 0)
 			{
-				IntPoint currentPoint = polygon[n];
-				length += (previousPoint - currentPoint).Length();
-				previousPoint = currentPoint;
+				IntPoint previousPoint = polygon[polygon.Count - 1];
+				for (int n = 0; n < polygon.Count; n++)
+				{
+					IntPoint currentPoint = polygon[n];
+					length += (previousPoint - currentPoint).Length();
+					previousPoint = currentPoint;
+				}
 			}
+
 			return length;
 		}
         public static void Reverse(this Polygon polygon)

@@ -110,10 +110,10 @@ namespace MatterHackers.MatterSlice
             {
                 Polygons allOutlines = new Polygons();
 
-                MeshLayers curLayer = storage.Layers[layerIndex];
-                for (int curLayerPartIndex = 0; curLayerPartIndex < curLayer.layerData.Count; curLayerPartIndex++)
+                SliceLayerParts curLayer = storage.Layers[layerIndex];
+                for (int curLayerPartIndex = 0; curLayerPartIndex < curLayer.layerSliceData.Count; curLayerPartIndex++)
                 {
-                    MeshLayerData curPart = curLayer.layerData[curLayerPartIndex];
+                    MeshLayerData curPart = curLayer.layerSliceData[curLayerPartIndex];
                     Polygons curLayerPolys = curPart.TotalOutline;
                     allOutlines = allOutlines.CreateUnion(curLayerPolys);
                     allOutlines = Clipper.CleanPolygons(allOutlines, cleanDistance_um);

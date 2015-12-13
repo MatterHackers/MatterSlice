@@ -41,17 +41,17 @@ namespace MatterHackers.MatterSlice
 		It's also the first step that stores the result in the "data storage" so all other steps can access it.
 		*/
 
-		private static void CreateLayerWithParts(MeshLayers storageLayer, SliceLayer layer)
+		private static void CreateLayerWithParts(SliceLayerParts storageLayer, SliceLayer layer)
 		{
 			List<Polygons> result;
 			result = layer.PolygonList.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd);
 
 			for (int i = 0; i < result.Count; i++)
 			{
-				storageLayer.layerData.Add(new MeshLayerData());
-				storageLayer.layerData[i].TotalOutline = result[i];
+				storageLayer.layerSliceData.Add(new MeshLayerData());
+				storageLayer.layerSliceData[i].TotalOutline = result[i];
 
-				storageLayer.layerData[i].BoundingBox.Calculate(storageLayer.layerData[i].TotalOutline);
+				storageLayer.layerSliceData[i].BoundingBox.Calculate(storageLayer.layerSliceData[i].TotalOutline);
 			}
 		}
 
@@ -59,7 +59,7 @@ namespace MatterHackers.MatterSlice
 		{
 			for (int layerIndex = 0; layerIndex < slicer.layers.Count; layerIndex++)
 			{
-				storage.Layers.Add(new MeshLayers());
+				storage.Layers.Add(new SliceLayerParts());
 				storage.Layers[layerIndex].printZ = slicer.layers[layerIndex].Z;
 				LayerPart.CreateLayerWithParts(storage.Layers[layerIndex], slicer.layers[layerIndex]);
 			}
@@ -77,10 +77,10 @@ namespace MatterHackers.MatterSlice
 				for (int layerNr = 0; layerNr < storage.AllPartsLayers[volumeIdx].Layers.Count; layerNr++)
 				{
 					streamToWriteTo.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style=\"width: 500px; height:500px\">\n");
-					MeshLayers layer = storage.AllPartsLayers[volumeIdx].Layers[layerNr];
-					for (int i = 0; i < layer.layerData.Count; i++)
+					SliceLayerParts layer = storage.AllPartsLayers[volumeIdx].Layers[layerNr];
+					for (int i = 0; i < layer.layerSliceData.Count; i++)
 					{
-						MeshLayerData part = layer.layerData[i];
+						MeshLayerData part = layer.layerSliceData[i];
 						for (int j = 0; j < part.TotalOutline.Count; j++)
 						{
 							streamToWriteTo.Write("<polygon points=\"");
