@@ -100,21 +100,6 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			// parse the boolean operations into a new output list and replace the current list
-			int indexToAddTo = 0;
-			for (int partToAddToUnionIndex = indexToAddTo + 1; partToAddToUnionIndex < allPartsLayers.Count; partToAddToUnionIndex++)
-			{
-				for (int layerIndex = 0; layerIndex < allPartsLayers[indexToAddTo].Layers.Count; layerIndex++)
-				{
-					SliceLayerParts layersToUnionInto = allPartsLayers[indexToAddTo].Layers[layerIndex];
-					SliceLayerParts layersToAddToUnion = allPartsLayers[partToAddToUnionIndex].Layers[layerIndex];
-					for (int layerDataToAddToUnionIndex = 0; layerDataToAddToUnionIndex < layersToUnionInto.layerSliceData.Count; layerDataToAddToUnionIndex++)
-					{
-						layersToUnionInto.layerSliceData[indexToAddTo].TotalOutline = layersToUnionInto.layerSliceData[indexToAddTo].TotalOutline.CreateUnion(layersToAddToUnion.layerSliceData[layerDataToAddToUnionIndex].TotalOutline);
-					}
-				}
-			}
-
 			while (allPartsLayers.Count > 1)
 			{
 				allPartsLayers.RemoveAt(1);
