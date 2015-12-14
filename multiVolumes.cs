@@ -24,12 +24,74 @@ using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
+	using System;
+	using System.Linq;
 	using Polygons = List<List<IntPoint>>;
 
-	public static class MultiVolumes
+	public class BooleanProcessing
 	{
-		public static void ProcessBooleans(List<PartLayers> allPartsLayers, string booleanOpperations)
+		int currentExtruder = 0;
+		int numberOfOpens = 0;
+		public List<PartLayers> FinalLayers { get; internal set; }
+		Stack<int> operandsIndexStack = new Stack<int>();
+		enum BooleanType { None, Union, Difference, Intersection };
+
+		public BooleanProcessing(List<PartLayers> allPartsLayers, string booleanOpperations)
 		{
+			int parseIndex = 0;
+			while (parseIndex < booleanOpperations.Length)
+			{
+				BooleanType typeToDo = BooleanType.None;
+
+				switch (booleanOpperations[parseIndex])
+				{
+					case '(': // start union
+					case '[': // start intersection
+					case '{': // start difference
+						numberOfOpens++;
+						break;
+
+					case ')': // end union
+						typeToDo = BooleanType.Union;
+						break;
+
+					case '}': // end difference
+						typeToDo = BooleanType.Difference;
+						break;
+
+					case ']': // end intersection
+						typeToDo = BooleanType.Intersection;
+						break;
+
+					default:
+						// get the number for the operand index
+						operandsIndexStack.Push(GetNextNumber(booleanOpperations, parseIndex));
+						break;
+				}
+
+				if(typeToDo != BooleanType.None)
+				{
+					numberOfOpens--;
+					int destMeshIndex = operandsIndexStack.Pop();
+					int meshToAddIndex = operandsIndexStack.Pop();
+					for (int layerIndex = 0; layerIndex < allPartsLayers[destMeshIndex].Layers.Count; layerIndex++)
+					{
+						SliceLayerParts layersToUnionInto = allPartsLayers[destMeshIndex].Layers[layerIndex];
+						SliceLayerParts layersToAddToUnion = allPartsLayers[meshToAddIndex].Layers[layerIndex];
+						DoLayerBooleans(layersToUnionInto, layersToAddToUnion, typeToDo);
+					}
+
+					operandsIndexStack.Push(destMeshIndex);
+
+					if (numberOfOpens == 0)
+					{
+						currentExtruder++;
+					}
+				}
+
+				parseIndex++;
+			}
+
 			// parse the boolean operations into a new output list and replace the current list
 			int indexToAddTo = 0;
 			for (int partToAddToUnionIndex = indexToAddTo + 1; partToAddToUnionIndex < allPartsLayers.Count; partToAddToUnionIndex++)
@@ -49,6 +111,47 @@ namespace MatterHackers.MatterSlice
 			{
 				allPartsLayers.RemoveAt(1);
 			}
+		}
+
+		private int GetNextNumber(string numberString, int index)
+		{
+			string digits = new string(numberString.Substring(index).TakeWhile(c => Char.IsDigit(c)).ToArray());
+			int result;
+			if (Int32.TryParse(digits, out result))
+			{
+				return result;
+			}
+
+			throw new FormatException("not a number");
+		}
+
+		private static void DoLayerBooleans(SliceLayerParts layersToUnionInto, SliceLayerParts layersToAddToUnion, BooleanType booleanType)
+		{
+			for (int sliceDataIndex = 0; sliceDataIndex < layersToUnionInto.layerSliceData.Count; sliceDataIndex++)
+			{
+				switch (booleanType)
+				{
+					case BooleanType.Union:
+						layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline = layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline.CreateUnion(layersToAddToUnion.layerSliceData[sliceDataIndex].TotalOutline);
+						break;
+					case BooleanType.Difference:
+						layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline = layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline.CreateDifference(layersToAddToUnion.layerSliceData[sliceDataIndex].TotalOutline);
+						break;
+					case BooleanType.Intersection:
+						layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline = layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline.CreateIntersection(layersToAddToUnion.layerSliceData[sliceDataIndex].TotalOutline);
+						break;
+				}
+			}
+		}
+	}	
+
+	public static class MultiVolumes
+	{
+		public static void ProcessBooleans(List<PartLayers> allPartsLayers, string booleanOpperations)
+		{
+			BooleanProcessing processor = new BooleanProcessing(allPartsLayers, booleanOpperations);
+
+			allPartsLayers = processor.FinalLayers;
 		}
 
 		public static void RemoveVolumesIntersections(List<PartLayers> volumes)
