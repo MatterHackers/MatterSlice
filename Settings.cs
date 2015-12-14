@@ -276,8 +276,9 @@ namespace MatterHackers.MatterSlice
         public double wipeTowerSize;
 
         public double zOffset;
+		public string BooleanOpperations { get; set; } = "";
 
-        public ConfigSettings()
+		public ConfigSettings()
         {
             SetToDefault();
         }

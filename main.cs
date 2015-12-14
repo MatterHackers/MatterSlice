@@ -122,6 +122,11 @@ namespace MatterHackers.MatterSlice
 								}
 								break;
 
+							case 'b':
+								argn++;
+								config.BooleanOpperations = args[argn];
+                                break;
+
 							case 'd':
 								config.DumpSettings("settings.ini");
 								break;

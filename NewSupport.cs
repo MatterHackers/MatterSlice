@@ -233,6 +233,7 @@ namespace MatterHackers.MatterSlice
 
         private static List<Polygons> CreateAirGappedBottomLayers(List<Polygons> inputPolys, int numInterfaceLayers)
         {
+			return inputPolys;
 			throw new NotImplementedException();
             int numLayers = inputPolys.Count;
 

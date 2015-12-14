@@ -49,23 +49,33 @@ namespace MatterHackers.MatterSlice
 					case '[': // start intersection
 					case '{': // start difference
 						numberOfOpens++;
+						parseIndex++;
 						break;
 
 					case ')': // end union
 						typeToDo = BooleanType.Union;
+						parseIndex++;
 						break;
 
 					case '}': // end difference
 						typeToDo = BooleanType.Difference;
+						parseIndex++;
 						break;
 
 					case ']': // end intersection
 						typeToDo = BooleanType.Intersection;
+						parseIndex++;
+						break;
+
+					case ',':
+						parseIndex++;
 						break;
 
 					default:
 						// get the number for the operand index
-						operandsIndexStack.Push(GetNextNumber(booleanOpperations, parseIndex));
+						int skipCount = 0;
+						operandsIndexStack.Push(GetNextNumber(booleanOpperations, parseIndex, out skipCount));
+						parseIndex += skipCount;
 						break;
 				}
 
@@ -88,8 +98,6 @@ namespace MatterHackers.MatterSlice
 						currentExtruder++;
 					}
 				}
-
-				parseIndex++;
 			}
 
 			// parse the boolean operations into a new output list and replace the current list
@@ -113,10 +121,11 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private int GetNextNumber(string numberString, int index)
+		private int GetNextNumber(string numberString, int index, out int skipCount)
 		{
 			string digits = new string(numberString.Substring(index).TakeWhile(c => Char.IsDigit(c)).ToArray());
-			int result;
+			skipCount = digits.Length;
+            int result;
 			if (Int32.TryParse(digits, out result))
 			{
 				return result;
