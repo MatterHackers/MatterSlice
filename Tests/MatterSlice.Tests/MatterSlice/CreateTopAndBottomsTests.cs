@@ -48,7 +48,7 @@ namespace MatterHackers.MatterSlice.Tests
 				string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
 				Polygons partOutline = PolygonsHelper.CreateFromString(inset0OutlineString);
 				int numLayers = 10;
-				PartLayers layerData = CreateLayerData(partOutline, numLayers);
+				ExtruderLayers layerData = CreateLayerData(partOutline, numLayers);
 				GenerateLayers(layerData, 400, 3, 0);
 				Assert.IsTrue(OnlyHasBottom(layerData, 0));
 				Assert.IsTrue(OnlyHasSolidInfill(layerData, 1));
@@ -61,7 +61,7 @@ namespace MatterHackers.MatterSlice.Tests
 				string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
 				Polygons inset0Outline = PolygonsHelper.CreateFromString(inset0OutlineString);
 				int numLayers = 10;
-				PartLayers layerData = CreateLayerData(inset0Outline, numLayers);
+				ExtruderLayers layerData = CreateLayerData(inset0Outline, numLayers);
 				GenerateLayers(layerData, 400, 3, 1);
 				Assert.IsTrue(OnlyHasBottom(layerData, 0));
 				Assert.IsTrue(OnlyHasSolidInfill(layerData, 1));
@@ -74,7 +74,7 @@ namespace MatterHackers.MatterSlice.Tests
 				string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
 				Polygons inset0Outline = PolygonsHelper.CreateFromString(inset0OutlineString);
 				int numLayers = 10;
-				PartLayers layerData = CreateLayerData(inset0Outline, numLayers);
+				ExtruderLayers layerData = CreateLayerData(inset0Outline, numLayers);
 				GenerateLayers(layerData, 400, 3, 3);
 				Assert.IsTrue(OnlyHasBottom(layerData, 0));
 				Assert.IsTrue(OnlyHasSolidInfill(layerData, 1));
@@ -92,7 +92,7 @@ namespace MatterHackers.MatterSlice.Tests
 				string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
 				Polygons inset0Outline = PolygonsHelper.CreateFromString(inset0OutlineString);
 				int numLayers = 10;
-				PartLayers layerData = CreateLayerData(inset0Outline, numLayers);
+				ExtruderLayers layerData = CreateLayerData(inset0Outline, numLayers);
 				GenerateLayers(layerData, 400, 0, 3);
 				Assert.IsTrue(OnlyHasTop(layerData, 9));
 				Assert.IsTrue(OnlyHasSolidInfill(layerData, 8));
@@ -105,7 +105,7 @@ namespace MatterHackers.MatterSlice.Tests
 				string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
 				Polygons inset0Outline = PolygonsHelper.CreateFromString(inset0OutlineString);
 				int numLayers = 10;
-				PartLayers layerData = CreateLayerData(inset0Outline, numLayers);
+				ExtruderLayers layerData = CreateLayerData(inset0Outline, numLayers);
 				GenerateLayers(layerData, 400, 3, 1);
 				Assert.IsTrue(OnlyHasBottom(layerData, 0));
 				Assert.IsTrue(OnlyHasSolidInfill(layerData, 1));
@@ -118,7 +118,7 @@ namespace MatterHackers.MatterSlice.Tests
 				string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
 				Polygons inset0Outline = PolygonsHelper.CreateFromString(inset0OutlineString);
 				int numLayers = 10;
-				PartLayers layerData = CreateLayerData(inset0Outline, numLayers);
+				ExtruderLayers layerData = CreateLayerData(inset0Outline, numLayers);
 				GenerateLayers(layerData, 400, 3, 3);
 				Assert.IsTrue(OnlyHasBottom(layerData, 0));
 				Assert.IsTrue(OnlyHasSolidInfill(layerData, 1));
@@ -127,7 +127,7 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		private static void GenerateLayers(PartLayers layerData, int extrusionWidth, int bottomLayers, int topLayers)
+		private static void GenerateLayers(ExtruderLayers layerData, int extrusionWidth, int bottomLayers, int topLayers)
 		{
 			int numLayers = layerData.Layers.Count;
 			for (int i = 0; i < numLayers; i++)
@@ -136,58 +136,58 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		private static PartLayers CreateLayerData(Polygons inset0Outline, int numLayers)
+		private static ExtruderLayers CreateLayerData(Polygons inset0Outline, int numLayers)
 		{
-			PartLayers layerData = new PartLayers();
-			layerData.Layers = new List<SliceLayerParts>();
+			ExtruderLayers layerData = new ExtruderLayers();
+			layerData.Layers = new List<SliceLayer>();
 			for (int i = 0; i < numLayers; i++)
 			{
-				SliceLayerParts layer = new SliceLayerParts();
-				layer.layerSliceData = new List<MeshLayerData>();
-				MeshLayerData part = new MeshLayerData();
-				part.Insets = new List<Polygons>();
-				part.Insets.Add(inset0Outline);
+				SliceLayer layer = new SliceLayer();
+				layer.Islands = new List<LayerIsland>();
+				LayerIsland part = new LayerIsland();
+				part.InsetToolPaths = new List<Polygons>();
+				part.InsetToolPaths.Add(inset0Outline);
 				part.BoundingBox = new Aabb(inset0Outline);
-				layer.layerSliceData.Add(part);
+				layer.Islands.Add(part);
 				layerData.Layers.Add(layer);
 			}
 			return layerData;
 		}
 
-		private static bool OnlyHasBottom(PartLayers layerData, int layerToCheck)
+		private static bool OnlyHasBottom(ExtruderLayers layerData, int layerToCheck)
 		{
-			return layerData.Layers[layerToCheck].layerSliceData.Count == 1
-				&& layerData.Layers[layerToCheck].layerSliceData[0].SolidBottomOutlines.Count == 1
-				&& layerData.Layers[layerToCheck].layerSliceData[0].SolidTopOutlines.Count == 0
-				&& layerData.Layers[layerToCheck].layerSliceData[0].SolidInfillOutlines.Count == 0
-				&& layerData.Layers[layerToCheck].layerSliceData[0].InfillOutlines.Count == 0;
+			return layerData.Layers[layerToCheck].Islands.Count == 1
+				&& layerData.Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 1
+				&& layerData.Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 0
+				&& layerData.Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 0
+				&& layerData.Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 0;
 		}
 
-		private static bool OnlyHasTop(PartLayers layerData, int layerToCheck)
+		private static bool OnlyHasTop(ExtruderLayers layerData, int layerToCheck)
 		{
-			return layerData.Layers[layerToCheck].layerSliceData.Count == 1
-				&& layerData.Layers[layerToCheck].layerSliceData[0].SolidBottomOutlines.Count == 0
-				&& layerData.Layers[layerToCheck].layerSliceData[0].SolidTopOutlines.Count == 1
-				&& layerData.Layers[layerToCheck].layerSliceData[0].SolidInfillOutlines.Count == 0
-				&& layerData.Layers[layerToCheck].layerSliceData[0].InfillOutlines.Count == 0;
+			return layerData.Layers[layerToCheck].Islands.Count == 1
+				&& layerData.Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 0
+				&& layerData.Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 1
+				&& layerData.Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 0
+				&& layerData.Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 0;
 		}
 
-		private static bool OnlyHasSolidInfill(PartLayers layerData, int layerToCheck)
+		private static bool OnlyHasSolidInfill(ExtruderLayers layerData, int layerToCheck)
 		{
-			return layerData.Layers[layerToCheck].layerSliceData.Count == 1
-				&& layerData.Layers[layerToCheck].layerSliceData[0].SolidBottomOutlines.Count == 0
-				&& layerData.Layers[layerToCheck].layerSliceData[0].SolidTopOutlines.Count == 0
-				&& layerData.Layers[layerToCheck].layerSliceData[0].SolidInfillOutlines.Count == 1
-				&& layerData.Layers[layerToCheck].layerSliceData[0].InfillOutlines.Count == 0;
+			return layerData.Layers[layerToCheck].Islands.Count == 1
+				&& layerData.Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 0
+				&& layerData.Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 0
+				&& layerData.Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 1
+				&& layerData.Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 0;
 		}
 
-		private static bool OnlyHasInfill(PartLayers layerData, int layerToCheck)
+		private static bool OnlyHasInfill(ExtruderLayers layerData, int layerToCheck)
 		{
-			return layerData.Layers[layerToCheck].layerSliceData.Count == 1
-				&& layerData.Layers[layerToCheck].layerSliceData[0].SolidBottomOutlines.Count == 0
-				&& layerData.Layers[layerToCheck].layerSliceData[0].SolidTopOutlines.Count == 0
-				&& layerData.Layers[layerToCheck].layerSliceData[0].SolidInfillOutlines.Count == 0
-				&& layerData.Layers[layerToCheck].layerSliceData[0].InfillOutlines.Count == 1;
+			return layerData.Layers[layerToCheck].Islands.Count == 1
+				&& layerData.Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 0
+				&& layerData.Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 0
+				&& layerData.Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 0
+				&& layerData.Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 1;
 		}
 	}
 }

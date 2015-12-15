@@ -28,7 +28,7 @@ namespace MatterHackers.MatterSlice
 
 	public static class Raft
 	{
-		public static void WriteRaftGCodeIfRequired(SliceDataStorage storage, ConfigSettings config, GCodeExport gcode)
+		public static void WriteRaftGCodeIfRequired(LayerDataStorage storage, ConfigSettings config, GCodeExport gcode)
 		{
 			if (ShouldGenerateRaft(config))
 			{
@@ -115,31 +115,31 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static void GenerateRaftOutlines(SliceDataStorage storage, int extraDistanceAroundPart_um, ConfigSettings config)
+		public static void GenerateRaftOutlines(LayerDataStorage storage, int extraDistanceAroundPart_um, ConfigSettings config)
 		{
-			for (int volumeIndex = 0; volumeIndex < storage.AllPartsLayers.Count; volumeIndex++)
+			for (int volumeIndex = 0; volumeIndex < storage.Extruders.Count; volumeIndex++)
 			{
 				if (config.continuousSpiralOuterPerimeter && volumeIndex > 0)
 				{
 					continue;
 				}
 
-				if (storage.AllPartsLayers[volumeIndex].Layers.Count < 1)
+				if (storage.Extruders[volumeIndex].Layers.Count < 1)
 				{
 					continue;
 				}
 
-				SliceLayerParts layer = storage.AllPartsLayers[volumeIndex].Layers[0];
+				SliceLayer layer = storage.Extruders[volumeIndex].Layers[0];
 				// let's find the first layer that has something in it for the raft rather than a zero layer
-				if (layer.layerSliceData.Count == 0 && storage.AllPartsLayers[volumeIndex].Layers.Count > 2) layer = storage.AllPartsLayers[volumeIndex].Layers[1];
-				for (int partIndex = 0; partIndex < layer.layerSliceData.Count; partIndex++)
+				if (layer.Islands.Count == 0 && storage.Extruders[volumeIndex].Layers.Count > 2) layer = storage.Extruders[volumeIndex].Layers[1];
+				for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
 				{
 					if (config.continuousSpiralOuterPerimeter && partIndex > 0)
 					{
 						continue;
 					}
 
-					storage.raftOutline = storage.raftOutline.CreateUnion(layer.layerSliceData[partIndex].TotalOutline.Offset(extraDistanceAroundPart_um));
+					storage.raftOutline = storage.raftOutline.CreateUnion(layer.Islands[partIndex].IslandOutline.Offset(extraDistanceAroundPart_um));
 				}
 			}
 

@@ -28,7 +28,7 @@ namespace MatterHackers.MatterSlice
 
 	public class Skirt
 	{
-		public static void generateSkirt(SliceDataStorage storage, int distance, int extrusionWidth_um, int numberOfLoops, int minLength, int initialLayerHeight, ConfigSettings config)
+		public static void generateSkirt(LayerDataStorage storage, int distance, int extrusionWidth_um, int numberOfLoops, int minLength, int initialLayerHeight, ConfigSettings config)
 		{
 			bool externalOnly = (distance > 0);
 			for (int skirtLoop = 0; skirtLoop < numberOfLoops; skirtLoop++)
@@ -36,20 +36,20 @@ namespace MatterHackers.MatterSlice
 				int offsetDistance = distance + extrusionWidth_um * skirtLoop + extrusionWidth_um / 2;
 
 				Polygons skirtPolygons = new Polygons(storage.wipeTower.Offset(offsetDistance));
-				for (int volumeIndex = 0; volumeIndex < storage.AllPartsLayers.Count; volumeIndex++)
+				for (int volumeIndex = 0; volumeIndex < storage.Extruders.Count; volumeIndex++)
 				{
 					if (config.continuousSpiralOuterPerimeter && volumeIndex > 0)
 					{
 						continue;
 					}
 
-					if (storage.AllPartsLayers[volumeIndex].Layers.Count < 1)
+					if (storage.Extruders[volumeIndex].Layers.Count < 1)
 					{
 						continue;
 					}
 
-					SliceLayerParts layer = storage.AllPartsLayers[volumeIndex].Layers[0];
-					for (int partIndex = 0; partIndex < layer.layerSliceData.Count; partIndex++)
+					SliceLayer layer = storage.Extruders[volumeIndex].Layers[0];
+					for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
 					{
 						if (config.continuousSpiralOuterPerimeter && partIndex > 0)
 						{
@@ -59,13 +59,13 @@ namespace MatterHackers.MatterSlice
 						if (externalOnly)
 						{
 							Polygons p = new Polygons();
-							p.Add(layer.layerSliceData[partIndex].TotalOutline[0]);
+							p.Add(layer.Islands[partIndex].IslandOutline[0]);
 							//p.Add(IntPointHelper.CreateConvexHull(layer.parts[partIndex].outline[0]));
 							skirtPolygons = skirtPolygons.CreateUnion(p.Offset(offsetDistance));
 						}
 						else
 						{
-							skirtPolygons = skirtPolygons.CreateUnion(layer.layerSliceData[partIndex].TotalOutline.Offset(offsetDistance));
+							skirtPolygons = skirtPolygons.CreateUnion(layer.Islands[partIndex].IslandOutline.Offset(offsetDistance));
 						}
 					}
 				}

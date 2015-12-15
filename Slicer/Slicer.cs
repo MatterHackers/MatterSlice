@@ -47,7 +47,7 @@ namespace MatterHackers.MatterSlice
 
 	public class Slicer
 	{
-		public List<SliceLayer> layers = new List<SliceLayer>();
+		public List<SlicerLayer> layers = new List<SlicerLayer>();
 		public Point3 modelSize;
 		public Point3 modelMin;
 
@@ -82,7 +82,7 @@ namespace MatterHackers.MatterSlice
 				{
 					z = initialLayerThickness_um + layerThickness_um / 2 + layerThickness_um * (layerIndex - 1);
 				}
-				layers.Add(new SliceLayer(z));
+				layers.Add(new SlicerLayer(z));
 			}
 
 			for (int faceIndex = 0; faceIndex < ov.facesTriangle.Count; faceIndex++)

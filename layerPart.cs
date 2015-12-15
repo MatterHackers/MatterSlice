@@ -41,50 +41,51 @@ namespace MatterHackers.MatterSlice
 		It's also the first step that stores the result in the "data storage" so all other steps can access it.
 		*/
 
-		private static void CreateLayerWithParts(SliceLayerParts storageLayer, SliceLayer layer)
+		private static void CreateLayerWithParts(SliceLayer singleExtruder, SlicerLayer layer)
 		{
-			List<Polygons> separtedIntoIslands = layer.PolygonList.ProcessIntoSeparatIslands();
+			singleExtruder.TotalOutline = layer.PolygonList;
+            List<Polygons> separtedIntoIslands = layer.PolygonList.ProcessIntoSeparatIslands();
 
 			for (int islandIndex = 0; islandIndex < separtedIntoIslands.Count; islandIndex++)
 			{
-				storageLayer.layerSliceData.Add(new MeshLayerData());
-				storageLayer.layerSliceData[islandIndex].TotalOutline = separtedIntoIslands[islandIndex];
+				singleExtruder.Islands.Add(new LayerIsland());
+				singleExtruder.Islands[islandIndex].IslandOutline = separtedIntoIslands[islandIndex];
 
-				storageLayer.layerSliceData[islandIndex].BoundingBox.Calculate(storageLayer.layerSliceData[islandIndex].TotalOutline);
+				singleExtruder.Islands[islandIndex].BoundingBox.Calculate(singleExtruder.Islands[islandIndex].IslandOutline);
 			}
 		}
 
-		public static void CreateLayerParts(PartLayers storage, Slicer slicer)
+		public static void CreateLayerParts(ExtruderLayers singleExtruder, Slicer slicer)
 		{
 			for (int layerIndex = 0; layerIndex < slicer.layers.Count; layerIndex++)
 			{
-				storage.Layers.Add(new SliceLayerParts());
-				storage.Layers[layerIndex].printZ = slicer.layers[layerIndex].Z;
-				LayerPart.CreateLayerWithParts(storage.Layers[layerIndex], slicer.layers[layerIndex]);
+				singleExtruder.Layers.Add(new SliceLayer());
+				singleExtruder.Layers[layerIndex].LayerZ = slicer.layers[layerIndex].Z;
+				LayerPart.CreateLayerWithParts(singleExtruder.Layers[layerIndex], slicer.layers[layerIndex]);
 			}
 		}
 
-		public static void DumpLayerparts(SliceDataStorage storage, string filename)
+		public static void DumpLayerparts(LayerDataStorage storage, string filename)
 		{
 			StreamWriter streamToWriteTo = new StreamWriter(filename);
 			streamToWriteTo.Write("<!DOCTYPE html><html><body>");
 			Point3 modelSize = storage.modelSize;
 			Point3 modelMin = storage.modelMin;
 
-			for (int volumeIdx = 0; volumeIdx < storage.AllPartsLayers.Count; volumeIdx++)
+			for (int volumeIdx = 0; volumeIdx < storage.Extruders.Count; volumeIdx++)
 			{
-				for (int layerNr = 0; layerNr < storage.AllPartsLayers[volumeIdx].Layers.Count; layerNr++)
+				for (int layerNr = 0; layerNr < storage.Extruders[volumeIdx].Layers.Count; layerNr++)
 				{
 					streamToWriteTo.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style=\"width: 500px; height:500px\">\n");
-					SliceLayerParts layer = storage.AllPartsLayers[volumeIdx].Layers[layerNr];
-					for (int i = 0; i < layer.layerSliceData.Count; i++)
+					SliceLayer layer = storage.Extruders[volumeIdx].Layers[layerNr];
+					for (int i = 0; i < layer.Islands.Count; i++)
 					{
-						MeshLayerData part = layer.layerSliceData[i];
-						for (int j = 0; j < part.TotalOutline.Count; j++)
+						LayerIsland part = layer.Islands[i];
+						for (int j = 0; j < part.IslandOutline.Count; j++)
 						{
 							streamToWriteTo.Write("<polygon points=\"");
-							for (int k = 0; k < part.TotalOutline[j].Count; k++)
-								streamToWriteTo.Write("{0},{1} ".FormatWith((float)(part.TotalOutline[j][k].X - modelMin.x) / modelSize.x * 500, (float)(part.TotalOutline[j][k].Y - modelMin.y) / modelSize.y * 500));
+							for (int k = 0; k < part.IslandOutline[j].Count; k++)
+								streamToWriteTo.Write("{0},{1} ".FormatWith((float)(part.IslandOutline[j][k].X - modelMin.x) / modelSize.x * 500, (float)(part.IslandOutline[j][k].Y - modelMin.y) / modelSize.y * 500));
 							if (j == 0)
 								streamToWriteTo.Write("\" style=\"fill:gray; stroke:black;stroke-width:1\" />\n");
 							else

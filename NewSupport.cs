@@ -64,7 +64,7 @@ namespace MatterHackers.MatterSlice
 			return new Polygons();
         }
 
-		public NewSupport(ConfigSettings config, PartLayers storage, double grabDistanceMm)
+		public NewSupport(ConfigSettings config, ExtruderLayers storage, double grabDistanceMm)
         {
             this.grabDistanceMm = grabDistanceMm;
             // create starting support outlines
@@ -100,7 +100,7 @@ namespace MatterHackers.MatterSlice
 			return polygonsList;
         }
 
-		private static List<Polygons> CalculateAllPartOutlines(ConfigSettings config, PartLayers storage)
+		private static List<Polygons> CalculateAllPartOutlines(ConfigSettings config, ExtruderLayers storage)
         {
             int numLayers = storage.Layers.Count;
 
@@ -110,11 +110,11 @@ namespace MatterHackers.MatterSlice
             {
                 Polygons allOutlines = new Polygons();
 
-                SliceLayerParts curLayer = storage.Layers[layerIndex];
-                for (int curLayerPartIndex = 0; curLayerPartIndex < curLayer.layerSliceData.Count; curLayerPartIndex++)
+                SliceLayer curLayer = storage.Layers[layerIndex];
+                for (int curLayerPartIndex = 0; curLayerPartIndex < curLayer.Islands.Count; curLayerPartIndex++)
                 {
-                    MeshLayerData curPart = curLayer.layerSliceData[curLayerPartIndex];
-                    Polygons curLayerPolys = curPart.TotalOutline;
+                    LayerIsland curPart = curLayer.Islands[curLayerPartIndex];
+                    Polygons curLayerPolys = curPart.IslandOutline;
                     allOutlines = allOutlines.CreateUnion(curLayerPolys);
                     allOutlines = Clipper.CleanPolygons(allOutlines, cleanDistance_um);
                 }

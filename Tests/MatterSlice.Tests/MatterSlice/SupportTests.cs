@@ -63,7 +63,7 @@ namespace MatterHackers.MatterSlice.Tests
                     partOutlines.Add(cubeOutline);
                 }
 
-                PartLayers layerData = CreateLayerData(partOutlines);
+                ExtruderLayers layerData = CreateLayerData(partOutlines);
                 NewSupport supportGenerator = new NewSupport(config, layerData, 0);
 
                 // check the all part outlines
@@ -148,7 +148,7 @@ namespace MatterHackers.MatterSlice.Tests
                     partOutlines.Add(cubeOutline);
                 }
 
-                PartLayers layerData = CreateLayerData(partOutlines);
+                ExtruderLayers layerData = CreateLayerData(partOutlines);
                 NewSupport supportGenerator = new NewSupport(config, layerData, 1);
 
                 // check the all part outlines
@@ -281,7 +281,7 @@ namespace MatterHackers.MatterSlice.Tests
                     partOutlines.Add(topCubeOutline);
                 }
 
-                PartLayers layerData = CreateLayerData(partOutlines);
+                ExtruderLayers layerData = CreateLayerData(partOutlines);
                 NewSupport supportGenerator = new NewSupport(config, layerData, 1);
 
                 // check the all part outlines
@@ -356,19 +356,19 @@ namespace MatterHackers.MatterSlice.Tests
             }
         }
 
-        private static PartLayers CreateLayerData(List<Polygons> totalLayerOutlines)
+        private static ExtruderLayers CreateLayerData(List<Polygons> totalLayerOutlines)
         {
             int numLayers = totalLayerOutlines.Count;
-            PartLayers layerData = new PartLayers();
-            layerData.Layers = new List<SliceLayerParts>();
+            ExtruderLayers layerData = new ExtruderLayers();
+            layerData.Layers = new List<SliceLayer>();
             for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
             {
-                SliceLayerParts layer = new SliceLayerParts();
-                layer.layerSliceData = new List<MeshLayerData>();
-                MeshLayerData part = new MeshLayerData();
-                part.TotalOutline = totalLayerOutlines[layerIndex];
+                SliceLayer layer = new SliceLayer();
+                layer.Islands = new List<LayerIsland>();
+                LayerIsland part = new LayerIsland();
+                part.IslandOutline = totalLayerOutlines[layerIndex];
                 Inset.GenerateInsets(part, 500, 500, 2);
-                layer.layerSliceData.Add(part);
+                layer.Islands.Add(part);
                 layerData.Layers.Add(layer);
             }
             return layerData;
