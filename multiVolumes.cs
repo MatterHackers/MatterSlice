@@ -134,25 +134,25 @@ namespace MatterHackers.MatterSlice
             switch (booleanType)
             {
                 case BooleanType.Union:
-                    if (layersB.TotalOutline.Count == 0)
+                    if (layersB.AllOutlines.Count == 0)
                     {
                         // do nothing we will keep the content of A
                     }
-                    else if (layersA.TotalOutline.Count == 0)
+                    else if (layersA.AllOutlines.Count == 0)
                     {
                         // there is nothing in A so set it to the content of B
-                        layersA.TotalOutline = layersB.TotalOutline;
+                        layersA.AllOutlines = layersB.AllOutlines;
                     }
                     else
                     {
-                        layersA.TotalOutline = layersA.TotalOutline.CreateUnion(layersB.TotalOutline);
+                        layersA.AllOutlines = layersA.AllOutlines.CreateUnion(layersB.AllOutlines);
                     }
                     break;
                 case BooleanType.Difference:
-                    layersA.TotalOutline = layersA.TotalOutline.CreateDifference(layersB.TotalOutline);
+                    layersA.AllOutlines = layersA.AllOutlines.CreateDifference(layersB.AllOutlines);
                     break;
                 case BooleanType.Intersection:
-                    layersA.TotalOutline = layersA.TotalOutline.CreateIntersection(layersB.TotalOutline);
+                    layersA.AllOutlines = layersA.AllOutlines.CreateIntersection(layersB.AllOutlines);
                     break;
             }
         }
@@ -176,7 +176,7 @@ namespace MatterHackers.MatterSlice
 					{
 						SliceLayer layerToRemoveFrom = extruders[extruderIndex].Layers[layerIndex];
 						SliceLayer layerToRemove = extruders[otherExtuderIndex].Layers[layerIndex];
-                        layerToRemoveFrom.TotalOutline = layerToRemoveFrom.TotalOutline.CreateDifference(layerToRemove.TotalOutline);
+                        layerToRemoveFrom.AllOutlines = layerToRemoveFrom.AllOutlines.CreateDifference(layerToRemove.AllOutlines);
 					}
 				}
 			}
@@ -197,14 +197,14 @@ namespace MatterHackers.MatterSlice
 				for (int extruderIndex = 0; extruderIndex < extruders.Count; extruderIndex++)
 				{
 					SliceLayer layer1 = extruders[extruderIndex].Layers[layerIndex];
-                    fullLayer = fullLayer.CreateUnion(layer1.TotalOutline.Offset(20));
+                    fullLayer = fullLayer.CreateUnion(layer1.AllOutlines.Offset(20));
 				}
 				fullLayer = fullLayer.Offset(-20);
 
 				for (int extruderIndex = 0; extruderIndex < extruders.Count; extruderIndex++)
 				{
 					SliceLayer layer1 = extruders[extruderIndex].Layers[layerIndex];
-                    layer1.TotalOutline = fullLayer.CreateIntersection(layer1.TotalOutline.Offset(overlapUm / 2));
+                    layer1.AllOutlines = fullLayer.CreateIntersection(layer1.AllOutlines.Offset(overlapUm / 2));
 				}
 			}
 		}

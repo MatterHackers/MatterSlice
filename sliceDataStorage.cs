@@ -56,12 +56,12 @@ namespace MatterHackers.MatterSlice
 	public class SliceLayer
 	{
 		public long LayerZ;
-		public Polygons TotalOutline = new Polygons();
+		public Polygons AllOutlines = new Polygons();
         public List<LayerIsland> Islands = null;
 
         public void CreateIslandData()
         {
-            List<Polygons> separtedIntoIslands = TotalOutline.ProcessIntoSeparatIslands();
+            List<Polygons> separtedIntoIslands = AllOutlines.ProcessIntoSeparatIslands();
 
             Islands = new List<LayerIsland>();
             for (int islandIndex = 0; islandIndex < separtedIntoIslands.Count; islandIndex++)
@@ -93,9 +93,9 @@ namespace MatterHackers.MatterSlice
                 Layers.Add(new SliceLayer());
                 Layers[layerIndex].LayerZ = slicer.layers[layerIndex].Z;
 
-                Layers[layerIndex].TotalOutline = slicer.layers[layerIndex].PolygonList;
+                Layers[layerIndex].AllOutlines = slicer.layers[layerIndex].PolygonList;
 
-                Layers[layerIndex].TotalOutline = Layers[layerIndex].TotalOutline.GetCorrectedWinding();
+                Layers[layerIndex].AllOutlines = Layers[layerIndex].AllOutlines.GetCorrectedWinding();
             }
         }
     }
