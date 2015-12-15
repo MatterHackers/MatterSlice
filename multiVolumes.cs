@@ -33,6 +33,7 @@ namespace MatterHackers.MatterSlice
 		int currentExtruder = 0;
 		int numberOfOpens = 0;
 		public List<PartLayers> FinalLayers { get; internal set; }
+        List<int> layersToRemove = new List<int>();
 		Stack<int> operandsIndexStack = new Stack<int>();
 		enum BooleanType { None, Union, Difference, Intersection };
 
@@ -82,16 +83,17 @@ namespace MatterHackers.MatterSlice
 				if(typeToDo != BooleanType.None)
 				{
 					numberOfOpens--;
-					int destMeshIndex = operandsIndexStack.Pop();
-					int meshToAddIndex = operandsIndexStack.Pop();
+                    int meshToAddIndex = operandsIndexStack.Pop();
+                    int destMeshIndex = operandsIndexStack.Pop();
 					for (int layerIndex = 0; layerIndex < allPartsLayers[destMeshIndex].Layers.Count; layerIndex++)
 					{
 						SliceLayerParts layersToUnionInto = allPartsLayers[destMeshIndex].Layers[layerIndex];
 						SliceLayerParts layersToAddToUnion = allPartsLayers[meshToAddIndex].Layers[layerIndex];
 						DoLayerBooleans(layersToUnionInto, layersToAddToUnion, typeToDo);
 					}
+                    layersToRemove.Add(meshToAddIndex);
 
-					operandsIndexStack.Push(destMeshIndex);
+                    operandsIndexStack.Push(destMeshIndex);
 
 					if (numberOfOpens == 0)
 					{
@@ -100,10 +102,11 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			while (allPartsLayers.Count > 1)
-			{
-				allPartsLayers.RemoveAt(1);
-			}
+            layersToRemove.Sort();
+            for(int i = layersToRemove.Count - 1; i>= 0; i--)
+            {
+                allPartsLayers.RemoveAt(layersToRemove[i]);
+            }
 		}
 
 		private int GetNextNumber(string numberString, int index, out int skipCount)
@@ -126,7 +129,21 @@ namespace MatterHackers.MatterSlice
 				switch (booleanType)
 				{
 					case BooleanType.Union:
-						layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline = layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline.CreateUnion(layersToAddToUnion.layerSliceData[sliceDataIndex].TotalOutline);
+                        if(layersToAddToUnion.layerSliceData.Count == 0 
+                            || layersToAddToUnion.layerSliceData[sliceDataIndex] == null)
+                        {
+                            int a = 0;
+                            // do nothing
+                        }
+                        if (layersToUnionInto.layerSliceData.Count == 0
+                            || layersToUnionInto.layerSliceData[sliceDataIndex] == null)
+                        {
+                            layersToUnionInto.layerSliceData[sliceDataIndex] = layersToAddToUnion.layerSliceData[sliceDataIndex];
+                        }
+                        else
+                        {
+                            layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline = layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline.CreateUnion(layersToAddToUnion.layerSliceData[sliceDataIndex].TotalOutline);
+                        }
 						break;
 					case BooleanType.Difference:
 						layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline = layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline.CreateDifference(layersToAddToUnion.layerSliceData[sliceDataIndex].TotalOutline);
@@ -144,8 +161,6 @@ namespace MatterHackers.MatterSlice
 		public static void ProcessBooleans(List<PartLayers> allPartsLayers, string booleanOpperations)
 		{
 			BooleanProcessing processor = new BooleanProcessing(allPartsLayers, booleanOpperations);
-
-			allPartsLayers = processor.FinalLayers;
 		}
 
 		public static void RemoveVolumesIntersections(List<PartLayers> volumes)
