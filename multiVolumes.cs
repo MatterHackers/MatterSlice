@@ -28,133 +28,137 @@ namespace MatterHackers.MatterSlice
 	using System.Linq;
 	using Polygons = List<List<IntPoint>>;
 
-	public class BooleanProcessing
-	{
-		int currentExtruder = 0;
-		int numberOfOpens = 0;
-		public List<PartLayers> FinalLayers { get; internal set; }
+    public class BooleanProcessing
+    {
+        int currentExtruder = 0;
+        int numberOfOpens = 0;
+        public List<PartLayers> FinalLayers { get; internal set; }
         List<int> layersToRemove = new List<int>();
-		Stack<int> operandsIndexStack = new Stack<int>();
-		enum BooleanType { None, Union, Difference, Intersection };
+        Stack<int> operandsIndexStack = new Stack<int>();
+        enum BooleanType { None, Union, Difference, Intersection };
 
-		public BooleanProcessing(List<PartLayers> allPartsLayers, string booleanOpperations)
-		{
-			int parseIndex = 0;
-			while (parseIndex < booleanOpperations.Length)
-			{
-				BooleanType typeToDo = BooleanType.None;
+        public BooleanProcessing(List<PartLayers> allPartsLayers, string booleanOpperations)
+        {
+            int parseIndex = 0;
+            while (parseIndex < booleanOpperations.Length)
+            {
+                BooleanType typeToDo = BooleanType.None;
 
-				switch (booleanOpperations[parseIndex])
-				{
-					case '(': // start union
-					case '[': // start intersection
-					case '{': // start difference
-						numberOfOpens++;
-						parseIndex++;
-						break;
+                switch (booleanOpperations[parseIndex])
+                {
+                    case '(': // start union
+                    case '[': // start intersection
+                    case '{': // start difference
+                        numberOfOpens++;
+                        parseIndex++;
+                        break;
 
-					case ')': // end union
-						typeToDo = BooleanType.Union;
-						parseIndex++;
-						break;
+                    case ')': // end union
+                        typeToDo = BooleanType.Union;
+                        parseIndex++;
+                        break;
 
-					case '}': // end difference
-						typeToDo = BooleanType.Difference;
-						parseIndex++;
-						break;
+                    case '}': // end difference
+                        typeToDo = BooleanType.Difference;
+                        parseIndex++;
+                        break;
 
-					case ']': // end intersection
-						typeToDo = BooleanType.Intersection;
-						parseIndex++;
-						break;
+                    case ']': // end intersection
+                        typeToDo = BooleanType.Intersection;
+                        parseIndex++;
+                        break;
 
-					case ',':
-						parseIndex++;
-						break;
+                    case ',':
+                        parseIndex++;
+                        break;
 
-					default:
-						// get the number for the operand index
-						int skipCount = 0;
-						operandsIndexStack.Push(GetNextNumber(booleanOpperations, parseIndex, out skipCount));
-						parseIndex += skipCount;
-						break;
-				}
+                    default:
+                        // get the number for the operand index
+                        int skipCount = 0;
+                        operandsIndexStack.Push(GetNextNumber(booleanOpperations, parseIndex, out skipCount));
+                        parseIndex += skipCount;
+                        break;
+                }
 
-				if(typeToDo != BooleanType.None)
-				{
-					numberOfOpens--;
+                if (typeToDo != BooleanType.None)
+                {
+                    numberOfOpens--;
                     int meshToAddIndex = operandsIndexStack.Pop();
                     int destMeshIndex = operandsIndexStack.Pop();
-					for (int layerIndex = 0; layerIndex < allPartsLayers[destMeshIndex].Layers.Count; layerIndex++)
-					{
-						SliceLayerParts layersToUnionInto = allPartsLayers[destMeshIndex].Layers[layerIndex];
-						SliceLayerParts layersToAddToUnion = allPartsLayers[meshToAddIndex].Layers[layerIndex];
-						DoLayerBooleans(layersToUnionInto, layersToAddToUnion, typeToDo);
-					}
+                    int layersToMerge = Math.Max(allPartsLayers[meshToAddIndex].Layers.Count, allPartsLayers[destMeshIndex].Layers.Count);
+                    for (int layerIndex = 0; layerIndex < allPartsLayers[destMeshIndex].Layers.Count; layerIndex++)
+                    {
+                        SliceLayerParts layersToUnionInto = allPartsLayers[destMeshIndex].Layers[layerIndex];
+                        SliceLayerParts layersToAddToUnion = allPartsLayers[meshToAddIndex].Layers[layerIndex];
+                        DoLayerBooleans(layersToUnionInto, layersToAddToUnion, typeToDo);
+                    }
                     layersToRemove.Add(meshToAddIndex);
 
                     operandsIndexStack.Push(destMeshIndex);
 
-					if (numberOfOpens == 0)
-					{
-						currentExtruder++;
-					}
-				}
-			}
+                    if (numberOfOpens == 0)
+                    {
+                        currentExtruder++;
+                    }
+                }
+            }
 
             layersToRemove.Sort();
-            for(int i = layersToRemove.Count - 1; i>= 0; i--)
+            for (int i = layersToRemove.Count - 1; i >= 0; i--)
             {
                 allPartsLayers.RemoveAt(layersToRemove[i]);
             }
-		}
+        }
 
-		private int GetNextNumber(string numberString, int index, out int skipCount)
-		{
-			string digits = new string(numberString.Substring(index).TakeWhile(c => Char.IsDigit(c)).ToArray());
-			skipCount = digits.Length;
+        private int GetNextNumber(string numberString, int index, out int skipCount)
+        {
+            string digits = new string(numberString.Substring(index).TakeWhile(c => Char.IsDigit(c)).ToArray());
+            skipCount = digits.Length;
             int result;
-			if (Int32.TryParse(digits, out result))
-			{
-				return result;
-			}
+            if (Int32.TryParse(digits, out result))
+            {
+                return result;
+            }
 
-			throw new FormatException("not a number");
-		}
+            throw new FormatException("not a number");
+        }
 
-		private static void DoLayerBooleans(SliceLayerParts layersToUnionInto, SliceLayerParts layersToAddToUnion, BooleanType booleanType)
-		{
-			for (int sliceDataIndex = 0; sliceDataIndex < layersToUnionInto.layerSliceData.Count; sliceDataIndex++)
-			{
-				switch (booleanType)
-				{
-					case BooleanType.Union:
-                        if(layersToAddToUnion.layerSliceData.Count == 0 
-                            || layersToAddToUnion.layerSliceData[sliceDataIndex] == null)
-                        {
-                            int a = 0;
-                            // do nothing
-                        }
-                        else if (layersToUnionInto.layerSliceData.Count == 0
-                            || layersToUnionInto.layerSliceData[sliceDataIndex] == null)
-                        {
-                            layersToUnionInto.layerSliceData[sliceDataIndex] = layersToAddToUnion.layerSliceData[sliceDataIndex];
-                        }
-                        else
-                        {
-                            layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline = layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline.CreateUnion(layersToAddToUnion.layerSliceData[sliceDataIndex].TotalOutline);
-                        }
-						break;
-					case BooleanType.Difference:
-						layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline = layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline.CreateDifference(layersToAddToUnion.layerSliceData[sliceDataIndex].TotalOutline);
-						break;
-					case BooleanType.Intersection:
-						layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline = layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline.CreateIntersection(layersToAddToUnion.layerSliceData[sliceDataIndex].TotalOutline);
-						break;
-				}
-			}
-		}
-	}	
+        private static void DoLayerBooleans(SliceLayerParts layersToUnionInto, SliceLayerParts layersToAddToUnion, BooleanType booleanType)
+        {
+            int sliceDataIndex = 0;
+            if (layersToAddToUnion.layerSliceData.Count > 1
+                || layersToUnionInto.layerSliceData.Count > 1)
+            {
+                throw new Exception("check this out. LBB");
+            }
+            switch (booleanType)
+            {
+                case BooleanType.Union:
+                    if (layersToAddToUnion.layerSliceData.Count == 0
+                        || layersToAddToUnion.layerSliceData[sliceDataIndex] == null)
+                    {
+                        int a = 0;
+                        // do nothing
+                    }
+                    else if (layersToUnionInto.layerSliceData.Count == 0
+                        || layersToUnionInto.layerSliceData[sliceDataIndex] == null)
+                    {
+                        layersToUnionInto.layerSliceData = layersToAddToUnion.layerSliceData;
+                    }
+                    else
+                    {
+                        layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline = layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline.CreateUnion(layersToAddToUnion.layerSliceData[sliceDataIndex].TotalOutline);
+                    }
+                    break;
+                case BooleanType.Difference:
+                    layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline = layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline.CreateDifference(layersToAddToUnion.layerSliceData[sliceDataIndex].TotalOutline);
+                    break;
+                case BooleanType.Intersection:
+                    layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline = layersToUnionInto.layerSliceData[sliceDataIndex].TotalOutline.CreateIntersection(layersToAddToUnion.layerSliceData[sliceDataIndex].TotalOutline);
+                    break;
+            }
+        }
+    }
 
 	public static class MultiVolumes
 	{

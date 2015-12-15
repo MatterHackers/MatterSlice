@@ -115,22 +115,15 @@ namespace MatterHackers.MatterSlice
             return Clipper.OpenPathsFromPolyTree(clippedLines);
         }
 
-        public static List<Polygons> CreateLayerOutlines(this Polygons polygons, LayerOpperation opperation)
+        public static List<Polygons> ProcessIntoSeparatIslands(this Polygons polygons)
         {
             List<Polygons> ret = new List<Polygons>();
             Clipper clipper = new Clipper();
             PolyTree resultPolyTree = new PolyTree();
             clipper.AddPaths(polygons, PolyType.ptSubject, true);
-            if (opperation == LayerOpperation.UnionAll)
-            {
-                clipper.Execute(ClipType.ctUnion, resultPolyTree, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
-            }
-            else
-            {
-                clipper.Execute(ClipType.ctUnion, resultPolyTree);
-            }
+            clipper.Execute(ClipType.ctUnion, resultPolyTree);
 
-            polygons._processPolyTreeNode(resultPolyTree, ret);
+            polygons.ProcessPolyTreeNodeIntoSeparatIslands(resultPolyTree, ret);
             return ret;
         }
 
@@ -356,7 +349,7 @@ namespace MatterHackers.MatterSlice
             return total;
         }
 
-        private static void _processPolyTreeNode(this Polygons polygonsIn, PolyNode node, List<Polygons> ret)
+        private static void ProcessPolyTreeNodeIntoSeparatIslands(this Polygons polygonsIn, PolyNode node, List<Polygons> ret)
         {
             for (int n = 0; n < node.ChildCount; n++)
             {
@@ -366,7 +359,7 @@ namespace MatterHackers.MatterSlice
                 for (int i = 0; i < child.ChildCount; i++)
                 {
                     polygons.Add(child.Childs[i].Contour);
-                    polygonsIn._processPolyTreeNode(child.Childs[i], ret);
+                    polygonsIn.ProcessPolyTreeNodeIntoSeparatIslands(child.Childs[i], ret);
                 }
                 ret.Add(polygons);
             }

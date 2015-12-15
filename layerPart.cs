@@ -43,15 +43,14 @@ namespace MatterHackers.MatterSlice
 
 		private static void CreateLayerWithParts(SliceLayerParts storageLayer, SliceLayer layer)
 		{
-			List<Polygons> result;
-			result = layer.PolygonList.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd);
+			List<Polygons> separtedIntoIslands = layer.PolygonList.ProcessIntoSeparatIslands();
 
-			for (int i = 0; i < result.Count; i++)
+			for (int islandIndex = 0; islandIndex < separtedIntoIslands.Count; islandIndex++)
 			{
 				storageLayer.layerSliceData.Add(new MeshLayerData());
-				storageLayer.layerSliceData[i].TotalOutline = result[i];
+				storageLayer.layerSliceData[islandIndex].TotalOutline = separtedIntoIslands[islandIndex];
 
-				storageLayer.layerSliceData[i].BoundingBox.Calculate(storageLayer.layerSliceData[i].TotalOutline);
+				storageLayer.layerSliceData[islandIndex].BoundingBox.Calculate(storageLayer.layerSliceData[islandIndex].TotalOutline);
 			}
 		}
 
