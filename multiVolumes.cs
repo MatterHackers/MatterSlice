@@ -34,12 +34,13 @@ namespace MatterHackers.MatterSlice
         int numberOfOpens = 0;
         public List<ExtruderLayers> FinalLayers { get; internal set; }
         List<int> layersToRemove = new List<int>();
-        Stack<int> operandsIndexStack = new Stack<int>();
+        Stack<int> extruderIndexStack = new Stack<int>();
         enum BooleanType { None, Union, Difference, Intersection };
 
-        public BooleanProcessing(List<ExtruderLayers> allPartsLayers, string booleanOpperations)
+        public BooleanProcessing(List<ExtruderLayers> extruders, string booleanOpperations)
         {
             int parseIndex = 0;
+            int totalLayers = extruders[0].Layers.Count;
             while (parseIndex < booleanOpperations.Length)
             {
                 BooleanType typeToDo = BooleanType.None;
@@ -75,7 +76,7 @@ namespace MatterHackers.MatterSlice
                     default:
                         // get the number for the operand index
                         int skipCount = 0;
-                        operandsIndexStack.Push(GetNextNumber(booleanOpperations, parseIndex, out skipCount));
+                        extruderIndexStack.Push(GetNextNumber(booleanOpperations, parseIndex, out skipCount));
                         parseIndex += skipCount;
                         break;
                 }
@@ -83,18 +84,23 @@ namespace MatterHackers.MatterSlice
                 if (typeToDo != BooleanType.None)
                 {
                     numberOfOpens--;
-                    int meshToAddIndex = operandsIndexStack.Pop();
-                    int destMeshIndex = operandsIndexStack.Pop();
-                    int layersToMerge = Math.Max(allPartsLayers[meshToAddIndex].Layers.Count, allPartsLayers[destMeshIndex].Layers.Count);
-                    for (int layerIndex = 0; layerIndex < allPartsLayers[destMeshIndex].Layers.Count; layerIndex++)
+                    int extruderBIndex = extruderIndexStack.Pop();
+                    int extruderAIndex = extruderIndexStack.Pop();
+                    if (extruders[extruderBIndex].Layers.Count != extruders[extruderAIndex].Layers.Count ||
+                        extruders[extruderAIndex].Layers.Count != totalLayers)
                     {
-                        SliceLayer layersToUnionInto = allPartsLayers[destMeshIndex].Layers[layerIndex];
-                        SliceLayer layersToAddToUnion = allPartsLayers[meshToAddIndex].Layers[layerIndex];
-                        DoLayerBooleans(layersToUnionInto, layersToAddToUnion, typeToDo);
+                        throw new Exception("These should be the same.");
                     }
-                    layersToRemove.Add(meshToAddIndex);
 
-                    operandsIndexStack.Push(destMeshIndex);
+                    for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
+                    {
+                        SliceLayer layerA = extruders[extruderAIndex].Layers[layerIndex];
+                        SliceLayer layerB = extruders[extruderBIndex].Layers[layerIndex];
+                        DoLayerBooleans(layerA, layerB, typeToDo);
+                    }
+                    layersToRemove.Add(extruderBIndex);
+
+                    extruderIndexStack.Push(extruderAIndex);
 
                     if (numberOfOpens == 0)
                     {
@@ -106,7 +112,7 @@ namespace MatterHackers.MatterSlice
             layersToRemove.Sort();
             for (int i = layersToRemove.Count - 1; i >= 0; i--)
             {
-                allPartsLayers.RemoveAt(layersToRemove[i]);
+                extruders.RemoveAt(layersToRemove[i]);
             }
         }
 
@@ -123,38 +129,30 @@ namespace MatterHackers.MatterSlice
             throw new FormatException("not a number");
         }
 
-        private static void DoLayerBooleans(SliceLayer layersToUnionInto, SliceLayer layersToAddToUnion, BooleanType booleanType)
+        private static void DoLayerBooleans(SliceLayer layersA, SliceLayer layersB, BooleanType booleanType)
         {
-            int sliceDataIndex = 0;
-            if (layersToAddToUnion.Islands.Count > 1
-                || layersToUnionInto.Islands.Count > 1)
-            {
-                throw new Exception("check this out. LBB");
-            }
             switch (booleanType)
             {
                 case BooleanType.Union:
-                    if (layersToAddToUnion.Islands.Count == 0
-                        || layersToAddToUnion.Islands[sliceDataIndex] == null)
+                    if (layersB.TotalOutline.Count == 0)
                     {
-                        int a = 0;
-                        // do nothing
+                        // do nothing we will keep the content of A
                     }
-                    else if (layersToUnionInto.Islands.Count == 0
-                        || layersToUnionInto.Islands[sliceDataIndex] == null)
+                    else if (layersA.TotalOutline.Count == 0)
                     {
-                        layersToUnionInto.Islands = layersToAddToUnion.Islands;
+                        // there is nothing in A so set it to the content of B
+                        layersA.TotalOutline = layersB.TotalOutline;
                     }
                     else
                     {
-                        layersToUnionInto.Islands[sliceDataIndex].IslandOutline = layersToUnionInto.Islands[sliceDataIndex].IslandOutline.CreateUnion(layersToAddToUnion.Islands[sliceDataIndex].IslandOutline);
+                        layersA.TotalOutline = layersA.TotalOutline.CreateUnion(layersB.TotalOutline);
                     }
                     break;
                 case BooleanType.Difference:
-                    layersToUnionInto.Islands[sliceDataIndex].IslandOutline = layersToUnionInto.Islands[sliceDataIndex].IslandOutline.CreateDifference(layersToAddToUnion.Islands[sliceDataIndex].IslandOutline);
+                    layersA.TotalOutline = layersA.TotalOutline.CreateDifference(layersB.TotalOutline);
                     break;
                 case BooleanType.Intersection:
-                    layersToUnionInto.Islands[sliceDataIndex].IslandOutline = layersToUnionInto.Islands[sliceDataIndex].IslandOutline.CreateIntersection(layersToAddToUnion.Islands[sliceDataIndex].IslandOutline);
+                    layersA.TotalOutline = layersA.TotalOutline.CreateIntersection(layersB.TotalOutline);
                     break;
             }
         }
@@ -167,24 +165,18 @@ namespace MatterHackers.MatterSlice
 			BooleanProcessing processor = new BooleanProcessing(allPartsLayers, booleanOpperations);
 		}
 
-		public static void RemoveVolumesIntersections(List<ExtruderLayers> volumes)
+		public static void RemoveVolumesIntersections(List<ExtruderLayers> extruders)
 		{
 			//Go trough all the volumes, and remove the previous volume outlines from our own outline, so we never have overlapped areas.
-			for (int volumeToRemoveFromIndex = volumes.Count - 1; volumeToRemoveFromIndex >= 0; volumeToRemoveFromIndex--)
+			for (int extruderIndex = extruders.Count - 1; extruderIndex >= 0; extruderIndex--)
 			{
-				for (int volumeToRemoveIndex = volumeToRemoveFromIndex - 1; volumeToRemoveIndex >= 0; volumeToRemoveIndex--)
+				for (int otherExtuderIndex = extruderIndex - 1; otherExtuderIndex >= 0; otherExtuderIndex--)
 				{
-					for (int layerIndex = 0; layerIndex < volumes[volumeToRemoveFromIndex].Layers.Count; layerIndex++)
+					for (int layerIndex = 0; layerIndex < extruders[extruderIndex].Layers.Count; layerIndex++)
 					{
-						SliceLayer layerToRemoveFrom = volumes[volumeToRemoveFromIndex].Layers[layerIndex];
-						SliceLayer layerToRemove = volumes[volumeToRemoveIndex].Layers[layerIndex];
-						for (int partToRemoveFromIndex = 0; partToRemoveFromIndex < layerToRemoveFrom.Islands.Count; partToRemoveFromIndex++)
-						{
-							for (int partToRemove = 0; partToRemove < layerToRemove.Islands.Count; partToRemove++)
-							{
-								layerToRemoveFrom.Islands[partToRemoveFromIndex].IslandOutline = layerToRemoveFrom.Islands[partToRemoveFromIndex].IslandOutline.CreateDifference(layerToRemove.Islands[partToRemove].IslandOutline);
-							}
-						}
+						SliceLayer layerToRemoveFrom = extruders[extruderIndex].Layers[layerIndex];
+						SliceLayer layerToRemove = extruders[otherExtuderIndex].Layers[layerIndex];
+                        layerToRemoveFrom.TotalOutline = layerToRemoveFrom.TotalOutline.CreateDifference(layerToRemove.TotalOutline);
 					}
 				}
 			}
@@ -192,33 +184,27 @@ namespace MatterHackers.MatterSlice
 
 		//Expand each layer a bit and then keep the extra overlapping parts that overlap with other volumes.
 		//This generates some overlap in dual extrusion, for better bonding in touching parts.
-		public static void OverlapMultipleVolumesSlightly(List<ExtruderLayers> volumes, int overlap)
+		public static void OverlapMultipleVolumesSlightly(List<ExtruderLayers> extruders, int overlapUm)
 		{
-			if (volumes.Count < 2 || overlap <= 0)
+			if (extruders.Count < 2 || overlapUm <= 0)
 			{
 				return;
 			}
 
-			for (int layerIndex = 0; layerIndex < volumes[0].Layers.Count; layerIndex++)
+			for (int layerIndex = 0; layerIndex < extruders[0].Layers.Count; layerIndex++)
 			{
 				Polygons fullLayer = new Polygons();
-				for (int volIdx = 0; volIdx < volumes.Count; volIdx++)
+				for (int extruderIndex = 0; extruderIndex < extruders.Count; extruderIndex++)
 				{
-					SliceLayer layer1 = volumes[volIdx].Layers[layerIndex];
-					for (int p1 = 0; p1 < layer1.Islands.Count; p1++)
-					{
-						fullLayer = fullLayer.CreateUnion(layer1.Islands[p1].IslandOutline.Offset(20));
-					}
+					SliceLayer layer1 = extruders[extruderIndex].Layers[layerIndex];
+                    fullLayer = fullLayer.CreateUnion(layer1.TotalOutline.Offset(20));
 				}
 				fullLayer = fullLayer.Offset(-20);
 
-				for (int volumeIndex = 0; volumeIndex < volumes.Count; volumeIndex++)
+				for (int extruderIndex = 0; extruderIndex < extruders.Count; extruderIndex++)
 				{
-					SliceLayer layer1 = volumes[volumeIndex].Layers[layerIndex];
-					for (int partIndex = 0; partIndex < layer1.Islands.Count; partIndex++)
-					{
-						layer1.Islands[partIndex].IslandOutline = fullLayer.CreateIntersection(layer1.Islands[partIndex].IslandOutline.Offset(overlap / 2));
-					}
+					SliceLayer layer1 = extruders[extruderIndex].Layers[layerIndex];
+                    layer1.TotalOutline = fullLayer.CreateIntersection(layer1.TotalOutline.Offset(overlapUm / 2));
 				}
 			}
 		}

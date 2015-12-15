@@ -48,7 +48,7 @@ namespace MatterHackers.MatterSlice
 		public int polygonIndex;
 	}
 
-	public class SlicerLayer
+	public class MeshProcessingLayer
 	{
 		public Polygons PolygonList = new Polygons();
 		public List<SlicePerimeterSegment> SegmentList = new List<SlicePerimeterSegment>();
@@ -56,12 +56,12 @@ namespace MatterHackers.MatterSlice
 		private Polygons openPolygonList = new Polygons();
 		private int z;
 
-		public SlicerLayer(int z)
+		public MeshProcessingLayer(int z)
 		{
 			this.z = z;
 		}
 
-		public SlicerLayer(int z, string segmentListData)
+		public MeshProcessingLayer(int z, string segmentListData)
 		{
 			this.z = z;
 			SegmentList = CreateSegmentListFromString(segmentListData);

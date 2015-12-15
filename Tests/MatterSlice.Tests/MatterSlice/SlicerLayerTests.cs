@@ -180,8 +180,8 @@ namespace MatterHackers.MatterSlice.Tests
         {
             foreach (string line in segmentsToCheck)
             {
-                List<SlicePerimeterSegment> segmentsList = SlicerLayer.CreateSegmentListFromString(line);
-                SlicerLayer layer = new SlicerLayer(1, line);
+                List<SlicePerimeterSegment> segmentsList = MeshProcessingLayer.CreateSegmentListFromString(line);
+                MeshProcessingLayer layer = new MeshProcessingLayer(1, line);
                 layer.MakePolygons();
 
                 Assert.IsTrue(layer.PolygonList.Count == expectedCount);
@@ -209,8 +209,8 @@ namespace MatterHackers.MatterSlice.Tests
             testSegments.Add(new SlicePerimeterSegment(new IntPoint(3, 2), new IntPoint(9, 4)));
             testSegments.Add(new SlicePerimeterSegment(new IntPoint(6, 2), new IntPoint(3, 7)));
 
-            string segmentsString = SlicerLayer.DumpSegmentListToString(testSegments);
-            List<SlicePerimeterSegment> outSegments = SlicerLayer.CreateSegmentListFromString(segmentsString);
+            string segmentsString = MeshProcessingLayer.DumpSegmentListToString(testSegments);
+            List<SlicePerimeterSegment> outSegments = MeshProcessingLayer.CreateSegmentListFromString(segmentsString);
 
             Assert.True(testSegments.Count == outSegments.Count);
             for (int i = 0; i < testSegments.Count; i++)

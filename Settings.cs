@@ -608,7 +608,7 @@ namespace MatterHackers.MatterSlice
 
             supportType = ConfigConstants.SUPPORT_TYPE.GRID;
             supportEndAngle = 0;
-			useNewSupport = true;
+			useNewSupport = false;
 			generateInternalSupport = true;
             raftExtruder = -1;
             supportLineSpacing = extrusionWidth * 5;

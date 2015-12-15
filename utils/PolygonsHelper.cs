@@ -66,6 +66,35 @@ namespace MatterHackers.MatterSlice
             }
         }
 
+        public static Polygons GetCorrectedWinding(this Polygons polygonsToFix)
+        {
+            polygonsToFix = Clipper.CleanPolygons(polygonsToFix);
+            Polygon boundsPolygon = new Polygon();
+            IntRect bounds = Clipper.GetBounds(polygonsToFix);
+            bounds.left -= 10;
+            bounds.bottom += 10;
+            bounds.right += 10;
+            bounds.top -= 10;
+
+            boundsPolygon.Add(new IntPoint(bounds.left, bounds.top));
+            boundsPolygon.Add(new IntPoint(bounds.right, bounds.top));
+            boundsPolygon.Add(new IntPoint(bounds.right, bounds.bottom));
+            boundsPolygon.Add(new IntPoint(bounds.left, bounds.bottom));
+
+            Clipper clipper = new Clipper();
+
+            clipper.AddPaths(polygonsToFix, PolyType.ptSubject, true);
+            clipper.AddPath(boundsPolygon, PolyType.ptClip, true);
+
+            PolyTree intersectionResult = new PolyTree();
+            clipper.Execute(ClipType.ctIntersection, intersectionResult);
+
+            Polygons outputPolygons = Clipper.ClosedPathsFromPolyTree(intersectionResult);
+
+            return outputPolygons;
+        }
+
+
         public static Polygons CreateDifference(this Polygons polygons, Polygons other)
         {
             Polygons ret = new Polygons();

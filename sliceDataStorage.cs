@@ -57,15 +57,50 @@ namespace MatterHackers.MatterSlice
 	{
 		public long LayerZ;
 		public Polygons TotalOutline = new Polygons();
-		public List<LayerIsland> Islands = new List<LayerIsland>();
-	};
+        public List<LayerIsland> Islands = null;
+
+        public void CreateIslandData()
+        {
+            List<Polygons> separtedIntoIslands = TotalOutline.ProcessIntoSeparatIslands();
+
+            Islands = new List<LayerIsland>();
+            for (int islandIndex = 0; islandIndex < separtedIntoIslands.Count; islandIndex++)
+            {
+                Islands.Add(new LayerIsland());
+                Islands[islandIndex].IslandOutline = separtedIntoIslands[islandIndex];
+
+                Islands[islandIndex].BoundingBox.Calculate(Islands[islandIndex].IslandOutline);
+            }
+        }
+    };
 
 	public class ExtruderLayers
 	{
 		public List<SliceLayer> Layers = new List<SliceLayer>();
-	}
 
-	public class LayerDataStorage
+        public void CreateIslandData()
+        {
+            for (int layerIndex = 0; layerIndex < Layers.Count; layerIndex++)
+            {
+                Layers[layerIndex].CreateIslandData();
+            }
+        }
+
+        public void InitializeLayerData(Slicer slicer)
+        {
+            for (int layerIndex = 0; layerIndex < slicer.layers.Count; layerIndex++)
+            {
+                Layers.Add(new SliceLayer());
+                Layers[layerIndex].LayerZ = slicer.layers[layerIndex].Z;
+
+                Layers[layerIndex].TotalOutline = slicer.layers[layerIndex].PolygonList;
+
+                Layers[layerIndex].TotalOutline = Layers[layerIndex].TotalOutline.GetCorrectedWinding();
+            }
+        }
+    }
+
+    public class LayerDataStorage
 	{
 		public Point3 modelSize, modelMin, modelMax;
 		public Polygons skirt = new Polygons();
@@ -76,5 +111,13 @@ namespace MatterHackers.MatterSlice
         public NewSupport newSupport = null;
         public Polygons wipeTower = new Polygons();
 		public IntPoint wipePoint;
-	}
+
+        public void CreateIslandData()
+        {
+            for (int extruderIndex = 0; extruderIndex < Extruders.Count; extruderIndex++)
+            {
+                Extruders[extruderIndex].CreateIslandData();
+            }
+        }
+    }
 }

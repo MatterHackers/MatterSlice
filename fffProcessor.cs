@@ -102,13 +102,15 @@ namespace MatterHackers.MatterSlice
             Stopwatch timeKeeperTotal = new Stopwatch();
             timeKeeperTotal.Start();
             preSetup(config.extrusionWidth_um);
-            sliceModels(slicingData);
 
-            processSliceData(slicingData);
+            SliceModels(slicingData);
+
+            ProcessSliceData(slicingData);
             if (MatterSlice.Canceled)
             {
                 return;
             }
+
             writeGCode(slicingData);
             if (MatterSlice.Canceled)
             {
@@ -166,7 +168,7 @@ namespace MatterHackers.MatterSlice
             gcode.SetToolChangeCode(config.toolChangeCode);
         }
 
-        private void sliceModels(LayerDataStorage slicingData)
+        private void SliceModels(LayerDataStorage slicingData)
         {
             timeKeeper.Restart();
 #if false
@@ -195,31 +197,25 @@ namespace MatterHackers.MatterSlice
             slicingData.modelMax = optomizedMeshCollection.maxXYZ_um;
 
             LogOutput.Log("Generating layer parts...\n");
-            for (int partIndex = 0; partIndex < slicerList.Count; partIndex++)
+            for (int extruderIndex = 0; extruderIndex < slicerList.Count; extruderIndex++)
             {
                 slicingData.Extruders.Add(new ExtruderLayers());
-                LayerPart.CreateLayerParts(slicingData.Extruders[partIndex], slicerList[partIndex]);
+                slicingData.Extruders[extruderIndex].InitializeLayerData(slicerList[extruderIndex]);
 
                 if (config.enableRaft)
                 {
                     //Add the raft offset to each layer.
-                    for (int layerNr = 0; layerNr < slicingData.Extruders[partIndex].Layers.Count; layerNr++)
+                    for (int layerIndex = 0; layerIndex < slicingData.Extruders[extruderIndex].Layers.Count; layerIndex++)
                     {
-                        slicingData.Extruders[partIndex].Layers[layerNr].LayerZ += config.raftBaseThickness_um + config.raftInterfaceThicknes_um;
+                        slicingData.Extruders[extruderIndex].Layers[layerIndex].LayerZ += config.raftBaseThickness_um + config.raftInterfaceThicknes_um;
                     }
                 }
             }
             LogOutput.Log("Generated layer parts in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
             timeKeeper.Restart();
-
-            LogOutput.Log("Generating support map...\n");
-            if (config.useNewSupport)
-            {
-                slicingData.newSupport = new NewSupport(config, slicingData.Extruders[0], 1);
-            }
         }
 
-        private void processSliceData(LayerDataStorage slicingData)
+        private void ProcessSliceData(LayerDataStorage slicingData)
         {
             if (config.continuousSpiralOuterPerimeter)
             {
@@ -227,13 +223,21 @@ namespace MatterHackers.MatterSlice
                 config.infillPercent = 0;
             }
 
-			MultiVolumes.ProcessBooleans(slicingData.Extruders, config.BooleanOpperations);
+            MultiVolumes.ProcessBooleans(slicingData.Extruders, config.BooleanOpperations);
 
-			MultiVolumes.RemoveVolumesIntersections(slicingData.Extruders);
+            MultiVolumes.RemoveVolumesIntersections(slicingData.Extruders);
             MultiVolumes.OverlapMultipleVolumesSlightly(slicingData.Extruders, config.multiVolumeOverlapPercent);
 #if False
             LayerPart.dumpLayerparts(slicingData, "output.html");
 #endif
+
+            slicingData.CreateIslandData();
+
+            LogOutput.Log("Generating support map...\n");
+            if (config.useNewSupport)
+            {
+                slicingData.newSupport = new NewSupport(config, slicingData.Extruders[0], 1);
+            }
 
             int totalLayers = slicingData.Extruders[0].Layers.Count;
 #if DEBUG
@@ -412,13 +416,13 @@ namespace MatterHackers.MatterSlice
                 for (int layerIndex = totalLayers - 1; layerIndex >= 0; layerIndex--)
                 {
                     bool layerHasData = false;
-                    foreach (ExtruderLayers currentVolume in slicingData.Extruders)
+                    foreach (ExtruderLayers currentExtruder in slicingData.Extruders)
                     {
-                        SliceLayer currentLayer = currentVolume.Layers[layerIndex];
-                        for (int partIndex = 0; partIndex < currentVolume.Layers[layerIndex].Islands.Count; partIndex++)
+                        SliceLayer currentLayer = currentExtruder.Layers[layerIndex];
+                        for (int partIndex = 0; partIndex < currentExtruder.Layers[layerIndex].Islands.Count; partIndex++)
                         {
-                            LayerIsland currentPart = currentLayer.Islands[partIndex];
-                            if (currentPart.IslandOutline.Count > 0)
+                            LayerIsland currentIsland = currentLayer.Islands[partIndex];
+                            if (currentIsland.IslandOutline.Count > 0)
                             {
                                 layerHasData = true;
                                 break;

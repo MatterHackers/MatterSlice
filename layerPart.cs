@@ -41,30 +41,6 @@ namespace MatterHackers.MatterSlice
 		It's also the first step that stores the result in the "data storage" so all other steps can access it.
 		*/
 
-		private static void CreateLayerWithParts(SliceLayer singleExtruder, SlicerLayer layer)
-		{
-			singleExtruder.TotalOutline = layer.PolygonList;
-            List<Polygons> separtedIntoIslands = layer.PolygonList.ProcessIntoSeparatIslands();
-
-			for (int islandIndex = 0; islandIndex < separtedIntoIslands.Count; islandIndex++)
-			{
-				singleExtruder.Islands.Add(new LayerIsland());
-				singleExtruder.Islands[islandIndex].IslandOutline = separtedIntoIslands[islandIndex];
-
-				singleExtruder.Islands[islandIndex].BoundingBox.Calculate(singleExtruder.Islands[islandIndex].IslandOutline);
-			}
-		}
-
-		public static void CreateLayerParts(ExtruderLayers singleExtruder, Slicer slicer)
-		{
-			for (int layerIndex = 0; layerIndex < slicer.layers.Count; layerIndex++)
-			{
-				singleExtruder.Layers.Add(new SliceLayer());
-				singleExtruder.Layers[layerIndex].LayerZ = slicer.layers[layerIndex].Z;
-				LayerPart.CreateLayerWithParts(singleExtruder.Layers[layerIndex], slicer.layers[layerIndex]);
-			}
-		}
-
 		public static void DumpLayerparts(LayerDataStorage storage, string filename)
 		{
 			StreamWriter streamToWriteTo = new StreamWriter(filename);
