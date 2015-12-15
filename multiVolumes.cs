@@ -135,7 +135,7 @@ namespace MatterHackers.MatterSlice
                             int a = 0;
                             // do nothing
                         }
-                        if (layersToUnionInto.layerSliceData.Count == 0
+                        else if (layersToUnionInto.layerSliceData.Count == 0
                             || layersToUnionInto.layerSliceData[sliceDataIndex] == null)
                         {
                             layersToUnionInto.layerSliceData[sliceDataIndex] = layersToAddToUnion.layerSliceData[sliceDataIndex];
