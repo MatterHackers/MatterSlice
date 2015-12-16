@@ -23,7 +23,6 @@ using System;
 using System.Collections.Generic;
 
 // TODO:
-// Make from bed only work (no internal support)
 // Make the on model materila be air gapped
 // Offset the output data to account for nozzle diameter (currenly they are just the outlines not the extrude positions)
 // Create extra upward suport for small features (tip of a rotated box)
@@ -33,6 +32,7 @@ using System.Collections.Generic;
 // Make skirt consider these outlines
 // Make raft consider these outlines
 // Make sure we work correctly with the support extruder set.
+// Make from bed only work (no internal support)
 
 namespace MatterHackers.MatterSlice
 {
@@ -75,7 +75,12 @@ namespace MatterHackers.MatterSlice
 
             allRequiredSupportOutlines = RemoveSelfSupportedSections(allPotentialSupportOutlines, config);
 
-			easyGrabDistanceOutlines = ExpandToEasyGrabDistance(allRequiredSupportOutlines, (int)(grabDistanceMm*1000));
+            if (!config.generateInternalSupport)
+            {
+                allRequiredSupportOutlines = RemoveSupportFromInternalSpaces(allRequiredSupportOutlines, allPartOutlines);
+            }
+
+            easyGrabDistanceOutlines = ExpandToEasyGrabDistance(allRequiredSupportOutlines, (int)(grabDistanceMm*1000));
 
 			//pushedUpTopOutlines = PushUpTops(easyGrabDistanceOutlines, numLayers, config);
 
@@ -90,7 +95,24 @@ namespace MatterHackers.MatterSlice
             supportOutlines = CalculateDifferencePerLayer(supportOutlines, interfaceLayers);
         }
 
-		static List<Polygons> CreateEmptyPolygons(int numLayers)
+        private static List<Polygons> RemoveSupportFromInternalSpaces(List<Polygons> inputPolys, List<Polygons> allPartOutlines)
+        {
+            int numLayers = inputPolys.Count;
+
+            Polygons accumulatedLayers = new Polygons();
+            for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
+            {
+                accumulatedLayers = accumulatedLayers.CreateUnion(allPartOutlines[layerIndex]);
+                accumulatedLayers = Clipper.CleanPolygons(accumulatedLayers, cleanDistance_um);
+
+                inputPolys[layerIndex] = inputPolys[layerIndex].CreateDifference(accumulatedLayers);
+                inputPolys[layerIndex] = Clipper.CleanPolygons(inputPolys[layerIndex], cleanDistance_um);
+            }
+
+            return inputPolys;
+        }
+
+        static List<Polygons> CreateEmptyPolygons(int numLayers)
 		{
 			List<Polygons> polygonsList = new List<Polygons>();
             for (int i = 0; i < numLayers; i++)
