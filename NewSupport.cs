@@ -26,12 +26,13 @@ using System.Collections.Generic;
 // Make from bed only work (no internal support)
 // Make the on model materila be air gapped
 // Offset the output data to account for nozzle diameter (currenly they are just the outlines not the extrude positions)
-// Make sure we work correctly with the support extruder set.
 // Create extra upward suport for small features (tip of a rotated box)
+// Fix bad moves on first path of extruder 0 after interface layer
 
 // DONE:
 // Make skirt consider these outlines
 // Make raft consider these outlines
+// Make sure we work correctly with the support extruder set.
 
 namespace MatterHackers.MatterSlice
 {
