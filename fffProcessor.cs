@@ -231,13 +231,13 @@ namespace MatterHackers.MatterSlice
             LayerPart.dumpLayerparts(slicingData, "output.html");
 #endif
 
-            slicingData.CreateIslandData();
-
             LogOutput.Log("Generating support map...\n");
-            if (config.useNewSupport)
+            if (config.generateSupport)
             {
-                slicingData.newSupport = new NewSupport(config, slicingData.Extruders[0], 1);
+                slicingData.support = new NewSupport(config, slicingData.Extruders, 1);
             }
+
+            slicingData.CreateIslandData();
 
             int totalLayers = slicingData.Extruders[0].Layers.Count;
 #if DEBUG
@@ -515,9 +515,9 @@ namespace MatterHackers.MatterSlice
                 bool printSupportFirst = (config.supportExtruder >= 0 && config.supportExtruder == gcodeLayer.getExtruder());
                 if (printSupportFirst)
                 {
-                    if (slicingData.newSupport != null)
+                    if (slicingData.support != null)
                     {
-                        slicingData.newSupport.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
+                        slicingData.support.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
                     }
                 }
 
@@ -542,15 +542,15 @@ namespace MatterHackers.MatterSlice
 
                 if (!printSupportFirst)
                 {
-                    if (slicingData.newSupport != null)
+                    if (slicingData.support != null)
                     {
-                        slicingData.newSupport.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
+                        slicingData.support.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
                     }
                 }
 
-                if (slicingData.newSupport != null)
+                if (slicingData.support != null)
                 {
-                    if (slicingData.newSupport.HaveAirGappedBottomLayers(layerIndex))
+                    if (slicingData.support.HaveAirGappedBottomLayers(layerIndex))
                     {
                         if (!config.enableRaft || layerIndex > 0)
                         {
@@ -558,7 +558,7 @@ namespace MatterHackers.MatterSlice
                             gcode.setZ(z);
                         }
 
-                        slicingData.newSupport.QueueAirGappedBottomLayer(gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
+                        slicingData.support.QueueAirGappedBottomLayer(gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
                     }
                 }
 
@@ -776,7 +776,7 @@ namespace MatterHackers.MatterSlice
                 for (int partIndex = 0; partIndex < partOrderOptimizer.bestPolygonOrderIndex.Count; partIndex++)
                 {
                     // Now write any areas that need to be on support at the air gap height
-                    if (config.useNewSupport
+                    if (config.generateSupport
                         && !config.continuousSpiralOuterPerimeter
                         && layerIndex > 0)
                     {
@@ -808,17 +808,17 @@ namespace MatterHackers.MatterSlice
 
         private void QueuePolygonsConsideringSupport(int layerIndex, GCodePlanner gcodeLayer, Polygons polygonsToWrite, GCodePathConfig fillConfig, SupportWriteType supportWriteType)
         {
-            if (config.useNewSupport && layerIndex > 0)
+            if (config.generateSupport && layerIndex > 0)
             {
                 if (supportWriteType == SupportWriteType.UnsuportedAreas)
                 {
                     // don't write the bottoms that are sitting on supported areas (they will be written at air gap distance later).
-                    Polygons polygonsNotOnSupport = polygonsToWrite.CreateDifference(slicingData.newSupport.GetRequiredSupportAreas(layerIndex));
+                    Polygons polygonsNotOnSupport = polygonsToWrite.CreateDifference(slicingData.support.GetRequiredSupportAreas(layerIndex));
                     gcodeLayer.QueuePolygonsByOptimizer(polygonsNotOnSupport, fillConfig);
                 }
                 else
                 {
-                    Polygons supportOutlines = slicingData.newSupport.GetRequiredSupportAreas(layerIndex);
+                    Polygons supportOutlines = slicingData.support.GetRequiredSupportAreas(layerIndex);
                     if (supportOutlines.Count > 0)
                     {
                         // write the bottoms that are sitting on supported areas.
@@ -848,8 +848,8 @@ namespace MatterHackers.MatterSlice
             {
                 if (layerIndex > 0)
                 {
-                    double bridgeAngle;
-                    if (!config.useNewSupport &&
+                    double bridgeAngle = 0;
+                    if (!config.generateSupport &&
                         Bridge.BridgeAngle(outline, slicingData.Extruders[volumeIndex].Layers[layerIndex - 1], out bridgeAngle))
                     {
                         Infill.GenerateLinePaths(outline, ref bridgePolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, bridgeAngle);

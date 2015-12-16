@@ -63,8 +63,9 @@ namespace MatterHackers.MatterSlice.Tests
                     partOutlines.Add(cubeOutline);
                 }
 
+
                 ExtruderLayers layerData = CreateLayerData(partOutlines);
-                NewSupport supportGenerator = new NewSupport(config, layerData, 0);
+                NewSupport supportGenerator = new NewSupport(config, new List<ExtruderLayers>() { layerData }, 0);
 
                 // check the all part outlines
                 {
@@ -149,7 +150,7 @@ namespace MatterHackers.MatterSlice.Tests
                 }
 
                 ExtruderLayers layerData = CreateLayerData(partOutlines);
-                NewSupport supportGenerator = new NewSupport(config, layerData, 1);
+                NewSupport supportGenerator = new NewSupport(config, new List<ExtruderLayers>() { layerData }, 1);
 
                 // check the all part outlines
                 {
@@ -282,7 +283,7 @@ namespace MatterHackers.MatterSlice.Tests
                 }
 
                 ExtruderLayers layerData = CreateLayerData(partOutlines);
-                NewSupport supportGenerator = new NewSupport(config, layerData, 1);
+                NewSupport supportGenerator = new NewSupport(config, new List<ExtruderLayers>() { layerData }, 1);
 
                 // check the all part outlines
                 {

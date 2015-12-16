@@ -70,9 +70,9 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-                if (storage.newSupport != null)
+                if (storage.support != null)
                 {
-                    skirtPolygons = skirtPolygons.CreateUnion(storage.newSupport.GetBedOutlines().Offset(offsetDistance));
+                    skirtPolygons = skirtPolygons.CreateUnion(storage.support.GetBedOutlines().Offset(offsetDistance));
                 }
 
 				//Remove small inner skirt holes. Holes have a negative area, remove anything smaller then 100x extrusion "area"

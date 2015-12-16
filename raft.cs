@@ -144,9 +144,9 @@ namespace MatterHackers.MatterSlice
 			}
 
 			storage.raftOutline = storage.raftOutline.CreateUnion(storage.wipeTower.Offset(extraDistanceAroundPart_um));
-            if (storage.newSupport != null)
+            if (storage.support != null)
             {
-                storage.raftOutline = storage.raftOutline.CreateUnion(storage.newSupport.GetBedOutlines().Offset(extraDistanceAroundPart_um));
+                storage.raftOutline = storage.raftOutline.CreateUnion(storage.support.GetBedOutlines().Offset(extraDistanceAroundPart_um));
             }
         }
 

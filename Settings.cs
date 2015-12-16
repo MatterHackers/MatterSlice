@@ -142,6 +142,9 @@ namespace MatterHackers.MatterSlice
         [SettingDescription("If True, support will be generated within the part as well as from the bed.")]
         public bool generateInternalSupport;
 
+        [SettingDescription("If True, support will be generated from the the bed. If false no support will be generated at all.")]
+        public bool generateSupport;
+
         [SettingDescription("The amount the infill extends into the perimeter in millimeters.")]
         public double infillExtendIntoPerimeter;
 
@@ -225,11 +228,6 @@ namespace MatterHackers.MatterSlice
         public int skirtMinLength;
 
         public string startCode;
-
-        [SettingDescription("The ending angle at which support material will be generated. Larger numbers will result in more support, degrees.")]
-        public int supportEndAngle;
-
-		public bool useNewSupport;
 
         public int supportExtruder;
 
@@ -607,8 +605,7 @@ namespace MatterHackers.MatterSlice
             raftExtraDistanceAroundPart = 5;
 
             supportType = ConfigConstants.SUPPORT_TYPE.GRID;
-            supportEndAngle = 0;
-			useNewSupport = false;
+            generateSupport = false;
 			generateInternalSupport = true;
             raftExtruder = -1;
             supportLineSpacing = extrusionWidth * 5;

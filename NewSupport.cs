@@ -64,11 +64,11 @@ namespace MatterHackers.MatterSlice
 			return new Polygons();
         }
 
-		public NewSupport(ConfigSettings config, ExtruderLayers storage, double grabDistanceMm)
+		public NewSupport(ConfigSettings config, List<ExtruderLayers> Extruders, double grabDistanceMm)
         {
             this.grabDistanceMm = grabDistanceMm;
             // create starting support outlines
-            allPartOutlines = CalculateAllPartOutlines(config, storage);
+            allPartOutlines = CalculateAllPartOutlines(config, Extruders);
 
 			allPotentialSupportOutlines = FindAllPotentialSupportOutlines(allPartOutlines, config);
 
@@ -100,26 +100,19 @@ namespace MatterHackers.MatterSlice
 			return polygonsList;
         }
 
-		private static List<Polygons> CalculateAllPartOutlines(ConfigSettings config, ExtruderLayers storage)
+		private static List<Polygons> CalculateAllPartOutlines(ConfigSettings config, List<ExtruderLayers> Extruders)
         {
-            int numLayers = storage.Layers.Count;
+            int numLayers = Extruders[0].Layers.Count;
 
             List<Polygons> allPartOutlines = CreateEmptyPolygons(numLayers);
-            // calculate the combind outlines for everything
-            for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
+
+            foreach (var extruder in Extruders)
             {
-                Polygons allOutlines = new Polygons();
-
-                SliceLayer curLayer = storage.Layers[layerIndex];
-                for (int curLayerPartIndex = 0; curLayerPartIndex < curLayer.Islands.Count; curLayerPartIndex++)
+                // calculate the combind outlines for everything
+                for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
                 {
-                    LayerIsland curPart = curLayer.Islands[curLayerPartIndex];
-                    Polygons curLayerPolys = curPart.IslandOutline;
-                    allOutlines = allOutlines.CreateUnion(curLayerPolys);
-                    allOutlines = Clipper.CleanPolygons(allOutlines, cleanDistance_um);
+                    allPartOutlines[layerIndex] = allPartOutlines[layerIndex].CreateUnion(extruder.Layers[layerIndex].AllOutlines);
                 }
-
-                allPartOutlines[layerIndex] = allOutlines.DeepCopy();
             }
 
 			return allPartOutlines;
@@ -183,7 +176,7 @@ namespace MatterHackers.MatterSlice
 
         public Polygons GetBedOutlines()
         {
-            return easyGrabDistanceOutlines[0];
+            return supportOutlines[0];
         }
 
         private static List<Polygons> PushUpTops(List<Polygons> inputPolys, ConfigSettings config)

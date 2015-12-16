@@ -108,7 +108,7 @@ namespace MatterHackers.MatterSlice
 		public List<Polygons> wipeShield = new List<Polygons>();
 		public List<ExtruderLayers> Extruders = new List<ExtruderLayers>();
 
-        public NewSupport newSupport = null;
+        public NewSupport support = null;
         public Polygons wipeTower = new Polygons();
 		public IntPoint wipePoint;
 
