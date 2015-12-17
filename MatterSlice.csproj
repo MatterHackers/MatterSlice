@@ -169,7 +169,7 @@
     <Compile Include="raft.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="multiVolumes.cs" />
+    <Compile Include="MultiExtruders.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="inset.cs" />

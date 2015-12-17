@@ -117,21 +117,21 @@ namespace MatterHackers.MatterSlice
 
 		public static void GenerateRaftOutlines(LayerDataStorage storage, int extraDistanceAroundPart_um, ConfigSettings config)
 		{
-			for (int volumeIndex = 0; volumeIndex < storage.Extruders.Count; volumeIndex++)
+			for (int extruderIndex = 0; extruderIndex < storage.Extruders.Count; extruderIndex++)
 			{
-				if (config.continuousSpiralOuterPerimeter && volumeIndex > 0)
+				if (config.continuousSpiralOuterPerimeter && extruderIndex > 0)
 				{
 					continue;
 				}
 
-				if (storage.Extruders[volumeIndex].Layers.Count < 1)
+				if (storage.Extruders[extruderIndex].Layers.Count < 1)
 				{
 					continue;
 				}
 
-				SliceLayer layer = storage.Extruders[volumeIndex].Layers[0];
+				SliceLayer layer = storage.Extruders[extruderIndex].Layers[0];
 				// let's find the first layer that has something in it for the raft rather than a zero layer
-				if (layer.Islands.Count == 0 && storage.Extruders[volumeIndex].Layers.Count > 2) layer = storage.Extruders[volumeIndex].Layers[1];
+				if (layer.Islands.Count == 0 && storage.Extruders[extruderIndex].Layers.Count > 2) layer = storage.Extruders[extruderIndex].Layers[1];
 				for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
 				{
 					if (config.continuousSpiralOuterPerimeter && partIndex > 0)

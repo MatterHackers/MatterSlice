@@ -181,7 +181,7 @@ namespace MatterHackers.MatterSlice
         // object transform
         public FMatrix3x3 modelRotationMatrix = new FMatrix3x3();
 
-        public int multiVolumeOverlapPercent;
+        public int multiExtruderOverlapPercent;
         public int numberOfBottomLayers;
         public int numberOfPerimeters;
 
@@ -622,7 +622,7 @@ namespace MatterHackers.MatterSlice
             wipeShieldDistanceFromObject = 0;
             avoidCrossingPerimeters = true;
             wipeTowerSize = 5;
-            multiVolumeOverlapPercent = 0;
+            multiExtruderOverlapPercent = 0;
 
             minimumLayerTimeSeconds = 5;
             minimumPrintingSpeed = 10;

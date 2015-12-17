@@ -131,12 +131,12 @@ namespace MatterHackers.MatterSlice
 			}
 
 			Point3 minXYZ = SimpleMeshes[0].minXYZ_um();
-			for (int volumeIndex = 1; volumeIndex < SimpleMeshes.Count; volumeIndex++)
+			for (int meshIndex = 1; meshIndex < SimpleMeshes.Count; meshIndex++)
 			{
-				Point3 volumeMinXYZ = SimpleMeshes[volumeIndex].minXYZ_um();
-				minXYZ.x = Math.Min(minXYZ.x, volumeMinXYZ.x);
-				minXYZ.y = Math.Min(minXYZ.y, volumeMinXYZ.y);
-				minXYZ.z = Math.Min(minXYZ.z, volumeMinXYZ.z);
+				Point3 meshMinXYZ = SimpleMeshes[meshIndex].minXYZ_um();
+				minXYZ.x = Math.Min(minXYZ.x, meshMinXYZ.x);
+				minXYZ.y = Math.Min(minXYZ.y, meshMinXYZ.y);
+				minXYZ.z = Math.Min(minXYZ.z, meshMinXYZ.z);
 			}
 			return minXYZ;
 		}
@@ -149,12 +149,12 @@ namespace MatterHackers.MatterSlice
 			}
 
 			Point3 maxXYZ = SimpleMeshes[0].maxXYZ_um();
-			for (int volumeIndex = 1; volumeIndex < SimpleMeshes.Count; volumeIndex++)
+			for (int meshIndex = 1; meshIndex < SimpleMeshes.Count; meshIndex++)
 			{
-				Point3 volumeMaxXYZ = SimpleMeshes[volumeIndex].maxXYZ_um();
-				maxXYZ.x = Math.Max(maxXYZ.x, volumeMaxXYZ.x);
-				maxXYZ.y = Math.Max(maxXYZ.y, volumeMaxXYZ.y);
-				maxXYZ.z = Math.Max(maxXYZ.z, volumeMaxXYZ.z);
+				Point3 meshMaxXYZ = SimpleMeshes[meshIndex].maxXYZ_um();
+				maxXYZ.x = Math.Max(maxXYZ.x, meshMaxXYZ.x);
+				maxXYZ.y = Math.Max(maxXYZ.y, meshMaxXYZ.y);
+				maxXYZ.z = Math.Max(maxXYZ.z, meshMaxXYZ.z);
 			}
 			return maxXYZ;
 		}

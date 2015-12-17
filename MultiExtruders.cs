@@ -158,17 +158,17 @@ namespace MatterHackers.MatterSlice
         }
     }
 
-	public static class MultiVolumes
+	public static class MultiExtruders
 	{
 		public static void ProcessBooleans(List<ExtruderLayers> allPartsLayers, string booleanOpperations)
 		{
 			BooleanProcessing processor = new BooleanProcessing(allPartsLayers, booleanOpperations);
 		}
 
-		public static void RemoveVolumesIntersections(List<ExtruderLayers> extruders)
+		public static void RemoveExtruderIntersections(List<ExtruderLayers> extruders)
 		{
-			//Go trough all the volumes, and remove the previous volume outlines from our own outline, so we never have overlapped areas.
-			for (int extruderIndex = extruders.Count - 1; extruderIndex >= 0; extruderIndex--)
+            //Go trough all the extruders, and remove the previous extruders outlines from our own outline, so we never have overlapped areas.
+            for (int extruderIndex = extruders.Count - 1; extruderIndex >= 0; extruderIndex--)
 			{
 				for (int otherExtuderIndex = extruderIndex - 1; otherExtuderIndex >= 0; otherExtuderIndex--)
 				{
@@ -182,9 +182,9 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		//Expand each layer a bit and then keep the extra overlapping parts that overlap with other volumes.
+		//Expand each layer a bit and then keep the extra overlapping parts that overlap with other extruders.
 		//This generates some overlap in dual extrusion, for better bonding in touching parts.
-		public static void OverlapMultipleVolumesSlightly(List<ExtruderLayers> extruders, int overlapUm)
+		public static void OverlapMultipleExtrudersSlightly(List<ExtruderLayers> extruders, int overlapUm)
 		{
 			if (extruders.Count < 2 || overlapUm <= 0)
 			{

@@ -27,16 +27,6 @@ namespace MatterHackers.MatterSlice
 {
 	using Polygons = List<List<IntPoint>>;
 
-	/*
-	SliceData
-	+ Layers[]
-	  + LayerParts[]
-		+ OutlinePolygons[]
-		+ Insets[]
-		  + Polygons[]
-		+ SkinPolygons[]
-	*/
-
 	/// <summary>
 	/// Represents the data for one island.
 	/// A single island can be more than one polygon as they have both the outline and the hole polygons.
@@ -97,6 +87,42 @@ namespace MatterHackers.MatterSlice
 
                 Layers[layerIndex].AllOutlines = Layers[layerIndex].AllOutlines.GetCorrectedWinding();
             }
+        }
+
+        public bool OnlyHasBottom(int layerToCheck)
+        {
+            return Layers[layerToCheck].Islands.Count == 1
+                && Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 1
+                && Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 0
+                && Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 0
+                && Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 0;
+        }
+
+        public bool OnlyHasTop(int layerToCheck)
+        {
+            return Layers[layerToCheck].Islands.Count == 1
+                && Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 0
+                && Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 1
+                && Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 0
+                && Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 0;
+        }
+
+        public bool OnlyHasSolidInfill(int layerToCheck)
+        {
+            return Layers[layerToCheck].Islands.Count == 1
+                && Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 0
+                && Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 0
+                && Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 1
+                && Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 0;
+        }
+
+        public bool OnlyHasInfill(int layerToCheck)
+        {
+            return Layers[layerToCheck].Islands.Count == 1
+                && Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 0
+                && Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 0
+                && Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 0
+                && Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 1;
         }
     }
 

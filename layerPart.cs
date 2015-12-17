@@ -48,12 +48,12 @@ namespace MatterHackers.MatterSlice
 			Point3 modelSize = storage.modelSize;
 			Point3 modelMin = storage.modelMin;
 
-			for (int volumeIdx = 0; volumeIdx < storage.Extruders.Count; volumeIdx++)
+			for (int extruderIndex = 0; extruderIndex < storage.Extruders.Count; extruderIndex++)
 			{
-				for (int layerNr = 0; layerNr < storage.Extruders[volumeIdx].Layers.Count; layerNr++)
+				for (int layerNr = 0; layerNr < storage.Extruders[extruderIndex].Layers.Count; layerNr++)
 				{
 					streamToWriteTo.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style=\"width: 500px; height:500px\">\n");
-					SliceLayer layer = storage.Extruders[volumeIdx].Layers[layerNr];
+					SliceLayer layer = storage.Extruders[extruderIndex].Layers[layerNr];
 					for (int i = 0; i < layer.Islands.Count; i++)
 					{
 						LayerIsland part = layer.Islands[i];
