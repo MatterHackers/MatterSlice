@@ -512,20 +512,16 @@ namespace MatterHackers.MatterSlice
                     QueueSkirtToGCode(slicingData, gcodeLayer, volumeIndex, layerIndex);
                 }
 
-                bool printSupportFirst = (config.supportExtruder >= 0 && config.supportExtruder == gcodeLayer.getExtruder());
-                if (printSupportFirst)
+                if (slicingData.support != null)
                 {
-                    if (slicingData.support != null)
-                    {
-                        slicingData.support.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
-                    }
+                    slicingData.support.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
                 }
 
                 int fanSpeedPercent = GetFanSpeed(layerIndex, gcodeLayer);
 
-                for (int volumeCnt = 0; volumeCnt < slicingData.Extruders.Count; volumeCnt++)
+                for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
                 {
-                    if (volumeCnt > 0)
+                    if (extruderIndex > 0)
                     {
                         volumeIndex = (volumeIndex + 1) % slicingData.Extruders.Count;
                     }
@@ -540,12 +536,9 @@ namespace MatterHackers.MatterSlice
                     }
                 }
 
-                if (!printSupportFirst)
+                if (slicingData.support != null)
                 {
-                    if (slicingData.support != null)
-                    {
-                        slicingData.support.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
-                    }
+                    slicingData.support.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
                 }
 
                 if (slicingData.support != null)
