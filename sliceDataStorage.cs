@@ -64,68 +64,6 @@ namespace MatterHackers.MatterSlice
         }
     };
 
-	public class ExtruderLayers
-	{
-		public List<SliceLayer> Layers = new List<SliceLayer>();
-
-        public void CreateIslandData()
-        {
-            for (int layerIndex = 0; layerIndex < Layers.Count; layerIndex++)
-            {
-                Layers[layerIndex].CreateIslandData();
-            }
-        }
-
-        public void InitializeLayerData(Slicer slicer)
-        {
-            for (int layerIndex = 0; layerIndex < slicer.layers.Count; layerIndex++)
-            {
-                Layers.Add(new SliceLayer());
-                Layers[layerIndex].LayerZ = slicer.layers[layerIndex].Z;
-
-                Layers[layerIndex].AllOutlines = slicer.layers[layerIndex].PolygonList;
-
-                Layers[layerIndex].AllOutlines = Layers[layerIndex].AllOutlines.GetCorrectedWinding();
-            }
-        }
-
-        public bool OnlyHasBottom(int layerToCheck)
-        {
-            return Layers[layerToCheck].Islands.Count == 1
-                && Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 1
-                && Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 0
-                && Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 0
-                && Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 0;
-        }
-
-        public bool OnlyHasTop(int layerToCheck)
-        {
-            return Layers[layerToCheck].Islands.Count == 1
-                && Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 0
-                && Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 1
-                && Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 0
-                && Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 0;
-        }
-
-        public bool OnlyHasSolidInfill(int layerToCheck)
-        {
-            return Layers[layerToCheck].Islands.Count == 1
-                && Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 0
-                && Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 0
-                && Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 1
-                && Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 0;
-        }
-
-        public bool OnlyHasInfill(int layerToCheck)
-        {
-            return Layers[layerToCheck].Islands.Count == 1
-                && Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 0
-                && Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 0
-                && Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 0
-                && Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 1;
-        }
-    }
-
     public class LayerDataStorage
 	{
 		public Point3 modelSize, modelMin, modelMax;

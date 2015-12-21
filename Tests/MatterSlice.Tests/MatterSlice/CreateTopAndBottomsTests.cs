@@ -131,7 +131,7 @@ namespace MatterHackers.MatterSlice.Tests
             int numLayers = extruder.Layers.Count;
             for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
             {
-                TopsAndBottoms.Generate(layerIndex, extruder, extrusionWidthUm, extrusionWidthUm, bottomLayers, topLayers);
+                extruder.GenerateTopAndBottoms(layerIndex, extrusionWidthUm, extrusionWidthUm, bottomLayers, topLayers);
             }
         }
 

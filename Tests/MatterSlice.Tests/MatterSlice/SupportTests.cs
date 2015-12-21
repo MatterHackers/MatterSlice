@@ -365,11 +365,7 @@ namespace MatterHackers.MatterSlice.Tests
             for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
             {
                 SliceLayer layer = new SliceLayer();
-                layer.Islands = new List<LayerIsland>();
-                LayerIsland part = new LayerIsland();
-                part.IslandOutline = totalLayerOutlines[layerIndex];
-                Inset.GenerateInsets(part, 500, 500, 2);
-                layer.Islands.Add(part);
+                layer.AllOutlines = totalLayerOutlines[layerIndex];
                 layerData.Layers.Add(layer);
             }
             return layerData;

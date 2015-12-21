@@ -26,6 +26,7 @@ using static System.Math;
 
 namespace MatterHackers.MatterSlice
 {
+    using System;
     using Paths = List<List<IntPoint>>;
 
     using Polygon = List<IntPoint>;
@@ -94,6 +95,19 @@ namespace MatterHackers.MatterSlice
             return outputPolygons;
         }
 
+        public static Polygons CreateLineDifference(this Polygons polygons, Polygons other)
+        {
+            Clipper clipper = new Clipper();
+
+            clipper.AddPaths(other, PolyType.ptSubject, false);
+            clipper.AddPaths(polygons, PolyType.ptClip, true);
+
+            PolyTree clippedLines = new PolyTree();
+
+            clipper.Execute(ClipType.ctDifference, clippedLines);
+
+            return Clipper.OpenPathsFromPolyTree(clippedLines);
+        }
 
         public static Polygons CreateDifference(this Polygons polygons, Polygons other)
         {
@@ -128,6 +142,22 @@ namespace MatterHackers.MatterSlice
             clipper.AddPaths(other, PolyType.ptClip, true);
             clipper.Execute(ClipType.ctIntersection, ret);
             return ret;
+        }
+
+        public static void RemoveSmallAreas(this Polygons polygons, int extrusionWidth)
+        {
+            double areaOfExtrusion = (extrusionWidth / 1000.0) * (extrusionWidth / 1000.0); // convert from microns to mm's.
+            double minAreaSize = areaOfExtrusion / 2;
+            for (int outlineIndex = polygons.Count-1; outlineIndex >=0; outlineIndex--)
+            {
+                double area = Math.Abs(polygons[outlineIndex].Area()) / 1000.0 / 1000.0; // convert from microns to mm's.
+
+                // Only create an up/down Outline if the area is large enough. So you do not create tiny blobs of "trying to fill"
+                if (area < minAreaSize) 
+                {
+                    polygons.RemoveAt(outlineIndex);
+                }
+            }
         }
 
         public static Polygons CreateLineIntersections(this Polygons polygons, Polygons other)

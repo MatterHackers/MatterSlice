@@ -112,6 +112,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Comb.cs" />
+    <Compile Include="ExtruderLayers.cs" />
     <Compile Include="GCodePathConfig.cs" />
     <Compile Include="GCodePlanner.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -158,9 +159,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="infill.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="TopsAndBottoms.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="skirt.cs" />

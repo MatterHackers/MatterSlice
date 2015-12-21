@@ -301,11 +301,11 @@ namespace MatterHackers.MatterSlice
                     {
                         if (layerIndex == 0)
                         {
-                            TopsAndBottoms.Generate(layerIndex, slicingData.Extruders[extruderIndex], config.firstLayerExtrusionWidth_um, config.firstLayerExtrusionWidth_um, config.numberOfBottomLayers, config.numberOfTopLayers);
+                            slicingData.Extruders[extruderIndex].GenerateTopAndBottoms(layerIndex, config.firstLayerExtrusionWidth_um, config.firstLayerExtrusionWidth_um, config.numberOfBottomLayers, config.numberOfTopLayers);
                         }
                         else
                         {
-                            TopsAndBottoms.Generate(layerIndex, slicingData.Extruders[extruderIndex], config.extrusionWidth_um, config.outsideExtrusionWidth_um, config.numberOfBottomLayers, config.numberOfTopLayers);
+                            slicingData.Extruders[extruderIndex].GenerateTopAndBottoms(layerIndex, config.extrusionWidth_um, config.outsideExtrusionWidth_um, config.numberOfBottomLayers, config.numberOfTopLayers);
                         }
                     }
                 }
@@ -802,20 +802,29 @@ namespace MatterHackers.MatterSlice
         {
             if (config.generateSupport && layerIndex > 0)
             {
+                Polygons supportOutlines = slicingData.support.GetRequiredSupportAreas(layerIndex);
+
                 if (supportWriteType == SupportWriteType.UnsuportedAreas)
                 {
+                    Polygons polygonsNotOnSupport;
                     // don't write the bottoms that are sitting on supported areas (they will be written at air gap distance later).
-                    Polygons polygonsNotOnSupport = polygonsToWrite.CreateDifference(slicingData.support.GetRequiredSupportAreas(layerIndex));
+                    if (fillConfig.closedLoop)
+                    {
+                        polygonsNotOnSupport = polygonsToWrite.CreateDifference(supportOutlines);
+                    }
+                    else
+                    {
+                        polygonsNotOnSupport = polygonsToWrite.CreateLineDifference(supportOutlines);
+                    }
                     gcodeLayer.QueuePolygonsByOptimizer(polygonsNotOnSupport, fillConfig);
                 }
                 else
                 {
-                    Polygons supportOutlines = slicingData.support.GetRequiredSupportAreas(layerIndex);
                     if (supportOutlines.Count > 0)
                     {
                         // write the bottoms that are sitting on supported areas.
                         Polygons polygonsOnSupport;
-                        if (polygonsToWrite.Count == 1)
+                        if (fillConfig.closedLoop)
                         {
                             polygonsOnSupport = supportOutlines.CreateIntersection(polygonsToWrite);
                         }
