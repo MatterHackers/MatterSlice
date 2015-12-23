@@ -520,11 +520,6 @@ namespace MatterHackers.MatterSlice
 
                 for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
                 {
-                    if (extruderIndex > 0)
-                    {
-                        extruderIndex = (extruderIndex + 1) % slicingData.Extruders.Count;
-                    }
-
                     if (layerIndex == 0)
                     {
                         QueueExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.firstLayerExtrusionWidth_um, fanSpeedPercent, z);
@@ -533,11 +528,6 @@ namespace MatterHackers.MatterSlice
                     {
                         QueueExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.extrusionWidth_um, fanSpeedPercent, z);
                     }
-                }
-
-                if (slicingData.support != null)
-                {
-                    slicingData.support.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
                 }
 
                 if (slicingData.support != null)
@@ -716,14 +706,14 @@ namespace MatterHackers.MatterSlice
                         // First the outside (this helps with accuracy)
                         if (part.InsetToolPaths.Count > 0)
                         {
-                            QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[0], inset0Config, SupportWriteType.UnsuportedAreas);
+                            QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[0], inset0Config, SupportWriteType.UnsupportedAreas);
                         }
 
                         if (!inset0Config.spiralize)
                         {
                             for (int perimeterIndex = 1; perimeterIndex < part.InsetToolPaths.Count; perimeterIndex++)
                             {
-                                QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[perimeterIndex], insetXConfig, SupportWriteType.UnsuportedAreas);
+                                QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[perimeterIndex], insetXConfig, SupportWriteType.UnsupportedAreas);
                             }
                         }
                     }
@@ -740,19 +730,19 @@ namespace MatterHackers.MatterSlice
                         // Print everything but the first perimeter from the outside in so the little parts have more to stick to.
                         for (int perimeterIndex = 1; perimeterIndex < part.InsetToolPaths.Count; perimeterIndex++)
                         {
-                            QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[perimeterIndex], insetXConfig, SupportWriteType.UnsuportedAreas);
+                            QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[perimeterIndex], insetXConfig, SupportWriteType.UnsupportedAreas);
                         }
                         // then 0
                         if (part.InsetToolPaths.Count > 0)
                         {
-                            QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[0], inset0Config, SupportWriteType.UnsuportedAreas);
+                            QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[0], inset0Config, SupportWriteType.UnsupportedAreas);
                         }
                     }
                 }
 
                 gcodeLayer.QueuePolygonsByOptimizer(fillPolygons, fillConfig);
 
-                QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bottomFillPolygons, fillConfig, SupportWriteType.UnsuportedAreas);
+                QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bottomFillPolygons, fillConfig, SupportWriteType.UnsupportedAreas);
 
                 gcodeLayer.QueuePolygonsByOptimizer(topFillPolygons, topFillConfig);
 
@@ -796,7 +786,7 @@ namespace MatterHackers.MatterSlice
         }
 
         private enum SupportWriteType
-        { UnsuportedAreas, SupportedAreas };
+        { UnsupportedAreas, SupportedAreas };
 
         private void QueuePolygonsConsideringSupport(int layerIndex, GCodePlanner gcodeLayer, Polygons polygonsToWrite, GCodePathConfig fillConfig, SupportWriteType supportWriteType)
         {
@@ -804,7 +794,7 @@ namespace MatterHackers.MatterSlice
             {
                 Polygons supportOutlines = slicingData.support.GetRequiredSupportAreas(layerIndex);
 
-                if (supportWriteType == SupportWriteType.UnsuportedAreas)
+                if (supportWriteType == SupportWriteType.UnsupportedAreas)
                 {
                     Polygons polygonsNotOnSupport;
                     // don't write the bottoms that are sitting on supported areas (they will be written at air gap distance later).
@@ -836,7 +826,7 @@ namespace MatterHackers.MatterSlice
                     }
                 }
             }
-            else if (supportWriteType == SupportWriteType.UnsuportedAreas)
+            else if (supportWriteType == SupportWriteType.UnsupportedAreas)
             {
                 gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, fillConfig);
             }

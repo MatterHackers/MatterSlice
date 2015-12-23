@@ -24,11 +24,11 @@ using System.Collections.Generic;
 
 // TODO:
 // Make the on model materila be air gapped
-// Offset the output data to account for nozzle diameter (currenly they are just the outlines not the extrude positions)
 // Create extra upward suport for small features (tip of a rotated box)
-// Fix bad moves on first path of extruder 0 after interface layer
+// Fix extra extruder material on top of interface layer
 
 // DONE:
+// Offset the output data to account for nozzle diameter (currenly they are just the outlines not the extrude positions)
 // Make skirt consider these outlines
 // Make raft consider these outlines
 // Make sure we work correctly with the support extruder set.
@@ -349,20 +349,27 @@ namespace MatterHackers.MatterSlice
 				// normal support
 				{
 					Polygons currentSupportOutlines = supportOutlines[layerIndex];
-					Polygons supportLines = new Polygons();
-					// render a grid of support
-					gcodeLayer.QueuePolygonsByOptimizer(currentSupportOutlines, supportNormalConfig);
-					switch (config.supportType)
-					{
-						case ConfigConstants.SUPPORT_TYPE.GRID:
-							Infill.GenerateGridInfill(config, currentSupportOutlines, ref supportLines, config.supportInfillStartingAngle, config.supportLineSpacing_um);
-							break;
+					currentSupportOutlines = currentSupportOutlines.Offset(-config.extrusionWidth_um/2);
+					List<Polygons> supportIslands = currentSupportOutlines.ProcessIntoSeparatIslands();
 
-						case ConfigConstants.SUPPORT_TYPE.LINES:
-							Infill.GenerateLineInfill(config, currentSupportOutlines, ref supportLines, config.supportInfillStartingAngle, config.supportLineSpacing_um);
-							break;
+					foreach (Polygons islandOutline in supportIslands)
+					{
+						Polygons islandInfillLines = new Polygons();
+						// render a grid of support
+						gcodeLayer.QueuePolygonsByOptimizer(islandOutline, supportNormalConfig);
+						Polygons infillOutline = islandOutline.Offset(-config.extrusionWidth_um / 2);
+						switch (config.supportType)
+						{
+							case ConfigConstants.SUPPORT_TYPE.GRID:
+								Infill.GenerateGridInfill(config, infillOutline, ref islandInfillLines, config.supportInfillStartingAngle, config.supportLineSpacing_um);
+								break;
+
+							case ConfigConstants.SUPPORT_TYPE.LINES:
+								Infill.GenerateLineInfill(config, infillOutline, ref islandInfillLines, config.supportInfillStartingAngle, config.supportLineSpacing_um);
+								break;
+						}
+						gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, supportNormalConfig);
 					}
-					gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportNormalConfig);
 				}
 
 				// interface
