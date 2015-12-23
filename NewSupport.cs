@@ -199,7 +199,7 @@ namespace MatterHackers.MatterSlice
 
         public Polygons GetBedOutlines()
         {
-            return supportOutlines[0];
+            return supportOutlines[0].CreateUnion(interfaceLayers[0]);
         }
 
         private static List<Polygons> PushUpTops(List<Polygons> inputPolys, ConfigSettings config)
@@ -374,7 +374,7 @@ namespace MatterHackers.MatterSlice
 
 				// interface
 				{
-					Polygons currentInterfaceOutlines = interfaceLayers[layerIndex];
+					Polygons currentInterfaceOutlines = interfaceLayers[layerIndex].Offset(-config.extrusionWidth_um / 2);
 					Polygons supportLines = new Polygons();
 					Infill.GenerateLineInfill(config, currentInterfaceOutlines, ref supportLines, config.supportInfillStartingAngle + 90, config.extrusionWidth_um);
 					gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportInterfaceConfig);
