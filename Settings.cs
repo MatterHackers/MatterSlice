@@ -258,7 +258,10 @@ namespace MatterHackers.MatterSlice
         [SettingDescription("This is the speed to print the top layer infill, mm/s.")]
         public double topInfillSpeed;
 
-        [SettingDescription("The speed to move when not extruding material. mm/s.")]
+		[SettingDescription("This is the speed to print the bottom layers infill, mm/s.")]
+		public double bottomInfillSpeed;
+
+		[SettingDescription("The speed to move when not extruding material. mm/s.")]
         public int travelSpeed;
 
         [SettingDescription("The amount of extra extrusion to do when unretracting (resume printing after retraction).")]
@@ -577,6 +580,7 @@ namespace MatterHackers.MatterSlice
             numberOfTopLayers = 6;
             firstLayerSpeed = 20;
             topInfillSpeed = 20;
+			bottomInfillSpeed = 20;
             supportMaterialSpeed = 40;
             infillSpeed = 50;
             bridgeSpeed = 20;

@@ -95,12 +95,12 @@ namespace MatterHackers.MatterSlice
             return outputPolygons;
         }
 
-        public static Polygons CreateLineDifference(this Polygons polygons, Polygons other)
+        public static Polygons CreateLineDifference(this Polygons linePolygons, Polygons removePolygons)
         {
             Clipper clipper = new Clipper();
 
-            clipper.AddPaths(other, PolyType.ptSubject, false);
-            clipper.AddPaths(polygons, PolyType.ptClip, true);
+            clipper.AddPaths(linePolygons, PolyType.ptSubject, false);
+            clipper.AddPaths(removePolygons, PolyType.ptClip, true);
 
             PolyTree clippedLines = new PolyTree();
 

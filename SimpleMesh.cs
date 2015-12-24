@@ -173,8 +173,13 @@ namespace MatterHackers.MatterSlice
 				Point3 v2 = new Point3(0, 0, 0);
 				string line = f.ReadLine();
 				Regex onlySingleSpaces = new Regex("\\s+", RegexOptions.Compiled);
+				int lineCount = 0;
 				while (line != null)
 				{
+					if(lineCount++ > 100 && vol.faceTriangles.Count == 0)
+					{
+						return false;
+					}
 					line = onlySingleSpaces.Replace(line, " ");
 					var parts = line.Trim().Split(' ');
 					if (parts[0].Trim() == "vertex")
@@ -235,7 +240,7 @@ namespace MatterHackers.MatterSlice
 				long bytesForAttributs = numTriangles * 2;
 				currentPosition += 4;
 				long numBytesRequiredForVertexData = currentPosition + bytesForNormals + bytesForVertices + bytesForAttributs;
-				if (fileContents.Length < numBytesRequiredForVertexData || numTriangles < 4)
+				if (fileContents.Length < numBytesRequiredForVertexData || numTriangles < 0)
 				{
 					stlStream.Close();
 					return false;
@@ -260,7 +265,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			if (vol.faceTriangles.Count > 3)
+			if (vol.faceTriangles.Count > 0)
 			{
 				simpleModel.SimpleMeshes.Add(vol);
 				return true;

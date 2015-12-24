@@ -53,6 +53,7 @@ namespace MatterHackers.MatterSlice
         private GCodePathConfig insetXConfig = new GCodePathConfig();
         private GCodePathConfig fillConfig = new GCodePathConfig();
         private GCodePathConfig topFillConfig = new GCodePathConfig();
+		private GCodePathConfig bottomFillConfig = new GCodePathConfig();
         private GCodePathConfig bridgConfig = new GCodePathConfig();
         private GCodePathConfig supportNormalConfig = new GCodePathConfig();
         private GCodePathConfig supportInterfaceConfig = new GCodePathConfig();
@@ -154,6 +155,8 @@ namespace MatterHackers.MatterSlice
             insetXConfig.SetData(config.insidePerimetersSpeed, extrusionWidth, "WALL-INNER");
             fillConfig.SetData(config.infillSpeed, extrusionWidth, "FILL", false);
             topFillConfig.SetData(config.topInfillSpeed, extrusionWidth, "TOP-FILL", false);
+			// TODO: put in the UI support for bottom infill speed, then use it. bottomFillConfig.SetData(config.bottomInfillSpeed, extrusionWidth, "BOTTOM-FILL", false);
+			bottomFillConfig.SetData(config.infillSpeed, extrusionWidth, "BOTTOM-FILL", false);
             bridgConfig.SetData(config.bridgeSpeed, extrusionWidth, "BRIDGE");
             supportNormalConfig.SetData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT");
             supportInterfaceConfig.SetData(config.supportMaterialSpeed - 5, extrusionWidth, "SUPPORT-INTERFACE");
@@ -742,7 +745,7 @@ namespace MatterHackers.MatterSlice
 
                 gcodeLayer.QueuePolygonsByOptimizer(fillPolygons, fillConfig);
 
-                QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bottomFillPolygons, fillConfig, SupportWriteType.UnsupportedAreas);
+                QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bottomFillPolygons, bottomFillConfig, SupportWriteType.UnsupportedAreas);
 
                 gcodeLayer.QueuePolygonsByOptimizer(topFillPolygons, topFillConfig);
 
@@ -777,7 +780,7 @@ namespace MatterHackers.MatterSlice
                             QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[0], inset0Config, SupportWriteType.SupportedAreas);
                         }
 
-                        QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bottomFillIslandPolygons[inlandIndex], fillConfig, SupportWriteType.SupportedAreas);
+                        QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bottomFillIslandPolygons[inlandIndex], bottomFillConfig, SupportWriteType.SupportedAreas);
                     }
                 }
             }

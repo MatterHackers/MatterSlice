@@ -24,8 +24,8 @@ using System.Collections.Generic;
 
 // TODO:
 // Make the on model material be air gapped
-// Fix extra extruder material on top of interface layer
 // Create extra upward support for small features (tip of a rotated box)
+// sparse wirte the support layers so they are easier to remove
 
 // DONE:
 // Offset the output data to account for nozzle diameter (currently they are just the outlines not the extrude positions)
@@ -33,6 +33,7 @@ using System.Collections.Generic;
 // Make raft consider these outlines
 // Make sure we work correctly with the support extruder set.
 // Make from bed only work (no internal support)
+// Fix extra extruder material on top of interface layer
 
 namespace MatterHackers.MatterSlice
 {
