@@ -205,7 +205,9 @@ namespace MatterHackers.MatterSlice
         public double raftExtraDistanceAroundPart;
         public int raftExtruder;
 
-        [SettingDescription("The speed to run the fan during raft printing.")]
+		public double supportAirGap;
+
+		[SettingDescription("The speed to run the fan during raft printing.")]
         public int raftFanSpeedPercent;
 
         // Raft read only info
@@ -297,6 +299,7 @@ namespace MatterHackers.MatterSlice
 
         public IntPoint positionToPlaceObjectCenter_um { get { return new IntPoint(positionToPlaceObjectCenter.X * 1000, positionToPlaceObjectCenter.Y * 1000); } }
         public int raftAirGap_um { get { return (int)(raftAirGap * 1000); } }
+		public int supportAirGap_um { get { return (int)(supportAirGap * 1000); } }
         public int raftBaseExtrusionWidth_um { get { return extrusionWidth_um * 3; } }
         public int raftBaseLineSpacing_um { get { return (int)(extrusionWidth_um * 4); } }
         public int raftBaseThickness_um { get { return extrusionWidth_um * 300 / 400; } }
@@ -606,7 +609,8 @@ namespace MatterHackers.MatterSlice
             // raft settings
             enableRaft = false;
             raftAirGap = .2; // .2 mm for .4 mm nozzle
-            raftExtraDistanceAroundPart = 5;
+			supportAirGap = .3; //
+			raftExtraDistanceAroundPart = 5;
 
             supportType = ConfigConstants.SUPPORT_TYPE.GRID;
             generateSupport = false;

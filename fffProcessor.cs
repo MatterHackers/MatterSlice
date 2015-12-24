@@ -539,7 +539,7 @@ namespace MatterHackers.MatterSlice
                     {
                         if (!config.enableRaft || layerIndex > 0)
                         {
-                            z += config.raftAirGap_um;
+                            z += config.supportAirGap_um;
                             gcode.setZ(z);
                         }
 
@@ -767,7 +767,7 @@ namespace MatterHackers.MatterSlice
                     {
                         LayerIsland part = layer.Islands[partOrderOptimizer.bestPolygonOrderIndex[inlandIndex]];
 
-                        gcode.setZ(currentZ_um + config.raftAirGap_um);
+                        gcode.setZ(currentZ_um + config.supportAirGap_um);
 
                         // Print everything but the first perimeter from the outside in so the little parts have more to stick to.
                         for (int perimeterIndex = 1; perimeterIndex < part.InsetToolPaths.Count; perimeterIndex++)

@@ -26,6 +26,7 @@ using System.Collections.Generic;
 // Make the on model material be air gapped
 // Create extra upward support for small features (tip of a rotated box)
 // sparse wirte the support layers so they are easier to remove
+// make sure all air gapped layers are written after ALL extruder normal layers
 
 // DONE:
 // Offset the output data to account for nozzle diameter (currently they are just the outlines not the extrude positions)
