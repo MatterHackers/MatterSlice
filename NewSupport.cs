@@ -23,12 +23,12 @@ using System;
 using System.Collections.Generic;
 
 // TODO:
-// Make the on model materila be air gapped
-// Create extra upward suport for small features (tip of a rotated box)
+// Make the on model material be air gapped
 // Fix extra extruder material on top of interface layer
+// Create extra upward support for small features (tip of a rotated box)
 
 // DONE:
-// Offset the output data to account for nozzle diameter (currenly they are just the outlines not the extrude positions)
+// Offset the output data to account for nozzle diameter (currently they are just the outlines not the extrude positions)
 // Make skirt consider these outlines
 // Make raft consider these outlines
 // Make sure we work correctly with the support extruder set.
@@ -131,7 +131,7 @@ namespace MatterHackers.MatterSlice
 
             foreach (var extruder in Extruders)
             {
-                // calculate the combind outlines for everything
+                // calculate the combined outlines for everything
                 for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
                 {
                     allPartOutlines[layerIndex] = allPartOutlines[layerIndex].CreateUnion(extruder.Layers[layerIndex].AllOutlines);
@@ -238,7 +238,7 @@ namespace MatterHackers.MatterSlice
 				Polygons curRequiredSupport = inputPolys[layerIndex];
 				Polygons totalSupportThisLayer = accumulatedAbove.CreateUnion(curRequiredSupport);
 
-				// remove the solid polys on this level
+				// remove the solid polygons on this level
 				Polygons remainingAbove = totalSupportThisLayer.CreateDifference(allPartOutlines[layerIndex]);
 
 				allDownOutlines[layerIndex] = Clipper.CleanPolygons(remainingAbove, cleanDistance_um);

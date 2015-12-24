@@ -1,5 +1,5 @@
 /*
-This file is part of MatterSlice. A commandline utility for
+This file is part of MatterSlice. A command line utility for
 generating 3D printing GCode.
 
 Copyright (C) 2013 David Braam
@@ -294,7 +294,7 @@ namespace MatterHackers.MatterSlice
                     return;
                 }
 
-                //Only generate bottom and top layers and infill for the first X layers when spiralize is choosen.
+                //Only generate bottom and top layers and infill for the first X layers when spiralize is chosen.
                 if (!config.continuousSpiralOuterPerimeter || (int)(layerIndex) < config.numberOfBottomLayers)
                 {
                     for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
@@ -675,7 +675,7 @@ namespace MatterHackers.MatterSlice
                 CalculateInfillData(slicingData, extruderIndex, layerIndex, part, ref bottomFillPolygons, ref fillPolygons, ref topFillPolygons, ref bridgePolygons);
                 bottomFillIslandPolygons.Add(bottomFillPolygons);
 
-                // Write the bridge polgons out first so the perimeter will have more to hold to while bridging the gaps.
+                // Write the bridge polygons out first so the perimeter will have more to hold to while bridging the gaps.
                 // It would be even better to slow down the perimeters that are part of bridges but that is a bit harder.
                 if (bridgePolygons.Count > 0)
                 {
@@ -717,7 +717,7 @@ namespace MatterHackers.MatterSlice
                             }
                         }
                     }
-                    else // This is so we can do overhanges better (the outside can stick a bit to the inside).
+                    else // This is so we can do overhangs better (the outside can stick a bit to the inside).
                     {
                         // Figure out where the seam hiding start point is for inset 0 and move to that spot so
                         // we have the minimum travel while starting inset 0 after printing the rest of the insets
@@ -869,7 +869,7 @@ namespace MatterHackers.MatterSlice
                 {
                     Infill.GenerateLinePaths(outline, ref fillPolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle + 90 * (layerIndex % 2));
                 }
-                else // use the new concentric infill (not tested enough yet) have to handle some bad casses better
+                else // use the new concentric infill (not tested enough yet) have to handle some bad cases better
                 {
                     double oldInfillPercent = config.infillPercent;
                     config.infillPercent = 100;
