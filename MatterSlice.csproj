@@ -112,6 +112,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Comb.cs" />
+    <Compile Include="ExtruderLayers.cs" />
     <Compile Include="GCodePathConfig.cs" />
     <Compile Include="GCodePlanner.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -125,7 +126,9 @@
     <Compile Include="main.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="timeEstimate.cs" />
+    <Compile Include="utils\Point3.cs" />
     <Compile Include="utils\IntpointHelper.cs" />
+    <Compile Include="utils\PolygonsHelper.cs" />
     <Compile Include="utils\SplitCommandLine.cs" />
     <Compile Include="utils\StringHelper.cs" />
   </ItemGroup>
@@ -136,10 +139,10 @@
     <Compile Include="gcodeExport.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="optimizedModel.cs" />
+    <Compile Include="OptimizedMesh.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SimpleModel.cs" />
+    <Compile Include="SimpleMesh.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AvoidCrossingPerimeters.cs" />
@@ -151,17 +154,11 @@
     <Compile Include="PathOrderOptimizer.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="support.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="bridge.cs" />
     <Compile Include="logoutput.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="infill.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="TopsAndBottoms.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="skirt.cs" />
@@ -170,7 +167,7 @@
     <Compile Include="raft.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="multiVolumes.cs" />
+    <Compile Include="MultiExtruders.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="inset.cs" />

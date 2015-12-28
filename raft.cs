@@ -28,7 +28,7 @@ namespace MatterHackers.MatterSlice
 
 	public static class Raft
 	{
-		public static void GenerateRaftGCodeIfRequired(SliceDataStorage storage, ConfigSettings config, GCodeExport gcode)
+		public static void WriteRaftGCodeIfRequired(LayerDataStorage storage, ConfigSettings config, GCodeExport gcode)
 		{
 			if (ShouldGenerateRaft(config))
 			{
@@ -59,15 +59,15 @@ namespace MatterHackers.MatterSlice
 					Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftBaseLineSpacing_um, config.infillExtendIntoPerimeter_um, 0);
 
 					// write the skirt around the raft
-					gcodeLayer.WritePolygonsByOptimizer(storage.skirt, raftBaseConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(storage.skirt, raftBaseConfig);
 
 					// write the outline of the raft
-					gcodeLayer.WritePolygonsByOptimizer(storage.raftOutline, raftBaseConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(storage.raftOutline, raftBaseConfig);
 
 					// write the inside of the raft base
-					gcodeLayer.WritePolygonsByOptimizer(raftLines, raftBaseConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftBaseConfig);
 
-					gcodeLayer.WriteGCode(false, config.raftBaseThickness_um);
+					gcodeLayer.WriteQueuedGCode(config.raftBaseThickness_um);
 				}
 
 				if (config.raftFanSpeedPercent > 0)
@@ -85,9 +85,9 @@ namespace MatterHackers.MatterSlice
 
 					Polygons raftLines = new Polygons();
 					Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftInterfaceLineSpacing_um, config.infillExtendIntoPerimeter_um, 45);
-					gcodeLayer.WritePolygonsByOptimizer(raftLines, raftMiddleConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftMiddleConfig);
 
-					gcodeLayer.WriteGCode(false, config.raftInterfaceThicknes_um);
+					gcodeLayer.WriteQueuedGCode(config.raftInterfaceThicknes_um);
 				}
 
 				for (int raftSurfaceIndex = 1; raftSurfaceIndex <= config.raftSurfaceLayers; raftSurfaceIndex++)
@@ -108,47 +108,49 @@ namespace MatterHackers.MatterSlice
 					{
 						Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftSurfaceLineSpacing_um, config.infillExtendIntoPerimeter_um, 90 * raftSurfaceIndex);
 					}
-					gcodeLayer.WritePolygonsByOptimizer(raftLines, raftSurfaceConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftSurfaceConfig);
 
-					gcodeLayer.WriteGCode(false, config.raftInterfaceThicknes_um);
+					gcodeLayer.WriteQueuedGCode(config.raftInterfaceThicknes_um);
 				}
 			}
 		}
 
-		public static void GenerateRaftOutlines(SliceDataStorage storage, int extraDistanceAroundPart_um, ConfigSettings config)
+		public static void GenerateRaftOutlines(LayerDataStorage storage, int extraDistanceAroundPart_um, ConfigSettings config)
 		{
-			for (int volumeIndex = 0; volumeIndex < storage.AllPartsLayers.Count; volumeIndex++)
+			for (int extruderIndex = 0; extruderIndex < storage.Extruders.Count; extruderIndex++)
 			{
-				if (config.continuousSpiralOuterPerimeter && volumeIndex > 0)
+				if (config.continuousSpiralOuterPerimeter && extruderIndex > 0)
 				{
 					continue;
 				}
 
-				if (storage.AllPartsLayers[volumeIndex].Layers.Count < 1)
+				if (storage.Extruders[extruderIndex].Layers.Count < 1)
 				{
 					continue;
 				}
 
-				SliceLayerParts layer = storage.AllPartsLayers[volumeIndex].Layers[0];
+				SliceLayer layer = storage.Extruders[extruderIndex].Layers[0];
 				// let's find the first layer that has something in it for the raft rather than a zero layer
-				if (layer.layerSliceData.Count == 0 && storage.AllPartsLayers[volumeIndex].Layers.Count > 2) layer = storage.AllPartsLayers[volumeIndex].Layers[1];
-				for (int partIndex = 0; partIndex < layer.layerSliceData.Count; partIndex++)
+				if (layer.Islands.Count == 0 && storage.Extruders[extruderIndex].Layers.Count > 2) layer = storage.Extruders[extruderIndex].Layers[1];
+				for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
 				{
 					if (config.continuousSpiralOuterPerimeter && partIndex > 0)
 					{
 						continue;
 					}
 
-					storage.raftOutline = storage.raftOutline.CreateUnion(layer.layerSliceData[partIndex].TotalOutline.Offset(extraDistanceAroundPart_um));
+					storage.raftOutline = storage.raftOutline.CreateUnion(layer.Islands[partIndex].IslandOutline.Offset(extraDistanceAroundPart_um));
 				}
 			}
 
-			SupportPolyGenerator supportGenerator = new SupportPolyGenerator(storage.support, 0);
 			storage.raftOutline = storage.raftOutline.CreateUnion(storage.wipeTower.Offset(extraDistanceAroundPart_um));
-			storage.raftOutline = storage.raftOutline.CreateUnion(supportGenerator.supportPolygons.Offset(extraDistanceAroundPart_um));
-		}
+            if (storage.support != null)
+            {
+                storage.raftOutline = storage.raftOutline.CreateUnion(storage.support.GetBedOutlines().Offset(extraDistanceAroundPart_um));
+            }
+        }
 
-		public static bool ShouldGenerateRaft(ConfigSettings config)
+        public static bool ShouldGenerateRaft(ConfigSettings config)
 		{
 			return config.enableRaft
 				&& config.raftBaseThickness_um > 0

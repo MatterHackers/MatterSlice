@@ -30,16 +30,17 @@ namespace MatterHackers.MatterSlice
 	{
 		private static void print_usage()
 		{
-			LogOutput.LogError("usage: MatterSlice [-h] [-d] [-v] [-m 3x3matrix] [-c <config file>]\n       [-s <settingkey>=<value>] -o <output.gcode> <model.stl>\n\n");
+			LogOutput.LogError("usage: MatterSlice [-h] [-d] [-v] [-t] [-m 3x3matrix]\n       [-b boolean math] [-c <config file>]\n       [-s <settingkey>=<value>] -o <output.gcode> <model.stl>\n\n");
 			LogOutput.LogError("    [] enclose optional settings, <> are required.\n\n");
 			LogOutput.LogError("    -h Show this message.\n");
-			LogOutput.LogError("    -d Save the currently loaded settings to settings.ini (usefull to see all settings).\n");
+			LogOutput.LogError("    -d Save the currently loaded settings to settings.ini (usefull to see\n       all settings).\n");
 			LogOutput.LogError("    -v Increment verbose level.\n");
-			LogOutput.LogError("    -m A 3x3 matrix for translating and rotating the layers.\n");
+            LogOutput.LogError("    -t Run unit tests.\n");
+            LogOutput.LogError("    -m A 3x3 matrix for translating and rotating the layers.\n");
+            LogOutput.LogError("    -b A string describing the boolean math to do on the loaded models.\n       (indexA,indexB) - parentheses = union\n       {indexA,indexBToRemove} - curly brackets = difference\n       [indexA,indexB] - square brackets = intersection\n       Example: b (0,[1,{2,3}]) intersect 2+3, remove from 1, union with 0\n");
 			LogOutput.LogError("    -c A config file to apply to the current settings.\n       Can be applyed multiple times.\n       Formated like the default.ini (partial settings are fine).\n");
 			LogOutput.LogError("    -s Specify a setting on the command line.\n       Uses the same names and values as default.ini.\n");
 			LogOutput.LogError("    -o Specify the path and filename to save 'output.gcode'.\n");
-			LogOutput.LogError("    -t Run unit tests.\n");
 			LogOutput.LogError("    model.stl, the file that will be loaded and sliced.\n");
 		}
 
@@ -120,6 +121,11 @@ namespace MatterHackers.MatterSlice
 									}
 								}
 								break;
+
+							case 'b':
+								argn++;
+								config.BooleanOpperations = args[argn];
+                                break;
 
 							case 'd':
 								config.DumpSettings("settings.ini");

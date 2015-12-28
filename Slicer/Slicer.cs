@@ -47,20 +47,19 @@ namespace MatterHackers.MatterSlice
 
 	public class Slicer
 	{
-		public List<SliceLayer> layers = new List<SliceLayer>();
+		public List<MeshProcessingLayer> layers = new List<MeshProcessingLayer>();
 		public Point3 modelSize;
 		public Point3 modelMin;
 
-		public Slicer(OptimizedVolume ov, ConfigSettings config)
+		public Slicer(OptimizedMesh ov, ConfigSettings config)
 		{
 			int initialLayerThickness_um = config.firstLayerThickness_um;
 			int layerThickness_um = config.layerThickness_um;
-			ConfigConstants.REPAIR_OUTLINES outlineRepairTypes = config.repairOutlines;
 
-			modelSize = ov.parentModel.size_um;
-			modelMin = ov.parentModel.minXYZ_um;
+			modelSize = ov.containingCollection.size_um;
+			modelMin = ov.containingCollection.minXYZ_um;
 
-			int heightWithoutFirstLayer = modelSize.z - initialLayerThickness_um - config.bottomClipAmount_um;
+			long heightWithoutFirstLayer = modelSize.z - initialLayerThickness_um - config.bottomClipAmount_um;
 			int countOfNormalThicknessLayers = Math.Max(0, (int)((heightWithoutFirstLayer / (double)layerThickness_um) + .5));
 
 			int layerCount = countOfNormalThicknessLayers;
@@ -83,7 +82,7 @@ namespace MatterHackers.MatterSlice
 				{
 					z = initialLayerThickness_um + layerThickness_um / 2 + layerThickness_um * (layerIndex - 1);
 				}
-				layers.Add(new SliceLayer(z));
+				layers.Add(new MeshProcessingLayer(z));
 			}
 
 			for (int faceIndex = 0; faceIndex < ov.facesTriangle.Count; faceIndex++)
@@ -91,8 +90,8 @@ namespace MatterHackers.MatterSlice
 				Point3 p0 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[0]].position;
 				Point3 p1 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[1]].position;
 				Point3 p2 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[2]].position;
-				int minZ = p0.z;
-				int maxZ = p0.z;
+				long minZ = p0.z;
+				long maxZ = p0.z;
 				if (p1.z < minZ) minZ = p1.z;
 				if (p2.z < minZ) minZ = p2.z;
 				if (p1.z > maxZ) maxZ = p1.z;
@@ -163,7 +162,7 @@ namespace MatterHackers.MatterSlice
 
 			for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
 			{
-				layers[layerIndex].MakePolygons(outlineRepairTypes);
+				layers[layerIndex].MakePolygons();
 			}
 		}
 

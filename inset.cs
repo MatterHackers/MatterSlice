@@ -30,13 +30,15 @@ namespace MatterHackers.MatterSlice
 	{
 		private static readonly double minimumDistanceToCreateNewPosition = 10;
 
-		public static void GenerateInsets(SliceLayerPart part, int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
+		public static void GenerateInsets(LayerIsland part, int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
 		{
-            part.AvoidCrossingBoundery = part.TotalOutline;//.Offset(-extrusionWidth_um);
+            part.BoundingBox.Calculate(part.IslandOutline);
+
+			part.AvoidCrossingBoundery = part.IslandOutline;//.Offset(-extrusionWidth_um);
 			if (insetCount == 0)
 			{
 				// if we have no insets defined still create one
-				part.Insets.Add(part.TotalOutline);
+				part.InsetToolPaths.Add(part.IslandOutline);
 			}
 			else // generate the insets
 			{
@@ -50,14 +52,14 @@ namespace MatterHackers.MatterSlice
 					// Incriment by half the offset amount
 					currentOffset += offsetBy;
 		
-					Polygons currentInset = part.TotalOutline.Offset(-currentOffset);
+					Polygons currentInset = part.IslandOutline.Offset(-currentOffset);
 					// make sure our polygon data is reasonable
 					currentInset = Clipper.CleanPolygons(currentInset, minimumDistanceToCreateNewPosition);
 
 					// check that we have actuall paths
 					if (currentInset.Count > 0)
 					{
-						part.Insets.Add(currentInset);
+						part.InsetToolPaths.Add(currentInset);
 
 						// Incriment by the second half
 						currentOffset += offsetBy;
@@ -77,20 +79,20 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static void generateInsets(SliceLayerParts layer, int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
+		public static void generateInsets(SliceLayer layer, int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
 		{
-			for (int partIndex = 0; partIndex < layer.layerSliceData.Count; partIndex++)
+			for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
 			{
-				GenerateInsets(layer.layerSliceData[partIndex], extrusionWidth_um, outerExtrusionWidth_um, insetCount);
+				GenerateInsets(layer.Islands[partIndex], extrusionWidth_um, outerExtrusionWidth_um, insetCount);
 			}
 
 			//Remove the parts which did not generate an inset. As these parts are too small to print,
 			// and later code can now assume that there is always minimum 1 inset line.
-			for (int partIndex = 0; partIndex < layer.layerSliceData.Count; partIndex++)
+			for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
 			{
-				if (layer.layerSliceData[partIndex].Insets.Count < 1)
+				if (layer.Islands[partIndex].InsetToolPaths.Count < 1)
 				{
-					layer.layerSliceData.RemoveAt(partIndex);
+					layer.Islands.RemoveAt(partIndex);
 					partIndex -= 1;
 				}
 			}

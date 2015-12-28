@@ -64,34 +64,10 @@ namespace MatterHackers.MatterSlice
             ULTIGCODE,
 
             /**
-			 * Bits From Bytes GCode.
-			 *  BFB machines use RPM instead of E. Which is coupled to the F instead of independed. (M108 S[deciRPM])
-			 *  Need X,Y,Z,F on every line.
-			 *  Needs extruder ON/OFF (M101, M103), has auto-retrection (M227 S[2560*mm] P[2560*mm])
-			 **/
-            BFB,
-
-            /**
 			  * MACH3 GCode
 			  *  MACH3 is CNC control software, which expects A/B/C/D for extruders, instead of E.
 			  **/
             MACH3,
-        }
-
-        [Flags]
-        public enum REPAIR_OUTLINES
-        {
-            NONE,
-            EXTENSIVE_STITCHING = 0x01,
-            KEEP_OPEN = 0x02,
-        }
-
-        [Flags]
-        public enum REPAIR_OVERLAPS
-        {
-            NONE,
-            REVERSE_ORIENTATION = 0x01,
-            UNION_ALL_TOGETHER = 0x02,
         }
 
         /**
@@ -128,9 +104,6 @@ namespace MatterHackers.MatterSlice
         // other
         [SettingDescription("This will cause the z height to raise continuously while on the outer perimeter.")]
         public bool continuousSpiralOuterPerimeter;
-
-        [SettingDescription("Will cause the head to be raised in z until the min layer time is reached.")]
-        public bool doCoolHeadLift;
 
         // Raft settings
         [SettingDescription("mm.")]
@@ -169,6 +142,9 @@ namespace MatterHackers.MatterSlice
         [SettingDescription("If True, support will be generated within the part as well as from the bed.")]
         public bool generateInternalSupport;
 
+        [SettingDescription("If True, support will be generated from the the bed. If false no support will be generated at all.")]
+        public bool generateSupport;
+
         [SettingDescription("The amount the infill extends into the perimeter in millimeters.")]
         public double infillExtendIntoPerimeter;
 
@@ -205,7 +181,7 @@ namespace MatterHackers.MatterSlice
         // object transform
         public FMatrix3x3 modelRotationMatrix = new FMatrix3x3();
 
-        public int multiVolumeOverlapPercent;
+        public int multiExtruderOverlapPercent;
         public int numberOfBottomLayers;
         public int numberOfPerimeters;
 
@@ -229,19 +205,15 @@ namespace MatterHackers.MatterSlice
         public double raftExtraDistanceAroundPart;
         public int raftExtruder;
 
-        [SettingDescription("The speed to run the fan during raft printing.")]
+		public double supportAirGap;
+
+		[SettingDescription("The speed to run the fan during raft printing.")]
         public int raftFanSpeedPercent;
 
         // Raft read only info
         public int raftPrintSpeed;
 
         // repair settings
-        [SettingDescription("You can or them together using '|'.")]
-        public ConfigConstants.REPAIR_OUTLINES repairOutlines;
-
-        [SettingDescription("You can or them together using '|'.")]
-        public ConfigConstants.REPAIR_OVERLAPS repairOverlaps;
-
         public double retractionOnExtruderSwitch;
         public double retractionOnTravel;
 
@@ -258,9 +230,6 @@ namespace MatterHackers.MatterSlice
         public int skirtMinLength;
 
         public string startCode;
-
-        [SettingDescription("The ending angle at which support material will be generated. Larger numbers will result in more support, degrees.")]
-        public int supportEndAngle;
 
         public int supportExtruder;
 
@@ -291,7 +260,10 @@ namespace MatterHackers.MatterSlice
         [SettingDescription("This is the speed to print the top layer infill, mm/s.")]
         public double topInfillSpeed;
 
-        [SettingDescription("The speed to move when not extruding material. mm/s.")]
+		[SettingDescription("This is the speed to print the bottom layers infill, mm/s.")]
+		public double bottomInfillSpeed;
+
+		[SettingDescription("The speed to move when not extruding material. mm/s.")]
         public int travelSpeed;
 
         [SettingDescription("The amount of extra extrusion to do when unretracting (resume printing after retraction).")]
@@ -307,8 +279,9 @@ namespace MatterHackers.MatterSlice
         public double wipeTowerSize;
 
         public double zOffset;
+		public string BooleanOpperations { get; set; } = "";
 
-        public ConfigSettings()
+		public ConfigSettings()
         {
             SetToDefault();
         }
@@ -326,6 +299,7 @@ namespace MatterHackers.MatterSlice
 
         public IntPoint positionToPlaceObjectCenter_um { get { return new IntPoint(positionToPlaceObjectCenter.X * 1000, positionToPlaceObjectCenter.Y * 1000); } }
         public int raftAirGap_um { get { return (int)(raftAirGap * 1000); } }
+		public int supportAirGap_um { get { return (int)(supportAirGap * 1000); } }
         public int raftBaseExtrusionWidth_um { get { return extrusionWidth_um * 3; } }
         public int raftBaseLineSpacing_um { get { return (int)(extrusionWidth_um * 4); } }
         public int raftBaseThickness_um { get { return extrusionWidth_um * 300 / 400; } }
@@ -609,6 +583,7 @@ namespace MatterHackers.MatterSlice
             numberOfTopLayers = 6;
             firstLayerSpeed = 20;
             topInfillSpeed = 20;
+			bottomInfillSpeed = 20;
             supportMaterialSpeed = 40;
             infillSpeed = 50;
             bridgeSpeed = 20;
@@ -634,11 +609,12 @@ namespace MatterHackers.MatterSlice
             // raft settings
             enableRaft = false;
             raftAirGap = .2; // .2 mm for .4 mm nozzle
-            raftExtraDistanceAroundPart = 5;
+			supportAirGap = .3; //
+			raftExtraDistanceAroundPart = 5;
 
             supportType = ConfigConstants.SUPPORT_TYPE.GRID;
-            supportEndAngle = 0;
-            generateInternalSupport = true;
+            generateSupport = false;
+			generateInternalSupport = true;
             raftExtruder = -1;
             supportLineSpacing = extrusionWidth * 5;
             supportExtruder = -1;
@@ -654,11 +630,10 @@ namespace MatterHackers.MatterSlice
             wipeShieldDistanceFromObject = 0;
             avoidCrossingPerimeters = true;
             wipeTowerSize = 5;
-            multiVolumeOverlapPercent = 0;
+            multiExtruderOverlapPercent = 0;
 
             minimumLayerTimeSeconds = 5;
             minimumPrintingSpeed = 10;
-            doCoolHeadLift = false;
             fanSpeedMinPercent = 100;
             fanSpeedMaxPercent = 100;
 

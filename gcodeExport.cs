@@ -48,14 +48,16 @@ namespace MatterHackers.MatterSlice
 		private ConfigConstants.OUTPUT_TYPE outputType;
 		private double retractionAmount_mm;
 		private int retractionSpeed;
-		private List<IntPoint> retractionWipePath = new Polygon();
+		private List<Point3> retractionWipePath = new List<Point3>();
 		private double retractionZHop_mm;
 		private string toolChangeCode;
 		private double[] totalFilament_mm = new double[ConfigConstants.MAX_EXTRUDERS];
 		private double totalPrintTime;
 		private double unretractExtrusionExtra_mm;
 		private bool wipeAfterRetraction;
-		private int zPos_um;
+		private long zPos_um;
+
+		public long CurrentZ { get { return zPos_um; } }
 
 		public GCodeExport()
 		{
@@ -86,12 +88,9 @@ namespace MatterHackers.MatterSlice
 			gcodeFileStream.Close();
 		}
 
-		public void Finalize(int maxObjectHeight, int moveSpeed, string endCode)
+		public void Finalize(long maxObjectHeight, int moveSpeed, string endCode)
 		{
 			WriteFanCommand(0);
-			WriteRetraction();
-			setZ(maxObjectHeight + 5000);
-			WriteMove(GetPositionXY(), moveSpeed, 0);
 			WriteCode(endCode);
 			WriteComment("filament used = {0:0.0}".FormatWith(GetTotalFilamentUsed(0) + GetTotalFilamentUsed(1)));
 			WriteComment("filament used extruder 1 (mm) = {0:0.0}".FormatWith(GetTotalFilamentUsed(0)));
@@ -129,12 +128,17 @@ namespace MatterHackers.MatterSlice
 			return this.outputType;
 		}
 
+		public Point3 GetPosition()
+		{
+			return currentPosition_um;
+		}
+
 		public IntPoint GetPositionXY()
 		{
 			return new IntPoint(currentPosition_um.x, currentPosition_um.y);
 		}
 
-		public int GetPositionZ()
+		public long GetPositionZ()
 		{
 			return currentPosition_um.z;
 		}
@@ -231,7 +235,7 @@ namespace MatterHackers.MatterSlice
 			this.toolChangeCode = toolChangeCode;
 		}
 
-		public void setZ(int z)
+		public void setZ(long z)
 		{
 			this.zPos_um = z;
 		}
@@ -330,112 +334,101 @@ namespace MatterHackers.MatterSlice
 			gcodeFileStream.Write("{0}\n".FormatWith(line));
 		}
 
-		public void WriteMove(IntPoint movePosition_um, double speed, int lineWidth_um)
-		{
-			StringBuilder lineToWrite = new StringBuilder();
-			if (outputType == ConfigConstants.OUTPUT_TYPE.BFB)
-			{
-				movePosition_um = WriteMoveBFBPartial(movePosition_um, speed, lineWidth_um, lineToWrite);
-			}
-			else
-			{
-				//Normal E handling.
-				if (lineWidth_um != 0)
-				{
-					IntPoint diff = movePosition_um - GetPositionXY();
-					if (isRetracted)
-					{
-						if (retractionZHop_mm > 0)
-						{
-							double zWritePosition = (double)(currentPosition_um.z - extruderOffset_um[extruderIndex].z) / 1000;
-							lineToWrite.Append("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
-						}
+        public void WriteMove(Point3 movePosition_um, double speed, int lineWidth_um)
+        {
+            StringBuilder lineToWrite = new StringBuilder();
+            //Normal E handling.
+            if (lineWidth_um != 0)
+            {
+                Point3 diff = movePosition_um - GetPosition();
+                if (isRetracted)
+                {
+                    if (retractionZHop_mm > 0)
+                    {
+                        double zWritePosition = (double)(currentPosition_um.z - extruderOffset_um[extruderIndex].z) / 1000;
+                        lineToWrite.Append("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
+                    }
 
-						if (extrusionAmount_mm > 10000.0)
-						{
-							//According to https://github.com/Ultimaker/CuraEngine/issues/14 having more then 21m of extrusion causes inaccuracies. So reset it every 10m, just to be sure.
-							ResetExtrusionValue(retractionAmount_mm);
-						}
+                    if (extrusionAmount_mm > 10000.0)
+                    {
+                        //According to https://github.com/Ultimaker/CuraEngine/issues/14 having more then 21m of extrusion causes inaccuracies. So reset it every 10m, just to be sure.
+                        ResetExtrusionValue(retractionAmount_mm);
+                    }
 
-						if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
-						{
-							lineToWrite.Append("G11\n");
-						}
-						else
-						{
-							lineToWrite.Append("G1 F{0} {1}{2:0.#####}\n".FormatWith(retractionSpeed * 60, extruderCharacter[extruderIndex], extrusionAmount_mm));
+                    if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
+                    {
+                        lineToWrite.Append("G11\n");
+                    }
+                    else
+                    {
+                        lineToWrite.Append("G1 F{0} {1}{2:0.#####}\n".FormatWith(retractionSpeed * 60, extruderCharacter[extruderIndex], extrusionAmount_mm));
 
-							currentSpeed = retractionSpeed;
-							estimateCalculator.plan(new TimeEstimateCalculator.Position(
-								currentPosition_um.x / 1000.0,
-								currentPosition_um.y / 1000.0,
-								currentPosition_um.z / 1000.0,
-								extrusionAmount_mm),
-								currentSpeed);
-						}
+                        currentSpeed = retractionSpeed;
+                        estimateCalculator.plan(new TimeEstimateCalculator.Position(
+                            currentPosition_um.x / 1000.0,
+                            currentPosition_um.y / 1000.0,
+                            currentPosition_um.z / 1000.0,
+                            extrusionAmount_mm),
+                            currentSpeed);
+                    }
 
-						isRetracted = false;
-					}
+                    isRetracted = false;
+                }
 
-					extrusionAmount_mm += extrusionPerMm * lineWidth_um / 1000.0 * diff.LengthMm();
-					lineToWrite.Append("G1");
-				}
-				else
-				{
-					lineToWrite.Append("G0");
-				}
+                extrusionAmount_mm += extrusionPerMm * lineWidth_um / 1000.0 * diff.LengthMm();
+                lineToWrite.Append("G1");
+            }
+            else
+            {
+                lineToWrite.Append("G0");
+            }
 
-				if (currentSpeed != speed)
-				{
-					lineToWrite.Append(" F{0}".FormatWith(speed * 60));
-					currentSpeed = speed;
-				}
+            if (currentSpeed != speed)
+            {
+                lineToWrite.Append(" F{0}".FormatWith(speed * 60));
+                currentSpeed = speed;
+            }
 
-				double xWritePosition = (double)(movePosition_um.X - extruderOffset_um[extruderIndex].x) / 1000.0;
-				double yWritePosition = (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].y) / 1000.0;
-				lineToWrite.Append(" X{0:0.###} Y{1:0.###}".FormatWith(xWritePosition, yWritePosition));
+            double xWritePosition = (double)(movePosition_um.x - extruderOffset_um[extruderIndex].x) / 1000.0;
+            double yWritePosition = (double)(movePosition_um.y - extruderOffset_um[extruderIndex].y) / 1000.0;
+            lineToWrite.Append(" X{0:0.###} Y{1:0.###}".FormatWith(xWritePosition, yWritePosition));
 
-				if (zPos_um != currentPosition_um.z)
-				{
-					double zWritePosition = (double)(zPos_um - extruderOffset_um[extruderIndex].z) / 1000.0;
-					lineToWrite.Append(" Z{0:0.###}".FormatWith(zWritePosition));
-				}
+            if (movePosition_um.z != currentPosition_um.z)
+            {
+                double zWritePosition = (double)(movePosition_um.z - extruderOffset_um[extruderIndex].z) / 1000.0;
+                lineToWrite.Append(" Z{0:0.###}".FormatWith(zWritePosition));
+            }
 
-				if (lineWidth_um != 0)
-				{
-					lineToWrite.Append(" {0}{1:0.#####}".FormatWith(extruderCharacter[extruderIndex], extrusionAmount_mm));
-				}
+            if (lineWidth_um != 0)
+            {
+                lineToWrite.Append(" {0}{1:0.#####}".FormatWith(extruderCharacter[extruderIndex], extrusionAmount_mm));
+            }
 
-				lineToWrite.Append("\n");
-			}
+            lineToWrite.Append("\n");
 
-			if (lineToWrite.Length > 0)
-			{
-				string lineAsString = lineToWrite.ToString();
-				gcodeFileStream.Write(lineAsString);
-			}
+            if (lineToWrite.Length > 0)
+            {
+                string lineAsString = lineToWrite.ToString();
+                gcodeFileStream.Write(lineAsString);
+            }
 
-			//If wipe enabled remember path, but stop at 100 moves to keep memory usage low
-			if (wipeAfterRetraction)
-			{
-				retractionWipePath.Add(movePosition_um);
-				if (retractionWipePath.Count > 100)
-				{
-					retractionWipePath.RemoveAt(0);
-				}
-			}
+            //If wipe enabled remember path, but stop at 100 moves to keep memory usage low
+            if (wipeAfterRetraction)
+            {
+                retractionWipePath.Add(movePosition_um);
+                if (retractionWipePath.Count > 100)
+                {
+                    retractionWipePath.RemoveAt(0);
+                }
+            }
 
-			currentPosition_um = new Point3(movePosition_um.X, movePosition_um.Y, zPos_um);
-			estimateCalculator.plan(new TimeEstimateCalculator.Position(currentPosition_um.x / 1000.0, currentPosition_um.y / 1000.0, currentPosition_um.z / 1000.0, extrusionAmount_mm), speed);
-		}
+            currentPosition_um = movePosition_um;
+            estimateCalculator.plan(new TimeEstimateCalculator.Position(currentPosition_um.x / 1000.0, currentPosition_um.y / 1000.0, currentPosition_um.z / 1000.0, extrusionAmount_mm), speed);
+        }
 
 		public void WriteRetraction()
 		{
 			double initialSpeed = currentSpeed;
-			if (outputType == ConfigConstants.OUTPUT_TYPE.BFB)//BitsFromBytes does automatic retraction.
-			{
-				return;
-			}
 
 			if (retractionAmount_mm > 0
 				&& !isRetracted
@@ -478,7 +471,7 @@ namespace MatterHackers.MatterSlice
 			//This wipes the extruder back along the previous path after retracting.
 			if (wipeAfterRetraction && retractionWipePath.Count >= 2)
 			{
-				IntPoint lastP = retractionWipePath[retractionWipePath.Count - 1];
+				Point3 lastP = retractionWipePath[retractionWipePath.Count - 1];
 				int indexStepDirection = -1;
 				int i = retractionWipePath.Count - 2;
 				double wipeDistanceMm = 10;
@@ -486,7 +479,7 @@ namespace MatterHackers.MatterSlice
 
 				while (wipeLeft > 0)
 				{
-					IntPoint p = retractionWipePath[i];
+					Point3 p = retractionWipePath[i];
 					long len = (lastP - p).Length();
 
 					//Check if we're out of moves
@@ -504,7 +497,7 @@ namespace MatterHackers.MatterSlice
 					//If move is longer than wipe remaining, calculate angle and move along path but stop short.
 					if (len > wipeLeft)
 					{
-						IntPoint direction = p - lastP;
+						Point3 direction = p - lastP;
 						long directionLength = direction.Length();
 						direction *= wipeLeft;
 						direction /= directionLength;
@@ -519,58 +512,11 @@ namespace MatterHackers.MatterSlice
 						currentSpeed = initialSpeed;
 						gcodeFileStream.Write("F{0} ".FormatWith(currentSpeed * 60));
 					}
-					gcodeFileStream.Write("X{0:0.###} Y{1:0.###}\n".FormatWith((p.X - extruderOffset_um[extruderIndex].x) / 1000.0, (p.Y - extruderOffset_um[extruderIndex].y) / 1000.0));
-					estimateCalculator.plan(new TimeEstimateCalculator.Position(p.X / 1000.0, p.Y / 1000.0, currentPosition_um.z / 1000.0, 0), currentSpeed);
+					gcodeFileStream.Write("X{0:0.###} Y{1:0.###}\n".FormatWith((p.x - extruderOffset_um[extruderIndex].x) / 1000.0, (p.y - extruderOffset_um[extruderIndex].y) / 1000.0));
+					estimateCalculator.plan(new TimeEstimateCalculator.Position(p.x / 1000.0, p.y / 1000.0, currentPosition_um.z / 1000.0, 0), currentSpeed);
 				}
 				retractionWipePath.Clear();
 			}
-		}
-
-		private IntPoint WriteMoveBFBPartial(IntPoint movePosition_um, double speed, int lineWidth_um, StringBuilder lineToWrite)
-		{
-			//For Bits From Bytes machines, we need to handle this completely differently. As they do not use E values, they use RPM values
-			double fspeed = speed * 60;
-			double rpm = (extrusionPerMm * (double)(lineWidth_um) / 1000.0) * speed * 60;
-
-			//All BFB machines have 4mm per RPM extrusion.
-			const double mm_per_rpm = 4.0;
-			rpm /= mm_per_rpm;
-			if (rpm > 0)
-			{
-				if (isRetracted)
-				{
-					if (currentSpeed != (int)(rpm * 10))
-					{
-						//lineToWrite.Append("; %f e-per-mm %d mm-width %d mm/s\n", extrusionPerMM, lineWidth, speed);
-						lineToWrite.Append("M108 S{0:0.0}\n".FormatWith(rpm * 10));
-						currentSpeed = (int)(rpm * 10);
-					}
-					lineToWrite.Append("M101\n");
-					isRetracted = false;
-				}
-				// Fix the speed by the actual RPM we are asking, because of rounding errors we cannot get all RPM values, but we have a lot more resolution in the feedrate value.
-				// (Trick copied from KISSlicer, thanks Jonathan)
-				fspeed *= (rpm / (Round(rpm * 100) / 100));
-
-				//Increase the extrusion amount to calculate the amount of filament used.
-				IntPoint diff = movePosition_um - GetPositionXY();
-				extrusionAmount_mm += extrusionPerMm * lineWidth_um / 1000.0 * diff.LengthMm();
-			}
-			else
-			{
-				//If we are not extruding, check if we still need to disable the extruder. This causes a retraction due to auto-retraction.
-				if (!isRetracted)
-				{
-					lineToWrite.Append("M103\n");
-					isRetracted = true;
-				}
-			}
-			double xWritePosition = (double)(movePosition_um.X - extruderOffset_um[extruderIndex].x) / 1000.0;
-			double yWritePosition = (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].y) / 1000.0;
-			double zWritePosition = (double)(zPos_um - extruderOffset_um[extruderIndex].z) / 1000.0;
-			// These values exist in microns (integer) so there is an absolute limit to precision of 1/1000th.
-			lineToWrite.Append("G1 X{0:0.###} Y{1:0.###} Z{2:0.###} F{3:0.#}\n".FormatWith(xWritePosition, yWritePosition, zWritePosition, fspeed));
-			return movePosition_um;
 		}
 	}
 }

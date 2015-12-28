@@ -38,7 +38,7 @@ namespace MatterHackers.MatterSlice
 	};
 
 	// A SimpleVolume is the most basic reprisentation of a 3D model. It contains all the faces as SimpleTriangles, with nothing fancy.
-	public class SimpleVolume
+	public class SimpleMesh
 	{
 		public List<SimpleFace> faceTriangles = new List<SimpleFace>();
 
@@ -48,7 +48,19 @@ namespace MatterHackers.MatterSlice
 				n = m;
 		}
 
+		private void SET_MIN(ref long n, long m)
+		{
+			if ((m) < (n))
+				n = m;
+		}
+
 		private void SET_MAX(ref int n, int m)
+		{
+			if ((m) > (n))
+				n = m;
+		}
+
+		private void SET_MAX(ref long n, long m)
 		{
 			if ((m) > (n))
 				n = m;
@@ -107,49 +119,49 @@ namespace MatterHackers.MatterSlice
 	}
 
 	//A SimpleModel is a 3D model with 1 or more 3D volumes.
-	public class SimpleModel
+	public class SimpleMeshCollection
 	{
-		public List<SimpleVolume> volumes = new List<SimpleVolume>();
+		public List<SimpleMesh> SimpleMeshes = new List<SimpleMesh>();
 
 		public Point3 minXYZ_um()
 		{
-			if (volumes.Count < 1)
+			if (SimpleMeshes.Count < 1)
 			{
 				return new Point3(0, 0, 0);
 			}
 
-			Point3 minXYZ = volumes[0].minXYZ_um();
-			for (int volumeIndex = 1; volumeIndex < volumes.Count; volumeIndex++)
+			Point3 minXYZ = SimpleMeshes[0].minXYZ_um();
+			for (int meshIndex = 1; meshIndex < SimpleMeshes.Count; meshIndex++)
 			{
-				Point3 volumeMinXYZ = volumes[volumeIndex].minXYZ_um();
-				minXYZ.x = Math.Min(minXYZ.x, volumeMinXYZ.x);
-				minXYZ.y = Math.Min(minXYZ.y, volumeMinXYZ.y);
-				minXYZ.z = Math.Min(minXYZ.z, volumeMinXYZ.z);
+				Point3 meshMinXYZ = SimpleMeshes[meshIndex].minXYZ_um();
+				minXYZ.x = Math.Min(minXYZ.x, meshMinXYZ.x);
+				minXYZ.y = Math.Min(minXYZ.y, meshMinXYZ.y);
+				minXYZ.z = Math.Min(minXYZ.z, meshMinXYZ.z);
 			}
 			return minXYZ;
 		}
 
 		public Point3 maxXYZ_um()
 		{
-			if (volumes.Count < 1)
+			if (SimpleMeshes.Count < 1)
 			{
 				return new Point3(0, 0, 0);
 			}
 
-			Point3 maxXYZ = volumes[0].maxXYZ_um();
-			for (int volumeIndex = 1; volumeIndex < volumes.Count; volumeIndex++)
+			Point3 maxXYZ = SimpleMeshes[0].maxXYZ_um();
+			for (int meshIndex = 1; meshIndex < SimpleMeshes.Count; meshIndex++)
 			{
-				Point3 volumeMaxXYZ = volumes[volumeIndex].maxXYZ_um();
-				maxXYZ.x = Math.Max(maxXYZ.x, volumeMaxXYZ.x);
-				maxXYZ.y = Math.Max(maxXYZ.y, volumeMaxXYZ.y);
-				maxXYZ.z = Math.Max(maxXYZ.z, volumeMaxXYZ.z);
+				Point3 meshMaxXYZ = SimpleMeshes[meshIndex].maxXYZ_um();
+				maxXYZ.x = Math.Max(maxXYZ.x, meshMaxXYZ.x);
+				maxXYZ.y = Math.Max(maxXYZ.y, meshMaxXYZ.y);
+				maxXYZ.z = Math.Max(maxXYZ.z, meshMaxXYZ.z);
 			}
 			return maxXYZ;
 		}
 
-		public static bool loadModelSTL_ascii(SimpleModel simpleModel, string filename, FMatrix3x3 matrix)
+		public static bool loadModelSTL_ascii(SimpleMeshCollection simpleModel, string filename, FMatrix3x3 matrix)
 		{
-			SimpleVolume vol = new SimpleVolume();
+			SimpleMesh vol = new SimpleMesh();
 			using (StreamReader f = new StreamReader(filename))
 			{
 				// check for "SOLID"
@@ -161,8 +173,13 @@ namespace MatterHackers.MatterSlice
 				Point3 v2 = new Point3(0, 0, 0);
 				string line = f.ReadLine();
 				Regex onlySingleSpaces = new Regex("\\s+", RegexOptions.Compiled);
+				int lineCount = 0;
 				while (line != null)
 				{
+					if(lineCount++ > 100 && vol.faceTriangles.Count == 0)
+					{
+						return false;
+					}
 					line = onlySingleSpaces.Replace(line, " ");
 					var parts = line.Trim().Split(' ');
 					if (parts[0].Trim() == "vertex")
@@ -198,16 +215,16 @@ namespace MatterHackers.MatterSlice
 
 			if (vol.faceTriangles.Count > 3)
 			{
-				simpleModel.volumes.Add(vol);
+				simpleModel.SimpleMeshes.Add(vol);
 				return true;
 			}
 
 			return false;
 		}
 
-		private static bool loadModelSTL_binary(SimpleModel simpleModel, string filename, FMatrix3x3 matrix)
+		private static bool loadModelSTL_binary(SimpleMeshCollection simpleModel, string filename, FMatrix3x3 matrix)
 		{
-			SimpleVolume vol = new SimpleVolume();
+			SimpleMesh vol = new SimpleMesh();
 			using (FileStream stlStream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
 			{
 				// load it as a binary stl
@@ -223,7 +240,7 @@ namespace MatterHackers.MatterSlice
 				long bytesForAttributs = numTriangles * 2;
 				currentPosition += 4;
 				long numBytesRequiredForVertexData = currentPosition + bytesForNormals + bytesForVertices + bytesForAttributs;
-				if (fileContents.Length < numBytesRequiredForVertexData || numTriangles < 4)
+				if (fileContents.Length < numBytesRequiredForVertexData || numTriangles < 0)
 				{
 					stlStream.Close();
 					return false;
@@ -248,16 +265,16 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			if (vol.faceTriangles.Count > 3)
+			if (vol.faceTriangles.Count > 0)
 			{
-				simpleModel.volumes.Add(vol);
+				simpleModel.SimpleMeshes.Add(vol);
 				return true;
 			}
 
 			return false;
 		}
 
-		public static bool loadModelFromFile(SimpleModel simpleModel, string filename, FMatrix3x3 matrix)
+		public static bool LoadModelFromFile(SimpleMeshCollection simpleModel, string filename, FMatrix3x3 matrix)
 		{
 			if (!loadModelSTL_ascii(simpleModel, filename, matrix))
 			{

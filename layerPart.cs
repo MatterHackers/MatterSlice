@@ -41,77 +41,27 @@ namespace MatterHackers.MatterSlice
 		It's also the first step that stores the result in the "data storage" so all other steps can access it.
 		*/
 
-		private static void CreateLayerWithParts(SliceLayerParts storageLayer, SliceLayer layer, ConfigConstants.REPAIR_OVERLAPS unionAllType)
-		{
-			if ((unionAllType & ConfigConstants.REPAIR_OVERLAPS.REVERSE_ORIENTATION) == ConfigConstants.REPAIR_OVERLAPS.REVERSE_ORIENTATION)
-			{
-				for (int i = 0; i < layer.PolygonList.Count; i++)
-				{
-					if (layer.PolygonList[i].Orientation())
-					{
-						layer.PolygonList[i].Reverse();
-					}
-				}
-			}
-
-			List<Polygons> result;
-			if ((unionAllType & ConfigConstants.REPAIR_OVERLAPS.UNION_ALL_TOGETHER) == ConfigConstants.REPAIR_OVERLAPS.UNION_ALL_TOGETHER)
-			{
-				result = layer.PolygonList.Offset(1000).CreateLayerOutlines(PolygonsHelper.LayerOpperation.UnionAll);
-			}
-			else
-			{
-				result = layer.PolygonList.CreateLayerOutlines(PolygonsHelper.LayerOpperation.EvenOdd);
-			}
-
-			for (int i = 0; i < result.Count; i++)
-			{
-				storageLayer.layerSliceData.Add(new SliceLayerPart());
-				if ((unionAllType & ConfigConstants.REPAIR_OVERLAPS.UNION_ALL_TOGETHER) == ConfigConstants.REPAIR_OVERLAPS.UNION_ALL_TOGETHER)
-				{
-					storageLayer.layerSliceData[i].TotalOutline.Add(result[i][0]);
-					storageLayer.layerSliceData[i].TotalOutline = storageLayer.layerSliceData[i].TotalOutline.Offset(-1000);
-				}
-				else
-				{
-					storageLayer.layerSliceData[i].TotalOutline = result[i];
-				}
-
-				storageLayer.layerSliceData[i].BoundingBox.Calculate(storageLayer.layerSliceData[i].TotalOutline);
-			}
-		}
-
-		public static void CreateLayerParts(PartLayers storage, Slicer slicer, ConfigConstants.REPAIR_OVERLAPS unionAllType)
-		{
-			for (int layerIndex = 0; layerIndex < slicer.layers.Count; layerIndex++)
-			{
-				storage.Layers.Add(new SliceLayerParts());
-				storage.Layers[layerIndex].printZ = slicer.layers[layerIndex].Z;
-				LayerPart.CreateLayerWithParts(storage.Layers[layerIndex], slicer.layers[layerIndex], unionAllType);
-			}
-		}
-
-		public static void DumpLayerparts(SliceDataStorage storage, string filename)
+		public static void DumpLayerparts(LayerDataStorage storage, string filename)
 		{
 			StreamWriter streamToWriteTo = new StreamWriter(filename);
 			streamToWriteTo.Write("<!DOCTYPE html><html><body>");
 			Point3 modelSize = storage.modelSize;
 			Point3 modelMin = storage.modelMin;
 
-			for (int volumeIdx = 0; volumeIdx < storage.AllPartsLayers.Count; volumeIdx++)
+			for (int extruderIndex = 0; extruderIndex < storage.Extruders.Count; extruderIndex++)
 			{
-				for (int layerNr = 0; layerNr < storage.AllPartsLayers[volumeIdx].Layers.Count; layerNr++)
+				for (int layerNr = 0; layerNr < storage.Extruders[extruderIndex].Layers.Count; layerNr++)
 				{
 					streamToWriteTo.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style=\"width: 500px; height:500px\">\n");
-					SliceLayerParts layer = storage.AllPartsLayers[volumeIdx].Layers[layerNr];
-					for (int i = 0; i < layer.layerSliceData.Count; i++)
+					SliceLayer layer = storage.Extruders[extruderIndex].Layers[layerNr];
+					for (int i = 0; i < layer.Islands.Count; i++)
 					{
-						SliceLayerPart part = layer.layerSliceData[i];
-						for (int j = 0; j < part.TotalOutline.Count; j++)
+						LayerIsland part = layer.Islands[i];
+						for (int j = 0; j < part.IslandOutline.Count; j++)
 						{
 							streamToWriteTo.Write("<polygon points=\"");
-							for (int k = 0; k < part.TotalOutline[j].Count; k++)
-								streamToWriteTo.Write("{0},{1} ".FormatWith((float)(part.TotalOutline[j][k].X - modelMin.x) / modelSize.x * 500, (float)(part.TotalOutline[j][k].Y - modelMin.y) / modelSize.y * 500));
+							for (int k = 0; k < part.IslandOutline[j].Count; k++)
+								streamToWriteTo.Write("{0},{1} ".FormatWith((float)(part.IslandOutline[j][k].X - modelMin.x) / modelSize.x * 500, (float)(part.IslandOutline[j][k].Y - modelMin.y) / modelSize.y * 500));
 							if (j == 0)
 								streamToWriteTo.Write("\" style=\"fill:gray; stroke:black;stroke-width:1\" />\n");
 							else

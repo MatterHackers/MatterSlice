@@ -45,25 +45,25 @@ namespace MatterHackers.MatterSlice
 		}
 	}
 
-	public class OptimizedVolume
+	public class OptimizedMesh
 	{
 		private const int MELD_DIST = 30;
 
-		public OptimizedModel parentModel;
+		public OptimizedMeshCollection containingCollection;
 		public List<OptimizedPoint3> vertices = new List<OptimizedPoint3>();
 		public List<OptimizedFace> facesTriangle = new List<OptimizedFace>();
 
-		public OptimizedVolume(SimpleVolume volume, OptimizedModel model)
+		public OptimizedMesh(SimpleMesh simpleMesh, OptimizedMeshCollection containingCollection)
 		{
-			this.parentModel = model;
-			vertices.Capacity = volume.faceTriangles.Count * 3;
-			facesTriangle.Capacity = volume.faceTriangles.Count;
+			this.containingCollection = containingCollection;
+			vertices.Capacity = simpleMesh.faceTriangles.Count * 3;
+			facesTriangle.Capacity = simpleMesh.faceTriangles.Count;
 
 			Dictionary<int, List<int>> indexMap = new Dictionary<int, List<int>>();
 
 			Stopwatch t = new Stopwatch();
 			t.Start();
-			for (int faceIndex = 0; faceIndex < volume.faceTriangles.Count; faceIndex++)
+			for (int faceIndex = 0; faceIndex < simpleMesh.faceTriangles.Count; faceIndex++)
 			{
 				if (MatterSlice.Canceled)
 				{
@@ -72,11 +72,11 @@ namespace MatterHackers.MatterSlice
 				OptimizedFace optimizedFace = new OptimizedFace();
 				if ((faceIndex % 1000 == 0) && t.Elapsed.TotalSeconds > 2)
 				{
-					LogOutput.logProgress("optimized", faceIndex + 1, volume.faceTriangles.Count);
+					LogOutput.logProgress("optimized", faceIndex + 1, simpleMesh.faceTriangles.Count);
 				}
 				for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
 				{
-					Point3 p = volume.faceTriangles[faceIndex].vertices[vertexIndex];
+					Point3 p = simpleMesh.faceTriangles[faceIndex].vertices[vertexIndex];
 					int hash = (int)(((p.x + MELD_DIST / 2) / MELD_DIST) ^ (((p.y + MELD_DIST / 2) / MELD_DIST) << 10) ^ (((p.z + MELD_DIST / 2) / MELD_DIST) << 20));
 					int idx = 0;
 					bool add = true;
@@ -182,18 +182,18 @@ namespace MatterHackers.MatterSlice
 		}
 	}
 
-	public class OptimizedModel
+	public class OptimizedMeshCollection
 	{
-		public List<OptimizedVolume> volumes = new List<OptimizedVolume>();
+		public List<OptimizedMesh> OptimizedMeshes = new List<OptimizedMesh>();
 		public Point3 size_um;
 		public Point3 minXYZ_um;
 		public Point3 maxXYZ_um;
 
-		public OptimizedModel(SimpleModel model)
+		public OptimizedMeshCollection(SimpleMeshCollection simpleMeshCollection)
 		{
-			for (int i = 0; i < model.volumes.Count; i++)
+			for (int simpleMeshIndex = 0; simpleMeshIndex < simpleMeshCollection.SimpleMeshes.Count; simpleMeshIndex++)
 			{
-				volumes.Add(new OptimizedVolume(model.volumes[i], this));
+				OptimizedMeshes.Add(new OptimizedMesh(simpleMeshCollection.SimpleMeshes[simpleMeshIndex], this));
 				if (MatterSlice.Canceled)
 				{
 					return;
@@ -201,20 +201,20 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void SetPositionAndSize(SimpleModel model, long xCenter_um, long yCenter_um, long zClip_um, bool centerObjectInXy)
+		public void SetPositionAndSize(SimpleMeshCollection simpleMeshCollection, long xCenter_um, long yCenter_um, long zClip_um, bool centerObjectInXy)
 		{
-			minXYZ_um = model.minXYZ_um();
-			maxXYZ_um = model.maxXYZ_um();
+			minXYZ_um = simpleMeshCollection.minXYZ_um();
+			maxXYZ_um = simpleMeshCollection.maxXYZ_um();
 
 			if (centerObjectInXy)
 			{
 				Point3 modelXYCenterZBottom_um = new Point3((minXYZ_um.x + maxXYZ_um.x) / 2, (minXYZ_um.y + maxXYZ_um.y) / 2, minXYZ_um.z);
 				modelXYCenterZBottom_um -= new Point3(xCenter_um, yCenter_um, zClip_um);
-				for (int i = 0; i < volumes.Count; i++)
+				for (int optimizedMeshIndex = 0; optimizedMeshIndex < OptimizedMeshes.Count; optimizedMeshIndex++)
 				{
-					for (int n = 0; n < volumes[i].vertices.Count; n++)
+					for (int n = 0; n < OptimizedMeshes[optimizedMeshIndex].vertices.Count; n++)
 					{
-						volumes[i].vertices[n].position -= modelXYCenterZBottom_um;
+						OptimizedMeshes[optimizedMeshIndex].vertices[n].position -= modelXYCenterZBottom_um;
 					}
 				}
 
@@ -225,11 +225,11 @@ namespace MatterHackers.MatterSlice
 			{
 				// Ofset by bed center and correctly position in z
 				Point3 modelZBottom_um = new Point3(0, 0, minXYZ_um.z - zClip_um);
-				for (int i = 0; i < volumes.Count; i++)
+				for (int optimizedMeshIndex = 0; optimizedMeshIndex < OptimizedMeshes.Count; optimizedMeshIndex++)
 				{
-					for (int n = 0; n < volumes[i].vertices.Count; n++)
+					for (int vertexIndex = 0; vertexIndex < OptimizedMeshes[optimizedMeshIndex].vertices.Count; vertexIndex++)
 					{
-						volumes[i].vertices[n].position -= modelZBottom_um;
+						OptimizedMeshes[optimizedMeshIndex].vertices[vertexIndex].position -= modelZBottom_um;
 					}
 				}
 
@@ -243,7 +243,7 @@ namespace MatterHackers.MatterSlice
 		public void saveDebugSTL(string filename)
 		{
 #if true
-			OptimizedVolume vol = volumes[0];
+			OptimizedMesh vol = OptimizedMeshes[0];
 
 			using (StreamWriter stream = new StreamWriter(filename))
 			{
