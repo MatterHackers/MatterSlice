@@ -111,7 +111,6 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Comb.cs" />
     <Compile Include="ExtruderLayers.cs" />
     <Compile Include="GCodePathConfig.cs" />
     <Compile Include="GCodePlanner.cs" />
