@@ -538,7 +538,7 @@ namespace MatterHackers.MatterSlice
 					z += config.supportAirGap_um;
 					gcode.setZ(z);
 
-					for (int extruderIndex = 1; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
+					for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
 					{
 						QueueAirGappedExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.extrusionWidth_um, fanSpeedPercent, z);
 					}
