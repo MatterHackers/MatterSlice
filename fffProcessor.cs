@@ -265,7 +265,7 @@ namespace MatterHackers.MatterSlice
 					if (config.continuousSpiralOuterPerimeter && (int)(layerIndex) < config.numberOfBottomLayers && layerIndex % 2 == 1)
 					{
 						//Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
-						insetCount += 5;
+						insetCount += 1;
 					}
 
 					SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];

@@ -88,6 +88,44 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void SpiralVaseCreatesContinuousLift()
+		{
+			string cylinderStlFile = TestUtlities.GetStlPath("Cylinder50Sides");
+			string cylinderGCodeFileName = TestUtlities.GetTempGCodePath("Cylinder50Sides.gcode");
+
+			ConfigSettings config = new ConfigSettings();
+			config.firstLayerThickness = .2;
+			config.layerThickness = .2;
+			config.numberOfBottomLayers = 0;
+			config.continuousSpiralOuterPerimeter = true;
+			fffProcessor processor = new fffProcessor(config);
+			processor.SetTargetFile(cylinderGCodeFileName);
+			processor.LoadStlFile(cylinderStlFile);
+			// slice and save it
+			processor.DoProcessing();
+			processor.finalize();
+
+			string[] cylinderGCodeContent = TestUtlities.LoadGCodeFile(cylinderGCodeFileName);
+
+			// test .1 layer height
+			int layerCount = TestUtlities.CountLayers(cylinderGCodeContent);
+            Assert.IsTrue(layerCount == 100);
+
+			for(int i=2; i< layerCount-3; i++)
+			{
+				string[] layerInfo = TestUtlities.GetGCodeForLayer(cylinderGCodeContent, i);
+
+				// check that all layers move up continuously
+				MovementInfo lastMovement = new MovementInfo();
+                foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
+				{
+					Assert.IsTrue(movement.z > lastMovement.z);
+					lastMovement = movement;
+				}
+			}
+		}
+
+		[Test]
 		public void CorrectNumberOfLayersForLayerHeights()
 		{
 			// test .1 layer height

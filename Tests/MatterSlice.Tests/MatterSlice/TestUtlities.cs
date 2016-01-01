@@ -30,12 +30,23 @@ either expressed or implied, of the FreeBSD Project.
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace MatterHackers.MatterSlice.Tests
 {
+	public struct MovementInfo
+	{
+		public double x;
+		public double y;
+		public double z;
+		public double extrusion;
+		public double feedRate;
+	}
+
 	// TODO: Rename after changes
-	public class TestUtlities
+	public static class TestUtlities
 	{
 		// HACK: Probably a way to do this via configuration rather than this fragile nonsense
 		static string matterSliceBaseDirectory = Path.Combine("..", "..", "..", "..", "..", "MatterSlice");
@@ -113,6 +124,50 @@ namespace MatterHackers.MatterSlice.Tests
 			Directory.CreateDirectory(tempGCodePath);
 			while (!Directory.Exists(tempGCodePath))
 			{
+			}
+		}
+
+		private static Regex numberRegex = new Regex(@"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?");
+
+		private static double GetNextNumber(String source, ref int startIndex)
+		{
+			Match numberMatch = numberRegex.Match(source, startIndex);
+			String returnString = numberMatch.Value;
+			startIndex = numberMatch.Index + numberMatch.Length;
+			double returnVal;
+			double.TryParse(returnString, NumberStyles.Number, CultureInfo.InvariantCulture, out returnVal);
+			return returnVal;
+		}
+
+		public static bool GetFirstNumberAfter(string stringToCheckAfter, string stringWithNumber, ref double readValue, int startIndex = 0)
+		{
+			int stringPos = stringWithNumber.IndexOf(stringToCheckAfter, startIndex);
+			if (stringPos != -1)
+			{
+				stringPos += stringToCheckAfter.Length;
+				readValue = GetNextNumber(stringWithNumber, ref stringPos);
+
+				return true;
+			}
+
+			return false;
+		}
+
+		public static IEnumerable<MovementInfo> Movements(string[] gcodeContents)
+		{
+			MovementInfo currentPosition = new MovementInfo();
+			foreach (string line in gcodeContents)
+			{
+				if (line.StartsWith("G1 "))
+				{
+					GetFirstNumberAfter("X", line, ref currentPosition.x);
+					GetFirstNumberAfter("Y", line, ref currentPosition.y);
+					GetFirstNumberAfter("Z", line, ref currentPosition.z);
+					GetFirstNumberAfter("E", line, ref currentPosition.extrusion);
+					GetFirstNumberAfter("F", line, ref currentPosition.feedRate);
+
+					yield return currentPosition;
+				}
 			}
 		}
 
