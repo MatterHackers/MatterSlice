@@ -28,56 +28,52 @@ namespace MatterHackers.MatterSlice
 	They represent millimeters in 3D space.
 	*/
 
-	public class FPoint3
+	public struct Vector3
 	{
-		public static readonly FPoint3 Up = new FPoint3(0, 0, 1);
+		public static readonly Vector3 Up = new Vector3(0, 0, 1);
 
 		public double x, y, z;
 
-		public FPoint3()
-		{
-		}
-
-		public FPoint3(double _x, double _y, double _z)
+		public Vector3(double _x, double _y, double _z)
 		{
 			x = _x;
 			y = _y;
 			z = _z;
 		}
 
-		public FPoint3(Point3 v0)
+		public Vector3(Point3 v0)
 		{
 			this.x = v0.x;
 			this.y = v0.y;
 			this.z = v0.z;
 		}
 
-		public static FPoint3 operator +(FPoint3 left, FPoint3 right)
+		public static Vector3 operator +(Vector3 left, Vector3 right)
 		{
-			return new FPoint3(left.x + right.x, left.y + right.y, left.z + right.z);
+			return new Vector3(left.x + right.x, left.y + right.y, left.z + right.z);
 		}
 
-		public static FPoint3 operator -(FPoint3 left, FPoint3 right)
+		public static Vector3 operator -(Vector3 left, Vector3 right)
 		{
-			return new FPoint3(left.x - right.x, left.y - right.y, left.z - right.z);
+			return new Vector3(left.x - right.x, left.y - right.y, left.z - right.z);
 		}
 
-		public static FPoint3 operator *(FPoint3 p, double d)
+		public static Vector3 operator *(Vector3 p, double d)
 		{
-			return new FPoint3(p.x * d, p.y * d, p.z * d);
+			return new Vector3(p.x * d, p.y * d, p.z * d);
 		}
 
-		public static FPoint3 operator /(FPoint3 p, double d)
+		public static Vector3 operator /(Vector3 p, double d)
 		{
-			return new FPoint3(p.x / d, p.y / d, p.z / d);
+			return new Vector3(p.x / d, p.y / d, p.z / d);
 		}
 
-		public static bool operator ==(FPoint3 p0, FPoint3 p1)
+		public static bool operator ==(Vector3 p0, Vector3 p1)
 		{
 			return p0.x == p1.x && p0.y == p1.y && p0.z == p1.z;
 		}
 
-		public static bool operator !=(FPoint3 p0, FPoint3 p1)
+		public static bool operator !=(Vector3 p0, Vector3 p1)
 		{
 			return p0.x != p1.x || p0.y != p1.y || p0.z != p1.z;
 		}
@@ -94,9 +90,9 @@ namespace MatterHackers.MatterSlice
 			return x * x + y * y + z * z;
 		}
 
-		public static double CalculateAngle(FPoint3 first, FPoint3 second)
+		public static double CalculateAngle(Vector3 first, Vector3 second)
 		{
-			return Math.Acos((FPoint3.Dot(first, second)) / (first.Length * second.Length));
+			return Math.Acos((Vector3.Dot(first, second)) / (first.Length * second.Length));
 		}
 
 		public double Length
@@ -107,14 +103,14 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static double Dot(FPoint3 left, FPoint3 right)
+		public static double Dot(Vector3 left, Vector3 right)
 		{
 			return left.x * right.x + left.y * right.y + left.z * right.z;
 		}
 
-		public FPoint3 Cross(FPoint3 p)
+		public Vector3 Cross(Vector3 p)
 		{
-			return new FPoint3(
+			return new Vector3(
 				y * p.z - z * p.y,
 				z * p.x - x * p.z,
 				x * p.y - y * p.x);
@@ -122,13 +118,13 @@ namespace MatterHackers.MatterSlice
 
 		public override bool Equals(object obj)
 		{
-			if (!(obj is FPoint3))
+			if (!(obj is Vector3))
 				return false;
 
-			return this.Equals((FPoint3)obj);
+			return this.Equals((Vector3)obj);
 		}
 
-		public bool Equals(FPoint3 other)
+		public bool Equals(Vector3 other)
 		{
 			return
 				x == other.x &&
@@ -191,7 +187,7 @@ namespace MatterHackers.MatterSlice
 			m[2, 2] = double.Parse(values[8]);
 		}
 
-		public Point3 apply(FPoint3 p)
+		public Point3 apply(Vector3 p)
 		{
 			return new Point3(
 				(p.x * m[0, 0] + p.y * m[1, 0] + p.z * m[2, 0]),

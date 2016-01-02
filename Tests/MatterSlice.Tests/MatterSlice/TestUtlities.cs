@@ -38,9 +38,7 @@ namespace MatterHackers.MatterSlice.Tests
 {
 	public struct MovementInfo
 	{
-		public double x;
-		public double y;
-		public double z;
+		public Vector3 position;
 		public double extrusion;
 		public double feedRate;
 	}
@@ -160,9 +158,9 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				if (line.StartsWith("G1 "))
 				{
-					GetFirstNumberAfter("X", line, ref currentPosition.x);
-					GetFirstNumberAfter("Y", line, ref currentPosition.y);
-					GetFirstNumberAfter("Z", line, ref currentPosition.z);
+					GetFirstNumberAfter("X", line, ref currentPosition.position.x);
+					GetFirstNumberAfter("Y", line, ref currentPosition.position.y);
+					GetFirstNumberAfter("Z", line, ref currentPosition.position.z);
 					GetFirstNumberAfter("E", line, ref currentPosition.extrusion);
 					GetFirstNumberAfter("F", line, ref currentPosition.feedRate);
 

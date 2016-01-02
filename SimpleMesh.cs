@@ -166,7 +166,7 @@ namespace MatterHackers.MatterSlice
 			{
 				// check for "SOLID"
 
-				FPoint3 vertex = new FPoint3();
+				Vector3 vertex = new Vector3();
 				int n = 0;
 				Point3 v0 = new Point3(0, 0, 0);
 				Point3 v1 = new Point3(0, 0, 0);

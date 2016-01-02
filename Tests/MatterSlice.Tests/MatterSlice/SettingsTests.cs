@@ -117,10 +117,25 @@ namespace MatterHackers.MatterSlice.Tests
 
 				// check that all layers move up continuously
 				MovementInfo lastMovement = new MovementInfo();
-                foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
+				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
 				{
-					Assert.IsTrue(movement.z > lastMovement.z);
+					Assert.IsTrue(movement.position.z > lastMovement.position.z);
+
 					lastMovement = movement;
+				}
+
+				bool first = true;
+				lastMovement = new MovementInfo();
+				// check that all moves are on the outside of the cylinder (not crossing to a new point)
+				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
+				{
+					if (!first)
+					{
+						Assert.IsTrue((movement.position - lastMovement.position).Length < 2);
+					}
+
+					lastMovement = movement;
+					first = false;
 				}
 			}
 		}

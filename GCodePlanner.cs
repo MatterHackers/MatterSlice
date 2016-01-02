@@ -446,8 +446,9 @@ namespace MatterHackers.MatterSlice
 						IntPoint nextPosition = path.points[i].XYPoint;
 						length += (currentPosition - nextPosition).LengthMm();
 						currentPosition = nextPosition;
-						gcodeExport.setZ((int)(z + layerThickness * length / totalLength + .5));
-						gcodeExport.WriteMove(path.points[i], speed, path.config.lineWidth);
+						Point3 nextExtrusion = path.points[i];
+						nextExtrusion.z = (int)(z + layerThickness * length / totalLength + .5);
+						gcodeExport.WriteMove(nextExtrusion, speed, path.config.lineWidth);
 					}
 				}
 				else

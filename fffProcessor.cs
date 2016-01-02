@@ -235,7 +235,7 @@ namespace MatterHackers.MatterSlice
 #endif
 
 			LogOutput.Log("Generating support map...\n");
-			if (config.generateSupport)
+			if (config.generateSupport && !config.continuousSpiralOuterPerimeter)
 			{
 				slicingData.support = new NewSupport(config, slicingData.Extruders, 1);
 			}
@@ -869,7 +869,9 @@ namespace MatterHackers.MatterSlice
 
 		private void QueuePolygonsConsideringSupport(int layerIndex, GCodePlanner gcodeLayer, Polygons polygonsToWrite, GCodePathConfig fillConfig, SupportWriteType supportWriteType)
 		{
-			if (config.generateSupport && layerIndex > 0)
+			if (config.generateSupport 
+				&& layerIndex > 0
+				&& !config.continuousSpiralOuterPerimeter)
 			{
 				Polygons supportOutlines = slicingData.support.GetRequiredSupportAreas(layerIndex);
 
