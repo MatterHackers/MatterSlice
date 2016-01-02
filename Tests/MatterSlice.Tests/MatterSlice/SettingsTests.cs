@@ -90,11 +90,19 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void SpiralVaseCreatesContinuousLift()
 		{
-			string cylinderStlFile = TestUtlities.GetStlPath("Cylinder50Sides");
-			string cylinderGCodeFileName = TestUtlities.GetTempGCodePath("Cylinder50Sides.gcode");
+			CheckCylinder("Cylinder50Sides", "Cylinder50Sides.gcode");
+
+			CheckCylinder("Cylinder2Wall50Sides", "Cylinder2Wall50Sides.gcode");
+		}
+
+		private static void CheckCylinder(string stlFile, string gcodeFile)
+		{
+			string cylinderStlFile = TestUtlities.GetStlPath(stlFile);
+			string cylinderGCodeFileName = TestUtlities.GetTempGCodePath(gcodeFile);
 
 			ConfigSettings config = new ConfigSettings();
 			config.firstLayerThickness = .2;
+			config.centerObjectInXy = false;
 			config.layerThickness = .2;
 			config.numberOfBottomLayers = 0;
 			config.continuousSpiralOuterPerimeter = true;
@@ -109,9 +117,9 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// test .1 layer height
 			int layerCount = TestUtlities.CountLayers(cylinderGCodeContent);
-            Assert.IsTrue(layerCount == 100);
+			Assert.IsTrue(layerCount == 100);
 
-			for(int i=2; i< layerCount-3; i++)
+			for (int i = 2; i < layerCount - 3; i++)
 			{
 				string[] layerInfo = TestUtlities.GetGCodeForLayer(cylinderGCodeContent, i);
 
@@ -132,6 +140,9 @@ namespace MatterHackers.MatterSlice.Tests
 					if (!first)
 					{
 						Assert.IsTrue((movement.position - lastMovement.position).Length < 2);
+
+						Vector3 xyOnly = new Vector3(movement.position.x, movement.position.y, 0);
+						Assert.AreEqual(9.8, xyOnly.Length, .3);
 					}
 
 					lastMovement = movement;

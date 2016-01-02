@@ -705,14 +705,22 @@ namespace MatterHackers.MatterSlice
 					// If we are on the very first layer we start with the outside so that we can stick to the bed better.
 					if (config.outsidePerimetersFirst || layerIndex == 0 || inset0Config.spiralize)
 					{
-						// First the outside (this helps with accuracy)
-						if (part.InsetToolPaths.Count > 0)
+						if (inset0Config.spiralize)
 						{
-							QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[0], inset0Config, SupportWriteType.UnsupportedAreas);
+							if (part.InsetToolPaths.Count > 0)
+							{
+								Polygon outsideSinglePolygon = part.InsetToolPaths[0][0];
+								QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, new Polygons() { outsideSinglePolygon }, inset0Config, SupportWriteType.UnsupportedAreas);
+							}
 						}
-
-						if (!inset0Config.spiralize)
+						else
 						{
+							// First the outside (this helps with accuracy)
+							if (part.InsetToolPaths.Count > 0)
+							{
+								QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[0], inset0Config, SupportWriteType.UnsupportedAreas);
+							}
+
 							for (int perimeterIndex = 1; perimeterIndex < part.InsetToolPaths.Count; perimeterIndex++)
 							{
 								QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[perimeterIndex], insetXConfig, SupportWriteType.UnsupportedAreas);
