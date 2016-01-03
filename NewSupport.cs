@@ -90,7 +90,7 @@ namespace MatterHackers.MatterSlice
 			interfaceLayers = CreateInterfaceLayers(easyGrabDistanceOutlines, config.supportInterfaceLayers);
 			interfaceLayers = ClipToXyDistance(interfaceLayers, allPartOutlines, config);
 
-			supportOutlines = AccumulateDownPolygons(easyGrabDistanceOutlines, allPartOutlines);
+			supportOutlines = AccumulateDownPolygons(config, easyGrabDistanceOutlines, allPartOutlines);
 			supportOutlines = ClipToXyDistance(supportOutlines, allPartOutlines, config);
 
 			// remove the interface layers from the normal support layers
@@ -228,7 +228,7 @@ namespace MatterHackers.MatterSlice
 			return pushedUpPolys;
 		}
 
-		private static List<Polygons> AccumulateDownPolygons(List<Polygons> inputPolys, List<Polygons> allPartOutlines)
+		private static List<Polygons> AccumulateDownPolygons(ConfigSettings config, List<Polygons> inputPolys, List<Polygons> allPartOutlines)
 		{
 			int numLayers = inputPolys.Count;
 
@@ -240,8 +240,24 @@ namespace MatterHackers.MatterSlice
 				// get all the polygons above us
 				Polygons accumulatedAbove = allDownOutlines[layerIndex + 1].CreateUnion(aboveRequiredSupport);
 
+				// reduce the amount of support material used
+				for (int i = accumulatedAbove.Count - 1; i >= 0; i--)
+				{
+					Polygon polygon = accumulatedAbove[i];
+					if (polygon.Area() > 10 * 1000 * 10 * 1000)
+					{
+						Polygons offsetPolygons = new Polygons() { polygon }.Offset(-config.extrusionWidth_um / 2);
+						accumulatedAbove.RemoveAt(i);
+						foreach (Polygon polyToAdd in offsetPolygons)
+						{
+							accumulatedAbove.Insert(i, polyToAdd);
+						}
+					}
+				}
+
 				// add in the support on this level
 				Polygons curRequiredSupport = inputPolys[layerIndex];
+
 				Polygons totalSupportThisLayer = accumulatedAbove.CreateUnion(curRequiredSupport);
 
 				// remove the solid polygons on this level
