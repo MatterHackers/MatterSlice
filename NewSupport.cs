@@ -232,6 +232,9 @@ namespace MatterHackers.MatterSlice
 		{
 			int numLayers = inputPolys.Count;
 
+			long nozzleSize = config.extrusionWidth_um;
+			long areaToTryAndBe = 20 * 20 * nozzleSize * nozzleSize; // 10 x 10 mm approximately (assuming .5 nozzle)
+
 			List<Polygons> allDownOutlines = CreateEmptyPolygons(numLayers);
 			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
 			{
@@ -244,9 +247,19 @@ namespace MatterHackers.MatterSlice
 				for (int i = accumulatedAbove.Count - 1; i >= 0; i--)
 				{
 					Polygon polygon = accumulatedAbove[i];
-					if (polygon.Area() > 10 * 1000 * 10 * 1000)
+					double polyArea = polygon.Area();
+                    if (polyArea > areaToTryAndBe)
 					{
 						Polygons offsetPolygons = new Polygons() { polygon }.Offset(-config.extrusionWidth_um / 2);
+						accumulatedAbove.RemoveAt(i);
+						foreach (Polygon polyToAdd in offsetPolygons)
+						{
+							accumulatedAbove.Insert(i, polyToAdd);
+						}
+					}
+					else if(polyArea < areaToTryAndBe * .9)
+					{
+						Polygons offsetPolygons = new Polygons() { polygon }.Offset(config.extrusionWidth_um / 2);
 						accumulatedAbove.RemoveAt(i);
 						foreach (Polygon polyToAdd in offsetPolygons)
 						{
