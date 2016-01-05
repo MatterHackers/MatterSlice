@@ -335,7 +335,9 @@ namespace MatterHackers.MatterSlice
         // .4 mm for .4 mm nozzle
         public int zOffset_um { get { return (int)(zOffset * 1000); } }
 
-        public void DumpSettings(string fileName)
+		public bool minimizeSupportColumns;
+
+		public void DumpSettings(string fileName)
         {
             List<string> lines = new List<string>();
             FieldInfo[] fields;
@@ -621,7 +623,8 @@ namespace MatterHackers.MatterSlice
             supportXYDistanceFromObject = .7;
             supportNumberOfLayersToSkipInZ = 1;
             supportInterfaceLayers = 3;
-            supportInterfaceExtruder = -1;
+			minimizeSupportColumns = true;
+			supportInterfaceExtruder = -1;
             retractionOnTravel = 4.5;
             retractionSpeed = 45;
             retractionOnExtruderSwitch = 14.5;

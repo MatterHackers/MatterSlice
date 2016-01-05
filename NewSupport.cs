@@ -243,27 +243,30 @@ namespace MatterHackers.MatterSlice
 				// get all the polygons above us
 				Polygons accumulatedAbove = allDownOutlines[layerIndex + 1].CreateUnion(aboveRequiredSupport);
 
-				// reduce the amount of support material used
-				for (int i = accumulatedAbove.Count - 1; i >= 0; i--)
+				if (config.minimizeSupportColumns)
 				{
-					Polygon polygon = accumulatedAbove[i];
-					double polyArea = polygon.Area();
-                    if (polyArea > areaToTryAndBe)
+					// reduce the amount of support material used
+					for (int i = accumulatedAbove.Count - 1; i >= 0; i--)
 					{
-						Polygons offsetPolygons = new Polygons() { polygon }.Offset(-config.extrusionWidth_um / 2);
-						accumulatedAbove.RemoveAt(i);
-						foreach (Polygon polyToAdd in offsetPolygons)
+						Polygon polygon = accumulatedAbove[i];
+						double polyArea = polygon.Area();
+						if (polyArea > areaToTryAndBe)
 						{
-							accumulatedAbove.Insert(i, polyToAdd);
+							Polygons offsetPolygons = new Polygons() { polygon }.Offset(-config.extrusionWidth_um / 2);
+							accumulatedAbove.RemoveAt(i);
+							foreach (Polygon polyToAdd in offsetPolygons)
+							{
+								accumulatedAbove.Insert(i, polyToAdd);
+							}
 						}
-					}
-					else if(polyArea < areaToTryAndBe * .9)
-					{
-						Polygons offsetPolygons = new Polygons() { polygon }.Offset(config.extrusionWidth_um / 2);
-						accumulatedAbove.RemoveAt(i);
-						foreach (Polygon polyToAdd in offsetPolygons)
+						else if (polyArea < areaToTryAndBe * .9)
 						{
-							accumulatedAbove.Insert(i, polyToAdd);
+							Polygons offsetPolygons = new Polygons() { polygon }.Offset(config.extrusionWidth_um / 2);
+							accumulatedAbove.RemoveAt(i);
+							foreach (Polygon polyToAdd in offsetPolygons)
+							{
+								accumulatedAbove.Insert(i, polyToAdd);
+							}
 						}
 					}
 				}

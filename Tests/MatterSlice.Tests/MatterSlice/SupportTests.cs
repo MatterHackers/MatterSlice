@@ -50,6 +50,7 @@ namespace MatterHackers.MatterSlice.Tests
 				config.layerThickness = .5;
 				config.supportXYDistanceFromObject = 0;
 				config.supportInterfaceLayers = 0;
+				config.minimizeSupportColumns = false;
 
 				List<Polygons> partOutlines = new List<Polygons>();
 				for (int i = 0; i < 5; i++)
@@ -247,6 +248,7 @@ namespace MatterHackers.MatterSlice.Tests
 				config.supportInterfaceLayers = 2;
 				config.layerThickness = .5;
 				config.supportXYDistanceFromObject = .1;
+				config.minimizeSupportColumns = false;
 
 				// 14      XXXXXXXXXX
 				// 13      XXXXXXXXXX
