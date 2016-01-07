@@ -153,11 +153,12 @@ namespace MatterHackers.MatterSlice
 			skirtConfig.SetData(config.insidePerimetersSpeed, extrusionWidth, "SKIRT");
 			inset0Config.SetData(config.outsidePerimeterSpeed, config.outsideExtrusionWidth_um, "WALL-OUTER");
 			insetXConfig.SetData(config.insidePerimetersSpeed, extrusionWidth, "WALL-INNER");
+
 			fillConfig.SetData(config.infillSpeed, extrusionWidth, "FILL", false);
 			topFillConfig.SetData(config.topInfillSpeed, extrusionWidth, "TOP-FILL", false);
-			// TODO: put in the UI support for bottom infill speed, then use it. bottomFillConfig.SetData(config.bottomInfillSpeed, extrusionWidth, "BOTTOM-FILL", false);
 			bottomFillConfig.SetData(config.infillSpeed, extrusionWidth, "BOTTOM-FILL", false);
 			bridgConfig.SetData(config.bridgeSpeed, extrusionWidth, "BRIDGE");
+
 			supportNormalConfig.SetData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT");
 			supportInterfaceConfig.SetData(config.supportMaterialSpeed - 5, extrusionWidth, "SUPPORT-INTERFACE");
 
@@ -460,7 +461,10 @@ namespace MatterHackers.MatterSlice
 					skirtConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "SKIRT");
 					inset0Config.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "WALL-OUTER");
 					insetXConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "WALL-INNER");
+
 					fillConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "FILL", false);
+					topFillConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "TOP-FILL", false);
+					bottomFillConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "BOTTOM-FILL", false);
 					bridgConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "BRIDGE");
 
 					supportNormalConfig.SetData(config.firstLayerSpeed, config.supportExtrusionWidth_um, "SUPPORT");
@@ -471,7 +475,10 @@ namespace MatterHackers.MatterSlice
 					skirtConfig.SetData(config.insidePerimetersSpeed, config.extrusionWidth_um, "SKIRT");
 					inset0Config.SetData(config.outsidePerimeterSpeed, config.outsideExtrusionWidth_um, "WALL-OUTER");
 					insetXConfig.SetData(config.insidePerimetersSpeed, config.extrusionWidth_um, "WALL-INNER");
+
 					fillConfig.SetData(config.infillSpeed, config.extrusionWidth_um, "FILL", false);
+					topFillConfig.SetData(config.topInfillSpeed, config.firstLayerExtrusionWidth_um, "TOP-FILL", false);
+					bottomFillConfig.SetData(config.infillSpeed, config.firstLayerExtrusionWidth_um, "BOTTOM-FILL", false);
 					bridgConfig.SetData(config.bridgeSpeed, config.extrusionWidth_um, "BRIDGE");
 
 					supportNormalConfig.SetData(config.supportMaterialSpeed, config.supportExtrusionWidth_um, "SUPPORT");
