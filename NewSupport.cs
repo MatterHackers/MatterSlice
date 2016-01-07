@@ -26,14 +26,15 @@ using System.Collections.Generic;
 // split the part into multiple areas for support pillars
 // Create extra upward support for small features (tip of a rotated box)
 // sparse write the support layers so they are easier to remove
-// check frost morn, should have support under unsupported parts
+// make column reduced support work
 
 // DONE:
+// check frost morn, should have support under unsupported parts
 // make sure all air gapped layers are written after ALL extruder normal layers
 // Make the on model material be air gapped
 // Offset the output data to account for nozzle diameter (currently they are just the outlines not the extrude positions)
-// Make skirt consider these outlines
-// Make raft consider these outlines
+// Make skirt consider support outlines
+// Make raft consider support outlines
 // Make sure we work correctly with the support extruder set.
 // Make from bed only work (no internal support)
 // Fix extra extruder material on top of interface layer
