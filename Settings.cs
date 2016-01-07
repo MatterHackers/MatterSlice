@@ -623,7 +623,7 @@ namespace MatterHackers.MatterSlice
             supportXYDistanceFromObject = .7;
             supportNumberOfLayersToSkipInZ = 1;
             supportInterfaceLayers = 3;
-			minimizeSupportColumns = true;
+			minimizeSupportColumns = false; // experimental and not working well enough yet
 			supportInterfaceExtruder = -1;
             retractionOnTravel = 4.5;
             retractionSpeed = 45;

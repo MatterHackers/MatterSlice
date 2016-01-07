@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 
 // TODO:
+// split the part into multiple areas for support pillars
 // Create extra upward support for small features (tip of a rotated box)
 // sparse write the support layers so they are easier to remove
 // check frost morn, should have support under unsupported parts
@@ -155,9 +156,9 @@ namespace MatterHackers.MatterSlice
 			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
 			{
 				Polygons aboveLayerPolys = inputPolys[layerIndex + 1];
-				Polygons curLayerPolys = inputPolys[layerIndex];
-				Polygons supportedAreas = aboveLayerPolys.CreateDifference(curLayerPolys);
-				allPotentialSupportOutlines[layerIndex] = Clipper.CleanPolygons(supportedAreas, cleanDistance_um);
+				Polygons curLayerPolys = inputPolys[layerIndex].Offset(config.extrusionWidth_um / 2);
+				Polygons areasNeedingSupport = aboveLayerPolys.CreateDifference(curLayerPolys);
+				allPotentialSupportOutlines[layerIndex] = Clipper.CleanPolygons(areasNeedingSupport, cleanDistance_um);
 			}
 
 			return allPotentialSupportOutlines;
@@ -175,8 +176,9 @@ namespace MatterHackers.MatterSlice
 				{
 					if (inputPolys[layerIndex].Count > 0)
 					{
-						allRequiredSupportOutlines[layerIndex] = inputPolys[layerIndex].Offset(-config.extrusionWidth_um / 2);
-						allRequiredSupportOutlines[layerIndex] = allRequiredSupportOutlines[layerIndex].Offset(config.extrusionWidth_um / 2);
+						Polygons expandedLayerBellow = inputPolys[layerIndex - 1].Offset(config.extrusionWidth_um / 2);
+
+						allRequiredSupportOutlines[layerIndex] = inputPolys[layerIndex].CreateDifference(expandedLayerBellow);
 						allRequiredSupportOutlines[layerIndex] = Clipper.CleanPolygons(allRequiredSupportOutlines[layerIndex], cleanDistance_um);
 					}
 				}
@@ -243,6 +245,7 @@ namespace MatterHackers.MatterSlice
 				// get all the polygons above us
 				Polygons accumulatedAbove = allDownOutlines[layerIndex + 1].CreateUnion(aboveRequiredSupport);
 
+				// experimental and not working well enough yet
 				if (config.minimizeSupportColumns)
 				{
 					// reduce the amount of support material used

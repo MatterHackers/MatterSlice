@@ -167,7 +167,7 @@ namespace MatterHackers.MatterSlice.Tests
 					CheckLayers(supportGenerator.allPartOutlines, polygonsCounts, polygon0Counts, poly0Paths);
 				}
 
-				Polygons layer9Support = PolygonsHelper.CreateFromString("x:5000, y:0,x:10000, y:0,x:10000, y:10000,x:5000, y:10000,|");
+				Polygons layer9Support = PolygonsHelper.CreateFromString("x:5200, y:0,x:10000, y:0,x:10000, y:10000,x:5200, y:10000,|");
 				// check the potential support outlines
 				{
 					List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
