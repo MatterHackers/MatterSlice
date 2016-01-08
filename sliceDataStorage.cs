@@ -25,118 +25,10 @@ using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
+	using System.IO;
 	using Polygons = List<List<IntPoint>>;
 
-	/// <summary>
-	/// Represents the data for one island.
-	/// A single island can be more than one polygon as they have both the outline and the hole polygons.
-	/// </summary>
-	public class LayerIsland
-	{
-		public Aabb BoundingBox = new Aabb();
-		public Polygons IslandOutline = new Polygons();
-		public Polygons AvoidCrossingBoundery = new Polygons();
-		public List<Polygons> InsetToolPaths = new List<Polygons>();
-		public Polygons SolidTopToolPaths = new Polygons();
-		public Polygons SolidBottomToolPaths = new Polygons();
-		public Polygons SolidInfillToolPaths = new Polygons();
-		public Polygons InfillToolPaths = new Polygons();
-
-		private static readonly double minimumDistanceToCreateNewPosition = 10;
-
-		public void GenerateInsets(int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
-		{
-			LayerIsland part = this;
-			part.BoundingBox.Calculate(part.IslandOutline);
-
-			part.AvoidCrossingBoundery = part.IslandOutline;//.Offset(-extrusionWidth_um);
-			if (insetCount == 0)
-			{
-				// if we have no insets defined still create one
-				part.InsetToolPaths.Add(part.IslandOutline);
-			}
-			else // generate the insets
-			{
-				int currentOffset = 0;
-
-				// Inset 0 will use the outerExtrusionWidth_um, everyone else will use extrusionWidth_um
-				int offsetBy = outerExtrusionWidth_um / 2;
-
-				for (int i = 0; i < insetCount; i++)
-				{
-					// Incriment by half the offset amount
-					currentOffset += offsetBy;
-
-					Polygons currentInset = part.IslandOutline.Offset(-currentOffset);
-					// make sure our polygon data is reasonable
-					currentInset = Clipper.CleanPolygons(currentInset, minimumDistanceToCreateNewPosition);
-
-					// check that we have actuall paths
-					if (currentInset.Count > 0)
-					{
-						part.InsetToolPaths.Add(currentInset);
-
-						// Incriment by the second half
-						currentOffset += offsetBy;
-					}
-					else
-					{
-						// we are done making insets as we have no arrea left
-						break;
-					}
-
-					if (i == 0)
-					{
-						// Reset offset amount to half the standard extrusion width
-						offsetBy = extrusionWidth_um / 2;
-					}
-				}
-			}
-		}
-	};
-
-	public class SliceLayer
-	{
-		public long LayerZ;
-		public Polygons AllOutlines = new Polygons();
-        public List<LayerIsland> Islands = null;
-
-		public void GenerateInsets(int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
-		{
-			SliceLayer layer = this;
-			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
-			{
-				layer.Islands[islandIndex].GenerateInsets(extrusionWidth_um, outerExtrusionWidth_um, insetCount);
-			}
-
-			//Remove the parts which did not generate an inset. As these parts are too small to print,
-			// and later code can now assume that there is always minimum 1 inset line.
-			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
-			{
-				if (layer.Islands[islandIndex].InsetToolPaths.Count < 1)
-				{
-					layer.Islands.RemoveAt(islandIndex);
-					islandIndex -= 1;
-				}
-			}
-		}
-
-		public void CreateIslandData()
-        {
-            List<Polygons> separtedIntoIslands = AllOutlines.ProcessIntoSeparatIslands();
-
-            Islands = new List<LayerIsland>();
-            for (int islandIndex = 0; islandIndex < separtedIntoIslands.Count; islandIndex++)
-            {
-                Islands.Add(new LayerIsland());
-                Islands[islandIndex].IslandOutline = separtedIntoIslands[islandIndex];
-
-                Islands[islandIndex].BoundingBox.Calculate(Islands[islandIndex].IslandOutline);
-            }
-        }
-    };
-
-    public class LayerDataStorage
+	public class LayerDataStorage
 	{
 		public Point3 modelSize, modelMin, modelMax;
 		public Polygons skirt = new Polygons();
@@ -155,5 +47,40 @@ namespace MatterHackers.MatterSlice
                 Extruders[extruderIndex].CreateIslandData();
             }
         }
-    }
+
+		public void DumpLayerparts(string filename)
+		{
+			LayerDataStorage storage = this;
+			StreamWriter streamToWriteTo = new StreamWriter(filename);
+			streamToWriteTo.Write("<!DOCTYPE html><html><body>");
+			Point3 modelSize = storage.modelSize;
+			Point3 modelMin = storage.modelMin;
+
+			for (int extruderIndex = 0; extruderIndex < storage.Extruders.Count; extruderIndex++)
+			{
+				for (int layerNr = 0; layerNr < storage.Extruders[extruderIndex].Layers.Count; layerNr++)
+				{
+					streamToWriteTo.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style=\"width: 500px; height:500px\">\n");
+					SliceLayer layer = storage.Extruders[extruderIndex].Layers[layerNr];
+					for (int i = 0; i < layer.Islands.Count; i++)
+					{
+						LayerIsland part = layer.Islands[i];
+						for (int j = 0; j < part.IslandOutline.Count; j++)
+						{
+							streamToWriteTo.Write("<polygon points=\"");
+							for (int k = 0; k < part.IslandOutline[j].Count; k++)
+								streamToWriteTo.Write("{0},{1} ".FormatWith((float)(part.IslandOutline[j][k].X - modelMin.x) / modelSize.x * 500, (float)(part.IslandOutline[j][k].Y - modelMin.y) / modelSize.y * 500));
+							if (j == 0)
+								streamToWriteTo.Write("\" style=\"fill:gray; stroke:black;stroke-width:1\" />\n");
+							else
+								streamToWriteTo.Write("\" style=\"fill:red; stroke:black;stroke-width:1\" />\n");
+						}
+					}
+					streamToWriteTo.Write("</svg>\n");
+				}
+			}
+			streamToWriteTo.Write("</body></html>");
+			streamToWriteTo.Close();
+		}
+	}
 }
