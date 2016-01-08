@@ -273,11 +273,11 @@ namespace MatterHackers.MatterSlice
 
 					if (layerIndex == 0)
 					{
-						Inset.generateInsets(layer, config.firstLayerExtrusionWidth_um, config.firstLayerExtrusionWidth_um, insetCount);
+						layer.GenerateInsets(config.firstLayerExtrusionWidth_um, config.firstLayerExtrusionWidth_um, insetCount);
 					}
 					else
 					{
-						Inset.generateInsets(layer, config.extrusionWidth_um, config.outsideExtrusionWidth_um, insetCount);
+						layer.GenerateInsets(config.extrusionWidth_um, config.outsideExtrusionWidth_um, insetCount);
 					}
 				}
 				LogOutput.Log("Creating Insets {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));

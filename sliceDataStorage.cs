@@ -41,6 +41,58 @@ namespace MatterHackers.MatterSlice
 		public Polygons SolidBottomToolPaths = new Polygons();
 		public Polygons SolidInfillToolPaths = new Polygons();
 		public Polygons InfillToolPaths = new Polygons();
+
+		private static readonly double minimumDistanceToCreateNewPosition = 10;
+
+		public void GenerateInsets(int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
+		{
+			LayerIsland part = this;
+			part.BoundingBox.Calculate(part.IslandOutline);
+
+			part.AvoidCrossingBoundery = part.IslandOutline;//.Offset(-extrusionWidth_um);
+			if (insetCount == 0)
+			{
+				// if we have no insets defined still create one
+				part.InsetToolPaths.Add(part.IslandOutline);
+			}
+			else // generate the insets
+			{
+				int currentOffset = 0;
+
+				// Inset 0 will use the outerExtrusionWidth_um, everyone else will use extrusionWidth_um
+				int offsetBy = outerExtrusionWidth_um / 2;
+
+				for (int i = 0; i < insetCount; i++)
+				{
+					// Incriment by half the offset amount
+					currentOffset += offsetBy;
+
+					Polygons currentInset = part.IslandOutline.Offset(-currentOffset);
+					// make sure our polygon data is reasonable
+					currentInset = Clipper.CleanPolygons(currentInset, minimumDistanceToCreateNewPosition);
+
+					// check that we have actuall paths
+					if (currentInset.Count > 0)
+					{
+						part.InsetToolPaths.Add(currentInset);
+
+						// Incriment by the second half
+						currentOffset += offsetBy;
+					}
+					else
+					{
+						// we are done making insets as we have no arrea left
+						break;
+					}
+
+					if (i == 0)
+					{
+						// Reset offset amount to half the standard extrusion width
+						offsetBy = extrusionWidth_um / 2;
+					}
+				}
+			}
+		}
 	};
 
 	public class SliceLayer
@@ -49,7 +101,27 @@ namespace MatterHackers.MatterSlice
 		public Polygons AllOutlines = new Polygons();
         public List<LayerIsland> Islands = null;
 
-        public void CreateIslandData()
+		public void GenerateInsets(int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
+		{
+			SliceLayer layer = this;
+			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
+			{
+				layer.Islands[islandIndex].GenerateInsets(extrusionWidth_um, outerExtrusionWidth_um, insetCount);
+			}
+
+			//Remove the parts which did not generate an inset. As these parts are too small to print,
+			// and later code can now assume that there is always minimum 1 inset line.
+			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
+			{
+				if (layer.Islands[islandIndex].InsetToolPaths.Count < 1)
+				{
+					layer.Islands.RemoveAt(islandIndex);
+					islandIndex -= 1;
+				}
+			}
+		}
+
+		public void CreateIslandData()
         {
             List<Polygons> separtedIntoIslands = AllOutlines.ProcessIntoSeparatIslands();
 
