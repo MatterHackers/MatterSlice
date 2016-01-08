@@ -332,9 +332,9 @@ namespace MatterHackers.MatterSlice
 
 			if (config.enableRaft)
 			{
-				Raft.GenerateRaftOutlines(slicingData, config.raftExtraDistanceAroundPart_um, config);
+				slicingData.GenerateRaftOutlines(config.raftExtraDistanceAroundPart_um, config);
 
-				Skirt.generateSkirt(slicingData,
+				slicingData.GenerateSkirt(
 					config.skirtDistance_um + config.raftBaseLineSpacing_um,
 					config.raftBaseLineSpacing_um,
 					config.numberOfSkirtLoops,
@@ -343,7 +343,7 @@ namespace MatterHackers.MatterSlice
 			}
 			else
 			{
-				Skirt.generateSkirt(slicingData,
+				slicingData.GenerateSkirt(
 					config.skirtDistance_um,
 					config.firstLayerExtrusionWidth_um,
 					config.numberOfSkirtLoops,
@@ -444,7 +444,7 @@ namespace MatterHackers.MatterSlice
 			gcode.WriteComment("Layer count: {0}".FormatWith(totalLayers));
 
 			// keep the raft generation code inside of raft
-			Raft.WriteRaftGCodeIfRequired(slicingData, config, gcode);
+			slicingData.WriteRaftGCodeIfRequired(config, gcode);
 
 			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 			{
@@ -516,7 +516,7 @@ namespace MatterHackers.MatterSlice
 				gcode.setZ(z);
 
 				// We only create the skirt if we are on layer 0.
-				if (layerIndex == 0 && !Raft.ShouldGenerateRaft(config))
+				if (layerIndex == 0 && !config.ShouldGenerateRaft())
 				{
 					QueueSkirtToGCode(slicingData, gcodeLayer, layerIndex);
 				}
@@ -936,8 +936,9 @@ namespace MatterHackers.MatterSlice
 				if (layerIndex > 0)
 				{
 					double bridgeAngle = 0;
-					if (!config.generateSupport &&
-						Bridge.BridgeAngle(outline, slicingData.Extruders[extruderIndex].Layers[layerIndex - 1], out bridgeAngle))
+					SliceLayer previousLayer = slicingData.Extruders[extruderIndex].Layers[layerIndex - 1];
+                    if (!config.generateSupport &&
+						previousLayer.BridgeAngle(outline, out bridgeAngle))
 					{
 						Infill.GenerateLinePaths(outline, ref bridgePolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, bridgeAngle);
 					}

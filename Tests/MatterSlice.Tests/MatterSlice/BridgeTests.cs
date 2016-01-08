@@ -148,7 +148,7 @@ namespace MatterHackers.MatterSlice.Tests
 			prevLayer.Islands[0].BoundingBox.Calculate(prevLayer.Islands[0].IslandOutline);
 
 			double bridgeAngle;
-			Bridge.BridgeAngle(outline, prevLayer, out bridgeAngle, debugName);
+			prevLayer.BridgeAngle(outline, out bridgeAngle, debugName);
 			return bridgeAngle;
 		}
 	}

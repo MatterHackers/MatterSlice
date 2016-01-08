@@ -117,7 +117,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="LayerIsland.cs" />
     <Compile Include="SliceLayer.cs" />
-    <Compile Include="sliceDataStorage.cs" />
+    <Compile Include="LayerDataStorage.cs" />
     <Compile Include="Slicer\SlicerLayer.cs" />
     <Compile Include="Slicer\Slicer.cs" />
     <Compile Include="NewSupport.cs" />
@@ -159,12 +159,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="infill.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="skirt.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="raft.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MultiExtruders.cs" />
