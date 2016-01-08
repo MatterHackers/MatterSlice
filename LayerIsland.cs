@@ -1,5 +1,5 @@
 /*
-This file is part of MatterSlice. A commandline utility for
+This file is part of MatterSlice. A command line utility for
 generating 3D printing GCode.
 
 Copyright (C) 2013 David Braam
@@ -64,24 +64,24 @@ namespace MatterHackers.MatterSlice
 
 				for (int i = 0; i < insetCount; i++)
 				{
-					// Incriment by half the offset amount
+					// Increment by half the offset amount
 					currentOffset += offsetBy;
 
 					Polygons currentInset = part.IslandOutline.Offset(-currentOffset);
 					// make sure our polygon data is reasonable
 					currentInset = Clipper.CleanPolygons(currentInset, minimumDistanceToCreateNewPosition);
 
-					// check that we have actuall paths
+					// check that we have actual paths
 					if (currentInset.Count > 0)
 					{
 						part.InsetToolPaths.Add(currentInset);
 
-						// Incriment by the second half
+						// Increment by the second half
 						currentOffset += offsetBy;
 					}
 					else
 					{
-						// we are done making insets as we have no arrea left
+						// we are done making insets as we have no area left
 						break;
 					}
 

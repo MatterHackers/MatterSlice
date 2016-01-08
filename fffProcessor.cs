@@ -664,11 +664,11 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				LayerIsland part = layer.Islands[partOrderOptimizer.bestPolygonOrderIndex[partIndex]];
+				LayerIsland island = layer.Islands[partOrderOptimizer.bestPolygonOrderIndex[partIndex]];
 
 				if (config.avoidCrossingPerimeters)
 				{
-					gcodeLayer.SetOuterPerimetersToAvoidCrossing(part.AvoidCrossingBoundery);
+					gcodeLayer.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundery);
 				}
 				else
 				{
@@ -681,7 +681,7 @@ namespace MatterHackers.MatterSlice
 
 				Polygons bottomFillPolygons = new Polygons();
 
-				CalculateInfillData(slicingData, extruderIndex, layerIndex, part, ref bottomFillPolygons, ref fillPolygons, ref topFillPolygons, ref bridgePolygons);
+				CalculateInfillData(slicingData, extruderIndex, layerIndex, island, ref bottomFillPolygons, ref fillPolygons, ref topFillPolygons, ref bridgePolygons);
 				bottomFillIslandPolygons.Add(bottomFillPolygons);
 
 				// Write the bridge polygons out first so the perimeter will have more to hold to while bridging the gaps.
@@ -714,23 +714,23 @@ namespace MatterHackers.MatterSlice
 					{
 						if (inset0Config.spiralize)
 						{
-							if (part.InsetToolPaths.Count > 0)
+							if (island.InsetToolPaths.Count > 0)
 							{
-								Polygon outsideSinglePolygon = part.InsetToolPaths[0][0];
-								QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, new Polygons() { outsideSinglePolygon }, inset0Config, SupportWriteType.UnsupportedAreas);
+								Polygon outsideSinglePolygon = island.InsetToolPaths[0][0];
+								gcodeLayer.QueuePolygonsByOptimizer(new Polygons() { outsideSinglePolygon }, inset0Config);
 							}
 						}
 						else
 						{
 							// First the outside (this helps with accuracy)
-							if (part.InsetToolPaths.Count > 0)
+							if (island.InsetToolPaths.Count > 0)
 							{
-								QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[0], inset0Config, SupportWriteType.UnsupportedAreas);
+								QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, island.InsetToolPaths[0], inset0Config, SupportWriteType.UnsupportedAreas);
 							}
 
-							for (int perimeterIndex = 1; perimeterIndex < part.InsetToolPaths.Count; perimeterIndex++)
+							for (int perimeterIndex = 1; perimeterIndex < island.InsetToolPaths.Count; perimeterIndex++)
 							{
-								QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[perimeterIndex], insetXConfig, SupportWriteType.UnsupportedAreas);
+								QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, island.InsetToolPaths[perimeterIndex], insetXConfig, SupportWriteType.UnsupportedAreas);
 							}
 						}
 					}
@@ -738,21 +738,21 @@ namespace MatterHackers.MatterSlice
 					{
 						// Figure out where the seam hiding start point is for inset 0 and move to that spot so
 						// we have the minimum travel while starting inset 0 after printing the rest of the insets
-						if (part?.InsetToolPaths?[0]?[0]?.Count > 0)
+						if (island?.InsetToolPaths?[0]?[0]?.Count > 0)
 						{
-							int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(part.InsetToolPaths[0][0]);
-							gcodeLayer.QueueTravel(part.InsetToolPaths[0][0][bestPoint]);
+							int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(island.InsetToolPaths[0][0]);
+							gcodeLayer.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
 						}
 
 						// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
-						for (int perimeterIndex = 1; perimeterIndex < part.InsetToolPaths.Count; perimeterIndex++)
+						for (int perimeterIndex = 1; perimeterIndex < island.InsetToolPaths.Count; perimeterIndex++)
 						{
-							QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[perimeterIndex], insetXConfig, SupportWriteType.UnsupportedAreas);
+							QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, island.InsetToolPaths[perimeterIndex], insetXConfig, SupportWriteType.UnsupportedAreas);
 						}
 						// then 0
-						if (part.InsetToolPaths.Count > 0)
+						if (island.InsetToolPaths.Count > 0)
 						{
-							QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[0], inset0Config, SupportWriteType.UnsupportedAreas);
+							QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, island.InsetToolPaths[0], inset0Config, SupportWriteType.UnsupportedAreas);
 						}
 					}
 				}
@@ -884,9 +884,13 @@ namespace MatterHackers.MatterSlice
 
 		private void QueuePolygonsConsideringSupport(int layerIndex, GCodePlanner gcodeLayer, Polygons polygonsToWrite, GCodePathConfig fillConfig, SupportWriteType supportWriteType)
 		{
+			if (config.continuousSpiralOuterPerimeter)
+			{
+				throw new Exception("There is no support with continuousSpiralOuterPerimeter.");
+			}
+
 			if (config.generateSupport 
-				&& layerIndex > 0
-				&& !config.continuousSpiralOuterPerimeter)
+				&& layerIndex > 0)
 			{
 				Polygons supportOutlines = slicingData.support.GetRequiredSupportAreas(layerIndex);
 

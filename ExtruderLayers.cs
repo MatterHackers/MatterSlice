@@ -1,5 +1,5 @@
 ﻿/*
-This file is part of MatterSlice. A commandline utility for
+This file is part of MatterSlice. A command line utility for
 generating 3D printing GCode.
 
 Copyright (c) 2015, Lars Brubaker
