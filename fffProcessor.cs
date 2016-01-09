@@ -884,45 +884,45 @@ namespace MatterHackers.MatterSlice
 
 		private void QueuePolygonsConsideringSupport(int layerIndex, GCodePlanner gcodeLayer, Polygons polygonsToWrite, GCodePathConfig fillConfig, SupportWriteType supportWriteType)
 		{
-			if (config.continuousSpiralOuterPerimeter)
-			{
-				throw new Exception("There is no support with continuousSpiralOuterPerimeter.");
-			}
-
 			if (config.generateSupport 
-				&& layerIndex > 0)
+				&& layerIndex > 0
+				&& !config.continuousSpiralOuterPerimeter)
 			{
 				Polygons supportOutlines = slicingData.support.GetRequiredSupportAreas(layerIndex);
 
 				if (supportWriteType == SupportWriteType.UnsupportedAreas)
 				{
-					Polygons polygonsNotOnSupport;
-					// don't write the bottoms that are sitting on supported areas (they will be written at air gap distance later).
-					if (fillConfig.closedLoop)
+					if (supportOutlines.Count > 0)
 					{
-						polygonsNotOnSupport = polygonsToWrite.CreateDifference(supportOutlines);
+						Polygons polygonsNotOnSupport;
+						// don't write the bottoms that are sitting on supported areas (they will be written at air gap distance later).
+						polygonsToWrite = PolygonsHelper.ConvertToLines(polygonsToWrite);
+
+						polygonsNotOnSupport = polygonsToWrite.CreateLineDifference(supportOutlines);
+						gcodeLayer.QueuePolygonsByOptimizer(polygonsNotOnSupport, fillConfig);
 					}
 					else
 					{
-						polygonsNotOnSupport = polygonsToWrite.CreateLineDifference(supportOutlines);
+						gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, fillConfig);
 					}
-					gcodeLayer.QueuePolygonsByOptimizer(polygonsNotOnSupport, fillConfig);
 				}
 				else
 				{
 					if (supportOutlines.Count > 0)
 					{
-						// write the bottoms that are sitting on supported areas.
-						Polygons polygonsOnSupport;
-						if (fillConfig.closedLoop)
+						if (supportOutlines.Count > 0)
 						{
-							polygonsOnSupport = supportOutlines.CreateIntersection(polygonsToWrite);
+							// write the bottoms that are sitting on supported areas.
+							Polygons polygonsOnSupport;
+							polygonsToWrite = PolygonsHelper.ConvertToLines(polygonsToWrite);
+
+							polygonsOnSupport = supportOutlines.CreateLineIntersections(polygonsToWrite);
+							gcodeLayer.QueuePolygonsByOptimizer(polygonsOnSupport, fillConfig);
 						}
 						else
 						{
-							polygonsOnSupport = supportOutlines.CreateLineIntersections(polygonsToWrite);
+							gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, fillConfig);
 						}
-						gcodeLayer.QueuePolygonsByOptimizer(polygonsOnSupport, fillConfig);
 					}
 				}
 			}

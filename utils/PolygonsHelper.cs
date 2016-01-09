@@ -423,5 +423,26 @@ namespace MatterHackers.MatterSlice
 				ret.Add(polygons);
 			}
 		}
+
+		public static Polygons ConvertToLines(Polygons polygons)
+		{
+			Polygons linePolygons = new Polygons();
+			foreach(Polygon polygon in polygons)
+			{
+				if (polygon.Count > 2)
+				{
+					for (int vertexIndex = 0; vertexIndex < polygon.Count; vertexIndex++)
+					{
+						linePolygons.Add(new Polygon() { polygon[vertexIndex], polygon[(vertexIndex + 1) % polygon.Count] });
+					}
+				}
+				else
+				{
+					linePolygons.Add(polygon);
+				}
+			}
+
+			return linePolygons;
+		}
 	}
 }
