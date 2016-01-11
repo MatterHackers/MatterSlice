@@ -72,13 +72,14 @@ namespace MatterHackers.MatterSlice
 
 		public NewSupport(ConfigSettings config, List<ExtruderLayers> Extruders, double grabDistanceMm)
 		{
-			this.grabDistanceMm = grabDistanceMm;
+			long supportWidth_um = (long)(config.extrusionWidth_um * (100-config.supportPercent) / 100);
+            this.grabDistanceMm = grabDistanceMm;
 			// create starting support outlines
 			allPartOutlines = CalculateAllPartOutlines(config, Extruders);
 
-			allPotentialSupportOutlines = FindAllPotentialSupportOutlines(allPartOutlines, config);
+			allPotentialSupportOutlines = FindAllPotentialSupportOutlines(allPartOutlines, supportWidth_um);
 
-			allRequiredSupportOutlines = RemoveSelfSupportedSections(allPotentialSupportOutlines, config);
+			allRequiredSupportOutlines = RemoveSelfSupportedSections(allPotentialSupportOutlines, supportWidth_um);
 
 			if (!config.generateInternalSupport)
 			{
@@ -149,7 +150,7 @@ namespace MatterHackers.MatterSlice
 			return allPartOutlines;
 		}
 
-		private static List<Polygons> FindAllPotentialSupportOutlines(List<Polygons> inputPolys, ConfigSettings config)
+		private static List<Polygons> FindAllPotentialSupportOutlines(List<Polygons> inputPolys, long supportWidth_um)
 		{
 			int numLayers = inputPolys.Count;
 			List<Polygons> allPotentialSupportOutlines = CreateEmptyPolygons(numLayers);
@@ -157,7 +158,7 @@ namespace MatterHackers.MatterSlice
 			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
 			{
 				Polygons aboveLayerPolys = inputPolys[layerIndex + 1];
-				Polygons curLayerPolys = inputPolys[layerIndex].Offset(config.extrusionWidth_um / 2);
+				Polygons curLayerPolys = inputPolys[layerIndex].Offset(supportWidth_um);
 				Polygons areasNeedingSupport = aboveLayerPolys.CreateDifference(curLayerPolys);
 				allPotentialSupportOutlines[layerIndex] = Clipper.CleanPolygons(areasNeedingSupport, cleanDistance_um);
 			}
@@ -165,7 +166,7 @@ namespace MatterHackers.MatterSlice
 			return allPotentialSupportOutlines;
 		}
 
-		private static List<Polygons> RemoveSelfSupportedSections(List<Polygons> inputPolys, ConfigSettings config)
+		private static List<Polygons> RemoveSelfSupportedSections(List<Polygons> inputPolys, long supportWidth_um)
 		{
 			int numLayers = inputPolys.Count;
 
@@ -177,7 +178,7 @@ namespace MatterHackers.MatterSlice
 				{
 					if (inputPolys[layerIndex].Count > 0)
 					{
-						Polygons expandedLayerBellow = inputPolys[layerIndex - 1].Offset(config.extrusionWidth_um / 2);
+						Polygons expandedLayerBellow = inputPolys[layerIndex - 1].Offset(supportWidth_um);
 
 						allRequiredSupportOutlines[layerIndex] = inputPolys[layerIndex].CreateDifference(expandedLayerBellow);
 						allRequiredSupportOutlines[layerIndex] = Clipper.CleanPolygons(allRequiredSupportOutlines[layerIndex], cleanDistance_um);

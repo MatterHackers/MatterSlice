@@ -1,5 +1,5 @@
 ﻿/*
-This file is part of MatterSlice. A commandline utility for
+This file is part of MatterSlice. A command line utility for
 generating 3D printing GCode.
 
 Copyright (C) 2013 David Braam
@@ -54,7 +54,7 @@ namespace MatterHackers.MatterSlice
 			REPRAP,
 			/**
 			 * UltiGCode is Marlin based GCode.
-			 *  UltiGCode uses less settings on the slicer and puts more settings in the firmware. This makes for more hardware/material independed GCode.
+			 *  UltiGCode uses less settings on the slicer and puts more settings in the firmware. This makes for more hardware/material independent GCode.
 			 *  G0 for moves, G1 for extrusion.
 			 *  E values give mm^3 of filament extrusion. Ignores the filament diameter setting.
 			 *  Retraction is done with G10 and G11. Retraction settings are ignored. G10 S1 is used for multi-extruder switch retraction.
@@ -145,8 +145,11 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("If True, support will be generated within the part as well as from the bed.")]
 		public bool generateInternalSupport;
 
-		[SettingDescription("If True, support will be generated from the the bed. If false no support will be generated at all.")]
+		[SettingDescription("If True, support will be generated from the bed. If false no support will be generated at all.")]
 		public bool generateSupport;
+
+		[SettingDescription("The percent of support to generate.")]
+		public double supportPercent;
 
 		[SettingDescription("The amount the infill extends into the perimeter in millimeters.")]
 		public double infillExtendIntoPerimeter;
@@ -636,6 +639,7 @@ namespace MatterHackers.MatterSlice
 
 			supportType = ConfigConstants.SUPPORT_TYPE.GRID;
 			generateSupport = false;
+			supportPercent = 50;
 			generateInternalSupport = true;
 			raftExtruder = -1;
 			supportLineSpacing = extrusionWidth * 5;
