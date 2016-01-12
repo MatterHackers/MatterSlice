@@ -35,7 +35,7 @@ namespace MatterHackers.MatterSlice
 	public class GCodePathConfig
 	{
 		public bool closedLoop = true;
-		public int lineWidth;
+		public int lineWidth_um;
 		public string gcodeComment;
 		public double speed;
 		public bool spiralize;
@@ -45,10 +45,10 @@ namespace MatterHackers.MatterSlice
 		{
 		}
 
-		public GCodePathConfig(double speed, int lineWidth, string name)
+		public GCodePathConfig(double speed, int lineWidth_um, string name)
 		{
 			this.speed = speed;
-			this.lineWidth = lineWidth;
+			this.lineWidth_um = lineWidth_um;
 			this.gcodeComment = name;
 		}
 
@@ -56,14 +56,14 @@ namespace MatterHackers.MatterSlice
 		/// Set the data for a path cofig. This is used to define how different parts (infill, perimeters) are written to gcode.
 		/// </summary>
 		/// <param name="speed"></param>
-		/// <param name="lineWidth"></param>
+		/// <param name="lineWidth_um"></param>
 		/// <param name="gcodeComment"></param>
 		/// <param name="closedLoop"></param>
-		public void SetData(double speed, int lineWidth, string gcodeComment, bool closedLoop = true)
+		public void SetData(double speed, int lineWidth_um, string gcodeComment, bool closedLoop = true)
 		{
 			this.closedLoop = closedLoop;
 			this.speed = speed;
-			this.lineWidth = lineWidth;
+			this.lineWidth_um = lineWidth_um;
 			this.gcodeComment = gcodeComment;
 		}
 	}

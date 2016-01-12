@@ -91,7 +91,7 @@ namespace MatterHackers.MatterSlice
 				{
 					Point3 currentPosition = path.points[pointIndex];
 					double thisTime = (lastPosition - currentPosition).LengthMm() / (double)(path.config.speed);
-					if (path.config.lineWidth != 0)
+					if (path.config.lineWidth_um != 0)
 					{
 						extrudeTime += thisTime;
 					}
@@ -117,7 +117,7 @@ namespace MatterHackers.MatterSlice
 				for (int n = 0; n < paths.Count; n++)
 				{
 					GCodePath path = paths[n];
-					if (path.config.lineWidth == 0)
+					if (path.config.lineWidth_um == 0)
 					{
 						continue;
 					}
@@ -365,7 +365,7 @@ namespace MatterHackers.MatterSlice
 				}
 
 				double speed = path.config.speed;
-				if (path.config.lineWidth != 0)
+				if (path.config.lineWidth_um != 0)
 				{
 					// Only apply the extrudeSpeedFactor to extrusion moves
 					speed = speed * extrudeSpeedFactor / 100;
@@ -377,12 +377,12 @@ namespace MatterHackers.MatterSlice
 
 				if (path.points.Count == 1
 					&& path.config != travelConfig
-					&& (gcodeExport.GetPositionXY() - path.points[0].XYPoint).ShorterThen(path.config.lineWidth * 2))
+					&& (gcodeExport.GetPositionXY() - path.points[0].XYPoint).ShorterThen(path.config.lineWidth_um * 2))
 				{
 					//Check for lots of small moves and combine them into one large line
 					Point3 nextPosition = path.points[0];
 					int i = pathIndex + 1;
-					while (i < paths.Count && paths[i].points.Count == 1 && (nextPosition - paths[i].points[0]).ShorterThen(path.config.lineWidth * 2))
+					while (i < paths.Count && paths[i].points.Count == 1 && (nextPosition - paths[i].points[0]).ShorterThen(path.config.lineWidth_um * 2))
 					{
 						nextPosition = paths[i].points[0];
 						i++;
@@ -402,13 +402,13 @@ namespace MatterHackers.MatterSlice
 							long newLen = (gcodeExport.GetPosition() - newPoint).Length();
 							if (newLen > 0)
 							{
-								gcodeExport.WriteMove(newPoint, speed, (int)(path.config.lineWidth * oldLen / newLen));
+								gcodeExport.WriteMove(newPoint, speed, (int)(path.config.lineWidth_um * oldLen / newLen));
 							}
 
 							nextPosition = paths[x + 1].points[0];
 						}
 
-						gcodeExport.WriteMove(paths[i - 1].points[0], speed, path.config.lineWidth);
+						gcodeExport.WriteMove(paths[i - 1].points[0], speed, path.config.lineWidth_um);
 						pathIndex = i - 1;
 						continue;
 					}
@@ -448,7 +448,7 @@ namespace MatterHackers.MatterSlice
 						currentPosition = nextPosition;
 						Point3 nextExtrusion = path.points[i];
 						nextExtrusion.z = (int)(z + layerThickness * length / totalLength + .5);
-						gcodeExport.WriteMove(nextExtrusion, speed, path.config.lineWidth);
+						gcodeExport.WriteMove(nextExtrusion, speed, path.config.lineWidth_um);
 					}
 				}
 				else
@@ -486,7 +486,7 @@ namespace MatterHackers.MatterSlice
 
 						for (int i = 0; i < path.points.Count; i++)
 						{
-							gcodeExport.WriteMove(path.points[i], speed, path.config.lineWidth);
+							gcodeExport.WriteMove(path.points[i], speed, path.config.lineWidth_um);
 						}
 					}
 				}
@@ -615,7 +615,7 @@ namespace MatterHackers.MatterSlice
 			if (path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER")
 			{
 				long currentDistance = 0;
-				long targetDistance = (long)(path.config.lineWidth * .90);
+				long targetDistance = (long)(path.config.lineWidth_um * .90);
 
 				if (path.points.Count > 1)
 				{
