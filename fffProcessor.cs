@@ -858,9 +858,6 @@ namespace MatterHackers.MatterSlice
 						gcodeLayer.MoveInsideTheOuterPerimeter(extrusionWidth_um * 2);
 					}
 
-					// Now write any areas that need to be on support at the air gap height
-					gcode.setZ(currentZ_um + config.supportAirGap_um);
-
 					// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
 					for (int perimeterIndex = 1; perimeterIndex < part.InsetToolPaths.Count; perimeterIndex++)
 					{
