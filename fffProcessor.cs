@@ -914,6 +914,16 @@ namespace MatterHackers.MatterSlice
 							polygonsToWrite = PolygonsHelper.ConvertToLines(polygonsToWrite);
 
 							polygonsOnSupport = supportOutlines.CreateLineIntersections(polygonsToWrite);
+							// ensure that all the segments have only 2 points
+							foreach(Polygon poly in polygonsOnSupport)
+							{
+								while(poly.Count > 2)
+								{
+									// This is an error and I'm not sure why it happened. It needs to be investigated. // LBB 2016 01 12
+									poly.RemoveAt(poly.Count - 1);
+								}
+							}
+
 							gcodeLayer.QueuePolygonsByOptimizer(polygonsOnSupport, fillConfig);
 						}
 						else
