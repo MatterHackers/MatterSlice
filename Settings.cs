@@ -98,6 +98,8 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The speed to run the fan during bridging.")]
 		public int bridgeFanSpeedPercent;
 
+		public bool retractWhenChangingIslands;
+
 		[SettingDescription("mm/s.")]
 		public int bridgeSpeed;
 
@@ -613,6 +615,7 @@ namespace MatterHackers.MatterSlice
 			infillSpeed = 50;
 			bridgeSpeed = 20;
 			bridgeFanSpeedPercent = 100;
+			retractWhenChangingIslands = true;
 			raftFanSpeedPercent = 100;
 			outsidePerimeterSpeed = 50;
 			outsidePerimeterExtrusionWidth = extrusionWidth;
