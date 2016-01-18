@@ -147,6 +147,9 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("If True, support will be generated within the part as well as from the bed.")]
 		public bool generateInternalSupport;
 
+		[SettingDescription("If True, an external perimeter will be created around each support island.")]
+		public bool generateSupportPerimeter;
+
 		[SettingDescription("If True, support will be generated from the bed. If false no support will be generated at all.")]
 		public bool generateSupport;
 
@@ -644,6 +647,7 @@ namespace MatterHackers.MatterSlice
 			generateSupport = false;
 			supportPercent = 50;
 			generateInternalSupport = true;
+			generateSupportPerimeter = true;
 			raftExtruder = -1;
 			supportLineSpacing = extrusionWidth * 5;
 			supportExtruder = -1;

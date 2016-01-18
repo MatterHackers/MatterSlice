@@ -48,7 +48,10 @@ namespace MatterHackers.MatterSlice
 
 		public long CurrentZ { get { return gcodeExport.CurrentZ; } }
 		
-		private IntPoint lastPosition;
+		public IntPoint LastPosition
+		{
+			get; private set;
+		}
 
 		private AvoidCrossingPerimeters outerPerimetersToAvoidCrossing;
 
@@ -67,7 +70,7 @@ namespace MatterHackers.MatterSlice
 			this.gcodeExport = gcode;
 			travelConfig = new GCodePathConfig(travelSpeed, 0, "travel");
 
-			lastPosition = gcode.GetPositionXY();
+			LastPosition = gcode.GetPositionXY();
 			outerPerimetersToAvoidCrossing = null;
 			extrudeSpeedFactor = 100;
 			travelSpeedFactor = 100;
@@ -276,12 +279,12 @@ namespace MatterHackers.MatterSlice
 
 		public void MoveInsideTheOuterPerimeter(int distance)
 		{
-			if (outerPerimetersToAvoidCrossing == null || outerPerimetersToAvoidCrossing.PointIsInsideBoundary(lastPosition))
+			if (outerPerimetersToAvoidCrossing == null || outerPerimetersToAvoidCrossing.PointIsInsideBoundary(LastPosition))
 			{
 				return;
 			}
 
-			IntPoint p = lastPosition;
+			IntPoint p = LastPosition;
 			if (outerPerimetersToAvoidCrossing.MovePointInsideBoundary(ref p, distance))
 			{
 				//Move inside again, so we move out of tight 90deg corners
@@ -338,7 +341,7 @@ namespace MatterHackers.MatterSlice
 		public void QueueExtrusionMove(IntPoint destination, GCodePathConfig config)
 		{
 			GetLatestPathWithConfig(config).points.Add(new Point3(destination, CurrentZ));
-			lastPosition = destination;
+			LastPosition = destination;
 		}
 
 		public void WriteQueuedGCode(int layerThickness)
@@ -500,8 +503,8 @@ namespace MatterHackers.MatterSlice
 			IntPoint currentPosition = polygon[startIndex];
 
 			if (!config.spiralize
-				&& (lastPosition.X != currentPosition.X
-				|| lastPosition.Y != currentPosition.Y))
+				&& (LastPosition.X != currentPosition.X
+				|| LastPosition.Y != currentPosition.Y))
 			{
 				QueueTravel(currentPosition);
 			}
@@ -546,7 +549,7 @@ namespace MatterHackers.MatterSlice
 
 		public void QueuePolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
 		{
-			PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(lastPosition);
+			PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(LastPosition);
 			orderOptimizer.AddPolygons(polygons);
 
 			orderOptimizer.Optimize(config);
@@ -570,7 +573,7 @@ namespace MatterHackers.MatterSlice
 			else if (outerPerimetersToAvoidCrossing != null)
 			{
 				List<IntPoint> pointList = new List<IntPoint>();
-				if (outerPerimetersToAvoidCrossing.CreatePathInsideBoundary(lastPosition, positionToMoveTo, pointList))
+				if (outerPerimetersToAvoidCrossing.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pointList))
 				{
 					long lineLength_um = 0;
 					// we can stay inside so move within the boundary
@@ -591,7 +594,7 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					if ((lastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um))
+					if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um))
 					{
 						// We are moving relatively far and are going to cross a boundary so do a retraction.
 						path.Retract = true;
@@ -600,14 +603,14 @@ namespace MatterHackers.MatterSlice
 			}
 			else if (alwaysRetract)
 			{
-				if ((lastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um))
+				if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um))
 				{
 					path.Retract = true;
 				}
 			}
 
 			path.points.Add(new Point3(positionToMoveTo, CurrentZ));
-			lastPosition = positionToMoveTo;
+			LastPosition = positionToMoveTo;
 		}
 
 		private static void TrimPerimeterIfNeeded(GCodePath path)

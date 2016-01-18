@@ -544,6 +544,7 @@ namespace MatterHackers.MatterSlice
 				{
 					z += config.supportAirGap_um;
 					gcode.setZ(z);
+					gcodeLayer.QueueTravel(gcodeLayer.LastPosition);
 
 					for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
 					{

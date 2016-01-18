@@ -376,7 +376,10 @@ namespace MatterHackers.MatterSlice
 			{
 				Polygons islandInfillLines = new Polygons();
 				// render a grid of support
-				gcodeLayer.QueuePolygonsByOptimizer(islandOutline, supportNormalConfig);
+				if (config.generateSupportPerimeter)
+				{
+					gcodeLayer.QueuePolygonsByOptimizer(islandOutline, supportNormalConfig);
+				}
 				Polygons infillOutline = islandOutline.Offset(-config.extrusionWidth_um / 2);
 				switch (config.supportType)
 				{
@@ -409,7 +412,10 @@ namespace MatterHackers.MatterSlice
 			{
 				Polygons islandInfillLines = new Polygons();
 				// render a grid of support
-				gcodeLayer.QueuePolygonsByOptimizer(islandOutline, supportNormalConfig);
+				if (config.generateSupportPerimeter)
+				{
+					gcodeLayer.QueuePolygonsByOptimizer(islandOutline, supportNormalConfig);
+				}
 				Polygons infillOutline = islandOutline.Offset(-config.extrusionWidth_um / 2);
 				switch (config.supportType)
 				{
