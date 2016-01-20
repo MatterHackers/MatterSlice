@@ -485,7 +485,6 @@ namespace MatterHackers.MatterSlice
 					supportInterfaceConfig.SetData(config.supportMaterialSpeed - 5, config.extrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 
-				gcode.WriteComment("LAYER:{0}".FormatWith(layerIndex));
 				if (layerIndex == 0)
 				{
 					gcode.SetExtrusion(config.firstLayerThickness_um, config.filamentDiameter_um, config.extrusionMultiplier);
@@ -513,6 +512,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
+				gcode.WriteComment("LAYER:{0}".FormatWith(layerIndex));
 				gcode.setZ(z);
 
 				// We only create the skirt if we are on layer 0.
@@ -563,6 +563,21 @@ namespace MatterHackers.MatterSlice
 				if (layerIndex <= 0)
 				{
 					currentLayerThickness_um = config.firstLayerThickness_um;
+				}
+
+				// Move to the best point for the next layer
+				if (layerIndex > 0 && layerIndex < totalLayers - 2)
+				{
+					// Figure out where the seam hiding start point is for inset 0 and move to that spot so
+					// we have the minimum travel while starting inset 0 after printing the rest of the insets
+					SliceLayer layer = slicingData?.Extruders?[0]?.Layers?[layerIndex + 1];
+					LayerIsland island = layer?.Islands?[0];
+					if (island?.InsetToolPaths?[0]?[0]?.Count > 0)
+					{
+						int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(island.InsetToolPaths[0][0]);
+						gcodeLayer.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundery);
+						gcodeLayer.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
+					}
 				}
 
 				gcodeLayer.WriteQueuedGCode(currentLayerThickness_um);
