@@ -485,6 +485,7 @@ namespace MatterHackers.MatterSlice
 					supportInterfaceConfig.SetData(config.supportMaterialSpeed - 5, config.extrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 
+				gcode.WriteComment("LAYER:{0}".FormatWith(layerIndex));
 				if (layerIndex == 0)
 				{
 					gcode.SetExtrusion(config.firstLayerThickness_um, config.filamentDiameter_um, config.extrusionMultiplier);
@@ -512,7 +513,6 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				gcode.WriteComment("LAYER:{0}".FormatWith(layerIndex));
 				gcode.setZ(z);
 
 				// We only create the skirt if we are on layer 0.
