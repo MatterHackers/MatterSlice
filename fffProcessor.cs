@@ -566,7 +566,9 @@ namespace MatterHackers.MatterSlice
 				}
 
 				// Move to the best point for the next layer
-				if (layerIndex > 0 && layerIndex < totalLayers - 2)
+				if (!config.continuousSpiralOuterPerimeter
+                    && layerIndex > 0 
+					&& layerIndex < totalLayers - 2)
 				{
 					// Figure out where the seam hiding start point is for inset 0 and move to that spot so
 					// we have the minimum travel while starting inset 0 after printing the rest of the insets
