@@ -573,7 +573,7 @@ namespace MatterHackers.MatterSlice
 					// Figure out where the seam hiding start point is for inset 0 and move to that spot so
 					// we have the minimum travel while starting inset 0 after printing the rest of the insets
 					SliceLayer layer = slicingData?.Extruders?[0]?.Layers?[layerIndex + 1];
-					if (layer.Islands.Count > 0)
+					if (layer.Islands.Count == 1)
 					{
 						LayerIsland island = layer?.Islands?[0];
 						if (island?.InsetToolPaths?[0]?[0]?.Count > 0)
