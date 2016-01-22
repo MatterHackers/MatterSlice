@@ -54,7 +54,8 @@ namespace MatterHackers.MatterSlice
 		private GCodePathConfig fillConfig = new GCodePathConfig();
 		private GCodePathConfig topFillConfig = new GCodePathConfig();
 		private GCodePathConfig bottomFillConfig = new GCodePathConfig();
-		private GCodePathConfig bridgConfig = new GCodePathConfig();
+		private GCodePathConfig airGappedBottomConfig = new GCodePathConfig();
+        private GCodePathConfig bridgConfig = new GCodePathConfig();
 		private GCodePathConfig supportNormalConfig = new GCodePathConfig();
 		private GCodePathConfig supportInterfaceConfig = new GCodePathConfig();
 
@@ -157,7 +158,8 @@ namespace MatterHackers.MatterSlice
 			fillConfig.SetData(config.infillSpeed, extrusionWidth, "FILL", false);
 			topFillConfig.SetData(config.topInfillSpeed, extrusionWidth, "TOP-FILL", false);
 			bottomFillConfig.SetData(config.infillSpeed, extrusionWidth, "BOTTOM-FILL", false);
-			bridgConfig.SetData(config.bridgeSpeed, extrusionWidth, "BRIDGE");
+			airGappedBottomConfig.SetData(config.firstLayerSpeed, extrusionWidth, "AIR-GAP", false);
+            bridgConfig.SetData(config.bridgeSpeed, extrusionWidth, "BRIDGE");
 
 			supportNormalConfig.SetData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT");
 			supportInterfaceConfig.SetData(config.supportMaterialSpeed - 5, extrusionWidth, "SUPPORT-INTERFACE");
@@ -465,7 +467,8 @@ namespace MatterHackers.MatterSlice
 					fillConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "FILL", false);
 					topFillConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "TOP-FILL", false);
 					bottomFillConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "BOTTOM-FILL", false);
-					bridgConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "BRIDGE");
+					airGappedBottomConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "AIR-GAP", false);
+                    bridgConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "BRIDGE");
 
 					supportNormalConfig.SetData(config.firstLayerSpeed, config.supportExtrusionWidth_um, "SUPPORT");
 					supportInterfaceConfig.SetData(config.firstLayerSpeed, config.extrusionWidth_um, "SUPPORT-INTERFACE");
@@ -479,10 +482,11 @@ namespace MatterHackers.MatterSlice
 					fillConfig.SetData(config.infillSpeed, config.extrusionWidth_um, "FILL", false);
 					topFillConfig.SetData(config.topInfillSpeed, config.firstLayerExtrusionWidth_um, "TOP-FILL", false);
 					bottomFillConfig.SetData(config.infillSpeed, config.firstLayerExtrusionWidth_um, "BOTTOM-FILL", false);
-					bridgConfig.SetData(config.bridgeSpeed, config.extrusionWidth_um, "BRIDGE");
+					airGappedBottomConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "AIR-GAP", false);
+                    bridgConfig.SetData(config.bridgeSpeed, config.extrusionWidth_um, "BRIDGE");
 
 					supportNormalConfig.SetData(config.supportMaterialSpeed, config.supportExtrusionWidth_um, "SUPPORT");
-					supportInterfaceConfig.SetData(config.supportMaterialSpeed - 5, config.extrusionWidth_um, "SUPPORT-INTERFACE");
+					supportInterfaceConfig.SetData(config.supportMaterialSpeed, config.extrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 
 				gcode.WriteComment("LAYER:{0}".FormatWith(layerIndex));
@@ -710,7 +714,7 @@ namespace MatterHackers.MatterSlice
 				if (bridgePolygons.Count > 0)
 				{
 					gcode.WriteFanCommand(config.bridgeFanSpeedPercent);
-					gcodeLayer.QueuePolygonsByOptimizer(bridgePolygons, bridgConfig);
+					QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bridgePolygons, airGappedBottomConfig, SupportWriteType.UnsupportedAreas);
 				}
 
 				if (config.numberOfPerimeters > 0)
@@ -855,7 +859,7 @@ namespace MatterHackers.MatterSlice
 					if (bridgePolygons.Count > 0)
 					{
 						gcode.WriteFanCommand(config.bridgeFanSpeedPercent);
-						gcodeLayer.QueuePolygonsByOptimizer(bridgePolygons, bridgConfig);
+						QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bridgePolygons, airGappedBottomConfig, SupportWriteType.SupportedAreas);
 					}
 
 					if (config.numberOfPerimeters > 0)
@@ -885,15 +889,15 @@ namespace MatterHackers.MatterSlice
 					// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
 					for (int perimeterIndex = 1; perimeterIndex < part.InsetToolPaths.Count; perimeterIndex++)
 					{
-						QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[perimeterIndex], insetXConfig, SupportWriteType.SupportedAreas);
+						QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[perimeterIndex], airGappedBottomConfig, SupportWriteType.SupportedAreas);
 					}
 					// then 0
 					if (part.InsetToolPaths.Count > 0)
 					{
-						QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[0], inset0Config, SupportWriteType.SupportedAreas);
+						QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[0], airGappedBottomConfig, SupportWriteType.SupportedAreas);
 					}
 
-					QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bottomFillIslandPolygons[inlandIndex], bottomFillConfig, SupportWriteType.SupportedAreas);
+					QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bottomFillIslandPolygons[inlandIndex], airGappedBottomConfig, SupportWriteType.SupportedAreas);
 				}
 			}
 
