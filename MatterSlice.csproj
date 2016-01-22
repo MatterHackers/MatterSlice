@@ -114,6 +114,7 @@
     <Compile Include="ExtruderLayers.cs" />
     <Compile Include="GCodePathConfig.cs" />
     <Compile Include="GCodePlanner.cs" />
+    <Compile Include="GrahamScan.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="LayerIsland.cs" />
     <Compile Include="SliceLayer.cs" />

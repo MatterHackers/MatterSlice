@@ -24,7 +24,9 @@ using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
+	using cg;
 	using System.IO;
+	using System.Linq;
 	using Polygons = List<List<IntPoint>>;
 
 	public class LayerDataStorage
@@ -117,73 +119,106 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void GenerateSkirt(int distance, int extrusionWidth_um, int numberOfLoops, int minLength, int initialLayerHeight, ConfigSettings config)
+		public void GenerateSkirt(int distance, int extrusionWidth_um, int numberOfLoops, int brimCount, int minLength, int initialLayerHeight, ConfigSettings config)
 		{
 			LayerDataStorage storage = this;
 			bool externalOnly = (distance > 0);
+
+			List<Polygons> skirtLoops = new List<List<List<IntPoint>>>();
+
+			Polygons skirtPolygons = GetSkirtBounds(config, storage, externalOnly, distance, extrusionWidth_um, brimCount);
+
+			// Find convex hull for the skirt outline 
+			List<GrahamScan.Point> items = new List<GrahamScan.Point>();
+			var scanner = new GrahamScan();
+			foreach (var path in skirtPolygons)
+			{
+				foreach (var polygon in path)
+				{
+					items.Add(new GrahamScan.Point((int)polygon.X, (int)polygon.Y));
+				}
+			}
+
+			var convexHull = scanner.getConvexHull(items);
+			var intpointHull = convexHull.Take(convexHull.Count - 1).Select(p => new IntPoint(p.x, p.y)).ToList();
+
+			skirtPolygons = new Polygons();
+			skirtPolygons.Add(intpointHull);
+
 			for (int skirtLoop = 0; skirtLoop < numberOfLoops; skirtLoop++)
 			{
 				int offsetDistance = distance + extrusionWidth_um * skirtLoop + extrusionWidth_um / 2;
 
-				Polygons skirtPolygons = new Polygons(storage.wipeTower.Offset(offsetDistance));
-				for (int extrudeIndex = 0; extrudeIndex < storage.Extruders.Count; extrudeIndex++)
-				{
-					if (config.ContinuousSpiralOuterPerimeter && extrudeIndex > 0)
-					{
-						continue;
-					}
+				storage.skirt.AddAll(skirtPolygons.Offset(offsetDistance));
 
-					if (storage.Extruders[extrudeIndex].Layers.Count < 1)
-					{
-						continue;
-					}
-
-					SliceLayer layer = storage.Extruders[extrudeIndex].Layers[0];
-					for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
-					{
-						if (config.ContinuousSpiralOuterPerimeter && islandIndex > 0)
-						{
-							continue;
-						}
-
-						if (externalOnly)
-						{
-							Polygons outline0 = new Polygons();
-							outline0.Add(layer.Islands[islandIndex].IslandOutline[0]);
-							//outline0.Add(layer.Islands[islandIndex].IslandOutline[0].CreateConvexHull());
-							skirtPolygons = skirtPolygons.CreateUnion(outline0.Offset(offsetDistance));
-						}
-						else
-						{
-							skirtPolygons = skirtPolygons.CreateUnion(layer.Islands[islandIndex].IslandOutline.Offset(offsetDistance));
-						}
-					}
-				}
-
-				if (storage.support != null)
-				{
-					skirtPolygons = skirtPolygons.CreateUnion(storage.support.GetBedOutlines().Offset(offsetDistance));
-				}
-
-				//Remove small inner skirt holes. Holes have a negative area, remove anything smaller then 100x extrusion "area"
-				for (int n = 0; n < skirtPolygons.Count; n++)
-				{
-					double area = skirtPolygons[n].Area();
-					if (area < 0 && area > -extrusionWidth_um * extrusionWidth_um * 100)
-					{
-						skirtPolygons.RemoveAt(n--);
-					}
-				}
-
-				storage.skirt.AddAll(skirtPolygons);
-
-				int lenght = (int)storage.skirt.PolygonLength();
-				if (skirtLoop + 1 >= numberOfLoops && lenght > 0 && lenght < minLength)
+				int length = (int)storage.skirt.PolygonLength();
+				if (skirtLoop + 1 >= numberOfLoops && length > 0 && length < minLength)
 				{
 					// add more loops for as long as we have not extruded enough length
 					numberOfLoops++;
 				}
 			}
+		}
+
+		private static Polygons GetSkirtBounds(ConfigSettings config, LayerDataStorage storage, bool externalOnly, int distance, int extrusionWidth_um, int brimCount)
+		{
+			Polygons skirtPolygons = new Polygons(storage.wipeTower);
+
+			// Loop over every extruder
+			for (int extrudeIndex = 0; extrudeIndex < storage.Extruders.Count; extrudeIndex++)
+			{
+				if (config.continuousSpiralOuterPerimeter && extrudeIndex > 0 ||
+						storage.Extruders[extrudeIndex].Layers.Count < 1)
+				{
+					continue;
+				}
+
+				// Loop over every island mapped to the current extruder
+				SliceLayer layer = storage.Extruders[extrudeIndex].Layers[0];
+				for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
+				{
+					if (config.ContinuousSpiralOuterPerimeter && partIndex > 0)
+					{
+						continue;
+					}
+
+					Polygons outline;
+					if (externalOnly)
+					{
+						outline = new Polygons();
+						outline.Add(layer.Islands[partIndex].IslandOutline[0]);
+					}
+					else
+					{
+						outline = layer.Islands[partIndex].IslandOutline;
+					}
+
+					if (brimCount > 0)
+					{
+						for (int brimIndex = 0; brimIndex < brimCount; brimIndex++)
+						{
+							int offsetDistance = extrusionWidth_um * brimIndex + extrusionWidth_um / 2;
+
+							// Extend the polygons to account for the brim (ensures convex hull takes this data into account) 
+							skirtPolygons = skirtPolygons.CreateUnion(outline.Offset(offsetDistance));
+
+							// TODO: This is a quick hack, reuse the skirt data to stuff in the brim. Good enough from proof of concept
+							storage.skirt.AddAll(outline.Offset(offsetDistance));
+						}
+					}
+					else
+					{
+						skirtPolygons = skirtPolygons.CreateUnion(outline);
+					}
+				}
+			}
+
+			if (storage.support != null)
+			{
+				skirtPolygons = skirtPolygons.CreateUnion(storage.support.GetBedOutlines());
+			}
+
+			return skirtPolygons;
 		}
 
 		public void WriteRaftGCodeIfRequired(ConfigSettings config, GCodeExport gcode)
