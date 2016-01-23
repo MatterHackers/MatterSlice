@@ -162,7 +162,7 @@ namespace MatterHackers.MatterSlice
             bridgConfig.SetData(config.bridgeSpeed, extrusionWidth, "BRIDGE");
 
 			supportNormalConfig.SetData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT");
-			supportInterfaceConfig.SetData(config.supportMaterialSpeed - 5, extrusionWidth, "SUPPORT-INTERFACE");
+			supportInterfaceConfig.SetData(config.supportMaterialSpeed - 1, extrusionWidth, "SUPPORT-INTERFACE");
 
 			for (int extruderIndex = 0; extruderIndex < ConfigConstants.MAX_EXTRUDERS; extruderIndex++)
 			{
@@ -486,7 +486,7 @@ namespace MatterHackers.MatterSlice
                     bridgConfig.SetData(config.bridgeSpeed, config.extrusionWidth_um, "BRIDGE");
 
 					supportNormalConfig.SetData(config.supportMaterialSpeed, config.supportExtrusionWidth_um, "SUPPORT");
-					supportInterfaceConfig.SetData(config.supportMaterialSpeed, config.extrusionWidth_um, "SUPPORT-INTERFACE");
+					supportInterfaceConfig.SetData(config.supportMaterialSpeed - 1, config.extrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 
 				gcode.WriteComment("LAYER:{0}".FormatWith(layerIndex));
@@ -555,7 +555,7 @@ namespace MatterHackers.MatterSlice
 						QueueAirGappedExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.extrusionWidth_um, fanSpeedPercent, z);
 					}
 
-					slicingData.support.QueueAirGappedBottomLayer(config, gcodeLayer, layerIndex, supportNormalConfig);
+					slicingData.support.QueueAirGappedBottomLayer(config, gcodeLayer, layerIndex, airGappedBottomConfig);
 				}
 
 				//Finish the layer by applying speed corrections for minimum layer times.
