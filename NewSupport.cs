@@ -49,6 +49,7 @@ namespace MatterHackers.MatterSlice
 		readonly static double cleanDistance_um = 10;
 
 		internal List<Polygons> allPartOutlines = new List<Polygons>();
+		internal List<Polygons> insetPartOutlines = new List<Polygons>();
 		internal List<Polygons> allPotentialSupportOutlines = new List<Polygons>();
 		internal List<Polygons> allRequiredSupportOutlines = new List<Polygons>();
 		internal List<Polygons> easyGrabDistanceOutlines = new List<Polygons>();
@@ -77,13 +78,15 @@ namespace MatterHackers.MatterSlice
 			// create starting support outlines
 			allPartOutlines = CalculateAllPartOutlines(config, Extruders);
 
-			allPotentialSupportOutlines = FindAllPotentialSupportOutlines(allPartOutlines, supportWidth_um);
+			insetPartOutlines = CreateInsetPartOutlines(allPartOutlines, config.extrusionWidth_um/2);
+
+			allPotentialSupportOutlines = FindAllPotentialSupportOutlines(insetPartOutlines, supportWidth_um);
 
 			allRequiredSupportOutlines = RemoveSelfSupportedSections(allPotentialSupportOutlines, supportWidth_um);
 
 			if (!config.generateInternalSupport)
 			{
-				allRequiredSupportOutlines = RemoveSupportFromInternalSpaces(allRequiredSupportOutlines, allPartOutlines);
+				allRequiredSupportOutlines = RemoveSupportFromInternalSpaces(allRequiredSupportOutlines, insetPartOutlines);
 			}
 
 			easyGrabDistanceOutlines = ExpandToEasyGrabDistance(allRequiredSupportOutlines, (int)(grabDistanceMm * 1000));
@@ -91,15 +94,15 @@ namespace MatterHackers.MatterSlice
 			//pushedUpTopOutlines = PushUpTops(easyGrabDistanceOutlines, numLayers, config);
 
 			interfaceLayers = CreateInterfaceLayers(easyGrabDistanceOutlines, config.supportInterfaceLayers);
-			interfaceLayers = ClipToXyDistance(interfaceLayers, allPartOutlines, config);
+			interfaceLayers = ClipToXyDistance(interfaceLayers, insetPartOutlines, config);
 
-			supportOutlines = AccumulateDownPolygons(config, easyGrabDistanceOutlines, allPartOutlines);
-			supportOutlines = ClipToXyDistance(supportOutlines, allPartOutlines, config);
+			supportOutlines = AccumulateDownPolygons(config, easyGrabDistanceOutlines, insetPartOutlines);
+			supportOutlines = ClipToXyDistance(supportOutlines, insetPartOutlines, config);
 
 			// remove the interface layers from the normal support layers
 			supportOutlines = CalculateDifferencePerLayer(supportOutlines, interfaceLayers);
 
-			airGappedBottomOutlines = CreateAirGappedBottomLayers(supportOutlines, allPartOutlines);
+			airGappedBottomOutlines = CreateAirGappedBottomLayers(supportOutlines, insetPartOutlines);
 			// remove the airGappedBottomOutlines layers from the normal support layers
 			supportOutlines = CalculateDifferencePerLayer(supportOutlines, airGappedBottomOutlines);
 		}
@@ -148,6 +151,19 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return allPartOutlines;
+		}
+
+		private static List<Polygons> CreateInsetPartOutlines(List<Polygons> inputPolys, long insetAmount_um)
+		{
+			int numLayers = inputPolys.Count;
+			List<Polygons> allInsetOutlines = CreateEmptyPolygons(numLayers);
+			// calculate all the non-supported areas
+			for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
+			{
+				allInsetOutlines[layerIndex] = Clipper.CleanPolygons(inputPolys[layerIndex].Offset(-insetAmount_um), cleanDistance_um);
+			}
+
+			return allInsetOutlines;
 		}
 
 		private static List<Polygons> FindAllPotentialSupportOutlines(List<Polygons> inputPolys, long supportWidth_um)
@@ -397,7 +413,7 @@ namespace MatterHackers.MatterSlice
 			// interface
 			Polygons currentInterfaceOutlines = interfaceLayers[layerIndex].Offset(-config.extrusionWidth_um / 2);
 			Polygons supportLines = new Polygons();
-			Infill.GenerateLineInfill(config, currentInterfaceOutlines, ref supportLines, config.supportInfillStartingAngle + 90, config.extrusionWidth_um);
+			Infill.GenerateLineInfill(config, currentInterfaceOutlines, ref supportLines, config.infillStartingAngle + 90, config.extrusionWidth_um);
 			gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportInterfaceConfig);
 		}
 

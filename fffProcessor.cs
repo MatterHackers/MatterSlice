@@ -913,7 +913,7 @@ namespace MatterHackers.MatterSlice
 				&& layerIndex > 0
 				&& !config.continuousSpiralOuterPerimeter)
 			{
-				Polygons supportOutlines = slicingData.support.GetRequiredSupportAreas(layerIndex);
+				Polygons supportOutlines = slicingData.support.GetRequiredSupportAreas(layerIndex).Offset(fillConfig.lineWidth_um/2);
 
 				if (supportWriteType == SupportWriteType.UnsupportedAreas)
 				{
