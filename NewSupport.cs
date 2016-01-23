@@ -369,7 +369,7 @@ namespace MatterHackers.MatterSlice
 		{
 			// normal support
 			Polygons currentSupportOutlines = supportOutlines[layerIndex];
-			currentSupportOutlines = currentSupportOutlines.Offset(-config.extrusionWidth_um / 2);
+			currentSupportOutlines = currentSupportOutlines.Offset(-supportNormalConfig.lineWidth_um / 2);
 			List<Polygons> supportIslands = currentSupportOutlines.ProcessIntoSeparatIslands();
 
 			foreach (Polygons islandOutline in supportIslands)
@@ -380,7 +380,7 @@ namespace MatterHackers.MatterSlice
 				{
 					gcodeLayer.QueuePolygonsByOptimizer(islandOutline, supportNormalConfig);
 				}
-				Polygons infillOutline = islandOutline.Offset(-config.extrusionWidth_um / 2);
+				Polygons infillOutline = islandOutline.Offset(-supportNormalConfig.lineWidth_um / 2);
 				switch (config.supportType)
 				{
 					case ConfigConstants.SUPPORT_TYPE.GRID:

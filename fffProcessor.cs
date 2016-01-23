@@ -480,9 +480,9 @@ namespace MatterHackers.MatterSlice
 					insetXConfig.SetData(config.insidePerimetersSpeed, config.extrusionWidth_um, "WALL-INNER");
 
 					fillConfig.SetData(config.infillSpeed, config.extrusionWidth_um, "FILL", false);
-					topFillConfig.SetData(config.topInfillSpeed, config.firstLayerExtrusionWidth_um, "TOP-FILL", false);
-					bottomFillConfig.SetData(config.infillSpeed, config.firstLayerExtrusionWidth_um, "BOTTOM-FILL", false);
-					airGappedBottomConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "AIR-GAP", false);
+					topFillConfig.SetData(config.topInfillSpeed, config.extrusionWidth_um, "TOP-FILL", false);
+					bottomFillConfig.SetData(config.infillSpeed, config.extrusionWidth_um, "BOTTOM-FILL", false);
+					airGappedBottomConfig.SetData(config.firstLayerSpeed, config.extrusionWidth_um, "AIR-GAP", false);
                     bridgConfig.SetData(config.bridgeSpeed, config.extrusionWidth_um, "BRIDGE");
 
 					supportNormalConfig.SetData(config.supportMaterialSpeed, config.supportExtrusionWidth_um, "SUPPORT");
