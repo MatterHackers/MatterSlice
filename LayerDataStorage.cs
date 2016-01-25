@@ -124,7 +124,7 @@ namespace MatterHackers.MatterSlice
 			LayerDataStorage storage = this;
 			bool externalOnly = (distance > 0);
 
-			List<Polygons> skirtLoops = new List<List<List<IntPoint>>>();
+			List<Polygons> skirtLoops = new List<Polygons>();
 
 			Polygons skirtPolygons = GetSkirtBounds(config, storage, externalOnly, distance, extrusionWidth_um, brimCount);
 
@@ -162,11 +162,13 @@ namespace MatterHackers.MatterSlice
 
 		private static Polygons GetSkirtBounds(ConfigSettings config, LayerDataStorage storage, bool externalOnly, int distance, int extrusionWidth_um, int brimCount)
 		{
-			Polygons skirtPolygons = new Polygons(storage.wipeTower);
+			var allOutlines = new Polygons();
 
 			// Loop over every extruder
 			for (int extrudeIndex = 0; extrudeIndex < storage.Extruders.Count; extrudeIndex++)
 			{
+				// Only process the first extruder on spiral vase or 
+				// skip extruders that have empty layers
 				if (config.continuousSpiralOuterPerimeter && extrudeIndex > 0 ||
 						storage.Extruders[extrudeIndex].Layers.Count < 1)
 				{
@@ -175,6 +177,7 @@ namespace MatterHackers.MatterSlice
 
 				// Loop over every island mapped to the current extruder
 				SliceLayer layer = storage.Extruders[extrudeIndex].Layers[0];
+
 				for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
 				{
 					if (config.ContinuousSpiralOuterPerimeter && partIndex > 0)
@@ -193,24 +196,47 @@ namespace MatterHackers.MatterSlice
 						outline = layer.Islands[partIndex].IslandOutline;
 					}
 
-					if (brimCount > 0)
-					{
-						for (int brimIndex = 0; brimIndex < brimCount; brimIndex++)
-						{
-							int offsetDistance = extrusionWidth_um * brimIndex + extrusionWidth_um / 2;
-
-							// Extend the polygons to account for the brim (ensures convex hull takes this data into account) 
-							skirtPolygons = skirtPolygons.CreateUnion(outline.Offset(offsetDistance));
-
-							// TODO: This is a quick hack, reuse the skirt data to stuff in the brim. Good enough from proof of concept
-							storage.skirt.AddAll(outline.Offset(offsetDistance));
-						}
-					}
-					else
-					{
-						skirtPolygons = skirtPolygons.CreateUnion(outline);
-					}
+					allOutlines.AddAll(outline);
 				}
+			}
+
+			bool hasWipeTower = storage.wipeTower.PolygonLength() > 0;
+
+			Polygons skirtPolygons = hasWipeTower ? new Polygons(storage.wipeTower) : new Polygons();
+
+			if (brimCount > 0)
+			{
+				Polygons brimLoops = new Polygons();
+
+				// Loop over the requested brimCount creating and unioning a new perimeter for each island
+				for (int brimIndex = 0; brimIndex < brimCount; brimIndex++)
+				{
+					int offsetDistance = extrusionWidth_um * brimIndex + extrusionWidth_um / 2;
+
+					Polygons unionedIslandOutlines = new Polygons();
+
+					// Grow each island by the current brim distance
+					foreach(var island in allOutlines)
+					{
+						var polygons = new Polygons();
+						polygons.Add(island);
+
+						// Union the island brims
+						unionedIslandOutlines = unionedIslandOutlines.CreateUnion(polygons.Offset(offsetDistance));
+					}
+
+					// Extend the polygons to account for the brim (ensures convex hull takes this data into account) 
+					brimLoops.AddAll(unionedIslandOutlines);
+				}
+
+				// TODO: This is a quick hack, reuse the skirt data to stuff in the brim. Good enough from proof of concept
+				storage.skirt.AddAll(brimLoops);
+
+				skirtPolygons = skirtPolygons.CreateUnion(brimLoops);
+			}
+			else
+			{
+				skirtPolygons = skirtPolygons.CreateUnion(allOutlines);
 			}
 
 			if (storage.support != null)
