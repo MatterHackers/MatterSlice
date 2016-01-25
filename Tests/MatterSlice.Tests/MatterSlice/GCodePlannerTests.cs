@@ -73,9 +73,9 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 5000), new IntPoint(0, 5000), new IntPoint(0, 0) };
+				List<Point3> perimeter = new List<Point3>() { new Point3(0, 0, 0), new Point3(5000, 0, 0), new Point3(5000, 5000, 0), new Point3(0, 5000, 0), new Point3(0, 0, 0) };
 				Assert.IsTrue(perimeter.Count == 5);
-				Polygons correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4);
+				List<List<Point3>> correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4);
 				Assert.IsTrue(correctedPath.Count == 1);
 				Assert.IsTrue(correctedPath[0].Count == 5);
 				for (int i = 0; i < perimeter.Count; i++)
@@ -92,8 +92,8 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0) };
-				Polygons correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4);
+				List<Point3> perimeter = new List<Point3>() { new Point3(0, 0), new Point3(5000, 0), new Point3(5000, 50), new Point3(0, 50), new Point3(0, 0) };
+				List<List<Point3>> correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4);
 				Assert.IsTrue(correctedPath.Count == 1);
 				Assert.IsTrue(correctedPath[0].Count == 2);
 			}
@@ -106,8 +106,8 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				Polygon perimeter = new Polygon() { new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50) };
-				Polygons correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4);
+				List<Point3> perimeter = new List<Point3>() { new Point3(0, 50), new Point3(0, 0), new Point3(5000, 0), new Point3(5000, 50), new Point3(0, 50) };
+				List<List<Point3>> correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4);
 				Assert.IsTrue(correctedPath.Count == 1);
 				Assert.IsTrue(correctedPath[0].Count == 2);
 			}
@@ -120,8 +120,8 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				Polygon perimeter = new Polygon() { new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50) };
-				Polygons correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4);
+				List<Point3> perimeter = new List<Point3>() { new Point3(5000, 50), new Point3(0, 50), new Point3(0, 0), new Point3(5000, 0), new Point3(5000, 50) };
+				List<List<Point3>> correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4);
 				Assert.IsTrue(correctedPath.Count == 1);
 				Assert.IsTrue(correctedPath[0].Count == 2);
 			}
@@ -134,8 +134,8 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				Polygon perimeter = new Polygon() { new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(5000, 0) };
-				Polygons correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4);
+				List<Point3> perimeter = new List<Point3>() { new Point3(5000, 0), new Point3(5000, 50), new Point3(0, 50), new Point3(0, 0), new Point3(5000, 0) };
+				List<List<Point3>> correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4);
 				Assert.IsTrue(correctedPath.Count == 1);
 				Assert.IsTrue(correctedPath[0].Count == 2);
 			}
@@ -149,8 +149,8 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0) };
-				Polygons correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4);
+				List<Point3> perimeter = new List<Point3>() { new Point3(0, 0), new Point3(5000, 0), new Point3(5000, 50), new Point3(0, 50), new Point3(0, 0) };
+				List<List<Point3>> correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4);
 				//Assert.IsTrue(correctedPath.Count == 3);
 				//Assert.IsTrue(correctedPath[0].Count == 2);
 			}
@@ -167,18 +167,18 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				Polygon perimeter = new Polygon() 
+				List<Point3> perimeter = new List<Point3>() 
 				{ 
 					// bottom of center line
-					new IntPoint(1000, 2500-25), new IntPoint(4000, 2500-25),
+					new Point3(1000, 2500-25), new Point3(4000, 2500-25),
 					// right leg
-					new IntPoint(4000, 0), new IntPoint(5000, 0), new IntPoint(5000, 5000), new IntPoint(4000, 5000), 
+					new Point3(4000, 0), new Point3(5000, 0), new Point3(5000, 5000), new Point3(4000, 5000), 
 					// top of center line
-					new IntPoint(4000, 2500+25), new IntPoint(1000, 2500+25),
+					new Point3(4000, 2500+25), new Point3(1000, 2500+25),
 					// left leg
-					new IntPoint(1000, 5000), new IntPoint(0, 5000), new IntPoint(0, 0), new IntPoint(1000, 0), new IntPoint(1000, 2500-25), 
+					new Point3(1000, 5000), new Point3(0, 5000), new Point3(0, 0), new Point3(1000, 0), new Point3(1000, 2500-25), 
 				};
-				Polygons correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400);
+				List<List<Point3>> correctedPath = planner.GetPathsWithOverlapsRemoved(perimeter, 400);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Count == 2);
 				Assert.IsTrue(correctedPath[1].Count == 6);

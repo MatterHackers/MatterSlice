@@ -412,9 +412,12 @@ namespace MatterHackers.MatterSlice
 
 			// interface
 			Polygons currentInterfaceOutlines = interfaceLayers[layerIndex].Offset(-config.extrusionWidth_um / 2);
-			Polygons supportLines = new Polygons();
-			Infill.GenerateLineInfill(config, currentInterfaceOutlines, ref supportLines, config.infillStartingAngle + 90, config.extrusionWidth_um);
-			gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportInterfaceConfig);
+			if (currentInterfaceOutlines.Count > 0)
+			{
+				Polygons supportLines = new Polygons();
+				Infill.GenerateLineInfill(config, currentInterfaceOutlines, ref supportLines, config.infillStartingAngle + 90, config.extrusionWidth_um);
+				gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportInterfaceConfig);
+			}
 		}
 
 		public void QueueAirGappedBottomLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig)

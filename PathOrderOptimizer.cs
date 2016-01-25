@@ -29,14 +29,14 @@ namespace MatterHackers.MatterSlice
 
 	using Polygons = List<List<IntPoint>>;
 
-	public class PathOrderOptimizer
+	public class IslandOrderOptimizer
 	{
 		private IntPoint startPosition;
 		private List<Polygon> polygons = new List<Polygon>();
 		public List<int> startIndexInPolygon = new List<int>();
-		public List<int> bestPolygonOrderIndex = new List<int>();
+		public List<int> bestIslandOrderIndex = new List<int>();
 
-		public PathOrderOptimizer(IntPoint startPoint)
+		public IslandOrderOptimizer(IntPoint startPoint)
 		{
 			this.startPosition = startPoint;
 		}
@@ -375,12 +375,12 @@ namespace MatterHackers.MatterSlice
 						currentPosition = polygons[bestPolygonIndex][startIndexInPolygon[bestPolygonIndex]];
 					}
 					polygonHasBeenAdded[bestPolygonIndex] = true;
-					bestPolygonOrderIndex.Add(bestPolygonIndex);
+					bestIslandOrderIndex.Add(bestPolygonIndex);
 				}
 			}
 
 			currentPosition = startPosition;
-			foreach (int bestPolygonIndex in bestPolygonOrderIndex)
+			foreach (int bestPolygonIndex in bestIslandOrderIndex)
 			{
 				int bestStartPoint = -1;
 				double bestDist = double.MaxValue;

@@ -582,7 +582,7 @@ namespace MatterHackers.MatterSlice
 						LayerIsland island = layer?.Islands?[0];
 						if (island?.InsetToolPaths?[0]?[0]?.Count > 0)
 						{
-							int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(island.InsetToolPaths[0][0]);
+							int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(island.InsetToolPaths[0][0]);
 							gcodeLayer.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundery);
 							gcodeLayer.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
 						}
@@ -668,7 +668,7 @@ namespace MatterHackers.MatterSlice
 				gcodeLayer.SetAlwaysRetract(!config.avoidCrossingPerimeters);
 			}
 
-			PathOrderOptimizer partOrderOptimizer = new PathOrderOptimizer(new IntPoint());
+			IslandOrderOptimizer islandOrderOptimizer = new IslandOrderOptimizer(new IntPoint());
 			for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
 			{
 				if (config.continuousSpiralOuterPerimeter && partIndex > 0)
@@ -676,20 +676,20 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				partOrderOptimizer.AddPolygon(layer.Islands[partIndex].InsetToolPaths[0][0]);
+				islandOrderOptimizer.AddPolygon(layer.Islands[partIndex].InsetToolPaths[0][0]);
 			}
-			partOrderOptimizer.Optimize();
+			islandOrderOptimizer.Optimize();
 
 			List<Polygons> bottomFillIslandPolygons = new List<Polygons>();
 
-			for (int partIndex = 0; partIndex < partOrderOptimizer.bestPolygonOrderIndex.Count; partIndex++)
+			for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.bestIslandOrderIndex.Count; islandOrderIndex++)
 			{
-				if (config.continuousSpiralOuterPerimeter && partIndex > 0)
+				if (config.continuousSpiralOuterPerimeter && islandOrderIndex > 0)
 				{
 					continue;
 				}
 
-				LayerIsland island = layer.Islands[partOrderOptimizer.bestPolygonOrderIndex[partIndex]];
+				LayerIsland island = layer.Islands[islandOrderOptimizer.bestIslandOrderIndex[islandOrderIndex]];
 
 				if (config.avoidCrossingPerimeters)
 				{
@@ -719,14 +719,14 @@ namespace MatterHackers.MatterSlice
 
 				if (config.numberOfPerimeters > 0)
 				{
-					if (partIndex != lastPartIndex)
+					if (islandOrderIndex != lastPartIndex)
 					{
 						// force a retract if changing islands
 						if (config.retractWhenChangingIslands)
 						{
 							gcodeLayer.ForceRetract();
 						}
-						lastPartIndex = partIndex;
+						lastPartIndex = islandOrderIndex;
 					}
 
 					if (config.continuousSpiralOuterPerimeter)
@@ -768,7 +768,7 @@ namespace MatterHackers.MatterSlice
 						// we have the minimum travel while starting inset 0 after printing the rest of the insets
 						if (island?.InsetToolPaths?[0]?[0]?.Count > 0)
 						{
-							int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(island.InsetToolPaths[0][0]);
+							int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(island.InsetToolPaths[0][0]);
 							gcodeLayer.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
 						}
 
@@ -813,7 +813,7 @@ namespace MatterHackers.MatterSlice
 
 				SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 
-				PathOrderOptimizer partOrderOptimizer = new PathOrderOptimizer(new IntPoint());
+				IslandOrderOptimizer partOrderOptimizer = new IslandOrderOptimizer(new IntPoint());
 				for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
 				{
 					if (config.continuousSpiralOuterPerimeter && partIndex > 0)
@@ -827,14 +827,14 @@ namespace MatterHackers.MatterSlice
 
 				List<Polygons> bottomFillIslandPolygons = new List<Polygons>();
 
-				for (int inlandIndex = 0; inlandIndex < partOrderOptimizer.bestPolygonOrderIndex.Count; inlandIndex++)
+				for (int inlandIndex = 0; inlandIndex < partOrderOptimizer.bestIslandOrderIndex.Count; inlandIndex++)
 				{
 					if (config.continuousSpiralOuterPerimeter && inlandIndex > 0)
 					{
 						continue;
 					}
 
-					LayerIsland part = layer.Islands[partOrderOptimizer.bestPolygonOrderIndex[inlandIndex]];
+					LayerIsland part = layer.Islands[partOrderOptimizer.bestIslandOrderIndex[inlandIndex]];
 
 					if (config.avoidCrossingPerimeters)
 					{
@@ -909,6 +909,8 @@ namespace MatterHackers.MatterSlice
 
 		private void QueuePolygonsConsideringSupport(int layerIndex, GCodePlanner gcodeLayer, Polygons polygonsToWrite, GCodePathConfig fillConfig, SupportWriteType supportWriteType)
 		{
+			bool oldLoopValue = fillConfig.closedLoop;
+
 			if (config.generateSupport 
 				&& layerIndex > 0
 				&& !config.continuousSpiralOuterPerimeter)
@@ -919,11 +921,11 @@ namespace MatterHackers.MatterSlice
 				{
 					if (supportOutlines.Count > 0)
 					{
-						Polygons polygonsNotOnSupport;
 						// don't write the bottoms that are sitting on supported areas (they will be written at air gap distance later).
-						polygonsToWrite = PolygonsHelper.ConvertToLines(polygonsToWrite);
+						Polygons polygonsToWriteAsLines = PolygonsHelper.ConvertToLines(polygonsToWrite);
 
-						polygonsNotOnSupport = polygonsToWrite.CreateLineDifference(supportOutlines);
+						Polygons polygonsNotOnSupport = polygonsToWriteAsLines.CreateLineDifference(supportOutlines);
+						fillConfig.closedLoop = false;
 						gcodeLayer.QueuePolygonsByOptimizer(polygonsNotOnSupport, fillConfig);
 					}
 					else
@@ -938,20 +940,10 @@ namespace MatterHackers.MatterSlice
 						if (supportOutlines.Count > 0)
 						{
 							// write the bottoms that are sitting on supported areas.
-							Polygons polygonsOnSupport;
-							polygonsToWrite = PolygonsHelper.ConvertToLines(polygonsToWrite);
+							Polygons polygonsToWriteAsLines = PolygonsHelper.ConvertToLines(polygonsToWrite);
 
-							polygonsOnSupport = supportOutlines.CreateLineIntersections(polygonsToWrite);
-							// ensure that all the segments have only 2 points
-							foreach(Polygon poly in polygonsOnSupport)
-							{
-								while(poly.Count > 2)
-								{
-									// This is an error and I'm not sure why it happened. It needs to be investigated. // LBB 2016 01 12
-									poly.RemoveAt(poly.Count - 1);
-								}
-							}
-
+							Polygons polygonsOnSupport = supportOutlines.CreateLineIntersections(polygonsToWriteAsLines);
+							fillConfig.closedLoop = false;
 							gcodeLayer.QueuePolygonsByOptimizer(polygonsOnSupport, fillConfig);
 						}
 						else
@@ -965,6 +957,8 @@ namespace MatterHackers.MatterSlice
 			{
 				gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, fillConfig);
 			}
+
+			fillConfig.closedLoop = oldLoopValue;
 		}
 
 		private void CalculateInfillData(LayerDataStorage slicingData, int extruderIndex, int layerIndex, LayerIsland part, ref Polygons bottomFillPolygons, ref Polygons fillPolygons, ref Polygons topFillPolygons, ref Polygons bridgePolygons)

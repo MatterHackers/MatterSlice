@@ -173,14 +173,14 @@ namespace MatterHackers.MatterSlice
 		[Flags]
 		enum Altered { remove = 1, merged = 2 };
 
-		public Polygons GetPathsWithOverlapsRemoved(Polygon perimeter, int overlapMergeAmount_um)
+		public List<List<Point3>> GetPathsWithOverlapsRemoved(List<Point3> perimeter, int overlapMergeAmount_um)
 		{
 			// make a copy that has every point duplicatiod (so that we have them as segments).
-			Polygon polySegments = new Polygon(perimeter.Count * 2);
+			List<Point3> polySegments = new List<Point3>(perimeter.Count * 2);
 			for (int i = 0; i < perimeter.Count - 1; i++)
 			{
-				IntPoint point = perimeter[i];
-				IntPoint nextPoint = perimeter[i + 1];
+				Point3 point = perimeter[i];
+				Point3 nextPoint = perimeter[i + 1];
 
 				polySegments.Add(point);
 				polySegments.Add(nextPoint);
@@ -244,8 +244,8 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// go through the polySegmets and create a new polygon for every connected set of segmets
-			Polygons separatedPolygons = new Polygons();
-			Polygon currentPolygon = new Polygon();
+			List<List<Point3>> separatedPolygons = new List<List<Point3>>();
+			List<Point3> currentPolygon = new List<Point3>();
 			separatedPolygons.Add(currentPolygon);
 			// put in the first point
 			for (int segmentIndex = 0; segmentIndex < polySegments.Count; segmentIndex += 2)
@@ -261,7 +261,7 @@ namespace MatterHackers.MatterSlice
 					currentPolygon.Add(polySegments[segmentIndex + 1]);
 
 					// create a new polygon
-					currentPolygon = new Polygon();
+					currentPolygon = new List<Point3>();
 					separatedPolygons.Add(currentPolygon);
 				}
 			}
@@ -378,45 +378,6 @@ namespace MatterHackers.MatterSlice
 					speed = speed * travelSpeedFactor / 100;
 				}
 
-				if (path.points.Count == 1
-					&& path.config != travelConfig
-					&& (gcodeExport.GetPositionXY() - path.points[0].XYPoint).ShorterThen(path.config.lineWidth_um * 2))
-				{
-					//Check for lots of small moves and combine them into one large line
-					Point3 nextPosition = path.points[0];
-					int i = pathIndex + 1;
-					while (i < paths.Count && paths[i].points.Count == 1 && (nextPosition - paths[i].points[0]).ShorterThen(path.config.lineWidth_um * 2))
-					{
-						nextPosition = paths[i].points[0];
-						i++;
-					}
-					if (paths[i - 1].config == travelConfig)
-					{
-						i--;
-					}
-
-					if (i > pathIndex + 2)
-					{
-						nextPosition = gcodeExport.GetPosition();
-						for (int x = pathIndex; x < i - 1; x += 2)
-						{
-							long oldLen = (nextPosition - paths[x].points[0]).Length();
-							Point3 newPoint = (paths[x].points[0] + paths[x + 1].points[0]) / 2;
-							long newLen = (gcodeExport.GetPosition() - newPoint).Length();
-							if (newLen > 0)
-							{
-								gcodeExport.WriteMove(newPoint, speed, (int)(path.config.lineWidth_um * oldLen / newLen));
-							}
-
-							nextPosition = paths[x + 1].points[0];
-						}
-
-						gcodeExport.WriteMove(paths[i - 1].points[0], speed, path.config.lineWidth_um);
-						pathIndex = i - 1;
-						continue;
-					}
-				}
-
 				bool spiralize = path.config.spiralize;
 				if (spiralize)
 				{
@@ -429,7 +390,8 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 				}
-				if (spiralize)
+
+				if (spiralize) // if we are still in spiralize mode
 				{
 					//If we need to spiralize then raise the head slowly by 1 layer as this path progresses.
 					double totalLength = 0;
@@ -456,34 +418,34 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-#if false
 					// This is test code to remove double drawn small perimeter lines.
-					if (path.config.lineWidth > 0
+					if (false
+							|| (
+							path.config.lineWidth_um > 0
 						&& path.points.Count > 2 // If the count is not greater than 2 there is no way it can ovelap itself.
-						&& gcode.GetPositionXY() == path.points[path.points.Count - 1])
+						&& gcodeExport.GetPosition() == path.points[path.points.Count - 1]))
 					{
-						Polygons pathsWithOverlapsRemoved = GetPathsWithOverlapsRemoved(path.points, path.config.lineWidth / 2);
+						List<List<Point3>> pathsWithOverlapsRemoved = GetPathsWithOverlapsRemoved(path.points, path.config.lineWidth_um / 2);
 						if (pathsWithOverlapsRemoved.Count > 0)
 						{
 							for (int polygonIndex = 0; polygonIndex < pathsWithOverlapsRemoved.Count; polygonIndex++)
 							{
 								int startIndex = 0;
-								Polygon polygon = pathsWithOverlapsRemoved[polygonIndex];
+								List<Point3> polygon = pathsWithOverlapsRemoved[polygonIndex];
 								if (polygonIndex > 0)
 								{
-									gcode.WriteMove(polygon[0], travelConfig.speed, 0);
+									gcodeExport.WriteMove(polygon[0], travelConfig.speed, 0);
 									startIndex = 1; // We skip the first point in the next extrusion, because we just moved to it.
 								}
 
 								for (int pointIndex = startIndex; pointIndex < polygon.Count; pointIndex++)
 								{
-									gcode.WriteMove(polygon[pointIndex], speed, path.config.lineWidth);
+									gcodeExport.WriteMove(polygon[pointIndex], speed, path.config.lineWidth_um);
 								}
 							}
 						}
 					}
 					else
-#endif
 					{
 						//TrimPerimeterIfNeeded(path);
 
@@ -549,14 +511,14 @@ namespace MatterHackers.MatterSlice
 
 		public void QueuePolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
 		{
-			PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(LastPosition);
+			IslandOrderOptimizer orderOptimizer = new IslandOrderOptimizer(LastPosition);
 			orderOptimizer.AddPolygons(polygons);
 
 			orderOptimizer.Optimize(config);
 
-			for (int i = 0; i < orderOptimizer.bestPolygonOrderIndex.Count; i++)
+			for (int i = 0; i < orderOptimizer.bestIslandOrderIndex.Count; i++)
 			{
-				int polygonIndex = orderOptimizer.bestPolygonOrderIndex[i];
+				int polygonIndex = orderOptimizer.bestIslandOrderIndex[i];
 				QueuePolygon(polygons[polygonIndex], orderOptimizer.startIndexInPolygon[polygonIndex], config);
 			}
 		}

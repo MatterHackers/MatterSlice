@@ -49,7 +49,7 @@ namespace MatterHackers.MatterSlice.Tests
 				IntPoint p1 = new IntPoint(10, 0);
 				IntPoint p2 = new IntPoint(0, 0);
 				IntPoint p3 = new IntPoint(0, 0);
-				Assert.IsTrue(PathOrderOptimizer.GetTurnAmount(p1, p2, p3) == 0);
+				Assert.IsTrue(IslandOrderOptimizer.GetTurnAmount(p1, p2, p3) == 0);
 			}
 
 			// no turn returns a 0 angle
@@ -57,7 +57,7 @@ namespace MatterHackers.MatterSlice.Tests
 				IntPoint p1 = new IntPoint(10, 0);
 				IntPoint p2 = new IntPoint(0, 0);
 				IntPoint p3 = new IntPoint(-10, 0);
-				Assert.IsTrue(PathOrderOptimizer.GetTurnAmount(p1, p2, p3) == 0);
+				Assert.IsTrue(IslandOrderOptimizer.GetTurnAmount(p1, p2, p3) == 0);
 			}
 
 			// 90 turn works
@@ -65,12 +65,12 @@ namespace MatterHackers.MatterSlice.Tests
 				IntPoint p1 = new IntPoint(0, 0);
 				IntPoint p2 = new IntPoint(10, 0);
 				IntPoint p3 = new IntPoint(10, 10);
-				Assert.AreEqual(PathOrderOptimizer.GetTurnAmount(p1, p2, p3), Math.PI / 2, .001);
+				Assert.AreEqual(IslandOrderOptimizer.GetTurnAmount(p1, p2, p3), Math.PI / 2, .001);
 
 				IntPoint p4 = new IntPoint(0, 10);
 				IntPoint p5 = new IntPoint(0, 0);
 				IntPoint p6 = new IntPoint(10, 0);
-				Assert.AreEqual(PathOrderOptimizer.GetTurnAmount(p4, p5, p6), Math.PI / 2, .001);
+				Assert.AreEqual(IslandOrderOptimizer.GetTurnAmount(p4, p5, p6), Math.PI / 2, .001);
 			}
 
 			// -90 turn works
@@ -78,7 +78,7 @@ namespace MatterHackers.MatterSlice.Tests
 				IntPoint p1 = new IntPoint(0, 0);
 				IntPoint p2 = new IntPoint(10, 0);
 				IntPoint p3 = new IntPoint(10, -10);
-				Assert.AreEqual(PathOrderOptimizer.GetTurnAmount(p1, p2, p3), -Math.PI / 2, .001);
+				Assert.AreEqual(IslandOrderOptimizer.GetTurnAmount(p1, p2, p3), -Math.PI / 2, .001);
 			}
 
 			// 45 turn works
@@ -86,12 +86,12 @@ namespace MatterHackers.MatterSlice.Tests
 				IntPoint p1 = new IntPoint(0, 0);
 				IntPoint p2 = new IntPoint(10, 0);
 				IntPoint p3 = new IntPoint(15, 5);
-				Assert.AreEqual(Math.PI / 4, PathOrderOptimizer.GetTurnAmount(p1, p2, p3), .001);
+				Assert.AreEqual(Math.PI / 4, IslandOrderOptimizer.GetTurnAmount(p1, p2, p3), .001);
 
 				IntPoint p4 = new IntPoint(0, 0);
 				IntPoint p5 = new IntPoint(-10, 0);
 				IntPoint p6 = new IntPoint(-15, -5);
-				Assert.AreEqual(Math.PI / 4, PathOrderOptimizer.GetTurnAmount(p4, p5, p6), .001);
+				Assert.AreEqual(Math.PI / 4, IslandOrderOptimizer.GetTurnAmount(p4, p5, p6), .001);
 			}
 
 			// -45 turn works
@@ -99,7 +99,7 @@ namespace MatterHackers.MatterSlice.Tests
 				IntPoint p1 = new IntPoint(0, 0);
 				IntPoint p2 = new IntPoint(10, 0);
 				IntPoint p3 = new IntPoint(15, -5);
-				Assert.AreEqual(-Math.PI / 4, PathOrderOptimizer.GetTurnAmount(p1, p2, p3), .001);
+				Assert.AreEqual(-Math.PI / 4, IslandOrderOptimizer.GetTurnAmount(p1, p2, p3), .001);
 			}
 
 			// find the right point wound ccw
@@ -110,7 +110,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |      \
 				// |0______\1
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(70, 50), new IntPoint(100, 100), new IntPoint(0, 100) };
-				int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+				int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
 				Assert.IsTrue(bestPoint == 2);
 			}
 
@@ -122,7 +122,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |       |
 				// |0______|1
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(100, 100), new IntPoint(0, 100) };
-				int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+				int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
 				Assert.IsTrue(bestPoint == 3);
 			}
 
@@ -134,7 +134,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |       |
 				// |2______|3
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(0, 0), new IntPoint(100, 0) };
-				int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+				int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
 				Assert.IsTrue(bestPoint == 1);
 			}
 
@@ -146,7 +146,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |       |
 				// |0______|3
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(100, 0) };
-				int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+				int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
 				Assert.IsTrue(bestPoint == 1);
 			}
 
@@ -158,7 +158,7 @@ namespace MatterHackers.MatterSlice.Tests
                 // |       |
                 // |3______|2
                 List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(100, 0), new IntPoint(0, 0) };
-                int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+                int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
                 Assert.IsTrue(bestPoint == 0);
             }
 
@@ -170,7 +170,7 @@ namespace MatterHackers.MatterSlice.Tests
                 // |      \
                 // |0______\1
                 List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(1000, 0), new IntPoint(900, 500), new IntPoint(1000, 1000), new IntPoint(0, 1000) };
-				int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+				int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
 				Assert.IsTrue(bestPoint == 2);
 			}
 
@@ -182,7 +182,7 @@ namespace MatterHackers.MatterSlice.Tests
                 // |      \
                 // |3______\4
                 List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(0, 0), new IntPoint(100, 0) };
-                int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+                int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
                 Assert.IsTrue(bestPoint == 0);
             }
 
@@ -194,7 +194,7 @@ namespace MatterHackers.MatterSlice.Tests
                 //   /    \
                 //  /4_____\5
                 List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(10, 50), new IntPoint(0, 0), new IntPoint(100, 0) };
-                int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+                int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
                 Assert.IsTrue(bestPoint == 3);
             }
 
@@ -206,7 +206,7 @@ namespace MatterHackers.MatterSlice.Tests
                 //   /    \
                 //  /1_____\2
                 List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(10, 50), new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), };
-                int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+                int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
                 Assert.IsTrue(bestPoint == 0);
             }
 
@@ -218,7 +218,7 @@ namespace MatterHackers.MatterSlice.Tests
                 // |      \
                 // |0______\4
                 List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50), new IntPoint(100, 0) };
-				int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+				int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
 				Assert.IsTrue(bestPoint == 2);
 			}
 
@@ -230,7 +230,7 @@ namespace MatterHackers.MatterSlice.Tests
                 // |      \
                 // |1______\0
                 List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(100, 0), new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50) };
-				int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+				int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
 				Assert.IsTrue(bestPoint == 3);
 			}
 
@@ -245,7 +245,7 @@ namespace MatterHackers.MatterSlice.Tests
                 {
                     new IntPoint(90, 50), new IntPoint(100, 0), new IntPoint(0, 0), new IntPoint(10, 50), new IntPoint(0, 100), new IntPoint(100, 100)
                 };
-                int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+                int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
                 Assert.IsTrue(bestPoint == 4);
             }
 
@@ -260,7 +260,7 @@ namespace MatterHackers.MatterSlice.Tests
                 {
                     new IntPoint(10, 50), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50), new IntPoint(100, 0), new IntPoint(0, 0),
                 };
-                int bestPoint = PathOrderOptimizer.GetBestEdgeIndex(testPoints);
+                int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
                 Assert.IsTrue(bestPoint == 1);
             }
         }

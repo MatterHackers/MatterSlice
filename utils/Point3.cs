@@ -56,7 +56,7 @@ namespace MatterHackers.MatterSlice
 		{
 		}
 
-		public Point3(int _x, int _y, int _z)
+		public Point3(int _x, int _y, int _z = 0)
 		{
 			this.x = _x;
 			this.y = _y;
