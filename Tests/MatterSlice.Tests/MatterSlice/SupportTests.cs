@@ -64,23 +64,24 @@ namespace MatterHackers.MatterSlice.Tests
 					partOutlines.Add(cubeOutline);
 				}
 
-
 				ExtruderLayers layerData = CreateLayerData(partOutlines);
 				NewSupport supportGenerator = new NewSupport(config, new List<ExtruderLayers>() { layerData }, 0);
+
+				Polygons cubeOutlineResults = PolygonsHelper.CreateFromString("x:200, y:200,x:9800, y:200,x:9800, y:9800,x:200, y:9800,|");
 
 				// check the all part outlines
 				{
 					List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, };
 					List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 0, 4, 4, 4, 4, 4, };
-					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null, cubeOutline, cubeOutline, cubeOutline, cubeOutline, cubeOutline, };
-					CheckLayers(supportGenerator.allPartOutlines, polygonsCounts, polygon0Counts, poly0Paths);
+					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null, cubeOutlineResults, cubeOutlineResults, cubeOutlineResults, cubeOutlineResults, cubeOutlineResults, };
+					CheckLayers(supportGenerator.insetPartOutlines, polygonsCounts, polygon0Counts, poly0Paths);
 				}
 
 				// check the potential support outlines
 				{
 					List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
 					List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
-					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, cubeOutline, null, null, null, null, null };
+					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, cubeOutlineResults, null, null, null, null, null };
 					CheckLayers(supportGenerator.allPotentialSupportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
 				}
 
@@ -88,7 +89,7 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
 					List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
-					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, cubeOutline, null, null, null, null, null };
+					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, cubeOutlineResults, null, null, null, null, null };
 					CheckLayers(supportGenerator.allRequiredSupportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
 				}
 
@@ -96,7 +97,7 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					List<int> polygonsCounts = new List<int> { 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, };
 					List<int> polygon0Counts = new List<int> { 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, };
-					List<Polygons> poly0Paths = new List<Polygons>() { cubeOutline, cubeOutline, cubeOutline, cubeOutline, cubeOutline, null, null, null, null, null };
+					List<Polygons> poly0Paths = new List<Polygons>() { cubeOutlineResults, cubeOutlineResults, cubeOutlineResults, cubeOutlineResults, cubeOutlineResults, null, null, null, null, null };
 					CheckLayers(supportGenerator.supportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
 				}
 
@@ -139,12 +140,14 @@ namespace MatterHackers.MatterSlice.Tests
 				}
 
 				Polygons halfCubeOutline = PolygonsHelper.CreateFromString("x:0, y:0,x:5000, y:0,x:5000, y:10000,x:0, y:10000,|");
+				Polygons halfCubeOutlineResults = halfCubeOutline.Offset(-200);
 				for (int i = 0; i < 5; i++)
 				{
 					partOutlines.Add(halfCubeOutline);
 				}
 
 				Polygons cubeOutline = PolygonsHelper.CreateFromString("x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|");
+				Polygons cubeOutlineResults = cubeOutline.Offset(-200);
 				for (int i = 0; i < 5; i++)
 				{
 					partOutlines.Add(cubeOutline);
@@ -162,17 +165,17 @@ namespace MatterHackers.MatterSlice.Tests
 						4, 4, 4, 4, 4,
 						4, 4, 4, 4, 4,};
 					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null,
-						halfCubeOutline, halfCubeOutline, halfCubeOutline, halfCubeOutline, halfCubeOutline,
-						cubeOutline, cubeOutline, cubeOutline, cubeOutline, cubeOutline, };
-					CheckLayers(supportGenerator.allPartOutlines, polygonsCounts, polygon0Counts, poly0Paths);
+						halfCubeOutlineResults, halfCubeOutlineResults, halfCubeOutlineResults, halfCubeOutlineResults, halfCubeOutlineResults,
+						cubeOutlineResults, cubeOutlineResults, cubeOutlineResults, cubeOutlineResults, cubeOutlineResults, };
+					CheckLayers(supportGenerator.insetPartOutlines, polygonsCounts, polygon0Counts, poly0Paths);
 				}
 
-				Polygons layer9Support = PolygonsHelper.CreateFromString("x:5200, y:0,x:10000, y:0,x:10000, y:10000,x:5200, y:10000,|");
+				Polygons layer9Support = PolygonsHelper.CreateFromString("x:5000, y:200,x:9800, y:200,x:9800, y:9800,x:5000, y:9800,|");
 				// check the potential support outlines
 				{
 					List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
 					List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
-					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, halfCubeOutline, null, null, null, null, layer9Support, null, null, null, null, null };
+					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, halfCubeOutlineResults, null, null, null, null, layer9Support, null, null, null, null, null };
 					CheckLayers(supportGenerator.allPotentialSupportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
 				}
 
@@ -180,7 +183,7 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
 					List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
-					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, halfCubeOutline, null, null, null, null, layer9Support, null, null, null, null, null };
+					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, halfCubeOutlineResults, null, null, null, null, layer9Support, null, null, null, null, null };
 					CheckLayers(supportGenerator.allRequiredSupportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
 				}
 
@@ -190,7 +193,7 @@ namespace MatterHackers.MatterSlice.Tests
 					{
 						List<int> polygonsCounts = new List<int> { 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, };
 						List<int> polygon0Counts = new List<int> { 4, 4, 4, 4, 4, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0, };
-						List<Polygons> poly0Paths = new List<Polygons>() { cubeOutline, cubeOutline, cubeOutline, cubeOutline, cubeOutline, null, null, null, null, null };
+						List<Polygons> poly0Paths = new List<Polygons>() { cubeOutlineResults, cubeOutlineResults, cubeOutlineResults, cubeOutlineResults, cubeOutlineResults, null, null, null, null, null };
 						CheckLayers(supportGenerator.supportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
 					}
 
@@ -268,6 +271,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				List<Polygons> partOutlines = new List<Polygons>();
 				Polygons bottomCubeOutline = PolygonsHelper.CreateFromString("x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|");
+				Polygons bottomCubeOutlineResults = bottomCubeOutline.Offset(-200);
 				for (int i = 0; i < 5; i++)
 				{
 					partOutlines.Add(bottomCubeOutline);
@@ -279,6 +283,7 @@ namespace MatterHackers.MatterSlice.Tests
 				}
 
 				Polygons topCubeOutline = PolygonsHelper.CreateFromString("x:2500, y:2500,x:7500, y:2500,x:7500, y:7500,x:2500, y:7500,|");
+				Polygons topCubeOutlineResults = topCubeOutline.Offset(-200);
 				for (int i = 0; i < 5; i++)
 				{
 					partOutlines.Add(topCubeOutline);
@@ -295,17 +300,17 @@ namespace MatterHackers.MatterSlice.Tests
 					List<int> polygon0Counts = new List<int> { 4, 4, 4, 4, 4,
 						0, 0, 0, 0, 0,
 						4, 4, 4, 4, 4,};
-					List<Polygons> poly0Paths = new List<Polygons>() {bottomCubeOutline, bottomCubeOutline, bottomCubeOutline, bottomCubeOutline, bottomCubeOutline,
+					List<Polygons> poly0Paths = new List<Polygons>() {bottomCubeOutlineResults, bottomCubeOutlineResults, bottomCubeOutlineResults, bottomCubeOutlineResults, bottomCubeOutlineResults,
 						null, null, null, null, null,
-						topCubeOutline, topCubeOutline, topCubeOutline, topCubeOutline, topCubeOutline, };
-					CheckLayers(supportGenerator.allPartOutlines, polygonsCounts, polygon0Counts, poly0Paths);
+						topCubeOutlineResults, topCubeOutlineResults, topCubeOutlineResults, topCubeOutlineResults, topCubeOutlineResults, };
+					CheckLayers(supportGenerator.insetPartOutlines, polygonsCounts, polygon0Counts, poly0Paths);
 				}
 
 				// check the potential support outlines
 				{
 					List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
 					List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
-					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null, null, null, null, null, topCubeOutline, null, null, null, null, null };
+					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null, null, null, null, null, topCubeOutlineResults, null, null, null, null, null };
 					CheckLayers(supportGenerator.allPotentialSupportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
 				}
 
@@ -313,12 +318,12 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
 					List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
-					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null, null, null, null, null, topCubeOutline, null, null, null, null, null };
+					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null, null, null, null, null, topCubeOutlineResults, null, null, null, null, null };
 					CheckLayers(supportGenerator.allRequiredSupportOutlines, polygonsCounts, polygon0Counts, poly0Paths);
 				}
 
 				{
-					Polygons expectedSupportOutlines = topCubeOutline.Offset(1000);
+					Polygons expectedSupportOutlines = topCubeOutlineResults.Offset(1000);
 					// check the air gapped bottom support outlines (only 5)
 					{
 						List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
