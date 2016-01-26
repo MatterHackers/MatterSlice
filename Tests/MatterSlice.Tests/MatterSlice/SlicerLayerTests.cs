@@ -41,7 +41,7 @@ namespace MatterHackers.MatterSlice.Tests
         public void TestSetup()
         {
             // Ensure the temp directory exists
-            string tempDirectory = Path.GetDirectoryName(TestUtlities.GetTempGCodePath("na"));
+            string tempDirectory = Path.GetDirectoryName(TestUtilities.GetTempGCodePath("na"));
             Directory.CreateDirectory(tempDirectory);
         }
 
@@ -143,7 +143,7 @@ namespace MatterHackers.MatterSlice.Tests
 
             // lots from an actual file
             {
-                string pathToData = Path.Combine("..", "..", "..", "TestData", "CubeSegmentsX2.txt");
+                string pathToData = Path.Combine(TestUtilities.TestBaseDirectory, "TestData", "CubeSegmentsX2.txt");
 
                 string[] segmentsToCheck = File.ReadAllLines(pathToData);
                 CheckLayersAreSinglePolygon(segmentsToCheck);
@@ -193,7 +193,7 @@ namespace MatterHackers.MatterSlice.Tests
         {
             // lots from an actual file
             {
-                string pathToData = Path.Combine("..", "..", "..", "TestData", "TwoRingSegmentsTestData.txt");
+                string pathToData = Path.Combine(TestUtilities.TestBaseDirectory, "TestData", "TwoRingSegmentsTestData.txt");
 
                 string[] segmentsToCheck = File.ReadAllLines(pathToData);
                 CheckLayersAreSinglePolygon(segmentsToCheck, 2);
@@ -223,8 +223,8 @@ namespace MatterHackers.MatterSlice.Tests
         [Test]
         public void AlwaysRetractOnIslandChange()
         {
-            string meshWithIslands = TestUtlities.GetStlPath("comb");
-            string gCodeWithIslands = TestUtlities.GetTempGCodePath("comb-box");
+            string meshWithIslands = TestUtilities.GetStlPath("comb");
+            string gCodeWithIslands = TestUtilities.GetTempGCodePath("comb-box");
 
             {
                 // load a model that has 3 islands
@@ -238,12 +238,12 @@ namespace MatterHackers.MatterSlice.Tests
                 processor.DoProcessing();
                 processor.finalize();
 
-                string[] gcodeContents = TestUtlities.LoadGCodeFile(gCodeWithIslands);
-                int numLayers = TestUtlities.CountLayers(gcodeContents);
+                string[] gcodeContents = TestUtilities.LoadGCodeFile(gCodeWithIslands);
+                int numLayers = TestUtilities.CountLayers(gcodeContents);
                 for (int i = 1; i < numLayers - 1; i++)
                 {
-                    string[] layer = TestUtlities.GetGCodeForLayer(gcodeContents, i);
-                    int totalRetractions = TestUtlities.CountRetractions(layer);
+                    string[] layer = TestUtilities.GetGCodeForLayer(gcodeContents, i);
+                    int totalRetractions = TestUtilities.CountRetractions(layer);
                     Assert.IsTrue(totalRetractions == 6);
                 }
             }
@@ -252,10 +252,10 @@ namespace MatterHackers.MatterSlice.Tests
         [Test]
         public void WindingDirectionDoesNotMatter()
         {
-            string manifoldFile = TestUtlities.GetStlPath("20mm-box");
-            string manifoldGCode = TestUtlities.GetTempGCodePath("20mm-box");
-            string nonManifoldFile = TestUtlities.GetStlPath("20mm-box bad winding");
-            string nonManifoldGCode = TestUtlities.GetTempGCodePath("20mm-box bad winding");
+            string manifoldFile = TestUtilities.GetStlPath("20mm-box");
+            string manifoldGCode = TestUtilities.GetTempGCodePath("20mm-box");
+            string nonManifoldFile = TestUtilities.GetStlPath("20mm-box bad winding");
+            string nonManifoldGCode = TestUtilities.GetTempGCodePath("20mm-box bad winding");
 
             {
                 // load a model that is correctly manifold

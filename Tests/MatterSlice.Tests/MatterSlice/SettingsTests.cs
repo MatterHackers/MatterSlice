@@ -36,8 +36,8 @@ namespace MatterHackers.MatterSlice.Tests
 	{
 		private string CreateGCodeForLayerHeights(double firstLayerHeight, double otherLayerHeight, double bottomClip = 0)
 		{
-			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
-			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}_o{1}_c{2}.gcode".FormatWith(firstLayerHeight, otherLayerHeight, bottomClip));
+			string box20MmStlFile = TestUtilities.GetStlPath("20mm-box");
+			string boxGCodeFile = TestUtilities.GetTempGCodePath("20mm-box-f{0}_o{1}_c{2}.gcode".FormatWith(firstLayerHeight, otherLayerHeight, bottomClip));
 
 			ConfigSettings config = new ConfigSettings();
 			config.firstLayerThickness = firstLayerHeight;
@@ -55,8 +55,8 @@ namespace MatterHackers.MatterSlice.Tests
 
 		private string CreateGCodeWithRaft(bool hasRaft)
 		{
-			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
-			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
+			string box20MmStlFile = TestUtilities.GetStlPath("20mm-box");
+			string boxGCodeFile = TestUtilities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
 
 			ConfigSettings config = new ConfigSettings();
 			config.enableRaft = hasRaft;
@@ -72,8 +72,8 @@ namespace MatterHackers.MatterSlice.Tests
 
 		private string CreateGcodeWithoutRaft(bool hasRaft)
 		{
-			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
-			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
+			string box20MmStlFile = TestUtilities.GetStlPath("20mm-box");
+			string boxGCodeFile = TestUtilities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
 
 			ConfigSettings config = new ConfigSettings();
 			config.enableRaft = hasRaft;
@@ -97,8 +97,8 @@ namespace MatterHackers.MatterSlice.Tests
 
 		private static void CheckCylinder(string stlFile, string gcodeFile)
 		{
-			string cylinderStlFile = TestUtlities.GetStlPath(stlFile);
-			string cylinderGCodeFileName = TestUtlities.GetTempGCodePath(gcodeFile);
+			string cylinderStlFile = TestUtilities.GetStlPath(stlFile);
+			string cylinderGCodeFileName = TestUtilities.GetTempGCodePath(gcodeFile);
 
 			ConfigSettings config = new ConfigSettings();
 			config.firstLayerThickness = .2;
@@ -113,19 +113,19 @@ namespace MatterHackers.MatterSlice.Tests
 			processor.DoProcessing();
 			processor.finalize();
 
-			string[] cylinderGCodeContent = TestUtlities.LoadGCodeFile(cylinderGCodeFileName);
+			string[] cylinderGCodeContent = TestUtilities.LoadGCodeFile(cylinderGCodeFileName);
 
 			// test .1 layer height
-			int layerCount = TestUtlities.CountLayers(cylinderGCodeContent);
+			int layerCount = TestUtilities.CountLayers(cylinderGCodeContent);
 			Assert.IsTrue(layerCount == 100);
 
 			for (int i = 2; i < layerCount - 3; i++)
 			{
-				string[] layerInfo = TestUtlities.GetGCodeForLayer(cylinderGCodeContent, i);
+				string[] layerInfo = TestUtilities.GetGCodeForLayer(cylinderGCodeContent, i);
 
 				// check that all layers move up continuously
 				MovementInfo lastMovement = new MovementInfo();
-				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
+				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo))
 				{
 					Assert.IsTrue(movement.position.z > lastMovement.position.z);
 
@@ -135,7 +135,7 @@ namespace MatterHackers.MatterSlice.Tests
 				bool first = true;
 				lastMovement = new MovementInfo();
 				// check that all moves are on the outside of the cylinder (not crossing to a new point)
-				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
+				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo))
 				{
 					if (!first)
 					{
@@ -155,27 +155,27 @@ namespace MatterHackers.MatterSlice.Tests
 		public void CorrectNumberOfLayersForLayerHeights()
 		{
 			// test .1 layer height
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.1, .1))) == 100);
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .1))) == 99);
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2))) == 50);
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.05, .2))) == 51);
+			Assert.IsTrue(TestUtilities.CountLayers(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.1, .1))) == 100);
+			Assert.IsTrue(TestUtilities.CountLayers(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .1))) == 99);
+			Assert.IsTrue(TestUtilities.CountLayers(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2))) == 50);
+			Assert.IsTrue(TestUtilities.CountLayers(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.05, .2))) == 51);
 		}
 
 		[Test]
 		public void BottomClipCorrectNumberOfLayers()
 		{
 			// test .1 layer height
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2, .2))) == 49);
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2, .31))) == 48);
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2, .4))) == 48);
+			Assert.IsTrue(TestUtilities.CountLayers(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2, .2))) == 49);
+			Assert.IsTrue(TestUtilities.CountLayers(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2, .31))) == 48);
+			Assert.IsTrue(TestUtilities.CountLayers(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2, .4))) == 48);
 		}
 
 		[Test]
 		public void ExportGCodeWithRaft()
 		{
 			//test that file has raft
-			Assert.IsTrue(TestUtlities.CheckForRaft(TestUtlities.LoadGCodeFile(CreateGCodeWithRaft(true))) == true);
-			Assert.IsTrue(TestUtlities.CheckForRaft(TestUtlities.LoadGCodeFile(CreateGcodeWithoutRaft(false))) == false);
+			Assert.IsTrue(TestUtilities.CheckForRaft(TestUtilities.LoadGCodeFile(CreateGCodeWithRaft(true))) == true);
+			Assert.IsTrue(TestUtilities.CheckForRaft(TestUtilities.LoadGCodeFile(CreateGcodeWithoutRaft(false))) == false);
 		}
 	}
 }
