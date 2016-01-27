@@ -378,6 +378,46 @@ namespace MatterHackers.MatterSlice
 					speed = speed * travelSpeedFactor / 100;
 				}
 
+				if (path.points.Count == 1
+					&& path.config != travelConfig
+					&& (gcodeExport.GetPositionXY() - path.points[0].XYPoint).ShorterThen(path.config.lineWidth_um * 2))
+				{
+					//Check for lots of small moves and combine them into one large line
+					Point3 nextPosition = path.points[0];
+					int i = pathIndex + 1;
+					while (i < paths.Count && paths[i].points.Count == 1 && (nextPosition - paths[i].points[0]).ShorterThen(path.config.lineWidth_um * 2))
+					{
+						nextPosition = paths[i].points[0];
+						i++;
+					}
+					if (paths[i - 1].config == travelConfig)
+					{
+						i--;
+					}
+
+					if (i > pathIndex + 2)
+					{
+						nextPosition = gcodeExport.GetPosition();
+						for (int x = pathIndex; x < i - 1; x += 2)
+						{
+							long oldLen = (nextPosition - paths[x].points[0]).Length();
+							Point3 newPoint = (paths[x].points[0] + paths[x + 1].points[0]) / 2;
+							long newLen = (gcodeExport.GetPosition() - newPoint).Length();
+							if (newLen > 0)
+							{
+								gcodeExport.WriteMove(newPoint, speed, (int)(path.config.lineWidth_um * oldLen / newLen));
+							}
+
+							nextPosition = paths[x + 1].points[0];
+						}
+
+						gcodeExport.WriteMove(paths[i - 1].points[0], speed, path.config.lineWidth_um);
+						pathIndex = i - 1;
+						continue;
+					}
+				}
+
+
 				bool spiralize = path.config.spiralize;
 				if (spiralize)
 				{

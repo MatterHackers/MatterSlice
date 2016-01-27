@@ -82,8 +82,11 @@ namespace MatterHackers.MatterSlice
 						Polygons largerInset = island.InsetToolPaths[insetIndex].Offset(-extrusionWidth_um / 2);
 						Polygons smallerInset = island.InsetToolPaths[insetIndex + 1].Offset(extrusionWidth_um / 2);
 
-						Polygons thinWalls = largerInset.CreateDifference(smallerInset);
-						topOutlines.AddAll(thinWalls);
+						Polygons thinWalls = largerInset.CreateDifference(smallerInset).Offset(-extrusionWidth_um/4);
+						if (thinWalls.Count > 0)
+						{
+							topOutlines.AddAll(thinWalls);
+						}
 					}
 
 					if (layerIndex + 1 < extruder.Layers.Count)
