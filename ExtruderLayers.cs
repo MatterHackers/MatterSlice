@@ -23,62 +23,58 @@ using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
-    using Polygons = List<List<IntPoint>>;
+	using Polygons = List<List<IntPoint>>;
 
-    public class ExtruderLayers
-    {
-        public List<SliceLayer> Layers = new List<SliceLayer>();
+	public class ExtruderLayers
+	{
+		public List<SliceLayer> Layers = new List<SliceLayer>();
 
-        private static readonly double cleanDistance_um = 10;
+		private static readonly double cleanDistance_um = 10;
 
-        public void CreateIslandData()
-        {
-            for (int layerIndex = 0; layerIndex < Layers.Count; layerIndex++)
-            {
-                Layers[layerIndex].CreateIslandData();
-            }
-        }
+		public void CreateIslandData()
+		{
+			for (int layerIndex = 0; layerIndex < Layers.Count; layerIndex++)
+			{
+				Layers[layerIndex].CreateIslandData();
+			}
+		}
 
-        public void GenerateTopAndBottoms(int layerIndex, int extrusionWidth_um, int outerPerimeterWidth_um, int downLayerCount, int upLayerCount)
-        {
-            ExtruderLayers extruder = this;
-            SliceLayer layer = extruder.Layers[layerIndex];
+		public void GenerateTopAndBottoms(int layerIndex, int extrusionWidth_um, int outerPerimeterWidth_um, int downLayerCount, int upLayerCount)
+		{
+			ExtruderLayers extruder = this;
+			SliceLayer layer = extruder.Layers[layerIndex];
 
-            for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
-            {
-                LayerIsland island = layer.Islands[islandIndex];
+			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
+			{
+				LayerIsland island = layer.Islands[islandIndex];
 				// this is the entire extrusion width to make sure we are outside of the extrusion line
 				Polygons lastInset = island.InsetToolPaths[island.InsetToolPaths.Count - 1];
 				Polygons insetWithOffset = lastInset.Offset(-extrusionWidth_um);
-                Polygons infillOutlines = new Polygons(insetWithOffset);
-				AddAdditionalThinLines(extrusionWidth_um, lastInset, insetWithOffset, infillOutlines);
+				Polygons infillOutlines = new Polygons(insetWithOffset);
 
 				// calculate the bottom outlines
 				if (downLayerCount > 0)
-                {
-                    Polygons bottomOutlines = new Polygons(insetWithOffset);
-
-					// Add more thin wall filling by taking the area between the insets.
-					AddAdditionalThinLines(extrusionWidth_um, lastInset, insetWithOffset, bottomOutlines);
+				{
+					Polygons bottomOutlines = new Polygons(insetWithOffset);
 
 					if (layerIndex - 1 >= 0)
-                    {
-                        bottomOutlines = RemoveIslandsFromPolygons(extruder.Layers[layerIndex - 1].Islands, island.BoundingBox, bottomOutlines);
-                        bottomOutlines.RemoveSmallAreas(extrusionWidth_um);
-                    }
+					{
+						bottomOutlines = RemoveIslandsFromPolygons(extruder.Layers[layerIndex - 1].Islands, island.BoundingBox, bottomOutlines);
+						bottomOutlines.RemoveSmallAreas(extrusionWidth_um);
+					}
 
-                    infillOutlines = infillOutlines.CreateDifference(bottomOutlines);
-                    infillOutlines = Clipper.CleanPolygons(infillOutlines, cleanDistance_um);
+					infillOutlines = infillOutlines.CreateDifference(bottomOutlines);
+					infillOutlines = Clipper.CleanPolygons(infillOutlines, cleanDistance_um);
 
-                    island.SolidBottomToolPaths = bottomOutlines;
-                }
+					island.SolidBottomToolPaths = bottomOutlines;
+				}
 
-                // calculate the top outlines
-                if (upLayerCount > 0)
-                {
-                    Polygons topOutlines = new Polygons(insetWithOffset);
-                    topOutlines = topOutlines.CreateDifference(island.SolidBottomToolPaths);
-                    topOutlines = Clipper.CleanPolygons(topOutlines, cleanDistance_um);
+				// calculate the top outlines
+				if (upLayerCount > 0)
+				{
+					Polygons topOutlines = new Polygons(insetWithOffset);
+					topOutlines = topOutlines.CreateDifference(island.SolidBottomToolPaths);
+					topOutlines = Clipper.CleanPolygons(topOutlines, cleanDistance_um);
 
 					for (int insetIndex = 0; insetIndex < island.InsetToolPaths.Count - 1; insetIndex++)
 					{
@@ -88,37 +84,34 @@ namespace MatterHackers.MatterSlice
 
 						Polygons thinWalls = largerInset.CreateDifference(smallerInset);
 						topOutlines.AddAll(thinWalls);
-
-						// Add more thin wall filling by taking the area between the insets.
-						AddAdditionalThinLines(extrusionWidth_um, lastInset, insetWithOffset, topOutlines);
 					}
 
 					if (layerIndex + 1 < extruder.Layers.Count)
-                    {
-                        // Remove the top layer that is above this one to get only the data that is a top layer on this layer.
-                        topOutlines = RemoveIslandsFromPolygons(extruder.Layers[layerIndex + 1].Islands, island.BoundingBox, topOutlines);
-                    }
+					{
+						// Remove the top layer that is above this one to get only the data that is a top layer on this layer.
+						topOutlines = RemoveIslandsFromPolygons(extruder.Layers[layerIndex + 1].Islands, island.BoundingBox, topOutlines);
+					}
 
-                    topOutlines.RemoveSmallAreas(extrusionWidth_um);
+					topOutlines.RemoveSmallAreas(extrusionWidth_um);
 
-                    infillOutlines = infillOutlines.CreateDifference(topOutlines);
-                    infillOutlines = Clipper.CleanPolygons(infillOutlines, cleanDistance_um);
+					infillOutlines = infillOutlines.CreateDifference(topOutlines);
+					infillOutlines = Clipper.CleanPolygons(infillOutlines, cleanDistance_um);
 
-                    island.SolidTopToolPaths = topOutlines;
-                }
+					island.SolidTopToolPaths = topOutlines;
+				}
 
-                // calculate the solid infill outlines
-                if (upLayerCount > 1 || downLayerCount > 1)
-                {
-                    Polygons solidInfillOutlines = new Polygons(insetWithOffset);
+				// calculate the solid infill outlines
+				if (upLayerCount > 1 || downLayerCount > 1)
+				{
+					Polygons solidInfillOutlines = new Polygons(insetWithOffset);
 					solidInfillOutlines = solidInfillOutlines.CreateDifference(island.SolidBottomToolPaths);
-                    solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
-                    solidInfillOutlines = solidInfillOutlines.CreateDifference(island.SolidTopToolPaths);
+					solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
+					solidInfillOutlines = solidInfillOutlines.CreateDifference(island.SolidTopToolPaths);
 
 					solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
 
-                    int upEnd = layerIndex + upLayerCount + 1;
-                    if (upEnd <= extruder.Layers.Count && layerIndex - downLayerCount >= 0)
+					int upEnd = layerIndex + upLayerCount + 1;
+					if (upEnd <= extruder.Layers.Count && layerIndex - downLayerCount >= 0)
 					{
 						Polygons totalPartsToRemove = new Polygons(insetWithOffset);
 
@@ -146,100 +139,94 @@ namespace MatterHackers.MatterSlice
 					}
 
 					island.SolidInfillToolPaths = solidInfillOutlines;
-                    infillOutlines = infillOutlines.CreateDifference(solidInfillOutlines);
-                }
+					infillOutlines = infillOutlines.CreateDifference(solidInfillOutlines);
+				}
 
 				infillOutlines.RemoveSmallAreas(extrusionWidth_um);
-                infillOutlines = Clipper.CleanPolygons(infillOutlines, cleanDistance_um);
+				infillOutlines = Clipper.CleanPolygons(infillOutlines, cleanDistance_um);
 				island.InfillToolPaths = infillOutlines;
 			}
 		}
 
-		private static void AddAdditionalThinLines(int extrusionWidth_um, Polygons lastInset, Polygons insetWithOffset, Polygons polygonsToAddTo)
+		public void InitializeLayerData(Slicer slicer)
 		{
-			Polygons thinFillWalls = lastInset.Offset(-extrusionWidth_um / 4).CreateDifference(insetWithOffset);
-			polygonsToAddTo.AddAll(thinFillWalls);
+			for (int layerIndex = 0; layerIndex < slicer.layers.Count; layerIndex++)
+			{
+				Layers.Add(new SliceLayer());
+				Layers[layerIndex].LayerZ = slicer.layers[layerIndex].Z;
+
+				Layers[layerIndex].AllOutlines = slicer.layers[layerIndex].PolygonList;
+
+				Layers[layerIndex].AllOutlines = Layers[layerIndex].AllOutlines.GetCorrectedWinding();
+			}
 		}
 
-		public void InitializeLayerData(Slicer slicer)
-        {
-            for (int layerIndex = 0; layerIndex < slicer.layers.Count; layerIndex++)
-            {
-                Layers.Add(new SliceLayer());
-                Layers[layerIndex].LayerZ = slicer.layers[layerIndex].Z;
+		public bool OnlyHasBottom(int layerToCheck)
+		{
+			return Layers[layerToCheck].Islands.Count == 1
+				&& Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 1
+				&& Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 0
+				&& Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 0
+				&& Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 0;
+		}
 
-                Layers[layerIndex].AllOutlines = slicer.layers[layerIndex].PolygonList;
+		public bool OnlyHasInfill(int layerToCheck)
+		{
+			return Layers[layerToCheck].Islands.Count == 1
+				&& Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 0
+				&& Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 0
+				&& Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 0
+				&& Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 1;
+		}
 
-                Layers[layerIndex].AllOutlines = Layers[layerIndex].AllOutlines.GetCorrectedWinding();
-            }
-        }
+		public bool OnlyHasSolidInfill(int layerToCheck)
+		{
+			return Layers[layerToCheck].Islands.Count == 1
+				&& Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 0
+				&& Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 0
+				&& Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 1
+				&& Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 0;
+		}
 
-        public bool OnlyHasBottom(int layerToCheck)
-        {
-            return Layers[layerToCheck].Islands.Count == 1
-                && Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 1
-                && Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 0
-                && Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 0
-                && Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 0;
-        }
+		public bool OnlyHasTop(int layerToCheck)
+		{
+			return Layers[layerToCheck].Islands.Count == 1
+				&& Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 0
+				&& Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 1
+				&& Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 0
+				&& Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 0;
+		}
 
-        public bool OnlyHasInfill(int layerToCheck)
-        {
-            return Layers[layerToCheck].Islands.Count == 1
-                && Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 0
-                && Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 0
-                && Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 0
-                && Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 1;
-        }
+		private static Polygons AddIslandsToPolygons(List<LayerIsland> islands, Aabb boundsToConsider, Polygons polysToAddTo)
+		{
+			Polygons polysToIntersect = new Polygons();
+			for (int islandIndex = 0; islandIndex < islands.Count; islandIndex++)
+			{
+				if (boundsToConsider.Hit(islands[islandIndex].BoundingBox))
+				{
+					polysToIntersect = polysToIntersect.CreateUnion(islands[islandIndex].InsetToolPaths[islands[islandIndex].InsetToolPaths.Count - 1]);
+					polysToIntersect = Clipper.CleanPolygons(polysToIntersect, cleanDistance_um);
+				}
+			}
 
-        public bool OnlyHasSolidInfill(int layerToCheck)
-        {
-            return Layers[layerToCheck].Islands.Count == 1
-                && Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 0
-                && Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 0
-                && Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 1
-                && Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 0;
-        }
+			polysToAddTo = polysToAddTo.CreateIntersection(polysToIntersect);
 
-        public bool OnlyHasTop(int layerToCheck)
-        {
-            return Layers[layerToCheck].Islands.Count == 1
-                && Layers[layerToCheck].Islands[0].SolidBottomToolPaths.Count == 0
-                && Layers[layerToCheck].Islands[0].SolidTopToolPaths.Count == 1
-                && Layers[layerToCheck].Islands[0].SolidInfillToolPaths.Count == 0
-                && Layers[layerToCheck].Islands[0].InfillToolPaths.Count == 0;
-        }
+			return polysToAddTo;
+		}
 
-        private static Polygons AddIslandsToPolygons(List<LayerIsland> islands, Aabb boundsToConsider, Polygons polysToAddTo)
-        {
-            Polygons polysToIntersect = new Polygons();
-            for (int islandIndex = 0; islandIndex < islands.Count; islandIndex++)
-            {
-                if (boundsToConsider.Hit(islands[islandIndex].BoundingBox))
-                {
-                    polysToIntersect = polysToIntersect.CreateUnion(islands[islandIndex].InsetToolPaths[islands[islandIndex].InsetToolPaths.Count - 1]);
-                    polysToIntersect = Clipper.CleanPolygons(polysToIntersect, cleanDistance_um);
-                }
-            }
+		private static Polygons RemoveIslandsFromPolygons(List<LayerIsland> islands, Aabb boundsToConsider, Polygons polygonsToSubtractFrom)
+		{
+			for (int islandIndex = 0; islandIndex < islands.Count; islandIndex++)
+			{
+				if (boundsToConsider.Hit(islands[islandIndex].BoundingBox))
+				{
+					polygonsToSubtractFrom = polygonsToSubtractFrom.CreateDifference(islands[islandIndex].InsetToolPaths[islands[islandIndex].InsetToolPaths.Count - 1]);
 
-            polysToAddTo = polysToAddTo.CreateIntersection(polysToIntersect);
+					polygonsToSubtractFrom = Clipper.CleanPolygons(polygonsToSubtractFrom, cleanDistance_um);
+				}
+			}
 
-            return polysToAddTo;
-        }
-
-        private static Polygons RemoveIslandsFromPolygons(List<LayerIsland> islands, Aabb boundsToConsider, Polygons polygonsToSubtractFrom)
-        {
-            for (int islandIndex = 0; islandIndex < islands.Count; islandIndex++)
-            {
-                if (boundsToConsider.Hit(islands[islandIndex].BoundingBox))
-                {
-                    polygonsToSubtractFrom = polygonsToSubtractFrom.CreateDifference(islands[islandIndex].InsetToolPaths[islands[islandIndex].InsetToolPaths.Count - 1]);
-
-                    polygonsToSubtractFrom = Clipper.CleanPolygons(polygonsToSubtractFrom, cleanDistance_um);
-                }
-            }
-
-            return polygonsToSubtractFrom;
-        }
-    }
+			return polygonsToSubtractFrom;
+		}
+	}
 }
