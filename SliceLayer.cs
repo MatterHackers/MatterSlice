@@ -58,9 +58,9 @@ namespace MatterHackers.MatterSlice
 			int startIndex = 0;
 			for (int i = 0; i < island0PointCount; i++)
 			{
-				IntPoint curr = island[i];
+				IntPoint currentPoint = island[i];
 
-				if (outline[0].Contains(curr))
+				if (outline[0].Contains(currentPoint))
 				{
 					startIndex = i;
 					break;
@@ -71,18 +71,18 @@ namespace MatterHackers.MatterSlice
 			double bestAngle = -1;
 
 			// check if it is concave
-			for (int i = 0; i < island0PointCount; i++)
+			for (int island0PointIndex = 0; island0PointIndex < island0PointCount; island0PointIndex++)
 			{
-				IntPoint curr = island[(startIndex + i) % island0PointCount];
+				IntPoint curr = island[(startIndex + island0PointIndex) % island0PointCount];
 
 				if (!outline[0].Contains(curr))
 				{
-					IntPoint prev = island[(startIndex + i + island0PointCount - 1) % island0PointCount];
+					IntPoint prev = island[(startIndex + island0PointIndex + island0PointCount - 1) % island0PointCount];
 					IntPoint convexStart = prev;
 
 					// We found a concave angle. now we want to find the first non-concave angle and make
 					// a bridge at the start and end angle of the concave region
-					for (int j = i + 1; j < island0PointCount + i; j++)
+					for (int j = island0PointIndex + 1; j < island0PointCount + island0PointIndex; j++)
 					{
 						IntPoint curr2 = island[(startIndex + j) % island0PointCount];
 
@@ -98,7 +98,7 @@ namespace MatterHackers.MatterSlice
 								{
 									island.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, bestAngle));
 								}
-								i = j + 1;
+								island0PointIndex = j + 1;
 								break;
 							}
 						}
@@ -116,31 +116,45 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public bool BridgeAngle(Polygons outline, out double bridgeAngle, string debugName = "")
+		public void GenerateFillConsideringBridging(Polygons bottomFillIsland, ref Polygons bottomFillLines, ConfigSettings config, string debugName = "")
 		{
-			SliceLayer prevLayer = this;
+			double bridgeAngle = 0;
+			if (this.BridgeAngle(bottomFillIsland, out bridgeAngle))
+			{
+				// TODO: Make this code handle very complex pathing between different sizes or layouts of support under the island to fill.
+				Infill.GenerateLinePaths(bottomFillIsland, ref bottomFillLines, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, bridgeAngle);
+			}
+			else
+			{
+				Infill.GenerateLinePaths(bottomFillIsland, ref bottomFillLines, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle);
+			}
+		}
+
+		public bool BridgeAngle(Polygons areaAboveToFill, out double bridgeAngle, string debugName = "")
+		{
+			SliceLayer layerToRestOn = this;
             bridgeAngle = -1;
-			Aabb boundaryBox = new Aabb(outline);
+			Aabb boundaryBox = new Aabb(areaAboveToFill);
 			//To detect if we have a bridge, first calculate the intersection of the current layer with the previous layer.
 			// This gives us the islands that the layer rests on.
-			Polygons islands = new Polygons();
-			foreach (LayerIsland prevLayerPart in prevLayer.Islands)
+			Polygons islandsToRestOn = new Polygons();
+			foreach (LayerIsland islandToRestOn in layerToRestOn.Islands)
 			{
-				if (!boundaryBox.Hit(prevLayerPart.BoundingBox))
+				if (!boundaryBox.Hit(islandToRestOn.BoundingBox))
 				{
 					continue;
 				}
 
-				islands.AddRange(outline.CreateIntersection(prevLayerPart.IslandOutline));
+				islandsToRestOn.AddRange(areaAboveToFill.CreateIntersection(islandToRestOn.IslandOutline));
 			}
 
 			if (OUTPUT_DEBUG_DATA)
 			{
-				string outlineString = outline.WriteToString();
+				string outlineString = areaAboveToFill.WriteToString();
 				string islandOutlineString = "";
-				foreach (LayerIsland prevLayerPart in prevLayer.Islands)
+				foreach (LayerIsland prevLayerIsland in layerToRestOn.Islands)
 				{
-					foreach (Polygon islandOutline in prevLayerPart.IslandOutline)
+					foreach (Polygon islandOutline in prevLayerIsland.IslandOutline)
 					{
 						islandOutlineString += islandOutline.WriteToString();
 					}
@@ -148,17 +162,23 @@ namespace MatterHackers.MatterSlice
 					islandOutlineString += "|";
 				}
 
-				string islandsString = islands.WriteToString();
+				string islandsString = islandsToRestOn.WriteToString();
 			}
 
-			if (islands.Count > 5 || islands.Count < 1)
+			Polygons islandConvexHuls = new Polygons();
+			foreach(Polygon poly in islandsToRestOn)
+			{
+				islandConvexHuls.Add(poly.CreateConvexHull());
+			}
+
+			if (islandsToRestOn.Count > 5 || islandsToRestOn.Count < 1)
 			{
 				return false;
 			}
 
-			if (islands.Count == 1)
+			if (islandsToRestOn.Count == 1)
 			{
-				return GetSingleIslandAngle(outline, islands[0], out bridgeAngle, debugName);
+				return GetSingleIslandAngle(areaAboveToFill, islandsToRestOn[0], out bridgeAngle, debugName);
 			}
 
 			// Find the 2 largest islands that we rest on.
@@ -166,15 +186,15 @@ namespace MatterHackers.MatterSlice
 			double nextBiggestArea = 0;
 			int indexOfBiggest = -1;
 			int indexOfNextBigest = -1;
-			for (int islandIndex = 0; islandIndex < islands.Count; islandIndex++)
+			for (int islandIndex = 0; islandIndex < islandsToRestOn.Count; islandIndex++)
 			{
 				//Skip internal holes
-				if (!islands[islandIndex].Orientation())
+				if (!islandsToRestOn[islandIndex].Orientation())
 				{
 					continue;
 				}
 
-				double area = Math.Abs(islands[islandIndex].Area());
+				double area = Math.Abs(islandConvexHuls[islandIndex].Area());
 				if (area > biggestArea)
 				{
 					if (biggestArea > nextBiggestArea)
@@ -197,17 +217,27 @@ namespace MatterHackers.MatterSlice
 				return false;
 			}
 
-			IntPoint center1 = islands[indexOfBiggest].CenterOfMass();
-			IntPoint center2 = islands[indexOfNextBigest].CenterOfMass();
+			Polygons big1 = new Polygons() { islandConvexHuls[indexOfBiggest] };
+			Polygons big2 = new Polygons() { islandConvexHuls[indexOfNextBigest] };
+
+			Polygons intersection = big1.CreateIntersection(big2);
+			if(intersection.Count > 0)
+			{
+				return GetSingleIslandAngle(areaAboveToFill, islandsToRestOn[indexOfBiggest], out bridgeAngle, debugName);
+			}
+
+			IntPoint center1 = islandsToRestOn[indexOfBiggest].CenterOfMass();
+			IntPoint center2 = islandsToRestOn[indexOfNextBigest].CenterOfMass();
 
 			bridgeAngle = Math.Atan2(center2.Y - center1.Y, center2.X - center1.X) / Math.PI * 180;
 			Range0To360(ref bridgeAngle);
 			if (OUTPUT_DEBUG_DATA)
 			{
-				islands.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, bridgeAngle));
+				islandsToRestOn.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, bridgeAngle));
 			}
 			return true;
 		}
+
 		public void CreateIslandData()
 		{
 			List<Polygons> separtedIntoIslands = AllOutlines.ProcessIntoSeparatIslands();

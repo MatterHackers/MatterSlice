@@ -961,28 +961,26 @@ namespace MatterHackers.MatterSlice
 			fillConfig.closedLoop = oldLoopValue;
 		}
 
-		private void CalculateInfillData(LayerDataStorage slicingData, int extruderIndex, int layerIndex, LayerIsland part, ref Polygons bottomFillPolygons, ref Polygons fillPolygons, ref Polygons topFillPolygons, ref Polygons bridgePolygons)
+		private void CalculateInfillData(LayerDataStorage slicingData, int extruderIndex, int layerIndex, LayerIsland part, ref Polygons bottomFillLines, ref Polygons fillPolygons, ref Polygons topFillPolygons, ref Polygons bridgePolygons)
 		{
-			// generate infill the bottom layer including bridging
-			foreach (Polygons outline in part.SolidBottomToolPaths.ProcessIntoSeparatIslands())
+			// generate infill for the bottom layer including bridging
+			foreach (Polygons bottomFillIsland in part.SolidBottomToolPaths.ProcessIntoSeparatIslands())
 			{
 				if (layerIndex > 0)
 				{
-					double bridgeAngle = 0;
-					SliceLayer previousLayer = slicingData.Extruders[extruderIndex].Layers[layerIndex - 1];
-                    if (!config.generateSupport &&
-						previousLayer.BridgeAngle(outline, out bridgeAngle))
+					if (config.generateSupport)
 					{
-						Infill.GenerateLinePaths(outline, ref bridgePolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, bridgeAngle);
+						Infill.GenerateLinePaths(bottomFillIsland, ref bottomFillLines, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle);
 					}
 					else
 					{
-						Infill.GenerateLinePaths(outline, ref bottomFillPolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle);
+						SliceLayer previousLayer = slicingData.Extruders[extruderIndex].Layers[layerIndex - 1];
+						previousLayer.GenerateFillConsideringBridging(bottomFillIsland, ref bottomFillLines, config);
 					}
 				}
 				else
 				{
-					Infill.GenerateLinePaths(outline, ref bottomFillPolygons, config.firstLayerExtrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle);
+					Infill.GenerateLinePaths(bottomFillIsland, ref bottomFillLines, config.firstLayerExtrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle);
 				}
 			}
 

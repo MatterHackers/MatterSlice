@@ -31,11 +31,11 @@ namespace MatterHackers.MatterSlice
 
 	public static class Infill
 	{
-		public static void GenerateLinePaths(Polygons in_outline, ref Polygons result, int lineSpacing, int infillExtendIntoPerimeter_um, double rotation, long rotationOffset = 0)
+		public static void GenerateLinePaths(Polygons polygonToInfill, ref Polygons infillLinesToPrint, int lineSpacing, int infillExtendIntoPerimeter_um, double rotation, long rotationOffset = 0)
 		{
-			if (in_outline.Count > 0)
+			if (polygonToInfill.Count > 0)
 			{
-				Polygons outlines = in_outline.Offset(infillExtendIntoPerimeter_um);
+				Polygons outlines = polygonToInfill.Offset(infillExtendIntoPerimeter_um);
 				if (outlines.Count > 0)
 				{
 					PointMatrix matrix = new PointMatrix(-(rotation + 90)); // we are rotating the part so we rotate by the negative so the lines go the way we expect
@@ -67,7 +67,7 @@ namespace MatterHackers.MatterSlice
 					PointMatrix inversematrix = new PointMatrix((rotation + 90));
 					newSegments.ApplyMatrix(inversematrix);
 
-					result.AddRange(newSegments);
+					infillLinesToPrint.AddRange(newSegments);
 				}
 			}
 		}

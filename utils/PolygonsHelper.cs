@@ -67,6 +67,17 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		public static Polygon CreateConvexHull(this Polygons polygons)
+		{
+			Polygon allPoints = new Polygon();
+			foreach (Polygon polygon in polygons)
+			{
+				allPoints.AddRange(polygon);
+			}
+
+			return allPoints.CreateConvexHull();
+		}
+
 		public static Polygons GetCorrectedWinding(this Polygons polygonsToFix)
 		{
 			polygonsToFix = Clipper.CleanPolygons(polygonsToFix);
