@@ -121,7 +121,6 @@
     <Compile Include="Slicer\SlicerLayer.cs" />
     <Compile Include="Slicer\Slicer.cs" />
     <Compile Include="NewSupport.cs" />
-    <Compile Include="utils\clipper.cs" />
     <Compile Include="utils\Vector3.cs" />
     <Compile Include="main.cs" />
     <Compile Include="Settings.cs" />
@@ -187,6 +186,11 @@
   <ItemGroup>
     <None Include="app.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\agg-sharp\clipper_library\clipper_library.csproj">
+      <Project>{9b062971-a88e-4a3d-b3c9-12b78d15fa66}</Project>
+      <Name>clipper_library</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

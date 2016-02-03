@@ -24,7 +24,7 @@ The integer point classes are used as soon as possible and represent microns in 
 Integer points are used to avoid floating point rounding errors, and because ClipperLib uses them.
 */
 
-using MatterSlice.ClipperLib;
+using ClipperLib;
 
 //Include Clipper to get the ClipperLib::IntPoint definition, which we reuse as Point definition.
 using System;
