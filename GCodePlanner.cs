@@ -595,7 +595,7 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 
-					// If the internal move is very long (20 mm), do a retration anyway
+					// If the internal move is very long (20 mm), do a retraction anyway
 					if (lineLength_um > retractionMinimumDistance_um)
 					{
 						path.Retract = true;

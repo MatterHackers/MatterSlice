@@ -585,6 +585,9 @@ namespace MatterHackers.MatterSlice
 							int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(island.InsetToolPaths[0][0]);
 							gcodeLayer.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundery);
 							gcodeLayer.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
+							// Now move up to the next layer so we don't start the extrusion one layer too low.
+							gcode.setZ(z + config.layerThickness_um);
+							gcodeLayer.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
 						}
 					}
 				}
@@ -777,6 +780,7 @@ namespace MatterHackers.MatterSlice
 						{
 							QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, island.InsetToolPaths[perimeterIndex], insetXConfig, SupportWriteType.UnsupportedAreas);
 						}
+						
 						// then 0
 						if (island.InsetToolPaths.Count > 0)
 						{
