@@ -459,31 +459,9 @@ namespace MatterHackers.MatterSlice
 				else
 				{
 					// This is test code to remove double drawn small perimeter lines.
-					if (false
-							|| (
-							path.config.lineWidth_um > 0
-						&& path.points.Count > 2 // If the count is not greater than 2 there is no way it can ovelap itself.
-						&& gcodeExport.GetPosition() == path.points[path.points.Count - 1]))
+					if (RemoveDoubleDrawPerimeterLines(path, speed))
 					{
-						List<List<Point3>> pathsWithOverlapsRemoved = GetPathsWithOverlapsRemoved(path.points, path.config.lineWidth_um / 2);
-						if (pathsWithOverlapsRemoved.Count > 0)
-						{
-							for (int polygonIndex = 0; polygonIndex < pathsWithOverlapsRemoved.Count; polygonIndex++)
-							{
-								int startIndex = 0;
-								List<Point3> polygon = pathsWithOverlapsRemoved[polygonIndex];
-								if (polygonIndex > 0)
-								{
-									gcodeExport.WriteMove(polygon[0], travelConfig.speed, 0);
-									startIndex = 1; // We skip the first point in the next extrusion, because we just moved to it.
-								}
-
-								for (int pointIndex = startIndex; pointIndex < polygon.Count; pointIndex++)
-								{
-									gcodeExport.WriteMove(polygon[pointIndex], speed, path.config.lineWidth_um);
-								}
-							}
-						}
+						return;
 					}
 					else
 					{
@@ -498,6 +476,35 @@ namespace MatterHackers.MatterSlice
 			}
 
 			gcodeExport.UpdateTotalPrintTime();
+		}
+
+		private bool RemoveDoubleDrawPerimeterLines(GCodePath path, double speed)
+		{
+			return false;
+			if (path.config.lineWidth_um > 0
+				&& path.points.Count > 2 // If the count is not greater than 2 there is no way it can ovelap itself.
+				&& gcodeExport.GetPosition() == path.points[path.points.Count - 1])
+			{
+				List<List<Point3>> pathsWithOverlapsRemoved = GetPathsWithOverlapsRemoved(path.points, path.config.lineWidth_um / 2);
+				if (pathsWithOverlapsRemoved.Count > 0)
+				{
+					for (int polygonIndex = 0; polygonIndex < pathsWithOverlapsRemoved.Count; polygonIndex++)
+					{
+						int startIndex = 0;
+						List<Point3> polygon = pathsWithOverlapsRemoved[polygonIndex];
+						if (polygonIndex > 0)
+						{
+							gcodeExport.WriteMove(polygon[0], travelConfig.speed, 0);
+							startIndex = 1; // We skip the first point in the next extrusion, because we just moved to it.
+						}
+
+						for (int pointIndex = startIndex; pointIndex < polygon.Count; pointIndex++)
+						{
+							gcodeExport.WriteMove(polygon[pointIndex], speed, path.config.lineWidth_um);
+						}
+					}
+				}
+			}
 		}
 
 		public void QueuePolygon(Polygon polygon, int startIndex, GCodePathConfig config)
