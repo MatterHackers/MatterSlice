@@ -46,7 +46,7 @@ namespace MatterHackers.MatterSlice
 
 	public class NewSupport
 	{
-		readonly static double cleanDistance_um = 10;
+		static double cleanDistance_um = 10;
 
 		internal List<Polygons> allPartOutlines = new List<Polygons>();
 		internal List<Polygons> insetPartOutlines = new List<Polygons>();
@@ -73,7 +73,8 @@ namespace MatterHackers.MatterSlice
 
 		public NewSupport(ConfigSettings config, List<ExtruderLayers> Extruders, double grabDistanceMm)
 		{
-			long supportWidth_um = (long)(config.extrusionWidth_um * (100-config.supportPercent) / 100);
+			cleanDistance_um = config.extrusionWidth_um / 10;
+            long supportWidth_um = (long)(config.extrusionWidth_um * (100-config.supportPercent) / 100);
             this.grabDistanceMm = grabDistanceMm;
 			// create starting support outlines
 			allPartOutlines = CalculateAllPartOutlines(config, Extruders);
@@ -394,8 +395,10 @@ namespace MatterHackers.MatterSlice
 				// render a grid of support
 				if (config.generateSupportPerimeter)
 				{
-					gcodeLayer.QueuePolygonsByOptimizer(islandOutline, supportNormalConfig);
+					Polygons outlines = Clipper.CleanPolygons(islandOutline, config.extrusionWidth_um / 4);
+					gcodeLayer.QueuePolygonsByOptimizer(outlines, supportNormalConfig);
 				}
+
 				Polygons infillOutline = islandOutline.Offset(-supportNormalConfig.lineWidth_um / 2);
 				switch (config.supportType)
 				{
@@ -433,7 +436,8 @@ namespace MatterHackers.MatterSlice
 				// render a grid of support
 				if (config.generateSupportPerimeter)
 				{
-					gcodeLayer.QueuePolygonsByOptimizer(islandOutline, supportNormalConfig);
+					Polygons outlines = Clipper.CleanPolygons(islandOutline, config.extrusionWidth_um / 4);
+					gcodeLayer.QueuePolygonsByOptimizer(outlines, supportNormalConfig);
 				}
 				Polygons infillOutline = islandOutline.Offset(-config.extrusionWidth_um / 2);
 				switch (config.supportType)
