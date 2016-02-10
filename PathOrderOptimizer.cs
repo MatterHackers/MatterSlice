@@ -54,7 +54,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private static int GetClosestIndex(Polygon currentPolygon, IntPoint startPosition)
+		public static int GetClosestIndex(Polygon currentPolygon, IntPoint startPosition)
 		{
 			int bestPointIndex = -1;
 			double closestDist = double.MaxValue;

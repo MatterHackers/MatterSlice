@@ -759,9 +759,9 @@ namespace MatterHackers.MatterSlice
 								QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, island.InsetToolPaths[0], inset0Config, SupportWriteType.UnsupportedAreas);
 							}
 
-							for (int perimeterIndex = 1; perimeterIndex < island.InsetToolPaths.Count; perimeterIndex++)
+							for (int insetIndex = 1; insetIndex < island.InsetToolPaths.Count; insetIndex++)
 							{
-								QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, island.InsetToolPaths[perimeterIndex], insetXConfig, SupportWriteType.UnsupportedAreas);
+								QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, island.InsetToolPaths[insetIndex], insetXConfig, SupportWriteType.UnsupportedAreas);
 							}
 						}
 					}
@@ -775,16 +775,55 @@ namespace MatterHackers.MatterSlice
 							gcodeLayer.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
 						}
 
-						// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
-						for (int perimeterIndex = 1; perimeterIndex < island.InsetToolPaths.Count; perimeterIndex++)
+						bool useNewInsetAccumulation = true;
+						if (useNewInsetAccumulation)
 						{
-							QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, island.InsetToolPaths[perimeterIndex], insetXConfig, SupportWriteType.UnsupportedAreas);
+							// Put all the insets into a new list so we can keep track of what has been printed.
+							List<Polygons> insetsToPrint = new List<Polygons>(island.InsetToolPaths.Count);
+							for (int insetIndex = 0; insetIndex < island.InsetToolPaths.Count; insetIndex++)
+							{
+								insetsToPrint.Add(new Polygons());
+								for (int polygonIndex = 0; polygonIndex < island.InsetToolPaths[insetIndex].Count; polygonIndex++)
+								{
+									insetsToPrint[insetIndex].Add(island.InsetToolPaths[insetIndex][polygonIndex]);
+								}
+							}
+
+							int insetCount = CountInsetsToPrint(insetsToPrint);
+							while (insetCount > 0)
+							{
+								bool limitDistance = false;
+                                if (island.InsetToolPaths.Count > 1)
+								{
+									// Move to the closest inset 1 and print it
+									limitDistance = PrintClosetsInset(insetsToPrint[1], limitDistance, insetXConfig, layerIndex, gcodeLayer);
+									for (int insetIndex = 2; insetIndex < island.InsetToolPaths.Count; insetIndex++)
+									{
+										limitDistance = PrintClosetsInset(insetsToPrint[insetIndex], limitDistance, insetXConfig, layerIndex, gcodeLayer);
+									}
+								}
+
+								if (island.InsetToolPaths.Count > 0)
+								{
+									PrintClosetsInset(insetsToPrint[0], limitDistance, inset0Config, layerIndex, gcodeLayer);
+								}
+
+								insetCount = CountInsetsToPrint(insetsToPrint);
+							}
 						}
-						
-						// then 0
-						if (island.InsetToolPaths.Count > 0)
+						else
 						{
-							QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, island.InsetToolPaths[0], inset0Config, SupportWriteType.UnsupportedAreas);
+							// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
+							for (int insetIndex = 1; insetIndex < island.InsetToolPaths.Count; insetIndex++)
+							{
+								QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, island.InsetToolPaths[insetIndex], insetXConfig, SupportWriteType.UnsupportedAreas);
+							}
+
+							// then 0
+							if (island.InsetToolPaths.Count > 0)
+							{
+								QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, island.InsetToolPaths[0], inset0Config, SupportWriteType.UnsupportedAreas);
+							}
 						}
 					}
 				}
@@ -803,6 +842,49 @@ namespace MatterHackers.MatterSlice
 			}
 
 			gcodeLayer.SetOuterPerimetersToAvoidCrossing(null);
+		}
+
+		private bool PrintClosetsInset(Polygons insetsConsider, bool limitDistance, GCodePathConfig pathConfig, int layerIndex, GCodePlanner gcodeLayer)
+		{
+			long maxDist_um = long.MaxValue;
+			if (limitDistance)
+			{
+				maxDist_um = config.extrusionWidth_um * 4;
+			}
+
+			int polygonPrintedIndex = -1;
+
+			for (int polygonIndex = 0; polygonIndex < insetsConsider.Count; polygonIndex++)
+			{
+				Polygon currentPolygon = insetsConsider[polygonIndex];
+				int bestPoint = IslandOrderOptimizer.GetClosestIndex(currentPolygon, gcodeLayer.LastPosition);
+				long distance = (currentPolygon[bestPoint] - gcodeLayer.LastPosition).Length();
+				if(distance < maxDist_um)
+				{
+					maxDist_um = distance;
+					polygonPrintedIndex = polygonIndex;
+				}
+			}
+
+			if (polygonPrintedIndex > -1)
+			{
+				QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, new Polygons() { insetsConsider[polygonPrintedIndex] }, pathConfig, SupportWriteType.UnsupportedAreas);
+				insetsConsider.RemoveAt(polygonPrintedIndex);
+				return true;
+			}
+
+			return false;
+		}
+
+		private int CountInsetsToPrint(List<Polygons> insetsToPrint)
+		{
+			int total = 0;
+			foreach(Polygons polygons in insetsToPrint)
+			{
+				total += polygons.Count;
+			}
+
+			return total;
 		}
 
 		//Add a single layer from a single extruder to the GCode
@@ -891,9 +973,9 @@ namespace MatterHackers.MatterSlice
 					}
 
 					// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
-					for (int perimeterIndex = 1; perimeterIndex < part.InsetToolPaths.Count; perimeterIndex++)
+					for (int insetIndex = 1; insetIndex < part.InsetToolPaths.Count; insetIndex++)
 					{
-						QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[perimeterIndex], airGappedBottomConfig, SupportWriteType.SupportedAreas);
+						QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[insetIndex], airGappedBottomConfig, SupportWriteType.SupportedAreas);
 					}
 					// then 0
 					if (part.InsetToolPaths.Count > 0)
