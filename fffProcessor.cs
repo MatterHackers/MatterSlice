@@ -755,7 +755,10 @@ namespace MatterHackers.MatterSlice
 						insetsToPrint.Add(new Polygons());
 						for (int polygonIndex = 0; polygonIndex < island.InsetToolPaths[insetIndex].Count; polygonIndex++)
 						{
-							insetsToPrint[insetIndex].Add(island.InsetToolPaths[insetIndex][polygonIndex]);
+							if (island.InsetToolPaths[insetIndex][polygonIndex].Count > 0)
+							{
+								insetsToPrint[insetIndex].Add(island.InsetToolPaths[insetIndex][polygonIndex]);
+							}
 						}
 					}
 
@@ -851,11 +854,14 @@ namespace MatterHackers.MatterSlice
 			{
 				Polygon currentPolygon = insetsConsider[polygonIndex];
 				int bestPoint = IslandOrderOptimizer.GetClosestIndex(currentPolygon, gcodeLayer.LastPosition);
-				long distance = (currentPolygon[bestPoint] - gcodeLayer.LastPosition).Length();
-				if(distance < maxDist_um)
+				if (bestPoint > -1)
 				{
-					maxDist_um = distance;
-					polygonPrintedIndex = polygonIndex;
+					long distance = (currentPolygon[bestPoint] - gcodeLayer.LastPosition).Length();
+					if (distance < maxDist_um)
+					{
+						maxDist_um = distance;
+						polygonPrintedIndex = polygonIndex;
+					}
 				}
 			}
 
