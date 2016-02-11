@@ -546,11 +546,9 @@ namespace MatterHackers.MatterSlice
 
 				if (slicingData.support != null)
 				{
-					// Should come before raising in z for AirGap
-					gcodeLayer.QueueTravel(gcodeLayer.LastPosition);
-
 					z += config.supportAirGap_um;
 					gcode.setZ(z);
+					gcodeLayer.QueueTravel(gcodeLayer.LastPosition);
 
 					for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
 					{
@@ -558,10 +556,6 @@ namespace MatterHackers.MatterSlice
 					}
 
 					slicingData.support.QueueAirGappedBottomLayer(config, gcodeLayer, layerIndex, airGappedBottomConfig);
-
-					// Reset z to the pre-airgapped value
-					z -= config.supportAirGap_um;
-					gcode.setZ(z);
 				}
 
 				//Finish the layer by applying speed corrections for minimum layer times.
