@@ -86,7 +86,7 @@ namespace MatterHackers.MatterSlice
 			LayerDataStorage storage = this;
 			for (int extruderIndex = 0; extruderIndex < storage.Extruders.Count; extruderIndex++)
 			{
-				if (config.continuousSpiralOuterPerimeter && extruderIndex > 0)
+				if (config.ContinuousSpiralOuterPerimeter && extruderIndex > 0)
 				{
 					continue;
 				}
@@ -101,7 +101,7 @@ namespace MatterHackers.MatterSlice
 				if (layer.Islands.Count == 0 && storage.Extruders[extruderIndex].Layers.Count > 2) layer = storage.Extruders[extruderIndex].Layers[1];
 				for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
 				{
-					if (config.continuousSpiralOuterPerimeter && partIndex > 0)
+					if (config.ContinuousSpiralOuterPerimeter && partIndex > 0)
 					{
 						continue;
 					}
@@ -128,7 +128,7 @@ namespace MatterHackers.MatterSlice
 				Polygons skirtPolygons = new Polygons(storage.wipeTower.Offset(offsetDistance));
 				for (int extrudeIndex = 0; extrudeIndex < storage.Extruders.Count; extrudeIndex++)
 				{
-					if (config.continuousSpiralOuterPerimeter && extrudeIndex > 0)
+					if (config.ContinuousSpiralOuterPerimeter && extrudeIndex > 0)
 					{
 						continue;
 					}
@@ -141,7 +141,7 @@ namespace MatterHackers.MatterSlice
 					SliceLayer layer = storage.Extruders[extrudeIndex].Layers[0];
 					for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 					{
-						if (config.continuousSpiralOuterPerimeter && islandIndex > 0)
+						if (config.ContinuousSpiralOuterPerimeter && islandIndex > 0)
 						{
 							continue;
 						}
@@ -191,31 +191,31 @@ namespace MatterHackers.MatterSlice
 			LayerDataStorage storage = this;
 			if (config.ShouldGenerateRaft())
 			{
-				GCodePathConfig raftBaseConfig = new GCodePathConfig(config.firstLayerSpeed, config.raftBaseExtrusionWidth_um, "SUPPORT");
-				GCodePathConfig raftMiddleConfig = new GCodePathConfig(config.raftPrintSpeed, config.raftInterfaceExtrusionWidth_um, "SUPPORT");
-				GCodePathConfig raftSurfaceConfig = new GCodePathConfig((config.raftSurfacePrintSpeed > 0) ? config.raftSurfacePrintSpeed : config.raftPrintSpeed, config.raftSurfaceExtrusionWidth_um, "SUPPORT");
+				GCodePathConfig raftBaseConfig = new GCodePathConfig(config.FirstLayerSpeed, config.RaftBaseExtrusionWidth_um, "SUPPORT");
+				GCodePathConfig raftMiddleConfig = new GCodePathConfig(config.RaftPrintSpeed, config.RaftInterfaceExtrusionWidth_um, "SUPPORT");
+				GCodePathConfig raftSurfaceConfig = new GCodePathConfig((config.RaftSurfacePrintSpeed > 0) ? config.RaftSurfacePrintSpeed : config.RaftPrintSpeed, config.RaftSurfaceExtrusionWidth_um, "SUPPORT");
 
 				// create the raft base
 				{
 					gcode.WriteComment("LAYER:-3");
 					gcode.WriteComment("RAFT BASE");
-					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_um);
-					if (config.raftExtruder >= 0)
+					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um);
+					if (config.RaftExtruder >= 0)
 					{
 						// if we have a specified raft extruder use it
-						gcodeLayer.SetExtruder(config.raftExtruder);
+						gcodeLayer.SetExtruder(config.RaftExtruder);
 					}
-					else if (config.supportExtruder >= 0)
+					else if (config.SupportExtruder >= 0)
 					{
 						// else preserve the old behavior of using the support extruder if set.
-						gcodeLayer.SetExtruder(config.supportExtruder);
+						gcodeLayer.SetExtruder(config.SupportExtruder);
 					}
 
-					gcode.setZ(config.raftBaseThickness_um);
-					gcode.SetExtrusion(config.raftBaseThickness_um, config.filamentDiameter_um, config.extrusionMultiplier);
+					gcode.setZ(config.RaftBaseThickness_um);
+					gcode.SetExtrusion(config.RaftBaseThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
 					Polygons raftLines = new Polygons();
-					Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftBaseLineSpacing_um, config.infillExtendIntoPerimeter_um, 0);
+					Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.RaftBaseLineSpacing_um, config.InfillExtendIntoPerimeter_um, 0);
 
 					// write the skirt around the raft
 					gcodeLayer.QueuePolygonsByOptimizer(storage.skirt, raftBaseConfig);
@@ -226,50 +226,50 @@ namespace MatterHackers.MatterSlice
 					// write the inside of the raft base
 					gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftBaseConfig);
 
-					gcodeLayer.WriteQueuedGCode(config.raftBaseThickness_um);
+					gcodeLayer.WriteQueuedGCode(config.RaftBaseThickness_um);
 				}
 
-				if (config.raftFanSpeedPercent > 0)
+				if (config.RaftFanSpeedPercent > 0)
 				{
-					gcode.WriteFanCommand(config.raftFanSpeedPercent);
+					gcode.WriteFanCommand(config.RaftFanSpeedPercent);
 				}
 
 				// raft middle layers
 				{
 					gcode.WriteComment("LAYER:-2");
 					gcode.WriteComment("RAFT MIDDLE");
-					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_um);
-					gcode.setZ(config.raftBaseThickness_um + config.raftInterfaceThicknes_um);
-					gcode.SetExtrusion(config.raftInterfaceThicknes_um, config.filamentDiameter_um, config.extrusionMultiplier);
+					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um);
+					gcode.setZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um);
+					gcode.SetExtrusion(config.RaftInterfaceThicknes_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
 					Polygons raftLines = new Polygons();
-					Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftInterfaceLineSpacing_um, config.infillExtendIntoPerimeter_um, 45);
+					Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.RaftInterfaceLineSpacing_um, config.InfillExtendIntoPerimeter_um, 45);
 					gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftMiddleConfig);
 
-					gcodeLayer.WriteQueuedGCode(config.raftInterfaceThicknes_um);
+					gcodeLayer.WriteQueuedGCode(config.RaftInterfaceThicknes_um);
 				}
 
-				for (int raftSurfaceIndex = 1; raftSurfaceIndex <= config.raftSurfaceLayers; raftSurfaceIndex++)
+				for (int raftSurfaceIndex = 1; raftSurfaceIndex <= config.RaftSurfaceLayers; raftSurfaceIndex++)
 				{
 					gcode.WriteComment("LAYER:-1");
 					gcode.WriteComment("RAFT SURFACE");
-					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_um);
-					gcode.setZ(config.raftBaseThickness_um + config.raftInterfaceThicknes_um + config.raftSurfaceThickness_um * raftSurfaceIndex);
-					gcode.SetExtrusion(config.raftSurfaceThickness_um, config.filamentDiameter_um, config.extrusionMultiplier);
+					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um);
+					gcode.setZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um + config.RaftSurfaceThickness_um * raftSurfaceIndex);
+					gcode.SetExtrusion(config.RaftSurfaceThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
 					Polygons raftLines = new Polygons();
-					if (raftSurfaceIndex == config.raftSurfaceLayers)
+					if (raftSurfaceIndex == config.RaftSurfaceLayers)
 					{
 						// make sure the top layer of the raft is 90 degrees offset to the first layer of the part so that it has minimum contact points.
-						Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftSurfaceLineSpacing_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle + 90);
+						Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.RaftSurfaceLineSpacing_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle + 90);
 					}
 					else
 					{
-						Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.raftSurfaceLineSpacing_um, config.infillExtendIntoPerimeter_um, 90 * raftSurfaceIndex);
+						Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.RaftSurfaceLineSpacing_um, config.InfillExtendIntoPerimeter_um, 90 * raftSurfaceIndex);
 					}
 					gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftSurfaceConfig);
 
-					gcodeLayer.WriteQueuedGCode(config.raftInterfaceThicknes_um);
+					gcodeLayer.WriteQueuedGCode(config.RaftInterfaceThicknes_um);
 				}
 			}
 		}

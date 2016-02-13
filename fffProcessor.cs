@@ -91,7 +91,7 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			optomizedMeshCollection.SetPositionAndSize(simpleMeshCollection, config.positionToPlaceObjectCenter_um.X, config.positionToPlaceObjectCenter_um.Y, -config.bottomClipAmount_um, config.centerObjectInXy);
+			optomizedMeshCollection.SetPositionAndSize(simpleMeshCollection, config.PositionToPlaceObjectCenter_um.X, config.PositionToPlaceObjectCenter_um.Y, -config.BottomClipAmount_um, config.CenterObjectInXy);
 			for (int meshIndex = 0; meshIndex < simpleMeshCollection.SimpleMeshes.Count; meshIndex++)
 			{
 				LogOutput.Log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleMeshCollection.SimpleMeshes[meshIndex].faceTriangles.Count, (int)optomizedMeshCollection.OptimizedMeshes[meshIndex].facesTriangle.Count, (double)(optomizedMeshCollection.OptimizedMeshes[meshIndex].facesTriangle.Count) / (double)(simpleMeshCollection.SimpleMeshes[meshIndex].faceTriangles.Count) * 100));
@@ -103,7 +103,7 @@ namespace MatterHackers.MatterSlice
 
 			Stopwatch timeKeeperTotal = new Stopwatch();
 			timeKeeperTotal.Start();
-			preSetup(config.extrusionWidth_um);
+			preSetup(config.ExtrusionWidth_um);
 
 			SliceModels(slicingData);
 
@@ -125,10 +125,10 @@ namespace MatterHackers.MatterSlice
 
 		public bool LoadStlFile(string input_filename)
 		{
-			preSetup(config.extrusionWidth_um);
+			preSetup(config.ExtrusionWidth_um);
 			timeKeeper.Restart();
 			LogOutput.Log("Loading {0} from disk...\n".FormatWith(input_filename));
-			if (!SimpleMeshCollection.LoadModelFromFile(simpleMeshCollection, input_filename, config.modelRotationMatrix))
+			if (!SimpleMeshCollection.LoadModelFromFile(simpleMeshCollection, input_filename, config.ModelRotationMatrix))
 			{
 				LogOutput.LogError("Failed to load model: {0}\n".FormatWith(input_filename));
 				return false;
@@ -144,34 +144,34 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			gcode.Finalize(maxObjectHeight, config.travelSpeed, config.endCode);
+			gcode.Finalize(maxObjectHeight, config.TravelSpeed, config.EndCode);
 
 			gcode.Close();
 		}
 
 		private void preSetup(int extrusionWidth)
 		{
-			skirtConfig.SetData(config.insidePerimetersSpeed, extrusionWidth, "SKIRT");
-			inset0Config.SetData(config.outsidePerimeterSpeed, config.outsideExtrusionWidth_um, "WALL-OUTER");
-			insetXConfig.SetData(config.insidePerimetersSpeed, extrusionWidth, "WALL-INNER");
+			skirtConfig.SetData(config.InsidePerimetersSpeed, extrusionWidth, "SKIRT");
+			inset0Config.SetData(config.OutsidePerimeterSpeed, config.OutsideExtrusionWidth_um, "WALL-OUTER");
+			insetXConfig.SetData(config.InsidePerimetersSpeed, extrusionWidth, "WALL-INNER");
 
-			fillConfig.SetData(config.infillSpeed, extrusionWidth, "FILL", false);
-			topFillConfig.SetData(config.topInfillSpeed, extrusionWidth, "TOP-FILL", false);
-			bottomFillConfig.SetData(config.infillSpeed, extrusionWidth, "BOTTOM-FILL", false);
-			airGappedBottomConfig.SetData(config.firstLayerSpeed, extrusionWidth, "AIR-GAP", false);
-            bridgConfig.SetData(config.bridgeSpeed, extrusionWidth, "BRIDGE");
+			fillConfig.SetData(config.InfillSpeed, extrusionWidth, "FILL", false);
+			topFillConfig.SetData(config.TopInfillSpeed, extrusionWidth, "TOP-FILL", false);
+			bottomFillConfig.SetData(config.InfillSpeed, extrusionWidth, "BOTTOM-FILL", false);
+			airGappedBottomConfig.SetData(config.FirstLayerSpeed, extrusionWidth, "AIR-GAP", false);
+            bridgConfig.SetData(config.BridgeSpeed, extrusionWidth, "BRIDGE");
 
-			supportNormalConfig.SetData(config.supportMaterialSpeed, extrusionWidth, "SUPPORT");
-			supportInterfaceConfig.SetData(config.supportMaterialSpeed - 1, extrusionWidth, "SUPPORT-INTERFACE");
+			supportNormalConfig.SetData(config.SupportMaterialSpeed, extrusionWidth, "SUPPORT");
+			supportInterfaceConfig.SetData(config.SupportMaterialSpeed - 1, extrusionWidth, "SUPPORT-INTERFACE");
 
 			for (int extruderIndex = 0; extruderIndex < ConfigConstants.MAX_EXTRUDERS; extruderIndex++)
 			{
-				gcode.SetExtruderOffset(extruderIndex, config.extruderOffsets[extruderIndex], -config.zOffset_um);
+				gcode.SetExtruderOffset(extruderIndex, config.ExtruderOffsets[extruderIndex], -config.ZOffset_um);
 			}
 
 			gcode.SetOutputType(config.outputType);
-			gcode.SetRetractionSettings(config.retractionOnTravel, config.retractionSpeed, config.retractionOnExtruderSwitch, config.minimumExtrusionBeforeRetraction, config.retractionZHop, config.wipeAfterRetraction, config.unretractExtraExtrusion);
-			gcode.SetToolChangeCode(config.toolChangeCode);
+			gcode.SetRetractionSettings(config.RetractionOnTravel, config.RetractionSpeed, config.RetractionOnExtruderSwitch, config.MinimumExtrusionBeforeRetraction, config.RetractionZHop, config.WipeAfterRetraction, config.UnretractExtraExtrusion);
+			gcode.SetToolChangeCode(config.ToolChangeCode);
 		}
 
 		private void SliceModels(LayerDataStorage slicingData)
@@ -208,12 +208,12 @@ namespace MatterHackers.MatterSlice
 				slicingData.Extruders.Add(new ExtruderLayers());
 				slicingData.Extruders[extruderIndex].InitializeLayerData(slicerList[extruderIndex]);
 
-				if (config.enableRaft)
+				if (config.EnableRaft)
 				{
 					//Add the raft offset to each layer.
 					for (int layerIndex = 0; layerIndex < slicingData.Extruders[extruderIndex].Layers.Count; layerIndex++)
 					{
-						slicingData.Extruders[extruderIndex].Layers[layerIndex].LayerZ += config.raftBaseThickness_um + config.raftInterfaceThicknes_um;
+						slicingData.Extruders[extruderIndex].Layers[layerIndex].LayerZ += config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um;
 					}
 				}
 			}
@@ -223,22 +223,22 @@ namespace MatterHackers.MatterSlice
 
 		private void ProcessSliceData(LayerDataStorage slicingData)
 		{
-			if (config.continuousSpiralOuterPerimeter)
+			if (config.ContinuousSpiralOuterPerimeter)
 			{
-				config.numberOfTopLayers = 0;
-				config.infillPercent = 0;
+				config.NumberOfTopLayers = 0;
+				config.InfillPercent = 0;
 			}
 
 			MultiExtruders.ProcessBooleans(slicingData.Extruders, config.BooleanOpperations);
 
 			MultiExtruders.RemoveExtruderIntersections(slicingData.Extruders);
-			MultiExtruders.OverlapMultipleExtrudersSlightly(slicingData.Extruders, config.multiExtruderOverlapPercent);
+			MultiExtruders.OverlapMultipleExtrudersSlightly(slicingData.Extruders, config.MultiExtruderOverlapPercent);
 #if False
             LayerPart.dumpLayerparts(slicingData, "output.html");
 #endif
 
 			LogOutput.Log("Generating support map...\n");
-			if (config.generateSupport && !config.continuousSpiralOuterPerimeter)
+			if (config.GenerateSupport && !config.ContinuousSpiralOuterPerimeter)
 			{
 				slicingData.support = new NewSupport(config, slicingData.Extruders, 1);
 			}
@@ -264,8 +264,8 @@ namespace MatterHackers.MatterSlice
 					{
 						return;
 					}
-					int insetCount = config.numberOfPerimeters;
-					if (config.continuousSpiralOuterPerimeter && (int)(layerIndex) < config.numberOfBottomLayers && layerIndex % 2 == 1)
+					int insetCount = config.NumberOfPerimeters;
+					if (config.ContinuousSpiralOuterPerimeter && (int)(layerIndex) < config.NumberOfBottomLayers && layerIndex % 2 == 1)
 					{
 						//Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
 						insetCount += 1;
@@ -275,17 +275,17 @@ namespace MatterHackers.MatterSlice
 
 					if (layerIndex == 0)
 					{
-						layer.GenerateInsets(config.firstLayerExtrusionWidth_um, config.firstLayerExtrusionWidth_um, insetCount);
+						layer.GenerateInsets(config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, insetCount);
 					}
 					else
 					{
-						layer.GenerateInsets(config.extrusionWidth_um, config.outsideExtrusionWidth_um, insetCount);
+						layer.GenerateInsets(config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, insetCount);
 					}
 				}
 				LogOutput.Log("Creating Insets {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
 			}
 
-			if (config.wipeShieldDistanceFromShapes_um > 0)
+			if (config.WipeShieldDistanceFromShapes_um > 0)
 			{
 				CreateWipeShields(slicingData, totalLayers);
 			}
@@ -301,17 +301,17 @@ namespace MatterHackers.MatterSlice
 				}
 
 				//Only generate bottom and top layers and infill for the first X layers when spiralize is chosen.
-				if (!config.continuousSpiralOuterPerimeter || (int)(layerIndex) < config.numberOfBottomLayers)
+				if (!config.ContinuousSpiralOuterPerimeter || (int)(layerIndex) < config.NumberOfBottomLayers)
 				{
 					for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
 					{
 						if (layerIndex == 0)
 						{
-							slicingData.Extruders[extruderIndex].GenerateTopAndBottoms(layerIndex, config.firstLayerExtrusionWidth_um, config.firstLayerExtrusionWidth_um, config.numberOfBottomLayers, config.numberOfTopLayers);
+							slicingData.Extruders[extruderIndex].GenerateTopAndBottoms(layerIndex, config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, config.NumberOfBottomLayers, config.NumberOfTopLayers);
 						}
 						else
 						{
-							slicingData.Extruders[extruderIndex].GenerateTopAndBottoms(layerIndex, config.extrusionWidth_um, config.outsideExtrusionWidth_um, config.numberOfBottomLayers, config.numberOfTopLayers);
+							slicingData.Extruders[extruderIndex].GenerateTopAndBottoms(layerIndex, config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, config.NumberOfBottomLayers, config.NumberOfTopLayers);
 						}
 					}
 				}
@@ -320,37 +320,37 @@ namespace MatterHackers.MatterSlice
 			LogOutput.Log("Generated top bottom layers in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Restart();
 
-			if (config.wipeTowerSize_um > 0)
+			if (config.WipeTowerSize_um > 0)
 			{
 				Polygon p = new Polygon();
 				slicingData.wipeTower.Add(p);
 				p.Add(new IntPoint(slicingData.modelMin.x - 3000, slicingData.modelMax.y + 3000));
-				p.Add(new IntPoint(slicingData.modelMin.x - 3000, slicingData.modelMax.y + 3000 + config.wipeTowerSize_um));
-				p.Add(new IntPoint(slicingData.modelMin.x - 3000 - config.wipeTowerSize_um, slicingData.modelMax.y + 3000 + config.wipeTowerSize_um));
-				p.Add(new IntPoint(slicingData.modelMin.x - 3000 - config.wipeTowerSize_um, slicingData.modelMax.y + 3000));
+				p.Add(new IntPoint(slicingData.modelMin.x - 3000, slicingData.modelMax.y + 3000 + config.WipeTowerSize_um));
+				p.Add(new IntPoint(slicingData.modelMin.x - 3000 - config.WipeTowerSize_um, slicingData.modelMax.y + 3000 + config.WipeTowerSize_um));
+				p.Add(new IntPoint(slicingData.modelMin.x - 3000 - config.WipeTowerSize_um, slicingData.modelMax.y + 3000));
 
-				slicingData.wipePoint = new IntPoint(slicingData.modelMin.x - 3000 - config.wipeTowerSize_um / 2, slicingData.modelMax.y + 3000 + config.wipeTowerSize_um / 2);
+				slicingData.wipePoint = new IntPoint(slicingData.modelMin.x - 3000 - config.WipeTowerSize_um / 2, slicingData.modelMax.y + 3000 + config.WipeTowerSize_um / 2);
 			}
 
-			if (config.enableRaft)
+			if (config.EnableRaft)
 			{
-				slicingData.GenerateRaftOutlines(config.raftExtraDistanceAroundPart_um, config);
+				slicingData.GenerateRaftOutlines(config.RaftExtraDistanceAroundPart_um, config);
 
 				slicingData.GenerateSkirt(
-					config.skirtDistance_um + config.raftBaseLineSpacing_um,
-					config.raftBaseLineSpacing_um,
-					config.numberOfSkirtLoops,
-					config.skirtMinLength_um,
-					config.raftBaseThickness_um, config);
+					config.SkirtDistance_um + config.RaftBaseLineSpacing_um,
+					config.RaftBaseLineSpacing_um,
+					config.NumberOfSkirtLoops,
+					config.SkirtMinLength_um,
+					config.RaftBaseThickness_um, config);
 			}
 			else
 			{
 				slicingData.GenerateSkirt(
-					config.skirtDistance_um,
-					config.firstLayerExtrusionWidth_um,
-					config.numberOfSkirtLoops,
-					config.skirtMinLength_um,
-					config.firstLayerThickness_um, config);
+					config.SkirtDistance_um,
+					config.FirstLayerExtrusionWidth_um,
+					config.NumberOfSkirtLoops,
+					config.SkirtMinLength_um,
+					config.FirstLayerThickness_um, config);
 			}
 		}
 
@@ -363,7 +363,7 @@ namespace MatterHackers.MatterSlice
 				{
 					for (int partNr = 0; partNr < slicingData.Extruders[extruderIndex].Layers[layerNr].Islands.Count; partNr++)
 					{
-						wipeShield = wipeShield.CreateUnion(slicingData.Extruders[extruderIndex].Layers[layerNr].Islands[partNr].IslandOutline.Offset(config.wipeShieldDistanceFromShapes_um));
+						wipeShield = wipeShield.CreateUnion(slicingData.Extruders[extruderIndex].Layers[layerNr].Islands[partNr].IslandOutline.Offset(config.WipeShieldDistanceFromShapes_um));
 					}
 				}
 				slicingData.wipeShield.Add(wipeShield);
@@ -374,7 +374,7 @@ namespace MatterHackers.MatterSlice
 				slicingData.wipeShield[layerIndex] = slicingData.wipeShield[layerIndex].Offset(-1000).Offset(1000);
 			}
 
-			int offsetAngle = (int)Math.Tan(60.0 * Math.PI / 180) * config.layerThickness_um;//Allow for a 60deg angle in the wipeShield.
+			int offsetAngle = (int)Math.Tan(60.0 * Math.PI / 180) * config.LayerThickness_um;//Allow for a 60deg angle in the wipeShield.
 			for (int layerNr = 1; layerNr < totalLayers; layerNr++)
 			{
 				slicingData.wipeShield[layerNr] = slicingData.wipeShield[layerNr].CreateUnion(slicingData.wipeShield[layerNr - 1].Offset(-offsetAngle));
@@ -388,11 +388,11 @@ namespace MatterHackers.MatterSlice
 
 		private void writeGCode(LayerDataStorage slicingData)
 		{
-			gcode.WriteComment("filamentDiameter = {0}".FormatWith(config.filamentDiameter));
-			gcode.WriteComment("extrusionWidth = {0}".FormatWith(config.extrusionWidth));
-			gcode.WriteComment("firstLayerExtrusionWidth = {0}".FormatWith(config.firstLayerExtrusionWidth));
-			gcode.WriteComment("layerThickness = {0}".FormatWith(config.layerThickness));
-			gcode.WriteComment("firstLayerThickness = {0}".FormatWith(config.firstLayerThickness));
+			gcode.WriteComment("filamentDiameter = {0}".FormatWith(config.FilamentDiameter));
+			gcode.WriteComment("extrusionWidth = {0}".FormatWith(config.ExtrusionWidth));
+			gcode.WriteComment("firstLayerExtrusionWidth = {0}".FormatWith(config.FirstLayerExtrusionWidth));
+			gcode.WriteComment("layerThickness = {0}".FormatWith(config.LayerThickness));
+			gcode.WriteComment("firstLayerThickness = {0}".FormatWith(config.FirstLayerThickness));
 
 			if (fileNumber == 1)
 			{
@@ -403,7 +403,7 @@ namespace MatterHackers.MatterSlice
 					gcode.WriteComment("MATERIAL:<FILAMENT>");
 					gcode.WriteComment("MATERIAL2:<FILAMEN2>");
 				}
-				gcode.WriteCode(config.startCode);
+				gcode.WriteCode(config.StartCode);
 			}
 			else
 			{
@@ -411,8 +411,8 @@ namespace MatterHackers.MatterSlice
 				gcode.ResetExtrusionValue();
 				gcode.WriteRetraction();
 				gcode.setZ(maxObjectHeight + 5000);
-				gcode.WriteMove(gcode.GetPosition(), config.travelSpeed, 0);
-				gcode.WriteMove(new Point3(slicingData.modelMin.x, slicingData.modelMin.y, gcode.CurrentZ), config.travelSpeed, 0);
+				gcode.WriteMove(gcode.GetPosition(), config.TravelSpeed, 0);
+				gcode.WriteMove(new Point3(slicingData.modelMin.x, slicingData.modelMin.y, gcode.CurrentZ), config.TravelSpeed, 0);
 			}
 			fileNumber++;
 
@@ -460,52 +460,52 @@ namespace MatterHackers.MatterSlice
 
 				if (layerIndex == 0)
 				{
-					skirtConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "SKIRT");
-					inset0Config.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "WALL-OUTER");
-					insetXConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "WALL-INNER");
+					skirtConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "SKIRT");
+					inset0Config.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "WALL-OUTER");
+					insetXConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "WALL-INNER");
 
-					fillConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "FILL", false);
-					topFillConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "TOP-FILL", false);
-					bottomFillConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "BOTTOM-FILL", false);
-					airGappedBottomConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "AIR-GAP", false);
-                    bridgConfig.SetData(config.firstLayerSpeed, config.firstLayerExtrusionWidth_um, "BRIDGE");
+					fillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "FILL", false);
+					topFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "TOP-FILL", false);
+					bottomFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "BOTTOM-FILL", false);
+					airGappedBottomConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "AIR-GAP", false);
+                    bridgConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "BRIDGE");
 
-					supportNormalConfig.SetData(config.firstLayerSpeed, config.supportExtrusionWidth_um, "SUPPORT");
-					supportInterfaceConfig.SetData(config.firstLayerSpeed, config.extrusionWidth_um, "SUPPORT-INTERFACE");
+					supportNormalConfig.SetData(config.FirstLayerSpeed, config.SupportExtrusionWidth_um, "SUPPORT");
+					supportInterfaceConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 				else
 				{
-					skirtConfig.SetData(config.insidePerimetersSpeed, config.extrusionWidth_um, "SKIRT");
-					inset0Config.SetData(config.outsidePerimeterSpeed, config.outsideExtrusionWidth_um, "WALL-OUTER");
-					insetXConfig.SetData(config.insidePerimetersSpeed, config.extrusionWidth_um, "WALL-INNER");
+					skirtConfig.SetData(config.InsidePerimetersSpeed, config.ExtrusionWidth_um, "SKIRT");
+					inset0Config.SetData(config.OutsidePerimeterSpeed, config.OutsideExtrusionWidth_um, "WALL-OUTER");
+					insetXConfig.SetData(config.InsidePerimetersSpeed, config.ExtrusionWidth_um, "WALL-INNER");
 
-					fillConfig.SetData(config.infillSpeed, config.extrusionWidth_um, "FILL", false);
-					topFillConfig.SetData(config.topInfillSpeed, config.extrusionWidth_um, "TOP-FILL", false);
-					bottomFillConfig.SetData(config.infillSpeed, config.extrusionWidth_um, "BOTTOM-FILL", false);
-					airGappedBottomConfig.SetData(config.firstLayerSpeed, config.extrusionWidth_um, "AIR-GAP", false);
-                    bridgConfig.SetData(config.bridgeSpeed, config.extrusionWidth_um, "BRIDGE");
+					fillConfig.SetData(config.InfillSpeed, config.ExtrusionWidth_um, "FILL", false);
+					topFillConfig.SetData(config.TopInfillSpeed, config.ExtrusionWidth_um, "TOP-FILL", false);
+					bottomFillConfig.SetData(config.InfillSpeed, config.ExtrusionWidth_um, "BOTTOM-FILL", false);
+					airGappedBottomConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um, "AIR-GAP", false);
+                    bridgConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um, "BRIDGE");
 
-					supportNormalConfig.SetData(config.supportMaterialSpeed, config.supportExtrusionWidth_um, "SUPPORT");
-					supportInterfaceConfig.SetData(config.supportMaterialSpeed - 1, config.extrusionWidth_um, "SUPPORT-INTERFACE");
+					supportNormalConfig.SetData(config.SupportMaterialSpeed, config.SupportExtrusionWidth_um, "SUPPORT");
+					supportInterfaceConfig.SetData(config.SupportMaterialSpeed - 1, config.ExtrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 
 				gcode.WriteComment("LAYER:{0}".FormatWith(layerIndex));
 				if (layerIndex == 0)
 				{
-					gcode.SetExtrusion(config.firstLayerThickness_um, config.filamentDiameter_um, config.extrusionMultiplier);
+					gcode.SetExtrusion(config.FirstLayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 				}
 				else
 				{
-					gcode.SetExtrusion(config.layerThickness_um, config.filamentDiameter_um, config.extrusionMultiplier);
+					gcode.SetExtrusion(config.LayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 				}
 
-				GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.travelSpeed, config.minimumTravelToCauseRetraction_um);
+				GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um);
 
 				// get the correct height for this layer
-				int z = config.firstLayerThickness_um + layerIndex * config.layerThickness_um;
-				if (config.enableRaft)
+				int z = config.FirstLayerThickness_um + layerIndex * config.LayerThickness_um;
+				if (config.EnableRaft)
 				{
-					z += config.raftBaseThickness_um + config.raftInterfaceThicknes_um + config.raftSurfaceLayers * config.raftSurfaceThickness_um;
+					z += config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um + config.RaftSurfaceLayers * config.RaftSurfaceThickness_um;
 					if (layerIndex == 0)
 					{
 						// We only raise the first layer of the print up by the air gap.
@@ -513,7 +513,7 @@ namespace MatterHackers.MatterSlice
 						//   Less press into the raft
 						//   More time to cool
 						//   more surface area to air while extruding
-						z += config.raftAirGap_um;
+						z += config.RaftAirGap_um;
 					}
 				}
 
@@ -536,41 +536,41 @@ namespace MatterHackers.MatterSlice
 				{
 					if (layerIndex == 0)
 					{
-						QueueExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.firstLayerExtrusionWidth_um, fanSpeedPercent, z);
+						QueueExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.FirstLayerExtrusionWidth_um, fanSpeedPercent, z);
 					}
 					else
 					{
-						QueueExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.extrusionWidth_um, fanSpeedPercent, z);
+						QueueExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.ExtrusionWidth_um, fanSpeedPercent, z);
 					}
 				}
 
 				if (slicingData.support != null)
 				{
-					z += config.supportAirGap_um;
+					z += config.SupportAirGap_um;
 					gcode.setZ(z);
 					gcodeLayer.QueueTravel(gcodeLayer.LastPosition);
 
 					for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
 					{
-						QueueAirGappedExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.extrusionWidth_um, fanSpeedPercent, z);
+						QueueAirGappedExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.ExtrusionWidth_um, fanSpeedPercent, z);
 					}
 
 					slicingData.support.QueueAirGappedBottomLayer(config, gcodeLayer, layerIndex, airGappedBottomConfig);
 				}
 
 				//Finish the layer by applying speed corrections for minimum layer times.
-				gcodeLayer.ForceMinimumLayerTime(config.minimumLayerTimeSeconds, config.minimumPrintingSpeed);
+				gcodeLayer.ForceMinimumLayerTime(config.MinimumLayerTimeSeconds, config.MinimumPrintingSpeed);
 
 				gcode.WriteFanCommand(fanSpeedPercent);
 
-				int currentLayerThickness_um = config.layerThickness_um;
+				int currentLayerThickness_um = config.LayerThickness_um;
 				if (layerIndex <= 0)
 				{
-					currentLayerThickness_um = config.firstLayerThickness_um;
+					currentLayerThickness_um = config.FirstLayerThickness_um;
 				}
 
 				// Move to the best point for the next layer
-				if (!config.continuousSpiralOuterPerimeter
+				if (!config.ContinuousSpiralOuterPerimeter
                     && layerIndex > 0 
 					&& layerIndex < totalLayers - 2)
 				{
@@ -586,7 +586,7 @@ namespace MatterHackers.MatterSlice
 							gcodeLayer.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundery);
 							gcodeLayer.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
 							// Now move up to the next layer so we don't start the extrusion one layer too low.
-							gcode.setZ(z + config.layerThickness_um);
+							gcode.setZ(z + config.LayerThickness_um);
 							gcodeLayer.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
 						}
 					}
@@ -606,18 +606,18 @@ namespace MatterHackers.MatterSlice
 
 		private int GetFanSpeed(int layerIndex, GCodePlanner gcodeLayer)
 		{
-			int fanSpeedPercent = config.fanSpeedMinPercent;
+			int fanSpeedPercent = config.FanSpeedMinPercent;
 			if (gcodeLayer.getExtrudeSpeedFactor() <= 50)
 			{
-				fanSpeedPercent = config.fanSpeedMaxPercent;
+				fanSpeedPercent = config.FanSpeedMaxPercent;
 			}
 			else
 			{
 				int n = gcodeLayer.getExtrudeSpeedFactor() - 50;
-				fanSpeedPercent = config.fanSpeedMinPercent * n / 50 + config.fanSpeedMaxPercent * (50 - n) / 50;
+				fanSpeedPercent = config.FanSpeedMinPercent * n / 50 + config.FanSpeedMaxPercent * (50 - n) / 50;
 			}
 
-			if (layerIndex < config.firstLayerToAllowFan)
+			if (layerIndex < config.FirstLayerToAllowFan)
 			{
 				// Don't allow the fan below this layer
 				fanSpeedPercent = 0;
@@ -668,13 +668,13 @@ namespace MatterHackers.MatterSlice
 			{
 				gcodeLayer.SetAlwaysRetract(true);
 				gcodeLayer.QueuePolygonsByOptimizer(slicingData.wipeShield[layerIndex], skirtConfig);
-				gcodeLayer.SetAlwaysRetract(!config.avoidCrossingPerimeters);
+				gcodeLayer.SetAlwaysRetract(!config.AvoidCrossingPerimeters);
 			}
 
 			IslandOrderOptimizer islandOrderOptimizer = new IslandOrderOptimizer(new IntPoint());
 			for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
 			{
-				if (config.continuousSpiralOuterPerimeter && partIndex > 0)
+				if (config.ContinuousSpiralOuterPerimeter && partIndex > 0)
 				{
 					continue;
 				}
@@ -687,14 +687,14 @@ namespace MatterHackers.MatterSlice
 
 			for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.bestIslandOrderIndex.Count; islandOrderIndex++)
 			{
-				if (config.continuousSpiralOuterPerimeter && islandOrderIndex > 0)
+				if (config.ContinuousSpiralOuterPerimeter && islandOrderIndex > 0)
 				{
 					continue;
 				}
 
 				LayerIsland island = layer.Islands[islandOrderOptimizer.bestIslandOrderIndex[islandOrderIndex]];
 
-				if (config.avoidCrossingPerimeters)
+				if (config.AvoidCrossingPerimeters)
 				{
 					gcodeLayer.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundery);
 				}
@@ -716,25 +716,25 @@ namespace MatterHackers.MatterSlice
 				// It would be even better to slow down the perimeters that are part of bridges but that is a bit harder.
 				if (bridgePolygons.Count > 0)
 				{
-					gcode.WriteFanCommand(config.bridgeFanSpeedPercent);
+					gcode.WriteFanCommand(config.BridgeFanSpeedPercent);
 					QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bridgePolygons, airGappedBottomConfig, SupportWriteType.UnsupportedAreas);
 				}
 
-				if (config.numberOfPerimeters > 0)
+				if (config.NumberOfPerimeters > 0)
 				{
 					if (islandOrderIndex != lastPartIndex)
 					{
 						// force a retract if changing islands
-						if (config.retractWhenChangingIslands)
+						if (config.RetractWhenChangingIslands)
 						{
 							gcodeLayer.ForceRetract();
 						}
 						lastPartIndex = islandOrderIndex;
 					}
 
-					if (config.continuousSpiralOuterPerimeter)
+					if (config.ContinuousSpiralOuterPerimeter)
 					{
-						if (layerIndex >= config.numberOfBottomLayers)
+						if (layerIndex >= config.NumberOfBottomLayers)
 						{
 							inset0Config.spiralize = true;
 						}
@@ -763,7 +763,7 @@ namespace MatterHackers.MatterSlice
 					}
 
 					// If we are on the very first layer we start with the outside so that we can stick to the bed better.
-					if (config.outsidePerimetersFirst || layerIndex == 0 || inset0Config.spiralize)
+					if (config.OutsidePerimetersFirst || layerIndex == 0 || inset0Config.spiralize)
 					{
 						if (inset0Config.spiralize)
 						{
@@ -831,7 +831,7 @@ namespace MatterHackers.MatterSlice
 				gcodeLayer.QueuePolygonsByOptimizer(topFillPolygons, topFillConfig);
 
 				//After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
-				if (!config.continuousSpiralOuterPerimeter || layerIndex < config.numberOfBottomLayers)
+				if (!config.ContinuousSpiralOuterPerimeter || layerIndex < config.NumberOfBottomLayers)
 				{
 					gcodeLayer.MoveInsideTheOuterPerimeter(extrusionWidth_um * 2);
 				}
@@ -845,7 +845,7 @@ namespace MatterHackers.MatterSlice
 			long maxDist_um = long.MaxValue;
 			if (limitDistance)
 			{
-				maxDist_um = config.extrusionWidth_um * 4;
+				maxDist_um = config.ExtrusionWidth_um * 4;
 			}
 
 			int polygonPrintedIndex = -1;
@@ -890,8 +890,8 @@ namespace MatterHackers.MatterSlice
 		//Add a single layer from a single extruder to the GCode
 		private void QueueAirGappedExtruderLayerToGCode(LayerDataStorage slicingData, GCodePlanner gcodeLayer, int extruderIndex, int layerIndex, int extrusionWidth_um, int fanSpeedPercent, long currentZ_um)
 		{
-			if (config.generateSupport
-				&& !config.continuousSpiralOuterPerimeter
+			if (config.GenerateSupport
+				&& !config.ContinuousSpiralOuterPerimeter
 				&& layerIndex > 0)
 			{
 				int prevExtruder = gcodeLayer.getExtruder();
@@ -902,7 +902,7 @@ namespace MatterHackers.MatterSlice
 				IslandOrderOptimizer partOrderOptimizer = new IslandOrderOptimizer(new IntPoint());
 				for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
 				{
-					if (config.continuousSpiralOuterPerimeter && partIndex > 0)
+					if (config.ContinuousSpiralOuterPerimeter && partIndex > 0)
 					{
 						continue;
 					}
@@ -915,14 +915,14 @@ namespace MatterHackers.MatterSlice
 
 				for (int inlandIndex = 0; inlandIndex < partOrderOptimizer.bestIslandOrderIndex.Count; inlandIndex++)
 				{
-					if (config.continuousSpiralOuterPerimeter && inlandIndex > 0)
+					if (config.ContinuousSpiralOuterPerimeter && inlandIndex > 0)
 					{
 						continue;
 					}
 
 					LayerIsland part = layer.Islands[partOrderOptimizer.bestIslandOrderIndex[inlandIndex]];
 
-					if (config.avoidCrossingPerimeters)
+					if (config.AvoidCrossingPerimeters)
 					{
 						gcodeLayer.SetOuterPerimetersToAvoidCrossing(part.AvoidCrossingBoundery);
 					}
@@ -944,11 +944,11 @@ namespace MatterHackers.MatterSlice
 					// It would be even better to slow down the perimeters that are part of bridges but that is a bit harder.
 					if (bridgePolygons.Count > 0)
 					{
-						gcode.WriteFanCommand(config.bridgeFanSpeedPercent);
+						gcode.WriteFanCommand(config.BridgeFanSpeedPercent);
 						QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bridgePolygons, airGappedBottomConfig, SupportWriteType.SupportedAreas);
 					}
 
-					if (config.numberOfPerimeters > 0)
+					if (config.NumberOfPerimeters > 0)
 					{
 						if (inlandIndex != lastPartIndex)
 						{
@@ -957,9 +957,9 @@ namespace MatterHackers.MatterSlice
 							lastPartIndex = inlandIndex;
 						}
 
-						if (config.continuousSpiralOuterPerimeter)
+						if (config.ContinuousSpiralOuterPerimeter)
 						{
-							if (layerIndex >= config.numberOfBottomLayers)
+							if (layerIndex >= config.NumberOfBottomLayers)
 							{
 								inset0Config.spiralize = true;
 							}
@@ -967,7 +967,7 @@ namespace MatterHackers.MatterSlice
 					}
 
 					//After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
-					if (!config.continuousSpiralOuterPerimeter || layerIndex < config.numberOfBottomLayers)
+					if (!config.ContinuousSpiralOuterPerimeter || layerIndex < config.NumberOfBottomLayers)
 					{
 						gcodeLayer.MoveInsideTheOuterPerimeter(extrusionWidth_um * 2);
 					}
@@ -997,9 +997,9 @@ namespace MatterHackers.MatterSlice
 		{
 			bool oldLoopValue = fillConfig.closedLoop;
 
-			if (config.generateSupport 
+			if (config.GenerateSupport 
 				&& layerIndex > 0
-				&& !config.continuousSpiralOuterPerimeter)
+				&& !config.ContinuousSpiralOuterPerimeter)
 			{
 				Polygons supportOutlines = slicingData.support.GetRequiredSupportAreas(layerIndex).Offset(fillConfig.lineWidth_um/2);
 
@@ -1054,9 +1054,9 @@ namespace MatterHackers.MatterSlice
 			{
 				if (layerIndex > 0)
 				{
-					if (config.generateSupport)
+					if (config.GenerateSupport)
 					{
-						Infill.GenerateLinePaths(bottomFillIsland, ref bottomFillLines, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle);
+						Infill.GenerateLinePaths(bottomFillIsland, ref bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
 					}
 					else
 					{
@@ -1066,14 +1066,14 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					Infill.GenerateLinePaths(bottomFillIsland, ref bottomFillLines, config.firstLayerExtrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle);
+					Infill.GenerateLinePaths(bottomFillIsland, ref bottomFillLines, config.FirstLayerExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
 				}
 			}
 
 			// generate infill for the top layer
 			foreach (Polygons outline in part.SolidTopToolPaths.ProcessIntoSeparatIslands())
 			{
-				Infill.GenerateLinePaths(outline, ref topFillPolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle);
+				Infill.GenerateLinePaths(outline, ref topFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
 			}
 
 			// generate infill intermediate layers
@@ -1081,23 +1081,23 @@ namespace MatterHackers.MatterSlice
 			{
 				if (true) // use the old infill method
 				{
-					Infill.GenerateLinePaths(outline, ref fillPolygons, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle + 90 * (layerIndex % 2));
+					Infill.GenerateLinePaths(outline, ref fillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle + 90 * (layerIndex % 2));
 				}
 				else // use the new concentric infill (not tested enough yet) have to handle some bad cases better
 				{
-					double oldInfillPercent = config.infillPercent;
-					config.infillPercent = 100;
+					double oldInfillPercent = config.InfillPercent;
+					config.InfillPercent = 100;
 					Infill.GenerateConcentricInfill(config, outline, ref fillPolygons);
-					config.infillPercent = oldInfillPercent;
+					config.InfillPercent = oldInfillPercent;
 				}
 			}
 
-			double fillAngle = config.infillStartingAngle;
+			double fillAngle = config.InfillStartingAngle;
 
 			// generate the sparse infill for this part on this layer
-			if (config.infillPercent > 0)
+			if (config.InfillPercent > 0)
 			{
-				switch (config.infillType)
+				switch (config.InfillType)
 				{
 					case ConfigConstants.INFILL_TYPE.LINES:
 						if ((layerIndex & 1) == 1)
@@ -1131,7 +1131,7 @@ namespace MatterHackers.MatterSlice
 
 		private void addWipeTower(LayerDataStorage slicingData, GCodePlanner gcodeLayer, int layerNr, int prevExtruder, int extrusionWidth_um)
 		{
-			if (config.wipeTowerSize_um < 1)
+			if (config.WipeTowerSize_um < 1)
 			{
 				return;
 			}
@@ -1139,11 +1139,11 @@ namespace MatterHackers.MatterSlice
 			//If we changed extruder, print the wipe/prime tower for this nozzle;
 			gcodeLayer.QueuePolygonsByOptimizer(slicingData.wipeTower, supportInterfaceConfig);
 			Polygons fillPolygons = new Polygons();
-			Infill.GenerateLinePaths(slicingData.wipeTower, ref fillPolygons, extrusionWidth_um, config.infillExtendIntoPerimeter_um, 45 + 90 * (layerNr % 2));
+			Infill.GenerateLinePaths(slicingData.wipeTower, ref fillPolygons, extrusionWidth_um, config.InfillExtendIntoPerimeter_um, 45 + 90 * (layerNr % 2));
 			gcodeLayer.QueuePolygonsByOptimizer(fillPolygons, supportInterfaceConfig);
 
 			//Make sure we wipe the old extruder on the wipe tower.
-			gcodeLayer.QueueTravel(slicingData.wipePoint - config.extruderOffsets[prevExtruder] + config.extruderOffsets[gcodeLayer.getExtruder()]);
+			gcodeLayer.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[gcodeLayer.getExtruder()]);
 		}
 
 		public void Cancel()

@@ -73,19 +73,19 @@ namespace MatterHackers.MatterSlice
 
 		public NewSupport(ConfigSettings config, List<ExtruderLayers> Extruders, double grabDistanceMm)
 		{
-			cleanDistance_um = config.extrusionWidth_um / 10;
-            long supportWidth_um = (long)(config.extrusionWidth_um * (100-config.supportPercent) / 100);
+			cleanDistance_um = config.ExtrusionWidth_um / 10;
+            long supportWidth_um = (long)(config.ExtrusionWidth_um * (100-config.SupportPercent) / 100);
             this.grabDistanceMm = grabDistanceMm;
 			// create starting support outlines
 			allPartOutlines = CalculateAllPartOutlines(config, Extruders);
 
-			insetPartOutlines = CreateInsetPartOutlines(allPartOutlines, config.extrusionWidth_um/2);
+			insetPartOutlines = CreateInsetPartOutlines(allPartOutlines, config.ExtrusionWidth_um/2);
 
 			allPotentialSupportOutlines = FindAllPotentialSupportOutlines(insetPartOutlines, supportWidth_um);
 
 			allRequiredSupportOutlines = RemoveSelfSupportedSections(allPotentialSupportOutlines, supportWidth_um);
 
-			if (!config.generateInternalSupport)
+			if (!config.GenerateInternalSupport)
 			{
 				allRequiredSupportOutlines = RemoveSupportFromInternalSpaces(allRequiredSupportOutlines, insetPartOutlines);
 			}
@@ -94,7 +94,7 @@ namespace MatterHackers.MatterSlice
 
 			//pushedUpTopOutlines = PushUpTops(easyGrabDistanceOutlines, numLayers, config);
 
-			interfaceLayers = CreateInterfaceLayers(easyGrabDistanceOutlines, config.supportInterfaceLayers);
+			interfaceLayers = CreateInterfaceLayers(easyGrabDistanceOutlines, config.SupportInterfaceLayers);
 			interfaceLayers = ClipToXyDistance(interfaceLayers, insetPartOutlines, config);
 
 			supportOutlines = AccumulateDownPolygons(config, easyGrabDistanceOutlines, insetPartOutlines);
@@ -234,7 +234,7 @@ namespace MatterHackers.MatterSlice
 			int numLayers = inputPolys.Count;
 
 			return inputPolys;
-			int layersFor2Mm = 2000 / config.layerThickness_um;
+			int layersFor2Mm = 2000 / config.LayerThickness_um;
 			List<Polygons> pushedUpPolys = CreateEmptyPolygons(numLayers);
 			for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
 			{
@@ -243,7 +243,7 @@ namespace MatterHackers.MatterSlice
 				}
 
 				Polygons curLayerPolys = inputPolys[layerIndex];
-				pushedUpPolys[layerIndex] = Clipper.CleanPolygons(curLayerPolys.Offset(config.extrusionWidth_um + config.supportXYDistance_um), cleanDistance_um);
+				pushedUpPolys[layerIndex] = Clipper.CleanPolygons(curLayerPolys.Offset(config.ExtrusionWidth_um + config.SupportXYDistance_um), cleanDistance_um);
 			}
 
 			return pushedUpPolys;
@@ -253,7 +253,7 @@ namespace MatterHackers.MatterSlice
 		{
 			int numLayers = inputPolys.Count;
 
-			long nozzleSize = config.extrusionWidth_um;
+			long nozzleSize = config.ExtrusionWidth_um;
 			long areaToTryAndBe = 20 * 20 * nozzleSize * nozzleSize; // 10 x 10 mm approximately (assuming .5 nozzle)
 
 			List<Polygons> allDownOutlines = CreateEmptyPolygons(numLayers);
@@ -265,7 +265,7 @@ namespace MatterHackers.MatterSlice
 				Polygons accumulatedAbove = allDownOutlines[layerIndex + 1].CreateUnion(aboveRequiredSupport);
 
 				// experimental and not working well enough yet
-				if (config.minimizeSupportColumns)
+				if (config.MinimizeSupportColumns)
 				{
 					// reduce the amount of support material used
 					for (int i = accumulatedAbove.Count - 1; i >= 0; i--)
@@ -274,7 +274,7 @@ namespace MatterHackers.MatterSlice
 						double polyArea = polygon.Area();
 						if (polyArea > areaToTryAndBe)
 						{
-							Polygons offsetPolygons = new Polygons() { polygon }.Offset(-config.extrusionWidth_um / 2);
+							Polygons offsetPolygons = new Polygons() { polygon }.Offset(-config.ExtrusionWidth_um / 2);
 							accumulatedAbove.RemoveAt(i);
 							foreach (Polygon polyToAdd in offsetPolygons)
 							{
@@ -283,7 +283,7 @@ namespace MatterHackers.MatterSlice
 						}
 						else if (polyArea < areaToTryAndBe * .9)
 						{
-							Polygons offsetPolygons = new Polygons() { polygon }.Offset(config.extrusionWidth_um / 2);
+							Polygons offsetPolygons = new Polygons() { polygon }.Offset(config.ExtrusionWidth_um / 2);
 							accumulatedAbove.RemoveAt(i);
 							foreach (Polygon polyToAdd in offsetPolygons)
 							{
@@ -357,7 +357,7 @@ namespace MatterHackers.MatterSlice
 			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
 			{
 				Polygons curRequiredSupport = inputPolys[layerIndex];
-				Polygons expandedlayerPolys = allPartOutlines[layerIndex].Offset(config.supportXYDistance_um);
+				Polygons expandedlayerPolys = allPartOutlines[layerIndex].Offset(config.SupportXYDistance_um);
 				Polygons totalSupportThisLayer = curRequiredSupport.CreateDifference(expandedlayerPolys);
 
 				clippedToXyOutlines[layerIndex] = Clipper.CleanPolygons(totalSupportThisLayer, cleanDistance_um);
@@ -393,32 +393,32 @@ namespace MatterHackers.MatterSlice
 			{
 				Polygons islandInfillLines = new Polygons();
 				// render a grid of support
-				if (config.generateSupportPerimeter)
+				if (config.GenerateSupportPerimeter)
 				{
-					Polygons outlines = Clipper.CleanPolygons(islandOutline, config.extrusionWidth_um / 4);
+					Polygons outlines = Clipper.CleanPolygons(islandOutline, config.ExtrusionWidth_um / 4);
 					gcodeLayer.QueuePolygonsByOptimizer(outlines, supportNormalConfig);
 				}
 
 				Polygons infillOutline = islandOutline.Offset(-supportNormalConfig.lineWidth_um / 2);
-				switch (config.supportType)
+				switch (config.SupportType)
 				{
 					case ConfigConstants.SUPPORT_TYPE.GRID:
-						Infill.GenerateGridInfill(config, infillOutline, ref islandInfillLines, config.supportInfillStartingAngle, config.supportLineSpacing_um);
+						Infill.GenerateGridInfill(config, infillOutline, ref islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
 						break;
 
 					case ConfigConstants.SUPPORT_TYPE.LINES:
-						Infill.GenerateLineInfill(config, infillOutline, ref islandInfillLines, config.supportInfillStartingAngle, config.supportLineSpacing_um);
+						Infill.GenerateLineInfill(config, infillOutline, ref islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
 						break;
 				}
 				gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, supportNormalConfig);
 			}
 
 			// interface
-			Polygons currentInterfaceOutlines = interfaceLayers[layerIndex].Offset(-config.extrusionWidth_um / 2);
+			Polygons currentInterfaceOutlines = interfaceLayers[layerIndex].Offset(-config.ExtrusionWidth_um / 2);
 			if (currentInterfaceOutlines.Count > 0)
 			{
 				Polygons supportLines = new Polygons();
-				Infill.GenerateLineInfill(config, currentInterfaceOutlines, ref supportLines, config.infillStartingAngle + 90, config.extrusionWidth_um);
+				Infill.GenerateLineInfill(config, currentInterfaceOutlines, ref supportLines, config.InfillStartingAngle + 90, config.ExtrusionWidth_um);
 				gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportInterfaceConfig);
 			}
 		}
@@ -427,27 +427,27 @@ namespace MatterHackers.MatterSlice
 		{
 			// normal support
 			Polygons currentAirGappedBottoms = airGappedBottomOutlines[layerIndex];
-			currentAirGappedBottoms = currentAirGappedBottoms.Offset(-config.extrusionWidth_um / 2);
+			currentAirGappedBottoms = currentAirGappedBottoms.Offset(-config.ExtrusionWidth_um / 2);
 			List<Polygons> supportIslands = currentAirGappedBottoms.ProcessIntoSeparatIslands();
 
 			foreach (Polygons islandOutline in supportIslands)
 			{
 				Polygons islandInfillLines = new Polygons();
 				// render a grid of support
-				if (config.generateSupportPerimeter)
+				if (config.GenerateSupportPerimeter)
 				{
-					Polygons outlines = Clipper.CleanPolygons(islandOutline, config.extrusionWidth_um / 4);
+					Polygons outlines = Clipper.CleanPolygons(islandOutline, config.ExtrusionWidth_um / 4);
 					gcodeLayer.QueuePolygonsByOptimizer(outlines, supportNormalConfig);
 				}
-				Polygons infillOutline = islandOutline.Offset(-config.extrusionWidth_um / 2);
-				switch (config.supportType)
+				Polygons infillOutline = islandOutline.Offset(-config.ExtrusionWidth_um / 2);
+				switch (config.SupportType)
 				{
 					case ConfigConstants.SUPPORT_TYPE.GRID:
-						Infill.GenerateGridInfill(config, infillOutline, ref islandInfillLines, config.supportInfillStartingAngle, config.supportLineSpacing_um);
+						Infill.GenerateGridInfill(config, infillOutline, ref islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
 						break;
 
 					case ConfigConstants.SUPPORT_TYPE.LINES:
-						Infill.GenerateLineInfill(config, infillOutline, ref islandInfillLines, config.supportInfillStartingAngle, config.supportLineSpacing_um);
+						Infill.GenerateLineInfill(config, infillOutline, ref islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
 						break;
 				}
 				gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, supportNormalConfig);

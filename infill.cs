@@ -258,28 +258,28 @@ namespace MatterHackers.MatterSlice
 		{
 			if (linespacing_um == 0)
 			{
-				if (config.infillPercent <= 0)
+				if (config.InfillPercent <= 0)
 				{
 					throw new Exception("infillPercent must be gerater than 0.");
 				}
 
-				linespacing_um = (int)(config.extrusionWidth_um / (config.infillPercent / 100));
+				linespacing_um = (int)(config.ExtrusionWidth_um / (config.InfillPercent / 100));
 			}
-			GenerateLinePaths(partOutline, ref fillPolygons, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle);
+			GenerateLinePaths(partOutline, ref fillPolygons, linespacing_um, config.InfillExtendIntoPerimeter_um, fillAngle);
 		}
 
 		public static void GenerateGridInfill(ConfigSettings config, Polygons partOutline, ref Polygons fillPolygons, double fillAngle, int linespacing_um = 0)
 		{
 			if (linespacing_um == 0)
 			{
-				if (config.infillPercent <= 0)
+				if (config.InfillPercent <= 0)
 				{
 					throw new Exception("infillPercent must be gerater than 0.");
 				}
-				linespacing_um = (int)(config.extrusionWidth_um / (config.infillPercent / 100) * 2);
+				linespacing_um = (int)(config.ExtrusionWidth_um / (config.InfillPercent / 100) * 2);
 			}
 
-			Infill.GenerateLinePaths(partOutline, ref fillPolygons, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle);
+			Infill.GenerateLinePaths(partOutline, ref fillPolygons, linespacing_um, config.InfillExtendIntoPerimeter_um, fillAngle);
 
 			fillAngle += 90;
 			if (fillAngle > 360)
@@ -287,35 +287,35 @@ namespace MatterHackers.MatterSlice
 				fillAngle -= 360;
 			}
 
-			Infill.GenerateLinePaths(partOutline, ref fillPolygons, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle);
+			Infill.GenerateLinePaths(partOutline, ref fillPolygons, linespacing_um, config.InfillExtendIntoPerimeter_um, fillAngle);
 		}
 
 		private static IntPoint hexOffset = new IntPoint(0, 0);
 
 		public static void GenerateHexagonInfill(ConfigSettings config, Polygons partOutline, ref Polygons fillPolygons, double fillAngle, int layerIndex)
 		{
-			if (config.infillPercent <= 0)
+			if (config.InfillPercent <= 0)
 			{
 				throw new Exception("infillPercent must be gerater than 0.");
 			}
 
-			int linespacing_um = (int)(config.extrusionWidth_um / (config.infillPercent / 100) * 3 * .66);
+			int linespacing_um = (int)(config.ExtrusionWidth_um / (config.InfillPercent / 100) * 3 * .66);
 
-			Infill.GenerateHexLinePaths(partOutline, ref fillPolygons, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle, layerIndex);
+			Infill.GenerateHexLinePaths(partOutline, ref fillPolygons, linespacing_um, config.InfillExtendIntoPerimeter_um, fillAngle, layerIndex);
 		}
 
 		public static void GenerateTriangleInfill(ConfigSettings config, Polygons partOutline, ref Polygons fillPolygons, double fillAngle)
 		{
-			if (config.infillPercent <= 0)
+			if (config.InfillPercent <= 0)
 			{
 				throw new Exception("infillPercent must be gerater than 0.");
 			}
 
-			int linespacing_um = (int)(config.extrusionWidth_um / (config.infillPercent / 100) * 3);
+			int linespacing_um = (int)(config.ExtrusionWidth_um / (config.InfillPercent / 100) * 3);
 
 			long offset = linespacing_um / 2;
 
-			Infill.GenerateLinePaths(partOutline, ref fillPolygons, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle, offset);
+			Infill.GenerateLinePaths(partOutline, ref fillPolygons, linespacing_um, config.InfillExtendIntoPerimeter_um, fillAngle, offset);
 
 			fillAngle += 60;
 			if (fillAngle > 360)
@@ -323,7 +323,7 @@ namespace MatterHackers.MatterSlice
 				fillAngle -= 360;
 			}
 
-			Infill.GenerateLinePaths(partOutline, ref fillPolygons, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle, offset);
+			Infill.GenerateLinePaths(partOutline, ref fillPolygons, linespacing_um, config.InfillExtendIntoPerimeter_um, fillAngle, offset);
 
 			fillAngle += 60;
 			if (fillAngle > 360)
@@ -331,14 +331,14 @@ namespace MatterHackers.MatterSlice
 				fillAngle -= 360;
 			}
 
-			Infill.GenerateLinePaths(partOutline, ref fillPolygons, linespacing_um, config.infillExtendIntoPerimeter_um, fillAngle, offset);
+			Infill.GenerateLinePaths(partOutline, ref fillPolygons, linespacing_um, config.InfillExtendIntoPerimeter_um, fillAngle, offset);
 		}
 
 		public static void GenerateConcentricInfill(ConfigSettings config, Polygons partOutline, ref Polygons fillPolygons, long extrusionWidthOverride_um = 0)
 		{
 			if (extrusionWidthOverride_um == 0)
 			{
-				extrusionWidthOverride_um = config.extrusionWidth_um;
+				extrusionWidthOverride_um = config.ExtrusionWidth_um;
 			}
 
 			Polygons outlineCopy = new Polygons(partOutline);
@@ -349,7 +349,7 @@ namespace MatterHackers.MatterSlice
 					outline.Add(outline[0]);
 				}
 			}
-			int linespacing_um = (int)(extrusionWidthOverride_um / (config.infillPercent / 100));
+			int linespacing_um = (int)(extrusionWidthOverride_um / (config.InfillPercent / 100));
 			while (outlineCopy.Count > 0)
 			{
 				for (int outlineIndex = 0; outlineIndex < outlineCopy.Count; outlineIndex++)

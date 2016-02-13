@@ -92,274 +92,274 @@ namespace MatterHackers.MatterSlice
 		}
 
 		[SettingDescription("Avoid crossing any of the perimeters of a shape while printing its parts.")]
-		public bool avoidCrossingPerimeters;
+		public bool AvoidCrossingPerimeters { get; set; }
 
 		[SettingDescription("The amount to clip off the bottom of the part, in millimeters.")]
-		public double bottomClipAmount;
+		public double BottomClipAmount { get; set; }
 
 		[SettingDescription("This is the speed to print the bottom layers infill, mm/s.")]
-		public double bottomInfillSpeed;
+		public double BottomInfillSpeed { get; set; }
 
 		[SettingDescription("The speed to run the fan during bridging.")]
-		public int bridgeFanSpeedPercent;
+		public int BridgeFanSpeedPercent { get; set; }
 
-		public bool retractWhenChangingIslands;
+		public bool RetractWhenChangingIslands { get; set; }
 
 		[SettingDescription("mm/s.")]
-		public int bridgeSpeed;
+		public int BridgeSpeed { get; set; }
 
 		[SettingDescription("Describes if 'positionToPlaceObjectCenter' should be used.")]
-		public bool centerObjectInXy;
+		public bool CenterObjectInXy { get; set; }
 
 		// other
 		[SettingDescription("This will cause the z height to raise continuously while on the outer perimeter.")]
-		public bool continuousSpiralOuterPerimeter;
+		public bool ContinuousSpiralOuterPerimeter { get; set; }
 
 		// Raft settings
 		[SettingDescription("mm.")]
-		public bool enableRaft;
+		public bool EnableRaft { get; set; }
 
-		public string endCode;
+		public string EndCode { get; set; }
 
-		public IntPoint[] extruderOffsets = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
+		public IntPoint[] ExtruderOffsets { get; set; } = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
 
 		[SettingDescription("Lets you adjust how much material to extrude.")]
-		public double extrusionMultiplier;
+		public double ExtrusionMultiplier { get; set; }
 
 		[SettingDescription("The width of the line to extrude.")]
-		public double extrusionWidth;
+		public double ExtrusionWidth { get; set; }
 
-		public int fanSpeedMaxPercent;
+		public int FanSpeedMaxPercent { get; set; }
 
-		public int fanSpeedMinPercent;
+		public int FanSpeedMinPercent { get; set; }
 
 		[SettingDescription("The width of the filament being fed into the extruder, in millimeters.")]
-		public double filamentDiameter;
+		public double FilamentDiameter { get; set; }
 
 		[SettingDescription("The width of the line to extrude for the first layer.")]
-		public double firstLayerExtrusionWidth;
+		public double FirstLayerExtrusionWidth { get; set; }
 
 		// speed settings
 		[SettingDescription("This is the speed to print everything on the first layer, mm/s.")]
-		public double firstLayerSpeed;
+		public double FirstLayerSpeed { get; set; }
 
 		[SettingDescription("The height of the first layer to print, in millimeters.")]
-		public double firstLayerThickness;
+		public double FirstLayerThickness { get; set; }
 
 		[SettingDescription("The fan will be force to stay off below this layer.")]
-		public int firstLayerToAllowFan;
+		public int FirstLayerToAllowFan { get; set; }
 
 		[SettingDescription("If True, support will be generated within the part as well as from the bed.")]
-		public bool generateInternalSupport;
+		public bool GenerateInternalSupport { get; set; }
 
 		[SettingDescription("If True, an external perimeter will be created around each support island.")]
-		public bool generateSupportPerimeter;
+		public bool GenerateSupportPerimeter { get; set; }
 
 		[SettingDescription("If True, support will be generated from the bed. If false no support will be generated at all.")]
-		public bool generateSupport;
+		public bool GenerateSupport { get; set; }
 
 		[SettingDescription("The percent of support to generate.")]
-		public double supportPercent;
+		public double SupportPercent { get; set; }
 
 		[SettingDescription("The amount the infill extends into the perimeter in millimeters.")]
-		public double infillExtendIntoPerimeter;
+		public double InfillExtendIntoPerimeter { get; set; }
 
 		[SettingDescription("The percent of filled space to open space while infilling.")]
-		public double infillPercent;
+		public double InfillPercent { get; set; }
 
 		[SettingDescription("mm/s.")]
-		public int infillSpeed;
+		public int InfillSpeed { get; set; }
 
 		[SettingDescription("The starting angle that infill lines will be drawn at (angle in x y).")]
-		public double infillStartingAngle = 45;
+		public double InfillStartingAngle { get; set; } = 45;
 
-		public ConfigConstants.INFILL_TYPE infillType;
+		public ConfigConstants.INFILL_TYPE InfillType { get; set; }
 
 		[SettingDescription("The speed of all perimeters but the outside one. mm/s.")]
-		public int insidePerimetersSpeed;
+		public int InsidePerimetersSpeed { get; set; }
 
 		// if you were to change the layerThicknessMm variable you would add a legacy name so that we can still use old settings
 		//[LegacyName("layerThickness")] // the name before we added Mm
-		public double layerThickness;
+		public double LayerThickness { get; set; }
 
-		public bool minimizeSupportColumns;
+		public bool MinimizeSupportColumns { get; set; }
 
 		[SettingDescription("mm.")]
-		public double minimumExtrusionBeforeRetraction;
+		public double MinimumExtrusionBeforeRetraction { get; set; }
 
 		//Cool settings
-		public int minimumLayerTimeSeconds;
+		public int MinimumLayerTimeSeconds { get; set; }
 
 		[SettingDescription("The minimum speed that the extruder is allowed to move while printing. mm/s.")]
-		public int minimumPrintingSpeed;
+		public int MinimumPrintingSpeed { get; set; }
 
 		[SettingDescription("The minimum travel distance that will require a retraction")]
-		public double minimumTravelToCauseRetraction;
+		public double MinimumTravelToCauseRetraction { get; set; }
 
 		// object transform
-		public FMatrix3x3 modelRotationMatrix = new FMatrix3x3();
+		public FMatrix3x3 ModelRotationMatrix { get; set; } = new FMatrix3x3();
 
-		public int multiExtruderOverlapPercent;
-		public int numberOfBottomLayers;
-		public int numberOfPerimeters;
+		public int MultiExtruderOverlapPercent { get; set; }
+		public int NumberOfBottomLayers { get; set; }
+		public int NumberOfPerimeters { get; set; }
 
 		[SettingDescription("The number of loops to draw around objects. Can be used to help hold them down.")]
-		public int numberOfSkirtLoops;
+		public int NumberOfSkirtLoops { get; set; }
 
-		public int numberOfTopLayers;
-		public ConfigConstants.OUTPUT_TYPE outputType;
+		public int NumberOfTopLayers { get; set; }
+		public ConfigConstants.OUTPUT_TYPE outputType { get; set; }
 
 		[SettingDescription("The extrusion width of all outside perimeters")]
-		public double outsidePerimeterExtrusionWidth;
+		public double OutsidePerimeterExtrusionWidth { get; set; }
 
 		[SettingDescription("Print the outside perimeter before the inside ones. This can help with accuracy.")]
-		public bool outsidePerimetersFirst;
+		public bool OutsidePerimetersFirst { get; set; }
 
 		[SettingDescription("The speed of the first perimeter. mm/s.")]
-		public int outsidePerimeterSpeed;
+		public int OutsidePerimeterSpeed { get; set; }
 
-		public DoublePoint positionToPlaceObjectCenter;
-		public double raftAirGap;
-		public double raftExtraDistanceAroundPart;
-		public int raftExtruder;
+		public DoublePoint PositionToPlaceObjectCenter { get; set; } = new DoublePoint(0, 0);
+		public double RaftAirGap { get; set; }
+		public double RaftExtraDistanceAroundPart { get; set; }
+		public int RaftExtruder { get; set; }
 
 		[SettingDescription("The speed to run the fan during raft printing.")]
-		public int raftFanSpeedPercent;
+		public int RaftFanSpeedPercent { get; set; }
 
 		// Raft read only info
-		public int raftPrintSpeed;
+		public int RaftPrintSpeed { get; set; }
 
 		// repair settings
-		public double retractionOnExtruderSwitch;
+		public double RetractionOnExtruderSwitch { get; set; }
 
-		public double retractionOnTravel;
+		public double RetractionOnTravel { get; set; }
 
 		[SettingDescription("mm/s.")]
-		public int retractionSpeed;
+		public int RetractionSpeed { get; set; }
 
 		[SettingDescription("The amount to move the extruder up in z after retracting (before a move). mm.")]
-		public double retractionZHop;
+		public double RetractionZHop { get; set; }
 
 		[SettingDescription("How far from objects the first skirt loop should be, in millimeters.")]
-		public double skirtDistanceFromObject;
+		public double SkirtDistanceFromObject { get; set; }
 
 		[SettingDescription("The minimum length of the skirt line, in millimeters.")]
-		public int skirtMinLength;
+		public int SkirtMinLength { get; set; }
 
-		public string startCode;
-		public double supportAirGap;
-		public int supportExtruder;
+		public string StartCode { get; set; }
+		public double SupportAirGap { get; set; }
+		public int SupportExtruder { get; set; }
 
 		[SettingDescription("Support extrusion percent.")]
-		public double supportExtrusionPercent;
+		public double SupportExtrusionPercent { get; set; }
 
 		[SettingDescription("The starting angle that the support lines will be drawn at (similar to infill start angle).")]
-		public double supportInfillStartingAngle;
+		public double SupportInfillStartingAngle { get; set; }
 
-		public int supportInterfaceExtruder;
-		public int supportInterfaceLayers;
-		public double supportLineSpacing;
+		public int SupportInterfaceExtruder { get; set; }
+		public int SupportInterfaceLayers { get; set; }
+		public double SupportLineSpacing { get; set; }
 
 		[SettingDescription("mm/s.")]
-		public int supportMaterialSpeed;
+		public int SupportMaterialSpeed { get; set; }
 
 		[SettingDescription("The number of layers to skip in z. The gap between the support and the model.")]
-		public int supportNumberOfLayersToSkipInZ;
+		public int SupportNumberOfLayersToSkipInZ { get; set; }
 
 		//Support material
-		public ConfigConstants.SUPPORT_TYPE supportType;
+		public ConfigConstants.SUPPORT_TYPE SupportType { get; set; }
 
 		[SettingDescription("The closest xy distance that support will be to the object. mm/s.")]
-		public double supportXYDistanceFromObject;
+		public double SupportXYDistanceFromObject { get; set; }
 
-		public string toolChangeCode;
+		public string ToolChangeCode { get; set; }
 
 		[SettingDescription("This is the speed to print the top layer infill, mm/s.")]
-		public double topInfillSpeed;
+		public double TopInfillSpeed { get; set; }
 
 		[SettingDescription("The speed to move when not extruding material. mm/s.")]
-		public int travelSpeed;
+		public int TravelSpeed { get; set; }
 
 		[SettingDescription("The amount of extra extrusion to do when unretracting (resume printing after retraction).")]
-		public double unretractExtraExtrusion = 0;
+		public double UnretractExtraExtrusion { get; set; } = 0;
 
 		[SettingDescription("If set will cause the head to try to wipe itself off after retracting.")]
-		public bool wipeAfterRetraction;
+		public bool WipeAfterRetraction { get; set; }
 
 		[SettingDescription("If greater than 0 this creates an outline around shapes so the extrude will be wiped when entering.")]
-		public double wipeShieldDistanceFromObject;
+		public double WipeShieldDistanceFromObject { get; set; }
 
 		[SettingDescription("Unlike the wipe shield this is a square of size*size in the lower left corner for wiping during extruder changing.")]
-		public double wipeTowerSize;
+		public double WipeTowerSize { get; set; }
 
-		public double zOffset;
+		public double ZOffset { get; set; }
 
 		public string BooleanOpperations { get; set; } = "";
-		public int bottomClipAmount_um { get { return (int)(bottomClipAmount * 1000); } }
+		public int BottomClipAmount_um { get { return (int)(BottomClipAmount * 1000); } }
 
-		public int extrusionWidth_um { get { return (int)(extrusionWidth * 1000); } }
+		public int ExtrusionWidth_um { get { return (int)(ExtrusionWidth * 1000); } }
 
-		public int filamentDiameter_um { get { return (int)(filamentDiameter * 1000); } }
+		public int FilamentDiameter_um { get { return (int)(FilamentDiameter * 1000); } }
 
-		public int firstLayerExtrusionWidth_um { get { return (int)(firstLayerExtrusionWidth * 1000); } }
+		public int FirstLayerExtrusionWidth_um { get { return (int)(FirstLayerExtrusionWidth * 1000); } }
 
-		public int firstLayerThickness_um { get { return (int)(firstLayerThickness * 1000); } }
+		public int FirstLayerThickness_um { get { return (int)(FirstLayerThickness * 1000); } }
 
-		public int infillExtendIntoPerimeter_um { get { return (int)(infillExtendIntoPerimeter * 1000); } }
+		public int InfillExtendIntoPerimeter_um { get { return (int)(InfillExtendIntoPerimeter * 1000); } }
 
-		public int layerThickness_um { get { return (int)(layerThickness * 1000); } }
+		public int LayerThickness_um { get { return (int)(LayerThickness * 1000); } }
 
-		public int minimumTravelToCauseRetraction_um { get { return (int)(minimumTravelToCauseRetraction * 1000); } }
+		public int MinimumTravelToCauseRetraction_um { get { return (int)(MinimumTravelToCauseRetraction * 1000); } }
 
-		public int outsideExtrusionWidth_um { get { return (int)(outsidePerimeterExtrusionWidth * 1000); } }
+		public int OutsideExtrusionWidth_um { get { return (int)(OutsidePerimeterExtrusionWidth * 1000); } }
 
-		public IntPoint positionToPlaceObjectCenter_um { get { return new IntPoint(positionToPlaceObjectCenter.X * 1000, positionToPlaceObjectCenter.Y * 1000); } }
+		public IntPoint PositionToPlaceObjectCenter_um { get { return new IntPoint(PositionToPlaceObjectCenter.X * 1000, PositionToPlaceObjectCenter.Y * 1000); } }
 
-		public int raftAirGap_um { get { return (int)(raftAirGap * 1000); } }
+		public int RaftAirGap_um { get { return (int)(RaftAirGap * 1000); } }
 
-		public int raftBaseExtrusionWidth_um { get { return extrusionWidth_um * 3; } }
+		public int RaftBaseExtrusionWidth_um { get { return ExtrusionWidth_um * 3; } }
 
-		public int raftBaseLineSpacing_um { get { return (int)(extrusionWidth_um * 4); } }
+		public int RaftBaseLineSpacing_um { get { return (int)(ExtrusionWidth_um * 4); } }
 
-		public int raftBaseThickness_um { get { return extrusionWidth_um * 300 / 400; } }
+		public int RaftBaseThickness_um { get { return ExtrusionWidth_um * 300 / 400; } }
 
-		public int raftExtraDistanceAroundPart_um { get { return (int)(raftExtraDistanceAroundPart * 1000); } }
+		public int RaftExtraDistanceAroundPart_um { get { return (int)(RaftExtraDistanceAroundPart * 1000); } }
 
-		public int raftInterfaceExtrusionWidth_um { get { return extrusionWidth_um * 350 / 400; } }
+		public int RaftInterfaceExtrusionWidth_um { get { return ExtrusionWidth_um * 350 / 400; } }
 
-		public int raftInterfaceLineSpacing_um { get { return extrusionWidth_um * 1000 / 400; } }
+		public int RaftInterfaceLineSpacing_um { get { return ExtrusionWidth_um * 1000 / 400; } }
 
 		// the least it can be in the raftExtrusionWidth_um
-		public int raftInterfaceThicknes_um { get { return extrusionWidth_um * 250 / 400; } }
+		public int RaftInterfaceThicknes_um { get { return ExtrusionWidth_um * 250 / 400; } }
 
-		public int raftSurfaceExtrusionWidth_um { get { return extrusionWidth_um * 400 / 400; } }
+		public int RaftSurfaceExtrusionWidth_um { get { return ExtrusionWidth_um * 400 / 400; } }
 
-		public int raftSurfaceLayers { get { return 2; } }
+		public int RaftSurfaceLayers { get { return 2; } }
 
-		public int raftSurfaceLineSpacing_um { get { return extrusionWidth_um * 400 / 400; } }
+		public int RaftSurfaceLineSpacing_um { get { return ExtrusionWidth_um * 400 / 400; } }
 
-		public int raftSurfacePrintSpeed { get { return raftPrintSpeed; } }
+		public int RaftSurfacePrintSpeed { get { return RaftPrintSpeed; } }
 
-		public int raftSurfaceThickness_um { get { return extrusionWidth_um * 250 / 400; } }
+		public int RaftSurfaceThickness_um { get { return ExtrusionWidth_um * 250 / 400; } }
 
-		public int skirtDistance_um { get { return (int)(skirtDistanceFromObject * 1000); } }
+		public int SkirtDistance_um { get { return (int)(SkirtDistanceFromObject * 1000); } }
 
-		public int skirtMinLength_um { get { return (int)(skirtMinLength * 1000); } }
+		public int SkirtMinLength_um { get { return (int)(SkirtMinLength * 1000); } }
 
-		public int supportAirGap_um { get { return (int)(supportAirGap * 1000); } }
+		public int SupportAirGap_um { get { return (int)(SupportAirGap * 1000); } }
 
-		public int supportExtrusionWidth_um { get { return (int)(extrusionWidth * (supportExtrusionPercent / 100.0) * 1000); } }
+		public int SupportExtrusionWidth_um { get { return (int)(ExtrusionWidth * (SupportExtrusionPercent / 100.0) * 1000); } }
 
-		public int supportLineSpacing_um { get { return (int)(supportLineSpacing * 1000); } }
+		public int SupportLineSpacing_um { get { return (int)(SupportLineSpacing * 1000); } }
 
-		public int supportXYDistance_um { get { return (int)(supportXYDistanceFromObject * 1000); } }
+		public int SupportXYDistance_um { get { return (int)(SupportXYDistanceFromObject * 1000); } }
 
-		public int wipeShieldDistanceFromShapes_um { get { return (int)(wipeShieldDistanceFromObject * 1000); } }
+		public int WipeShieldDistanceFromShapes_um { get { return (int)(WipeShieldDistanceFromObject * 1000); } }
 
-		public int wipeTowerSize_um { get { return (int)(wipeTowerSize * 1000); } }
+		public int WipeTowerSize_um { get { return (int)(WipeTowerSize * 1000); } }
 
 		// .4 mm for .4 mm nozzle
-		public int zOffset_um { get { return (int)(zOffset * 1000); } }
+		public int ZOffset_um { get { return (int)(ZOffset * 1000); } }
 
 		// .4 mm for .4 mm nozzle
 		public void DumpSettings(string fileName)
@@ -601,86 +601,85 @@ namespace MatterHackers.MatterSlice
 		// 1 mm for .4 mm nozzle
 		public void SetToDefault()
 		{
-			filamentDiameter = 2.89;
-			extrusionMultiplier = 1;
-			firstLayerThickness = .3;
-			layerThickness = .1;
-			firstLayerExtrusionWidth = .8;
-			extrusionWidth = .4;
-			supportExtrusionPercent = 100;
-			numberOfPerimeters = 2;
-			numberOfBottomLayers = 6;
-			numberOfTopLayers = 6;
-			firstLayerSpeed = 20;
-			topInfillSpeed = 20;
-			bottomInfillSpeed = 20;
-			supportMaterialSpeed = 40;
-			infillSpeed = 50;
-			bridgeSpeed = 20;
-			bridgeFanSpeedPercent = 100;
-			retractWhenChangingIslands = true;
-			raftFanSpeedPercent = 100;
-			outsidePerimeterSpeed = 50;
-			outsidePerimeterExtrusionWidth = extrusionWidth;
-			insidePerimetersSpeed = 50;
-			travelSpeed = 200;
-			firstLayerToAllowFan = 2;
-			skirtDistanceFromObject = 6;
-			numberOfSkirtLoops = 1;
-			skirtMinLength = 0;
-			infillPercent = 20;
-			infillExtendIntoPerimeter = .06;
-			infillStartingAngle = 45;
-			infillType = ConfigConstants.INFILL_TYPE.GRID;
-			centerObjectInXy = true;
-			positionToPlaceObjectCenter.X = 102.5;
-			positionToPlaceObjectCenter.Y = 102.5;
-			bottomClipAmount = 0;
+			FilamentDiameter = 2.89;
+			ExtrusionMultiplier = 1;
+			FirstLayerThickness = .3;
+			LayerThickness = .1;
+			FirstLayerExtrusionWidth = .8;
+			ExtrusionWidth = .4;
+			SupportExtrusionPercent = 100;
+			NumberOfPerimeters = 2;
+			NumberOfBottomLayers = 6;
+			NumberOfTopLayers = 6;
+			FirstLayerSpeed = 20;
+			TopInfillSpeed = 20;
+			BottomInfillSpeed = 20;
+			SupportMaterialSpeed = 40;
+			InfillSpeed = 50;
+			BridgeSpeed = 20;
+			BridgeFanSpeedPercent = 100;
+			RetractWhenChangingIslands = true;
+			RaftFanSpeedPercent = 100;
+			OutsidePerimeterSpeed = 50;
+			OutsidePerimeterExtrusionWidth = ExtrusionWidth;
+			InsidePerimetersSpeed = 50;
+			TravelSpeed = 200;
+			FirstLayerToAllowFan = 2;
+			SkirtDistanceFromObject = 6;
+			NumberOfSkirtLoops = 1;
+			SkirtMinLength = 0;
+			InfillPercent = 20;
+			InfillExtendIntoPerimeter = .06;
+			InfillStartingAngle = 45;
+			InfillType = ConfigConstants.INFILL_TYPE.GRID;
+			CenterObjectInXy = true;
+			PositionToPlaceObjectCenter = new DoublePoint(102.5, 102.5);
+			BottomClipAmount = 0;
 
 			// raft settings
-			enableRaft = false;
-			raftAirGap = .2; // .2 mm for .4 mm nozzle
-			supportAirGap = .3; //
-			raftExtraDistanceAroundPart = 5;
+			EnableRaft = false;
+			RaftAirGap = .2; // .2 mm for .4 mm nozzle
+			SupportAirGap = .3; //
+			RaftExtraDistanceAroundPart = 5;
 
-			supportType = ConfigConstants.SUPPORT_TYPE.GRID;
-			generateSupport = false;
-			supportPercent = 50;
-			generateInternalSupport = true;
-			generateSupportPerimeter = true;
-			raftExtruder = -1;
-			supportLineSpacing = extrusionWidth * 5;
-			supportExtruder = -1;
-			supportXYDistanceFromObject = .7;
-			supportNumberOfLayersToSkipInZ = 1;
-			supportInterfaceLayers = 3;
-			minimizeSupportColumns = false; // experimental and not working well enough yet
-			supportInterfaceExtruder = -1;
-			retractionOnTravel = 4.5;
-			retractionSpeed = 45;
-			retractionOnExtruderSwitch = 14.5;
-			minimumTravelToCauseRetraction = 10;
-			minimumExtrusionBeforeRetraction = 0;
-			wipeShieldDistanceFromObject = 0;
-			avoidCrossingPerimeters = true;
-			wipeTowerSize = 5;
-			multiExtruderOverlapPercent = 0;
+			SupportType = ConfigConstants.SUPPORT_TYPE.GRID;
+			GenerateSupport = false;
+			SupportPercent = 50;
+			GenerateInternalSupport = true;
+			GenerateSupportPerimeter = true;
+			RaftExtruder = -1;
+			SupportLineSpacing = ExtrusionWidth * 5;
+			SupportExtruder = -1;
+			SupportXYDistanceFromObject = .7;
+			SupportNumberOfLayersToSkipInZ = 1;
+			SupportInterfaceLayers = 3;
+			MinimizeSupportColumns = false; // experimental and not working well enough yet
+			SupportInterfaceExtruder = -1;
+			RetractionOnTravel = 4.5;
+			RetractionSpeed = 45;
+			RetractionOnExtruderSwitch = 14.5;
+			MinimumTravelToCauseRetraction = 10;
+			MinimumExtrusionBeforeRetraction = 0;
+			WipeShieldDistanceFromObject = 0;
+			AvoidCrossingPerimeters = true;
+			WipeTowerSize = 5;
+			MultiExtruderOverlapPercent = 0;
 
-			minimumLayerTimeSeconds = 5;
-			minimumPrintingSpeed = 10;
-			fanSpeedMinPercent = 100;
-			fanSpeedMaxPercent = 100;
+			MinimumLayerTimeSeconds = 5;
+			MinimumPrintingSpeed = 10;
+			FanSpeedMinPercent = 100;
+			FanSpeedMaxPercent = 100;
 
-			continuousSpiralOuterPerimeter = false;
+			ContinuousSpiralOuterPerimeter = false;
 			outputType = ConfigConstants.OUTPUT_TYPE.REPRAP;
 
-			startCode =
+			StartCode =
 							"M109 S210     ;Heatup to 210C\n" +
 							"G21           ;metric values\n" +
 							"G90           ;absolute positioning\n" +
 							"G28           ;Home\n" +
 							"G92 E0        ;zero the extruded length\n";
-			endCode =
+			EndCode =
 				"M104 S0                     ;extruder heater off\n" +
 				"M140 S0                     ;heated bed heater off (if you have it)\n" +
 				"M84                         ;steppers off\n";
@@ -689,9 +688,9 @@ namespace MatterHackers.MatterSlice
 		public bool ShouldGenerateRaft()
 		{
 			ConfigSettings config = this;
-			return config.enableRaft
-				&& config.raftBaseThickness_um > 0
-				&& config.raftInterfaceThicknes_um > 0;
+			return config.EnableRaft
+				&& config.RaftBaseThickness_um > 0
+				&& config.RaftInterfaceThicknes_um > 0;
 		}
 
 		// .25 mm for .4 mm nozzle
@@ -775,7 +774,7 @@ namespace MatterHackers.MatterSlice
 	}
 
 	// this class is so that we can add a help text to variables in the config file
-	[System.AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Field)]
+	[System.AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Field | AttributeTargets.Property)]
 	public class SettingDescription : System.Attribute
 	{
 		private string description;

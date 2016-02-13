@@ -230,7 +230,7 @@ namespace MatterHackers.MatterSlice.Tests
                 // load a model that has 3 islands
                 ConfigSettings config = new ConfigSettings();
                 // make sure no retractions are going to occure that are island crossing
-                config.minimumTravelToCauseRetraction = 2000;
+                config.MinimumTravelToCauseRetraction = 2000;
                 fffProcessor processor = new fffProcessor(config);
                 processor.SetTargetFile(gCodeWithIslands);
                 processor.LoadStlFile(meshWithIslands);

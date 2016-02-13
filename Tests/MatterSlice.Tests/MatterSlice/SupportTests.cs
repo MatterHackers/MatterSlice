@@ -47,10 +47,10 @@ namespace MatterHackers.MatterSlice.Tests
 			// test the supports for a simple cube in the air
 			{
 				ConfigSettings config = new ConfigSettings();
-				config.layerThickness = .5;
-				config.supportXYDistanceFromObject = 0;
-				config.supportInterfaceLayers = 0;
-				config.minimizeSupportColumns = false;
+				config.LayerThickness = .5;
+				config.SupportXYDistanceFromObject = 0;
+				config.SupportInterfaceLayers = 0;
+				config.MinimizeSupportColumns = false;
 
 				List<Polygons> partOutlines = new List<Polygons>();
 				for (int i = 0; i < 5; i++)
@@ -113,9 +113,9 @@ namespace MatterHackers.MatterSlice.Tests
 			// test the supports for a cube that is 1/2 width just under the main part
 			{
 				ConfigSettings config = new ConfigSettings();
-				config.supportInterfaceLayers = 0;
-				config.layerThickness = .5;
-				config.supportXYDistanceFromObject = .1;
+				config.SupportInterfaceLayers = 0;
+				config.LayerThickness = .5;
+				config.SupportXYDistanceFromObject = .1;
 
 				// 14 XXXXXXXXXXXXXXXXXXXX
 				// 13 XXXXXXXXXXXXXXXXXXXX
@@ -214,10 +214,10 @@ namespace MatterHackers.MatterSlice.Tests
 			// test the supports for a cube that is 1/2 width just under the main part
 			{
 				ConfigSettings config = new ConfigSettings();
-				config.supportInterfaceLayers = 0;
-				config.layerThickness = .5;
-				config.supportXYDistanceFromObject = .1;
-				config.generateInternalSupport = false;
+				config.SupportInterfaceLayers = 0;
+				config.LayerThickness = .5;
+				config.SupportXYDistanceFromObject = .1;
+				config.GenerateInternalSupport = false;
 
 				// 19      XXXXXXXXXX
 				// 18      XXXXXXXXXX
@@ -248,10 +248,10 @@ namespace MatterHackers.MatterSlice.Tests
 			// test the supports for a cube that is 1/2 width just under the main part
 			{
 				ConfigSettings config = new ConfigSettings();
-				config.supportInterfaceLayers = 2;
-				config.layerThickness = .5;
-				config.supportXYDistanceFromObject = .1;
-				config.minimizeSupportColumns = false;
+				config.SupportInterfaceLayers = 2;
+				config.LayerThickness = .5;
+				config.SupportXYDistanceFromObject = .1;
+				config.MinimizeSupportColumns = false;
 
 				// 14      XXXXXXXXXX
 				// 13      XXXXXXXXXX
