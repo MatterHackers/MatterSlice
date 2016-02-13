@@ -40,9 +40,9 @@ namespace MatterHackers.MatterSlice.Tests
 			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}_o{1}_c{2}.gcode".FormatWith(firstLayerHeight, otherLayerHeight, bottomClip));
 
 			ConfigSettings config = new ConfigSettings();
-			config.firstLayerThickness = firstLayerHeight;
-			config.layerThickness = otherLayerHeight;
-			config.bottomClipAmount = bottomClip;
+			config.FirstLayerThickness = firstLayerHeight;
+			config.LayerThickness = otherLayerHeight;
+			config.BottomClipAmount = bottomClip;
 			fffProcessor processor = new fffProcessor(config);
 			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);
@@ -59,7 +59,7 @@ namespace MatterHackers.MatterSlice.Tests
 			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
 
 			ConfigSettings config = new ConfigSettings();
-			config.enableRaft = hasRaft;
+			config.EnableRaft = hasRaft;
 			fffProcessor processor = new fffProcessor(config);
 			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);
@@ -76,7 +76,7 @@ namespace MatterHackers.MatterSlice.Tests
 			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
 
 			ConfigSettings config = new ConfigSettings();
-			config.enableRaft = hasRaft;
+			config.EnableRaft = hasRaft;
 			fffProcessor processor = new fffProcessor(config);
 			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);
@@ -101,11 +101,11 @@ namespace MatterHackers.MatterSlice.Tests
 			string cylinderGCodeFileName = TestUtlities.GetTempGCodePath(gcodeFile);
 
 			ConfigSettings config = new ConfigSettings();
-			config.firstLayerThickness = .2;
-			config.centerObjectInXy = false;
-			config.layerThickness = .2;
-			config.numberOfBottomLayers = 0;
-			config.continuousSpiralOuterPerimeter = true;
+			config.FirstLayerThickness = .2;
+			config.CenterObjectInXy = false;
+			config.LayerThickness = .2;
+			config.NumberOfBottomLayers = 0;
+			config.ContinuousSpiralOuterPerimeter = true;
 			fffProcessor processor = new fffProcessor(config);
 			processor.SetTargetFile(cylinderGCodeFileName);
 			processor.LoadStlFile(cylinderStlFile);

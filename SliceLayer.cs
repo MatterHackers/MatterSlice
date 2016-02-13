@@ -122,11 +122,11 @@ namespace MatterHackers.MatterSlice
 			if (this.BridgeAngle(bottomFillIsland, out bridgeAngle))
 			{
 				// TODO: Make this code handle very complex pathing between different sizes or layouts of support under the island to fill.
-				Infill.GenerateLinePaths(bottomFillIsland, ref bottomFillLines, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, bridgeAngle);
+				Infill.GenerateLinePaths(bottomFillIsland, ref bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, bridgeAngle);
 			}
 			else
 			{
-				Infill.GenerateLinePaths(bottomFillIsland, ref bottomFillLines, config.extrusionWidth_um, config.infillExtendIntoPerimeter_um, config.infillStartingAngle);
+				Infill.GenerateLinePaths(bottomFillIsland, ref bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
 			}
 		}
 
