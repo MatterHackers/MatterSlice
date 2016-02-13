@@ -86,6 +86,11 @@ namespace MatterHackers.MatterSlice
 	// all the variables in this class will be saved and loaded from settings files
 	public class ConfigSettings
 	{
+		public ConfigSettings()
+		{
+			SetToDefault();
+		}
+
 		[SettingDescription("Avoid crossing any of the perimeters of a shape while printing its parts.")]
 		public bool avoidCrossingPerimeters;
 
@@ -288,11 +293,6 @@ namespace MatterHackers.MatterSlice
 		public double wipeTowerSize;
 
 		public double zOffset;
-
-		public ConfigSettings()
-		{
-			SetToDefault();
-		}
 
 		public string BooleanOpperations { get; set; } = "";
 		public int bottomClipAmount_um { get { return (int)(bottomClipAmount * 1000); } }
