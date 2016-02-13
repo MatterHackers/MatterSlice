@@ -295,71 +295,71 @@ namespace MatterHackers.MatterSlice
 		public double ZOffset { get; set; }
 
 		public string BooleanOpperations { get; set; } = "";
-		public int BottomClipAmount_um { get { return (int)(BottomClipAmount * 1000); } }
+		public int BottomClipAmount_um => (int)(BottomClipAmount * 1000);
 
-		public int ExtrusionWidth_um { get { return (int)(ExtrusionWidth * 1000); } }
+		public int ExtrusionWidth_um => (int)(ExtrusionWidth * 1000);
 
-		public int FilamentDiameter_um { get { return (int)(FilamentDiameter * 1000); } }
+		public int FilamentDiameter_um => (int)(FilamentDiameter * 1000);
 
-		public int FirstLayerExtrusionWidth_um { get { return (int)(FirstLayerExtrusionWidth * 1000); } }
+		public int FirstLayerExtrusionWidth_um => (int)(FirstLayerExtrusionWidth * 1000);
 
-		public int FirstLayerThickness_um { get { return (int)(FirstLayerThickness * 1000); } }
+		public int FirstLayerThickness_um => (int)(FirstLayerThickness * 1000);
 
-		public int InfillExtendIntoPerimeter_um { get { return (int)(InfillExtendIntoPerimeter * 1000); } }
+		public int InfillExtendIntoPerimeter_um => (int)(InfillExtendIntoPerimeter * 1000);
 
-		public int LayerThickness_um { get { return (int)(LayerThickness * 1000); } }
+		public int LayerThickness_um => (int)(LayerThickness * 1000);
 
-		public int MinimumTravelToCauseRetraction_um { get { return (int)(MinimumTravelToCauseRetraction * 1000); } }
+		public int MinimumTravelToCauseRetraction_um => (int)(MinimumTravelToCauseRetraction * 1000);
 
-		public int OutsideExtrusionWidth_um { get { return (int)(OutsidePerimeterExtrusionWidth * 1000); } }
+		public int OutsideExtrusionWidth_um => (int)(OutsidePerimeterExtrusionWidth * 1000);
 
-		public IntPoint PositionToPlaceObjectCenter_um { get { return new IntPoint(PositionToPlaceObjectCenter.X * 1000, PositionToPlaceObjectCenter.Y * 1000); } }
+		public IntPoint PositionToPlaceObjectCenter_um => new IntPoint(PositionToPlaceObjectCenter.X * 1000, PositionToPlaceObjectCenter.Y * 1000);
 
-		public int RaftAirGap_um { get { return (int)(RaftAirGap * 1000); } }
+		public int RaftAirGap_um => (int)(RaftAirGap * 1000);
 
-		public int RaftBaseExtrusionWidth_um { get { return ExtrusionWidth_um * 3; } }
+		public int RaftBaseExtrusionWidth_um => ExtrusionWidth_um * 3;
 
-		public int RaftBaseLineSpacing_um { get { return (int)(ExtrusionWidth_um * 4); } }
+		public int RaftBaseLineSpacing_um => (int)(ExtrusionWidth_um * 4);
 
-		public int RaftBaseThickness_um { get { return ExtrusionWidth_um * 300 / 400; } }
+		public int RaftBaseThickness_um => ExtrusionWidth_um * 300 / 400;
 
-		public int RaftExtraDistanceAroundPart_um { get { return (int)(RaftExtraDistanceAroundPart * 1000); } }
+		public int RaftExtraDistanceAroundPart_um => (int)(RaftExtraDistanceAroundPart * 1000);
 
-		public int RaftInterfaceExtrusionWidth_um { get { return ExtrusionWidth_um * 350 / 400; } }
+		public int RaftInterfaceExtrusionWidth_um => ExtrusionWidth_um * 350 / 400;
 
-		public int RaftInterfaceLineSpacing_um { get { return ExtrusionWidth_um * 1000 / 400; } }
+		public int RaftInterfaceLineSpacing_um => ExtrusionWidth_um * 1000 / 400;
 
 		// the least it can be in the raftExtrusionWidth_um
-		public int RaftInterfaceThicknes_um { get { return ExtrusionWidth_um * 250 / 400; } }
+		public int RaftInterfaceThicknes_um => ExtrusionWidth_um * 250 / 400;
 
-		public int RaftSurfaceExtrusionWidth_um { get { return ExtrusionWidth_um * 400 / 400; } }
+		public int RaftSurfaceExtrusionWidth_um => ExtrusionWidth_um * 400 / 400;
 
-		public int RaftSurfaceLayers { get { return 2; } }
+		public int RaftSurfaceLayers => 2;
 
-		public int RaftSurfaceLineSpacing_um { get { return ExtrusionWidth_um * 400 / 400; } }
+		public int RaftSurfaceLineSpacing_um => ExtrusionWidth_um * 400 / 400;
 
-		public int RaftSurfacePrintSpeed { get { return RaftPrintSpeed; } }
+		public int RaftSurfacePrintSpeed => RaftPrintSpeed;
 
-		public int RaftSurfaceThickness_um { get { return ExtrusionWidth_um * 250 / 400; } }
+		public int RaftSurfaceThickness_um => ExtrusionWidth_um * 250 / 400;
 
-		public int SkirtDistance_um { get { return (int)(SkirtDistanceFromObject * 1000); } }
+		public int SkirtDistance_um => (int)(SkirtDistanceFromObject * 1000);
 
-		public int SkirtMinLength_um { get { return (int)(SkirtMinLength * 1000); } }
+		public int SkirtMinLength_um => (int)(SkirtMinLength * 1000);
 
-		public int SupportAirGap_um { get { return (int)(SupportAirGap * 1000); } }
+		public int SupportAirGap_um => (int)(SupportAirGap * 1000);
 
-		public int SupportExtrusionWidth_um { get { return (int)(ExtrusionWidth * (SupportExtrusionPercent / 100.0) * 1000); } }
+		public int SupportExtrusionWidth_um => (int)(ExtrusionWidth * (SupportExtrusionPercent / 100.0) * 1000);
 
-		public int SupportLineSpacing_um { get { return (int)(SupportLineSpacing * 1000); } }
+		public int SupportLineSpacing_um => (int)(SupportLineSpacing * 1000);
 
-		public int SupportXYDistance_um { get { return (int)(SupportXYDistanceFromObject * 1000); } }
+		public int SupportXYDistance_um => (int)(SupportXYDistanceFromObject * 1000);
 
-		public int WipeShieldDistanceFromShapes_um { get { return (int)(WipeShieldDistanceFromObject * 1000); } }
+		public int WipeShieldDistanceFromShapes_um => (int)(WipeShieldDistanceFromObject * 1000);
 
-		public int WipeTowerSize_um { get { return (int)(WipeTowerSize * 1000); } }
+		public int WipeTowerSize_um => (int)(WipeTowerSize * 1000);
 
 		// .4 mm for .4 mm nozzle
-		public int ZOffset_um { get { return (int)(ZOffset * 1000); } }
+		public int ZOffset_um => (int)(ZOffset * 1000);
 
 		// .4 mm for .4 mm nozzle
 		public void DumpSettings(string fileName)
