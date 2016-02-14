@@ -483,9 +483,7 @@ namespace MatterHackers.MatterSlice
 			valueToSetTo = valueToSetTo.Replace("\"", "").Trim();
 
 			List<string> lines = new List<string>();
-			PropertyInfo[] properties = this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-			foreach (PropertyInfo property in properties)
+			foreach (PropertyInfo property in this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
 			{
 				// List of case insensitive names that will import as this property
 				HashSet<string> possibleNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
