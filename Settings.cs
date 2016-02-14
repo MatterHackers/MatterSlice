@@ -440,13 +440,8 @@ namespace MatterHackers.MatterSlice
 			}
 
 			lines.Sort();
-			using (System.IO.StreamWriter file = new System.IO.StreamWriter(fileName))
-			{
-				foreach (string line in lines)
-				{
-					file.WriteLine(line);
-				}
-			}
+
+			File.WriteAllLines(fileName, lines.ToArray());
 		}
 
 		// .250 mm for .4 mm nozzle
