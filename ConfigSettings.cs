@@ -365,29 +365,22 @@ namespace MatterHackers.MatterSlice
 		public void DumpSettings(string fileName)
 		{
 			List<string> lines = new List<string>();
-			FieldInfo[] fields;
-			fields = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
-			foreach (FieldInfo field in fields)
+			foreach (PropertyInfo property in this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
 			{
 				string fieldDescription = "";
-				System.Attribute[] attributes = System.Attribute.GetCustomAttributes(field);
-				foreach (Attribute attribute in attributes)
+				foreach (Attribute attribute in Attribute.GetCustomAttributes(property))
 				{
-					LegacyName legacyName = attribute as LegacyName;
-					if (legacyName != null)
-					{
-						string Name = legacyName.Name;
-					}
-
 					SettingDescription description = attribute as SettingDescription;
 					if (description != null)
 					{
 						fieldDescription = " # {0}".FormatWith(description.Description);
 					}
 				}
-				string name = field.Name;
-				object value = field.GetValue(this);
-				switch (field.FieldType.Name)
+
+				string name = property.Name;
+				object value = property.GetValue(this);
+
+				switch (property.PropertyType.Name)
 				{
 					case "Int32":
 					case "Double":
@@ -428,7 +421,7 @@ namespace MatterHackers.MatterSlice
 						{
 							throw new Exception("We can't output a description on a string as we need to write whatever the string says.");
 						}
-						// change the cariage returns to '\n's in the file
+						// change the carriage returns to '\n's in the file
 						lines.Add("{0}={1}".FormatWith(name, value).Replace("\n", "\\n"));
 						break;
 
@@ -438,22 +431,17 @@ namespace MatterHackers.MatterSlice
 					case "OUTPUT_TYPE":
 					case "INFILL_TYPE":
 						// all the enums can be output by this function
-						lines.Add("{0}={1} # {2}{3}".FormatWith(name, value, GetEnumHelpText(field.FieldType, field.FieldType.Name), fieldDescription));
+						lines.Add("{0}={1} # {2}{3}".FormatWith(name, value, GetEnumHelpText(property.PropertyType, property.PropertyType.Name), fieldDescription));
 						break;
 
 					default:
-						throw new NotImplementedException("unknown type '{0}'".FormatWith(field.FieldType.Name));
+						throw new NotImplementedException("unknown type '{0}'".FormatWith(property.PropertyType.Name));
 				}
 			}
 
 			lines.Sort();
-			using (System.IO.StreamWriter file = new System.IO.StreamWriter(fileName))
-			{
-				foreach (string line in lines)
-				{
-					file.WriteLine(line);
-				}
-			}
+
+			File.WriteAllLines(fileName, lines.ToArray());
 		}
 
 		// .250 mm for .4 mm nozzle
@@ -495,14 +483,14 @@ namespace MatterHackers.MatterSlice
 			valueToSetTo = valueToSetTo.Replace("\"", "").Trim();
 
 			List<string> lines = new List<string>();
-			FieldInfo[] fields;
-			fields = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
-			foreach (FieldInfo field in fields)
+			foreach (PropertyInfo property in this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
 			{
-				System.Attribute[] attributes = System.Attribute.GetCustomAttributes(field);
-				List<string> possibleNames = new List<string>();
-				possibleNames.Add(field.Name);
-				foreach (Attribute attribute in attributes)
+				// List of case insensitive names that will import as this property
+				HashSet<string> possibleNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+				possibleNames.Add(property.Name);
+
+				// Including any mapped LegacyName attributes
+				foreach (Attribute attribute in Attribute.GetCustomAttributes(property))
 				{
 					LegacyName legacyName = attribute as LegacyName;
 					if (legacyName != null)
@@ -513,25 +501,23 @@ namespace MatterHackers.MatterSlice
 
 				if (possibleNames.Contains(keyToSet))
 				{
-					string name = field.Name;
-					object value = field.GetValue(this);
-					switch (field.FieldType.Name)
+					switch (property.PropertyType.Name)
 					{
 						case "Int32":
-							field.SetValue(this, (int)double.Parse(valueToSetTo));
+							property.SetValue(this, (int)double.Parse(valueToSetTo));
 							break;
 
 						case "Double":
-							field.SetValue(this, double.Parse(valueToSetTo));
+							property.SetValue(this, double.Parse(valueToSetTo));
 							break;
 
 						case "Boolean":
-							field.SetValue(this, bool.Parse(valueToSetTo));
+							property.SetValue(this, bool.Parse(valueToSetTo));
 							break;
 
 						case "FMatrix3x3":
 							{
-								field.SetValue(this, new FMatrix3x3(valueToSetTo));
+								property.SetValue(this, new FMatrix3x3(valueToSetTo));
 							}
 							break;
 
@@ -539,7 +525,7 @@ namespace MatterHackers.MatterSlice
 							{
 								string bracketContents = GetInsides(valueToSetTo, '[', ']');
 								string[] xyValues = bracketContents.Split(',');
-								field.SetValue(this, new DoublePoint(double.Parse(xyValues[0]), double.Parse(xyValues[1])));
+								property.SetValue(this, new DoublePoint(double.Parse(xyValues[0]), double.Parse(xyValues[1])));
 							}
 							break;
 
@@ -547,7 +533,7 @@ namespace MatterHackers.MatterSlice
 							{
 								string bracketContents = GetInsides(valueToSetTo, '[', ']');
 								string[] xyValues = bracketContents.Split(',');
-								field.SetValue(this, new IntPoint(double.Parse(xyValues[0]), double.Parse(xyValues[1])));
+								property.SetValue(this, new IntPoint(double.Parse(xyValues[0]), double.Parse(xyValues[1])));
 							}
 							break;
 
@@ -565,12 +551,12 @@ namespace MatterHackers.MatterSlice
 
 									nextIndex = GetInsides(out intPointString, bracketContents, '[', ']', nextIndex);
 								} while (nextIndex != -1);
-								field.SetValue(this, points.ToArray());
+								property.SetValue(this, points.ToArray());
 							}
 							break;
 
 						case "String":
-							field.SetValue(this, valueToSetTo.Replace("\\n", "\n"));
+							property.SetValue(this, valueToSetTo.Replace("\\n", "\n"));
 							break;
 
 						case "REPAIR_OVERLAPS":
@@ -581,7 +567,7 @@ namespace MatterHackers.MatterSlice
 							try
 							{
 								valueToSetTo = valueToSetTo.Replace('|', ',');
-								field.SetValue(this, Enum.Parse(field.FieldType, valueToSetTo));
+								property.SetValue(this, Enum.Parse(property.PropertyType, valueToSetTo));
 							}
 							catch (Exception)
 							{

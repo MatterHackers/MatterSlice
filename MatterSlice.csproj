@@ -123,7 +123,7 @@
     <Compile Include="NewSupport.cs" />
     <Compile Include="utils\Vector3.cs" />
     <Compile Include="main.cs" />
-    <Compile Include="Settings.cs" />
+    <Compile Include="ConfigSettings.cs" />
     <Compile Include="timeEstimate.cs" />
     <Compile Include="utils\Point3.cs" />
     <Compile Include="utils\IntpointHelper.cs" />
