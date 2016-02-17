@@ -208,5 +208,19 @@ namespace MatterHackers.MatterSlice.Tests
 
 			return retractions;
 		}
+
+		internal static bool UsesExtruder(string[] gcodeContent, int extruderIndex)
+		{
+			string startToCheckFor = "T{0}".FormatWith(extruderIndex);
+			foreach (string line in gcodeContent)
+			{
+				if (line.StartsWith(startToCheckFor))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
 	}
 }
