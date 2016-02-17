@@ -196,14 +196,14 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.DoProcessing();
 				processor.finalize();
 
-				string[] gcodeContent = TestUtlities.LoadGCodeFile(gcodeToCreate);
-				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContent, 1));
-				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContent, 2));
+				string[] gcodeContents = TestUtlities.LoadGCodeFile(gcodeToCreate);
+				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 1));
+				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 2));
 			}
 
 			// check that support is printed with extruder 1
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_0_" + ".gcode");
+				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_1b_" + ".gcode");
 
 				ConfigSettings config = new ConfigSettings();
 				config.SupportExtruder = 1;
@@ -215,14 +215,14 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.DoProcessing();
 				processor.finalize();
 
-				string[] gcodeContent = TestUtlities.LoadGCodeFile(gcodeToCreate);
-				Assert.IsTrue(TestUtlities.UsesExtruder(gcodeContent, 1));
-				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContent, 2));
+				string[] gcodeContents = TestUtlities.LoadGCodeFile(gcodeToCreate);
+				Assert.IsTrue(TestUtlities.UsesExtruder(gcodeContents, 1));
+				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 2));
 			}
 
 			// check that support interface is printed with extruder 1
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_0_" + ".gcode");
+				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_1i_" + ".gcode");
 
 				ConfigSettings config = new ConfigSettings();
 				config.SupportInterfaceExtruder = 1;
@@ -234,14 +234,14 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.DoProcessing();
 				processor.finalize();
 
-				string[] gcodeContent = TestUtlities.LoadGCodeFile(gcodeToCreate);
-				Assert.IsTrue(TestUtlities.UsesExtruder(gcodeContent, 1));
-				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContent, 2));
+				string[] gcodeContents = TestUtlities.LoadGCodeFile(gcodeToCreate);
+				Assert.IsTrue(TestUtlities.UsesExtruder(gcodeContents, 1));
+				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 2));
 			}
 
 			// check that support and interface can be set separately
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_0_" + ".gcode");
+				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_1b2i_" + ".gcode");
 
 				ConfigSettings config = new ConfigSettings();
 				config.SupportExtruder = 1;
@@ -254,9 +254,70 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.DoProcessing();
 				processor.finalize();
 
-				string[] gcodeContent = TestUtlities.LoadGCodeFile(gcodeToCreate);
-				Assert.IsTrue(TestUtlities.UsesExtruder(gcodeContent, 1));
-				Assert.IsTrue(TestUtlities.UsesExtruder(gcodeContent, 2));
+				string[] gcodeContents = TestUtlities.LoadGCodeFile(gcodeToCreate);
+				Assert.IsTrue(TestUtlities.UsesExtruder(gcodeContents, 1));
+				Assert.IsTrue(TestUtlities.UsesExtruder(gcodeContents, 2));
+			}
+		}
+
+		[Test]
+		public void AllMovesRequiringRetractionDoRetraction()
+		{
+			string baseFileName = "ab retraction test";
+			string stlToLoad = TestUtlities.GetStlPath(baseFileName + ".stl");
+
+			// check that default is support printed with extruder 0
+			{
+				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_retract_" + ".gcode");
+
+				ConfigSettings config = new ConfigSettings();
+				config.RetractionZHop = 5;
+				config.MinimumTravelToCauseRetraction = 2;
+				config.MinimumExtrusionBeforeRetraction = 0;
+				config.FirstLayerExtrusionWidth = .5;
+				fffProcessor processor = new fffProcessor(config);
+				processor.SetTargetFile(gcodeToCreate);
+				processor.LoadStlFile(stlToLoad);
+				// slice and save it
+				processor.DoProcessing();
+				processor.finalize();
+
+				string[] gcodeContents = TestUtlities.LoadGCodeFile(gcodeToCreate);
+				int layerCount = TestUtlities.CountLayers(gcodeContents);
+				bool firstPosition = true;
+				for(int i=0; i<layerCount; i++)
+				{
+					string[] layerGCode = TestUtlities.GetGCodeForLayer(gcodeContents, i);
+					MovementInfo lastMovement = new MovementInfo();
+					foreach (MovementInfo movement in TestUtlities.Movements(layerGCode))
+					{
+						if(movement.position.z > 3)
+						{
+							int a = 0;
+						}
+						if (!firstPosition)
+						{
+							bool isTravel = lastMovement.extrusion == movement.extrusion;
+							if (isTravel)
+							{
+								Vector3 lastPosition = lastMovement.position;
+								lastPosition.z = 0;
+								Vector3 currenPosition = movement.position;
+								currenPosition.z = 0;
+								double xyLength = (lastPosition - currenPosition).Length;
+								if (xyLength > config.MinimumTravelToCauseRetraction)
+								{
+									Assert.IsTrue(movement.position.z > lastMovement.position.z);
+								}
+							}
+						}
+
+						lastMovement = movement;
+						firstPosition = false;
+					}
+				}
+				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 1));
+				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 2));
 			}
 		}
 	}
