@@ -525,13 +525,10 @@ namespace MatterHackers.MatterSlice
 					QueueSkirtToGCode(slicingData, gcodeLayer, layerIndex);
 				}
 
-				if (slicingData.support != null)
-				{
-					slicingData.support.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig, supportInterfaceConfig);
-				}
-
 				int fanSpeedPercent = GetFanSpeed(layerIndex, gcodeLayer);
 
+				bool printedSupport = false;
+				bool printedInterface = false;
 				for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
 				{
 					if (layerIndex == 0)
@@ -541,6 +538,36 @@ namespace MatterHackers.MatterSlice
 					else
 					{
 						QueueExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.extrusionWidth_um, fanSpeedPercent, z);
+					}
+
+					if (slicingData.support != null)
+					{
+						if ((config.SupportExtruder <= 0 && extruderIndex == 0)
+							|| config.SupportExtruder == extruderIndex)
+						{
+							slicingData.support.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig);
+							printedSupport = true;
+						}
+						if ((config.SupportInterfaceExtruder <= 0 && extruderIndex == 0)
+							|| config.SupportInterfaceExtruder == extruderIndex)
+						{
+							slicingData.support.QueueInterfaceSupportLayer(config, gcodeLayer, layerIndex, supportInterfaceConfig);
+							printedInterface = true;
+						}
+					}
+				}
+
+				if (slicingData.support != null)
+				{
+					if (!printedSupport)
+					{
+						gcodeLayer.SetExtruder(config.SupportExtruder);
+						slicingData.support.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig);
+					}
+					if (!printedInterface)
+					{
+						gcodeLayer.SetExtruder(config.SupportInterfaceExtruder);
+						slicingData.support.QueueInterfaceSupportLayer(config, gcodeLayer, layerIndex, supportInterfaceConfig);
 					}
 				}
 
