@@ -1,5 +1,5 @@
 /*
-This file is part of MatterSlice. A commandline utility for
+This file is part of MatterSlice. A command line utility for
 generating 3D printing GCode.
 
 Copyright (c) 2014, Lars Brubaker
@@ -382,7 +382,7 @@ namespace MatterHackers.MatterSlice
 			return diferenceLayers;
 		}
 
-		public void QueueNormalSupportLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, GCodePathConfig supportInterfaceConfig)
+		public void QueueNormalSupportLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig)
 		{
 			// normal support
 			Polygons currentSupportOutlines = supportOutlines[layerIndex];
@@ -412,7 +412,10 @@ namespace MatterHackers.MatterSlice
 				}
 				gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, supportNormalConfig);
 			}
+		}
 
+		public void QueueInterfaceSupportLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportInterfaceConfig)
+		{
 			// interface
 			Polygons currentInterfaceOutlines = interfaceLayers[layerIndex].Offset(-config.ExtrusionWidth_um / 2);
 			if (currentInterfaceOutlines.Count > 0)
