@@ -486,7 +486,7 @@ namespace MatterHackers.MatterSlice
                     bridgConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um, "BRIDGE");
 
 					supportNormalConfig.SetData(config.SupportMaterialSpeed, config.SupportExtrusionWidth_um, "SUPPORT");
-					supportInterfaceConfig.SetData(config.SupportMaterialSpeed - 1, config.ExtrusionWidth_um, "SUPPORT-INTERFACE");
+					supportInterfaceConfig.SetData(config.FirstLayerSpeed - 1, config.ExtrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 
 				gcode.WriteComment("LAYER:{0}".FormatWith(layerIndex));
