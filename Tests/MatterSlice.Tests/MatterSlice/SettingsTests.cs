@@ -291,10 +291,6 @@ namespace MatterHackers.MatterSlice.Tests
 					MovementInfo lastMovement = new MovementInfo();
 					foreach (MovementInfo movement in TestUtlities.Movements(layerGCode))
 					{
-						if(movement.position.z > 3)
-						{
-							int a = 0;
-						}
 						if (!firstPosition)
 						{
 							bool isTravel = lastMovement.extrusion == movement.extrusion;
