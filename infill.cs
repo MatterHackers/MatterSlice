@@ -260,7 +260,7 @@ namespace MatterHackers.MatterSlice
 			{
 				if (config.InfillPercent <= 0)
 				{
-					throw new Exception("infillPercent must be gerater than 0.");
+					throw new Exception("infillPercent must be greater than 0.");
 				}
 
 				linespacing_um = (int)(config.ExtrusionWidth_um / (config.InfillPercent / 100));
@@ -274,7 +274,7 @@ namespace MatterHackers.MatterSlice
 			{
 				if (config.InfillPercent <= 0)
 				{
-					throw new Exception("infillPercent must be gerater than 0.");
+					throw new Exception("infillPercent must be greater than 0.");
 				}
 				linespacing_um = (int)(config.ExtrusionWidth_um / (config.InfillPercent / 100) * 2);
 			}

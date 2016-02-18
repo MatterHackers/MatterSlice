@@ -400,16 +400,26 @@ namespace MatterHackers.MatterSlice
 				}
 
 				Polygons infillOutline = islandOutline.Offset(-supportNormalConfig.lineWidth_um / 2);
-				switch (config.SupportType)
-				{
-					case ConfigConstants.SUPPORT_TYPE.GRID:
-						Infill.GenerateGridInfill(config, infillOutline, ref islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
-						break;
 
-					case ConfigConstants.SUPPORT_TYPE.LINES:
-						Infill.GenerateLineInfill(config, infillOutline, ref islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
-						break;
+				if (layerIndex == 0)
+				{
+					// on the first layer print this as solid
+					Infill.GenerateLineInfill(config, infillOutline, ref islandInfillLines, config.SupportInfillStartingAngle, config.FirstLayerExtrusionWidth_um);
 				}
+				else
+				{
+					switch (config.SupportType)
+					{
+						case ConfigConstants.SUPPORT_TYPE.GRID:
+							Infill.GenerateGridInfill(config, infillOutline, ref islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
+							break;
+
+						case ConfigConstants.SUPPORT_TYPE.LINES:
+							Infill.GenerateLineInfill(config, infillOutline, ref islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
+							break;
+					}
+				}
+
 				gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, supportNormalConfig);
 			}
 		}
