@@ -404,7 +404,7 @@ namespace MatterHackers.MatterSlice
 				if (layerIndex == 0)
 				{
 					// on the first layer print this as solid
-					Infill.GenerateLineInfill(config, infillOutline, ref islandInfillLines, config.SupportInfillStartingAngle, config.FirstLayerExtrusionWidth_um);
+					Infill.GenerateLineInfill(config, infillOutline, ref islandInfillLines, config.SupportInfillStartingAngle, config.ExtrusionWidth_um);
 				}
 				else
 				{
