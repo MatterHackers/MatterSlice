@@ -542,14 +542,14 @@ namespace MatterHackers.MatterSlice
 
 					if (slicingData.support != null)
 					{
-						if ((config.SupportExtruder <= 0 && extruderIndex == 0)
-							|| config.SupportExtruder == extruderIndex)
+						if ((config.supportExtruder <= 0 && extruderIndex == 0)
+							|| config.supportExtruder == extruderIndex)
 						{
 							slicingData.support.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig);
 							printedSupport = true;
 						}
-						if ((config.SupportInterfaceExtruder <= 0 && extruderIndex == 0)
-							|| config.SupportInterfaceExtruder == extruderIndex)
+						if ((config.supportInterfaceExtruder <= 0 && extruderIndex == 0)
+							|| config.supportInterfaceExtruder == extruderIndex)
 						{
 							slicingData.support.QueueInterfaceSupportLayer(config, gcodeLayer, layerIndex, supportInterfaceConfig);
 							printedInterface = true;
@@ -561,12 +561,12 @@ namespace MatterHackers.MatterSlice
 				{
 					if (!printedSupport)
 					{
-						gcodeLayer.SetExtruder(config.SupportExtruder);
+						gcodeLayer.SetExtruder(config.supportExtruder);
 						slicingData.support.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig);
 					}
 					if (!printedInterface)
 					{
-						gcodeLayer.SetExtruder(config.SupportInterfaceExtruder);
+						gcodeLayer.SetExtruder(config.supportInterfaceExtruder);
 						slicingData.support.QueueInterfaceSupportLayer(config, gcodeLayer, layerIndex, supportInterfaceConfig);
 					}
 				}
