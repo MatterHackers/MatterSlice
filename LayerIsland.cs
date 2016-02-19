@@ -35,7 +35,7 @@ namespace MatterHackers.MatterSlice
 	{
 		public Aabb BoundingBox = new Aabb();
 		public Polygons IslandOutline = new Polygons();
-		public Polygons AvoidCrossingBoundery = new Polygons();
+		public Polygons AvoidCrossingBoundary = new Polygons();
 		public List<Polygons> InsetToolPaths = new List<Polygons>();
 		public Polygons SolidTopToolPaths = new Polygons();
 		public Polygons SolidBottomToolPaths = new Polygons();
@@ -49,7 +49,7 @@ namespace MatterHackers.MatterSlice
 			LayerIsland part = this;
 			part.BoundingBox.Calculate(part.IslandOutline);
 
-			part.AvoidCrossingBoundery = part.IslandOutline.Offset(-extrusionWidth_um);
+			part.AvoidCrossingBoundary = part.IslandOutline.Offset(-extrusionWidth_um);
 			if (insetCount == 0)
 			{
 				// if we have no insets defined still create one
