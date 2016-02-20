@@ -166,13 +166,12 @@ namespace MatterHackers.MatterSlice
 			{
 				// Only process the first extruder on spiral vase or 
 				// skip extruders that have empty layers
-				if (config.ContinuousSpiralOuterPerimeter && extrudeIndex > 0 ||
-						storage.Extruders[extrudeIndex].Layers.Count < 1)
+				if (config.ContinuousSpiralOuterPerimeter)
 				{
 					SliceLayer layer0 = storage.Extruders[extrudeIndex].Layers[0];
 					allOutlines.AddAll(layer0.Islands[0]?.IslandOutline);
 
-					continue;
+					break;
 				}
 
 				// Add the layers outline to allOutlines
