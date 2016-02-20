@@ -29,7 +29,7 @@ using System.Collections.Generic;
  */
 namespace MatterHackers.MatterSlice
 {
-	public sealed class GrahamScan : IComparer<IntPoint>
+	public static class GrahamScan
 	{
 		/// <summary>
 		/// An enum denoting a directional-turn between 3 points (vectors).
@@ -41,14 +41,12 @@ namespace MatterHackers.MatterSlice
 			Collinear
 		}
 
-		IntPoint lowest;
-
 		/// <summary>
 		/// Returns true if all points in <code>points</code> are collinear.
 		/// </summary>
 		/// <param name="points"> the list of points. </param>
 		/// <returns>       true if all points in <code>points</code> are collinear. </returns>
-		protected internal static bool areAllCollinear(IList<IntPoint> points)
+		private static bool AreAllCollinear(IList<IntPoint> points)
 		{
 			if (points.Count < 2)
 			{
@@ -80,22 +78,23 @@ namespace MatterHackers.MatterSlice
 		/// </summary>
 		/// <param name="points">The list of points. </param>
 		/// <returns>The convex hull of the points created from the list <code>points</code>. </returns>
-		public IList<IntPoint> GetConvexHull(List<IntPoint> points)
+		public static IList<IntPoint> GetConvexHull(List<IntPoint> points)
 		{
-			this.lowest = getLowestPoint(points);
+			 IntPoint lowestPoint = GetLowestPoint(points);
 
-			List<IntPoint> sorted;
+			// Sort points based on angle to lowestPoint
+			IntPointSorter sorter = new IntPointSorter(lowestPoint);
+			points.Sort(sorter.ComparePoints);
 
-			points.Sort(this);
-
-			sorted = points;
+			// Alias for clarity
+			List<IntPoint> sorted = points;
 
 			if (sorted.Count < 3)
 			{
 				throw new System.ArgumentException("can only create a convex hull of 3 or more unique points");
 			}
 
-			if (areAllCollinear(sorted))
+			if (AreAllCollinear(sorted))
 			{
 				throw new System.ArgumentException("cannot create a convex hull from collinear points");
 			}
@@ -140,7 +139,7 @@ namespace MatterHackers.MatterSlice
 		/// <returns>       the points with the lowest y coordinate. In case more than
 		///               1 such point exists, the one with the lowest x coordinate
 		///               is returned. </returns>
-		private static IntPoint getLowestPoint(IList<IntPoint> points)
+		private static IntPoint GetLowestPoint(IList<IntPoint> points)
 		{
 			IntPoint lowest = points[0];
 
@@ -155,54 +154,6 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return lowest;
-		}
-
-		/// <summary>
-		/// Returns a sorted set of points from the list <code>points</code>. The
-		/// set of points are sorted in increasing order of the angle they and the
-		/// lowest point <tt>P</tt> make with the x-axis. If tow (or more) points
-		/// form the same angle towards <tt>P</tt>, the one closest to <tt>P</tt>
-		/// comes first.
-		/// </summary>
-		/// <param name="points"> the list of points to sort. </param>
-		/// <returns>       a sorted set of points from the list <code>points</code>. </returns>
-		/// <seealso cref= GrahamScan#getLowestPoint(java.util.List) </seealso>
-		public int Compare(IntPoint a, IntPoint b)
-		{
-			if (a.Equals(b))
-			{
-				return 0;
-			}
-
-			// use longs to guard against int-underflow
-			double thetaA = Math.Atan2((long)a.Y - lowest.Y, (long)a.X - lowest.X);
-			double thetaB = Math.Atan2((long)b.Y - lowest.Y, (long)b.X - lowest.X);
-
-			if (thetaA < thetaB)
-			{
-				return -1;
-			}
-			else if (thetaA > thetaB)
-			{
-				return 1;
-			}
-			else
-			{
-				// collinear with the 'lowest' point, let the point closest to it come first
-
-				// use longs to guard against int-over/underflow
-				double distanceA = Math.Sqrt((((long)lowest.X - a.X) * ((long)lowest.X - a.X)) + (((long)lowest.Y - a.Y) * ((long)lowest.Y - a.Y)));
-				double distanceB = Math.Sqrt((((long)lowest.X - b.X) * ((long)lowest.X - b.X)) + (((long)lowest.Y - b.Y) * ((long)lowest.Y - b.Y)));
-
-				if (distanceA < distanceB)
-				{
-					return -1;
-				}
-				else
-				{
-					return 1;
-				}
-			}
 		}
 
 		/// <summary>
@@ -223,7 +174,7 @@ namespace MatterHackers.MatterSlice
 		/// <returns> the GrahamScan#Turn formed by traversing through the
 		///         ordered points <code>a</code>, <code>b</code> and
 		///         <code>c</code>. </returns>
-		protected internal static Turn GetTurn(IntPoint a, IntPoint b, IntPoint c)
+		private static Turn GetTurn(IntPoint a, IntPoint b, IntPoint c)
 		{
 
 			// use longs to guard against int-over/underflow
@@ -241,6 +192,58 @@ namespace MatterHackers.MatterSlice
 			{
 				return Turn.Collinear;
 			}
+		}
+
+		/// <summary>
+		/// Sorts a set of IntPoint values by their angle to the referenced lowestPoint
+		/// </summary>
+		private class IntPointSorter
+		{
+			private IntPoint lowestPoint;
+
+			public IntPointSorter(IntPoint lowest)
+			{
+				this.lowestPoint = lowest;
+			}
+
+			public int ComparePoints(IntPoint a, IntPoint b)
+			{
+				if (a.Equals(b))
+				{
+					return 0;
+				}
+
+				// use longs to guard against int-underflow
+				double thetaA = Math.Atan2((long)a.Y - lowestPoint.Y, (long)a.X - lowestPoint.X);
+				double thetaB = Math.Atan2((long)b.Y - lowestPoint.Y, (long)b.X - lowestPoint.X);
+
+				if (thetaA < thetaB)
+				{
+					return -1;
+				}
+				else if (thetaA > thetaB)
+				{
+					return 1;
+				}
+				else
+				{
+					// collinear with the 'lowest' point, let the point closest to it come first
+
+					// use longs to guard against int-over/underflow
+					double distanceA = Math.Sqrt((((long)lowestPoint.X - a.X) * ((long)lowestPoint.X - a.X)) + (((long)lowestPoint.Y - a.Y) * ((long)lowestPoint.Y - a.Y)));
+					double distanceB = Math.Sqrt((((long)lowestPoint.X - b.X) * ((long)lowestPoint.X - b.X)) + (((long)lowestPoint.Y - b.Y) * ((long)lowestPoint.Y - b.Y)));
+
+					if (distanceA < distanceB)
+					{
+						return -1;
+					}
+					else
+					{
+						return 1;
+					}
+				}
+			}
+
 		}
 	}
 }
