@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ClipperLib;
+using System;
 using System.Collections.Generic;
 
 /*
@@ -26,29 +27,10 @@ using System.Collections.Generic;
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
-namespace cg
+namespace MatterHackers.MatterSlice
 {
-	/// 
-	public sealed class GrahamScan : IComparer<GrahamScan.Point>
+	public sealed class GrahamScan : IComparer<IntPoint>
 	{
-		[Serializable]
-		public struct Point
-		{
-			public int x, y;
-
-			public Point(int newX, int newY)
-			{
-				x = newX;
-				y = newY;
-			}
-
-			public override string ToString()
-			{
-				return string.Format("[{0},{1}]", this.x, this.y);
-			}
-		}
-
-
 		/// <summary>
 		/// An enum denoting a directional-turn between 3 points (vectors).
 		/// </summary>
@@ -59,28 +41,27 @@ namespace cg
 			Collinear
 		}
 
-		Point lowest;
+		IntPoint lowest;
 
 		/// <summary>
 		/// Returns true if all points in <code>points</code> are collinear.
 		/// </summary>
 		/// <param name="points"> the list of points. </param>
 		/// <returns>       true if all points in <code>points</code> are collinear. </returns>
-		protected internal static bool areAllCollinear(IList<Point> points)
+		protected internal static bool areAllCollinear(IList<IntPoint> points)
 		{
-
 			if (points.Count < 2)
 			{
 				return true;
 			}
 
-			Point a = points[0];
-			Point b = points[1];
+			IntPoint a = points[0];
+			IntPoint b = points[1];
 
 			for (int i = 2; i < points.Count; i++)
 			{
 
-				Point c = points[i];
+				IntPoint c = points[i];
 
 				if (GetTurn(a, b, c) != Turn.Collinear)
 				{
@@ -99,12 +80,11 @@ namespace cg
 		/// </summary>
 		/// <param name="points">The list of points. </param>
 		/// <returns>The convex hull of the points created from the list <code>points</code>. </returns>
-		public IList<Point> getConvexHull(List<Point> points)
+		public IList<IntPoint> GetConvexHull(List<IntPoint> points)
 		{
-
 			this.lowest = getLowestPoint(points);
 
-			List<Point> sorted;
+			List<IntPoint> sorted;
 
 			points.Sort(this);
 
@@ -120,15 +100,15 @@ namespace cg
 				throw new System.ArgumentException("cannot create a convex hull from collinear points");
 			}
 
-			Stack<Point> stack = new Stack<Point>();
+			Stack<IntPoint> stack = new Stack<IntPoint>();
 			stack.Push(sorted[0]);
 			stack.Push(sorted[1]);
 
 			for (int i = 2; i < sorted.Count; i++)
 			{
-				Point head = sorted[i];
-				Point middle = stack.Pop();
-				Point tail = stack.Peek();
+				IntPoint head = sorted[i];
+				IntPoint middle = stack.Pop();
+				IntPoint tail = stack.Peek();
 
 				Turn turn = GetTurn(tail, middle, head);
 				switch (turn)
@@ -149,7 +129,7 @@ namespace cg
 			// close the hull
 			stack.Push(sorted[0]);
 
-			return new List<Point>(stack);
+			return new List<IntPoint>(stack);
 		}
 
 		/// <summary>
@@ -160,15 +140,15 @@ namespace cg
 		/// <returns>       the points with the lowest y coordinate. In case more than
 		///               1 such point exists, the one with the lowest x coordinate
 		///               is returned. </returns>
-		private static Point getLowestPoint(IList<Point> points)
+		private static IntPoint getLowestPoint(IList<IntPoint> points)
 		{
-			Point lowest = points[0];
+			IntPoint lowest = points[0];
 
 			for (int i = 1; i < points.Count; i++)
 			{
-				Point temp = points[i];
+				IntPoint temp = points[i];
 
-				if (temp.y < lowest.y || (temp.y == lowest.y && temp.x < lowest.x))
+				if (temp.Y < lowest.Y || (temp.Y == lowest.Y && temp.X < lowest.X))
 				{
 					lowest = temp;
 				}
@@ -187,7 +167,7 @@ namespace cg
 		/// <param name="points"> the list of points to sort. </param>
 		/// <returns>       a sorted set of points from the list <code>points</code>. </returns>
 		/// <seealso cref= GrahamScan#getLowestPoint(java.util.List) </seealso>
-		public int Compare(Point a, Point b)
+		public int Compare(IntPoint a, IntPoint b)
 		{
 			if (a.Equals(b))
 			{
@@ -195,8 +175,8 @@ namespace cg
 			}
 
 			// use longs to guard against int-underflow
-			double thetaA = Math.Atan2((long)a.y - lowest.y, (long)a.x - lowest.x);
-			double thetaB = Math.Atan2((long)b.y - lowest.y, (long)b.x - lowest.x);
+			double thetaA = Math.Atan2((long)a.Y - lowest.Y, (long)a.X - lowest.X);
+			double thetaB = Math.Atan2((long)b.Y - lowest.Y, (long)b.X - lowest.X);
 
 			if (thetaA < thetaB)
 			{
@@ -211,8 +191,8 @@ namespace cg
 				// collinear with the 'lowest' point, let the point closest to it come first
 
 				// use longs to guard against int-over/underflow
-				double distanceA = Math.Sqrt((((long)lowest.x - a.x) * ((long)lowest.x - a.x)) + (((long)lowest.y - a.y) * ((long)lowest.y - a.y)));
-				double distanceB = Math.Sqrt((((long)lowest.x - b.x) * ((long)lowest.x - b.x)) + (((long)lowest.y - b.y) * ((long)lowest.y - b.y)));
+				double distanceA = Math.Sqrt((((long)lowest.X - a.X) * ((long)lowest.X - a.X)) + (((long)lowest.Y - a.Y) * ((long)lowest.Y - a.Y)));
+				double distanceB = Math.Sqrt((((long)lowest.X - b.X) * ((long)lowest.X - b.X)) + (((long)lowest.Y - b.Y) * ((long)lowest.Y - b.Y)));
 
 				if (distanceA < distanceB)
 				{
@@ -224,32 +204,30 @@ namespace cg
 				}
 			}
 		}
-	
 
-
-	/// <summary>
-	/// Returns the GrahamScan#Turn formed by traversing through the
-	/// ordered points <code>a</code>, <code>b</code> and <code>c</code>.
-	/// More specifically, the cross product <tt>C</tt> between the
-	/// 3 points (vectors) is calculated:
-	/// 
-	/// <tt>(b.x-a.x * c.y-a.y) - (b.y-a.y * c.x-a.x)</tt>
-	/// 
-	/// and if <tt>C</tt> is less than 0, the turn is CLOCKWISE, if
-	/// <tt>C</tt> is more than 0, the turn is COUNTER_CLOCKWISE, else
-	/// the three points are COLLINEAR.
-	/// </summary>
-	/// <param name="a"> the starting point. </param>
-	/// <param name="b"> the second point. </param>
-	/// <param name="c"> the end point. </param>
-	/// <returns> the GrahamScan#Turn formed by traversing through the
-	///         ordered points <code>a</code>, <code>b</code> and
-	///         <code>c</code>. </returns>
-	protected internal static Turn GetTurn(Point a, Point b, Point c)
+		/// <summary>
+		/// Returns the GrahamScan#Turn formed by traversing through the
+		/// ordered points <code>a</code>, <code>b</code> and <code>c</code>.
+		/// More specifically, the cross product <tt>C</tt> between the
+		/// 3 points (vectors) is calculated:
+		/// 
+		/// <tt>(b.x-a.x * c.y-a.y) - (b.y-a.y * c.x-a.x)</tt>
+		/// 
+		/// and if <tt>C</tt> is less than 0, the turn is CLOCKWISE, if
+		/// <tt>C</tt> is more than 0, the turn is COUNTER_CLOCKWISE, else
+		/// the three points are COLLINEAR.
+		/// </summary>
+		/// <param name="a"> the starting point. </param>
+		/// <param name="b"> the second point. </param>
+		/// <param name="c"> the end point. </param>
+		/// <returns> the GrahamScan#Turn formed by traversing through the
+		///         ordered points <code>a</code>, <code>b</code> and
+		///         <code>c</code>. </returns>
+		protected internal static Turn GetTurn(IntPoint a, IntPoint b, IntPoint c)
 		{
 
 			// use longs to guard against int-over/underflow
-			long crossProduct = (((long)b.x - a.x) * ((long)c.y - a.y)) - (((long)b.y - a.y) * ((long)c.x - a.x));
+			long crossProduct = (((long)b.X - a.X) * ((long)c.Y - a.Y)) - (((long)b.Y - a.Y) * ((long)c.X - a.X));
 
 			if (crossProduct > 0)
 			{
@@ -265,5 +243,4 @@ namespace cg
 			}
 		}
 	}
-
 }

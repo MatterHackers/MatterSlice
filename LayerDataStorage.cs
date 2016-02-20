@@ -24,7 +24,6 @@ using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
-	using cg;
 	using System.IO;
 	using System.Linq;
 	using Polygons = List<List<IntPoint>>;
@@ -129,18 +128,16 @@ namespace MatterHackers.MatterSlice
 			Polygons skirtPolygons = GetSkirtBounds(config, storage, externalOnly, distance, extrusionWidth_um, brimCount);
 
 			// Find convex hull for the skirt outline 
-			List<GrahamScan.Point> items = new List<GrahamScan.Point>();
-			var scanner = new GrahamScan();
+			List<IntPoint> items = new List<IntPoint>();
 			foreach (var path in skirtPolygons)
 			{
-				foreach (var polygon in path)
-				{
-					items.Add(new GrahamScan.Point((int)polygon.X, (int)polygon.Y));
-				}
+				items.AddRange(path);
 			}
 
-			var convexHull = scanner.getConvexHull(items);
-			var intpointHull = convexHull.Take(convexHull.Count - 1).Select(p => new IntPoint(p.x, p.y)).ToList();
+
+			var scanner = new GrahamScan();
+			var convexHull = scanner.GetConvexHull(items);
+			var intpointHull = convexHull.Take(convexHull.Count - 1).Select(p => new IntPoint(p.X, p.Y)).ToList();
 
 			skirtPolygons = new Polygons();
 			skirtPolygons.Add(intpointHull);
@@ -162,42 +159,25 @@ namespace MatterHackers.MatterSlice
 
 		private static Polygons GetSkirtBounds(ConfigSettings config, LayerDataStorage storage, bool externalOnly, int distance, int extrusionWidth_um, int brimCount)
 		{
-			var allOutlines = new Polygons();
+			Polygons allOutlines = new Polygons();
 
 			// Loop over every extruder
 			for (int extrudeIndex = 0; extrudeIndex < storage.Extruders.Count; extrudeIndex++)
 			{
 				// Only process the first extruder on spiral vase or 
 				// skip extruders that have empty layers
-				if (config.continuousSpiralOuterPerimeter && extrudeIndex > 0 ||
+				if (config.ContinuousSpiralOuterPerimeter && extrudeIndex > 0 ||
 						storage.Extruders[extrudeIndex].Layers.Count < 1)
 				{
+					SliceLayer layer0 = storage.Extruders[extrudeIndex].Layers[0];
+					allOutlines.AddAll(layer0.Islands[0]?.IslandOutline);
+
 					continue;
 				}
 
-				// Loop over every island mapped to the current extruder
+				// Add the layers outline to allOutlines
 				SliceLayer layer = storage.Extruders[extrudeIndex].Layers[0];
-
-				for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
-				{
-					if (config.ContinuousSpiralOuterPerimeter && partIndex > 0)
-					{
-						continue;
-					}
-
-					Polygons outline;
-					if (externalOnly)
-					{
-						outline = new Polygons();
-						outline.Add(layer.Islands[partIndex].IslandOutline[0]);
-					}
-					else
-					{
-						outline = layer.Islands[partIndex].IslandOutline;
-					}
-
-					allOutlines.AddAll(outline);
-				}
+				allOutlines.AddAll(layer.AllOutlines);
 			}
 
 			bool hasWipeTower = storage.wipeTower.PolygonLength() > 0;
