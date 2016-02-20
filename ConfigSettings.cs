@@ -206,7 +206,7 @@ namespace MatterHackers.MatterSlice
 		public int NumberOfTopLayers { get; set; }
 
 		[SettingDescription("The number of loops to draw around the convex hull")]
-		public int NumberOfSkirtLoops;
+		public int NumberOfSkirtLoops { get; set; }
 
 		[SettingDescription("The number of loops to draw around islands")]
 		public int NumberOfBrimLoops { get; set; }
