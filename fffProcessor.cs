@@ -340,6 +340,7 @@ namespace MatterHackers.MatterSlice
 					config.SkirtDistance_um + config.RaftBaseLineSpacing_um,
 					config.RaftBaseLineSpacing_um,
 					config.NumberOfSkirtLoops,
+					config.NumberOfBrimLoops,
 					config.SkirtMinLength_um,
 					config.RaftBaseThickness_um, config);
 			}
@@ -349,6 +350,7 @@ namespace MatterHackers.MatterSlice
 					config.SkirtDistance_um,
 					config.FirstLayerExtrusionWidth_um,
 					config.NumberOfSkirtLoops,
+					config.NumberOfBrimLoops,
 					config.SkirtMinLength_um,
 					config.FirstLayerThickness_um, config);
 			}

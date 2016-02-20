@@ -203,10 +203,14 @@ namespace MatterHackers.MatterSlice
 		public int NumberOfBottomLayers { get; set; }
 		public int NumberOfPerimeters { get; set; }
 
-		[SettingDescription("The number of loops to draw around objects. Can be used to help hold them down.")]
-		public int NumberOfSkirtLoops { get; set; }
-
 		public int NumberOfTopLayers { get; set; }
+
+		[SettingDescription("The number of loops to draw around the convex hull")]
+		public int NumberOfSkirtLoops;
+
+		[SettingDescription("The number of loops to draw around islands")]
+		public int NumberOfBrimLoops { get; set; }
+
 		public ConfigConstants.OUTPUT_TYPE outputType { get; set; }
 
 		[SettingDescription("The extrusion width of all outside perimeters")]
@@ -613,6 +617,7 @@ namespace MatterHackers.MatterSlice
 			FirstLayerToAllowFan = 2;
 			SkirtDistanceFromObject = 6;
 			NumberOfSkirtLoops = 1;
+			NumberOfBrimLoops = 0;
 			SkirtMinLength = 0;
 			InfillPercent = 20;
 			InfillExtendIntoPerimeter = .06;
