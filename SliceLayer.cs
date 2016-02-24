@@ -165,12 +165,6 @@ namespace MatterHackers.MatterSlice
 				string islandsString = islandsToRestOn.WriteToString();
 			}
 
-			Polygons islandConvexHuls = new Polygons();
-			foreach(Polygon poly in islandsToRestOn)
-			{
-				islandConvexHuls.Add(poly.CreateConvexHull());
-			}
-
 			if (islandsToRestOn.Count > 5 || islandsToRestOn.Count < 1)
 			{
 				return false;
@@ -194,7 +188,7 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				double area = Math.Abs(islandConvexHuls[islandIndex].Area());
+				double area = Math.Abs(islandsToRestOn[islandIndex].Area());
 				if (area > biggestArea)
 				{
 					if (biggestArea > nextBiggestArea)
@@ -217,15 +211,6 @@ namespace MatterHackers.MatterSlice
 				return false;
 			}
 
-			Polygons big1 = new Polygons() { islandConvexHuls[indexOfBiggest] };
-			Polygons big2 = new Polygons() { islandConvexHuls[indexOfNextBigest] };
-
-			Polygons intersection = big1.CreateIntersection(big2);
-			if(intersection.Count > 0)
-			{
-				return GetSingleIslandAngle(areaAboveToFill, islandsToRestOn[indexOfBiggest], out bridgeAngle, debugName);
-			}
-
 			IntPoint center1 = islandsToRestOn[indexOfBiggest].CenterOfMass();
 			IntPoint center2 = islandsToRestOn[indexOfNextBigest].CenterOfMass();
 
@@ -237,7 +222,6 @@ namespace MatterHackers.MatterSlice
 			}
 			return true;
 		}
-
 		public void CreateIslandData()
 		{
 			List<Polygons> separtedIntoIslands = AllOutlines.ProcessIntoSeparatIslands();
