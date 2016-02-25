@@ -53,7 +53,7 @@ namespace MatterHackers.MatterSlice
 		}
 
 		/// <summary>
-		/// Set the data for a path cofig. This is used to define how different parts (infill, perimeters) are written to gcode.
+		/// Set the data for a path config. This is used to define how different parts (infill, perimeters) are written to gcode.
 		/// </summary>
 		/// <param name="speed"></param>
 		/// <param name="lineWidth_um"></param>

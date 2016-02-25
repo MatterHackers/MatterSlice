@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
     The TimeEstimateCalculator class generates a estimate of printing time calculated with acceleration in mind.
-    Some of this code has been addapted from the Marlin sources.
+    Some of this code has been adapted from the Marlin sources.
 */
 
 using System;

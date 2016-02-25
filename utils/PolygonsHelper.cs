@@ -222,7 +222,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// we can just test the first one first as we know that there is a special case in
-			// the silcer that all the other polygons are inside this one.
+			// the slicer that all the other polygons are inside this one.
 			int positionOnOuterPerimeter = Clipper.PointInPolygon(testPoint, polygons[0]);
 			if (positionOnOuterPerimeter == 0) // not inside or on boundary
 			{

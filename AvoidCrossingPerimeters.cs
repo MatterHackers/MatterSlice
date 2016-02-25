@@ -179,7 +179,7 @@ namespace MatterHackers.MatterSlice
 			for (int startIndex = 0; startIndex < pointList.Count - 2; startIndex++)
 			{
 				IntPoint startPosition = pointList[startIndex];
-				// make sure there is at least one point between the start and the end to optomize
+				// make sure there is at least one point between the start and the end to optimize
 				if (pointList.Count > startIndex + 2)
 				{
 					for (int checkIndex = pointList.Count - 1; checkIndex > startIndex + 1; checkIndex--)

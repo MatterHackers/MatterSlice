@@ -185,7 +185,7 @@ namespace MatterHackers.MatterSlice
 		public static int GetBestEdgeIndex(Polygon currentPolygon)
 		{
 			// TODO: other considerations
-			// collect & bucket options and then choos the closest
+			// collect & bucket options and then choose the closest
 
 			double totalTurns = 0;
             CandidateGroup positiveGroup = new CandidateGroup();
@@ -226,7 +226,7 @@ namespace MatterHackers.MatterSlice
 				if (turnAmount < 0)
 				{
 					// threshold angles, don't pick angles that are too shallow
-					// thershold line lengths, don't pick big angles hiding in TINY lines
+					// threshold line lengths, don't pick big angles hiding in TINY lines
 					if (Math.Abs(turnAmount ) > minTurnToChoose
 						&& distanceLongeEnough)
 					{
