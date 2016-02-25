@@ -760,7 +760,7 @@ namespace MatterHackers.MatterSlice
 				if (bridgePolygons.Count > 0)
 				{
 					gcode.WriteFanCommand(config.BridgeFanSpeedPercent);
-					QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bridgePolygons, airGappedBottomConfig, SupportWriteType.UnsupportedAreas);
+					QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bridgePolygons, bridgConfig, SupportWriteType.UnsupportedAreas);
 				}
 
 				if (config.NumberOfPerimeters > 0)
@@ -1104,7 +1104,7 @@ namespace MatterHackers.MatterSlice
 					else
 					{
 						SliceLayer previousLayer = slicingData.Extruders[extruderIndex].Layers[layerIndex - 1];
-						previousLayer.GenerateFillConsideringBridging(bottomFillIsland, ref bottomFillLines, config);
+						previousLayer.GenerateFillConsideringBridging(bottomFillIsland, ref bottomFillLines, config, bridgePolygons);
 					}
 				}
 				else
