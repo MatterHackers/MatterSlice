@@ -404,18 +404,18 @@ namespace MatterHackers.MatterSlice
 				if (layerIndex == 0)
 				{
 					// on the first layer print this as solid
-					Infill.GenerateLineInfill(config, infillOutline, ref islandInfillLines, config.SupportInfillStartingAngle, config.ExtrusionWidth_um);
+					Infill.GenerateLineInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.ExtrusionWidth_um);
 				}
 				else
 				{
 					switch (config.SupportType)
 					{
 						case ConfigConstants.SUPPORT_TYPE.GRID:
-							Infill.GenerateGridInfill(config, infillOutline, ref islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
+							Infill.GenerateGridInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
 							break;
 
 						case ConfigConstants.SUPPORT_TYPE.LINES:
-							Infill.GenerateLineInfill(config, infillOutline, ref islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
+							Infill.GenerateLineInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
 							break;
 					}
 				}
@@ -431,7 +431,7 @@ namespace MatterHackers.MatterSlice
 			if (currentInterfaceOutlines.Count > 0)
 			{
 				Polygons supportLines = new Polygons();
-				Infill.GenerateLineInfill(config, currentInterfaceOutlines, ref supportLines, config.InfillStartingAngle + 90, config.ExtrusionWidth_um);
+				Infill.GenerateLineInfill(config, currentInterfaceOutlines, supportLines, config.InfillStartingAngle + 90, config.ExtrusionWidth_um);
 				gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportInterfaceConfig);
 			}
 		}
@@ -456,11 +456,11 @@ namespace MatterHackers.MatterSlice
 				switch (config.SupportType)
 				{
 					case ConfigConstants.SUPPORT_TYPE.GRID:
-						Infill.GenerateGridInfill(config, infillOutline, ref islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
+						Infill.GenerateGridInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
 						break;
 
 					case ConfigConstants.SUPPORT_TYPE.LINES:
-						Infill.GenerateLineInfill(config, infillOutline, ref islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
+						Infill.GenerateLineInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
 						break;
 				}
 				gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, supportNormalConfig);

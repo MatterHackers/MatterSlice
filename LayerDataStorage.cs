@@ -244,7 +244,7 @@ namespace MatterHackers.MatterSlice
 					gcode.SetExtrusion(config.RaftBaseThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
 					Polygons raftLines = new Polygons();
-					Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.RaftBaseLineSpacing_um, config.InfillExtendIntoPerimeter_um, 0);
+					Infill.GenerateLinePaths(storage.raftOutline, raftLines, config.RaftBaseLineSpacing_um, config.InfillExtendIntoPerimeter_um, 0);
 
 					// write the skirt around the raft
 					gcodeLayer.QueuePolygonsByOptimizer(storage.skirt, raftBaseConfig);
@@ -272,7 +272,7 @@ namespace MatterHackers.MatterSlice
 					gcode.SetExtrusion(config.RaftInterfaceThicknes_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
 					Polygons raftLines = new Polygons();
-					Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.RaftInterfaceLineSpacing_um, config.InfillExtendIntoPerimeter_um, 45);
+					Infill.GenerateLinePaths(storage.raftOutline, raftLines, config.RaftInterfaceLineSpacing_um, config.InfillExtendIntoPerimeter_um, 45);
 					gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftMiddleConfig);
 
 					gcodeLayer.WriteQueuedGCode(config.RaftInterfaceThicknes_um);
@@ -290,11 +290,11 @@ namespace MatterHackers.MatterSlice
 					if (raftSurfaceIndex == config.RaftSurfaceLayers)
 					{
 						// make sure the top layer of the raft is 90 degrees offset to the first layer of the part so that it has minimum contact points.
-						Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.RaftSurfaceLineSpacing_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle + 90);
+						Infill.GenerateLinePaths(storage.raftOutline, raftLines, config.RaftSurfaceLineSpacing_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle + 90);
 					}
 					else
 					{
-						Infill.GenerateLinePaths(storage.raftOutline, ref raftLines, config.RaftSurfaceLineSpacing_um, config.InfillExtendIntoPerimeter_um, 90 * raftSurfaceIndex);
+						Infill.GenerateLinePaths(storage.raftOutline, raftLines, config.RaftSurfaceLineSpacing_um, config.InfillExtendIntoPerimeter_um, 90 * raftSurfaceIndex);
 					}
 					gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftSurfaceConfig);
 

@@ -752,7 +752,7 @@ namespace MatterHackers.MatterSlice
 
 				Polygons bottomFillPolygons = new Polygons();
 
-				CalculateInfillData(slicingData, extruderIndex, layerIndex, island, ref bottomFillPolygons, ref fillPolygons, ref topFillPolygons, ref bridgePolygons);
+				CalculateInfillData(slicingData, extruderIndex, layerIndex, island, bottomFillPolygons, fillPolygons, topFillPolygons, bridgePolygons);
 				bottomFillIslandPolygons.Add(bottomFillPolygons);
 
 				// Write the bridge polygons out first so the perimeter will have more to hold to while bridging the gaps.
@@ -980,16 +980,15 @@ namespace MatterHackers.MatterSlice
 
 					Polygons bottomFillPolygons = new Polygons();
 
-					CalculateInfillData(slicingData, extruderIndex, layerIndex, part, ref bottomFillPolygons, ref fillPolygons, ref topFillPolygons, ref bridgePolygons);
+					CalculateInfillData(slicingData, extruderIndex, layerIndex, part, bottomFillPolygons, fillPolygons, topFillPolygons, bridgePolygons);
 					bottomFillIslandPolygons.Add(bottomFillPolygons);
 
-					// Write the bridge polygons out first so the perimeter will have more to hold to while bridging the gaps.
-					// It would be even better to slow down the perimeters that are part of bridges but that is a bit harder.
+#if DEBUG
 					if (bridgePolygons.Count > 0)
 					{
-						gcode.WriteFanCommand(config.BridgeFanSpeedPercent);
-						QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bridgePolygons, airGappedBottomConfig, SupportWriteType.SupportedAreas);
+						new Exception("Unexpected bridge polygons in air gapped region");
 					}
+#endif
 
 					if (config.NumberOfPerimeters > 0)
 					{
@@ -1090,7 +1089,7 @@ namespace MatterHackers.MatterSlice
 			fillConfig.closedLoop = oldLoopValue;
 		}
 
-		private void CalculateInfillData(LayerDataStorage slicingData, int extruderIndex, int layerIndex, LayerIsland part, ref Polygons bottomFillLines, ref Polygons fillPolygons, ref Polygons topFillPolygons, ref Polygons bridgePolygons)
+		private void CalculateInfillData(LayerDataStorage slicingData, int extruderIndex, int layerIndex, LayerIsland part, Polygons bottomFillLines, Polygons fillPolygons, Polygons topFillPolygons, Polygons bridgePolygons)
 		{
 			// generate infill for the bottom layer including bridging
 			foreach (Polygons bottomFillIsland in part.SolidBottomToolPaths.ProcessIntoSeparatIslands())
@@ -1099,24 +1098,24 @@ namespace MatterHackers.MatterSlice
 				{
 					if (config.GenerateSupport)
 					{
-						Infill.GenerateLinePaths(bottomFillIsland, ref bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+						Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
 					}
 					else
 					{
 						SliceLayer previousLayer = slicingData.Extruders[extruderIndex].Layers[layerIndex - 1];
-						previousLayer.GenerateFillConsideringBridging(bottomFillIsland, ref bottomFillLines, config, bridgePolygons);
+						previousLayer.GenerateFillConsideringBridging(bottomFillIsland, bottomFillLines, config, bridgePolygons);
 					}
 				}
 				else
 				{
-					Infill.GenerateLinePaths(bottomFillIsland, ref bottomFillLines, config.FirstLayerExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+					Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.FirstLayerExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
 				}
 			}
 
 			// generate infill for the top layer
 			foreach (Polygons outline in part.SolidTopToolPaths.ProcessIntoSeparatIslands())
 			{
-				Infill.GenerateLinePaths(outline, ref topFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+				Infill.GenerateLinePaths(outline, topFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
 			}
 
 			// generate infill intermediate layers
@@ -1124,13 +1123,13 @@ namespace MatterHackers.MatterSlice
 			{
 				if (true) // use the old infill method
 				{
-					Infill.GenerateLinePaths(outline, ref fillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle + 90 * (layerIndex % 2));
+					Infill.GenerateLinePaths(outline, fillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle + 90 * (layerIndex % 2));
 				}
 				else // use the new concentric infill (not tested enough yet) have to handle some bad cases better
 				{
 					double oldInfillPercent = config.InfillPercent;
 					config.InfillPercent = 100;
-					Infill.GenerateConcentricInfill(config, outline, ref fillPolygons);
+					Infill.GenerateConcentricInfill(config, outline, fillPolygons);
 					config.InfillPercent = oldInfillPercent;
 				}
 			}
@@ -1147,23 +1146,23 @@ namespace MatterHackers.MatterSlice
 						{
 							fillAngle += 90;
 						}
-						Infill.GenerateLineInfill(config, part.InfillToolPaths, ref fillPolygons, fillAngle);
+						Infill.GenerateLineInfill(config, part.InfillToolPaths, fillPolygons, fillAngle);
 						break;
 
 					case ConfigConstants.INFILL_TYPE.GRID:
-						Infill.GenerateGridInfill(config, part.InfillToolPaths, ref fillPolygons, fillAngle);
+						Infill.GenerateGridInfill(config, part.InfillToolPaths, fillPolygons, fillAngle);
 						break;
 
 					case ConfigConstants.INFILL_TYPE.TRIANGLES:
-						Infill.GenerateTriangleInfill(config, part.InfillToolPaths, ref fillPolygons, fillAngle);
+						Infill.GenerateTriangleInfill(config, part.InfillToolPaths, fillPolygons, fillAngle);
 						break;
 
 					case ConfigConstants.INFILL_TYPE.HEXAGON:
-						Infill.GenerateHexagonInfill(config, part.InfillToolPaths, ref fillPolygons, fillAngle, layerIndex);
+						Infill.GenerateHexagonInfill(config, part.InfillToolPaths, fillPolygons, fillAngle, layerIndex);
 						break;
 
 					case ConfigConstants.INFILL_TYPE.CONCENTRIC:
-						Infill.GenerateConcentricInfill(config, part.InfillToolPaths, ref fillPolygons);
+						Infill.GenerateConcentricInfill(config, part.InfillToolPaths, fillPolygons);
 						break;
 
 					default:
@@ -1182,7 +1181,7 @@ namespace MatterHackers.MatterSlice
 			//If we changed extruder, print the wipe/prime tower for this nozzle;
 			gcodeLayer.QueuePolygonsByOptimizer(slicingData.wipeTower, supportInterfaceConfig);
 			Polygons fillPolygons = new Polygons();
-			Infill.GenerateLinePaths(slicingData.wipeTower, ref fillPolygons, extrusionWidth_um, config.InfillExtendIntoPerimeter_um, 45 + 90 * (layerNr % 2));
+			Infill.GenerateLinePaths(slicingData.wipeTower, fillPolygons, extrusionWidth_um, config.InfillExtendIntoPerimeter_um, 45 + 90 * (layerNr % 2));
 			gcodeLayer.QueuePolygonsByOptimizer(fillPolygons, supportInterfaceConfig);
 
 			//Make sure we wipe the old extruder on the wipe tower.
