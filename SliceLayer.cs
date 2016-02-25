@@ -116,17 +116,17 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public void GenerateFillConsideringBridging(Polygons bottomFillIsland, ref Polygons bottomFillLines, ConfigSettings config, string debugName = "")
+		public void GenerateFillConsideringBridging(Polygons bottomFillIsland, Polygons bottomFillLines, ConfigSettings config, Polygons bridgePolygons, string debugName = "")
 		{
 			double bridgeAngle = 0;
 			if (this.BridgeAngle(bottomFillIsland, out bridgeAngle))
 			{
 				// TODO: Make this code handle very complex pathing between different sizes or layouts of support under the island to fill.
-				Infill.GenerateLinePaths(bottomFillIsland, ref bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, bridgeAngle);
+				Infill.GenerateLinePaths(bottomFillIsland, bridgePolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, bridgeAngle);
 			}
 			else
 			{
-				Infill.GenerateLinePaths(bottomFillIsland, ref bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+				Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
 			}
 		}
 
@@ -222,6 +222,7 @@ namespace MatterHackers.MatterSlice
 			}
 			return true;
 		}
+
 		public void CreateIslandData()
 		{
 			List<Polygons> separtedIntoIslands = AllOutlines.ProcessIntoSeparatIslands();
