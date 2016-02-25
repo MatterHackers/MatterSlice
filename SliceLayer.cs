@@ -54,7 +54,7 @@ namespace MatterHackers.MatterSlice
 				return false;
 			}
 
-			// we need to find the first convex angle to be our start of finding the cancave area
+			// we need to find the first convex angle to be our start of finding the concave area
 			int startIndex = 0;
 			for (int i = 0; i < island0PointCount; i++)
 			{
