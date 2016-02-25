@@ -50,14 +50,14 @@ namespace MatterHackers.MatterSlice
 		}
 
 		static bool saveDebugData = false;
-		bool boundry = false;
+		bool boundary = false;
 		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, List<IntPoint> pathThatIsInside)
 		{
 			if (saveDebugData)
 			{
 				using (StreamWriter sw = File.AppendText("test.txt"))
 				{
-					if (boundry)
+					if (boundary)
 					{
 						string pointsString = boundaryPolygons.WriteToString();
 						sw.WriteLine(pointsString);
@@ -129,7 +129,7 @@ namespace MatterHackers.MatterSlice
 			// This gives a path from the start to finish curved around the holes that it encounters.
 			while (true)
 			{
-				// if we go up enough we should run into the boundry
+				// if we go up enough we should run into the boundary
 				int abovePolyIndex = GetPolygonIndexAbove(nomalizedStartX);
 				if (abovePolyIndex < 0)
 				{
@@ -215,33 +215,33 @@ namespace MatterHackers.MatterSlice
 			long bestDist = 2000 * 2000;
 			for (int boundaryIndex = 0; boundaryIndex < boundaryPolygons.Count; boundaryIndex++)
 			{
-				Polygon boundryPolygon = boundaryPolygons[boundaryIndex];
+				Polygon boundaryPolygon = boundaryPolygons[boundaryIndex];
 
-				if (boundryPolygon.Count < 1)
+				if (boundaryPolygon.Count < 1)
 				{
 					continue;
 				}
 
-				IntPoint previousPoint = boundryPolygon[boundryPolygon.Count - 1];
-				for (int pointIndex = 0; pointIndex < boundryPolygon.Count; pointIndex++)
+				IntPoint previousPoint = boundaryPolygon[boundaryPolygon.Count - 1];
+				for (int pointIndex = 0; pointIndex < boundaryPolygon.Count; pointIndex++)
 				{
-					IntPoint currentPoint = boundryPolygon[pointIndex];
+					IntPoint currentPoint = boundaryPolygon[pointIndex];
 
 					//Q = A + Normal( B - A ) * ((( B - A ) dot ( P - A )) / VSize( A - B ));
 					IntPoint deltaToCurrent = currentPoint - previousPoint;
 					long deltaLength = deltaToCurrent.Length();
-					long distToBoundrySegment = deltaToCurrent.Dot(pointToMove - previousPoint) / deltaLength;
-					if (distToBoundrySegment < 10)
+					long distToBoundarySegment = deltaToCurrent.Dot(pointToMove - previousPoint) / deltaLength;
+					if (distToBoundarySegment < 10)
 					{
-						distToBoundrySegment = 10;
+						distToBoundarySegment = 10;
 					}
 
-					if (distToBoundrySegment > deltaLength - 10)
+					if (distToBoundarySegment > deltaLength - 10)
 					{
-						distToBoundrySegment = deltaLength - 10;
+						distToBoundarySegment = deltaLength - 10;
 					}
 
-					IntPoint pointAlongCurrentSegment = previousPoint + deltaToCurrent * distToBoundrySegment / deltaLength;
+					IntPoint pointAlongCurrentSegment = previousPoint + deltaToCurrent * distToBoundarySegment / deltaLength;
 
 					long dist = (pointAlongCurrentSegment - pointToMove).LengthSquared();
 					if (dist < bestDist)
@@ -273,14 +273,14 @@ namespace MatterHackers.MatterSlice
 			int errorDist = 100;
 			for (int boundaryIndex = 0; boundaryIndex < boundaryPolygons.Count; boundaryIndex++)
 			{
-				Polygon boundryPolygon = boundaryPolygons[boundaryIndex];
+				Polygon boundaryPolygon = boundaryPolygons[boundaryIndex];
 
 				minXPosition[boundaryIndex] = long.MaxValue;
 				maxXPosition[boundaryIndex] = long.MinValue;
-				IntPoint previousPosition = lineToSameYMatrix.apply(boundryPolygon[boundryPolygon.Count - 1]);
-				for (int pointIndex = 0; pointIndex < boundryPolygon.Count; pointIndex++)
+				IntPoint previousPosition = lineToSameYMatrix.apply(boundaryPolygon[boundaryPolygon.Count - 1]);
+				for (int pointIndex = 0; pointIndex < boundaryPolygon.Count; pointIndex++)
 				{
-					IntPoint currentPosition = lineToSameYMatrix.apply(boundryPolygon[pointIndex]);
+					IntPoint currentPosition = lineToSameYMatrix.apply(boundaryPolygon[pointIndex]);
 					if ((previousPosition.Y + errorDist >= rotatedStartPoint.Y && currentPosition.Y - errorDist <= rotatedStartPoint.Y)
 						|| (currentPosition.Y + errorDist >= rotatedStartPoint.Y && previousPosition.Y - errorDist <= rotatedStartPoint.Y)) // prev -> current crosses the start -> end
 					{
@@ -314,16 +314,16 @@ namespace MatterHackers.MatterSlice
 		{
 			for (int boundaryIndex = 0; boundaryIndex < boundaryPolygons.Count; boundaryIndex++)
 			{
-				Polygon boundryPolygon = boundaryPolygons[boundaryIndex];
-				if (boundryPolygon.Count < 1)
+				Polygon boundaryPolygon = boundaryPolygons[boundaryIndex];
+				if (boundaryPolygon.Count < 1)
 				{
 					continue;
 				}
 
-				IntPoint lastPosition = boundryPolygon[boundryPolygon.Count - 1];
-				for (int pointIndex = 0; pointIndex < boundryPolygon.Count; pointIndex++)
+				IntPoint lastPosition = boundaryPolygon[boundaryPolygon.Count - 1];
+				for (int pointIndex = 0; pointIndex < boundaryPolygon.Count; pointIndex++)
 				{
-					IntPoint currentPosition = boundryPolygon[pointIndex];
+					IntPoint currentPosition = boundaryPolygon[pointIndex];
 					int startSide = startPoint.GetLineSide(lastPosition, currentPosition);
 					int endSide = endPoint.GetLineSide(lastPosition, currentPosition);
 					if (startSide != 0)
