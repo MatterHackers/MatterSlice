@@ -175,7 +175,7 @@ namespace MatterHackers.MatterSlice
 
 		public List<List<Point3>> GetPathsWithOverlapsRemoved(List<Point3> perimeter, int overlapMergeAmount_um)
 		{
-			// make a copy that has every point duplicatiod (so that we have them as segments).
+			// make a copy that has every point duplicated (so that we have them as segments).
 			List<Point3> polySegments = new List<Point3>(perimeter.Count * 2);
 			for (int i = 0; i < perimeter.Count - 1; i++)
 			{
@@ -198,7 +198,7 @@ namespace MatterHackers.MatterSlice
 					int checkPointIndex = checkSegmentIndex * 2;
 					// The first point of start and the last point of check (the path will be coming back on itself).
 					long startDelta = (polySegments[firstPointIndex] - polySegments[checkPointIndex + 1]).Length();
-					// if the segmets are similar enough
+					// if the segments are similar enough
 					if (startDelta < overlapMergeAmount_um)
 					{
 						// The last point of start and the first point of check (the path will be coming back on itself).
@@ -219,7 +219,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			// Check for perimeter edeges that need to be removed that are the u turns of sectons that go back on themselves.
+			// Check for perimeter edges that need to be removed that are the u turns of sections that go back on themselves.
 			//  __________
 			// |__________|	->  |--------|  the 2 vertical sections should be removed
 			for (int segmentIndex = 0; segmentIndex < segmentCount; segmentIndex++)
@@ -243,7 +243,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			// go through the polySegmets and create a new polygon for every connected set of segmets
+			// go through the polySegments and create a new polygon for every connected set of segments
 			List<List<Point3>> separatedPolygons = new List<List<Point3>>();
 			List<Point3> currentPolygon = new List<Point3>();
 			separatedPolygons.Add(currentPolygon);
@@ -482,7 +482,7 @@ namespace MatterHackers.MatterSlice
 		{
 			return false;
 			if (path.config.lineWidth_um > 0
-				&& path.points.Count > 2 // If the count is not greater than 2 there is no way it can ovelap itself.
+				&& path.points.Count > 2 // If the count is not greater than 2 there is no way it can overlap itself.
 				&& gcodeExport.GetPosition() == path.points[path.points.Count - 1])
 			{
 				List<List<Point3>> pathsWithOverlapsRemoved = GetPathsWithOverlapsRemoved(path.points, path.config.lineWidth_um / 2);

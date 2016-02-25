@@ -128,14 +128,14 @@ namespace MatterHackers.MatterSlice
 			Polygons skirtPolygons = GetSkirtBounds(config, storage, externalOnly, distance, extrusionWidth_um, brimCount);
 
 			// Find convex hull for the skirt outline 
-			Polygons convextHull = new Polygons(new[] { skirtPolygons.CreateConvexHull() });
+			Polygons convexHull = new Polygons(new[] { skirtPolygons.CreateConvexHull() });
 
 			// Create skirt loops from the ConvexHull 
 			for (int skirtLoop = 0; skirtLoop < numberOfLoops; skirtLoop++)
 			{
 				int offsetDistance = distance + extrusionWidth_um * skirtLoop + extrusionWidth_um / 2;
 
-				storage.skirt.AddAll(convextHull.Offset(offsetDistance));
+				storage.skirt.AddAll(convexHull.Offset(offsetDistance));
 
 				int length = (int)storage.skirt.PolygonLength();
 				if (skirtLoop + 1 >= numberOfLoops && length > 0 && length < minLength)

@@ -202,7 +202,7 @@ namespace MatterHackers.MatterSlice
 						Polygon attachedLine = new Polygon();
 						foreach (IntPoint center in IncrementPositionIterator(startPoint, boundary, lineSpacing, layerIndex))
 						{
-							// what we are adding are the little plusses that define the points
+							// what we are adding are the little pluses that define the points
 							//        | top
 							//        |
 							//        /\ center

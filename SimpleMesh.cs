@@ -37,7 +37,7 @@ namespace MatterHackers.MatterSlice
 		}
 	};
 
-	// A SimpleVolume is the most basic reprisentation of a 3D model. It contains all the faces as SimpleTriangles, with nothing fancy.
+	// A SimpleVolume is the most basic representation of a 3D model. It contains all the faces as SimpleTriangles, with nothing fancy.
 	public class SimpleMesh
 	{
 		public List<SimpleFace> faceTriangles = new List<SimpleFace>();

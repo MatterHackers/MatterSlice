@@ -65,7 +65,7 @@ namespace MatterHackers.MatterSlice
 			int layerCount = countOfNormalThicknessLayers;
 			if (initialLayerThickness_um > 0)
 			{
-				// we have to add in the first layer (that is a differnt size)
+				// we have to add in the first layer (that is a different size)
 				layerCount++;
 			}
 
