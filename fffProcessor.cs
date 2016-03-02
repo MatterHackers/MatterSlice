@@ -698,10 +698,20 @@ namespace MatterHackers.MatterSlice
 		//Add a single layer from a single extruder to the GCode
 		private void QueueExtruderLayerToGCode(LayerDataStorage slicingData, GCodePlanner gcodeLayer, int extruderIndex, int layerIndex, int extrusionWidth_um, int fanSpeedPercent, long currentZ_um)
 		{
+			SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
+
+			if(layer.AllOutlines.Count == 0 
+				&& config.WipeTowerSize == 0
+				&& config.WipeShieldDistanceFromObject == 0)
+			{
+				// don't do anything on this layer
+				return;
+			}
+
+
 			int prevExtruder = gcodeLayer.getExtruder();
 			bool extruderChanged = gcodeLayer.SetExtruder(extruderIndex);
 
-			SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 			if (extruderChanged)
 			{
 				addWipeTower(slicingData, gcodeLayer, layerIndex, prevExtruder, extrusionWidth_um);
