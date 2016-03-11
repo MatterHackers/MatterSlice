@@ -68,6 +68,10 @@ namespace MatterHackers.MatterSlice
 				// we have to add in the first layer (that is a different size)
 				layerCount++;
 			}
+			if (config.outputOnlyFirstLayer)
+			{
+				layerCount = 1;
+			}
 
 			LogOutput.Log(string.Format("Layer count: {0}\n", layerCount));
 			layers.Capacity = layerCount;

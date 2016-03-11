@@ -205,7 +205,7 @@ namespace MatterHackers.MatterSlice
 			for (int extruderIndex = 0; extruderIndex < slicerList.Count; extruderIndex++)
 			{
 				slicingData.Extruders.Add(new ExtruderLayers());
-				slicingData.Extruders[extruderIndex].InitializeLayerData(slicerList[extruderIndex]);
+				slicingData.Extruders[extruderIndex].InitializeLayerData(slicerList[extruderIndex], config);
 
 				if (config.EnableRaft)
 				{
@@ -245,6 +245,10 @@ namespace MatterHackers.MatterSlice
 			slicingData.CreateIslandData();
 
 			int totalLayers = slicingData.Extruders[0].Layers.Count;
+			if (config.outputOnlyFirstLayer)
+			{
+				totalLayers = 1;
+			}
 #if DEBUG
 			for (int extruderIndex = 1; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
 			{
@@ -411,6 +415,11 @@ namespace MatterHackers.MatterSlice
 			fileNumber++;
 
 			int totalLayers = slicingData.Extruders[0].Layers.Count;
+			if (config.outputOnlyFirstLayer)
+			{
+				totalLayers = 1;
+			}
+
 			// let's remove any of the layers on top that are empty
 			{
 				for (int layerIndex = totalLayers - 1; layerIndex >= 0; layerIndex--)

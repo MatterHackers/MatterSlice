@@ -151,10 +151,15 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void InitializeLayerData(Slicer slicer)
+		public void InitializeLayerData(Slicer slicer, ConfigSettings config)
 		{
 			for (int layerIndex = 0; layerIndex < slicer.layers.Count; layerIndex++)
 			{
+				if (config.outputOnlyFirstLayer && layerIndex > 0)
+				{
+					break;
+				}
+
 				Layers.Add(new SliceLayer());
 				Layers[layerIndex].LayerZ = slicer.layers[layerIndex].Z;
 
