@@ -41,35 +41,6 @@ namespace MatterHackers.MatterSlice
 			CONCENTRIC,
 		}
 
-		public enum OUTPUT_TYPE
-		{
-			/**
-			 * RepRap GCode is Marlin/Sprinter/Repetier based GCode.
-			 *  This is the most commonly used GCode set.
-			 *  G0 for moves, G1 for extrusion.
-			 *  E values give mm of filament extrusion.
-			 *  Retraction is done on E values with G1. Start/end code is added.
-			 *  M106 Sxxx and M107 are used to turn the fan on/off.
-			 **/
-			REPRAP,
-			/**
-			 * UltiGCode is Marlin based GCode.
-			 *  UltiGCode uses less settings on the slicer and puts more settings in the firmware. This makes for more hardware/material independent GCode.
-			 *  G0 for moves, G1 for extrusion.
-			 *  E values give mm^3 of filament extrusion. Ignores the filament diameter setting.
-			 *  Retraction is done with G10 and G11. Retraction settings are ignored. G10 S1 is used for multi-extruder switch retraction.
-			 *  Start/end code is not added.
-			 *  M106 Sxxx and M107 are used to turn the fan on/off.
-			 **/
-			ULTIGCODE,
-
-			/**
-			  * MACH3 GCode
-			  *  MACH3 is CNC control software, which expects A/B/C/D for extruders, instead of E.
-			  **/
-			MACH3,
-		}
-
 		/**
 		 * * Type of support material.
 		 * * Grid is a X/Y grid with an outline, which is very strong, provides good support. But in some cases is hard to remove.
@@ -208,10 +179,11 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The number of loops to draw around the convex hull")]
 		public int NumberOfSkirtLoops { get; set; }
 
-		[SettingDescription("The number of loops to draw around islands")]
+		[SettingDescription("The number of loops to draw around islands.")]
 		public int NumberOfBrimLoops { get; set; }
 
-		public ConfigConstants.OUTPUT_TYPE outputType { get; set; }
+		[SettingDescription("Output only the first layer of the print.")]
+		public bool outputOnlyFirstLayer { get; set; }
 
 		[SettingDescription("The extrusion width of all outside perimeters")]
 		public double OutsidePerimeterExtrusionWidth { get; set; }
@@ -662,7 +634,6 @@ namespace MatterHackers.MatterSlice
 			FanSpeedMaxPercent = 100;
 
 			ContinuousSpiralOuterPerimeter = false;
-			outputType = ConfigConstants.OUTPUT_TYPE.REPRAP;
 
 			StartCode =
 							"M109 S210     ;Heatup to 210C\n" +

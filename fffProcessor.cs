@@ -169,7 +169,6 @@ namespace MatterHackers.MatterSlice
 				gcode.SetExtruderOffset(extruderIndex, config.ExtruderOffsets[extruderIndex], -config.ZOffset_um);
 			}
 
-			gcode.SetOutputType(config.outputType);
 			gcode.SetRetractionSettings(config.RetractionOnTravel, config.RetractionSpeed, config.RetractionOnExtruderSwitch, config.MinimumExtrusionBeforeRetraction, config.RetractionZHop, config.WipeAfterRetraction, config.UnretractExtraExtrusion);
 			gcode.SetToolChangeCode(config.ToolChangeCode);
 		}
@@ -398,13 +397,6 @@ namespace MatterHackers.MatterSlice
 
 			if (fileNumber == 1)
 			{
-				if (gcode.GetOutputType() == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
-				{
-					gcode.WriteComment("TYPE:UltiGCode");
-					gcode.WriteComment("TIME:<__TIME__>");
-					gcode.WriteComment("MATERIAL:<FILAMENT>");
-					gcode.WriteComment("MATERIAL2:<FILAMEN2>");
-				}
 				gcode.WriteCode(config.StartCode);
 			}
 			else
@@ -456,6 +448,12 @@ namespace MatterHackers.MatterSlice
 				{
 					return;
 				}
+
+				if(config.outputOnlyFirstLayer && layerIndex > 0)
+				{
+					break;
+				}
+
 				LogOutput.Log("Writing Layers {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
 
 				LogOutput.logProgress("export", layerIndex + 1, totalLayers);

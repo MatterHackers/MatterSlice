@@ -35,7 +35,6 @@ namespace MatterHackers.MatterSlice
 		private Point3 currentPosition_um;
 		private double currentSpeed;
 		private TimeEstimateCalculator estimateCalculator = new TimeEstimateCalculator();
-		private char[] extruderCharacter = new char[ConfigConstants.MAX_EXTRUDERS];
 		private int extruderIndex;
 		private Point3[] extruderOffset_um = new Point3[ConfigConstants.MAX_EXTRUDERS];
 		private double extruderSwitchRetraction_mm;
@@ -45,7 +44,6 @@ namespace MatterHackers.MatterSlice
 		private StreamWriter gcodeFileStream;
 		private bool isRetracted;
 		private double minimumExtrusionBeforeRetraction_mm;
-		private ConfigConstants.OUTPUT_TYPE outputType;
 		private double retractionAmount_mm;
 		private int retractionSpeed;
 		private List<Point3> retractionWipePath = new List<Point3>();
@@ -79,7 +77,6 @@ namespace MatterHackers.MatterSlice
 			currentSpeed = 0;
 			retractionSpeed = 45;
 			isRetracted = true;
-			SetOutputType(ConfigConstants.OUTPUT_TYPE.REPRAP);
 			gcodeFileStream = new StreamWriter(Console.OpenStandardOutput());
 		}
 
@@ -100,17 +97,6 @@ namespace MatterHackers.MatterSlice
 			LogOutput.Log("Print time: {0}\n".FormatWith((int)(GetTotalPrintTime())));
 			LogOutput.Log("Filament: {0}\n".FormatWith((int)(GetTotalFilamentUsed(0))));
 			LogOutput.Log("Filament2: {0}\n".FormatWith((int)(GetTotalFilamentUsed(1))));
-
-			if (GetOutputType() == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
-			{
-				string numberString;
-				numberString = "{0}".FormatWith((int)(GetTotalPrintTime()));
-				//replaceTagInStart("<__TIME__>", numberString);
-				numberString = "{0}".FormatWith((int)(GetTotalFilamentUsed(0)));
-				//replaceTagInStart("<FILAMENT>", numberString);
-				numberString = "{0}".FormatWith((int)(GetTotalFilamentUsed(1)));
-				//replaceTagInStart("<FILAMEN2>", numberString);
-			}
 		}
 
 		public int GetExtruderIndex()
@@ -121,11 +107,6 @@ namespace MatterHackers.MatterSlice
 		public long GetFileSize()
 		{
 			return gcodeFileStream.BaseStream.Length;
-		}
-
-		public ConfigConstants.OUTPUT_TYPE GetOutputType()
-		{
-			return this.outputType;
 		}
 
 		public Point3 GetPosition()
@@ -167,7 +148,7 @@ namespace MatterHackers.MatterSlice
 		{
 			if (extrusionAmount_mm != 0.0)
 			{
-				gcodeFileStream.Write("G92 {0}0\n".FormatWith(extruderCharacter[extruderIndex]));
+				gcodeFileStream.Write("G92 E0\n");
 				totalFilament_mm[extruderIndex] += extrusionAmount_mm;
 				extrusionAmountAtPreviousRetraction_mm -= extrusionAmount_mm;
 				extrusionAmount_mm = extraExtrudeAmount_mm;
@@ -184,39 +165,13 @@ namespace MatterHackers.MatterSlice
 			//double feedRateRatio = 1 + (Math.PI / 4 - 1) * layerThickness / extrusionWidth;
 			//extrusionMultiplier *= feedRateRatio;
 			double filamentArea = Math.PI * ((double)(filamentDiameter) / 1000.0 / 2.0) * ((double)(filamentDiameter) / 1000.0 / 2.0);
-			if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)//UltiGCode uses volume extrusion as E value, and thus does not need the filamentArea in the mix.
-			{
-				extrusionPerMm = (double)(layerThickness) / 1000.0;
-			}
-			else
-			{
-				extrusionPerMm = (double)(layerThickness) / 1000.0 / filamentArea * extrusionMultiplier;
-			}
+			extrusionPerMm = (double)(layerThickness) / 1000.0 / filamentArea * extrusionMultiplier;
 		}
 
 		public void SetFilename(string filename)
 		{
 			filename = filename.Replace("\"", "");
 			gcodeFileStream = new StreamWriter(filename);
-		}
-
-		public void SetOutputType(ConfigConstants.OUTPUT_TYPE outputType)
-		{
-			this.outputType = outputType;
-			if (outputType == ConfigConstants.OUTPUT_TYPE.MACH3)
-			{
-				for (int n = 0; n < ConfigConstants.MAX_EXTRUDERS; n++)
-				{
-					extruderCharacter[n] = (char)('A' + n);
-				}
-			}
-			else
-			{
-				for (int n = 0; n < ConfigConstants.MAX_EXTRUDERS; n++)
-				{
-					extruderCharacter[n] = 'E';
-				}
-			}
 		}
 
 		public void SetRetractionSettings(double retractionAmount, int retractionSpeed, double extruderSwitchRetraction, double minimumExtrusionBeforeRetraction_mm, double retractionZHop_mm, bool wipeAfterRetraction, double unretractExtrusionExtra_mm)
@@ -247,22 +202,11 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
-			{
-				gcodeFileStream.Write("G10 S1\n");
-			}
-			else
-			{
-				gcodeFileStream.Write("G1 F{0} {1}{2:0.####}\n", retractionSpeed * 60, extruderCharacter[extruderIndex], extrusionAmount_mm - extruderSwitchRetraction_mm);
-				currentSpeed = retractionSpeed;
-			}
+			gcodeFileStream.Write("G1 F{0} E{1:0.####}\n", retractionSpeed * 60, extrusionAmount_mm - extruderSwitchRetraction_mm);
+			currentSpeed = retractionSpeed;
 
 			ResetExtrusionValue();
 			extruderIndex = newExtruder;
-			if (outputType == ConfigConstants.OUTPUT_TYPE.MACH3)
-			{
-				ResetExtrusionValue();
-			}
 
 			isRetracted = true;
 			extrusionAmount_mm = extruderSwitchRetraction_mm;
@@ -341,39 +285,32 @@ namespace MatterHackers.MatterSlice
             if (lineWidth_um != 0)
             {
                 Point3 diff = movePosition_um - GetPosition();
-                if (isRetracted)
-                {
-                    if (retractionZHop_mm > 0)
-                    {
-                        double zWritePosition = (double)(currentPosition_um.z - extruderOffset_um[extruderIndex].z) / 1000;
-                        lineToWrite.Append("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
-                    }
+				if (isRetracted)
+				{
+					if (retractionZHop_mm > 0)
+					{
+						double zWritePosition = (double)(currentPosition_um.z - extruderOffset_um[extruderIndex].z) / 1000;
+						lineToWrite.Append("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
+					}
 
-                    if (extrusionAmount_mm > 10000.0)
-                    {
-                        //According to https://github.com/Ultimaker/CuraEngine/issues/14 having more then 21m of extrusion causes inaccuracies. So reset it every 10m, just to be sure.
-                        ResetExtrusionValue(retractionAmount_mm);
-                    }
+					if (extrusionAmount_mm > 10000.0)
+					{
+						//According to https://github.com/Ultimaker/CuraEngine/issues/14 having more then 21m of extrusion causes inaccuracies. So reset it every 10m, just to be sure.
+						ResetExtrusionValue(retractionAmount_mm);
+					}
 
-                    if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
-                    {
-                        lineToWrite.Append("G11\n");
-                    }
-                    else
-                    {
-                        lineToWrite.Append("G1 F{0} {1}{2:0.#####}\n".FormatWith(retractionSpeed * 60, extruderCharacter[extruderIndex], extrusionAmount_mm));
+					lineToWrite.Append("G1 F{0} E{1:0.#####}\n".FormatWith(retractionSpeed * 60, extrusionAmount_mm));
 
-                        currentSpeed = retractionSpeed;
-                        estimateCalculator.plan(new TimeEstimateCalculator.Position(
-                            currentPosition_um.x / 1000.0,
-                            currentPosition_um.y / 1000.0,
-                            currentPosition_um.z / 1000.0,
-                            extrusionAmount_mm),
-                            currentSpeed);
-                    }
+					currentSpeed = retractionSpeed;
+					estimateCalculator.plan(new TimeEstimateCalculator.Position(
+						currentPosition_um.x / 1000.0,
+						currentPosition_um.y / 1000.0,
+						currentPosition_um.z / 1000.0,
+						extrusionAmount_mm),
+						currentSpeed);
 
-                    isRetracted = false;
-                }
+					isRetracted = false;
+				}
 
                 extrusionAmount_mm += extrusionPerMm * lineWidth_um / 1000.0 * diff.LengthMm();
                 lineToWrite.Append("G1");
@@ -401,7 +338,7 @@ namespace MatterHackers.MatterSlice
 
             if (lineWidth_um != 0)
             {
-                lineToWrite.Append(" {0}{1:0.#####}".FormatWith(extruderCharacter[extruderIndex], extrusionAmount_mm));
+                lineToWrite.Append(" E{0:0.#####}".FormatWith(extrusionAmount_mm));
             }
 
             lineToWrite.Append("\n");
@@ -434,16 +371,9 @@ namespace MatterHackers.MatterSlice
 				&& !isRetracted
 				&& extrusionAmountAtPreviousRetraction_mm + minimumExtrusionBeforeRetraction_mm < extrusionAmount_mm)
 			{
-				if (outputType == ConfigConstants.OUTPUT_TYPE.ULTIGCODE)
-				{
-					gcodeFileStream.Write("G10\n");
-				}
-				else
-				{
-					gcodeFileStream.Write("G1 F{0} {1}{2:0.#####}\n".FormatWith(retractionSpeed * 60, extruderCharacter[extruderIndex], extrusionAmount_mm - retractionAmount_mm));
-					currentSpeed = retractionSpeed;
-					estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition_um.x) / 1000.0, (currentPosition_um.y) / 1000.0, (double)(currentPosition_um.z) / 1000.0, extrusionAmount_mm - retractionAmount_mm), currentSpeed);
-				}
+				gcodeFileStream.Write("G1 F{0} E{1:0.#####}\n".FormatWith(retractionSpeed * 60, extrusionAmount_mm - retractionAmount_mm));
+				currentSpeed = retractionSpeed;
+				estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition_um.x) / 1000.0, (currentPosition_um.y) / 1000.0, (double)(currentPosition_um.z) / 1000.0, extrusionAmount_mm - retractionAmount_mm), currentSpeed);
 
 				AddRetractionWipeIfRequired(initialSpeed);
 
