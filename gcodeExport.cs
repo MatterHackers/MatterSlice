@@ -391,11 +391,6 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		internal static int Round(double value)
-		{
-			return value < 0 ? (int)(value - 0.5) : (int)(value + 0.5);
-		}
-
 		private void AddRetractionWipeIfRequired(double initialSpeed)
 		{
 			//This wipes the extruder back along the previous path after retracting.
