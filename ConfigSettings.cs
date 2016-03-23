@@ -397,7 +397,8 @@ namespace MatterHackers.MatterSlice
 						{
 							throw new Exception("We can't output a description on a string as we need to write whatever the string says.");
 						}
-						// change the carriage returns to '\n's in the file
+
+						// Replace newline characters with escaped newline characters
 						lines.Add("{0}={1}".FormatWith(name, value).Replace("\n", "\\n"));
 						break;
 
