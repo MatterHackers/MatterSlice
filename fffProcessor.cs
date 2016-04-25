@@ -170,7 +170,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			gcode.SetRetractionSettings(config.RetractionOnTravel, config.RetractionSpeed, config.RetractionOnExtruderSwitch, config.MinimumExtrusionBeforeRetraction, config.RetractionZHop, config.WipeAfterRetraction, config.UnretractExtraExtrusion);
-			gcode.SetToolChangeCode(config.ToolChangeCode);
+			gcode.SetToolChangeCode(config.ToolChangeCode, config.BeforeToolchangeCode);
 		}
 
 		private void SliceModels(LayerDataStorage slicingData)

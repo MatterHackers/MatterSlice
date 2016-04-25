@@ -49,6 +49,7 @@ namespace MatterHackers.MatterSlice
 		private List<Point3> retractionWipePath = new List<Point3>();
 		private double retractionZHop_mm;
 		private string toolChangeCode;
+		private string beforeToolchangeCode;
 		private double[] totalFilament_mm = new double[ConfigConstants.MAX_EXTRUDERS];
 		private double totalPrintTime;
 		private double unretractExtrusionExtra_mm;
@@ -148,7 +149,7 @@ namespace MatterHackers.MatterSlice
 		{
 			if (extrusionAmount_mm != 0.0)
 			{
-				gcodeFileStream.Write("G92 E0\n");
+				gcodeFileStream.Write("G92 E0 ; reset extrusion\n");
 				totalFilament_mm[extruderIndex] += extrusionAmount_mm;
 				extrusionAmountAtPreviousRetraction_mm -= extrusionAmount_mm;
 				extrusionAmount_mm = extraExtrudeAmount_mm;
@@ -185,9 +186,10 @@ namespace MatterHackers.MatterSlice
 			this.retractionZHop_mm = retractionZHop_mm;
 		}
 
-		public void SetToolChangeCode(string toolChangeCode)
+		public void SetToolChangeCode(string toolChangeCode, string beforeToolchangeCode)
 		{
 			this.toolChangeCode = toolChangeCode;
+			this.beforeToolchangeCode = beforeToolchangeCode;
 		}
 
 		public void setZ(long z)
@@ -202,7 +204,13 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			gcodeFileStream.Write("G1 F{0} E{1:0.####}\n", retractionSpeed * 60, extrusionAmount_mm - extruderSwitchRetraction_mm);
+			if(beforeToolchangeCode != null && beforeToolchangeCode != "")
+			{
+				WriteCode("; Before Tool Change GCode");
+				WriteCode(beforeToolchangeCode);
+			}
+
+			gcodeFileStream.Write("G1 F{0} E{1:0.####} ; retract\n", retractionSpeed * 60, extrusionAmount_mm - extruderSwitchRetraction_mm);
 			currentSpeed = retractionSpeed;
 
 			ResetExtrusionValue();
@@ -210,10 +218,11 @@ namespace MatterHackers.MatterSlice
 
 			isRetracted = true;
 			extrusionAmount_mm = extruderSwitchRetraction_mm;
-			gcodeFileStream.Write("T{0}\n".FormatWith(extruderIndex));
+			gcodeFileStream.Write("T{0} ; switch extruder\n".FormatWith(extruderIndex));
 
 			if (toolChangeCode != null && toolChangeCode != "")
 			{
+				WriteCode("; After Tool Change GCode");
 				WriteCode(toolChangeCode);
 			}
 		}

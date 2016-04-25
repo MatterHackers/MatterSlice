@@ -248,6 +248,8 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The closest xy distance that support will be to the object. mm/s.")]
 		public double SupportXYDistanceFromObject { get; set; }
 
+		public string BeforeToolchangeCode { get; set; }
+
 		public string ToolChangeCode { get; set; }
 
 		[SettingDescription("This is the speed to print the top layer infill, mm/s.")]
