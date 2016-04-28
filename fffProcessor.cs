@@ -867,16 +867,10 @@ namespace MatterHackers.MatterSlice
 							if (island.InsetToolPaths.Count > 1)
 							{
 								// Move to the closest inset 1 and print it
-								limitDistance = PrintClosetsInset(insetsToPrint[1], limitDistance, insetXConfig, layerIndex, gcodeLayer);
-								for (int insetIndex = 2; insetIndex < island.InsetToolPaths.Count; insetIndex++)
+								for (int insetIndex = island.InsetToolPaths.Count-1; insetIndex >= 0; insetIndex--)
 								{
 									limitDistance = PrintClosetsInset(insetsToPrint[insetIndex], limitDistance, insetXConfig, layerIndex, gcodeLayer);
 								}
-							}
-
-							if (island.InsetToolPaths.Count > 0)
-							{
-								PrintClosetsInset(insetsToPrint[0], limitDistance, inset0Config, layerIndex, gcodeLayer);
 							}
 
 							insetCount = CountInsetsToPrint(insetsToPrint);
