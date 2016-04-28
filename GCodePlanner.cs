@@ -465,7 +465,7 @@ namespace MatterHackers.MatterSlice
 					}
 					else
 					{
-						//TrimPerimeterIfNeeded(path);
+						TrimPerimeterIfNeeded(path);
 
 						for (int i = 0; i < path.points.Count; i++)
 						{
@@ -642,7 +642,7 @@ namespace MatterHackers.MatterSlice
 						{
 							long newDistance = currentDistance - targetDistance;
 
-							Point3 dir = path.points[pointIndex] - path.points[pointIndex - 1] * newDistance / currentDistance;
+							Point3 dir = (path.points[pointIndex] - path.points[pointIndex - 1]) * newDistance / currentDistance;
 
 							Point3 clippedEndpoint = path.points[pointIndex - 1] + dir;
 

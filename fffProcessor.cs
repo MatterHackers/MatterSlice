@@ -864,7 +864,7 @@ namespace MatterHackers.MatterSlice
 						while (insetCount > 0)
 						{
 							bool limitDistance = false;
-							if (island.InsetToolPaths.Count > 1)
+							if (island.InsetToolPaths.Count > 0)
 							{
 								// Move to the closest inset 1 and print it
 								for (int insetIndex = island.InsetToolPaths.Count-1; insetIndex >= 0; insetIndex--)

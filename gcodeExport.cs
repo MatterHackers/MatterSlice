@@ -56,7 +56,7 @@ namespace MatterHackers.MatterSlice
 		private bool wipeAfterRetraction;
 		private long zPos_um;
 
-		public long CurrentZ { get { return zPos_um; } }
+		public long CurrentZ { get { return zPos_um; } } 
 
 		public GCodeExport()
 		{
