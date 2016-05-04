@@ -99,7 +99,11 @@ namespace MatterHackers.MatterSlice
 
 				SliceLayer layer = storage.Extruders[extruderIndex].Layers[0];
 				// let's find the first layer that has something in it for the raft rather than a zero layer
-				if (layer.Islands.Count == 0 && storage.Extruders[extruderIndex].Layers.Count > 2) layer = storage.Extruders[extruderIndex].Layers[1];
+				if (layer.Islands.Count == 0 && storage.Extruders[extruderIndex].Layers.Count > 2)
+				{
+					layer = storage.Extruders[extruderIndex].Layers[1];
+				}
+
 				for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
 				{
 					if (config.ContinuousSpiralOuterPerimeter && partIndex > 0)
@@ -243,17 +247,23 @@ namespace MatterHackers.MatterSlice
 					gcode.setZ(config.RaftBaseThickness_um);
 					gcode.SetExtrusion(config.RaftBaseThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
-					Polygons raftLines = new Polygons();
-					Infill.GenerateLinePaths(storage.raftOutline, raftLines, config.RaftBaseLineSpacing_um, config.InfillExtendIntoPerimeter_um, 0);
-
 					// write the skirt around the raft
 					gcodeLayer.QueuePolygonsByOptimizer(storage.skirt, raftBaseConfig);
 
-					// write the outline of the raft
-					gcodeLayer.QueuePolygonsByOptimizer(storage.raftOutline, raftBaseConfig);
+					List<Polygons> raftIslands = storage.raftOutline.ProcessIntoSeparatIslands();
+					foreach (var raftIsland in raftIslands)
+					{
+						// write the outline of the raft
+						gcodeLayer.QueuePolygonsByOptimizer(raftIsland, raftBaseConfig);
 
-					// write the inside of the raft base
-					gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftBaseConfig);
+						Polygons raftLines = new Polygons();
+						Infill.GenerateLinePaths(raftIsland, raftLines, config.RaftBaseLineSpacing_um, config.InfillExtendIntoPerimeter_um, 0);
+
+						// write the inside of the raft base
+						gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftBaseConfig);
+
+						gcodeLayer.ForceRetract();
+					}
 
 					gcodeLayer.WriteQueuedGCode(config.RaftBaseThickness_um);
 				}
