@@ -1006,7 +1006,11 @@ namespace MatterHackers.MatterSlice
 						if (inlandIndex != lastPartIndex)
 						{
 							// force a retract if changing islands
-							gcodeLayer.ForceRetract();
+							if (config.RetractWhenChangingIslands)
+							{
+								gcodeLayer.ForceRetract();
+							}
+							
 							lastPartIndex = inlandIndex;
 						}
 

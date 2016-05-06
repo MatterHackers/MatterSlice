@@ -262,7 +262,10 @@ namespace MatterHackers.MatterSlice
 						// write the inside of the raft base
 						gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftBaseConfig);
 
-						gcodeLayer.ForceRetract();
+						if (config.RetractWhenChangingIslands)
+						{
+							gcodeLayer.ForceRetract();
+						}
 					}
 
 					gcodeLayer.WriteQueuedGCode(config.RaftBaseThickness_um);
