@@ -65,7 +65,14 @@ namespace MatterHackers.MatterSlice
 			layerIndex--;
 			if (layerIndex < interfaceLayers.Count && layerIndex >= 0)
 			{
-				return interfaceLayers[layerIndex];
+				if (interfaceLayers[layerIndex].Count > 0)
+				{
+					return interfaceLayers[layerIndex];
+				}
+				else if(layerIndex < supportOutlines.Count)
+				{
+					return supportOutlines[layerIndex];
+				}
 			}
 
 			return new Polygons();
