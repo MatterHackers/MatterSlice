@@ -342,7 +342,12 @@ namespace MatterHackers.MatterSlice
             if (movePosition_um.z != currentPosition_um.z)
             {
                 double zWritePosition = (double)(movePosition_um.z - extruderOffset_um[extruderIndex].z) / 1000.0;
-                lineToWrite.Append(" Z{0:0.###}".FormatWith(zWritePosition));
+				if (lineWidth_um == 0
+					&& isRetracted)
+				{
+					zWritePosition += retractionZHop_mm;
+				}
+				lineToWrite.Append(" Z{0:0.###}".FormatWith(zWritePosition));
             }
 
             if (lineWidth_um != 0)

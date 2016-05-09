@@ -509,6 +509,11 @@ namespace MatterHackers.MatterSlice
 				}
 
 				GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um);
+				if (layerIndex == 0
+					&& config.RetractionZHop > 0)
+				{
+					gcodeLayer.ForceRetract();
+				}
 
 				// get the correct height for this layer
 				int z = config.FirstLayerThickness_um + layerIndex * config.LayerThickness_um;
