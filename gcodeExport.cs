@@ -78,7 +78,6 @@ namespace MatterHackers.MatterSlice
 
 			currentSpeed = 0;
 			retractionSpeed = 45;
-			isRetracted = true;
 			SetOutputType(ConfigConstants.OUTPUT_TYPE.REPRAP);
 			gcodeFileStream = new StreamWriter(Console.OpenStandardOutput());
 		}
@@ -345,8 +344,8 @@ namespace MatterHackers.MatterSlice
                 {
                     if (retractionZHop_mm > 0)
                     {
-                        double zWritePosition = (double)(currentPosition_um.z - extruderOffset_um[extruderIndex].z) / 1000;
-                        lineToWrite.Append("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
+						double zWritePosition = (double)(currentPosition_um.z - extruderOffset_um[extruderIndex].z) / 1000;
+						lineToWrite.Append("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
                     }
 
                     if (extrusionAmount_mm > 10000.0)
@@ -396,7 +395,12 @@ namespace MatterHackers.MatterSlice
             if (movePosition_um.z != currentPosition_um.z)
             {
                 double zWritePosition = (double)(movePosition_um.z - extruderOffset_um[extruderIndex].z) / 1000.0;
-                lineToWrite.Append(" Z{0:0.###}".FormatWith(zWritePosition));
+				if (lineWidth_um == 0
+					&& isRetracted)
+				{
+					zWritePosition += retractionZHop_mm;
+				}
+				lineToWrite.Append(" Z{0:0.###}".FormatWith(zWritePosition));
             }
 
             if (lineWidth_um != 0)
