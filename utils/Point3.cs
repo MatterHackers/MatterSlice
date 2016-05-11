@@ -52,7 +52,7 @@ namespace MatterHackers.MatterSlice
 		}
 
 		public Point3(double _x, double _y, double _z)
-			: this((int)(_x + .5), (int)(_y + .5), (int)(_z + .5))
+			: this(Convert.ToInt32(_x), Convert.ToInt32(_y), Convert.ToInt32(_z))
 		{
 		}
 
@@ -85,7 +85,7 @@ namespace MatterHackers.MatterSlice
 
 		public static Point3 operator /(Point3 point, int i)
 		{
-			return new Point3((int)(point.x / i + .5), (int)(point.y / i + .5), (int)(point.z / i + .5));
+			return new Point3(Convert.ToInt32(point.x / (double)i), Convert.ToInt32(point.y / (double)i), Convert.ToInt32(point.z / (double)i));
 		}
 
 		public static Point3 operator +(Point3 left, Point3 right)
