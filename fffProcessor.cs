@@ -855,7 +855,12 @@ namespace MatterHackers.MatterSlice
 									limitDistance = PrintClosetsInset(insetsToPrint[1], limitDistance, insetXConfig, layerIndex, gcodeLayer);
 									for (int insetIndex = 2; insetIndex < island.InsetToolPaths.Count; insetIndex++)
 									{
-										limitDistance = PrintClosetsInset(insetsToPrint[insetIndex], limitDistance, insetXConfig, layerIndex, gcodeLayer);
+										limitDistance = PrintClosetsInset(
+											insetsToPrint[insetIndex],
+											limitDistance,
+											insetIndex == 0 ? inset0Config : insetXConfig,
+											layerIndex,
+											gcodeLayer);
 									}
 								}
 
@@ -874,7 +879,12 @@ namespace MatterHackers.MatterSlice
 								// Move to the closest inset 1 and print it
 								for (int insetIndex = island.InsetToolPaths.Count-1; insetIndex >= 0; insetIndex--)
 								{
-									limitDistance = PrintClosetsInset(insetsToPrint[insetIndex], limitDistance, insetXConfig, layerIndex, gcodeLayer);
+									limitDistance = PrintClosetsInset(
+										insetsToPrint[insetIndex], 
+										limitDistance, 
+										insetIndex == 0 ? inset0Config : insetXConfig,
+										layerIndex, 
+										gcodeLayer);
 								}
 							}
 
