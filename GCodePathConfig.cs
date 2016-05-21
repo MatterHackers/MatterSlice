@@ -45,13 +45,6 @@ namespace MatterHackers.MatterSlice
 		{
 		}
 
-		public GCodePathConfig(double speed, int lineWidth_um, string name)
-		{
-			this.speed = speed;
-			this.lineWidth_um = lineWidth_um;
-			this.gcodeComment = name;
-		}
-
 		/// <summary>
 		/// Set the data for a path config. This is used to define how different parts (infill, perimeters) are written to gcode.
 		/// </summary>

@@ -68,7 +68,8 @@ namespace MatterHackers.MatterSlice
 		public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um)
 		{
 			this.gcodeExport = gcode;
-			travelConfig = new GCodePathConfig(travelSpeed, 0, "travel");
+			travelConfig = new GCodePathConfig();
+			travelConfig.SetData(travelSpeed, 0, "travel");
 
 			LastPosition = gcode.GetPositionXY();
 			outerPerimetersToAvoidCrossing = null;
