@@ -61,14 +61,14 @@ namespace MatterHackers.MatterSlice
 
 		private double totalPrintTime;
 
-		private GCodePathConfig travelConfig = new GCodePathConfig();
+		private GCodePathConfig travelConfig;
 
 		private int travelSpeedFactor;
 
 		public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um)
 		{
 			this.gcodeExport = gcode;
-			travelConfig = new GCodePathConfig();
+			travelConfig =  new GCodePathConfig("travelConfig");
 			travelConfig.SetData(travelSpeed, 0, "travel");
 
 			LastPosition = gcode.GetPositionXY();

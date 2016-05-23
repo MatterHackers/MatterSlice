@@ -43,21 +43,21 @@ namespace MatterHackers.MatterSlice
 		private OptimizedMeshCollection optomizedMeshCollection;
 		private LayerDataStorage slicingData = new LayerDataStorage();
 
-		private GCodePathConfig skirtConfig = new GCodePathConfig();
+		private GCodePathConfig skirtConfig = new GCodePathConfig("skirtConfig");
 
-		private GCodePathConfig inset0Config = new GCodePathConfig()
+		private GCodePathConfig inset0Config = new GCodePathConfig("inset0Config")
 		{
 			doSeamHiding = true,
 		};
 
-		private GCodePathConfig insetXConfig = new GCodePathConfig();
-		private GCodePathConfig fillConfig = new GCodePathConfig();
-		private GCodePathConfig topFillConfig = new GCodePathConfig();
-		private GCodePathConfig bottomFillConfig = new GCodePathConfig();
-		private GCodePathConfig airGappedBottomConfig = new GCodePathConfig();
-        private GCodePathConfig bridgeConfig = new GCodePathConfig();
-		private GCodePathConfig supportNormalConfig = new GCodePathConfig();
-		private GCodePathConfig supportInterfaceConfig = new GCodePathConfig();
+		private GCodePathConfig insetXConfig = new GCodePathConfig("insetXConfig");
+		private GCodePathConfig fillConfig = new GCodePathConfig("fillConfig");
+		private GCodePathConfig topFillConfig = new GCodePathConfig("topFillConfig");
+		private GCodePathConfig bottomFillConfig = new GCodePathConfig("bottomFillConfig");
+		private GCodePathConfig airGappedBottomConfig = new GCodePathConfig("airGappedBottomConfig");
+        private GCodePathConfig bridgeConfig = new GCodePathConfig("bridgeConfig");
+		private GCodePathConfig supportNormalConfig = new GCodePathConfig("supportNormalConfig");
+		private GCodePathConfig supportInterfaceConfig = new GCodePathConfig("supportInterfaceConfig");
 
 		public fffProcessor(ConfigSettings config)
 		{
