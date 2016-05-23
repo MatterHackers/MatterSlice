@@ -58,7 +58,7 @@ namespace MatterHackers.MatterSlice
 	// all the variables in this class will be saved and loaded from settings files
 	public class ConfigSettings
 	{
-		// Store all public property instance properties in a local static variable
+		// Store all public instance properties in a local static list to resolve settings mappings
 		private static List<PropertyInfo> allProperties = typeof(ConfigSettings).GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
 
 		public ConfigSettings()
