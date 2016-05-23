@@ -647,7 +647,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				gcodeLayer.WriteQueuedGCode(currentLayerThickness_um);
+				gcodeLayer.WriteQueuedGCode(currentLayerThickness_um, fanSpeedPercent, config.BridgeFanSpeedPercent);
 			}
 
 			LogOutput.Log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
@@ -780,7 +780,6 @@ namespace MatterHackers.MatterSlice
 				// It would be even better to slow down the perimeters that are part of bridges but that is a bit harder.
 				if (bridgePolygons.Count > 0)
 				{
-					gcode.WriteFanCommand(config.BridgeFanSpeedPercent);
 					QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bridgePolygons, bridgeConfig, SupportWriteType.UnsupportedAreas);
 				}
 
