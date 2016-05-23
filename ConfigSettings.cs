@@ -23,6 +23,7 @@ using ClipperLib;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace MatterHackers.MatterSlice
@@ -57,6 +58,9 @@ namespace MatterHackers.MatterSlice
 	// all the variables in this class will be saved and loaded from settings files
 	public class ConfigSettings
 	{
+		// Store all public property instance properties in a local static variable
+		private static List<PropertyInfo> allProperties = typeof(ConfigSettings).GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
+
 		public ConfigSettings()
 		{
 			SetToDefault();
@@ -461,13 +465,14 @@ namespace MatterHackers.MatterSlice
 		{
 			valueToSetTo = valueToSetTo.Replace("\"", "").Trim();
 
-			List<string> lines = new List<string>();
-			foreach (PropertyInfo property in this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+			foreach (PropertyInfo property in allProperties)
 			{
 				// List of case insensitive names that will import as this property
 				HashSet<string> possibleNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 				possibleNames.Add(property.Name);
 
+				// TODO: No one makes use of the LegacyName attribute thus the possibleNames HashSet and the LegacyName class could be removed as part of a code cleanup pass
+				//
 				// Including any mapped LegacyName attributes
 				foreach (Attribute attribute in Attribute.GetCustomAttributes(property))
 				{
