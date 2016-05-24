@@ -61,14 +61,15 @@ namespace MatterHackers.MatterSlice
 
 		private double totalPrintTime;
 
-		private GCodePathConfig travelConfig = new GCodePathConfig();
+		private GCodePathConfig travelConfig;
 
 		private int travelSpeedFactor;
 
 		public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um)
 		{
 			this.gcodeExport = gcode;
-			travelConfig = new GCodePathConfig(travelSpeed, 0, "travel");
+			travelConfig =  new GCodePathConfig("travelConfig");
+			travelConfig.SetData(travelSpeed, 0, "travel");
 
 			LastPosition = gcode.GetPositionXY();
 			outerPerimetersToAvoidCrossing = null;
@@ -344,7 +345,7 @@ namespace MatterHackers.MatterSlice
 			LastPosition = destination;
 		}
 
-		public void WriteQueuedGCode(int layerThickness)
+		public void WriteQueuedGCode(int layerThickness, int fanSpeedPercent = -1, int bridgeFanSpeedPercent = -1)
 		{
 			GCodePathConfig lastConfig = null;
 			int extruderIndex = gcodeExport.GetExtruderIndex();
@@ -363,6 +364,15 @@ namespace MatterHackers.MatterSlice
 				}
 				if (path.config != travelConfig && lastConfig != path.config)
 				{
+					if (path.config.gcodeComment == "BRIDGE" && bridgeFanSpeedPercent != -1)
+					{
+						gcodeExport.WriteFanCommand(bridgeFanSpeedPercent);	
+					}
+					else if (lastConfig?.gcodeComment == "BRIDGE" && bridgeFanSpeedPercent != -1)
+					{
+						gcodeExport.WriteFanCommand(fanSpeedPercent);
+					}
+
 					gcodeExport.WriteComment("TYPE:{0}".FormatWith(path.config.gcodeComment));
 					lastConfig = path.config;
 				}

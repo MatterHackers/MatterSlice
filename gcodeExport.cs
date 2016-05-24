@@ -271,6 +271,9 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
+			// Exhaust the buffer before changing the fan speed
+			gcodeFileStream.Write("G4 P0\n");
+
 			if (speed > 0)
 			{
 				gcodeFileStream.Write("M106 S{0}\n".FormatWith(speed * 255 / 100));

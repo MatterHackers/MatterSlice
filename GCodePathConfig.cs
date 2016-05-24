@@ -31,25 +31,22 @@ namespace MatterHackers.MatterSlice
 
 	using Polygons = List<List<IntPoint>>;
 
-	//The GCodePathConfig is the configuration for moves/extrusion actions. This defines at which width the line is printed and at which speed.
+	/// <summary>
+	/// Contains the configuration for moves/extrusion actions. This defines at which width the line is printed and at which speed.
+	/// </summary>
 	public class GCodePathConfig
 	{
 		public bool closedLoop = true;
 		public int lineWidth_um;
 		public string gcodeComment;
 		public double speed;
+		private string Name { get; set; }
 		public bool spiralize;
 		public bool doSeamHiding;
 
-		public GCodePathConfig()
+		public GCodePathConfig(string configName)
 		{
-		}
-
-		public GCodePathConfig(double speed, int lineWidth_um, string name)
-		{
-			this.speed = speed;
-			this.lineWidth_um = lineWidth_um;
-			this.gcodeComment = name;
+			this.Name = configName;
 		}
 
 		/// <summary>

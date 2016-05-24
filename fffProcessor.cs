@@ -43,21 +43,21 @@ namespace MatterHackers.MatterSlice
 		private OptimizedMeshCollection optomizedMeshCollection;
 		private LayerDataStorage slicingData = new LayerDataStorage();
 
-		private GCodePathConfig skirtConfig = new GCodePathConfig();
+		private GCodePathConfig skirtConfig = new GCodePathConfig("skirtConfig");
 
-		private GCodePathConfig inset0Config = new GCodePathConfig()
+		private GCodePathConfig inset0Config = new GCodePathConfig("inset0Config")
 		{
 			doSeamHiding = true,
 		};
 
-		private GCodePathConfig insetXConfig = new GCodePathConfig();
-		private GCodePathConfig fillConfig = new GCodePathConfig();
-		private GCodePathConfig topFillConfig = new GCodePathConfig();
-		private GCodePathConfig bottomFillConfig = new GCodePathConfig();
-		private GCodePathConfig airGappedBottomConfig = new GCodePathConfig();
-        private GCodePathConfig bridgeConfig = new GCodePathConfig();
-		private GCodePathConfig supportNormalConfig = new GCodePathConfig();
-		private GCodePathConfig supportInterfaceConfig = new GCodePathConfig();
+		private GCodePathConfig insetXConfig = new GCodePathConfig("insetXConfig");
+		private GCodePathConfig fillConfig = new GCodePathConfig("fillConfig");
+		private GCodePathConfig topFillConfig = new GCodePathConfig("topFillConfig");
+		private GCodePathConfig bottomFillConfig = new GCodePathConfig("bottomFillConfig");
+		private GCodePathConfig airGappedBottomConfig = new GCodePathConfig("airGappedBottomConfig");
+        private GCodePathConfig bridgeConfig = new GCodePathConfig("bridgeConfig");
+		private GCodePathConfig supportNormalConfig = new GCodePathConfig("supportNormalConfig");
+		private GCodePathConfig supportInterfaceConfig = new GCodePathConfig("supportInterfaceConfig");
 
 		public fffProcessor(ConfigSettings config)
 		{
@@ -547,11 +547,11 @@ namespace MatterHackers.MatterSlice
 				{
 					if (layerIndex == 0)
 					{
-						QueueExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.FirstLayerExtrusionWidth_um, fanSpeedPercent, z);
+						QueueExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.FirstLayerExtrusionWidth_um, z);
 					}
 					else
 					{
-						QueueExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.ExtrusionWidth_um, fanSpeedPercent, z);
+						QueueExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
 					}
 
 					if (slicingData.support != null)
@@ -607,7 +607,7 @@ namespace MatterHackers.MatterSlice
 
 					for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
 					{
-						QueueAirGappedExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.ExtrusionWidth_um, fanSpeedPercent, z);
+						QueueAirGappedExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
 					}
 
 					slicingData.support.QueueAirGappedBottomLayer(config, gcodeLayer, layerIndex, airGappedBottomConfig);
@@ -647,7 +647,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				gcodeLayer.WriteQueuedGCode(currentLayerThickness_um);
+				gcodeLayer.WriteQueuedGCode(currentLayerThickness_um, fanSpeedPercent, config.BridgeFanSpeedPercent);
 			}
 
 			LogOutput.Log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
@@ -708,7 +708,7 @@ namespace MatterHackers.MatterSlice
 		private int lastPartIndex = 0;
 
 		//Add a single layer from a single extruder to the GCode
-		private void QueueExtruderLayerToGCode(LayerDataStorage slicingData, GCodePlanner gcodeLayer, int extruderIndex, int layerIndex, int extrusionWidth_um, int fanSpeedPercent, long currentZ_um)
+		private void QueueExtruderLayerToGCode(LayerDataStorage slicingData, GCodePlanner gcodeLayer, int extruderIndex, int layerIndex, int extrusionWidth_um, long currentZ_um)
 		{
 			SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 
@@ -719,7 +719,6 @@ namespace MatterHackers.MatterSlice
 				// don't do anything on this layer
 				return;
 			}
-
 
 			int prevExtruder = gcodeLayer.getExtruder();
 			bool extruderChanged = gcodeLayer.SetExtruder(extruderIndex);
@@ -781,7 +780,6 @@ namespace MatterHackers.MatterSlice
 				// It would be even better to slow down the perimeters that are part of bridges but that is a bit harder.
 				if (bridgePolygons.Count > 0)
 				{
-					gcode.WriteFanCommand(config.BridgeFanSpeedPercent);
 					QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bridgePolygons, bridgeConfig, SupportWriteType.UnsupportedAreas);
 				}
 
@@ -957,7 +955,7 @@ namespace MatterHackers.MatterSlice
 		}
 
 		//Add a single layer from a single extruder to the GCode
-		private void QueueAirGappedExtruderLayerToGCode(LayerDataStorage slicingData, GCodePlanner gcodeLayer, int extruderIndex, int layerIndex, int extrusionWidth_um, int fanSpeedPercent, long currentZ_um)
+		private void QueueAirGappedExtruderLayerToGCode(LayerDataStorage slicingData, GCodePlanner gcodeLayer, int extruderIndex, int layerIndex, int extrusionWidth_um, long currentZ_um)
 		{
 			if (config.GenerateSupport
 				&& !config.ContinuousSpiralOuterPerimeter
