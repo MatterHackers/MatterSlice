@@ -378,10 +378,14 @@ namespace MatterHackers.MatterSlice
 				}
 
 				double speed = path.config.speed;
+
 				if (path.config.lineWidth_um != 0)
 				{
-					// Only apply the extrudeSpeedFactor to extrusion moves
-					speed = speed * extrudeSpeedFactor / 100;
+					// Prevent cooling overrides from affecting bridge moves
+					if (path.config.gcodeComment != "BRIDGE")
+					{
+						speed = speed * extrudeSpeedFactor / 100;
+					}
 				}
 				else
 				{
