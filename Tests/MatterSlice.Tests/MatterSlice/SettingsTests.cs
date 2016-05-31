@@ -27,13 +27,58 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
+using System.Collections.Generic;
 using NUnit.Framework;
+using ClipperLib;
 
 namespace MatterHackers.MatterSlice.Tests
 {
-    [TestFixture, Category("MatterSlice")]
+	using Polygon = List<IntPoint>;
+	using Polygons = List<List<IntPoint>>;
+
+	[TestFixture, Category("MatterSlice")]
 	public class SliceSettingsTests
 	{
+		#region Inset order tests
+		[Test]
+		public void OuterPerimeterFirstCorrect()
+		{
+			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
+			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-perimeter.gcode");
+
+			ConfigSettings config = new ConfigSettings();
+			config.NumberOfPerimeters = 3;
+			config.InfillPercent = 0;
+			fffProcessor processor = new fffProcessor(config);
+			processor.SetTargetFile(boxGCodeFile);
+			processor.LoadStlFile(box20MmStlFile);
+			// slice and save it
+			processor.DoProcessing();
+			processor.finalize();
+
+			string[] gcode = TestUtlities.LoadGCodeFile(boxGCodeFile);
+
+			{
+				// check layer 0
+				string[] layer0Info = TestUtlities.GetGCodeForLayer(gcode, 0);
+				List<Polygons> layer0Polygons = TestUtlities.GetExtrusionPolygons(layer0Info);
+				// make sure there are 3
+				Assert.IsTrue(layer0Polygons.Count == 3);
+				// make sure they are in the right order (first layer is outside in)
+			}
+
+			{
+				// check layer 1
+				string[] layer1Info = TestUtlities.GetGCodeForLayer(gcode, 1);
+				List<Polygons> layer1Polygons = TestUtlities.GetExtrusionPolygons(layer1Info);
+
+				// make sure there are 3
+				Assert.IsTrue(layer1Polygons.Count == 3);
+				// make sure they are in the right order (other layers are inside out)
+			}
+		}
+		#endregion
+
 		private string CreateGCodeForLayerHeights(double firstLayerHeight, double otherLayerHeight, double bottomClip = 0)
 		{
 			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");

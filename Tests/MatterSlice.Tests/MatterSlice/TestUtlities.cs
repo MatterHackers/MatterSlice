@@ -27,6 +27,7 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
+using ClipperLib;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -36,6 +37,9 @@ using System.Text.RegularExpressions;
 
 namespace MatterHackers.MatterSlice.Tests
 {
+	using Polygon = List<IntPoint>;
+	using Polygons = List<List<IntPoint>>;
+
 	public struct MovementInfo
 	{
 		public Vector3 position;
@@ -58,6 +62,11 @@ namespace MatterHackers.MatterSlice.Tests
 		public static string GetTempGCodePath(string file)
 		{
 			return Path.ChangeExtension(Path.Combine("..", "..", "..", "TestData", "Temp", file), "gcode");
+		}
+
+		public static List<Polygons> GetExtrusionPolygons(string[] gcode)
+		{
+			throw new NotImplementedException();
 		}
 
 		public static string GetControlGCodePath(string file)
