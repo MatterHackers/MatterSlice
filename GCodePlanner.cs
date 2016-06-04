@@ -161,7 +161,7 @@ namespace MatterHackers.MatterSlice
 			forceRetraction = true;
 		}
 
-		public int getExtruder()
+		public int GetExtruder()
 		{
 			return currentExtruderIndex;
 		}
