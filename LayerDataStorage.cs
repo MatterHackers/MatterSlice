@@ -327,6 +327,8 @@ namespace MatterHackers.MatterSlice
 		{
 			if (config.WipeTowerSize_um > 0)
 			{
+				extrudersThatHaveBeenPrimed = new bool[Extruders.Count];
+
 				Polygon wipeTowerShape = new Polygon();
 				wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000, this.modelMax.y + 3000));
 				wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000, this.modelMax.y + 3000 + config.WipeTowerSize_um));
@@ -338,40 +340,25 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		bool[] extrudersThatHaveBeenPrimed = new bool[ConfigConstants.MAX_EXTRUDERS];
+		bool[] extrudersThatHaveBeenPrimed = null;
 
-		public void GenerateWipeInfill(int extruderIndex, Polygons partOutline, Polygons fillPolygons, long extrusionWidth_um)
+		public void GenerateWipeTowerInfill(int extruderIndex, Polygons partOutline, Polygons outputfillPolygons, long extrusionWidth_um)
 		{
-			Polygons outlineCopy = new Polygons(partOutline);
-			foreach (Polygon outline in outlineCopy)
+			Polygons outlineForExtruder = partOutline.Offset(-extrusionWidth_um * extruderIndex);
+
+			long insetPerLoop = extrusionWidth_um * Extruders.Count;
+			while (outlineForExtruder.Count > 0)
 			{
-				if (outline.Count > 0)
+				for (int polygonIndex = 0; polygonIndex < outlineForExtruder.Count; polygonIndex++)
 				{
-					outline.Add(outline[0]);
+					Polygon newInset = outlineForExtruder[polygonIndex];
+					newInset.Add(newInset[0]); // add in the last move so it is a solid polygon
+					outputfillPolygons.Add(newInset);
 				}
+				outlineForExtruder = outlineForExtruder.Offset(-insetPerLoop);
 			}
 
-			outlineCopy = outlineCopy.Offset(-extrusionWidth_um * extruderIndex);
-
-			long linespacing_um = extrusionWidth_um * ConfigConstants.MAX_EXTRUDERS;
-			while (outlineCopy.Count > 0)
-			{
-				for (int outlineIndex = 0; outlineIndex < outlineCopy.Count; outlineIndex++)
-				{
-					Polygon r = outlineCopy[outlineIndex];
-					fillPolygons.Add(r);
-				}
-				outlineCopy = outlineCopy.Offset(-linespacing_um);
-
-				// add back in the last move
-				foreach (Polygon outline in outlineCopy)
-				{
-					if (outline.Count > 0)
-					{
-						outline.Add(outline[0]);
-					}
-				}
-			}
+			outputfillPolygons.Reverse();
 		}
 
 		public void PrimeOnWipeTower(int extruderIndex, GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
@@ -381,14 +368,10 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			// Start at the center
-			gcodeLayer.QueueTravel(this.wipePoint);
-
 			//If we changed extruder, print the wipe/prime tower for this nozzle;
-			gcodeLayer.QueuePolygonsByOptimizer(this.wipeTower, fillConfig);
 			Polygons fillPolygons = new Polygons();
-			GenerateWipeInfill(extruderIndex, this.wipeTower, fillPolygons, fillConfig.lineWidth_um);
-			gcodeLayer.QueuePolygonsByOptimizer(fillPolygons, fillConfig);
+			GenerateWipeTowerInfill(extruderIndex, this.wipeTower, fillPolygons, fillConfig.lineWidth_um);
+			gcodeLayer.QueuePolygons(fillPolygons, fillConfig);
 
 			extrudersThatHaveBeenPrimed[extruderIndex] = true;
 		}
@@ -396,7 +379,7 @@ namespace MatterHackers.MatterSlice
 		public void EnsureWipeTowerIsSolid(GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
 		{
 			// print all of the extruder loops that have not already been printed
-			for(int extruderIndex =0; extruderIndex < ConfigConstants.MAX_EXTRUDERS; extruderIndex++)
+			for(int extruderIndex =0; extruderIndex < Extruders.Count; extruderIndex++)
 			{
 				if(!extrudersThatHaveBeenPrimed[extruderIndex])
 				{

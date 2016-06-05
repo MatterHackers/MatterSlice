@@ -521,6 +521,14 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		public void QueuePolygons(Polygons polygons, GCodePathConfig config)
+		{
+			foreach(var polygon in polygons)
+			{
+				QueuePolygon(polygon, 0, config);
+			}
+		}
+
 		public void QueuePolygon(Polygon polygon, int startIndex, GCodePathConfig config)
 		{
 			IntPoint currentPosition = polygon[startIndex];

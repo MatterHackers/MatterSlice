@@ -669,8 +669,7 @@ namespace MatterHackers.MatterSlice
 		{
 			SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 
-			if(layer.AllOutlines.Count == 0 
-				&& config.WipeTowerSize == 0
+			if(layer.AllOutlines.Count == 0
 				&& config.WipeShieldDistanceFromObject == 0)
 			{
 				// don't do anything on this layer
