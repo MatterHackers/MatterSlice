@@ -53,6 +53,7 @@ namespace MatterHackers.MatterSlice
 		private double[] totalFilament_mm = new double[ConfigConstants.MAX_EXTRUDERS];
 		private double totalPrintTime;
 		private double unretractExtrusionExtra_mm;
+		private double unretractExtraOnExtruderSwitch_mm;
 		private bool wipeAfterRetraction;
 		private long zPos_um;
 
@@ -175,9 +176,10 @@ namespace MatterHackers.MatterSlice
 			gcodeFileStream = new StreamWriter(filename);
 		}
 
-		public void SetRetractionSettings(double retractionAmount, int retractionSpeed, double extruderSwitchRetraction, double minimumExtrusionBeforeRetraction_mm, double retractionZHop_mm, bool wipeAfterRetraction, double unretractExtrusionExtra_mm)
+		public void SetRetractionSettings(double retractionAmount, int retractionSpeed, double extruderSwitchRetraction, double minimumExtrusionBeforeRetraction_mm, double retractionZHop_mm, bool wipeAfterRetraction, double unretractExtrusionExtra_mm, double unretractExtraOnExtruderSwitch_mm)
 		{
 			this.unretractExtrusionExtra_mm = unretractExtrusionExtra_mm;
+			this.unretractExtraOnExtruderSwitch_mm = unretractExtraOnExtruderSwitch_mm;
 			this.wipeAfterRetraction = wipeAfterRetraction;
 			this.retractionAmount_mm = retractionAmount;
 			this.retractionSpeed = retractionSpeed;
@@ -217,7 +219,8 @@ namespace MatterHackers.MatterSlice
 			extruderIndex = newExtruder;
 
 			isRetracted = true;
-			extrusionAmount_mm = extruderSwitchRetraction_mm;
+			extrusionAmount_mm = extruderSwitchRetraction_mm + unretractExtraOnExtruderSwitch_mm;
+
 			gcodeFileStream.Write("T{0} ; switch extruder\n".FormatWith(extruderIndex));
 
 			if (toolChangeCode != null && toolChangeCode != "")

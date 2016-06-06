@@ -212,6 +212,8 @@ namespace MatterHackers.MatterSlice
 		// repair settings
 		public double RetractionOnExtruderSwitch { get; set; }
 
+		public double UnretractExtraOnExtruderSwitch { get; set; }
+
 		public double RetractionOnTravel { get; set; }
 
 		[SettingDescription("mm/s.")]
@@ -629,6 +631,7 @@ namespace MatterHackers.MatterSlice
 			RetractionOnTravel = 4.5;
 			RetractionSpeed = 45;
 			RetractionOnExtruderSwitch = 14.5;
+			UnretractExtraOnExtruderSwitch = 0;
 			MinimumTravelToCauseRetraction = 10;
 			MinimumExtrusionBeforeRetraction = 0;
 			WipeShieldDistanceFromObject = 0;
