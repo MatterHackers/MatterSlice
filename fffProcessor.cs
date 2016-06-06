@@ -236,9 +236,9 @@ namespace MatterHackers.MatterSlice
             LayerPart.dumpLayerparts(slicingData, "output.html");
 #endif
 
-			LogOutput.Log("Generating support map...\n");
 			if (config.GenerateSupport && !config.ContinuousSpiralOuterPerimeter)
 			{
+				LogOutput.Log("Generating support map...\n");
 				slicingData.support = new NewSupport(config, slicingData.Extruders, 1);
 			}
 
@@ -526,8 +526,8 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				slicingData.EnsureWipeTowerIsSolid(gcodeLayer, fillConfig, config);
-
+				slicingData.EnsureWipeTowerIsSolid(layerIndex, gcodeLayer, fillConfig, config);
+				 
 				if (slicingData.support != null)
 				{
 					if (!printedSupport)
@@ -681,7 +681,7 @@ namespace MatterHackers.MatterSlice
 
 			if (extruderChanged)
 			{
-				slicingData.PrimeOnWipeTower(extruderIndex, gcodeLayer, fillConfig, config);
+				slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, gcodeLayer, fillConfig, config);
 				//Make sure we wipe the old extruder on the wipe tower.
 				gcodeLayer.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[gcodeLayer.GetExtruder()]);
 			}

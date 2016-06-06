@@ -361,9 +361,14 @@ namespace MatterHackers.MatterSlice
 			outputfillPolygons.Reverse();
 		}
 
-		public void PrimeOnWipeTower(int extruderIndex, GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
+		public void PrimeOnWipeTower(int extruderIndex, int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
 		{
 			if (config.WipeTowerSize_um < 1)
+			{
+				return;
+			}
+
+			if (layerIndex > LastLayerWithChange() + 1)
 			{
 				return;
 			}
@@ -376,15 +381,48 @@ namespace MatterHackers.MatterSlice
 			extrudersThatHaveBeenPrimed[extruderIndex] = true;
 		}
 
-		public void EnsureWipeTowerIsSolid(GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
+		int LastLayerWithChange()
 		{
-			// print all of the extruder loops that have not already been printed
-			for(int extruderIndex =0; extruderIndex < Extruders.Count; extruderIndex++)
+			int numLayers = Extruders[0].Layers.Count;
+			int firstExtruderWithData = -1;
+			for (int checkLayer = numLayers - 1; checkLayer >= 0; checkLayer--)
 			{
-				if(!extrudersThatHaveBeenPrimed[extruderIndex])
+				for (int extruderToCheck = 0; extruderToCheck < Extruders.Count; extruderToCheck++)
+				{
+					if(Extruders[extruderToCheck].Layers[checkLayer].AllOutlines.Count > 0)
+					{
+						if(firstExtruderWithData == -1)
+						{
+							firstExtruderWithData = extruderToCheck;
+						}
+						else
+						{
+							if(firstExtruderWithData != extruderToCheck)
+							{
+								return checkLayer;
+							}
+						}
+					}
+				}
+			}
+
+			return -1;
+		}
+
+		public void EnsureWipeTowerIsSolid(int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
+		{
+			if(layerIndex >= LastLayerWithChange())
+			{
+				return;
+			}
+
+			// print all of the extruder loops that have not already been printed
+			for (int extruderIndex = 0; extruderIndex < Extruders.Count; extruderIndex++)
+			{
+				if (!extrudersThatHaveBeenPrimed[extruderIndex])
 				{
 					// write the loops for this extruder, but don't change to it. We are just filling the prime tower.
-					PrimeOnWipeTower(extruderIndex, gcodeLayer, fillConfig, config);
+					PrimeOnWipeTower(extruderIndex, 0, gcodeLayer, fillConfig, config);
 				}
 
 				// clear the history of printer extruders for the next layer
