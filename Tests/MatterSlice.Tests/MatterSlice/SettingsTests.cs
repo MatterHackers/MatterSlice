@@ -40,7 +40,7 @@ namespace MatterHackers.MatterSlice.Tests
 	public class SliceSettingsTests
 	{
 		#region Inset order tests
-		[Test]
+		[Test, Ignore("Not finished")]
 		public void OuterPerimeterFirstCorrect()
 		{
 			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
