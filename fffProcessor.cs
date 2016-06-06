@@ -236,9 +236,9 @@ namespace MatterHackers.MatterSlice
             LayerPart.dumpLayerparts(slicingData, "output.html");
 #endif
 
-			LogOutput.Log("Generating support map...\n");
 			if (config.GenerateSupport && !config.ContinuousSpiralOuterPerimeter)
 			{
+				LogOutput.Log("Generating support map...\n");
 				slicingData.support = new NewSupport(config, slicingData.Extruders, 1);
 			}
 
@@ -288,10 +288,7 @@ namespace MatterHackers.MatterSlice
 				LogOutput.Log("Creating Insets {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
 			}
 
-			if (config.WipeShieldDistanceFromShapes_um > 0)
-			{
-				CreateWipeShields(slicingData, totalLayers);
-			}
+			slicingData.CreateWipeShield(totalLayers, config);
 
 			LogOutput.Log("Generated inset in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Restart();
@@ -323,17 +320,7 @@ namespace MatterHackers.MatterSlice
 			LogOutput.Log("Generated top bottom layers in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Restart();
 
-			if (config.WipeTowerSize_um > 0)
-			{
-				Polygon p = new Polygon();
-				slicingData.wipeTower.Add(p);
-				p.Add(new IntPoint(slicingData.modelMin.x - 3000, slicingData.modelMax.y + 3000));
-				p.Add(new IntPoint(slicingData.modelMin.x - 3000, slicingData.modelMax.y + 3000 + config.WipeTowerSize_um));
-				p.Add(new IntPoint(slicingData.modelMin.x - 3000 - config.WipeTowerSize_um, slicingData.modelMax.y + 3000 + config.WipeTowerSize_um));
-				p.Add(new IntPoint(slicingData.modelMin.x - 3000 - config.WipeTowerSize_um, slicingData.modelMax.y + 3000));
-
-				slicingData.wipePoint = new IntPoint(slicingData.modelMin.x - 3000 - config.WipeTowerSize_um / 2, slicingData.modelMax.y + 3000 + config.WipeTowerSize_um / 2);
-			}
+			slicingData.CreateWipeTower(totalLayers, config);
 
 			if (config.EnableRaft)
 			{
@@ -356,38 +343,6 @@ namespace MatterHackers.MatterSlice
 					config.NumberOfBrimLoops,
 					config.SkirtMinLength_um,
 					config.FirstLayerThickness_um, config);
-			}
-		}
-
-		private void CreateWipeShields(LayerDataStorage slicingData, int totalLayers)
-		{
-			for (int layerNr = 0; layerNr < totalLayers; layerNr++)
-			{
-				Polygons wipeShield = new Polygons();
-				for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
-				{
-					for (int partNr = 0; partNr < slicingData.Extruders[extruderIndex].Layers[layerNr].Islands.Count; partNr++)
-					{
-						wipeShield = wipeShield.CreateUnion(slicingData.Extruders[extruderIndex].Layers[layerNr].Islands[partNr].IslandOutline.Offset(config.WipeShieldDistanceFromShapes_um));
-					}
-				}
-				slicingData.wipeShield.Add(wipeShield);
-			}
-
-			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
-			{
-				slicingData.wipeShield[layerIndex] = slicingData.wipeShield[layerIndex].Offset(-1000).Offset(1000);
-			}
-
-			int offsetAngle = (int)Math.Tan(60.0 * Math.PI / 180) * config.LayerThickness_um;//Allow for a 60deg angle in the wipeShield.
-			for (int layerNr = 1; layerNr < totalLayers; layerNr++)
-			{
-				slicingData.wipeShield[layerNr] = slicingData.wipeShield[layerNr].CreateUnion(slicingData.wipeShield[layerNr - 1].Offset(-offsetAngle));
-			}
-
-			for (int layerNr = totalLayers - 1; layerNr > 0; layerNr--)
-			{
-				slicingData.wipeShield[layerNr - 1] = slicingData.wipeShield[layerNr - 1].CreateUnion(slicingData.wipeShield[layerNr].Offset(-offsetAngle));
 			}
 		}
 
@@ -449,7 +404,7 @@ namespace MatterHackers.MatterSlice
 			gcode.WriteComment("Layer count: {0}".FormatWith(totalLayers));
 
 			// keep the raft generation code inside of raft
-			slicingData.WriteRaftGCodeIfRequired(config, gcode);
+			slicingData.WriteRaftGCodeIfRequired(gcode, config);
 
 			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 			{
@@ -571,6 +526,8 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
+				slicingData.EnsureWipeTowerIsSolid(layerIndex, gcodeLayer, fillConfig, config);
+				 
 				if (slicingData.support != null)
 				{
 					if (!printedSupport)
@@ -712,20 +669,21 @@ namespace MatterHackers.MatterSlice
 		{
 			SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 
-			if(layer.AllOutlines.Count == 0 
-				&& config.WipeTowerSize == 0
+			if(layer.AllOutlines.Count == 0
 				&& config.WipeShieldDistanceFromObject == 0)
 			{
 				// don't do anything on this layer
 				return;
 			}
 
-			int prevExtruder = gcodeLayer.getExtruder();
+			int prevExtruder = gcodeLayer.GetExtruder();
 			bool extruderChanged = gcodeLayer.SetExtruder(extruderIndex);
 
 			if (extruderChanged)
 			{
-				addWipeTower(slicingData, gcodeLayer, layerIndex, prevExtruder, extrusionWidth_um);
+				slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, gcodeLayer, fillConfig, config);
+				//Make sure we wipe the old extruder on the wipe tower.
+				gcodeLayer.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[gcodeLayer.GetExtruder()]);
 			}
 
 			if (slicingData.wipeShield.Count > 0 && slicingData.Extruders.Count > 1)
@@ -961,7 +919,7 @@ namespace MatterHackers.MatterSlice
 				&& !config.ContinuousSpiralOuterPerimeter
 				&& layerIndex > 0)
 			{
-				int prevExtruder = gcodeLayer.getExtruder();
+				int prevExtruder = gcodeLayer.GetExtruder();
 				bool extruderChanged = gcodeLayer.SetExtruder(extruderIndex);
 
 				SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
@@ -1197,23 +1155,6 @@ namespace MatterHackers.MatterSlice
 						throw new NotImplementedException();
 				}
 			}
-		}
-
-		private void addWipeTower(LayerDataStorage slicingData, GCodePlanner gcodeLayer, int layerNr, int prevExtruder, int extrusionWidth_um)
-		{
-			if (config.WipeTowerSize_um < 1)
-			{
-				return;
-			}
-
-			//If we changed extruder, print the wipe/prime tower for this nozzle;
-			gcodeLayer.QueuePolygonsByOptimizer(slicingData.wipeTower, supportInterfaceConfig);
-			Polygons fillPolygons = new Polygons();
-			Infill.GenerateLinePaths(slicingData.wipeTower, fillPolygons, extrusionWidth_um, config.InfillExtendIntoPerimeter_um, 45 + 90 * (layerNr % 2));
-			gcodeLayer.QueuePolygonsByOptimizer(fillPolygons, supportInterfaceConfig);
-
-			//Make sure we wipe the old extruder on the wipe tower.
-			gcodeLayer.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[gcodeLayer.getExtruder()]);
 		}
 
 		public void Cancel()

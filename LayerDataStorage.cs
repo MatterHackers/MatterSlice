@@ -24,8 +24,10 @@ using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
+	using System;
 	using System.IO;
 	using System.Linq;
+	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
 	public class LayerDataStorage
@@ -188,7 +190,7 @@ namespace MatterHackers.MatterSlice
 					Polygons unionedIslandOutlines = new Polygons();
 
 					// Grow each island by the current brim distance
-					foreach(var island in allOutlines)
+					foreach (var island in allOutlines)
 					{
 						var polygons = new Polygons();
 						polygons.Add(island);
@@ -219,7 +221,7 @@ namespace MatterHackers.MatterSlice
 			return skirtPolygons;
 		}
 
-		public void WriteRaftGCodeIfRequired(ConfigSettings config, GCodeExport gcode)
+		public void WriteRaftGCodeIfRequired(GCodeExport gcode, ConfigSettings config)
 		{
 			LayerDataStorage storage = this;
 			if (config.ShouldGenerateRaft())
@@ -318,6 +320,150 @@ namespace MatterHackers.MatterSlice
 
 					gcodeLayer.WriteQueuedGCode(config.RaftInterfaceThicknes_um);
 				}
+			}
+		}
+
+		public void CreateWipeTower(int totalLayers, ConfigSettings config)
+		{
+			if (config.WipeTowerSize_um > 0)
+			{
+				extrudersThatHaveBeenPrimed = new bool[Extruders.Count];
+
+				Polygon wipeTowerShape = new Polygon();
+				wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000, this.modelMax.y + 3000));
+				wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000, this.modelMax.y + 3000 + config.WipeTowerSize_um));
+				wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000 - config.WipeTowerSize_um, this.modelMax.y + 3000 + config.WipeTowerSize_um));
+				wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000 - config.WipeTowerSize_um, this.modelMax.y + 3000));
+
+				this.wipeTower.Add(wipeTowerShape);
+				this.wipePoint = new IntPoint(this.modelMin.x - 3000 - config.WipeTowerSize_um / 2, this.modelMax.y + 3000 + config.WipeTowerSize_um / 2);
+			}
+		}
+
+		bool[] extrudersThatHaveBeenPrimed = null;
+
+		public void GenerateWipeTowerInfill(int extruderIndex, Polygons partOutline, Polygons outputfillPolygons, long extrusionWidth_um)
+		{
+			Polygons outlineForExtruder = partOutline.Offset(-extrusionWidth_um * extruderIndex);
+
+			long insetPerLoop = extrusionWidth_um * Extruders.Count;
+			while (outlineForExtruder.Count > 0)
+			{
+				for (int polygonIndex = 0; polygonIndex < outlineForExtruder.Count; polygonIndex++)
+				{
+					Polygon newInset = outlineForExtruder[polygonIndex];
+					newInset.Add(newInset[0]); // add in the last move so it is a solid polygon
+					outputfillPolygons.Add(newInset);
+				}
+				outlineForExtruder = outlineForExtruder.Offset(-insetPerLoop);
+			}
+
+			outputfillPolygons.Reverse();
+		}
+
+		public void PrimeOnWipeTower(int extruderIndex, int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
+		{
+			if (config.WipeTowerSize_um < 1)
+			{
+				return;
+			}
+
+			if (layerIndex > LastLayerWithChange() + 1)
+			{
+				return;
+			}
+
+			//If we changed extruder, print the wipe/prime tower for this nozzle;
+			Polygons fillPolygons = new Polygons();
+			GenerateWipeTowerInfill(extruderIndex, this.wipeTower, fillPolygons, fillConfig.lineWidth_um);
+			gcodeLayer.QueuePolygons(fillPolygons, fillConfig);
+
+			extrudersThatHaveBeenPrimed[extruderIndex] = true;
+		}
+
+		int LastLayerWithChange()
+		{
+			int numLayers = Extruders[0].Layers.Count;
+			int firstExtruderWithData = -1;
+			for (int checkLayer = numLayers - 1; checkLayer >= 0; checkLayer--)
+			{
+				for (int extruderToCheck = 0; extruderToCheck < Extruders.Count; extruderToCheck++)
+				{
+					if(Extruders[extruderToCheck].Layers[checkLayer].AllOutlines.Count > 0)
+					{
+						if(firstExtruderWithData == -1)
+						{
+							firstExtruderWithData = extruderToCheck;
+						}
+						else
+						{
+							if(firstExtruderWithData != extruderToCheck)
+							{
+								return checkLayer;
+							}
+						}
+					}
+				}
+			}
+
+			return -1;
+		}
+
+		public void EnsureWipeTowerIsSolid(int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
+		{
+			if(layerIndex >= LastLayerWithChange())
+			{
+				return;
+			}
+
+			// print all of the extruder loops that have not already been printed
+			for (int extruderIndex = 0; extruderIndex < Extruders.Count; extruderIndex++)
+			{
+				if (!extrudersThatHaveBeenPrimed[extruderIndex])
+				{
+					// write the loops for this extruder, but don't change to it. We are just filling the prime tower.
+					PrimeOnWipeTower(extruderIndex, 0, gcodeLayer, fillConfig, config);
+				}
+
+				// clear the history of printer extruders for the next layer
+				extrudersThatHaveBeenPrimed[extruderIndex] = false;
+			}
+		}
+
+		public void CreateWipeShield(int totalLayers, ConfigSettings config)
+		{
+			if (config.WipeShieldDistanceFromShapes_um <= 0)
+			{
+				return;
+			}
+
+			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
+			{
+				Polygons wipeShield = new Polygons();
+				for (int extruderIndex = 0; extruderIndex < this.Extruders.Count; extruderIndex++)
+				{
+					for (int islandIndex = 0; islandIndex < this.Extruders[extruderIndex].Layers[layerIndex].Islands.Count; islandIndex++)
+					{
+						wipeShield = wipeShield.CreateUnion(this.Extruders[extruderIndex].Layers[layerIndex].Islands[islandIndex].IslandOutline.Offset(config.WipeShieldDistanceFromShapes_um));
+					}
+				}
+				this.wipeShield.Add(wipeShield);
+			}
+
+			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
+			{
+				this.wipeShield[layerIndex] = this.wipeShield[layerIndex].Offset(-1000).Offset(1000);
+			}
+
+			int offsetAngle = (int)Math.Tan(60.0 * Math.PI / 180) * config.LayerThickness_um;//Allow for a 60deg angle in the wipeShield.
+			for (int layerIndex = 1; layerIndex < totalLayers; layerIndex++)
+			{
+				this.wipeShield[layerIndex] = this.wipeShield[layerIndex].CreateUnion(this.wipeShield[layerIndex - 1].Offset(-offsetAngle));
+			}
+
+			for (int layerIndex = totalLayers - 1; layerIndex > 0; layerIndex--)
+			{
+				this.wipeShield[layerIndex - 1] = this.wipeShield[layerIndex - 1].CreateUnion(this.wipeShield[layerIndex].Offset(-offsetAngle));
 			}
 		}
 	}

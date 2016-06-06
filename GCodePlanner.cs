@@ -161,7 +161,7 @@ namespace MatterHackers.MatterSlice
 			forceRetraction = true;
 		}
 
-		public int getExtruder()
+		public int GetExtruder()
 		{
 			return currentExtruderIndex;
 		}
@@ -518,6 +518,14 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 				}
+			}
+		}
+
+		public void QueuePolygons(Polygons polygons, GCodePathConfig config)
+		{
+			foreach(var polygon in polygons)
+			{
+				QueuePolygon(polygon, 0, config);
 			}
 		}
 
