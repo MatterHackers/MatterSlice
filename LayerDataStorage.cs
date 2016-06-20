@@ -363,12 +363,9 @@ namespace MatterHackers.MatterSlice
 
 		public void PrimeOnWipeTower(int extruderIndex, int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
 		{
-			if (config.WipeTowerSize_um < 1)
-			{
-				return;
-			}
-
-			if (layerIndex > LastLayerWithChange() + 1)
+			if (config.WipeTowerSize_um < 1 
+				|| extrudersThatHaveBeenPrimed == null
+				|| layerIndex > LastLayerWithChange() + 1)
 			{
 				return;
 			}
@@ -411,7 +408,8 @@ namespace MatterHackers.MatterSlice
 
 		public void EnsureWipeTowerIsSolid(int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
 		{
-			if(layerIndex >= LastLayerWithChange())
+			if(layerIndex >= LastLayerWithChange()
+				|| extrudersThatHaveBeenPrimed == null)
 			{
 				return;
 			}
