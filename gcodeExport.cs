@@ -212,7 +212,11 @@ namespace MatterHackers.MatterSlice
 				WriteCode(beforeToolchangeCode);
 			}
 
-			gcodeFileStream.Write("G1 F{0} E{1:0.####} ; retract\n", retractionSpeed * 60, extrusionAmount_mm - extruderSwitchRetraction_mm);
+			if (extruderSwitchRetraction_mm != 0)
+			{
+				gcodeFileStream.Write("G1 F{0} E{1:0.####} ; retract\n", retractionSpeed * 60, extrusionAmount_mm - extruderSwitchRetraction_mm);
+			}
+
 			currentSpeed = retractionSpeed;
 
 			ResetExtrusionValue();
