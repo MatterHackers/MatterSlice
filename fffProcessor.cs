@@ -763,7 +763,8 @@ namespace MatterHackers.MatterSlice
 
 					// Figure out where the seam hiding start point is for inset 0 and move to that spot so
 					// we have the minimum travel while starting inset 0 after printing the rest of the insets
-					if (island?.InsetToolPaths?[0]?[0]?.Count > 0)
+					if (island?.InsetToolPaths?[0]?[0]?.Count > 0
+						&& !config.ContinuousSpiralOuterPerimeter)
 					{
 						int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(island.InsetToolPaths[0][0]);
 						gcodeLayer.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
