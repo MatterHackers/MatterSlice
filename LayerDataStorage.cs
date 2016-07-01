@@ -325,19 +325,22 @@ namespace MatterHackers.MatterSlice
 
 		public void CreateWipeTower(int totalLayers, ConfigSettings config)
 		{
-			if (config.WipeTowerSize_um > 0)
+			if (config.WipeTowerSize_um < 1
+				|| LastLayerWithChange() == -1)
 			{
-				extrudersThatHaveBeenPrimed = new bool[Extruders.Count];
-
-				Polygon wipeTowerShape = new Polygon();
-				wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000, this.modelMax.y + 3000));
-				wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000, this.modelMax.y + 3000 + config.WipeTowerSize_um));
-				wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000 - config.WipeTowerSize_um, this.modelMax.y + 3000 + config.WipeTowerSize_um));
-				wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000 - config.WipeTowerSize_um, this.modelMax.y + 3000));
-
-				this.wipeTower.Add(wipeTowerShape);
-				this.wipePoint = new IntPoint(this.modelMin.x - 3000 - config.WipeTowerSize_um / 2, this.modelMax.y + 3000 + config.WipeTowerSize_um / 2);
+				return;
 			}
+
+			extrudersThatHaveBeenPrimed = new bool[Extruders.Count];
+
+			Polygon wipeTowerShape = new Polygon();
+			wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000, this.modelMax.y + 3000));
+			wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000, this.modelMax.y + 3000 + config.WipeTowerSize_um));
+			wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000 - config.WipeTowerSize_um, this.modelMax.y + 3000 + config.WipeTowerSize_um));
+			wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000 - config.WipeTowerSize_um, this.modelMax.y + 3000));
+
+			this.wipeTower.Add(wipeTowerShape);
+			this.wipePoint = new IntPoint(this.modelMin.x - 3000 - config.WipeTowerSize_um / 2, this.modelMax.y + 3000 + config.WipeTowerSize_um / 2);
 		}
 
 		bool[] extrudersThatHaveBeenPrimed = null;
