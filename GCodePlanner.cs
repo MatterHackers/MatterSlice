@@ -663,12 +663,14 @@ namespace MatterHackers.MatterSlice
 						if (currentDistance > targetDistance)
 						{
 							long newDistance = currentDistance - targetDistance;
+							if (newDistance > 100) // Don't clip segments less than 100 um. We get too much truncation error.
+							{
+								Point3 dir = (path.points[pointIndex] - path.points[pointIndex - 1]) * newDistance / currentDistance;
 
-							Point3 dir = (path.points[pointIndex] - path.points[pointIndex - 1]) * newDistance / currentDistance;
+								Point3 clippedEndpoint = path.points[pointIndex - 1] + dir;
 
-							Point3 clippedEndpoint = path.points[pointIndex - 1] + dir;
-
-							path.points[pointIndex] = clippedEndpoint;
+								path.points[pointIndex] = clippedEndpoint;
+							}
 							break;
 						}
 						else if (currentDistance == targetDistance)
