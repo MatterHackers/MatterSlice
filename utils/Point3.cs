@@ -44,6 +44,11 @@ namespace MatterHackers.MatterSlice
 
 		public IntPoint XYPoint { get { return new IntPoint(x, y); } }
 
+		public override string ToString()
+		{
+			return "x:{0} y:{1} z:{2}".FormatWith(x, y, z);
+		}
+
 		public Point3(IntPoint xy, long z)
 		{
 			this.x = xy.X;
