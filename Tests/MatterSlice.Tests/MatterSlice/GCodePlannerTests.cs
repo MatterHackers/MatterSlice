@@ -41,7 +41,7 @@ namespace MatterHackers.MatterSlice.Tests
 	[TestFixture, Category("MatterSlice.GCodePlannerTests")]
 	public class GCodePlannerTests
 	{
-		[Test]
+		[Test, Category("FixNeeded")]
 		public void MakeCloseSegmentsMergable()
 		{
 			// A path that needs to have points inserted to do the correct thing
