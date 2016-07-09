@@ -53,9 +53,41 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0) };
-				Polygon correctedPath = planner.MakeCloseSegmentsMergable(perimeter, 400 / 4);
-				Assert.IsTrue(correctedPath.Count == 3);
+				List<Point3> perimeter = new List<Point3>()
+				{
+					new Point3(5000, 50),
+					new Point3(0, 10000),
+					new Point3(0, 0),
+					new Point3(15000, 0),
+					new Point3(15000, 10000),
+					new Point3(10000, 50),
+				};
+				Assert.IsTrue(perimeter.Count == 6);
+				List<Point3> correctedPath = planner.MakeCloseSegmentsMergable(perimeter, 400 / 4);
+				Assert.IsTrue(correctedPath.Count == 8);
+			}
+
+			// Make sure we work correctly when splitting the closing segment.
+			{
+				// |\      /|                     |\      /|
+				// | \____/ |   				  | \____/ |
+				// |_______s|	create points ->  |_.____._|
+
+				int travelSpeed = 50;
+				int retractionMinimumDistance = 20;
+				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
+				List<Point3> perimeter = new List<Point3>()
+				{
+					new Point3(15000, 0),
+					new Point3(15000, 10000),
+					new Point3(10000, 50),
+					new Point3(5000, 50),
+					new Point3(0, 10000),
+					new Point3(0, 0),
+				};
+				Assert.IsTrue(perimeter.Count == 6);
+				List<Point3> correctedPath = planner.MakeCloseSegmentsMergable(perimeter, 400 / 4);
+				Assert.IsTrue(correctedPath.Count == 8);
 			}
 		}
 

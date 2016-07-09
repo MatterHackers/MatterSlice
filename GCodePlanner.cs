@@ -752,9 +752,18 @@ namespace MatterHackers.MatterSlice
 			//Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
 		}
 
-		public Polygon MakeCloseSegmentsMergable(Polygon perimeter, int distanceNeedingAdd)
+		public List<Point3> MakeCloseSegmentsMergable(List<Point3> perimeter, int distanceNeedingAdd)
 		{
-			throw new System.NotImplementedException();
+			List<Point3> expandedPerimeter = new List<Point3>(perimeter);
+
+			for (int segmentIndex = perimeter.Count; segmentIndex > 0; segmentIndex--)
+			{
+				for (int vertexIndex = 0; vertexIndex < perimeter.Count; vertexIndex++)
+				{
+				}
+			}
+
+			return expandedPerimeter;
 		}
 	}
 }
