@@ -43,13 +43,14 @@ namespace MatterHackers.MatterSlice
 		public Point3 Start;
 		public Point3 End;
 
-		public static List<Segment> ConvertPerimeterToSegments(List<Point3> perimeter)
+		public static List<Segment> ConvertPapthToSegments(List<Point3> path, bool isPerimeter = true)
 		{
-			List<Segment> polySegments = new List<Segment>(perimeter.Count);
-			for (int i = 0; i < perimeter.Count; i++)
+			List<Segment> polySegments = new List<Segment>(path.Count);
+			int endIndex = isPerimeter ? path.Count : path.Count-1;
+			for (int i = 0; i < endIndex; i++)
 			{
-				Point3 point = perimeter[i];
-				Point3 nextPoint = perimeter[(i + 1) % perimeter.Count];
+				Point3 point = path[i];
+				Point3 nextPoint = path[(i + 1) % path.Count];
 
 				polySegments.Add(new Segment()
 				{
@@ -61,13 +62,25 @@ namespace MatterHackers.MatterSlice
 			return polySegments;
 		}
 
-		public static List<Segment> ConvertPathToSegments(IList<IntPoint> openPath, long zHeight)
+		public static bool operator ==(Segment p0, Segment p1)
 		{
-			List<Segment> polySegments = new List<Segment>(openPath.Count);
-			for (int i = 0; i < openPath.Count-1; i++)
+			return p0.Start == p1.Start && p0.End == p1.End;
+		}
+
+		public static bool operator !=(Segment p0, Segment p1)
+		{
+			return p0.Start != p1.Start || p0.End != p1.End;
+		}
+
+		public static List<Segment> ConvertPathToSegments(IList<IntPoint> path, long zHeight, bool isPerimeter = true)
+		{
+			List<Segment> polySegments = new List<Segment>(path.Count);
+			int endIndex = isPerimeter ? path.Count : path.Count - 1;
+			for (int i = 0; i < endIndex; i++)
 			{
-				Point3 point = new Point3(openPath[i].X, openPath[i].Y, zHeight);
-				Point3 nextPoint = new Point3(openPath[i+1].X, openPath[i+1].Y, zHeight);
+				Point3 point = new Point3(path[i].X, path[i].Y, zHeight);
+				int nextIndex = (i + 1) % path.Count;
+				Point3 nextPoint = new Point3(path[nextIndex].X, path[nextIndex].Y, zHeight);
 
 				polySegments.Add(new Segment()
 				{
@@ -121,7 +134,7 @@ namespace MatterHackers.MatterSlice
 				requiredSplits2D.Add(0, start2D);
 				requiredSplits2D.Add(length, end2D);
 				// convert to a segment list
-				List<Segment> newSegments = Segment.ConvertPathToSegments(requiredSplits2D.Values, Start.z);
+				List<Segment> newSegments = Segment.ConvertPathToSegments(requiredSplits2D.Values, Start.z, false);
 				// return them;
 				return newSegments;
 			}
@@ -282,7 +295,7 @@ namespace MatterHackers.MatterSlice
 			perimeter = MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um);
 
 			// make a copy that has every point duplicated (so that we have them as segments).
-			List <Segment> polySegments = Segment.ConvertPerimeterToSegments(perimeter);
+			List <Segment> polySegments = Segment.ConvertPapthToSegments(perimeter);
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
 
@@ -840,7 +853,7 @@ namespace MatterHackers.MatterSlice
 
 		public List<Point3> MakeCloseSegmentsMergable(List<Point3> perimeter, long distanceNeedingAdd)
 		{
-			List<Segment> segments = Segment.ConvertPerimeterToSegments(perimeter);
+			List<Segment> segments = Segment.ConvertPapthToSegments(perimeter);
 
 			// for every segment
 			for (int segmentIndex = perimeter.Count-1; segmentIndex >= 0; segmentIndex--)

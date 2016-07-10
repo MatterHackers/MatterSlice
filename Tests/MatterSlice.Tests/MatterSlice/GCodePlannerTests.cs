@@ -46,16 +46,17 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			// check that we can cut up a single segment
 			{
-				List<Segment> segmentsControl = Segment.ConvertPerimeterToSegments(new List<Point3>()
+				List<Segment> segmentsControl = Segment.ConvertPapthToSegments(new List<Point3>()
 				{
 					new Point3(0, 0),
-					new Point3(0, 2500),
-					new Point3(0, 5000),
-				});
+					new Point3(2500, 0),
+					new Point3(5000, 0),
+				}, false);
 
 				List<Point3> cuts = new List<Point3>()
 				{
 					new Point3(2500, 0),
+					new Point3(2500, 401),
 				};
 
 				Segment segmentToCut = new Segment()
@@ -66,6 +67,11 @@ namespace MatterHackers.MatterSlice.Tests
 					
 
 				List<Segment> segmentsTest = segmentToCut.GetSplitSegmentForVertecies(cuts, 400);
+				Assert.IsTrue(segmentsControl.Count == segmentsTest.Count);
+				for(int i=0; i<segmentsTest.Count; i++)
+				{
+					Assert.IsTrue(segmentsTest[i] == segmentsControl[i]);
+				}
 			}
 
 			// A path that needs to have points inserted to do the correct thing
