@@ -138,7 +138,7 @@ namespace MatterHackers.MatterSlice.Tests
 				List<Point3> perimeter = new List<Point3>() { new Point3(0, 0, 0), new Point3(5000, 0, 0), new Point3(5000, 5000, 0), new Point3(0, 5000, 0)};
 				Assert.IsTrue(perimeter.Count == 4);
 				List<PathAndWidth> correctedPath;
-				planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4, out correctedPath);
+				planner.RemovePerimeterOverlaps(perimeter, 400 / 4, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 1);
 				Assert.IsTrue(correctedPath[0].Path.Count == 5);
 				for (int i = 0; i < perimeter.Count; i++)
@@ -157,7 +157,7 @@ namespace MatterHackers.MatterSlice.Tests
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<Point3> perimeter = new List<Point3>() { new Point3(0, 0), new Point3(5000, 0), new Point3(5000, 50), new Point3(0, 50)};
 				List<PathAndWidth> correctedPath;
-				planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4, out correctedPath);
+				planner.RemovePerimeterOverlaps(perimeter, 400 / 4, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 1);
 				Assert.IsTrue(correctedPath[0].Path.Count == 2);
 			}
@@ -172,7 +172,7 @@ namespace MatterHackers.MatterSlice.Tests
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<Point3> perimeter = new List<Point3>() { new Point3(0, 50), new Point3(0, 0), new Point3(5000, 0), new Point3(5000, 50) };
 				List<PathAndWidth> correctedPath;
-				planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4, out correctedPath);
+				planner.RemovePerimeterOverlaps(perimeter, 400 / 4, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 1);
 				Assert.IsTrue(correctedPath[0].Path.Count == 2);
 			}
@@ -187,7 +187,7 @@ namespace MatterHackers.MatterSlice.Tests
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<Point3> perimeter = new List<Point3>() { new Point3(5000, 50), new Point3(0, 50), new Point3(0, 0), new Point3(5000, 0), new Point3(5000, 50) };
 				List<PathAndWidth> correctedPath;
-				planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4, out correctedPath);
+				planner.RemovePerimeterOverlaps(perimeter, 400 / 4, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 2);
 				Assert.IsTrue(correctedPath[0].Path.Count == 2);
 			}
@@ -202,7 +202,7 @@ namespace MatterHackers.MatterSlice.Tests
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<Point3> perimeter = new List<Point3>() { new Point3(5000, 0), new Point3(5000, 50), new Point3(0, 50), new Point3(0, 0)};
 				List<PathAndWidth> correctedPath;
-				planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4, out correctedPath);
+				planner.RemovePerimeterOverlaps(perimeter, 400 / 4, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 1);
 				Assert.IsTrue(correctedPath[0].Path.Count == 2);
 			}
@@ -218,7 +218,7 @@ namespace MatterHackers.MatterSlice.Tests
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<Point3> perimeter = new List<Point3>() { new Point3(0, 0), new Point3(5000, 0), new Point3(5000, 50), new Point3(0, 50), new Point3(0, 0) };
 				List<PathAndWidth> correctedPath;
-				planner.GetPathsWithOverlapsRemoved(perimeter, 400 / 4, out correctedPath);
+				planner.RemovePerimeterOverlaps(perimeter, 400 / 4, out correctedPath);
 				//Assert.IsTrue(correctedPath.Count == 3);
 				//Assert.IsTrue(correctedPath[0].Count == 2);
 			}
@@ -247,7 +247,7 @@ namespace MatterHackers.MatterSlice.Tests
 					new Point3(1000, 5000), new Point3(0, 5000), new Point3(0, 0), new Point3(1000, 0), 
 				};
 				List<PathAndWidth> correctedPath;
-				planner.GetPathsWithOverlapsRemoved(perimeter, 400, out correctedPath);
+				planner.RemovePerimeterOverlaps(perimeter, 400, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Path.Count == 2);
 				Assert.IsTrue(correctedPath[1].Path.Count == 6);

@@ -131,8 +131,14 @@ namespace MatterHackers.MatterSlice
 			if(requiredSplits2D.Count > 0)
 			{
 				// add in the start and end
-				requiredSplits2D.Add(0, start2D);
-				requiredSplits2D.Add(length, end2D);
+				if (!requiredSplits2D.ContainsKey(0))
+				{
+					requiredSplits2D.Add(0, start2D);
+				}
+				if (!requiredSplits2D.ContainsKey(length))
+				{
+					requiredSplits2D.Add(length, end2D);
+				}
 				// convert to a segment list
 				List<Segment> newSegments = Segment.ConvertPathToSegments(requiredSplits2D.Values, Start.z, false);
 				// return them;
@@ -288,7 +294,7 @@ namespace MatterHackers.MatterSlice
 		[Flags]
 		enum Altered { remove = 1, merged = 2 };
 
-		public bool GetPathsWithOverlapsRemoved(List<Point3> perimeter, int overlapMergeAmount_um, out List<PathAndWidth> separatedPolygons)
+		public bool RemovePerimeterOverlaps(List<Point3> perimeter, int overlapMergeAmount_um, out List<PathAndWidth> separatedPolygons)
 		{
 			bool pathWasOptomized = false;
 
@@ -582,7 +588,7 @@ namespace MatterHackers.MatterSlice
 				{
 					// This is test code to remove double drawn small perimeter lines.
 					List<PathAndWidth> pathsWithOverlapsRemoved;
-					if (RemoveDoubleDrawPerimeterLines(path, speed, out pathsWithOverlapsRemoved))
+					if (false)//RemovePerimetersThatOverlap(path, speed, out pathsWithOverlapsRemoved))
 					{
 						for (int polygonIndex = 0; polygonIndex < pathsWithOverlapsRemoved.Count; polygonIndex++)
 						{
@@ -627,14 +633,14 @@ namespace MatterHackers.MatterSlice
 			gcodeExport.UpdateTotalPrintTime();
 		}
 
-		private bool RemoveDoubleDrawPerimeterLines(GCodePath path, double speed, out List<PathAndWidth> pathsWithOverlapsRemoved)
+		private bool RemovePerimetersThatOverlap(GCodePath path, double speed, out List<PathAndWidth> pathsWithOverlapsRemoved)
 		{
 			pathsWithOverlapsRemoved = null;
 			if (path.config.lineWidth_um > 0
 				&& path.points.Count > 2 // If the count is not greater than 2 there is no way it can overlap itself.
 				&& gcodeExport.GetPosition() == path.points[path.points.Count - 1])
 			{
-				if (GetPathsWithOverlapsRemoved(path.points, path.config.lineWidth_um, out pathsWithOverlapsRemoved)
+				if (RemovePerimeterOverlaps(path.points, path.config.lineWidth_um, out pathsWithOverlapsRemoved)
 					&& pathsWithOverlapsRemoved.Count > 0)
 				{
 					return true;
