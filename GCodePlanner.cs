@@ -42,6 +42,92 @@ namespace MatterHackers.MatterSlice
 	{
 		public Point3 Start;
 		public Point3 End;
+
+		public static List<Segment> ConvertPerimeterToSegments(List<Point3> perimeter)
+		{
+			List<Segment> polySegments = new List<Segment>(perimeter.Count);
+			for (int i = 0; i < perimeter.Count; i++)
+			{
+				Point3 point = perimeter[i];
+				Point3 nextPoint = perimeter[(i + 1) % perimeter.Count];
+
+				polySegments.Add(new Segment()
+				{
+					Start = point,
+					End = nextPoint,
+				});
+			}
+
+			return polySegments;
+		}
+
+		public static List<Segment> ConvertPathToSegments(IList<IntPoint> openPath, long zHeight)
+		{
+			List<Segment> polySegments = new List<Segment>(openPath.Count);
+			for (int i = 0; i < openPath.Count-1; i++)
+			{
+				Point3 point = new Point3(openPath[i].X, openPath[i].Y, zHeight);
+				Point3 nextPoint = new Point3(openPath[i+1].X, openPath[i+1].Y, zHeight);
+
+				polySegments.Add(new Segment()
+				{
+					Start = point,
+					End = nextPoint,
+				});
+			}
+
+			return polySegments;
+		}
+
+		public List<Segment> GetSplitSegmentForVertecies(List<Point3> perimeter, long maxDistance)
+		{
+			IntPoint start2D = new IntPoint(Start.x, Start.y);
+			IntPoint end2D = new IntPoint(End.x, End.y);
+
+			SortedList<long, IntPoint> requiredSplits2D = new SortedList<long, IntPoint>();
+
+			// get some data we will need for the operations
+			IntPoint direction = (end2D - start2D);
+			long length = direction.Length();
+			long lengthSquared = length * length;
+			IntPoint rightDirection = direction.GetPerpendicularRight();
+			long maxDistanceNormalized = maxDistance * length;
+
+			// for every vertex
+			for (int vertexIndex = 0; vertexIndex < perimeter.Count; vertexIndex++)
+			{
+				IntPoint vertex = new IntPoint(perimeter[vertexIndex].x, perimeter[vertexIndex].y) - start2D;
+				// if the vertex is close enough to the segment
+				long dotProduct = rightDirection.Dot(vertex);
+				if (Math.Abs(dotProduct) < maxDistanceNormalized)
+				{
+					long dotProduct2 = direction.Dot(vertex);
+					if (dotProduct2 > 0 && dotProduct2 < lengthSquared)
+					{
+						long distance = dotProduct2 / length;
+						// don't add if there is already a point at this position
+						if (!requiredSplits2D.ContainsKey(distance))
+						{
+							// we are close enough to the line split it
+							requiredSplits2D.Add(distance, start2D + direction.Normal(distance));
+						}
+					}
+				}
+			}
+
+			if(requiredSplits2D.Count > 0)
+			{
+				// add in the start and end
+				requiredSplits2D.Add(0, start2D);
+				requiredSplits2D.Add(length, end2D);
+				// convert to a segment list
+				List<Segment> newSegments = Segment.ConvertPathToSegments(requiredSplits2D.Values, Start.z);
+				// return them;
+				return newSegments;
+			}
+
+			return null;
+		}
 	}
 
 	//The GCodePlanner class stores multiple moves that are planned.
@@ -193,8 +279,10 @@ namespace MatterHackers.MatterSlice
 		{
 			bool pathWasOptomized = false;
 
+			perimeter = MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um);
+
 			// make a copy that has every point duplicated (so that we have them as segments).
-			List<Segment> polySegments = ConvertPerimeterToSegments(perimeter);
+			List <Segment> polySegments = Segment.ConvertPerimeterToSegments(perimeter);
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
 
@@ -278,24 +366,6 @@ namespace MatterHackers.MatterSlice
 			currentPolygon.Path.Add(polySegments[polySegments.Count - 1].End);
 
 			return pathWasOptomized;
-		}
-
-		private static List<Segment> ConvertPerimeterToSegments(List<Point3> perimeter)
-		{
-			List<Segment> polySegments = new List<Segment>(perimeter.Count);
-			for (int i = 0; i < perimeter.Count; i++)
-			{
-				Point3 point = perimeter[i];
-				Point3 nextPoint = perimeter[(i + 1) % perimeter.Count];
-
-				polySegments.Add(new Segment()
-				{
-					Start = point,
-					End = nextPoint,
-				});
-			}
-
-			return polySegments;
 		}
 
 		public int getTravelSpeedFactor()
@@ -768,22 +838,31 @@ namespace MatterHackers.MatterSlice
 			//Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
 		}
 
-		public List<Point3> MakeCloseSegmentsMergable(List<Point3> perimeter, int distanceNeedingAdd)
+		public List<Point3> MakeCloseSegmentsMergable(List<Point3> perimeter, long distanceNeedingAdd)
 		{
-			List<Segment> segments = ConvertPerimeterToSegments(perimeter);
+			List<Segment> segments = Segment.ConvertPerimeterToSegments(perimeter);
 
-			// for every vertex
-			for (int vertexIndex = 0; vertexIndex < perimeter.Count; vertexIndex++)
+			// for every segment
+			for (int segmentIndex = perimeter.Count-1; segmentIndex >= 0; segmentIndex--)
 			{
-				// for every segment
-				for (int segmentIndex = perimeter.Count; segmentIndex > 0; segmentIndex--)
+				List<Segment> newSegments = segments[segmentIndex].GetSplitSegmentForVertecies(perimeter, distanceNeedingAdd);
+				if(newSegments?.Count > 0)
 				{
-					// if the vertex is close enough to the segment
-					// split it
+					// remove the old segment
+					segments.RemoveAt(segmentIndex);
+					// add the new ones
+					segments.InsertRange(segmentIndex, newSegments);
 				}
 			}
 
-			return perimeter;
+			List<Point3> segmentedPerimeter = new List<Point3>(segments.Count);
+
+			foreach(var segment in segments)
+			{
+				segmentedPerimeter.Add(segment.Start);
+			}
+
+			return segmentedPerimeter;
 		}
 	}
 }

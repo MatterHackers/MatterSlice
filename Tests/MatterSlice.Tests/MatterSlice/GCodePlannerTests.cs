@@ -44,6 +44,30 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test, Category("FixNeeded")]
 		public void MakeCloseSegmentsMergable()
 		{
+			// check that we can cut up a single segment
+			{
+				List<Segment> segmentsControl = Segment.ConvertPerimeterToSegments(new List<Point3>()
+				{
+					new Point3(0, 0),
+					new Point3(0, 2500),
+					new Point3(0, 5000),
+				});
+
+				List<Point3> cuts = new List<Point3>()
+				{
+					new Point3(2500, 0),
+				};
+
+				Segment segmentToCut = new Segment()
+				{
+					Start = new Point3(0, 0),
+					End = new Point3(5000, 0),
+				};
+					
+
+				List<Segment> segmentsTest = segmentToCut.GetSplitSegmentForVertecies(cuts, 400);
+			}
+
 			// A path that needs to have points inserted to do the correct thing
 			{
 				// |\      /|                     |\      /|
