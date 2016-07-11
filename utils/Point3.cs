@@ -125,6 +125,11 @@ namespace MatterHackers.MatterSlice
 			return LengthSquared() <= minLength * minLength;
 		}
 
+		public long Dot(Point3 p)
+		{
+			return this.x * p.x + this.y * p.y + this.z * p.z;
+		}
+
 		public Point3 Cross(Point3 p)
 		{
 			return new Point3(

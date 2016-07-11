@@ -134,6 +134,11 @@ namespace MatterHackers.MatterSlice
 			return 0;
 		}
 
+		public static IntPoint GetPerpendicularRight(this IntPoint thisPoint)
+		{
+			return new IntPoint(thisPoint.Y, -thisPoint.X);
+		}
+
 		public static IntPoint GetPerpendicularLeft(this IntPoint thisPoint)
 		{
 			return new IntPoint(-thisPoint.Y, thisPoint.X);
