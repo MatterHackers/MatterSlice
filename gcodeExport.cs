@@ -297,7 +297,7 @@ namespace MatterHackers.MatterSlice
 			gcodeFileStream.Write("{0}\n".FormatWith(line));
 		}
 
-        public void WriteMove(Point3 movePosition_um, double speed, int lineWidth_um)
+        public void WriteMove(Point3 movePosition_um, double speed, long lineWidth_um)
         {
             StringBuilder lineToWrite = new StringBuilder();
             //Normal E handling.
