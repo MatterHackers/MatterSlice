@@ -607,12 +607,12 @@ namespace MatterHackers.MatterSlice
 							}
 
 							// move to the start of this polygon
-							gcodeExport.WriteMove(polygon.Path[0], speed, 0);
+							gcodeExport.WriteMove(polygon.Path[0], travelConfig.speed, 0);
 
 							// write all the data for the polygon
 							for (int pointIndex = 1; pointIndex < polygon.Path.Count; pointIndex++)
 							{
-								gcodeExport.WriteMove(polygon.Path[pointIndex], travelConfig.speed, polygon.ExtrusionWidthUm);
+								gcodeExport.WriteMove(polygon.Path[pointIndex], speed, polygon.ExtrusionWidthUm);
 							}
 						}
 					}
