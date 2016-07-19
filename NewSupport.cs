@@ -398,6 +398,12 @@ namespace MatterHackers.MatterSlice
 
 			foreach (Polygons islandOutline in supportIslands)
 			{
+				// force a retract if changing islands
+				if (config.RetractWhenChangingIslands)
+				{
+					gcodeLayer.ForceRetract();
+				}
+
 				Polygons islandInfillLines = new Polygons();
 				// render a grid of support
 				if (config.GenerateSupportPerimeter)
@@ -434,12 +440,23 @@ namespace MatterHackers.MatterSlice
 		public void QueueInterfaceSupportLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportInterfaceConfig)
 		{
 			// interface
-			Polygons currentInterfaceOutlines = interfaceLayers[layerIndex].Offset(-config.ExtrusionWidth_um / 2);
-			if (currentInterfaceOutlines.Count > 0)
+			Polygons currentInterfaceOutlines2 = interfaceLayers[layerIndex].Offset(-config.ExtrusionWidth_um / 2);
+			if (currentInterfaceOutlines2.Count > 0)
 			{
-				Polygons supportLines = new Polygons();
-				Infill.GenerateLineInfill(config, currentInterfaceOutlines, supportLines, config.InfillStartingAngle + 90, config.ExtrusionWidth_um);
-				gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportInterfaceConfig);
+				List<Polygons> interfaceIslands = currentInterfaceOutlines2.ProcessIntoSeparatIslands();
+
+				foreach (Polygons interfaceOutline in interfaceIslands)
+				{
+					// force a retract if changing islands
+					if (config.RetractWhenChangingIslands)
+					{
+						gcodeLayer.ForceRetract();
+					}
+
+					Polygons supportLines = new Polygons();
+					Infill.GenerateLineInfill(config, interfaceOutline, supportLines, config.InfillStartingAngle + 90, config.ExtrusionWidth_um);
+					gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportInterfaceConfig);
+				}
 			}
 		}
 
@@ -452,6 +469,12 @@ namespace MatterHackers.MatterSlice
 
 			foreach (Polygons islandOutline in supportIslands)
 			{
+				// force a retract if changing islands
+				if (config.RetractWhenChangingIslands)
+				{
+					gcodeLayer.ForceRetract();
+				}
+
 				Polygons islandInfillLines = new Polygons();
 				// render a grid of support
 				if (config.GenerateSupportPerimeter)
