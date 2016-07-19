@@ -168,7 +168,17 @@ namespace MatterHackers.MatterSlice
 			// calculate all the non-supported areas
 			for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
 			{
-				allInsetOutlines[layerIndex] = Clipper.CleanPolygons(inputPolys[layerIndex].Offset(-insetAmount_um), cleanDistance_um);
+				Polygons insetPolygons = Clipper.CleanPolygons(inputPolys[layerIndex].Offset(-insetAmount_um), cleanDistance_um);
+				List<Polygons> insetIslands = insetPolygons.ProcessIntoSeparatIslands();
+
+				foreach (Polygons insetOutline in insetIslands)
+				{
+					insetOutline.RemoveSmallAreas(insetAmount_um*2);
+					foreach (var islandPart in insetOutline)
+					{
+						allInsetOutlines[layerIndex].Add(islandPart);
+					}
+				}
 			}
 
 			return allInsetOutlines;

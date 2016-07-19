@@ -150,7 +150,7 @@ namespace MatterHackers.MatterSlice
 			return ret;
 		}
 
-		public static void RemoveSmallAreas(this Polygons polygons, int extrusionWidth)
+		public static void RemoveSmallAreas(this Polygons polygons, long extrusionWidth)
 		{
 			double areaOfExtrusion = (extrusionWidth / 1000.0) * (extrusionWidth / 1000.0); // convert from microns to mm's.
 			double minAreaSize = areaOfExtrusion / 2;
