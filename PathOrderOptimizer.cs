@@ -115,7 +115,12 @@ namespace MatterHackers.MatterSlice
 
         internal class CandidateGroup : List<CandidatePoint>
         {
-            double sameTurn = DegreesToRadians(10);
+            double sameTurn;
+
+			public CandidateGroup(double sameTurn)
+			{
+				this.sameTurn = sameTurn;
+			}
 
             public int BestIndex
             {
@@ -196,7 +201,7 @@ namespace MatterHackers.MatterSlice
 
 		public static IntPoint GetBestPosition(Polygon inputPolygon, long lineWidth)
 		{
-			Polygon currentPolygon = Clipper.CleanPolygon(inputPolygon, lineWidth);
+			Polygon currentPolygon = Clipper.CleanPolygon(inputPolygon, lineWidth/4);
 			// TODO: other considerations
 			// collect & bucket options and then choose the closest
 
@@ -206,13 +211,13 @@ namespace MatterHackers.MatterSlice
 			}
 
 			double totalTurns = 0;
-            CandidateGroup positiveGroup = new CandidateGroup();
-            CandidateGroup negativeGroup = new CandidateGroup();
+            CandidateGroup positiveGroup = new CandidateGroup(35);
+            CandidateGroup negativeGroup = new CandidateGroup(10);
 
             IntPoint currentFurthestBack = new IntPoint(long.MaxValue, long.MinValue);
 			int furthestBackIndex = 0;
 
-			double minTurnToChoose = DegreesToRadians(15);
+			double minTurnToChoose = DegreesToRadians(3);
 			long minSegmentLengthToConsiderSquared = 50 * 50;
 
 			int pointCount = currentPolygon.Count;
@@ -230,6 +235,7 @@ namespace MatterHackers.MatterSlice
 						|| currentPoint.X < currentFurthestBack.X)
 					{
 						furthestBackIndex = pointIndex;
+						currentFurthestBack = currentPoint;
 					}
 				}
 
