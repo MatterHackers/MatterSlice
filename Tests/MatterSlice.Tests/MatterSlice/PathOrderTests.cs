@@ -110,7 +110,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |      \
 				// |0______\1
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(70, 50), new IntPoint(100, 100), new IntPoint(0, 100) };
-				int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
+				int bestPoint = IslandOrderOptimizer.GetBestIndex(testPoints);
 				Assert.IsTrue(bestPoint == 2);
 			}
 
@@ -122,7 +122,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |       |
 				// |0______|1
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(100, 100), new IntPoint(0, 100) };
-				int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
+				int bestPoint = IslandOrderOptimizer.GetBestIndex(testPoints);
 				Assert.IsTrue(bestPoint == 3);
 			}
 
@@ -134,7 +134,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |       |
 				// |2______|3
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(0, 0), new IntPoint(100, 0) };
-				int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
+				int bestPoint = IslandOrderOptimizer.GetBestIndex(testPoints);
 				Assert.IsTrue(bestPoint == 1);
 			}
 
@@ -146,7 +146,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |       |
 				// |0______|3
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(100, 0) };
-				int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
+				int bestPoint = IslandOrderOptimizer.GetBestIndex(testPoints);
 				Assert.IsTrue(bestPoint == 1);
 			}
 
@@ -158,7 +158,7 @@ namespace MatterHackers.MatterSlice.Tests
                 // |       |
                 // |3______|2
                 List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(100, 0), new IntPoint(0, 0) };
-                int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
+                int bestPoint = IslandOrderOptimizer.GetBestIndex(testPoints);
                 Assert.IsTrue(bestPoint == 0);
             }
 
@@ -170,7 +170,7 @@ namespace MatterHackers.MatterSlice.Tests
                 // |      \
                 // |0______\1
                 List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(1000, 0), new IntPoint(900, 500), new IntPoint(1000, 1000), new IntPoint(0, 1000) };
-				int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
+				int bestPoint = IslandOrderOptimizer.GetBestIndex(testPoints);
 				Assert.IsTrue(bestPoint == 2);
 			}
 
@@ -182,7 +182,7 @@ namespace MatterHackers.MatterSlice.Tests
                 // |      \
                 // |3______\4
                 List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(0, 0), new IntPoint(100, 0) };
-                int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
+                int bestPoint = IslandOrderOptimizer.GetBestIndex(testPoints);
                 Assert.IsTrue(bestPoint == 0);
             }
 
@@ -194,7 +194,7 @@ namespace MatterHackers.MatterSlice.Tests
                 //   /    \
                 //  /4_____\5
                 List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(10, 50), new IntPoint(0, 0), new IntPoint(100, 0) };
-                int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
+                int bestPoint = IslandOrderOptimizer.GetBestIndex(testPoints);
                 Assert.IsTrue(bestPoint == 3);
             }
 
@@ -206,7 +206,7 @@ namespace MatterHackers.MatterSlice.Tests
                 //   /    \
                 //  /1_____\2
                 List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(10, 50), new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), };
-                int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
+                int bestPoint = IslandOrderOptimizer.GetBestIndex(testPoints);
                 Assert.IsTrue(bestPoint == 0);
             }
 
@@ -218,8 +218,8 @@ namespace MatterHackers.MatterSlice.Tests
                 // |      \
                 // |0______\4
                 List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50), new IntPoint(100, 0) };
-				int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
-				Assert.IsTrue(bestPoint == 2);
+				int bestPoint = IslandOrderOptimizer.GetBestIndex(testPoints);
+				Assert.IsTrue(bestPoint == 1);
 			}
 
             // find the right point wound cw
@@ -230,8 +230,8 @@ namespace MatterHackers.MatterSlice.Tests
                 // |      \
                 // |1______\0
                 List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(100, 0), new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50) };
-				int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
-				Assert.IsTrue(bestPoint == 3);
+				int bestPoint = IslandOrderOptimizer.GetBestIndex(testPoints);
+				Assert.IsTrue(bestPoint == 2);
 			}
 
             // cw
@@ -245,7 +245,7 @@ namespace MatterHackers.MatterSlice.Tests
                 {
                     new IntPoint(90, 50), new IntPoint(100, 0), new IntPoint(0, 0), new IntPoint(10, 50), new IntPoint(0, 100), new IntPoint(100, 100)
                 };
-                int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
+                int bestPoint = IslandOrderOptimizer.GetBestIndex(testPoints);
                 Assert.IsTrue(bestPoint == 4);
             }
 
@@ -260,7 +260,7 @@ namespace MatterHackers.MatterSlice.Tests
                 {
                     new IntPoint(10, 50), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50), new IntPoint(100, 0), new IntPoint(0, 0),
                 };
-                int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(testPoints);
+                int bestPoint = IslandOrderOptimizer.GetBestIndex(testPoints);
                 Assert.IsTrue(bestPoint == 1);
             }
         }

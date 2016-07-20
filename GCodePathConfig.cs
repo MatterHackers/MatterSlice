@@ -20,17 +20,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 using ClipperLib;
-using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 
 namespace MatterHackers.MatterSlice
 {
-	using Polygon = List<IntPoint>;
-
-	using Polygons = List<List<IntPoint>>;
-
 	/// <summary>
 	/// Contains the configuration for moves/extrusion actions. This defines at which width the line is printed and at which speed.
 	/// </summary>

@@ -115,7 +115,12 @@ namespace MatterHackers.MatterSlice
 
         internal class CandidateGroup : List<CandidatePoint>
         {
-            double sameTurn = DegreesToRadians(10);
+            double sameTurn;
+
+			public CandidateGroup(double sameTurn)
+			{
+				this.sameTurn = sameTurn;
+			}
 
             public int BestIndex
             {
@@ -182,19 +187,37 @@ namespace MatterHackers.MatterSlice
             }
         }
 
-		public static int GetBestEdgeIndex(Polygon currentPolygon)
+		public static int GetBestIndex(Polygon inputPolygon, long lineWidth = 3)
 		{
+			// code to make the seam go to the back most position
+			//return GetClosestIndex(inputPolygon, new IntPoint(0, 50000000));
+
+			// code to go to a specific position (would have to have it come from setting)
+			//return GetClosestIndex(inputPolygon, config.SeamPosition);
+
+			IntPoint bestPosition = GetBestPosition(inputPolygon, lineWidth);
+			return GetClosestIndex(inputPolygon, bestPosition);
+		}
+
+		public static IntPoint GetBestPosition(Polygon inputPolygon, long lineWidth)
+		{
+			Polygon currentPolygon = Clipper.CleanPolygon(inputPolygon, lineWidth/4);
 			// TODO: other considerations
 			// collect & bucket options and then choose the closest
 
+			if(currentPolygon.Count == 0)
+			{
+				return inputPolygon[0];
+			}
+
 			double totalTurns = 0;
-            CandidateGroup positiveGroup = new CandidateGroup();
-            CandidateGroup negativeGroup = new CandidateGroup();
+            CandidateGroup positiveGroup = new CandidateGroup(35);
+            CandidateGroup negativeGroup = new CandidateGroup(10);
 
             IntPoint currentFurthestBack = new IntPoint(long.MaxValue, long.MinValue);
 			int furthestBackIndex = 0;
 
-			double minTurnToChoose = DegreesToRadians(15);
+			double minTurnToChoose = DegreesToRadians(3);
 			long minSegmentLengthToConsiderSquared = 50 * 50;
 
 			int pointCount = currentPolygon.Count;
@@ -212,6 +235,7 @@ namespace MatterHackers.MatterSlice
 						|| currentPoint.X < currentFurthestBack.X)
 					{
 						furthestBackIndex = pointIndex;
+						currentFurthestBack = currentPoint;
 					}
 				}
 
@@ -247,32 +271,32 @@ namespace MatterHackers.MatterSlice
 			{
 				if (negativeGroup.Count > 0)
 				{
-					return negativeGroup.BestIndex;
+					return currentPolygon[negativeGroup.BestIndex];
 				}
 				if (positiveGroup.Count > 0)
 				{
-					return positiveGroup.BestIndex;
+					return currentPolygon[positiveGroup.BestIndex];
 				}
 				else
 				{
 					// If can't find good candidate go with vertex most in a single direction
-					return furthestBackIndex;
+					return currentPolygon[furthestBackIndex];
 				}
 			}
 			else // cw
 			{
 				if (negativeGroup.Count > 0)
 				{
-					return negativeGroup.BestIndex;
+					return currentPolygon[negativeGroup.BestIndex];
 				}
 				if (positiveGroup.Count > 0)
 				{
-					return positiveGroup.BestIndex;
+					return currentPolygon[positiveGroup.BestIndex];
 				}
 				else
 				{
 					// If can't find good candidate go with vertex most in a single direction
-					return furthestBackIndex;
+					return currentPolygon[furthestBackIndex];
 				}
 			}
 		}
@@ -301,7 +325,7 @@ namespace MatterHackers.MatterSlice
 						&& config.doSeamHiding
                         && !config.spiralize)
 					{
-						bestPointIndex = GetBestEdgeIndex(currentPolygon);
+						bestPointIndex = GetBestIndex(currentPolygon, config.lineWidth_um);
 					}
 					else
 					{
