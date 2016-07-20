@@ -594,7 +594,7 @@ namespace MatterHackers.MatterSlice
 						LayerIsland island = layer?.Islands?[0];
 						if (island?.InsetToolPaths?[0]?[0]?.Count > 0)
 						{
-							int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(island.InsetToolPaths[0][0]);
+							int bestPoint = IslandOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
 							gcodeLayer.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundary);
 							gcodeLayer.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
 							// Now move up to the next layer so we don't start the extrusion one layer too low.
@@ -766,7 +766,7 @@ namespace MatterHackers.MatterSlice
 					if (island?.InsetToolPaths?[0]?[0]?.Count > 0
 						&& !config.ContinuousSpiralOuterPerimeter)
 					{
-						int bestPoint = IslandOrderOptimizer.GetBestEdgeIndex(island.InsetToolPaths[0][0]);
+						int bestPoint = IslandOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
 						gcodeLayer.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
 					}
 
