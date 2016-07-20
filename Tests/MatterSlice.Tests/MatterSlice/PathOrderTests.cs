@@ -219,7 +219,7 @@ namespace MatterHackers.MatterSlice.Tests
                 // |0______\4
                 List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50), new IntPoint(100, 0) };
 				int bestPoint = IslandOrderOptimizer.GetBestIndex(testPoints);
-				Assert.IsTrue(bestPoint == 2);
+				Assert.IsTrue(bestPoint == 1);
 			}
 
             // find the right point wound cw
@@ -231,7 +231,7 @@ namespace MatterHackers.MatterSlice.Tests
                 // |1______\0
                 List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(100, 0), new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50) };
 				int bestPoint = IslandOrderOptimizer.GetBestIndex(testPoints);
-				Assert.IsTrue(bestPoint == 3);
+				Assert.IsTrue(bestPoint == 2);
 			}
 
             // cw
