@@ -154,68 +154,75 @@ namespace MatterHackers.MatterSlice
 
 		private static Polygons GetSkirtBounds(ConfigSettings config, LayerDataStorage storage, bool externalOnly, int distance, int extrusionWidth_um, int brimCount)
 		{
-			Polygons allOutlines = new Polygons();
-
-			// Loop over every extruder
-			for (int extrudeIndex = 0; extrudeIndex < storage.Extruders.Count; extrudeIndex++)
-			{
-				// Only process the first extruder on spiral vase or 
-				// skip extruders that have empty layers
-				if (config.ContinuousSpiralOuterPerimeter)
-				{
-					SliceLayer layer0 = storage.Extruders[extrudeIndex].Layers[0];
-					allOutlines.AddAll(layer0.Islands[0]?.IslandOutline);
-
-					break;
-				}
-
-				// Add the layers outline to allOutlines
-				SliceLayer layer = storage.Extruders[extrudeIndex].Layers[0];
-				allOutlines.AddAll(layer.AllOutlines);
-			}
-
 			bool hasWipeTower = storage.wipeTower.PolygonLength() > 0;
 
 			Polygons skirtPolygons = hasWipeTower ? new Polygons(storage.wipeTower) : new Polygons();
 
-			if (brimCount > 0)
+			if (config.EnableRaft)
 			{
-				Polygons brimLoops = new Polygons();
-
-				// Loop over the requested brimCount creating and unioning a new perimeter for each island
-				for (int brimIndex = 0; brimIndex < brimCount; brimIndex++)
-				{
-					int offsetDistance = extrusionWidth_um * brimIndex + extrusionWidth_um / 2;
-
-					Polygons unionedIslandOutlines = new Polygons();
-
-					// Grow each island by the current brim distance
-					foreach (var island in allOutlines)
-					{
-						var polygons = new Polygons();
-						polygons.Add(island);
-
-						// Union the island brims
-						unionedIslandOutlines = unionedIslandOutlines.CreateUnion(polygons.Offset(offsetDistance));
-					}
-
-					// Extend the polygons to account for the brim (ensures convex hull takes this data into account) 
-					brimLoops.AddAll(unionedIslandOutlines);
-				}
-
-				// TODO: This is a quick hack, reuse the skirt data to stuff in the brim. Good enough from proof of concept
-				storage.skirt.AddAll(brimLoops);
-
-				skirtPolygons = skirtPolygons.CreateUnion(brimLoops);
+				skirtPolygons = skirtPolygons.CreateUnion(storage.raftOutline);
 			}
 			else
 			{
-				skirtPolygons = skirtPolygons.CreateUnion(allOutlines);
-			}
+				Polygons allOutlines = new Polygons();
 
-			if (storage.support != null)
-			{
-				skirtPolygons = skirtPolygons.CreateUnion(storage.support.GetBedOutlines());
+				// Loop over every extruder
+				for (int extrudeIndex = 0; extrudeIndex < storage.Extruders.Count; extrudeIndex++)
+				{
+					// Only process the first extruder on spiral vase or 
+					// skip extruders that have empty layers
+					if (config.ContinuousSpiralOuterPerimeter)
+					{
+						SliceLayer layer0 = storage.Extruders[extrudeIndex].Layers[0];
+						allOutlines.AddAll(layer0.Islands[0]?.IslandOutline);
+
+						break;
+					}
+
+					// Add the layers outline to allOutlines
+					SliceLayer layer = storage.Extruders[extrudeIndex].Layers[0];
+					allOutlines.AddAll(layer.AllOutlines);
+				}
+
+				if (brimCount > 0)
+				{
+					Polygons brimLoops = new Polygons();
+
+					// Loop over the requested brimCount creating and unioning a new perimeter for each island
+					for (int brimIndex = 0; brimIndex < brimCount; brimIndex++)
+					{
+						int offsetDistance = extrusionWidth_um * brimIndex + extrusionWidth_um / 2;
+
+						Polygons unionedIslandOutlines = new Polygons();
+
+						// Grow each island by the current brim distance
+						foreach (var island in allOutlines)
+						{
+							var polygons = new Polygons();
+							polygons.Add(island);
+
+							// Union the island brims
+							unionedIslandOutlines = unionedIslandOutlines.CreateUnion(polygons.Offset(offsetDistance));
+						}
+
+						// Extend the polygons to account for the brim (ensures convex hull takes this data into account) 
+						brimLoops.AddAll(unionedIslandOutlines);
+					}
+
+					// TODO: This is a quick hack, reuse the skirt data to stuff in the brim. Good enough from proof of concept
+					storage.skirt.AddAll(brimLoops);
+
+					skirtPolygons = skirtPolygons.CreateUnion(brimLoops);
+				}
+				else
+				{
+					skirtPolygons = skirtPolygons.CreateUnion(allOutlines);
+				}
+
+				if (storage.support != null)
+				{
+					skirtPolygons = skirtPolygons.CreateUnion(storage.support.GetBedOutlines());
+				}
 			}
 
 			return skirtPolygons;
