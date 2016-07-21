@@ -41,7 +41,7 @@ namespace MatterHackers.MatterSlice.Tests
 	[TestFixture, Category("MatterSlice.GCodePlannerTests")]
 	public class GCodePlannerTests
 	{
-		[Test, Category("FixNeeded")]
+		[Test]
 		public void MakeCloseSegmentsMergable()
 		{
 			// check that we can cut up a single segment
