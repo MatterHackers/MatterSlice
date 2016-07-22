@@ -121,6 +121,50 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
+#if false
+		[Test]
+		public void FindThinFeaturesTests()
+		{
+			// Make sure we don't do anything to a simple perimeter.
+			{
+				// ____________
+				// |          |
+				// |          |
+				// |          |
+				// |__________|
+
+				int travelSpeed = 50;
+				int retractionMinimumDistance = 20;
+				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
+				List<Point3> perimeter = new List<Point3>() { new Point3(0, 0, 0), new Point3(5000, 0, 0), new Point3(5000, 5000, 0), new Point3(0, 5000, 0) };
+				Assert.IsTrue(perimeter.Count == 4);
+				List<PathAndWidth> correctedPath = planner.FindThinLines(perimeter, 400 / 4);
+				Assert.IsTrue(correctedPath.Count == 1);
+				Assert.IsTrue(correctedPath[0].Path.Count == 5);
+				for (int i = 0; i < perimeter.Count; i++)
+				{
+					Assert.IsTrue(perimeter[i] == correctedPath[0].Path[i]);
+				}
+			}
+
+			// A very simple collapse lower left start
+			{
+				//  ____________   
+				// s|__________|	  very simple  -> ----------
+
+				int travelSpeed = 50;
+				int retractionMinimumDistance = 20;
+				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
+				List<Point3> perimeter = new List<Point3>() { new Point3(0, 0), new Point3(5000, 0), new Point3(5000, 50), new Point3(0, 50) };
+				List<PathAndWidth> correctedPath;
+				planner.RemovePerimeterOverlaps(perimeter, 400, out correctedPath);
+				Assert.IsTrue(correctedPath.Count == 3);
+				Assert.IsTrue(correctedPath[0].Path.Count == 2);
+				Assert.IsTrue(correctedPath[0].ExtrusionWidthUm == 450);
+			}
+		}
+#endif
+
 		[Test]
 		public void GetPathsWithOverlapsRemovedTests()
 		{
@@ -140,7 +184,7 @@ namespace MatterHackers.MatterSlice.Tests
 				List<PathAndWidth> correctedPath;
 				planner.RemovePerimeterOverlaps(perimeter, 400 / 4, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 1);
-				Assert.IsTrue(correctedPath[0].Path.Count == 5);
+				Assert.IsTrue(correctedPath[0].Path.Count == 5); // it is 5 because we return a closed path (points = 0, 1, 2, 3, 0)
 				for (int i = 0; i < perimeter.Count; i++)
 				{
 					Assert.IsTrue(perimeter[i] == correctedPath[0].Path[i]);
