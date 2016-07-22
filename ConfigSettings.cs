@@ -195,6 +195,9 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("Print the outside perimeter before the inside ones. This can help with accuracy.")]
 		public bool OutsidePerimetersFirst { get; set; }
 
+		[SettingDescription("The ratio that the end of a perimeter will overlap the start in nozzle diameters.")]
+		public double perimeterStartEndOverlapRatio { get; set; }
+
 		[SettingDescription("The speed of the first perimeter. mm/s.")]
 		public int OutsidePerimeterSpeed { get; set; }
 

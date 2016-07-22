@@ -192,7 +192,9 @@ namespace MatterHackers.MatterSlice
 
 		private int travelSpeedFactor;
 
-		public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um)
+		double perimeterStartEndOverlapRatio;
+
+		public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um, double perimeterStartEndOverlap = 0)
 		{
 			this.gcodeExport = gcode;
 			travelConfig =  new GCodePathConfig("travelConfig");
@@ -208,6 +210,8 @@ namespace MatterHackers.MatterSlice
 			alwaysRetract = false;
 			currentExtruderIndex = gcode.GetExtruderIndex();
 			this.retractionMinimumDistance_um = retractionMinimumDistance_um;
+
+			this.perimeterStartEndOverlapRatio = perimeterStartEndOverlap;
 		}
 
 		public void ForceMinimumLayerTime(double minTime, int minimumPrintingSpeed)
@@ -618,7 +622,10 @@ namespace MatterHackers.MatterSlice
 					}
 					else
 					{
-						TrimPerimeterIfNeeded(path);
+						if (perimeterStartEndOverlapRatio > 0)
+						{
+							TrimPerimeterIfNeeded(path, perimeterStartEndOverlapRatio);
+						}
 
 						for (int i = 0; i < path.points.Count; i++)
 						{
@@ -771,12 +778,12 @@ namespace MatterHackers.MatterSlice
 			LastPosition = positionToMoveTo;
 		}
 
-		private static void TrimPerimeterIfNeeded(GCodePath path)
+		private static void TrimPerimeterIfNeeded(GCodePath path, double perimeterStartEndOverlapRatio)
 		{
 			if (path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER")
 			{
 				long currentDistance = 0;
-				long targetDistance = (long)(path.config.lineWidth_um * .90);
+				long targetDistance = (long)(path.config.lineWidth_um * (1-perimeterStartEndOverlapRatio));
 
 				if (path.points.Count > 1)
 				{

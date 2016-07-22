@@ -463,7 +463,7 @@ namespace MatterHackers.MatterSlice
 					gcode.SetExtrusion(config.LayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 				}
 
-				GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um);
+				GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.perimeterStartEndOverlapRatio);
 				if (layerIndex == 0
 					&& config.RetractionZHop > 0)
 				{
