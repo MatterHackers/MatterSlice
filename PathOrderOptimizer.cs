@@ -353,7 +353,7 @@ namespace MatterHackers.MatterSlice
 					if (polygons[polygonIndex].Count == 2 || canTravelForwardOrBackward)
 					{
 						double distToSart = (polygons[polygonIndex][0] - currentPosition).LengthSquared();
-						if (distToSart < bestDist)
+						if (distToSart <= bestDist)
 						{
 							bestPolygonIndex = polygonIndex;
 							bestDist = distToSart;
