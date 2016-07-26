@@ -333,12 +333,12 @@ namespace MatterHackers.MatterSlice
 		public void CreateWipeTower(int totalLayers, ConfigSettings config)
 		{
 			if (config.WipeTowerSize_um < 1
-				|| LastLayerWithChange() == -1)
+				|| LastLayerWithChange(config) == -1)
 			{
 				return;
 			}
 
-			extrudersThatHaveBeenPrimed = new bool[Extruders.Count];
+			extrudersThatHaveBeenPrimed = new bool[config.MaxExtruderCount()];
 
 			Polygon wipeTowerShape = new Polygon();
 			wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000, this.modelMax.y + 3000));
@@ -352,11 +352,11 @@ namespace MatterHackers.MatterSlice
 
 		bool[] extrudersThatHaveBeenPrimed = null;
 
-		public void GenerateWipeTowerInfill(int extruderIndex, Polygons partOutline, Polygons outputfillPolygons, long extrusionWidth_um)
+		public void GenerateWipeTowerInfill(int extruderIndex, Polygons partOutline, Polygons outputfillPolygons, long extrusionWidth_um, ConfigSettings config)
 		{
 			Polygons outlineForExtruder = partOutline.Offset(-extrusionWidth_um * extruderIndex);
 
-			long insetPerLoop = extrusionWidth_um * Extruders.Count;
+			long insetPerLoop = extrusionWidth_um * config.MaxExtruderCount();
 			while (outlineForExtruder.Count > 0)
 			{
 				for (int polygonIndex = 0; polygonIndex < outlineForExtruder.Count; polygonIndex++)
@@ -375,28 +375,30 @@ namespace MatterHackers.MatterSlice
 		{
 			if (config.WipeTowerSize_um < 1 
 				|| extrudersThatHaveBeenPrimed == null
-				|| layerIndex > LastLayerWithChange() + 1)
+				|| layerIndex > LastLayerWithChange(config) + 1)
 			{
 				return;
 			}
 
 			//If we changed extruder, print the wipe/prime tower for this nozzle;
 			Polygons fillPolygons = new Polygons();
-			GenerateWipeTowerInfill(extruderIndex, this.wipeTower, fillPolygons, fillConfig.lineWidth_um);
+			GenerateWipeTowerInfill(extruderIndex, this.wipeTower, fillPolygons, fillConfig.lineWidth_um, config);
 			gcodeLayer.QueuePolygons(fillPolygons, fillConfig);
 
 			extrudersThatHaveBeenPrimed[extruderIndex] = true;
 		}
 
-		int LastLayerWithChange()
+		int LastLayerWithChange(ConfigSettings config)
 		{
 			int numLayers = Extruders[0].Layers.Count;
 			int firstExtruderWithData = -1;
 			for (int checkLayer = numLayers - 1; checkLayer >= 0; checkLayer--)
 			{
-				for (int extruderToCheck = 0; extruderToCheck < Extruders.Count; extruderToCheck++)
+				for (int extruderToCheck = 0; extruderToCheck < config.MaxExtruderCount(); extruderToCheck++)
 				{
-					if(Extruders[extruderToCheck].Layers[checkLayer].AllOutlines.Count > 0)
+					if((extruderToCheck < Extruders.Count && Extruders[extruderToCheck].Layers[checkLayer].AllOutlines.Count > 0)
+						|| (config.SupportExtruder == extruderToCheck && support.HasNormalSupport(checkLayer) )
+						|| (config.SupportInterfaceExtruder == extruderToCheck && support.HasInterfaceSupport(checkLayer)) )
 					{
 						if(firstExtruderWithData == -1)
 						{
@@ -418,14 +420,14 @@ namespace MatterHackers.MatterSlice
 
 		public void EnsureWipeTowerIsSolid(int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
 		{
-			if(layerIndex >= LastLayerWithChange()
+			if(layerIndex >= LastLayerWithChange(config)
 				|| extrudersThatHaveBeenPrimed == null)
 			{
 				return;
 			}
 
 			// print all of the extruder loops that have not already been printed
-			for (int extruderIndex = 0; extruderIndex < Extruders.Count; extruderIndex++)
+			for (int extruderIndex = 0; extruderIndex < config.MaxExtruderCount(); extruderIndex++)
 			{
 				if (!extrudersThatHaveBeenPrimed[extruderIndex])
 				{

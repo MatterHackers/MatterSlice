@@ -337,6 +337,17 @@ namespace MatterHackers.MatterSlice
 
 		public int SupportExtrusionWidth_um => (int)(ExtrusionWidth * (SupportExtrusionPercent / 100.0) * 1000);
 
+		private int extruderCount = 0;
+		public void SetExtruderCount(int count)
+		{
+			extruderCount = count;
+		}
+
+		public int MaxExtruderCount()
+		{
+			return Math.Max(extruderCount, Math.Max(SupportExtruder + 1, SupportInterfaceExtruder + 1));
+		}
+
 		public int SupportLineSpacing_um => (int)(SupportLineSpacing * 1000);
 
 		public int SupportXYDistance_um => (int)(SupportXYDistanceFromObject * 1000);

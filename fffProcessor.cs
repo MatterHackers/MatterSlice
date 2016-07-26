@@ -113,6 +113,8 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
+			config.SetExtruderCount(slicingData.Extruders.Count);
+
 			writeGCode(slicingData);
 			if (MatterSlice.Canceled)
 			{
@@ -496,10 +498,18 @@ namespace MatterHackers.MatterSlice
 
 				int fanSpeedPercent = GetFanSpeed(layerIndex, gcodeLayer);
 
-				bool printedSupport = false;
-				bool printedInterface = false;
-				for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
+				for (int extruderIndex = 0; extruderIndex < config.MaxExtruderCount(); extruderIndex++)
 				{
+					int prevExtruder = gcodeLayer.GetExtruder();
+					bool extruderChanged = gcodeLayer.SetExtruder(extruderIndex);
+
+					if (extruderChanged)
+					{
+						slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, gcodeLayer, fillConfig, config);
+						//Make sure we wipe the old extruder on the wipe tower.
+						gcodeLayer.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[gcodeLayer.GetExtruder()]);
+					}
+
 					if (layerIndex == 0)
 					{
 						QueueExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.FirstLayerExtrusionWidth_um, z);
@@ -515,46 +525,16 @@ namespace MatterHackers.MatterSlice
 							|| config.SupportExtruder == extruderIndex)
 						{
 							slicingData.support.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig);
-							printedSupport = true;
 						}
 						if ((config.SupportInterfaceExtruder <= 0 && extruderIndex == 0)
 							|| config.SupportInterfaceExtruder == extruderIndex)
 						{
 							slicingData.support.QueueInterfaceSupportLayer(config, gcodeLayer, layerIndex, supportInterfaceConfig);
-							printedInterface = true;
 						}
 					}
 				}
 
 				slicingData.EnsureWipeTowerIsSolid(layerIndex, gcodeLayer, fillConfig, config);
-				 
-				if (slicingData.support != null)
-				{
-					if (!printedSupport)
-					{
-						gcodeLayer.SetExtruder(config.SupportExtruder);
-						slicingData.support.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig);
-					}
-					if (!printedInterface)
-					{
-						gcodeLayer.SetExtruder(config.SupportInterfaceExtruder);
-						slicingData.support.QueueInterfaceSupportLayer(config, gcodeLayer, layerIndex, supportInterfaceConfig);
-					}
-				}
-
-				if (slicingData.support != null)
-				{
-					if (!printedSupport)
-					{
-						gcodeLayer.SetExtruder(config.SupportExtruder);
-						slicingData.support.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig);
-					}
-					if (!printedInterface)
-					{
-						gcodeLayer.SetExtruder(config.SupportInterfaceExtruder);
-						slicingData.support.QueueInterfaceSupportLayer(config, gcodeLayer, layerIndex, supportInterfaceConfig);
-					}
-				}
 
 				if (slicingData.support != null)
 				{
@@ -667,6 +647,11 @@ namespace MatterHackers.MatterSlice
 		//Add a single layer from a single extruder to the GCode
 		private void QueueExtruderLayerToGCode(LayerDataStorage slicingData, GCodePlanner gcodeLayer, int extruderIndex, int layerIndex, int extrusionWidth_um, long currentZ_um)
 		{
+			if(extruderIndex > slicingData.Extruders.Count-1)
+			{
+				return;
+			}
+
 			SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 
 			if(layer.AllOutlines.Count == 0
@@ -674,16 +659,6 @@ namespace MatterHackers.MatterSlice
 			{
 				// don't do anything on this layer
 				return;
-			}
-
-			int prevExtruder = gcodeLayer.GetExtruder();
-			bool extruderChanged = gcodeLayer.SetExtruder(extruderIndex);
-
-			if (extruderChanged)
-			{
-				slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, gcodeLayer, fillConfig, config);
-				//Make sure we wipe the old extruder on the wipe tower.
-				gcodeLayer.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[gcodeLayer.GetExtruder()]);
 			}
 
 			if (slicingData.wipeShield.Count > 0 && slicingData.Extruders.Count > 1)
