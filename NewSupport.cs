@@ -399,6 +399,16 @@ namespace MatterHackers.MatterSlice
 			return diferenceLayers;
 		}
 
+		public bool HasNormalSupport(int layerIndex)
+		{
+			return supportOutlines[layerIndex].Count > 0;
+		}
+
+		public bool HasInterfaceSupport(int layerIndex)
+		{
+			return interfaceLayers[layerIndex].Count > 0;
+		}
+
 		public void QueueNormalSupportLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig)
 		{
 			// normal support
