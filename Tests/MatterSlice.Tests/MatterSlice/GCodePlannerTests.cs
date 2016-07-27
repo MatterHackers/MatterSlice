@@ -121,7 +121,6 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-#if false
 		[Test]
 		public void FindThinFeaturesTests()
 		{
@@ -138,13 +137,11 @@ namespace MatterHackers.MatterSlice.Tests
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<Point3> perimeter = new List<Point3>() { new Point3(0, 0, 0), new Point3(5000, 0, 0), new Point3(5000, 5000, 0), new Point3(0, 5000, 0) };
 				Assert.IsTrue(perimeter.Count == 4);
-				List<PathAndWidth> correctedPath = planner.FindThinLines(perimeter, 400 / 4);
-				Assert.IsTrue(correctedPath.Count == 1);
-				Assert.IsTrue(correctedPath[0].Path.Count == 5);
-				for (int i = 0; i < perimeter.Count; i++)
-				{
-					Assert.IsTrue(perimeter[i] == correctedPath[0].Path[i]);
-				}
+				List<PathAndWidth> thinLines;
+				bool foundThinLines = planner.FindThinLines(perimeter, 400 / 2, out thinLines);
+				Assert.IsFalse(foundThinLines);
+				Assert.IsTrue(thinLines.Count == 1);
+				Assert.IsTrue(thinLines[0].Path.Count == 0);
 			}
 
 			// A very simple collapse lower left start
@@ -156,14 +153,71 @@ namespace MatterHackers.MatterSlice.Tests
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<Point3> perimeter = new List<Point3>() { new Point3(0, 0), new Point3(5000, 0), new Point3(5000, 50), new Point3(0, 50) };
-				List<PathAndWidth> correctedPath;
-				planner.RemovePerimeterOverlaps(perimeter, 400, out correctedPath);
-				Assert.IsTrue(correctedPath.Count == 3);
-				Assert.IsTrue(correctedPath[0].Path.Count == 2);
-				Assert.IsTrue(correctedPath[0].ExtrusionWidthUm == 450);
+				List<PathAndWidth> thinLines;
+				bool foundThinLines = planner.FindThinLines(perimeter, 400, out thinLines);
+				Assert.IsTrue(foundThinLines);
+				Assert.IsTrue(thinLines.Count == 1);
+				Assert.IsTrue(thinLines[0].Path.Count == 2);
+				Assert.IsTrue(thinLines[0].ExtrusionWidthUm == 50);
+			}
+
+			// A path that needs to have points inserted to do the correct thing
+			{
+				// |\      /|                     |\      /|
+				// | \s___/ |   				  | \    / |
+				// |________|	create points ->  |__----__|
+
+				int travelSpeed = 50;
+				int retractionMinimumDistance = 20;
+				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
+				List<Point3> perimeter = new List<Point3>()
+				{
+					new Point3(5000, 50),
+					new Point3(0, 10000),
+					new Point3(0, 0),
+					new Point3(15000, 0),
+					new Point3(15000, 10000),
+					new Point3(10000, 50),
+				};
+				List<PathAndWidth> thinLines;
+				bool foundThinLines = planner.FindThinLines(perimeter, 400, out thinLines);
+				Assert.IsTrue(foundThinLines);
+				Assert.IsTrue(thinLines.Count == 1);
+				Assert.IsTrue(thinLines[0].Path.Count == 2);
+				Assert.IsTrue(thinLines[0].ExtrusionWidthUm == 50);
+			}
+
+			// Simple overlap (s is the start runing ccw)
+			{
+				//     _____    _____ 5000,5000             _____    _____
+				//     |   |    |   |					    |   |    |   |
+				//     |   |____|   |					    |   |    |   |
+				//     |   s____    |    this is too thin   |    ----    | 5000,2500
+				//     |   |    |   |		and goes to ->  |   |    |   |
+				// 0,0 |___|    |___|					    |___|    |___|
+
+				int travelSpeed = 50;
+				int retractionMinimumDistance = 20;
+				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
+				List<Point3> perimeter = new List<Point3>()
+				{ 
+					// bottom of center line
+					new Point3(1000, 2500-25), new Point3(4000, 2500-25),
+					// right leg
+					new Point3(4000, 0), new Point3(5000, 0), new Point3(5000, 5000), new Point3(4000, 5000), 
+					// top of center line
+					new Point3(4000, 2500+27), new Point3(1000, 2500+27),
+					// left leg
+					new Point3(1000, 5000), new Point3(0, 5000), new Point3(0, 0), new Point3(1000, 0),
+				};
+				List<PathAndWidth> thinLines;
+				bool foundThinLines = planner.FindThinLines(perimeter, 400, out thinLines);
+				Assert.IsTrue(foundThinLines);
+				Assert.IsTrue(thinLines.Count == 1);
+				Assert.IsTrue(thinLines[0].Path.Count == 2);
+				Assert.IsTrue(thinLines[0].ExtrusionWidthUm == 52);
 			}
 		}
-#endif
 
 		[Test]
 		public void GetPathsWithOverlapsRemovedTests()
