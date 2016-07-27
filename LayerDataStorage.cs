@@ -397,8 +397,8 @@ namespace MatterHackers.MatterSlice
 				for (int extruderToCheck = 0; extruderToCheck < config.MaxExtruderCount(); extruderToCheck++)
 				{
 					if((extruderToCheck < Extruders.Count && Extruders[extruderToCheck].Layers[checkLayer].AllOutlines.Count > 0)
-						|| (config.SupportExtruder == extruderToCheck && support.HasNormalSupport(checkLayer) )
-						|| (config.SupportInterfaceExtruder == extruderToCheck && support.HasInterfaceSupport(checkLayer)) )
+						|| (config.SupportExtruder == extruderToCheck && support != null && support.HasNormalSupport(checkLayer) )
+						|| (config.SupportInterfaceExtruder == extruderToCheck && support != null && support.HasInterfaceSupport(checkLayer)) )
 					{
 						if(firstExtruderWithData == -1)
 						{
