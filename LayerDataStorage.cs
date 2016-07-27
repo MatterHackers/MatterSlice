@@ -246,7 +246,7 @@ namespace MatterHackers.MatterSlice
 				{
 					gcode.WriteComment("LAYER:-3");
 					gcode.WriteComment("RAFT BASE");
-					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.perimeterStartEndOverlapRatio);
+					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 					if (config.RaftExtruder >= 0)
 					{
 						// if we have a specified raft extruder use it
@@ -294,7 +294,7 @@ namespace MatterHackers.MatterSlice
 				{
 					gcode.WriteComment("LAYER:-2");
 					gcode.WriteComment("RAFT MIDDLE");
-					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.perimeterStartEndOverlapRatio);
+					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 					gcode.setZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um);
 					gcode.SetExtrusion(config.RaftInterfaceThicknes_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
@@ -309,7 +309,7 @@ namespace MatterHackers.MatterSlice
 				{
 					gcode.WriteComment("LAYER:-1");
 					gcode.WriteComment("RAFT SURFACE");
-					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.perimeterStartEndOverlapRatio);
+					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 					gcode.setZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um + config.RaftSurfaceThickness_um * raftSurfaceIndex);
 					gcode.SetExtrusion(config.RaftSurfaceThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
