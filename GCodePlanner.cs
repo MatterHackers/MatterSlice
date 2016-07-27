@@ -45,7 +45,7 @@ namespace MatterHackers.MatterSlice
 
 		public long Width { get; set; }
 
-		public static List<Segment> ConvertPapthToSegments(List<Point3> path, bool isPerimeter = true)
+		public static List<Segment> ConvertPathToSegments(List<Point3> path, bool isPerimeter = true)
 		{
 			List<Segment> polySegments = new List<Segment>(path.Count);
 			int endIndex = isPerimeter ? path.Count : path.Count-1;
@@ -312,7 +312,7 @@ namespace MatterHackers.MatterSlice
 			perimeter = MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um);
 
 			// make a copy that has every point duplicated (so that we have them as segments).
-			List<Segment> polySegments = Segment.ConvertPapthToSegments(perimeter);
+			List<Segment> polySegments = Segment.ConvertPathToSegments(perimeter);
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
 
@@ -401,7 +401,7 @@ namespace MatterHackers.MatterSlice
 			perimeter = MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um);
 
 			// make a copy that has every point duplicated (so that we have them as segments).
-			List <Segment> polySegments = Segment.ConvertPapthToSegments(perimeter);
+			List <Segment> polySegments = Segment.ConvertPathToSegments(perimeter);
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
 
@@ -803,7 +803,7 @@ namespace MatterHackers.MatterSlice
 
 		public void QueuePolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
 		{
-			IslandOrderOptimizer orderOptimizer = new IslandOrderOptimizer(LastPosition);
+			PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(LastPosition);
 			orderOptimizer.AddPolygons(polygons);
 
 			orderOptimizer.Optimize(config);
@@ -953,7 +953,7 @@ namespace MatterHackers.MatterSlice
 
 		public List<Point3> MakeCloseSegmentsMergable(List<Point3> perimeter, long distanceNeedingAdd)
 		{
-			List<Segment> segments = Segment.ConvertPapthToSegments(perimeter);
+			List<Segment> segments = Segment.ConvertPathToSegments(perimeter);
 
 			// for every segment
 			for (int segmentIndex = perimeter.Count-1; segmentIndex >= 0; segmentIndex--)

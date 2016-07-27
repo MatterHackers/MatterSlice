@@ -46,7 +46,7 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			// check that we can cut up a single segment
 			{
-				List<Segment> segmentsControl = Segment.ConvertPapthToSegments(new List<Point3>()
+				List<Segment> segmentsControl = Segment.ConvertPathToSegments(new List<Point3>()
 				{
 					new Point3(0, 0),
 					new Point3(2500, 0),
@@ -235,13 +235,13 @@ namespace MatterHackers.MatterSlice.Tests
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<Point3> perimeter = new List<Point3>() { new Point3(0, 0, 0), new Point3(5000, 0, 0), new Point3(5000, 5000, 0), new Point3(0, 5000, 0)};
 				Assert.IsTrue(perimeter.Count == 4);
-				List<PathAndWidth> correctedPath;
-				planner.RemovePerimeterOverlaps(perimeter, 400 / 4, out correctedPath);
-				Assert.IsTrue(correctedPath.Count == 1);
-				Assert.IsTrue(correctedPath[0].Path.Count == 5); // it is 5 because we return a closed path (points = 0, 1, 2, 3, 0)
+				List<PathAndWidth> thinLines;
+				planner.RemovePerimeterOverlaps(perimeter, 400 / 4, out thinLines);
+				Assert.IsTrue(thinLines.Count == 1);
+				Assert.IsTrue(thinLines[0].Path.Count == 5); // it is 5 because we return a closed path (points = 0, 1, 2, 3, 0)
 				for (int i = 0; i < perimeter.Count; i++)
 				{
-					Assert.IsTrue(perimeter[i] == correctedPath[0].Path[i]);
+					Assert.IsTrue(perimeter[i] == thinLines[0].Path[i]);
 				}
 			}
 
