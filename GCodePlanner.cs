@@ -305,7 +305,96 @@ namespace MatterHackers.MatterSlice
 		[Flags]
 		enum Altered { remove = 1, merged = 2 };
 
-		public bool RemovePerimeterOverlaps(List<Point3> perimeter, int overlapMergeAmount_um, out List<PathAndWidth> separatedPolygons)
+		public bool FindThinLines(List<Point3> perimeter, long overlapMergeAmount_um, out List<PathAndWidth> onlyMergeLines)
+		{
+			bool pathHasMergeLines = false;
+
+			perimeter = MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um);
+
+			// make a copy that has every point duplicated (so that we have them as segments).
+			List<Segment> polySegments = Segment.ConvertPapthToSegments(perimeter);
+
+			Altered[] markedAltered = new Altered[polySegments.Count];
+
+			int segmentCount = polySegments.Count;
+			// now walk every segment and check if there is another segment that is similar enough to merge them together
+			for (int firstSegmentIndex = 0; firstSegmentIndex < segmentCount; firstSegmentIndex++)
+			{
+				for (int checkSegmentIndex = firstSegmentIndex + 1; checkSegmentIndex < segmentCount; checkSegmentIndex++)
+				{
+					// The first point of start and the last point of check (the path will be coming back on itself).
+					long startDelta = (polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length();
+					// if the segments are similar enough
+					if (startDelta < overlapMergeAmount_um)
+					{
+						// The last point of start and the first point of check (the path will be coming back on itself).
+						long endDelta = (polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length();
+						if (endDelta < overlapMergeAmount_um)
+						{
+							pathHasMergeLines = true;
+							// move the first segments points to the average of the merge positions
+							long startEndWidth = Math.Abs((polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length());
+							long endStartWidth = Math.Abs((polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length());
+							polySegments[firstSegmentIndex].Width = Math.Min(startEndWidth, endStartWidth);
+							polySegments[firstSegmentIndex].Start = (polySegments[firstSegmentIndex].Start + polySegments[checkSegmentIndex].End) / 2; // the start
+							polySegments[firstSegmentIndex].End = (polySegments[firstSegmentIndex].End + polySegments[checkSegmentIndex].Start) / 2; // the end
+
+							markedAltered[firstSegmentIndex] = Altered.merged;
+							// mark this segment for removal
+							markedAltered[checkSegmentIndex] = Altered.remove;
+							// We only expect to find one match for each segment, so move on to the next segment
+							break;
+						}
+					}
+				}
+			}
+
+			// remove the marked segments
+			for (int segmentIndex = segmentCount - 1; segmentIndex >= 0; segmentIndex--)
+			{
+				// remove every segment that has not been merged
+				if (markedAltered[segmentIndex] != Altered.merged)
+				{
+					polySegments.RemoveAt(segmentIndex);
+				}
+			}
+
+			// go through the polySegments and create a new polygon for every connected set of segments
+			onlyMergeLines = new List<PathAndWidth>();
+			PathAndWidth currentPolygon = new PathAndWidth();
+			onlyMergeLines.Add(currentPolygon);
+			// put in the first point
+			for (int segmentIndex = 0; segmentIndex < polySegments.Count; segmentIndex++)
+			{
+				// add the start point
+				currentPolygon.Path.Add(polySegments[segmentIndex].Start);
+				currentPolygon.ExtrusionWidthUm = polySegments[segmentIndex].Width;
+
+				// if the next segment is not connected to this one
+				if (segmentIndex < polySegments.Count - 1
+					&& (polySegments[segmentIndex].End != polySegments[segmentIndex + 1].Start
+					|| polySegments[segmentIndex].Width != polySegments[segmentIndex + 1].Width))
+				{
+					// add the end point
+					currentPolygon.Path.Add(polySegments[segmentIndex].End);
+
+					// create a new polygon
+					currentPolygon = new PathAndWidth();
+					onlyMergeLines.Add(currentPolygon);
+				}
+			}
+
+			// add the end point
+			if (polySegments.Count > 0)
+			{
+				currentPolygon.Path.Add(polySegments[polySegments.Count - 1].End);
+			}
+
+			return pathHasMergeLines;
+		}
+
+
+		public bool RemovePerimeterOverlaps(List<Point3> perimeter, long overlapMergeAmount_um, out List<PathAndWidth> separatedPolygons)
 		{
 			bool pathWasOptomized = false;
 
