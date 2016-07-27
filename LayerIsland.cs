@@ -34,8 +34,14 @@ namespace MatterHackers.MatterSlice
 	public class LayerIsland
 	{
 		public Aabb BoundingBox = new Aabb();
+		/// <summary>
+		/// The outline of the island as defined by the original mesh polygons (not inset at all).
+		/// </summary>
 		public Polygons IslandOutline = new Polygons();
 		public Polygons AvoidCrossingBoundary = new Polygons();
+		/// <summary>
+		/// The IslandOutline inset as many times as there are perimeters for the part.
+		/// </summary>
 		public List<Polygons> InsetToolPaths = new List<Polygons>();
 		public Polygons SolidTopToolPaths = new Polygons();
 		public Polygons SolidBottomToolPaths = new Polygons();

@@ -29,14 +29,14 @@ namespace MatterHackers.MatterSlice
 
 	using Polygons = List<List<IntPoint>>;
 
-	public class IslandOrderOptimizer
+	public class PathOrderOptimizer
 	{
 		private IntPoint startPosition;
 		private List<Polygon> polygons = new List<Polygon>();
 		public List<int> startIndexInPolygon = new List<int>();
 		public List<int> bestIslandOrderIndex = new List<int>();
 
-		public IslandOrderOptimizer(IntPoint startPoint)
+		public PathOrderOptimizer(IntPoint startPoint)
 		{
 			this.startPosition = startPoint;
 		}
