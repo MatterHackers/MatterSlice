@@ -211,7 +211,7 @@ namespace MatterHackers.MatterSlice
 			currentExtruderIndex = gcode.GetExtruderIndex();
 			this.retractionMinimumDistance_um = retractionMinimumDistance_um;
 
-			this.perimeterStartEndOverlapRatio = Math.Max(0, Math.Min(100, perimeterStartEndOverlap));
+			this.perimeterStartEndOverlapRatio = Math.Max(0, Math.Min(1, perimeterStartEndOverlap));
 		}
 
 		public void ForceMinimumLayerTime(double minTime, int minimumPrintingSpeed)
@@ -622,7 +622,7 @@ namespace MatterHackers.MatterSlice
 					}
 					else
 					{
-						if (perimeterStartEndOverlapRatio < 100)
+						if (perimeterStartEndOverlapRatio < 1)
 						{
 							TrimPerimeterIfNeeded(path, perimeterStartEndOverlapRatio);
 						}
