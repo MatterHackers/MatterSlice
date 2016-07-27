@@ -590,7 +590,7 @@ namespace MatterHackers.MatterSlice
 				{
 					// This is test code to remove double drawn small perimeter lines.
 					List<PathAndWidth> pathsWithOverlapsRemoved;
-					if (false) //RemovePerimetersThatOverlap(path, speed, out pathsWithOverlapsRemoved))
+					if (RemovePerimetersThatOverlap(path, speed, out pathsWithOverlapsRemoved))
 					{
 						for (int polygonIndex = 0; polygonIndex < pathsWithOverlapsRemoved.Count; polygonIndex++)
 						{
