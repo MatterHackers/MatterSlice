@@ -394,14 +394,14 @@ namespace MatterHackers.MatterSlice
 		}
 
 
-		public bool RemovePerimeterOverlaps(List<Point3> perimeter, long overlapMergeAmount_um, out List<PathAndWidth> separatedPolygons)
+		public bool RemovePerimeterOverlaps(List<Point3> perimeter, long overlapMergeAmount_um, out List<PathAndWidth> separatedPolygons, bool pathIsClosed = true)
 		{
 			bool pathWasOptomized = false;
 
 			perimeter = MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um);
 
 			// make a copy that has every point duplicated (so that we have them as segments).
-			List <Segment> polySegments = Segment.ConvertPathToSegments(perimeter);
+			List <Segment> polySegments = Segment.ConvertPathToSegments(perimeter, pathIsClosed);
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
 
@@ -677,9 +677,15 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
+					bool pathIsClosed = true;
+					if (perimeterStartEndOverlapRatio < 1)
+					{
+						pathIsClosed = !TrimPerimeterIfNeeded(path, perimeterStartEndOverlapRatio);
+					}
+
 					// This is test code to remove double drawn small perimeter lines.
 					List<PathAndWidth> pathsWithOverlapsRemoved;
-					if (RemovePerimetersThatOverlap(path, speed, out pathsWithOverlapsRemoved))
+					if (RemovePerimetersThatOverlap(path, speed, out pathsWithOverlapsRemoved, pathIsClosed))
 					{
 						for (int polygonIndex = 0; polygonIndex < pathsWithOverlapsRemoved.Count; polygonIndex++)
 						{
@@ -711,11 +717,6 @@ namespace MatterHackers.MatterSlice
 					}
 					else
 					{
-						if (perimeterStartEndOverlapRatio < 1)
-						{
-							TrimPerimeterIfNeeded(path, perimeterStartEndOverlapRatio);
-						}
-
 						for (int i = 0; i < path.points.Count; i++)
 						{
 							gcodeExport.WriteMove(path.points[i], speed, path.config.lineWidth_um);
@@ -727,14 +728,14 @@ namespace MatterHackers.MatterSlice
 			gcodeExport.UpdateTotalPrintTime();
 		}
 
-		private bool RemovePerimetersThatOverlap(GCodePath path, double speed, out List<PathAndWidth> pathsWithOverlapsRemoved)
+		private bool RemovePerimetersThatOverlap(GCodePath path, double speed, out List<PathAndWidth> pathsWithOverlapsRemoved, bool pathIsClosed)
 		{
 			pathsWithOverlapsRemoved = null;
 			if (path.config.lineWidth_um > 0
 				&& path.points.Count > 2 // If the count is not greater than 2 there is no way it can overlap itself.
 				&& gcodeExport.GetPosition() == path.points[path.points.Count - 1])
 			{
-				if (RemovePerimeterOverlaps(path.points, path.config.lineWidth_um, out pathsWithOverlapsRemoved)
+				if (RemovePerimeterOverlaps(path.points, path.config.lineWidth_um, out pathsWithOverlapsRemoved, pathIsClosed)
 					&& pathsWithOverlapsRemoved.Count > 0)
 				{
 					return true;
@@ -867,7 +868,7 @@ namespace MatterHackers.MatterSlice
 			LastPosition = positionToMoveTo;
 		}
 
-		private static void TrimPerimeterIfNeeded(GCodePath path, double perimeterStartEndOverlapRatio)
+		private static bool TrimPerimeterIfNeeded(GCodePath path, double perimeterStartEndOverlapRatio)
 		{
 			if (path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER")
 			{
@@ -886,7 +887,7 @@ namespace MatterHackers.MatterSlice
 						if (currentDistance > targetDistance)
 						{
 							long newDistance = currentDistance - targetDistance;
-							if (newDistance > 100) // Don't clip segments less than 100 um. We get too much truncation error.
+							if (newDistance > 50) // Don't clip segments less than 50 um. We get too much truncation error.
 							{
 								Point3 dir = (path.points[pointIndex] - path.points[pointIndex - 1]) * newDistance / currentDistance;
 
@@ -905,12 +906,17 @@ namespace MatterHackers.MatterSlice
 						else
 						{
 							// Pops last point and reduces distance remaining to target
-							targetDistance = targetDistance - currentDistance;
+							targetDistance -= currentDistance;
 							path.points.RemoveAt(path.points.Count - 1);
 						}
 					}
 				}
+
+				// the path was trimmed
+				return true;
 			}
+
+			return false;
 		}
 
 		private void ForceNewPathStart()
