@@ -27,13 +27,13 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
-using ClipperLib;
+using MSClipperLib;
 using NUnit.Framework;
 using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice.Tests
 {
-    using Polygons = List<List<IntPoint>>;
+    using Polygons = List<List<MSClipperLib.IntPoint>>;
 
     [TestFixture, Category("MatterSlice")]
     public class CreateToAndBottomTests

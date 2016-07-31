@@ -24,7 +24,7 @@ The integer point classes are used as soon as possible and represent microns in 
 Integer points are used to avoid floating point rounding errors, and because ClipperLib uses them.
 */
 
-using ClipperLib;
+using MSClipperLib;
 
 //Include Clipper to get the ClipperLib::IntPoint definition, which we reuse as Point definition.
 using System;
@@ -34,11 +34,12 @@ using static System.Math;
 
 namespace MatterHackers.MatterSlice
 {
+#if false
 	using Polygon = List<IntPoint>;
 
 	using Polygons = List<List<IntPoint>>;
 
-	public struct Point3
+	public struct IntPoint
 	{
 		public long x, y, z;
 
@@ -49,53 +50,53 @@ namespace MatterHackers.MatterSlice
 			return "x:{0} y:{1} z:{2}".FormatWith(x, y, z);
 		}
 
-		public Point3(IntPoint xy, long z)
+		public IntPoint(IntPoint xy, long z)
 		{
 			this.x = xy.X;
 			this.y = xy.Y;
 			this.z = z;
 		}
 
-		public Point3(double _x, double _y, double _z)
+		public IntPoint(double _x, double _y, double _z)
 			: this(Convert.ToInt64(_x), Convert.ToInt64(_y), Convert.ToInt64(_z))
 		{
 		}
 
-		public Point3(long _x, long _y, long _z = 0)
+		public IntPoint(long _x, long _y, long _z = 0)
 		{
 			this.x = _x;
 			this.y = _y;
 			this.z = _z;
 		}
 
-		public static Point3 operator -(Point3 left, Point3 right)
+		public static IntPoint operator -(IntPoint left, IntPoint right)
 		{
-			return new Point3(left.x - right.x, left.y - right.y, left.z - right.z);
+			return new IntPoint(left.x - right.x, left.y - right.y, left.z - right.z);
 		}
 
-		public static Point3 operator *(Point3 left, long right)
+		public static IntPoint operator *(IntPoint left, long right)
 		{
-			return new Point3(left.x * right, left.y * right, left.z * right);
+			return new IntPoint(left.x * right, left.y * right, left.z * right);
 		}
 
-		public static Point3 operator /(Point3 left, long right)
+		public static IntPoint operator /(IntPoint left, long right)
 		{
-			return new Point3(left.x / right, left.y / right, left.z / right);
+			return new IntPoint(left.x / right, left.y / right, left.z / right);
 		}
 
-		public static bool operator !=(Point3 left, Point3 right)
+		public static bool operator !=(IntPoint left, IntPoint right)
 		{
 			return left.x != right.x || left.y != right.y || left.z != right.z;
 		}
 
-		public static Point3 operator /(Point3 point, int i)
+		public static IntPoint operator /(IntPoint point, int i)
 		{
-			return new Point3(Convert.ToInt64(point.x / (double)i), Convert.ToInt64(point.y / (double)i), Convert.ToInt64(point.z / (double)i));
+			return new IntPoint(Convert.ToInt64(point.x / (double)i), Convert.ToInt64(point.y / (double)i), Convert.ToInt64(point.z / (double)i));
 		}
 
-		public static Point3 operator +(Point3 left, Point3 right)
+		public static IntPoint operator +(IntPoint left, IntPoint right)
 		{
-			return new Point3(left.x + right.x, left.y + right.y, left.z + right.z);
+			return new IntPoint(left.x + right.x, left.y + right.y, left.z + right.z);
 		}
 
 		public bool ShorterThen(long len)
@@ -109,7 +110,7 @@ namespace MatterHackers.MatterSlice
 			return LengthSquared() <= len * len;
 		}
 
-		public static bool operator ==(Point3 left, Point3 right)
+		public static bool operator ==(IntPoint left, IntPoint right)
 		{
 			return left.x == right.x && left.y == right.y && left.z == right.z;
 		}
@@ -125,27 +126,19 @@ namespace MatterHackers.MatterSlice
 			return LengthSquared() <= minLength * minLength;
 		}
 
-		public long Dot(Point3 p)
+		public long Dot(IntPoint p)
 		{
 			return this.x * p.x + this.y * p.y + this.z * p.z;
 		}
 
-		public Point3 Cross(Point3 p)
-		{
-			return new Point3(
-				y * p.z - z * p.y,
-				z * p.x - x * p.z,
-				x * p.y - y * p.x);
-		}
-
 		public override bool Equals(object obj)
 		{
-			if (!(obj is Point3))
+			if (!(obj is IntPoint))
 			{
 				return false;
 			}
 
-			return this == (Point3)obj;
+			return this == (IntPoint)obj;
 		}
 
 		public override int GetHashCode()
@@ -183,4 +176,5 @@ namespace MatterHackers.MatterSlice
 			return z;
 		}
 	}
+#endif
 }

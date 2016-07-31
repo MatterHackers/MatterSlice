@@ -19,6 +19,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using MSClipperLib;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -36,10 +37,10 @@ namespace MatterHackers.MatterSlice
 
 	public class OptimizedPoint3
 	{
-		public Point3 position;
+		public IntPoint position;
 		public List<int> usedByFacesList = new List<int>();
 
-		public OptimizedPoint3(Point3 position)
+		public OptimizedPoint3(IntPoint position)
 		{
 			this.position = position;
 		}
@@ -76,15 +77,15 @@ namespace MatterHackers.MatterSlice
 				}
 				for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
 				{
-					Point3 p = simpleMesh.faceTriangles[faceIndex].vertices[vertexIndex];
-					int hash = (int)(((p.x + MELD_DIST / 2) / MELD_DIST) ^ (((p.y + MELD_DIST / 2) / MELD_DIST) << 10) ^ (((p.z + MELD_DIST / 2) / MELD_DIST) << 20));
+					IntPoint p = simpleMesh.faceTriangles[faceIndex].vertices[vertexIndex];
+					int hash = (int)(((p.X + MELD_DIST / 2) / MELD_DIST) ^ (((p.Y + MELD_DIST / 2) / MELD_DIST) << 10) ^ (((p.Z + MELD_DIST / 2) / MELD_DIST) << 20));
 					int idx = 0;
 					bool add = true;
 					if (indexMap.ContainsKey(hash))
 					{
 						for (int n = 0; n < indexMap[hash].Count; n++)
 						{
-							if ((vertices[indexMap[hash][n]].position - p).AbsLengthLEQ(MELD_DIST))
+							if ((vertices[indexMap[hash][n]].position - p).Length() <= MELD_DIST)
 							{
 								idx = indexMap[hash][n];
 								add = false;
@@ -185,9 +186,9 @@ namespace MatterHackers.MatterSlice
 	public class OptimizedMeshCollection
 	{
 		public List<OptimizedMesh> OptimizedMeshes = new List<OptimizedMesh>();
-		public Point3 size_um;
-		public Point3 minXYZ_um;
-		public Point3 maxXYZ_um;
+		public IntPoint size_um;
+		public IntPoint minXYZ_um;
+		public IntPoint maxXYZ_um;
 
 		public OptimizedMeshCollection(SimpleMeshCollection simpleMeshCollection)
 		{
@@ -208,8 +209,8 @@ namespace MatterHackers.MatterSlice
 
 			if (centerObjectInXy)
 			{
-				Point3 modelXYCenterZBottom_um = new Point3((minXYZ_um.x + maxXYZ_um.x) / 2, (minXYZ_um.y + maxXYZ_um.y) / 2, minXYZ_um.z);
-				modelXYCenterZBottom_um -= new Point3(xCenter_um, yCenter_um, zClip_um);
+				IntPoint modelXYCenterZBottom_um = new IntPoint((minXYZ_um.X + maxXYZ_um.X) / 2, (minXYZ_um.Y + maxXYZ_um.Y) / 2, minXYZ_um.Z);
+				modelXYCenterZBottom_um -= new IntPoint(xCenter_um, yCenter_um, zClip_um);
 				for (int optimizedMeshIndex = 0; optimizedMeshIndex < OptimizedMeshes.Count; optimizedMeshIndex++)
 				{
 					for (int n = 0; n < OptimizedMeshes[optimizedMeshIndex].vertices.Count; n++)
@@ -224,7 +225,7 @@ namespace MatterHackers.MatterSlice
 			else // we still need to put in the bottom clip
 			{
 				// Offset by bed center and correctly position in z
-				Point3 modelZBottom_um = new Point3(0, 0, minXYZ_um.z - zClip_um);
+				IntPoint modelZBottom_um = new IntPoint(0, 0, minXYZ_um.Z - zClip_um);
 				for (int optimizedMeshIndex = 0; optimizedMeshIndex < OptimizedMeshes.Count; optimizedMeshIndex++)
 				{
 					for (int vertexIndex = 0; vertexIndex < OptimizedMeshes[optimizedMeshIndex].vertices.Count; vertexIndex++)
@@ -265,9 +266,9 @@ namespace MatterHackers.MatterSlice
 
 					for (int vert = 0; vert < 3; vert++)
 					{
-						f.Write((float)(vol.vertices[vol.facesTriangle[i].vertexIndex[vert]].position.x / 1000.0));
-						f.Write((float)(vol.vertices[vol.facesTriangle[i].vertexIndex[vert]].position.y / 1000.0));
-						f.Write((float)(vol.vertices[vol.facesTriangle[i].vertexIndex[vert]].position.z / 1000.0));
+						f.Write((float)(vol.vertices[vol.facesTriangle[i].vertexIndex[vert]].position.X / 1000.0));
+						f.Write((float)(vol.vertices[vol.facesTriangle[i].vertexIndex[vert]].position.Y / 1000.0));
+						f.Write((float)(vol.vertices[vol.facesTriangle[i].vertexIndex[vert]].position.Z / 1000.0));
 					}
 
 					f.Write((short)0);

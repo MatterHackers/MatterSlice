@@ -19,6 +19,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using MSClipperLib;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,9 +30,9 @@ namespace MatterHackers.MatterSlice
 	// A SimpleFace is a 3 dimensional model triangle with 3 points. These points are already converted to integers
 	public class SimpleFace
 	{
-		public Point3[] vertices = new Point3[3];
+		public IntPoint[] vertices = new IntPoint[3];
 
-		public SimpleFace(Point3 v0, Point3 v1, Point3 v2)
+		public SimpleFace(IntPoint v0, IntPoint v1, IntPoint v2)
 		{
 			vertices[0] = v0; vertices[1] = v1; vertices[2] = v2;
 		}
@@ -66,53 +67,53 @@ namespace MatterHackers.MatterSlice
 				n = m;
 		}
 
-		public void addFaceTriangle(Point3 v0, Point3 v1, Point3 v2)
+		public void addFaceTriangle(IntPoint v0, IntPoint v1, IntPoint v2)
 		{
 			faceTriangles.Add(new SimpleFace(v0, v1, v2));
 		}
 
-		public Point3 minXYZ_um()
+		public IntPoint minXYZ_um()
 		{
 			if (faceTriangles.Count < 1)
 			{
-				return new Point3(0, 0, 0);
+				return new IntPoint(0, 0, 0);
 			}
 
-			Point3 ret = faceTriangles[0].vertices[0];
+			IntPoint ret = faceTriangles[0].vertices[0];
 			for (int faceIndex = 0; faceIndex < faceTriangles.Count; faceIndex++)
 			{
-				SET_MIN(ref ret.x, faceTriangles[faceIndex].vertices[0].x);
-				SET_MIN(ref ret.y, faceTriangles[faceIndex].vertices[0].y);
-				SET_MIN(ref ret.z, faceTriangles[faceIndex].vertices[0].z);
-				SET_MIN(ref ret.x, faceTriangles[faceIndex].vertices[1].x);
-				SET_MIN(ref ret.y, faceTriangles[faceIndex].vertices[1].y);
-				SET_MIN(ref ret.z, faceTriangles[faceIndex].vertices[1].z);
-				SET_MIN(ref ret.x, faceTriangles[faceIndex].vertices[2].x);
-				SET_MIN(ref ret.y, faceTriangles[faceIndex].vertices[2].y);
-				SET_MIN(ref ret.z, faceTriangles[faceIndex].vertices[2].z);
+				SET_MIN(ref ret.X, faceTriangles[faceIndex].vertices[0].X);
+				SET_MIN(ref ret.Y, faceTriangles[faceIndex].vertices[0].Y);
+				SET_MIN(ref ret.Z, faceTriangles[faceIndex].vertices[0].Z);
+				SET_MIN(ref ret.X, faceTriangles[faceIndex].vertices[1].X);
+				SET_MIN(ref ret.Y, faceTriangles[faceIndex].vertices[1].Y);
+				SET_MIN(ref ret.Z, faceTriangles[faceIndex].vertices[1].Z);
+				SET_MIN(ref ret.X, faceTriangles[faceIndex].vertices[2].X);
+				SET_MIN(ref ret.Y, faceTriangles[faceIndex].vertices[2].Y);
+				SET_MIN(ref ret.Z, faceTriangles[faceIndex].vertices[2].Z);
 			}
 			return ret;
 		}
 
-		public Point3 maxXYZ_um()
+		public IntPoint maxXYZ_um()
 		{
 			if (faceTriangles.Count < 1)
 			{
-				return new Point3(0, 0, 0);
+				return new IntPoint(0, 0, 0);
 			}
 
-			Point3 ret = faceTriangles[0].vertices[0];
+			IntPoint ret = faceTriangles[0].vertices[0];
 			for (int i = 0; i < faceTriangles.Count; i++)
 			{
-				SET_MAX(ref ret.x, faceTriangles[i].vertices[0].x);
-				SET_MAX(ref ret.y, faceTriangles[i].vertices[0].y);
-				SET_MAX(ref ret.z, faceTriangles[i].vertices[0].z);
-				SET_MAX(ref ret.x, faceTriangles[i].vertices[1].x);
-				SET_MAX(ref ret.y, faceTriangles[i].vertices[1].y);
-				SET_MAX(ref ret.z, faceTriangles[i].vertices[1].z);
-				SET_MAX(ref ret.x, faceTriangles[i].vertices[2].x);
-				SET_MAX(ref ret.y, faceTriangles[i].vertices[2].y);
-				SET_MAX(ref ret.z, faceTriangles[i].vertices[2].z);
+				SET_MAX(ref ret.X, faceTriangles[i].vertices[0].X);
+				SET_MAX(ref ret.Y, faceTriangles[i].vertices[0].Y);
+				SET_MAX(ref ret.Z, faceTriangles[i].vertices[0].Z);
+				SET_MAX(ref ret.X, faceTriangles[i].vertices[1].X);
+				SET_MAX(ref ret.Y, faceTriangles[i].vertices[1].Y);
+				SET_MAX(ref ret.Z, faceTriangles[i].vertices[1].Z);
+				SET_MAX(ref ret.X, faceTriangles[i].vertices[2].X);
+				SET_MAX(ref ret.Y, faceTriangles[i].vertices[2].Y);
+				SET_MAX(ref ret.Z, faceTriangles[i].vertices[2].Z);
 			}
 			return ret;
 		}
@@ -123,38 +124,38 @@ namespace MatterHackers.MatterSlice
 	{
 		public List<SimpleMesh> SimpleMeshes = new List<SimpleMesh>();
 
-		public Point3 minXYZ_um()
+		public IntPoint minXYZ_um()
 		{
 			if (SimpleMeshes.Count < 1)
 			{
-				return new Point3(0, 0, 0);
+				return new IntPoint(0, 0, 0);
 			}
 
-			Point3 minXYZ = SimpleMeshes[0].minXYZ_um();
+			IntPoint minXYZ = SimpleMeshes[0].minXYZ_um();
 			for (int meshIndex = 1; meshIndex < SimpleMeshes.Count; meshIndex++)
 			{
-				Point3 meshMinXYZ = SimpleMeshes[meshIndex].minXYZ_um();
-				minXYZ.x = Math.Min(minXYZ.x, meshMinXYZ.x);
-				minXYZ.y = Math.Min(minXYZ.y, meshMinXYZ.y);
-				minXYZ.z = Math.Min(minXYZ.z, meshMinXYZ.z);
+				IntPoint meshMinXYZ = SimpleMeshes[meshIndex].minXYZ_um();
+				minXYZ.X = Math.Min(minXYZ.X, meshMinXYZ.X);
+				minXYZ.Y = Math.Min(minXYZ.Y, meshMinXYZ.Y);
+				minXYZ.Z = Math.Min(minXYZ.Z, meshMinXYZ.Z);
 			}
 			return minXYZ;
 		}
 
-		public Point3 maxXYZ_um()
+		public IntPoint maxXYZ_um()
 		{
 			if (SimpleMeshes.Count < 1)
 			{
-				return new Point3(0, 0, 0);
+				return new IntPoint(0, 0, 0);
 			}
 
-			Point3 maxXYZ = SimpleMeshes[0].maxXYZ_um();
+			IntPoint maxXYZ = SimpleMeshes[0].maxXYZ_um();
 			for (int meshIndex = 1; meshIndex < SimpleMeshes.Count; meshIndex++)
 			{
-				Point3 meshMaxXYZ = SimpleMeshes[meshIndex].maxXYZ_um();
-				maxXYZ.x = Math.Max(maxXYZ.x, meshMaxXYZ.x);
-				maxXYZ.y = Math.Max(maxXYZ.y, meshMaxXYZ.y);
-				maxXYZ.z = Math.Max(maxXYZ.z, meshMaxXYZ.z);
+				IntPoint meshMaxXYZ = SimpleMeshes[meshIndex].maxXYZ_um();
+				maxXYZ.X = Math.Max(maxXYZ.X, meshMaxXYZ.X);
+				maxXYZ.Y = Math.Max(maxXYZ.Y, meshMaxXYZ.Y);
+				maxXYZ.Z = Math.Max(maxXYZ.Z, meshMaxXYZ.Z);
 			}
 			return maxXYZ;
 		}
@@ -168,9 +169,9 @@ namespace MatterHackers.MatterSlice
 
 				Vector3 vertex = new Vector3();
 				int n = 0;
-				Point3 v0 = new Point3(0, 0, 0);
-				Point3 v1 = new Point3(0, 0, 0);
-				Point3 v2 = new Point3(0, 0, 0);
+				IntPoint v0 = new IntPoint(0, 0, 0);
+				IntPoint v1 = new IntPoint(0, 0, 0);
+				IntPoint v2 = new IntPoint(0, 0, 0);
 				string line = f.ReadLine();
 				Regex onlySingleSpaces = new Regex("\\s+", RegexOptions.Compiled);
 				int lineCount = 0;
@@ -246,14 +247,14 @@ namespace MatterHackers.MatterSlice
 					return false;
 				}
 
-				Point3[] vector = new Point3[3];
+				IntPoint[] vector = new IntPoint[3];
 				for (int i = 0; i < numTriangles; i++)
 				{
 					// skip the normal
 					currentPosition += 3 * 4;
 					for (int j = 0; j < 3; j++)
 					{
-						vector[j] = new Point3(
+						vector[j] = new IntPoint(
 							System.BitConverter.ToSingle(fileContents, currentPosition + 0 * 4) * 1000,
 							System.BitConverter.ToSingle(fileContents, currentPosition + 1 * 4) * 1000,
 							System.BitConverter.ToSingle(fileContents, currentPosition + 2 * 4) * 1000);
