@@ -247,7 +247,7 @@ namespace MatterHackers.MatterSlice
 					if (dist < bestDist)
 					{
 						bestDist = dist;
-						newPosition = pointAlongCurrentSegment + ((currentPoint - previousPoint).Normal(maxDistanceToMove)).GetPerpendicularLeft();
+						newPosition = pointAlongCurrentSegment + ((currentPoint - previousPoint).Normal(maxDistanceToMove)).GetPerpendicularLeftXY();
 					}
 
 					previousPoint = currentPoint;
@@ -324,8 +324,8 @@ namespace MatterHackers.MatterSlice
 				for (int pointIndex = 0; pointIndex < boundaryPolygon.Count; pointIndex++)
 				{
 					IntPoint currentPosition = boundaryPolygon[pointIndex];
-					int startSide = startPoint.GetLineSide(lastPosition, currentPosition);
-					int endSide = endPoint.GetLineSide(lastPosition, currentPosition);
+					int startSide = startPoint.GetLineSideXY(lastPosition, currentPosition);
+					int endSide = endPoint.GetLineSideXY(lastPosition, currentPosition);
 					if (startSide != 0)
 					{
 						if (startSide + endSide == 0)
@@ -371,8 +371,8 @@ namespace MatterHackers.MatterSlice
 			IntPoint nextPoint = boundaryPolygons[polygonIndex][nextIndex];
 
 			// assuming a ccw winding this will give us a point inside of the edge
-			IntPoint leftNormalOfPrevEdge = ((currentPoint - previousPoint).Normal(1000)).GetPerpendicularLeft();
-			IntPoint leftNormalOfCurrentEdge = ((nextPoint - currentPoint).Normal(1000)).GetPerpendicularLeft();
+			IntPoint leftNormalOfPrevEdge = ((currentPoint - previousPoint).Normal(1000)).GetPerpendicularLeftXY();
+			IntPoint leftNormalOfCurrentEdge = ((nextPoint - currentPoint).Normal(1000)).GetPerpendicularLeftXY();
 			IntPoint offsetToBeInside = (leftNormalOfPrevEdge + leftNormalOfCurrentEdge).Normal(200);
 
 			return currentPoint + offsetToBeInside;

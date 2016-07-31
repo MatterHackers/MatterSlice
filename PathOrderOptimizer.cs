@@ -81,10 +81,10 @@ namespace MatterHackers.MatterSlice
 				nextPoint -= currentPoint;
 
 				double prevAngle = Math.Atan2(prevPoint.Y, prevPoint.X);
-				IntPoint rotatedPrev = prevPoint.GetRotated(-prevAngle);
+				IntPoint rotatedPrev = prevPoint.GetRotatedAboutZ(-prevAngle);
 
 				// undo the rotation
-				nextPoint = nextPoint.GetRotated(-prevAngle);
+				nextPoint = nextPoint.GetRotatedAboutZ(-prevAngle);
 				double angle = Math.Atan2(nextPoint.Y, nextPoint.X); ;
 
 				return angle;

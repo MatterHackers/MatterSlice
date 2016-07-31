@@ -401,39 +401,39 @@ namespace MSClipperLib
 		/////////////////////////////////////////////////// start added for MatterSlice ///////////////////////////////////////////////////
 		public override string ToString()
 		{
-			return string.Format("x:{0}, y:{1}", X, Y);
+			return string.Format("x:{0}, y:{1}, z:{2}", X, Y, Z);
 		}
 
 		public static IntPoint operator +(IntPoint p0, IntPoint p1)
 		{
-			return new IntPoint(p0.X + p1.X, p0.Y + p1.Y);
+			return new IntPoint(p0.X + p1.X, p0.Y + p1.Y, p0.Z + p1.Z);
 		}
 
 		public static IntPoint operator -(IntPoint p0, IntPoint p1)
 		{
-			return new IntPoint(p0.X - p1.X, p0.Y - p1.Y);
+			return new IntPoint(p0.X - p1.X, p0.Y - p1.Y, p0.Z - p1.Z);
 		}
 
 		public static IntPoint operator *(IntPoint p0, long i)
 		{
-			return new IntPoint(p0.X * i, p0.Y * i);
+			return new IntPoint(p0.X * i, p0.Y * i, p0.Z * i);
 		}
 
 		public static IntPoint operator /(IntPoint p0, long i)
 		{
-			return new IntPoint(p0.X / i, p0.Y / i);
+			return new IntPoint(p0.X / i, p0.Y / i, p0.Z / i);
 		}
 
 		/////////////////////////////////////////////////// end added for MatterSlice ///////////////////////////////////////////////////
 
 		public static bool operator ==(IntPoint a, IntPoint b)
 		{
-			return a.X == b.X && a.Y == b.Y;
+			return a.X == b.X && a.Y == b.Y && a.Z == b.Z;
 		}
 
 		public static bool operator !=(IntPoint a, IntPoint b)
 		{
-			return a.X != b.X || a.Y != b.Y;
+			return a.X != b.X || a.Y != b.Y || a.Z != b.Z;
 		}
 
 		public override bool Equals(object obj)
@@ -442,7 +442,7 @@ namespace MSClipperLib
 			if (obj is IntPoint)
 			{
 				IntPoint a = (IntPoint)obj;
-				return (X == a.X) && (Y == a.Y);
+				return (X == a.X) && (Y == a.Y) && (Z == a.Z);
 			}
 			else return false;
 		}

@@ -845,7 +845,7 @@ namespace MatterHackers.MatterSlice
 				foreach (var island in layer.Islands)
 				{
 					List<IntPoint> path = new List<IntPoint>();
-					List<PathAndWidth> thinLines;
+					Polygons thinLines;
 					foreach (var outline in island.IslandOutline.Offset(-extrusionWidth_um * 0))
 					{
 						foreach (var point in outline)
@@ -859,7 +859,7 @@ namespace MatterHackers.MatterSlice
 						foreach (var widthPath in thinLines)
 						{
 							Polygon thinPath = new Polygon();
-							foreach (var point in widthPath.Path)
+							foreach (var point in widthPath)
 							{
 								thinPath.Add(new IntPoint(point.X, point.Y));
 							}
