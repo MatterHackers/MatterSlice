@@ -301,6 +301,11 @@ namespace MatterHackers.MatterSlice
         {
             StringBuilder lineToWrite = new StringBuilder();
             //Normal E handling.
+			if(movePosition_um.Width != 0)
+			{
+				lineWidth_um = movePosition_um.Width;
+			}
+
             if (lineWidth_um != 0)
             {
                 IntPoint diff = movePosition_um - GetPosition();

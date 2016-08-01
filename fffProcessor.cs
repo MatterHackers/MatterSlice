@@ -839,14 +839,14 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// Find the thin lines for this layer and add them to the queue
-			if (false) // this code is just for test. LBB
+			if (true) // this code is just for test. LBB
 			{
 				Polygons fillPolygons = new Polygons();
 				foreach (var island in layer.Islands)
 				{
 					List<IntPoint> path = new List<IntPoint>();
 					Polygons thinLines;
-					foreach (var outline in island.IslandOutline.Offset(-extrusionWidth_um * 0))
+					foreach (var outline in island.IslandOutline.Offset(-extrusionWidth_um * 1))
 					{
 						foreach (var point in outline)
 						{
@@ -858,12 +858,7 @@ namespace MatterHackers.MatterSlice
 					{
 						foreach (var widthPath in thinLines)
 						{
-							Polygon thinPath = new Polygon();
-							foreach (var point in widthPath)
-							{
-								thinPath.Add(new IntPoint(point.X, point.Y));
-							}
-							fillPolygons.Add(thinPath);
+							fillPolygons.Add(widthPath);
 						}
 					}
 				}
