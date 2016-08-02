@@ -27,14 +27,14 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
-using ClipperLib;
+using MSClipperLib;
 using NUnit.Framework;
 using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice.Tests
 {
-	using Polygons = List<List<IntPoint>>;
-	using Polygon = List<IntPoint>;
+	using Polygons = List<List<MSClipperLib.IntPoint>>;
+	using Polygon = List<MSClipperLib.IntPoint>;
 
 	[TestFixture, Category("MatterSlice")]
 	public class AvoidCrossingPerimetersTests
@@ -66,14 +66,14 @@ namespace MatterHackers.MatterSlice.Tests
 
 				string partOutlineString = "x:90501, y:80501,x:109500, y:80501,x:109500, y:119500,x:90501, y:119500,|x:97387, y:104041,x:95594, y:105213,x:94278, y:106903,x:93583, y:108929,x:93583, y:111071,x:94278, y:113097,x:95594, y:114787,x:97387, y:115959,x:99464, y:116485,x:101598, y:116307,x:103559, y:115447,x:105135, y:113996,x:106154, y:112113,x:106507, y:110000,x:106154, y:107887,x:105135, y:106004,x:103559, y:104553,x:101598, y:103693,x:99464, y:103515,|x:97387, y:84042,x:95594, y:85214,x:94278, y:86904,x:93583, y:88930,x:93583, y:91072,x:94278, y:93098,x:95594, y:94788,x:97387, y:95960,x:99464, y:96486,x:101598, y:96308,x:103559, y:95448,x:105135, y:93997,x:106154, y:92114,x:106507, y:90001,x:106154, y:87888,x:105135, y:86005,x:103559, y:84554,x:101598, y:83694,x:99464, y:83516,|";
 				Polygons boundaryPolygons = PolygonsHelper.CreateFromString(partOutlineString);
-				IntPoint startPoint = new IntPoint(95765, 114600);
-				IntPoint endPoint = new IntPoint(99485, 96234);
+				MSClipperLib.IntPoint startPoint = new MSClipperLib.IntPoint(95765, 114600);
+				MSClipperLib.IntPoint endPoint = new MSClipperLib.IntPoint(99485, 96234);
 				AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons);
 
 				{
-					IntPoint startPointInside = startPoint;
+					MSClipperLib.IntPoint startPointInside = startPoint;
 					testHarness.MovePointInsideBoundary(ref startPointInside);
-					IntPoint endPointInside = endPoint;
+					MSClipperLib.IntPoint endPointInside = endPoint;
 					testHarness.MovePointInsideBoundary(ref endPointInside);
 
 					Assert.IsTrue(testHarness.PointIsInsideBoundary(startPointInside));

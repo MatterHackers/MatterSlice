@@ -19,7 +19,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using ClipperLib;
+using MSClipperLib;
 using System;
 using System.Collections.Generic;
 
@@ -81,10 +81,10 @@ namespace MatterHackers.MatterSlice
 				nextPoint -= currentPoint;
 
 				double prevAngle = Math.Atan2(prevPoint.Y, prevPoint.X);
-				IntPoint rotatedPrev = prevPoint.GetRotated(-prevAngle);
+				IntPoint rotatedPrev = prevPoint.GetRotatedAboutZ(-prevAngle);
 
 				// undo the rotation
-				nextPoint = nextPoint.GetRotated(-prevAngle);
+				nextPoint = nextPoint.GetRotatedAboutZ(-prevAngle);
 				double angle = Math.Atan2(nextPoint.Y, nextPoint.X); ;
 
 				return angle;

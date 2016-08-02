@@ -27,7 +27,7 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
-using ClipperLib;
+using MSClipperLib;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
@@ -204,10 +204,10 @@ namespace MatterHackers.MatterSlice.Tests
         public void DumpSegmentsWorks()
         {
             List<SlicePerimeterSegment> testSegments = new List<SlicePerimeterSegment>();
-            testSegments.Add(new SlicePerimeterSegment(new IntPoint(1, 2), new IntPoint(3, 4)));
-            testSegments.Add(new SlicePerimeterSegment(new IntPoint(4, 2), new IntPoint(5, 4)));
-            testSegments.Add(new SlicePerimeterSegment(new IntPoint(3, 2), new IntPoint(9, 4)));
-            testSegments.Add(new SlicePerimeterSegment(new IntPoint(6, 2), new IntPoint(3, 7)));
+            testSegments.Add(new SlicePerimeterSegment((MSClipperLib.IntPoint)new MSClipperLib.IntPoint((long)1, (long)2), (MSClipperLib.IntPoint)new MSClipperLib.IntPoint((long)3, (long)4)));
+            testSegments.Add(new SlicePerimeterSegment((MSClipperLib.IntPoint)new MSClipperLib.IntPoint((long)4, (long)2), (MSClipperLib.IntPoint)new MSClipperLib.IntPoint((long)5, (long)4)));
+            testSegments.Add(new SlicePerimeterSegment((MSClipperLib.IntPoint)new MSClipperLib.IntPoint((long)3, (long)2), (MSClipperLib.IntPoint)new MSClipperLib.IntPoint((long)9, (long)4)));
+            testSegments.Add(new SlicePerimeterSegment((MSClipperLib.IntPoint)new MSClipperLib.IntPoint((long)6, (long)2), (MSClipperLib.IntPoint)new MSClipperLib.IntPoint((long)3, (long)7)));
 
             string segmentsString = MeshProcessingLayer.DumpSegmentListToString(testSegments);
             List<SlicePerimeterSegment> outSegments = MeshProcessingLayer.CreateSegmentListFromString(segmentsString);
