@@ -27,7 +27,7 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
-using ClipperLib;
+using MSClipperLib;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -36,8 +36,8 @@ using System.IO;
 namespace MatterHackers.MatterSlice.Tests
 {
 	using static PathOrderOptimizer;
-	using Polygon = List<IntPoint>;
-	using Polygons = List<List<IntPoint>>;
+	using Polygon = List<MSClipperLib.IntPoint>;
+	using Polygons = List<List<MSClipperLib.IntPoint>>;
 
 	[TestFixture, Category("MatterSlice.PathOrderTests")]
 	public class PathOrderTests
@@ -47,59 +47,59 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			// coincident points return 0 angle
 			{
-				IntPoint p1 = new IntPoint(10, 0);
-				IntPoint p2 = new IntPoint(0, 0);
-				IntPoint p3 = new IntPoint(0, 0);
+				MSClipperLib.IntPoint p1 = new MSClipperLib.IntPoint(10, 0);
+				MSClipperLib.IntPoint p2 = new MSClipperLib.IntPoint(0, 0);
+				MSClipperLib.IntPoint p3 = new MSClipperLib.IntPoint(0, 0);
 				Assert.IsTrue(PathOrderOptimizer.GetTurnAmount(p1, p2, p3) == 0);
 			}
 
 			// no turn returns a 0 angle
 			{
-				IntPoint p1 = new IntPoint(10, 0);
-				IntPoint p2 = new IntPoint(0, 0);
-				IntPoint p3 = new IntPoint(-10, 0);
+				MSClipperLib.IntPoint p1 = new MSClipperLib.IntPoint(10, 0);
+				MSClipperLib.IntPoint p2 = new MSClipperLib.IntPoint(0, 0);
+				MSClipperLib.IntPoint p3 = new MSClipperLib.IntPoint(-10, 0);
 				Assert.IsTrue(PathOrderOptimizer.GetTurnAmount(p1, p2, p3) == 0);
 			}
 
 			// 90 turn works
 			{
-				IntPoint p1 = new IntPoint(0, 0);
-				IntPoint p2 = new IntPoint(10, 0);
-				IntPoint p3 = new IntPoint(10, 10);
+				MSClipperLib.IntPoint p1 = new MSClipperLib.IntPoint(0, 0);
+				MSClipperLib.IntPoint p2 = new MSClipperLib.IntPoint(10, 0);
+				MSClipperLib.IntPoint p3 = new MSClipperLib.IntPoint(10, 10);
 				Assert.AreEqual(PathOrderOptimizer.GetTurnAmount(p1, p2, p3), Math.PI / 2, .001);
 
-				IntPoint p4 = new IntPoint(0, 10);
-				IntPoint p5 = new IntPoint(0, 0);
-				IntPoint p6 = new IntPoint(10, 0);
+				MSClipperLib.IntPoint p4 = new MSClipperLib.IntPoint(0, 10);
+				MSClipperLib.IntPoint p5 = new MSClipperLib.IntPoint(0, 0);
+				MSClipperLib.IntPoint p6 = new MSClipperLib.IntPoint(10, 0);
 				Assert.AreEqual(PathOrderOptimizer.GetTurnAmount(p4, p5, p6), Math.PI / 2, .001);
 			}
 
 			// -90 turn works
 			{
-				IntPoint p1 = new IntPoint(0, 0);
-				IntPoint p2 = new IntPoint(10, 0);
-				IntPoint p3 = new IntPoint(10, -10);
+				MSClipperLib.IntPoint p1 = new MSClipperLib.IntPoint(0, 0);
+				MSClipperLib.IntPoint p2 = new MSClipperLib.IntPoint(10, 0);
+				MSClipperLib.IntPoint p3 = new MSClipperLib.IntPoint(10, -10);
 				Assert.AreEqual(PathOrderOptimizer.GetTurnAmount(p1, p2, p3), -Math.PI / 2, .001);
 			}
 
 			// 45 turn works
 			{
-				IntPoint p1 = new IntPoint(0, 0);
-				IntPoint p2 = new IntPoint(10, 0);
-				IntPoint p3 = new IntPoint(15, 5);
+				MSClipperLib.IntPoint p1 = new MSClipperLib.IntPoint(0, 0);
+				MSClipperLib.IntPoint p2 = new MSClipperLib.IntPoint(10, 0);
+				MSClipperLib.IntPoint p3 = new MSClipperLib.IntPoint(15, 5);
 				Assert.AreEqual(Math.PI / 4, PathOrderOptimizer.GetTurnAmount(p1, p2, p3), .001);
 
-				IntPoint p4 = new IntPoint(0, 0);
-				IntPoint p5 = new IntPoint(-10, 0);
-				IntPoint p6 = new IntPoint(-15, -5);
+				MSClipperLib.IntPoint p4 = new MSClipperLib.IntPoint(0, 0);
+				MSClipperLib.IntPoint p5 = new MSClipperLib.IntPoint(-10, 0);
+				MSClipperLib.IntPoint p6 = new MSClipperLib.IntPoint(-15, -5);
 				Assert.AreEqual(Math.PI / 4, PathOrderOptimizer.GetTurnAmount(p4, p5, p6), .001);
 			}
 
 			// -45 turn works
 			{
-				IntPoint p1 = new IntPoint(0, 0);
-				IntPoint p2 = new IntPoint(10, 0);
-				IntPoint p3 = new IntPoint(15, -5);
+				MSClipperLib.IntPoint p1 = new MSClipperLib.IntPoint(0, 0);
+				MSClipperLib.IntPoint p2 = new MSClipperLib.IntPoint(10, 0);
+				MSClipperLib.IntPoint p3 = new MSClipperLib.IntPoint(15, -5);
 				Assert.AreEqual(-Math.PI / 4, PathOrderOptimizer.GetTurnAmount(p1, p2, p3), .001);
 			}
 
@@ -110,7 +110,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |      /2
 				// |      \
 				// |0______\1
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(70, 50), new IntPoint(100, 100), new IntPoint(0, 100) };
+				Polygon testPoints = new Polygon { new MSClipperLib.IntPoint(0, 0), new MSClipperLib.IntPoint(100, 0), new MSClipperLib.IntPoint(70, 50), new MSClipperLib.IntPoint(100, 100), new MSClipperLib.IntPoint(0, 100) };
 				int bestPoint = PathOrderOptimizer.GetBestIndex(testPoints);
 				Assert.IsTrue(bestPoint == 2);
 			}
@@ -122,7 +122,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |       |
 				// |       |
 				// |0______|1
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(100, 100), new IntPoint(0, 100) };
+				Polygon testPoints = new Polygon { new MSClipperLib.IntPoint(0, 0), new MSClipperLib.IntPoint(100, 0), new MSClipperLib.IntPoint(100, 100), new MSClipperLib.IntPoint(0, 100) };
 				int bestPoint = PathOrderOptimizer.GetBestIndex(testPoints);
 				Assert.IsTrue(bestPoint == 3);
 			}
@@ -134,7 +134,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |       |
 				// |       |
 				// |2______|3
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(0, 0), new IntPoint(100, 0) };
+				Polygon testPoints = new Polygon { new MSClipperLib.IntPoint(100, 100), new MSClipperLib.IntPoint(0, 100), new MSClipperLib.IntPoint(0, 0), new MSClipperLib.IntPoint(100, 0) };
 				int bestPoint = PathOrderOptimizer.GetBestIndex(testPoints);
 				Assert.IsTrue(bestPoint == 1);
 			}
@@ -146,55 +146,55 @@ namespace MatterHackers.MatterSlice.Tests
 				// |       |
 				// |       |
 				// |0______|3
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(100, 0) };
+				Polygon testPoints = new Polygon { new MSClipperLib.IntPoint(0, 0), new MSClipperLib.IntPoint(0, 100), new MSClipperLib.IntPoint(100, 100), new MSClipperLib.IntPoint(100, 0) };
 				int bestPoint = PathOrderOptimizer.GetBestIndex(testPoints);
 				Assert.IsTrue(bestPoint == 1);
 			}
 
             // find the right point wound cw
             {
-                // 0________1
-                // |       |
-                // |       |
-                // |       |
-                // |3______|2
-                List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(100, 0), new IntPoint(0, 0) };
+				// 0________1
+				// |       |
+				// |       |
+				// |       |
+				// |3______|2
+				Polygon testPoints = new Polygon { new MSClipperLib.IntPoint(0, 100), new MSClipperLib.IntPoint(100, 100), new MSClipperLib.IntPoint(100, 0), new MSClipperLib.IntPoint(0, 0) };
                 int bestPoint = PathOrderOptimizer.GetBestIndex(testPoints);
                 Assert.IsTrue(bestPoint == 0);
             }
 
             // find the right point wound ccw
             {
-                // 4________3
-                // |       /
-                // |      /2
-                // |      \
-                // |0______\1
-                List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(1000, 0), new IntPoint(900, 500), new IntPoint(1000, 1000), new IntPoint(0, 1000) };
+				// 4________3
+				// |       /
+				// |      /2
+				// |      \
+				// |0______\1
+				Polygon testPoints = new Polygon { new MSClipperLib.IntPoint(0, 0), new MSClipperLib.IntPoint(1000, 0), new MSClipperLib.IntPoint(900, 500), new MSClipperLib.IntPoint(1000, 1000), new MSClipperLib.IntPoint(0, 1000) };
 				int bestPoint = PathOrderOptimizer.GetBestIndex(testPoints);
 				Assert.IsTrue(bestPoint == 2);
 			}
 
             // ccw
             {
-                // 2________1
-                // |       /
-                // |      /0
-                // |      \
-                // |3______\4
-                List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(0, 0), new IntPoint(100, 0) };
+				// 2________1
+				// |       /
+				// |      /0
+				// |      \
+				// |3______\4
+				Polygon testPoints = new Polygon { new MSClipperLib.IntPoint(90, 50), new MSClipperLib.IntPoint(100, 100), new MSClipperLib.IntPoint(0, 100), new MSClipperLib.IntPoint(0, 0), new MSClipperLib.IntPoint(100, 0) };
                 int bestPoint = PathOrderOptimizer.GetBestIndex(testPoints);
                 Assert.IsTrue(bestPoint == 0);
             }
 
             // ccw
             {
-                // 2________1
-                //  \      /
-                //   \3   /0
-                //   /    \
-                //  /4_____\5
-                List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(10, 50), new IntPoint(0, 0), new IntPoint(100, 0) };
+				// 2________1
+				//  \      /
+				//   \3   /0
+				//   /    \
+				//  /4_____\5
+				Polygon testPoints = new Polygon { new MSClipperLib.IntPoint(90, 50), new MSClipperLib.IntPoint(100, 100), new MSClipperLib.IntPoint(0, 100), new MSClipperLib.IntPoint(10, 50), new MSClipperLib.IntPoint(0, 0), new MSClipperLib.IntPoint(100, 0) };
                 int bestPoint = PathOrderOptimizer.GetBestIndex(testPoints);
                 Assert.IsTrue(bestPoint == 3);
             }
@@ -206,7 +206,7 @@ namespace MatterHackers.MatterSlice.Tests
 				//   \3   /0 less angle
 				//   /    \
 				//  /4_____\5
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(950, 500), new IntPoint(1000, 1000), new IntPoint(0, 1000), new IntPoint(100, 500), new IntPoint(0, 0), new IntPoint(1000, 0) };
+				Polygon testPoints = new Polygon { new MSClipperLib.IntPoint(950, 500), new MSClipperLib.IntPoint(1000, 1000), new MSClipperLib.IntPoint(0, 1000), new MSClipperLib.IntPoint(100, 500), new MSClipperLib.IntPoint(0, 0), new MSClipperLib.IntPoint(1000, 0) };
 				int bestPoint = PathOrderOptimizer.GetBestIndex(testPoints);
 				Assert.IsTrue(bestPoint == 3);
 			}
@@ -218,7 +218,7 @@ namespace MatterHackers.MatterSlice.Tests
 				//   \3   /0 more angle
 				//   /    \
 				//  /4_____\5
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(550, 500), new IntPoint(1000, 1000), new IntPoint(0, 1000), new IntPoint(100, 500), new IntPoint(0, 0), new IntPoint(1000, 0) };
+				Polygon testPoints = new Polygon { new MSClipperLib.IntPoint(550, 500), new MSClipperLib.IntPoint(1000, 1000), new MSClipperLib.IntPoint(0, 1000), new MSClipperLib.IntPoint(100, 500), new MSClipperLib.IntPoint(0, 0), new MSClipperLib.IntPoint(1000, 0) };
 				int bestPoint = PathOrderOptimizer.GetBestIndex(testPoints);
 				Assert.IsTrue(bestPoint == 0);
 			}
@@ -230,45 +230,45 @@ namespace MatterHackers.MatterSlice.Tests
 				//   \0   /3
 				//   /    \
 				//  /1_____\2
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(10, 50), new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), };
+				Polygon testPoints = new Polygon { new MSClipperLib.IntPoint(10, 50), new MSClipperLib.IntPoint(0, 0), new MSClipperLib.IntPoint(100, 0), new MSClipperLib.IntPoint(90, 50), new MSClipperLib.IntPoint(100, 100), new MSClipperLib.IntPoint(0, 100), };
                 int bestPoint = PathOrderOptimizer.GetBestIndex(testPoints);
                 Assert.IsTrue(bestPoint == 0);
             }
 
             // find the right point wound cw (inside hole loops)
             {
-                // 1________2
-                // |       /
-                // |      /3
-                // |      \
-                // |0______\4
-                List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50), new IntPoint(100, 0) };
+				// 1________2
+				// |       /
+				// |      /3
+				// |      \
+				// |0______\4
+				Polygon testPoints = new Polygon { new MSClipperLib.IntPoint(0, 0), new MSClipperLib.IntPoint(0, 100), new MSClipperLib.IntPoint(100, 100), new MSClipperLib.IntPoint(90, 50), new MSClipperLib.IntPoint(100, 0) };
 				int bestPoint = PathOrderOptimizer.GetBestIndex(testPoints);
 				Assert.IsTrue(bestPoint == 1);
 			}
 
             // find the right point wound cw
             {
-                // 2________3
-                // |       /
-                // |      /4
-                // |      \
-                // |1______\0
-                List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(100, 0), new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50) };
+				// 2________3
+				// |       /
+				// |      /4
+				// |      \
+				// |1______\0
+				Polygon testPoints = new Polygon { new MSClipperLib.IntPoint(100, 0), new MSClipperLib.IntPoint(0, 0), new MSClipperLib.IntPoint(0, 100), new MSClipperLib.IntPoint(100, 100), new MSClipperLib.IntPoint(90, 50) };
 				int bestPoint = PathOrderOptimizer.GetBestIndex(testPoints);
 				Assert.IsTrue(bestPoint == 2);
 			}
 
             // cw
             {
-                // 4________5
-                //  \      /
-                //   \3   /0
-                //   /    \
-                //  /2_____\1
-                List<IntPoint> testPoints = new List<IntPoint>
-                {
-                    new IntPoint(90, 50), new IntPoint(100, 0), new IntPoint(0, 0), new IntPoint(10, 50), new IntPoint(0, 100), new IntPoint(100, 100)
+				// 4________5
+				//  \      /
+				//   \3   /0
+				//   /    \
+				//  /2_____\1
+				Polygon testPoints = new Polygon
+				{
+                    new MSClipperLib.IntPoint(90, 50), new MSClipperLib.IntPoint(100, 0), new MSClipperLib.IntPoint(0, 0), new MSClipperLib.IntPoint(10, 50), new MSClipperLib.IntPoint(0, 100), new MSClipperLib.IntPoint(100, 100)
                 };
                 int bestPoint = PathOrderOptimizer.GetBestIndex(testPoints);
                 Assert.IsTrue(bestPoint == 4);
@@ -276,14 +276,14 @@ namespace MatterHackers.MatterSlice.Tests
 
             // cw
             {
-                // 1________2
-                //  \      /
-                //   \0   /3
-                //   /    \
-                //  /5_____\4
-                List<IntPoint> testPoints = new List<IntPoint>
-                {
-                    new IntPoint(10, 50), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50), new IntPoint(100, 0), new IntPoint(0, 0),
+				// 1________2
+				//  \      /
+				//   \0   /3
+				//   /    \
+				//  /5_____\4
+				Polygon testPoints = new Polygon
+				{
+                    new MSClipperLib.IntPoint(10, 50), new MSClipperLib.IntPoint(0, 100), new MSClipperLib.IntPoint(100, 100), new MSClipperLib.IntPoint(90, 50), new MSClipperLib.IntPoint(100, 0), new MSClipperLib.IntPoint(0, 0),
                 };
                 int bestPoint = PathOrderOptimizer.GetBestIndex(testPoints);
                 Assert.IsTrue(bestPoint == 1);

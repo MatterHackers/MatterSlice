@@ -111,6 +111,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MSClipper.cs" />
     <Compile Include="ExtruderLayers.cs" />
     <Compile Include="GCodePathConfig.cs" />
     <Compile Include="GCodePlanner.cs" />
@@ -126,7 +127,6 @@
     <Compile Include="main.cs" />
     <Compile Include="ConfigSettings.cs" />
     <Compile Include="timeEstimate.cs" />
-    <Compile Include="utils\Point3.cs" />
     <Compile Include="utils\IntpointHelper.cs" />
     <Compile Include="utils\PolygonsHelper.cs" />
     <Compile Include="utils\SplitCommandLine.cs" />
@@ -186,12 +186,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\agg-sharp\clipper_library\clipper_library.csproj">
-      <Project>{9b062971-a88e-4a3d-b3c9-12b78d15fa66}</Project>
-      <Name>clipper_library</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

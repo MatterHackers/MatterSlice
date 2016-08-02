@@ -1,4 +1,4 @@
-﻿using ClipperLib;
+﻿using MSClipperLib;
 using System;
 using System.Collections.Generic;
 

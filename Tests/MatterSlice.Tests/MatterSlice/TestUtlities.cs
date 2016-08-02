@@ -37,8 +37,8 @@ using System.Text.RegularExpressions;
 
 namespace MatterHackers.MatterSlice.Tests
 {
-	using Polygon = List<IntPoint>;
-	using Polygons = List<List<IntPoint>>;
+	using Polygon = List<ClipperLib.IntPoint>;
+	using Polygons = List<List<ClipperLib.IntPoint>>;
 
 	public struct MovementInfo
 	{

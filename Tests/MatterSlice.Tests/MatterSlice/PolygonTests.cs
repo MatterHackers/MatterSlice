@@ -27,7 +27,7 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
-using ClipperLib;
+using MSClipperLib;
 using NUnit.Framework;
 using MatterHackers.MatterSlice;
 using System.Collections.Generic;
@@ -35,7 +35,7 @@ using System.Collections.Generic;
 namespace MatterHackers.MatterSlice.Tests
 {
 	using System;
-	using Polygon = List<IntPoint>;
+	using Polygon = List<MSClipperLib.IntPoint>;
 	using System.Reflection;
 
 	[TestFixture, Category("MatterSlice.PolygonHelpers")]
@@ -129,7 +129,7 @@ namespace MatterHackers.MatterSlice.Tests
 		//
 		// The 'center of mass', as a reference
 		//
-		private IntPoint RefCenterOfMass;
+		private MSClipperLib.IntPoint RefCenterOfMass;
 
 		public void findRefValues()
 		{
@@ -165,7 +165,7 @@ namespace MatterHackers.MatterSlice.Tests
 			int com_x = xmid + (int)(Math.Floor(0.5 + com_sum_x / (3.0 * area_sum)));
 			int com_y = ymid + (int)(Math.Floor(0.5 + com_sum_y / (3.0 * area_sum)));
 
-			RefCenterOfMass = new IntPoint(com_x, com_y);
+			RefCenterOfMass = new MSClipperLib.IntPoint(com_x, com_y);
 		}
 
 		[Test, Ignore("Not Finished")]
@@ -184,7 +184,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			for (int i = 0; i < N_test_poly; i++)
 			{
-				test_path.Add(transformPoint(new IntPoint(test_poly_points[i][0], test_poly_points[i][1]), xform_code));
+				test_path.Add((MSClipperLib.IntPoint)transformPoint(new MSClipperLib.IntPoint(test_poly_points[i][0], test_poly_points[i][1]), xform_code));
 			}
 
 			Polygon tpoly = new Polygon(test_path);
@@ -196,21 +196,21 @@ namespace MatterHackers.MatterSlice.Tests
 			Assert.IsTrue(found_area == ref_area);
 
 			// check center of mass
-			IntPoint found_com = tpoly.CenterOfMass();
-			IntPoint ref_com = transformPoint(RefCenterOfMass, xform_code);
+			MSClipperLib.IntPoint found_com = PolygonHelper.CenterOfMass(tpoly);
+			MSClipperLib.IntPoint ref_com = transformPoint(RefCenterOfMass, xform_code);
 			Assert.IsTrue(Math.Abs(found_com.X - ref_com.X) <= 1);
 			Assert.IsTrue(Math.Abs(found_com.Y - ref_com.Y) <= 1);
 
 			// check 'inside' points.
 			for (int i = 0; i < test_points_inside.Length / test_points_inside[0].Length; i++)
 			{
-				IntPoint tpt = transformPoint(new IntPoint(test_points_inside[i][0], test_points_inside[i][1]), xform_code);
+				MSClipperLib.IntPoint tpt = transformPoint(new MSClipperLib.IntPoint(test_points_inside[i][0], test_points_inside[i][1]), xform_code);
 				Assert.IsTrue(tpoly.Inside(tpt));
 			}
 
 			for (int i = 0; i < test_points_outside.Length / test_points_outside[0].Length; i++)
 			{
-				IntPoint tpt = transformPoint(new IntPoint(test_points_outside[i][0], test_points_outside[i][1]), xform_code);
+				MSClipperLib.IntPoint tpt = transformPoint(new MSClipperLib.IntPoint(test_points_outside[i][0], test_points_outside[i][1]), xform_code);
 				Assert.IsFalse(tpoly.Inside(tpt));
 			}
 		}
@@ -230,7 +230,7 @@ namespace MatterHackers.MatterSlice.Tests
 		//      11 (nothing)
 		// The operations are contrived so that the change in area depends on bits 3,2,1,0 only.
 		//
-		private static IntPoint transformPoint(IntPoint p, int transform_code)
+		private static IntPoint transformPoint(MSClipperLib.IntPoint p, int transform_code)
 		{
 			if ((transform_code & 3) == 3)
 			{
@@ -254,7 +254,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				case 2:
 					{
-						IntPoint tmp = p; // rotate 45 and scale by sqrt(2)
+						MSClipperLib.IntPoint tmp = p; // rotate 45 and scale by sqrt(2)
 						p.X = tmp.X - tmp.Y;
 						p.Y = tmp.X + tmp.Y;
 					}

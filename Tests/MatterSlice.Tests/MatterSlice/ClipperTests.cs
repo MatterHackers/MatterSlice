@@ -43,55 +43,55 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			// remove a single point that is going to be coincident
 			{
-				List<IntPoint> testPath = new List<IntPoint>();
-				testPath.Add(new IntPoint(0, 0));
-				testPath.Add(new IntPoint(5, 0));
-				testPath.Add(new IntPoint(11, 0));
-				testPath.Add(new IntPoint(5, 20));
+				List<ClipperLib.IntPoint> testPath = new List<ClipperLib.IntPoint>();
+				testPath.Add(new ClipperLib.IntPoint(0, 0));
+				testPath.Add(new ClipperLib.IntPoint(5, 0));
+				testPath.Add(new ClipperLib.IntPoint(11, 0));
+				testPath.Add(new ClipperLib.IntPoint(5, 20));
 
-				List<IntPoint> cleanedPath = Clipper.CleanPolygon(testPath, 10);
+				List<ClipperLib.IntPoint> cleanedPath = Clipper.CleanPolygon(testPath, 10);
 				Assert.IsTrue(cleanedPath.Count == 3);
 			}
 
 			// don't remove a non collinear point
 			{
-				List<IntPoint> testPath = new List<IntPoint>();
-				testPath.Add(new IntPoint(0, 0));
-				testPath.Add(new IntPoint(50, 5));
-				testPath.Add(new IntPoint(100, 0));
-				testPath.Add(new IntPoint(50, 200));
+				List<ClipperLib.IntPoint> testPath = new List<ClipperLib.IntPoint>();
+				testPath.Add(new ClipperLib.IntPoint(0, 0));
+				testPath.Add(new ClipperLib.IntPoint(50, 5));
+				testPath.Add(new ClipperLib.IntPoint(100, 0));
+				testPath.Add(new ClipperLib.IntPoint(50, 200));
 
-				List<IntPoint> cleanedPath = Clipper.CleanPolygon(testPath, 4);
+				List<ClipperLib.IntPoint> cleanedPath = Clipper.CleanPolygon(testPath, 4);
 				Assert.IsTrue(cleanedPath.Count == 4);
 			}
 
 			// now remove that point with a higher tolerance
 			{
-				List<IntPoint> testPath = new List<IntPoint>();
-				testPath.Add(new IntPoint(0, 0));
-				testPath.Add(new IntPoint(50, 5));
-				testPath.Add(new IntPoint(100, 0));
-				testPath.Add(new IntPoint(50, 200));
+				List<ClipperLib.IntPoint> testPath = new List<ClipperLib.IntPoint>();
+				testPath.Add(new ClipperLib.IntPoint(0, 0));
+				testPath.Add(new ClipperLib.IntPoint(50, 5));
+				testPath.Add(new ClipperLib.IntPoint(100, 0));
+				testPath.Add(new ClipperLib.IntPoint(50, 200));
 
-				List<IntPoint> cleanedPath = Clipper.CleanPolygon(testPath, 6);
+				List<ClipperLib.IntPoint> cleanedPath = Clipper.CleanPolygon(testPath, 6);
 				Assert.IsTrue(cleanedPath.Count == 3);
 			}
 
 			// now remove a bunch of points
 			{
 				int mergeDist = 10;
-				List<IntPoint> testPath = new List<IntPoint>();
-				testPath.Add(new IntPoint(0, 0));
+				List<ClipperLib.IntPoint> testPath = new List<ClipperLib.IntPoint>();
+				testPath.Add(new ClipperLib.IntPoint(0, 0));
 				Random randY = new Random(0);
 				for (int i = 2; i < 58; i++)
 				//	for (int i = 2; i < 98; i++)
 				{
-					testPath.Add(new IntPoint(i, (int)(randY.NextDouble() * mergeDist - mergeDist / 2)));
+					testPath.Add(new ClipperLib.IntPoint(i, (int)(randY.NextDouble() * mergeDist - mergeDist / 2)));
 				}
-				testPath.Add(new IntPoint(100, 0));
-				testPath.Add(new IntPoint(50, 200));
+				testPath.Add(new ClipperLib.IntPoint(100, 0));
+				testPath.Add(new ClipperLib.IntPoint(50, 200));
 
-				List<IntPoint> cleanedPath = Clipper.CleanPolygon(testPath, mergeDist);
+				List<ClipperLib.IntPoint> cleanedPath = Clipper.CleanPolygon(testPath, mergeDist);
 				Assert.IsTrue(cleanedPath.Count == 3);
 				//Assert.IsTrue(cleanedPath.Contains(new IntPoint(0, 0)));
 				//Assert.IsTrue(cleanedPath.Contains(new IntPoint(100, 0)));

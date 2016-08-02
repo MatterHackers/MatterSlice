@@ -19,7 +19,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using ClipperLib;
+using MSClipperLib;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -367,7 +367,7 @@ namespace MatterHackers.MatterSlice
 				gcode.WriteRetraction();
 				gcode.setZ(maxObjectHeight + 5000);
 				gcode.WriteMove(gcode.GetPosition(), config.TravelSpeed, 0);
-				gcode.WriteMove(new Point3(slicingData.modelMin.x, slicingData.modelMin.y, gcode.CurrentZ), config.TravelSpeed, 0);
+				gcode.WriteMove(new IntPoint(slicingData.modelMin.X, slicingData.modelMin.Y, gcode.CurrentZ), config.TravelSpeed, 0);
 			}
 			fileNumber++;
 
@@ -593,7 +593,7 @@ namespace MatterHackers.MatterSlice
 			gcode.WriteFanCommand(0);
 
 			//Store the object height for when we are printing multiple objects, as we need to clear every one of them when moving to the next position.
-			maxObjectHeight = Math.Max(maxObjectHeight, slicingData.modelSize.z);
+			maxObjectHeight = Math.Max(maxObjectHeight, slicingData.modelSize.Z);
 		}
 
 		private int GetFanSpeed(int layerIndex, GCodePlanner gcodeLayer)
@@ -839,18 +839,18 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// Find the thin lines for this layer and add them to the queue
-			if (false) // this code is just for test. LBB
+			if (true) // this code is just for test. LBB
 			{
 				Polygons fillPolygons = new Polygons();
 				foreach (var island in layer.Islands)
 				{
-					List<Point3> path = new List<Point3>();
-					List<PathAndWidth> thinLines;
-					foreach (var outline in island.IslandOutline.Offset(-extrusionWidth_um * 0))
+					List<IntPoint> path = new List<IntPoint>();
+					Polygons thinLines;
+					foreach (var outline in island.IslandOutline.Offset(-extrusionWidth_um * 1))
 					{
 						foreach (var point in outline)
 						{
-							path.Add(new Point3(point, currentZ_um));
+							path.Add(new IntPoint(point));
 						}
 					}
 
@@ -858,12 +858,7 @@ namespace MatterHackers.MatterSlice
 					{
 						foreach (var widthPath in thinLines)
 						{
-							Polygon thinPath = new Polygon();
-							foreach (var point in widthPath.Path)
-							{
-								thinPath.Add(new IntPoint(point.x, point.y));
-							}
-							fillPolygons.Add(thinPath);
+							fillPolygons.Add(widthPath);
 						}
 					}
 				}
