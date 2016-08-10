@@ -1044,7 +1044,7 @@ namespace MatterHackers.MatterSlice
 					if (supportOutlines.Count > 0)
 					{
 						fillConfig.closedLoop = false;
-						Polygons polysToWrateAtNormalHeight = new Polygons();
+						Polygons polysToWriteAtNormalHeight = new Polygons();
 
 						Polygons polygonsToWriteAsLines = PolygonsHelper.ConvertToLines(polygonsToWrite);
 						foreach(Polygon poly in polygonsToWriteAsLines)
@@ -1053,13 +1053,13 @@ namespace MatterHackers.MatterSlice
 							// write the bottoms that are not sitting on supported areas
 							if (polygonsIntersectSupport.Count == 0)
 							{
-								polysToWrateAtNormalHeight.Add(poly);
+								polysToWriteAtNormalHeight.Add(poly);
 							}
 						}
 
-						if (polysToWrateAtNormalHeight.Count > 0)
+						if (polysToWriteAtNormalHeight.Count > 0)
 						{
-							gcodeLayer.QueuePolygonsByOptimizer(polysToWrateAtNormalHeight, fillConfig);
+							gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtNormalHeight, fillConfig);
 						}
 					}
 					else
@@ -1072,7 +1072,7 @@ namespace MatterHackers.MatterSlice
 					if (supportOutlines.Count > 0)
 					{
 						fillConfig.closedLoop = false;
-						Polygons polysToWrateAtAirGapHeight = new Polygons();
+						Polygons polysToWriteAtAirGapHeight = new Polygons();
 
 						Polygons polygonsToWriteAsLines = PolygonsHelper.ConvertToLines(polygonsToWrite);
 						foreach (Polygon poly in polygonsToWriteAsLines)
@@ -1081,13 +1081,13 @@ namespace MatterHackers.MatterSlice
 							// write the bottoms that are not sitting on supported areas
 							if (polygonsIntersectSupport.Count > 0)
 							{
-								polysToWrateAtAirGapHeight.Add(poly);
+								polysToWriteAtAirGapHeight.Add(poly);
 							}
 						}
 
-						if (polysToWrateAtAirGapHeight.Count > 0)
+						if (polysToWriteAtAirGapHeight.Count > 0)
 						{
-							gcodeLayer.QueuePolygonsByOptimizer(polysToWrateAtAirGapHeight, fillConfig);
+							gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtAirGapHeight, fillConfig);
 						}
 					}
 				}
