@@ -45,10 +45,21 @@ namespace MatterHackers.MatterSlice
 
 		public long Width { get; set; }
 
-		public static List<Segment> ConvertPathToSegments(List<Point3> path, bool isPerimeter = true)
+		public Segment()
+		{
+
+		}
+
+		public Segment(Point3 start, Point3 end)
+		{
+			this.Start = start;
+			this.End = end;
+		}
+
+		public static List<Segment> ConvertPathToSegments(List<Point3> path, bool pathIsClosed = true)
 		{
 			List<Segment> polySegments = new List<Segment>(path.Count);
-			int endIndex = isPerimeter ? path.Count : path.Count-1;
+			int endIndex = pathIsClosed ? path.Count : path.Count-1;
 			for (int i = 0; i < endIndex; i++)
 			{
 				Point3 point = path[i];
@@ -99,7 +110,7 @@ namespace MatterHackers.MatterSlice
 			return polySegments;
 		}
 
-		public List<Segment> GetSplitSegmentForVertecies(List<Point3> perimeter, long maxDistance)
+		public List<Segment> GetSplitSegmentForVertecies(List<Point3> splitPoints, long maxDistance)
 		{
 			IntPoint start2D = new IntPoint(Start.x, Start.y);
 			IntPoint end2D = new IntPoint(End.x, End.y);
@@ -114,9 +125,9 @@ namespace MatterHackers.MatterSlice
 			long maxDistanceNormalized = maxDistance * length;
 
 			// for every vertex
-			for (int vertexIndex = 0; vertexIndex < perimeter.Count; vertexIndex++)
+			for (int splintIndex = 0; splintIndex < splitPoints.Count; splintIndex++)
 			{
-				IntPoint vertex = new IntPoint(perimeter[vertexIndex].x, perimeter[vertexIndex].y) - start2D;
+				IntPoint vertex = new IntPoint(splitPoints[splintIndex].x, splitPoints[splintIndex].y) - start2D;
 				// if the vertex is close enough to the segment
 				long dotProduct = rightDirection.Dot(vertex);
 				if (Math.Abs(dotProduct) < maxDistanceNormalized)
@@ -305,11 +316,11 @@ namespace MatterHackers.MatterSlice
 		[Flags]
 		enum Altered { remove = 1, merged = 2 };
 
-		public bool FindThinLines(List<Point3> perimeter, long overlapMergeAmount_um, out List<PathAndWidth> onlyMergeLines)
+		public bool FindThinLines(List<Point3> perimeter, long overlapMergeAmount_um, out List<PathAndWidth> onlyMergeLines, bool isPerimeter = true)
 		{
 			bool pathHasMergeLines = false;
 
-			perimeter = MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um);
+			perimeter = MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um, isPerimeter);
 
 			// make a copy that has every point duplicated (so that we have them as segments).
 			List<Segment> polySegments = Segment.ConvertPathToSegments(perimeter);
@@ -398,7 +409,7 @@ namespace MatterHackers.MatterSlice
 		{
 			bool pathWasOptomized = false;
 
-			perimeter = MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um);
+			perimeter = MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um, pathIsClosed);
 
 			// make a copy that has every point duplicated (so that we have them as segments).
 			List <Segment> polySegments = Segment.ConvertPathToSegments(perimeter, pathIsClosed);
@@ -677,15 +688,20 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					bool pathIsClosed = true;
-					if (perimeterStartEndOverlapRatio < 1)
+					bool pathIsPerimeter = false;
+					if (path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER")
 					{
-						pathIsClosed = !TrimPerimeterIfNeeded(path, perimeterStartEndOverlapRatio);
+						pathIsPerimeter = true;
+					}
+
+					if (perimeterStartEndOverlapRatio < 1 && pathIsPerimeter)
+					{
+						TrimPerimeter(path, perimeterStartEndOverlapRatio);
 					}
 
 					// This is test code to remove double drawn small perimeter lines.
 					List<PathAndWidth> pathsWithOverlapsRemoved;
-					if (RemovePerimetersThatOverlap(path, speed, out pathsWithOverlapsRemoved, pathIsClosed))
+					if (RemovePerimetersThatOverlap(path, speed, out pathsWithOverlapsRemoved, pathIsPerimeter))
 					{
 						for (int polygonIndex = 0; polygonIndex < pathsWithOverlapsRemoved.Count; polygonIndex++)
 						{
@@ -733,7 +749,7 @@ namespace MatterHackers.MatterSlice
 			pathsWithOverlapsRemoved = null;
 			if (path.config.lineWidth_um > 0
 				&& path.points.Count > 2 // If the count is not greater than 2 there is no way it can overlap itself.
-				&& gcodeExport.GetPosition() == path.points[path.points.Count - 1])
+				&& (gcodeExport.GetPosition() == path.points[path.points.Count - 1] || !pathIsClosed))
 			{
 				if (RemovePerimeterOverlaps(path.points, path.config.lineWidth_um, out pathsWithOverlapsRemoved, pathIsClosed)
 					&& pathsWithOverlapsRemoved.Count > 0)
@@ -868,55 +884,47 @@ namespace MatterHackers.MatterSlice
 			LastPosition = positionToMoveTo;
 		}
 
-		private static bool TrimPerimeterIfNeeded(GCodePath path, double perimeterStartEndOverlapRatio)
+		private static void TrimPerimeter(GCodePath path, double perimeterStartEndOverlapRatio)
 		{
-			if (path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER")
+			long currentDistance = 0;
+			long targetDistance = (long)(path.config.lineWidth_um * (1 - perimeterStartEndOverlapRatio));
+
+			if (path.points.Count > 1)
 			{
-				long currentDistance = 0;
-				long targetDistance = (long)(path.config.lineWidth_um * (1-perimeterStartEndOverlapRatio));
-
-				if (path.points.Count > 1)
+				for (int pointIndex = path.points.Count - 1; pointIndex > 0; pointIndex--)
 				{
-					for (int pointIndex = path.points.Count - 1; pointIndex > 0; pointIndex--)
+					// Calculate distance between 2 points
+					currentDistance = (path.points[pointIndex] - path.points[pointIndex - 1]).Length();
+
+					// If distance exceeds clip distance:
+					//  - Sets the new last path point
+					if (currentDistance > targetDistance)
 					{
-						// Calculate distance between 2 points
-						currentDistance = (path.points[pointIndex] - path.points[pointIndex - 1]).Length();
-
-						// If distance exceeds clip distance:
-						//  - Sets the new last path point
-						if (currentDistance > targetDistance)
+						long newDistance = currentDistance - targetDistance;
+						if (newDistance > 50) // Don't clip segments less than 50 um. We get too much truncation error.
 						{
-							long newDistance = currentDistance - targetDistance;
-							if (newDistance > 50) // Don't clip segments less than 50 um. We get too much truncation error.
-							{
-								Point3 dir = (path.points[pointIndex] - path.points[pointIndex - 1]) * newDistance / currentDistance;
+							Point3 dir = (path.points[pointIndex] - path.points[pointIndex - 1]) * newDistance / currentDistance;
 
-								Point3 clippedEndpoint = path.points[pointIndex - 1] + dir;
+							Point3 clippedEndpoint = path.points[pointIndex - 1] + dir;
 
-								path.points[pointIndex] = clippedEndpoint;
-							}
-							break;
+							path.points[pointIndex] = clippedEndpoint;
 						}
-						else if (currentDistance == targetDistance)
-						{
-							// Pops off last point because it is at the limit distance
-							path.points.RemoveAt(path.points.Count - 1);
-							break;
-						}
-						else
-						{
-							// Pops last point and reduces distance remaining to target
-							targetDistance -= currentDistance;
-							path.points.RemoveAt(path.points.Count - 1);
-						}
+						break;
+					}
+					else if (currentDistance == targetDistance)
+					{
+						// Pops off last point because it is at the limit distance
+						path.points.RemoveAt(path.points.Count - 1);
+						break;
+					}
+					else
+					{
+						// Pops last point and reduces distance remaining to target
+						targetDistance -= currentDistance;
+						path.points.RemoveAt(path.points.Count - 1);
 					}
 				}
-
-				// the path was trimmed
-				return true;
 			}
-
-			return false;
 		}
 
 		private void ForceNewPathStart()
@@ -957,12 +965,12 @@ namespace MatterHackers.MatterSlice
 			//Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
 		}
 
-		public List<Point3> MakeCloseSegmentsMergable(List<Point3> perimeter, long distanceNeedingAdd)
+		public List<Point3> MakeCloseSegmentsMergable(List<Point3> perimeter, long distanceNeedingAdd, bool pathIsClosed = true)
 		{
-			List<Segment> segments = Segment.ConvertPathToSegments(perimeter);
+			List<Segment> segments = Segment.ConvertPathToSegments(perimeter, pathIsClosed);
 
 			// for every segment
-			for (int segmentIndex = perimeter.Count-1; segmentIndex >= 0; segmentIndex--)
+			for (int segmentIndex = segments.Count-1; segmentIndex >= 0; segmentIndex--)
 			{
 				List<Segment> newSegments = segments[segmentIndex].GetSplitSegmentForVertecies(perimeter, distanceNeedingAdd);
 				if(newSegments?.Count > 0)
@@ -979,6 +987,12 @@ namespace MatterHackers.MatterSlice
 			foreach(var segment in segments)
 			{
 				segmentedPerimeter.Add(segment.Start);
+			}
+
+			if (!pathIsClosed)
+			{
+				// add the last point
+				segmentedPerimeter.Add(segments[segments.Count-1].End);
 			}
 
 			return segmentedPerimeter;

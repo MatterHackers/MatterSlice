@@ -854,7 +854,7 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 
-					if (layerGcodePlanner.FindThinLines(path, extrusionWidth_um - 2, out thinLines))
+					if (layerGcodePlanner.FindThinLines(path, extrusionWidth_um - 2, out thinLines, true))
 					{
 						foreach (var widthPath in thinLines)
 						{

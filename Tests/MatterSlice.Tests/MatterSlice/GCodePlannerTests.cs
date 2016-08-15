@@ -97,6 +97,40 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.IsTrue(correctedPath.Count == 8);
 			}
 
+			// A path that has been clipped
+			{
+				//  ____________s             ____________ __
+				//           *    goes to  -> 
+
+				long mergeDistance = 400 / 4;
+				Segment segment = new Segment(new Point3(5000, 50), new Point3(0, 50));
+				List<Segment> segments = segment.GetSplitSegmentForVertecies(new List<Point3> { new Point3(4500, 0) }, mergeDistance);
+				Assert.IsTrue(segments.Count == 2);
+				Assert.IsTrue(segments[0] == new Segment(new Point3(5000, 50), new Point3(4500, 50)));
+				Assert.IsTrue(segments[1] == new Segment(new Point3(4500, 50), new Point3(0, 50)));
+			}
+
+			// A path that has been clipped
+			{
+				//  ____________s   
+				//  |_________	  goes to  -> ----------
+
+				int travelSpeed = 50;
+				int retractionMinimumDistance = 20;
+				long mergeDistance = 400 / 4;
+				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
+				List<Point3> perimeter = new List<Point3>() { new Point3(5000, 50), new Point3(0, 50), new Point3(0, 0), new Point3(4500, 0)};
+				Assert.IsTrue(perimeter.Count == 4);
+				List<Point3> correctedPath = planner.MakeCloseSegmentsMergable(perimeter, mergeDistance, false);
+				Assert.IsTrue(correctedPath.Count == 5);
+				Assert.IsTrue(correctedPath[0] == new Point3(5000, 50));
+				Assert.IsTrue(correctedPath[1] == new Point3(4500, 50));
+				Assert.IsTrue(correctedPath[2] == new Point3(0, 50));
+				Assert.IsTrue(correctedPath[3] == new Point3(0, 0));
+				Assert.IsTrue(correctedPath[4] == new Point3(4500, 0));
+			}
+
+
 			// Make sure we work correctly when splitting the closing segment.
 			{
 				// |\      /|                     |\      /|
@@ -308,6 +342,31 @@ namespace MatterHackers.MatterSlice.Tests
 				planner.RemovePerimeterOverlaps(perimeter, 400 / 4, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Path.Count == 2);
+			}
+
+			// A path that has been clipped
+			{
+				//  ____________s   
+				//  |_________	  goes to  -> ----------
+
+				int travelSpeed = 50;
+				int retractionMinimumDistance = 20;
+				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
+				List<Point3> perimeter = new List<Point3>() { new Point3(5000, 50), new Point3(0, 50), new Point3(0, 0), new Point3(4500, 0) };
+				List<PathAndWidth> correctedPath;
+				bool removedLines = planner.RemovePerimeterOverlaps(perimeter, 400, out correctedPath, false);
+				Assert.IsTrue(removedLines);
+				Assert.IsTrue(correctedPath.Count == 3);
+				Assert.IsTrue(correctedPath[0].Path.Count == 2);
+				Assert.IsTrue(correctedPath[0].ExtrusionWidthUm == 400);
+				Assert.IsTrue(correctedPath[0].Path[0] == new Point3(5000, 50));
+				Assert.IsTrue(correctedPath[0].Path[1] == new Point3(4500, 50));
+				Assert.IsTrue(correctedPath[1].Path.Count == 2);
+				Assert.IsTrue(correctedPath[1].ExtrusionWidthUm == 450);
+				Assert.IsTrue(correctedPath[1].Path[0] == new Point3(4500, 25));
+				Assert.IsTrue(correctedPath[1].Path[1] == new Point3(0, 25));
+				Assert.IsTrue(correctedPath[2].Path.Count == 2);
+				Assert.IsTrue(correctedPath[2].ExtrusionWidthUm == 400);
 			}
 
 			// A path that needs to have points inserted to do the correct thing
