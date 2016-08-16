@@ -90,10 +90,10 @@ namespace MatterHackers.MatterSlice
 			return p0.Start != p1.Start || p0.End != p1.End;
 		}
 
-		public static List<Segment> ConvertPathToSegments(IList<IntPoint> path, long zHeight, bool isPerimeter = true)
+		public static List<Segment> ConvertPathToSegments(IList<IntPoint> path, long zHeight, bool pathIsClosed = true)
 		{
 			List<Segment> polySegments = new List<Segment>(path.Count);
-			int endIndex = isPerimeter ? path.Count : path.Count - 1;
+			int endIndex = pathIsClosed ? path.Count : path.Count - 1;
 			for (int i = 0; i < endIndex; i++)
 			{
 				Point3 point = new Point3(path[i].X, path[i].Y, zHeight);
@@ -316,11 +316,11 @@ namespace MatterHackers.MatterSlice
 		[Flags]
 		enum Altered { remove = 1, merged = 2 };
 
-		public bool FindThinLines(List<Point3> perimeter, long overlapMergeAmount_um, out List<PathAndWidth> onlyMergeLines, bool isPerimeter = true)
+		public bool FindThinLines(List<Point3> perimeter, long overlapMergeAmount_um, out List<PathAndWidth> onlyMergeLines, bool pathIsClosed = true)
 		{
 			bool pathHasMergeLines = false;
 
-			perimeter = MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um, isPerimeter);
+			perimeter = MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um, pathIsClosed);
 
 			// make a copy that has every point duplicated (so that we have them as segments).
 			List<Segment> polySegments = Segment.ConvertPathToSegments(perimeter);
@@ -405,7 +405,7 @@ namespace MatterHackers.MatterSlice
 		}
 
 
-		public bool RemovePerimeterOverlaps(List<Point3> perimeter, long overlapMergeAmount_um, out List<PathAndWidth> separatedPolygons, bool pathIsClosed = true)
+		public bool MergePerimeterOverlaps(List<Point3> perimeter, long overlapMergeAmount_um, out List<PathAndWidth> separatedPolygons, bool pathIsClosed = true)
 		{
 			bool pathWasOptomized = false;
 
@@ -688,20 +688,28 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					bool pathIsPerimeter = false;
+					// This is test code to remove double drawn small perimeter lines.
+					List<PathAndWidth> pathsWithOverlapsRemoved = null;
+					bool pathHadOverlaps = false;
+					bool pathIsClosed = true;
 					if (path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER")
 					{
-						pathIsPerimeter = true;
+						if (perimeterStartEndOverlapRatio < 1)
+						{
+							TrimPerimeter(path, perimeterStartEndOverlapRatio);
+							// it was closed but now it isn't
+							pathIsClosed = false;
+						}
+
+						if (path.config.lineWidth_um > 0
+							&& path.points.Count > 2)
+						{
+							pathHadOverlaps = MergePerimeterOverlaps(path.points, path.config.lineWidth_um, out pathsWithOverlapsRemoved, pathIsClosed)
+								&& pathsWithOverlapsRemoved.Count > 0;
+						}
 					}
 
-					if (perimeterStartEndOverlapRatio < 1 && pathIsPerimeter)
-					{
-						TrimPerimeter(path, perimeterStartEndOverlapRatio);
-					}
-
-					// This is test code to remove double drawn small perimeter lines.
-					List<PathAndWidth> pathsWithOverlapsRemoved;
-					if (RemovePerimetersThatOverlap(path, speed, out pathsWithOverlapsRemoved, pathIsPerimeter))
+					if (pathHadOverlaps)
 					{
 						for (int polygonIndex = 0; polygonIndex < pathsWithOverlapsRemoved.Count; polygonIndex++)
 						{
@@ -733,7 +741,8 @@ namespace MatterHackers.MatterSlice
 					}
 					else
 					{
-						for (int i = 0; i < path.points.Count; i++)
+						int outputCount = pathIsClosed ? path.points.Count : path.points.Count - 1;
+						for (int i = 0; i < outputCount; i++)
 						{
 							gcodeExport.WriteMove(path.points[i], speed, path.config.lineWidth_um);
 						}
@@ -742,23 +751,6 @@ namespace MatterHackers.MatterSlice
 			}
 
 			gcodeExport.UpdateTotalPrintTime();
-		}
-
-		private bool RemovePerimetersThatOverlap(GCodePath path, double speed, out List<PathAndWidth> pathsWithOverlapsRemoved, bool pathIsClosed)
-		{
-			pathsWithOverlapsRemoved = null;
-			if (path.config.lineWidth_um > 0
-				&& path.points.Count > 2 // If the count is not greater than 2 there is no way it can overlap itself.
-				&& (gcodeExport.GetPosition() == path.points[path.points.Count - 1] || !pathIsClosed))
-			{
-				if (RemovePerimeterOverlaps(path.points, path.config.lineWidth_um, out pathsWithOverlapsRemoved, pathIsClosed)
-					&& pathsWithOverlapsRemoved.Count > 0)
-				{
-					return true;
-				}
-			}
-
-			return false;
 		}
 
 		public void QueuePolygons(Polygons polygons, GCodePathConfig config)
@@ -891,6 +883,9 @@ namespace MatterHackers.MatterSlice
 
 			if (path.points.Count > 1)
 			{
+				// add the first point to the end so it is not closed
+				path.points.Add(path.points[0]);
+
 				for (int pointIndex = path.points.Count - 1; pointIndex > 0; pointIndex--)
 				{
 					// Calculate distance between 2 points
@@ -901,7 +896,7 @@ namespace MatterHackers.MatterSlice
 					if (currentDistance > targetDistance)
 					{
 						long newDistance = currentDistance - targetDistance;
-						if (newDistance > 50) // Don't clip segments less than 50 um. We get too much truncation error.
+						if (targetDistance > 50) // Don't clip segments less than 50 um. We get too much truncation error.
 						{
 							Point3 dir = (path.points[pointIndex] - path.points[pointIndex - 1]) * newDistance / currentDistance;
 

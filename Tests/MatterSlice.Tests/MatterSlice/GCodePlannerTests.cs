@@ -270,7 +270,7 @@ namespace MatterHackers.MatterSlice.Tests
 				List<Point3> perimeter = new List<Point3>() { new Point3(0, 0, 0), new Point3(5000, 0, 0), new Point3(5000, 5000, 0), new Point3(0, 5000, 0)};
 				Assert.IsTrue(perimeter.Count == 4);
 				List<PathAndWidth> thinLines;
-				planner.RemovePerimeterOverlaps(perimeter, 400 / 4, out thinLines);
+				planner.MergePerimeterOverlaps(perimeter, 400 / 4, out thinLines);
 				Assert.IsTrue(thinLines.Count == 1);
 				Assert.IsTrue(thinLines[0].Path.Count == 5); // it is 5 because we return a closed path (points = 0, 1, 2, 3, 0)
 				for (int i = 0; i < perimeter.Count; i++)
@@ -289,7 +289,7 @@ namespace MatterHackers.MatterSlice.Tests
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<Point3> perimeter = new List<Point3>() { new Point3(0, 0), new Point3(5000, 0), new Point3(5000, 50), new Point3(0, 50)};
 				List<PathAndWidth> correctedPath;
-				planner.RemovePerimeterOverlaps(perimeter, 400, out correctedPath);
+				planner.MergePerimeterOverlaps(perimeter, 400, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Path.Count == 2);
 				Assert.IsTrue(correctedPath[0].ExtrusionWidthUm == 450);
@@ -305,7 +305,7 @@ namespace MatterHackers.MatterSlice.Tests
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<Point3> perimeter = new List<Point3>() { new Point3(0, 50), new Point3(0, 0), new Point3(5000, 0), new Point3(5000, 50) };
 				List<PathAndWidth> correctedPath;
-				planner.RemovePerimeterOverlaps(perimeter, 200, out correctedPath);
+				planner.MergePerimeterOverlaps(perimeter, 200, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Path.Count == 2);
 				Assert.IsTrue(correctedPath[0].ExtrusionWidthUm == 200);
@@ -323,7 +323,7 @@ namespace MatterHackers.MatterSlice.Tests
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<Point3> perimeter = new List<Point3>() { new Point3(5000, 50), new Point3(0, 50), new Point3(0, 0), new Point3(5000, 0), new Point3(5000, 50) };
 				List<PathAndWidth> correctedPath;
-				planner.RemovePerimeterOverlaps(perimeter, 400, out correctedPath);
+				planner.MergePerimeterOverlaps(perimeter, 400, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Path.Count == 2);
 				Assert.IsTrue(correctedPath[0].ExtrusionWidthUm == 450);
@@ -339,7 +339,7 @@ namespace MatterHackers.MatterSlice.Tests
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<Point3> perimeter = new List<Point3>() { new Point3(5000, 0), new Point3(5000, 50), new Point3(0, 50), new Point3(0, 0)};
 				List<PathAndWidth> correctedPath;
-				planner.RemovePerimeterOverlaps(perimeter, 400 / 4, out correctedPath);
+				planner.MergePerimeterOverlaps(perimeter, 400 / 4, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Path.Count == 2);
 			}
@@ -354,7 +354,7 @@ namespace MatterHackers.MatterSlice.Tests
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<Point3> perimeter = new List<Point3>() { new Point3(5000, 50), new Point3(0, 50), new Point3(0, 0), new Point3(4500, 0) };
 				List<PathAndWidth> correctedPath;
-				bool removedLines = planner.RemovePerimeterOverlaps(perimeter, 400, out correctedPath, false);
+				bool removedLines = planner.MergePerimeterOverlaps(perimeter, 400, out correctedPath, false);
 				Assert.IsTrue(removedLines);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Path.Count == 2);
@@ -388,7 +388,7 @@ namespace MatterHackers.MatterSlice.Tests
 					new Point3(10000, 50),
 				};
 				List<PathAndWidth> correctedPath;
-				planner.RemovePerimeterOverlaps(perimeter, 400, out correctedPath);
+				planner.MergePerimeterOverlaps(perimeter, 400, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Path.Count == 4);
 				Assert.IsTrue(correctedPath[1].Path.Count == 2);
@@ -419,7 +419,7 @@ namespace MatterHackers.MatterSlice.Tests
 					new Point3(1000, 5000), new Point3(0, 5000), new Point3(0, 0), new Point3(1000, 0), 
 				};
 				List<PathAndWidth> correctedPath;
-				planner.RemovePerimeterOverlaps(perimeter, 400, out correctedPath);
+				planner.MergePerimeterOverlaps(perimeter, 400, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Path.Count == 2);
 				Assert.IsTrue(correctedPath[1].Path.Count == 6);
