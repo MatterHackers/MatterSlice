@@ -694,23 +694,24 @@ namespace MatterHackers.MatterSlice
 					bool pathIsClosed = true;
 					if (path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER")
 					{
-						string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(path);
+						//string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(path);
 						if (perimeterStartEndOverlapRatio < 1)
 						{
-							GCodePath trimmedPath = TrimPerimeter(path, perimeterStartEndOverlapRatio);
-							string trimmedString = Newtonsoft.Json.JsonConvert.SerializeObject(trimmedPath);
-							path = trimmedPath;
+							path = TrimPerimeter(path, perimeterStartEndOverlapRatio);
+							//string trimmedString = Newtonsoft.Json.JsonConvert.SerializeObject(path);
 							// it was closed but now it isn't
 							pathIsClosed = false;
 						}
 
-						if (false && path.config.lineWidth_um > 0
+						if (path.config.lineWidth_um > 0
 							&& path.points.Count > 2)
 						{
-							perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(path);
+							// have to add in the position we are currently at
+							path.points.Insert(0, gcodeExport.GetPosition());
+							//string openPerimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(path);
 							pathHadOverlaps = MergePerimeterOverlaps(path.points, path.config.lineWidth_um, out pathsWithOverlapsRemoved, pathIsClosed)
 								&& pathsWithOverlapsRemoved.Count > 0;
-							string trimmedString = Newtonsoft.Json.JsonConvert.SerializeObject(pathsWithOverlapsRemoved);
+							//string trimmedString = Newtonsoft.Json.JsonConvert.SerializeObject(pathsWithOverlapsRemoved);
 						}
 					}
 
