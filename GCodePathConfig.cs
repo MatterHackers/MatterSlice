@@ -33,7 +33,7 @@ namespace MatterHackers.MatterSlice
 		public int lineWidth_um;
 		public string gcodeComment;
 		public double speed;
-		private string Name { get; set; }
+		public string Name { get; set; }
 		public bool spiralize;
 		public bool doSeamHiding;
 

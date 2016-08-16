@@ -34,6 +34,7 @@ using static System.Math;
 
 namespace MatterHackers.MatterSlice
 {
+	using Newtonsoft.Json;
 	using Polygon = List<IntPoint>;
 
 	using Polygons = List<List<IntPoint>>;
@@ -42,6 +43,7 @@ namespace MatterHackers.MatterSlice
 	{
 		public long x, y, z;
 
+		[JsonIgnore]
 		public IntPoint XYPoint { get { return new IntPoint(x, y); } }
 
 		public override string ToString()
@@ -159,9 +161,9 @@ namespace MatterHackers.MatterSlice
 			return Sqrt(LengthSquared()) / 1000.0;
 		}
 
-		public int Length()
+		public long Length()
 		{
-			return (int)Sqrt(LengthSquared());
+			return (long)Sqrt(LengthSquared());
 		}
 
 		public long LengthSquared()
