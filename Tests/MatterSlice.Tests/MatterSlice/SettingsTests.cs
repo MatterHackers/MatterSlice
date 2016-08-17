@@ -29,7 +29,7 @@ either expressed or implied, of the FreeBSD Project.
 
 using System.Collections.Generic;
 using NUnit.Framework;
-using ClipperLib;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice.Tests
 {
