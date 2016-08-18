@@ -300,8 +300,9 @@ namespace MatterHackers.MatterSlice
         public void WriteMove(IntPoint movePosition_um, double speed, long lineWidth_um)
         {
             StringBuilder lineToWrite = new StringBuilder();
-            //Normal E handling.
-            if (lineWidth_um != 0)
+
+			//Normal E handling.
+			if (lineWidth_um != 0)
             {
                 IntPoint diff = movePosition_um - GetPosition();
 				if (isRetracted)

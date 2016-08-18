@@ -187,11 +187,11 @@ namespace MatterHackers.MatterSlice.Tests
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<IntPoint> perimeter = new List<IntPoint>() { new IntPoint(0, 0, 0), new IntPoint(5000, 0, 0), new IntPoint(5000, 5000, 0), new IntPoint(0, 5000, 0) };
 				Assert.IsTrue(perimeter.Count == 4);
-				List<PathAndWidth> thinLines;
+				Polygons thinLines;
 				bool foundThinLines = planner.FindThinLines(perimeter, 400 / 2, out thinLines);
 				Assert.IsFalse(foundThinLines);
 				Assert.IsTrue(thinLines.Count == 1);
-				Assert.IsTrue(thinLines[0].Path.Count == 0);
+				Assert.IsTrue(thinLines[0].Count == 0);
 			}
 
 			// A very simple collapse lower left start
@@ -203,12 +203,12 @@ namespace MatterHackers.MatterSlice.Tests
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<IntPoint> perimeter = new List<IntPoint>() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50) };
-				List<PathAndWidth> thinLines;
+				Polygons thinLines;
 				bool foundThinLines = planner.FindThinLines(perimeter, 400, out thinLines);
 				Assert.IsTrue(foundThinLines);
 				Assert.IsTrue(thinLines.Count == 1);
-				Assert.IsTrue(thinLines[0].Path.Count == 2);
-				Assert.IsTrue(thinLines[0].ExtrusionWidthUm == 50);
+				Assert.IsTrue(thinLines[0].Count == 2);
+				Assert.IsTrue(thinLines[0][0].Width == 50);
 			}
 
 			// A path that needs to have points inserted to do the correct thing
@@ -229,12 +229,12 @@ namespace MatterHackers.MatterSlice.Tests
 					new IntPoint(15000, 10000),
 					new IntPoint(10000, 50),
 				};
-				List<PathAndWidth> thinLines;
+				Polygons thinLines;
 				bool foundThinLines = planner.FindThinLines(perimeter, 400, out thinLines);
 				Assert.IsTrue(foundThinLines);
 				Assert.IsTrue(thinLines.Count == 1);
-				Assert.IsTrue(thinLines[0].Path.Count == 2);
-				Assert.IsTrue(thinLines[0].ExtrusionWidthUm == 50);
+				Assert.IsTrue(thinLines[0].Count == 2);
+				Assert.IsTrue(thinLines[0][0].Width == 50);
 			}
 
 			// Simple overlap (s is the start runing ccw)
@@ -260,12 +260,12 @@ namespace MatterHackers.MatterSlice.Tests
 					// left leg
 					new IntPoint(1000, 5000), new IntPoint(0, 5000), new IntPoint(0, 0), new IntPoint(1000, 0),
 				};
-				List<PathAndWidth> thinLines;
+				Polygons thinLines;
 				bool foundThinLines = planner.FindThinLines(perimeter, 400, out thinLines);
 				Assert.IsTrue(foundThinLines);
 				Assert.IsTrue(thinLines.Count == 1);
-				Assert.IsTrue(thinLines[0].Path.Count == 2);
-				Assert.IsTrue(thinLines[0].ExtrusionWidthUm == 52);
+				Assert.IsTrue(thinLines[0].Count == 2);
+				Assert.IsTrue(thinLines[0][0].Width == 52);
 			}
 		}
 
@@ -285,13 +285,13 @@ namespace MatterHackers.MatterSlice.Tests
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<IntPoint> perimeter = new List<IntPoint>() { new IntPoint(0, 0, 0), new IntPoint(5000, 0, 0), new IntPoint(5000, 5000, 0), new IntPoint(0, 5000, 0)};
 				Assert.IsTrue(perimeter.Count == 4);
-				List<PathAndWidth> thinLines;
+				Polygons thinLines;
 				planner.MergePerimeterOverlaps(perimeter, 400 / 4, out thinLines);
 				Assert.IsTrue(thinLines.Count == 1);
-				Assert.IsTrue(thinLines[0].Path.Count == 5); // it is 5 because we return a closed path (points = 0, 1, 2, 3, 0)
+				Assert.IsTrue(thinLines[0].Count == 5); // it is 5 because we return a closed path (points = 0, 1, 2, 3, 0)
 				for (int i = 0; i < perimeter.Count; i++)
 				{
-					Assert.IsTrue(perimeter[i] == thinLines[0].Path[i]);
+					Assert.IsTrue(perimeter[i] == thinLines[0][i]);
 				}
 			}
 
@@ -304,11 +304,11 @@ namespace MatterHackers.MatterSlice.Tests
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<IntPoint> perimeter = new List<IntPoint>() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50)};
-				List<PathAndWidth> correctedPath;
+				Polygons correctedPath;
 				planner.MergePerimeterOverlaps(perimeter, 400, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
-				Assert.IsTrue(correctedPath[0].Path.Count == 2);
-				Assert.IsTrue(correctedPath[0].ExtrusionWidthUm == 450);
+				Assert.IsTrue(correctedPath[0].Count == 2);
+				Assert.IsTrue(correctedPath[0][0].Width == 450);
 			}
 
 			// A very simple collapse upper left start
@@ -320,13 +320,13 @@ namespace MatterHackers.MatterSlice.Tests
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<IntPoint> perimeter = new List<IntPoint>() { new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50) };
-				List<PathAndWidth> correctedPath;
+				Polygons correctedPath;
 				planner.MergePerimeterOverlaps(perimeter, 200, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
-				Assert.IsTrue(correctedPath[0].Path.Count == 2);
-				Assert.IsTrue(correctedPath[0].ExtrusionWidthUm == 200);
-				Assert.IsTrue(correctedPath[1].ExtrusionWidthUm == 250);
-				Assert.IsTrue(correctedPath[2].ExtrusionWidthUm == 200);
+				Assert.IsTrue(correctedPath[0].Count == 2);
+				Assert.IsTrue(correctedPath[0][0].Width == 0);
+				Assert.IsTrue(correctedPath[1][0].Width == 250);
+				Assert.IsTrue(correctedPath[2][0].Width == 0);
 			}
 
 			// A very simple collapse upper right start
@@ -338,11 +338,11 @@ namespace MatterHackers.MatterSlice.Tests
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<IntPoint> perimeter = new List<IntPoint>() { new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50) };
-				List<PathAndWidth> correctedPath;
+				Polygons correctedPath;
 				planner.MergePerimeterOverlaps(perimeter, 400, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
-				Assert.IsTrue(correctedPath[0].Path.Count == 2);
-				Assert.IsTrue(correctedPath[0].ExtrusionWidthUm == 450);
+				Assert.IsTrue(correctedPath[0].Count == 2);
+				Assert.IsTrue(correctedPath[0][0].Width == 450);
 			}
 
 			// A very simple collapse lower left start
@@ -354,10 +354,10 @@ namespace MatterHackers.MatterSlice.Tests
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<IntPoint> perimeter = new List<IntPoint>() { new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0)};
-				List<PathAndWidth> correctedPath;
+				Polygons correctedPath;
 				planner.MergePerimeterOverlaps(perimeter, 400 / 4, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
-				Assert.IsTrue(correctedPath[0].Path.Count == 2);
+				Assert.IsTrue(correctedPath[0].Count == 2);
 			}
 
 			// A path that has been clipped
@@ -369,20 +369,20 @@ namespace MatterHackers.MatterSlice.Tests
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				List<IntPoint> perimeter = new List<IntPoint>() { new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(4500, 0) };
-				List<PathAndWidth> correctedPath;
+				Polygons correctedPath;
 				bool removedLines = planner.MergePerimeterOverlaps(perimeter, 400, out correctedPath, false);
 				Assert.IsTrue(removedLines);
 				Assert.IsTrue(correctedPath.Count == 3);
-				Assert.IsTrue(correctedPath[0].Path.Count == 2);
-				Assert.IsTrue(correctedPath[0].ExtrusionWidthUm == 400);
-				Assert.IsTrue(correctedPath[0].Path[0] == new IntPoint(5000, 50));
-				Assert.IsTrue(correctedPath[0].Path[1] == new IntPoint(4500, 50));
-				Assert.IsTrue(correctedPath[1].Path.Count == 2);
-				Assert.IsTrue(correctedPath[1].ExtrusionWidthUm == 450);
-				Assert.IsTrue(correctedPath[1].Path[0] == new IntPoint(4500, 25));
-				Assert.IsTrue(correctedPath[1].Path[1] == new IntPoint(0, 25));
-				Assert.IsTrue(correctedPath[2].Path.Count == 2);
-				Assert.IsTrue(correctedPath[2].ExtrusionWidthUm == 400);
+				Assert.IsTrue(correctedPath[0].Count == 2);
+				Assert.IsTrue(correctedPath[0][0].Width == 0);
+				Assert.IsTrue(correctedPath[0][0] == new IntPoint(5000, 50));
+				Assert.IsTrue(correctedPath[0][1] == new IntPoint(4500, 50));
+				Assert.IsTrue(correctedPath[1].Count == 2);
+				Assert.IsTrue(correctedPath[1][0].Width == 450);
+				Assert.IsTrue(correctedPath[1][0] == new IntPoint(4500, 25));
+				Assert.IsTrue(correctedPath[1][1] == new IntPoint(0, 25));
+				Assert.IsTrue(correctedPath[2].Count == 2);
+				Assert.IsTrue(correctedPath[2][0].Width == 0);
 			}
 
 			// A path that needs to have points inserted to do the correct thing
@@ -403,12 +403,12 @@ namespace MatterHackers.MatterSlice.Tests
 					new IntPoint(15000, 10000),
 					new IntPoint(10000, 50),
 				};
-				List<PathAndWidth> correctedPath;
+				Polygons correctedPath;
 				planner.MergePerimeterOverlaps(perimeter, 400, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
-				Assert.IsTrue(correctedPath[0].Path.Count == 4);
-				Assert.IsTrue(correctedPath[1].Path.Count == 2);
-				Assert.IsTrue(correctedPath[2].Path.Count == 4);
+				Assert.IsTrue(correctedPath[0].Count == 4);
+				Assert.IsTrue(correctedPath[1].Count == 2);
+				Assert.IsTrue(correctedPath[2].Count == 4);
 			}
 
 			// Simple overlap (s is the start runing ccw)
@@ -434,12 +434,12 @@ namespace MatterHackers.MatterSlice.Tests
 					// left leg
 					new IntPoint(1000, 5000), new IntPoint(0, 5000), new IntPoint(0, 0), new IntPoint(1000, 0), 
 				};
-				List<PathAndWidth> correctedPath;
+				Polygons correctedPath;
 				planner.MergePerimeterOverlaps(perimeter, 400, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
-				Assert.IsTrue(correctedPath[0].Path.Count == 2);
-				Assert.IsTrue(correctedPath[1].Path.Count == 6);
-				Assert.IsTrue(correctedPath[2].Path.Count == 6);
+				Assert.IsTrue(correctedPath[0].Count == 2);
+				Assert.IsTrue(correctedPath[1].Count == 6);
+				Assert.IsTrue(correctedPath[2].Count == 6);
 			}
 		}
 	}

@@ -28,22 +28,10 @@ namespace MatterHackers.MatterSlice
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
-	public class PathAndWidth
-	{
-		public long ExtrusionWidthUm
-		{
-			get; set;
-		}
-
-		public List<IntPoint> Path { get; set; } = new List<IntPoint>();
-	}
-
 	public class Segment
 	{
 		public IntPoint Start;
 		public IntPoint End;
-
-		public long Width { get; set; }
 
 		public Segment()
 		{
@@ -316,7 +304,7 @@ namespace MatterHackers.MatterSlice
 		[Flags]
 		enum Altered { remove = 1, merged = 2 };
 
-		public bool FindThinLines(List<IntPoint> perimeter, long overlapMergeAmount_um, out List<PathAndWidth> onlyMergeLines, bool pathIsClosed = true)
+		public bool FindThinLines(Polygon perimeter, long overlapMergeAmount_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
 		{
 			bool pathHasMergeLines = false;
 
@@ -346,9 +334,11 @@ namespace MatterHackers.MatterSlice
 							// move the first segments points to the average of the merge positions
 							long startEndWidth = Math.Abs((polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length());
 							long endStartWidth = Math.Abs((polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length());
-							polySegments[firstSegmentIndex].Width = Math.Min(startEndWidth, endStartWidth);
+							long width = Math.Min(startEndWidth, endStartWidth);
 							polySegments[firstSegmentIndex].Start = (polySegments[firstSegmentIndex].Start + polySegments[checkSegmentIndex].End) / 2; // the start
+							polySegments[firstSegmentIndex].Start.Width = width;
 							polySegments[firstSegmentIndex].End = (polySegments[firstSegmentIndex].End + polySegments[checkSegmentIndex].Start) / 2; // the end
+							polySegments[firstSegmentIndex].End.Width = width;
 
 							markedAltered[firstSegmentIndex] = Altered.merged;
 							// mark this segment for removal
@@ -371,26 +361,24 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// go through the polySegments and create a new polygon for every connected set of segments
-			onlyMergeLines = new List<PathAndWidth>();
-			PathAndWidth currentPolygon = new PathAndWidth();
+			onlyMergeLines = new Polygons();
+			Polygon currentPolygon = new Polygon();
 			onlyMergeLines.Add(currentPolygon);
 			// put in the first point
 			for (int segmentIndex = 0; segmentIndex < polySegments.Count; segmentIndex++)
 			{
 				// add the start point
-				currentPolygon.Path.Add(polySegments[segmentIndex].Start);
-				currentPolygon.ExtrusionWidthUm = polySegments[segmentIndex].Width;
+				currentPolygon.Add(polySegments[segmentIndex].Start);
 
 				// if the next segment is not connected to this one
 				if (segmentIndex < polySegments.Count - 1
-					&& (polySegments[segmentIndex].End != polySegments[segmentIndex + 1].Start
-					|| polySegments[segmentIndex].Width != polySegments[segmentIndex + 1].Width))
+					&& polySegments[segmentIndex].End != polySegments[segmentIndex + 1].Start)
 				{
 					// add the end point
-					currentPolygon.Path.Add(polySegments[segmentIndex].End);
+					currentPolygon.Add(polySegments[segmentIndex].End);
 
 					// create a new polygon
-					currentPolygon = new PathAndWidth();
+					currentPolygon = new Polygon();
 					onlyMergeLines.Add(currentPolygon);
 				}
 			}
@@ -398,14 +386,14 @@ namespace MatterHackers.MatterSlice
 			// add the end point
 			if (polySegments.Count > 0)
 			{
-				currentPolygon.Path.Add(polySegments[polySegments.Count - 1].End);
+				currentPolygon.Add(polySegments[polySegments.Count - 1].End);
 			}
 
 			return pathHasMergeLines;
 		}
 
 
-		public bool MergePerimeterOverlaps(List<IntPoint> perimeter, long overlapMergeAmount_um, out List<PathAndWidth> separatedPolygons, bool pathIsClosed = true)
+		public bool MergePerimeterOverlaps(List<IntPoint> perimeter, long overlapMergeAmount_um, out Polygons separatedPolygons, bool pathIsClosed = true)
 		{
 			bool pathWasOptomized = false;
 
@@ -420,6 +408,9 @@ namespace MatterHackers.MatterSlice
 			// now walk every segment and check if there is another segment that is similar enough to merge them together
 			for (int firstSegmentIndex = 0; firstSegmentIndex < segmentCount; firstSegmentIndex++)
 			{
+				//polySegments[firstSegmentIndex].Start.Width = overlapMergeAmount_um;
+				//polySegments[firstSegmentIndex].End.Width = overlapMergeAmount_um;
+
 				for (int checkSegmentIndex = firstSegmentIndex + 1; checkSegmentIndex < segmentCount; checkSegmentIndex++)
 				{
 					// The first point of start and the last point of check (the path will be coming back on itself).
@@ -435,9 +426,11 @@ namespace MatterHackers.MatterSlice
 							// move the first segments points to the average of the merge positions
 							long startEndWidth = Math.Abs((polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length());
 							long endStartWidth = Math.Abs((polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length());
-							polySegments[firstSegmentIndex].Width = Math.Min(startEndWidth, endStartWidth);
+							long width = Math.Min(startEndWidth, endStartWidth) + overlapMergeAmount_um;
 							polySegments[firstSegmentIndex].Start = (polySegments[firstSegmentIndex].Start + polySegments[checkSegmentIndex].End) / 2; // the start
+							polySegments[firstSegmentIndex].Start.Width = width;
 							polySegments[firstSegmentIndex].End = (polySegments[firstSegmentIndex].End + polySegments[checkSegmentIndex].Start) / 2; // the end
+							polySegments[firstSegmentIndex].End.Width = width;
 
 							markedAltered[firstSegmentIndex] = Altered.merged;
 							// mark this segment for removal
@@ -459,32 +452,30 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// go through the polySegments and create a new polygon for every connected set of segments
-			separatedPolygons = new List<PathAndWidth>();
-			PathAndWidth currentPolygon = new PathAndWidth();
+			separatedPolygons = new Polygons();
+			Polygon currentPolygon = new Polygon();
 			separatedPolygons.Add(currentPolygon);
 			// put in the first point
 			for (int segmentIndex = 0; segmentIndex < polySegments.Count; segmentIndex++)
 			{
 				// add the start point
-				currentPolygon.Path.Add(polySegments[segmentIndex].Start);
-				currentPolygon.ExtrusionWidthUm = polySegments[segmentIndex].Width + overlapMergeAmount_um;
+				currentPolygon.Add(polySegments[segmentIndex].Start);
 
 				// if the next segment is not connected to this one
 				if (segmentIndex < polySegments.Count - 1
-					&& (polySegments[segmentIndex].End != polySegments[segmentIndex + 1].Start
-					|| polySegments[segmentIndex].Width != polySegments[segmentIndex + 1].Width))
+					&& polySegments[segmentIndex].End != polySegments[segmentIndex + 1].Start)
 				{
 					// add the end point
-					currentPolygon.Path.Add(polySegments[segmentIndex].End);
+					currentPolygon.Add(polySegments[segmentIndex].End);
 
 					// create a new polygon
-					currentPolygon = new PathAndWidth();
+					currentPolygon = new Polygon();
 					separatedPolygons.Add(currentPolygon);
 				}
 			}
 
 			// add the end point
-			currentPolygon.Path.Add(polySegments[polySegments.Count - 1].End);
+			currentPolygon.Add(polySegments[polySegments.Count - 1].End);
 
 			return pathWasOptomized;
 		}
@@ -641,7 +632,13 @@ namespace MatterHackers.MatterSlice
 							nextPosition = paths[x + 1].points[0];
 						}
 
-						gcodeExport.WriteMove(paths[i - 1].points[0], speed, path.config.lineWidth_um);
+						long lineWidth_um = path.config.lineWidth_um;
+						if (paths[i - 1].points[0].Width != 0)
+						{
+							lineWidth_um = paths[i - 1].points[0].Width;
+						}
+
+						gcodeExport.WriteMove(paths[i - 1].points[0], speed, lineWidth_um);
 						pathIndex = i - 1;
 						continue;
 					}
@@ -689,7 +686,7 @@ namespace MatterHackers.MatterSlice
 				else
 				{
 					// This is test code to remove double drawn small perimeter lines.
-					List<PathAndWidth> pathsWithOverlapsRemoved = null;
+					Polygons pathsWithOverlapsRemoved = null;
 					bool pathHadOverlaps = false;
 					bool pathIsClosed = true;
 					if (path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER")
@@ -719,29 +716,29 @@ namespace MatterHackers.MatterSlice
 					{
 						for (int polygonIndex = 0; polygonIndex < pathsWithOverlapsRemoved.Count; polygonIndex++)
 						{
-							PathAndWidth polygon = pathsWithOverlapsRemoved[polygonIndex];
+							Polygon polygon = pathsWithOverlapsRemoved[polygonIndex];
 
-							if (polygon.Path.Count == 2)
+							if (polygon.Count == 2)
 							{
 								// make sure the path is ordered with the first point the closest to where we are now
 								IntPoint currentPosition = gcodeExport.GetPosition();
 								// if the second point is closer swap them
-								if ((polygon.Path[1] - currentPosition).LengthSquared() < (polygon.Path[0] - currentPosition).LengthSquared())
+								if ((polygon[1] - currentPosition).LengthSquared() < (polygon[0] - currentPosition).LengthSquared())
 								{
 									// swap them
-									IntPoint temp = polygon.Path[0];
-									polygon.Path[0] = polygon.Path[1];
-									polygon.Path[1] = temp;
+									IntPoint temp = polygon[0];
+									polygon[0] = polygon[1];
+									polygon[1] = temp;
 								}
 							}
 
 							// move to the start of this polygon
-							gcodeExport.WriteMove(polygon.Path[0], travelConfig.speed, 0);
+							gcodeExport.WriteMove(polygon[0], travelConfig.speed, 0);
 
 							// write all the data for the polygon
-							for (int pointIndex = 1; pointIndex < polygon.Path.Count; pointIndex++)
+							for (int pointIndex = 1; pointIndex < polygon.Count; pointIndex++)
 							{
-								gcodeExport.WriteMove(polygon.Path[pointIndex], speed, polygon.ExtrusionWidthUm);
+								gcodeExport.WriteMove(polygon[pointIndex], speed, polygon[pointIndex].Width);
 							}
 						}
 					}
@@ -750,7 +747,13 @@ namespace MatterHackers.MatterSlice
 						int outputCount = path.points.Count;
 						for (int i = 0; i < outputCount; i++)
 						{
-							gcodeExport.WriteMove(path.points[i], speed, path.config.lineWidth_um);
+							long lineWidth_um = path.config.lineWidth_um;
+							if (path.points[i].Width != 0)
+							{
+								lineWidth_um = path.points[i].Width;
+							}
+
+							gcodeExport.WriteMove(path.points[i], speed, lineWidth_um);
 						}
 					}
 				}

@@ -406,7 +406,7 @@ namespace MSClipperLib
 		/////////////////////////////////////////////////// start added for MatterSlice ///////////////////////////////////////////////////
 		public override string ToString()
 		{
-			return string.Format("x:{0}, y:{1}, z:{2}", X, Y, Z);
+			return string.Format("x:{0}, y:{1}, z:{2}, width:{3}", X, Y, Z, Width);
 		}
 
 		public static IntPoint operator +(IntPoint p0, IntPoint p1)
@@ -1165,6 +1165,7 @@ namespace MSClipperLib
 			Swap(ref e.Top.X, ref e.Bot.X);
 #if use_xyz
       Swap(ref e.Top.Z, ref e.Bot.Z);
+			Swap(ref e.Top.Width, ref e.Bot.Width);
 #endif
 		}
 		//------------------------------------------------------------------------------
@@ -1268,6 +1269,7 @@ namespace MSClipperLib
 	private void FillTheZ(IntPoint bot1, IntPoint top1, IntPoint bot2, IntPoint top2, ref IntPoint pt)
 	{
 		pt.Z = bot1.Z;
+		pt.Width = bot1.Width;
 	}
 
 	//------------------------------------------------------------------------------
