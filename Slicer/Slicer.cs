@@ -77,7 +77,7 @@ namespace MatterHackers.MatterSlice
 			layers.Capacity = layerCount;
 			for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
 			{
-				int z;
+				long z;
 				if (layerIndex == 0)
 				{
 					z = initialLayerThickness_um / 2;
@@ -103,7 +103,7 @@ namespace MatterHackers.MatterSlice
 
 				for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
 				{
-					int z = layers[layerIndex].Z;
+					long z = layers[layerIndex].Z;
 					if (z < minZ || z > maxZ)
 					{
 						continue;
@@ -170,13 +170,15 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public SlicePerimeterSegment GetCrossingAtZ(IntPoint singlePointOnSide, IntPoint otherSide1, IntPoint otherSide2, int z)
+		public SlicePerimeterSegment GetCrossingAtZ(IntPoint singlePointOnSide, IntPoint otherSide1, IntPoint otherSide2, long z)
 		{
 			SlicePerimeterSegment seg = new SlicePerimeterSegment();
 			seg.start.X = (long)(singlePointOnSide.X + (double)(otherSide1.X - singlePointOnSide.X) * (double)(z - singlePointOnSide.Z) / (double)(otherSide1.Z - singlePointOnSide.Z) + .5);
 			seg.start.Y = (long)(singlePointOnSide.Y + (double)(otherSide1.Y - singlePointOnSide.Y) * (double)(z - singlePointOnSide.Z) / (double)(otherSide1.Z - singlePointOnSide.Z) + .5);
+			seg.start.Z = z;
 			seg.end.X = (long)(singlePointOnSide.X + (double)(otherSide2.X - singlePointOnSide.X) * (double)(z - singlePointOnSide.Z) / (double)(otherSide2.Z - singlePointOnSide.Z) + .5);
 			seg.end.Y = (long)(singlePointOnSide.Y + (double)(otherSide2.Y - singlePointOnSide.Y) * (double)(z - singlePointOnSide.Z) / (double)(otherSide2.Z - singlePointOnSide.Z) + .5);
+			seg.end.Z = z;
 			return seg;
 		}
 

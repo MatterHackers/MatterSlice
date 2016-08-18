@@ -54,9 +54,9 @@ namespace MatterHackers.MatterSlice
 		public List<SlicePerimeterSegment> SegmentList = new List<SlicePerimeterSegment>();
 
 		private Polygons openPolygonList = new Polygons();
-		private int z;
+		private long z;
 
-		public MeshProcessingLayer(int z)
+		public MeshProcessingLayer(long z)
 		{
 			this.z = z;
 		}
@@ -67,7 +67,7 @@ namespace MatterHackers.MatterSlice
 			SegmentList = CreateSegmentListFromString(segmentListData);
 		}
 
-		public int Z { get { return z; } }
+		public long Z { get { return z; } }
 
 		public static List<SlicePerimeterSegment> CreateSegmentListFromString(string segmentListData)
 		{
