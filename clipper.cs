@@ -359,33 +359,34 @@ namespace MSClipperLib
 	{
 		public cInt X;
 		public cInt Y;
+		public cInt Width;
 #if use_xyz
     public cInt Z;
     
     public IntPoint(cInt x, cInt y, cInt z = 0)
     {
-      this.X = x; this.Y = y; this.Z = z;
+      this.X = x; this.Y = y; this.Z = z; this.Width = 0;
     }
     
     public IntPoint(double x, double y, double z = 0)
     {
-      this.X = (cInt)x; this.Y = (cInt)y; this.Z = (cInt)z;
+      this.X = (cInt)x; this.Y = (cInt)y; this.Z = (cInt)z; this.Width = 0;
     }
 
 		public IntPoint(IntPoint inPoint, double z = 0)
 		{
-			this.X = inPoint.X; this.Y = inPoint.Y; this.Z = (cInt)z;
+			this.X = inPoint.X; this.Y = inPoint.Y; this.Z = (cInt)z; this.Width = inPoint.Width;
 		}
 
 	public IntPoint(DoublePoint dp)
     {
-      this.X = (cInt)dp.X; this.Y = (cInt)dp.Y; this.Z = 0;
-    }
+      this.X = (cInt)dp.X; this.Y = (cInt)dp.Y; this.Z = 0; this.Width = 0;
+		}
 
     public IntPoint(IntPoint pt)
     {
-      this.X = pt.X; this.Y = pt.Y; this.Z = pt.Z;
-    }
+      this.X = pt.X; this.Y = pt.Y; this.Z = pt.Z; this.Width = pt.Width;
+		}
 #else
 		public IntPoint(cInt X, cInt Y)
 		{
@@ -405,39 +406,39 @@ namespace MSClipperLib
 		/////////////////////////////////////////////////// start added for MatterSlice ///////////////////////////////////////////////////
 		public override string ToString()
 		{
-			return string.Format("x:{0}, y:{1}", X, Y);
+			return string.Format("x:{0}, y:{1}, z:{2}", X, Y, Z);
 		}
 
 		public static IntPoint operator +(IntPoint p0, IntPoint p1)
 		{
-			return new IntPoint(p0.X + p1.X, p0.Y + p1.Y);
+			return new IntPoint(p0.X + p1.X, p0.Y + p1.Y, p0.Z + p1.Z);
 		}
 
 		public static IntPoint operator -(IntPoint p0, IntPoint p1)
 		{
-			return new IntPoint(p0.X - p1.X, p0.Y - p1.Y);
+			return new IntPoint(p0.X - p1.X, p0.Y - p1.Y, p0.Z - p1.Z);
 		}
 
 		public static IntPoint operator *(IntPoint p0, long i)
 		{
-			return new IntPoint(p0.X * i, p0.Y * i);
+			return new IntPoint(p0.X * i, p0.Y * i, p0.Z * i);
 		}
 
 		public static IntPoint operator /(IntPoint p0, long i)
 		{
-			return new IntPoint(p0.X / i, p0.Y / i);
+			return new IntPoint(p0.X / i, p0.Y / i, p0.Z / i);
 		}
 
 		/////////////////////////////////////////////////// end added for MatterSlice ///////////////////////////////////////////////////
 
 		public static bool operator ==(IntPoint a, IntPoint b)
 		{
-			return a.X == b.X && a.Y == b.Y;
+			return a.X == b.X && a.Y == b.Y && a.Z == b.Z;
 		}
 
 		public static bool operator !=(IntPoint a, IntPoint b)
 		{
-			return a.X != b.X || a.Y != b.Y;
+			return a.X != b.X || a.Y != b.Y || a.Z != b.Z;
 		}
 
 		public override bool Equals(object obj)
@@ -446,7 +447,7 @@ namespace MSClipperLib
 			if (obj is IntPoint)
 			{
 				IntPoint a = (IntPoint)obj;
-				return (X == a.X) && (Y == a.Y);
+				return (X == a.X) && (Y == a.Y) && (Z == a.Z);
 			}
 			else return false;
 		}
