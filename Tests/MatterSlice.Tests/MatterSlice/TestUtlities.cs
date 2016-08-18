@@ -181,10 +181,7 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					GetFirstNumberAfter("X", line, ref currentPosition.position.x);
 					GetFirstNumberAfter("Y", line, ref currentPosition.position.y);
-					if (GetFirstNumberAfter("Z", line, ref currentPosition.position.z))
-					{
-						int a = 0;
-					}
+					GetFirstNumberAfter("Z", line, ref currentPosition.position.z);
 					GetFirstNumberAfter("E", line, ref currentPosition.extrusion);
 					GetFirstNumberAfter("F", line, ref currentPosition.feedRate);
 

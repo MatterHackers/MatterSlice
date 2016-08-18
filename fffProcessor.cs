@@ -561,29 +561,6 @@ namespace MatterHackers.MatterSlice
 					currentLayerThickness_um = config.FirstLayerThickness_um;
 				}
 
-				// Move to the best point for the next layer
-				if (!config.ContinuousSpiralOuterPerimeter
-                    && layerIndex > 0 
-					&& layerIndex < totalLayers - 2)
-				{
-					// Figure out where the seam hiding start point is for inset 0 and move to that spot so
-					// we have the minimum travel while starting inset 0 after printing the rest of the insets
-					SliceLayer layer = slicingData?.Extruders?[0]?.Layers?[layerIndex + 1];
-					if (layer.Islands.Count == 1)
-					{
-						LayerIsland island = layer?.Islands?[0];
-						if (island?.InsetToolPaths?[0]?[0]?.Count > 0)
-						{
-							int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
-							gcodeLayer.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundary);
-							gcodeLayer.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
-							// Now move up to the next layer so we don't start the extrusion one layer too low.
-							gcode.setZ(z + config.LayerThickness_um);
-							gcodeLayer.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
-						}
-					}
-				}
-
 				gcodeLayer.WriteQueuedGCode(currentLayerThickness_um, fanSpeedPercent, config.BridgeFanSpeedPercent);
 			}
 
@@ -666,6 +643,25 @@ namespace MatterHackers.MatterSlice
 				layerGcodePlanner.SetAlwaysRetract(true);
 				layerGcodePlanner.QueuePolygonsByOptimizer(slicingData.wipeShield[layerIndex], skirtConfig);
 				layerGcodePlanner.SetAlwaysRetract(!config.AvoidCrossingPerimeters);
+			}
+
+			// Move to the best point start point for this layer
+			if (!config.ContinuousSpiralOuterPerimeter
+				&& layerIndex > 0
+				&& layerIndex < slicingData.Extruders[extruderIndex].Layers.Count - 2)
+			{
+				// Figure out where the seam hiding start point is for inset 0 and move to that spot so
+				// we have the minimum travel while starting inset 0 after printing the rest of the insets
+				if (layer.Islands.Count == 1)
+				{
+					LayerIsland island = layer?.Islands?[0];
+					if (island?.InsetToolPaths?[0]?[0]?.Count > 0)
+					{
+						int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
+						layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundary);
+						layerGcodePlanner.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
+					}
+				}
 			}
 
 			PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(new IntPoint());
