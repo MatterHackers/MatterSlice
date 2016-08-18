@@ -24,7 +24,7 @@ The integer point classes are used as soon as possible and represent microns in 
 Integer points are used to avoid floating point rounding errors, and because ClipperLib uses them.
 */
 
-using ClipperLib;
+using MSClipperLib;
 
 //Include Clipper to get the ClipperLib::IntPoint definition, which we reuse as Point definition.
 using System;
@@ -83,10 +83,19 @@ namespace MatterHackers.MatterSlice
 
 	internal static class IntPointHelper
 	{
-		public static long Cross(this IntPoint left, IntPoint right)
+		public static IntPoint Cross(this IntPoint left, IntPoint right)
+		{
+			return new IntPoint(
+				left.Y * right.Z - left.Z * right.Y,
+				left.Z * right.X - left.X * right.Z,
+				left.X * right.Y - left.Y * right.X);
+		}
+
+		public static long CrossXy(this IntPoint left, IntPoint right)
 		{
 			return left.X * right.Y - left.Y * right.X;
 		}
+
 
 		public static bool shorterThen(this IntPoint polygon, long length)
 		{
@@ -100,12 +109,7 @@ namespace MatterHackers.MatterSlice
 				return false;
 			}
 
-			return vSize2(polygon) <= length * length;
-		}
-
-		public static long vSize2(this IntPoint polygon)
-		{
-			return polygon.LengthSquared();
+			return LengthSquared(polygon) <= length * length;
 		}
 
 		public static IntPoint CrossZ(this IntPoint thisPoint)
@@ -115,7 +119,7 @@ namespace MatterHackers.MatterSlice
 
 		public static long Dot(this IntPoint thisPoint, IntPoint p1)
 		{
-			return thisPoint.X * p1.X + thisPoint.Y * p1.Y;
+			return thisPoint.X * p1.X + thisPoint.Y * p1.Y + thisPoint.Z * p1.Z;
 		}
 
 		public static int GetLineSide(this IntPoint pointToTest, IntPoint start, IntPoint end)
@@ -154,6 +158,8 @@ namespace MatterHackers.MatterSlice
 			IntPoint output;
 			output.X = (long)(Round(thisPoint.X * CosVal - thisPoint.Y * SinVal));
 			output.Y = (long)(Round(thisPoint.Y * CosVal + thisPoint.X * SinVal));
+			output.Z = thisPoint.Z;
+			output.Width = thisPoint.Width;
 
 			return output;
 		}
@@ -170,6 +176,11 @@ namespace MatterHackers.MatterSlice
 				return false;
 			}
 
+			if (thisPoint.Z > len || thisPoint.Z < -len)
+			{
+				return false;
+			}
+
 			return thisPoint.LengthSquared() <= len * len;
 		}
 
@@ -182,12 +193,13 @@ namespace MatterHackers.MatterSlice
 		{
 			double fx = (double)(thisPoint.X) / 1000.0;
 			double fy = (double)(thisPoint.Y) / 1000.0;
-			return Sqrt(fx * fx + fy * fy);
+			double fz = (double)(thisPoint.Z) / 1000.0;
+			return Sqrt(fx * fx + fy * fy + fz * fz);
 		}
 
 		public static long LengthSquared(this IntPoint thisPoint)
 		{
-			return thisPoint.X * thisPoint.X + thisPoint.Y * thisPoint.Y;
+			return thisPoint.X * thisPoint.X + thisPoint.Y * thisPoint.Y + thisPoint.Z * thisPoint.Z;
 		}
 
 		public static bool LongerThen(this IntPoint p0, long len)
@@ -208,7 +220,7 @@ namespace MatterHackers.MatterSlice
 
 		public static string OutputInMm(this IntPoint thisPoint)
 		{
-			return string.Format("[{0},{1}]", thisPoint.X / 1000.0, thisPoint.Y / 1000.0);
+			return string.Format("[{0},{1},{2}]", thisPoint.X / 1000.0, thisPoint.Y / 1000.0, thisPoint.Z / 1000.0);
 		}
 
 		public static IntPoint SetLength(this IntPoint thisPoint, long len)
@@ -227,6 +239,8 @@ namespace MatterHackers.MatterSlice
 			if (thisPoint.X > len || thisPoint.X < -len)
 				return false;
 			if (thisPoint.Y > len || thisPoint.Y < -len)
+				return false;
+			if (thisPoint.Z > len || thisPoint.Z < -len)
 				return false;
 			return thisPoint.LengthSquared() <= len * len;
 		}

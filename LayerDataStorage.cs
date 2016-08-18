@@ -19,7 +19,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using ClipperLib;
+using MSClipperLib;
 using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
@@ -33,7 +33,7 @@ namespace MatterHackers.MatterSlice
 	public class LayerDataStorage
 	{
 		public List<ExtruderLayers> Extruders = new List<ExtruderLayers>();
-		public Point3 modelSize, modelMin, modelMax;
+		public IntPoint modelSize, modelMin, modelMax;
 		public Polygons raftOutline = new Polygons();
 		public Polygons skirt = new Polygons();
 		public NewSupport support = null;
@@ -54,8 +54,8 @@ namespace MatterHackers.MatterSlice
 			LayerDataStorage storage = this;
 			StreamWriter streamToWriteTo = new StreamWriter(filename);
 			streamToWriteTo.Write("<!DOCTYPE html><html><body>");
-			Point3 modelSize = storage.modelSize;
-			Point3 modelMin = storage.modelMin;
+			IntPoint modelSize = storage.modelSize;
+			IntPoint modelMin = storage.modelMin;
 
 			for (int extruderIndex = 0; extruderIndex < storage.Extruders.Count; extruderIndex++)
 			{
@@ -70,7 +70,7 @@ namespace MatterHackers.MatterSlice
 						{
 							streamToWriteTo.Write("<polygon points=\"");
 							for (int k = 0; k < part.IslandOutline[j].Count; k++)
-								streamToWriteTo.Write("{0},{1} ".FormatWith((float)(part.IslandOutline[j][k].X - modelMin.x) / modelSize.x * 500, (float)(part.IslandOutline[j][k].Y - modelMin.y) / modelSize.y * 500));
+								streamToWriteTo.Write("{0},{1} ".FormatWith((float)(part.IslandOutline[j][k].X - modelMin.X) / modelSize.X * 500, (float)(part.IslandOutline[j][k].Y - modelMin.Y) / modelSize.Y * 500));
 							if (j == 0)
 								streamToWriteTo.Write("\" style=\"fill:gray; stroke:black;stroke-width:1\" />\n");
 							else
@@ -341,13 +341,13 @@ namespace MatterHackers.MatterSlice
 			extrudersThatHaveBeenPrimed = new bool[config.MaxExtruderCount()];
 
 			Polygon wipeTowerShape = new Polygon();
-			wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000, this.modelMax.y + 3000));
-			wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000, this.modelMax.y + 3000 + config.WipeTowerSize_um));
-			wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000 - config.WipeTowerSize_um, this.modelMax.y + 3000 + config.WipeTowerSize_um));
-			wipeTowerShape.Add(new IntPoint(this.modelMin.x - 3000 - config.WipeTowerSize_um, this.modelMax.y + 3000));
+			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000));
+			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000 + config.WipeTowerSize_um));
+			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000 + config.WipeTowerSize_um));
+			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000));
 
 			this.wipeTower.Add(wipeTowerShape);
-			this.wipePoint = new IntPoint(this.modelMin.x - 3000 - config.WipeTowerSize_um / 2, this.modelMax.y + 3000 + config.WipeTowerSize_um / 2);
+			this.wipePoint = new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um / 2, this.modelMax.Y + 3000 + config.WipeTowerSize_um / 2);
 		}
 
 		bool[] extrudersThatHaveBeenPrimed = null;

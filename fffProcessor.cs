@@ -19,7 +19,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using ClipperLib;
+using MSClipperLib;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -367,7 +367,7 @@ namespace MatterHackers.MatterSlice
 				gcode.WriteRetraction();
 				gcode.setZ(maxObjectHeight + 5000);
 				gcode.WriteMove(gcode.GetPosition(), config.TravelSpeed, 0);
-				gcode.WriteMove(new Point3(slicingData.modelMin.x, slicingData.modelMin.y, gcode.CurrentZ), config.TravelSpeed, 0);
+				gcode.WriteMove(new IntPoint(slicingData.modelMin.X, slicingData.modelMin.Y, gcode.CurrentZ), config.TravelSpeed, 0);
 			}
 			fileNumber++;
 
@@ -561,29 +561,6 @@ namespace MatterHackers.MatterSlice
 					currentLayerThickness_um = config.FirstLayerThickness_um;
 				}
 
-				// Move to the best point for the next layer
-				if (!config.ContinuousSpiralOuterPerimeter
-                    && layerIndex > 0 
-					&& layerIndex < totalLayers - 2)
-				{
-					// Figure out where the seam hiding start point is for inset 0 and move to that spot so
-					// we have the minimum travel while starting inset 0 after printing the rest of the insets
-					SliceLayer layer = slicingData?.Extruders?[0]?.Layers?[layerIndex + 1];
-					if (layer.Islands.Count == 1)
-					{
-						LayerIsland island = layer?.Islands?[0];
-						if (island?.InsetToolPaths?[0]?[0]?.Count > 0)
-						{
-							int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
-							gcodeLayer.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundary);
-							gcodeLayer.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
-							// Now move up to the next layer so we don't start the extrusion one layer too low.
-							gcode.setZ(z + config.LayerThickness_um);
-							gcodeLayer.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
-						}
-					}
-				}
-
 				gcodeLayer.WriteQueuedGCode(currentLayerThickness_um, fanSpeedPercent, config.BridgeFanSpeedPercent);
 			}
 
@@ -593,7 +570,7 @@ namespace MatterHackers.MatterSlice
 			gcode.WriteFanCommand(0);
 
 			//Store the object height for when we are printing multiple objects, as we need to clear every one of them when moving to the next position.
-			maxObjectHeight = Math.Max(maxObjectHeight, slicingData.modelSize.z);
+			maxObjectHeight = Math.Max(maxObjectHeight, slicingData.modelSize.Z);
 		}
 
 		private int GetFanSpeed(int layerIndex, GCodePlanner gcodeLayer)
@@ -666,6 +643,25 @@ namespace MatterHackers.MatterSlice
 				layerGcodePlanner.SetAlwaysRetract(true);
 				layerGcodePlanner.QueuePolygonsByOptimizer(slicingData.wipeShield[layerIndex], skirtConfig);
 				layerGcodePlanner.SetAlwaysRetract(!config.AvoidCrossingPerimeters);
+			}
+
+			// Move to the best point start point for this layer
+			if (!config.ContinuousSpiralOuterPerimeter
+				&& layerIndex > 0
+				&& layerIndex < slicingData.Extruders[extruderIndex].Layers.Count - 2)
+			{
+				// Figure out where the seam hiding start point is for inset 0 and move to that spot so
+				// we have the minimum travel while starting inset 0 after printing the rest of the insets
+				if (layer.Islands.Count == 1)
+				{
+					LayerIsland island = layer?.Islands?[0];
+					if (island?.InsetToolPaths?[0]?[0]?.Count > 0)
+					{
+						int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
+						layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundary);
+						layerGcodePlanner.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
+					}
+				}
 			}
 
 			PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(new IntPoint());
@@ -844,13 +840,13 @@ namespace MatterHackers.MatterSlice
 				Polygons fillPolygons = new Polygons();
 				foreach (var island in layer.Islands)
 				{
-					List<Point3> path = new List<Point3>();
+					List<IntPoint> path = new List<IntPoint>();
 					List<PathAndWidth> thinLines;
 					foreach (var outline in island.IslandOutline.Offset(-extrusionWidth_um * 0))
 					{
 						foreach (var point in outline)
 						{
-							path.Add(new Point3(point, currentZ_um));
+							path.Add(new IntPoint(point, currentZ_um));
 						}
 					}
 
@@ -861,7 +857,7 @@ namespace MatterHackers.MatterSlice
 							Polygon thinPath = new Polygon();
 							foreach (var point in widthPath.Path)
 							{
-								thinPath.Add(new IntPoint(point.x, point.y));
+								thinPath.Add(new IntPoint(point.X, point.Y));
 							}
 							fillPolygons.Add(thinPath);
 						}

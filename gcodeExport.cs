@@ -19,7 +19,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using ClipperLib;
+using MSClipperLib;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -32,11 +32,11 @@ namespace MatterHackers.MatterSlice
 	public class GCodeExport
 	{
 		private int currentFanSpeed;
-		private Point3 currentPosition_um;
+		private IntPoint currentPosition_um;
 		private double currentSpeed;
 		private TimeEstimateCalculator estimateCalculator = new TimeEstimateCalculator();
 		private int extruderIndex;
-		private Point3[] extruderOffset_um = new Point3[ConfigConstants.MAX_EXTRUDERS];
+		private IntPoint[] extruderOffset_um = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
 		private double extruderSwitchRetraction_mm;
 		private double extrusionAmount_mm;
 		private double extrusionAmountAtPreviousRetraction_mm;
@@ -46,7 +46,7 @@ namespace MatterHackers.MatterSlice
 		private double minimumExtrusionBeforeRetraction_mm;
 		private double retractionAmount_mm;
 		private int retractionSpeed;
-		private List<Point3> retractionWipePath = new List<Point3>();
+		private List<IntPoint> retractionWipePath = new List<IntPoint>();
 		private double retractionZHop_mm;
 		private string toolChangeCode;
 		private string beforeToolchangeCode;
@@ -111,19 +111,19 @@ namespace MatterHackers.MatterSlice
 			return gcodeFileStream.BaseStream.Length;
 		}
 
-		public Point3 GetPosition()
+		public IntPoint GetPosition()
 		{
 			return currentPosition_um;
 		}
 
 		public IntPoint GetPositionXY()
 		{
-			return new IntPoint(currentPosition_um.x, currentPosition_um.y);
+			return new IntPoint(currentPosition_um.X, currentPosition_um.Y);
 		}
 
 		public long GetPositionZ()
 		{
-			return currentPosition_um.z;
+			return currentPosition_um.Z;
 		}
 
 		public double GetTotalFilamentUsed(int extruderIndexToGet)
@@ -159,7 +159,7 @@ namespace MatterHackers.MatterSlice
 
 		public void SetExtruderOffset(int extruderIndex, IntPoint extruderOffset_um, int z_offset_um)
 		{
-			this.extruderOffset_um[extruderIndex] = new Point3(extruderOffset_um.X, extruderOffset_um.Y, z_offset_um);
+			this.extruderOffset_um[extruderIndex] = new IntPoint(extruderOffset_um.X, extruderOffset_um.Y, z_offset_um);
 		}
 
 		public void SetExtrusion(int layerThickness, int filamentDiameter, double extrusionMultiplier)
@@ -297,18 +297,18 @@ namespace MatterHackers.MatterSlice
 			gcodeFileStream.Write("{0}\n".FormatWith(line));
 		}
 
-        public void WriteMove(Point3 movePosition_um, double speed, long lineWidth_um)
+        public void WriteMove(IntPoint movePosition_um, double speed, long lineWidth_um)
         {
             StringBuilder lineToWrite = new StringBuilder();
             //Normal E handling.
             if (lineWidth_um != 0)
             {
-                Point3 diff = movePosition_um - GetPosition();
+                IntPoint diff = movePosition_um - GetPosition();
 				if (isRetracted)
 				{
 					if (retractionZHop_mm > 0)
 					{
-						double zWritePosition = (double)(currentPosition_um.z - extruderOffset_um[extruderIndex].z) / 1000;
+						double zWritePosition = (double)(currentPosition_um.Z - extruderOffset_um[extruderIndex].Z) / 1000;
 						lineToWrite.Append("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
 					}
 
@@ -322,9 +322,9 @@ namespace MatterHackers.MatterSlice
 
 					currentSpeed = retractionSpeed;
 					estimateCalculator.plan(new TimeEstimateCalculator.Position(
-						currentPosition_um.x / 1000.0,
-						currentPosition_um.y / 1000.0,
-						currentPosition_um.z / 1000.0,
+						currentPosition_um.X / 1000.0,
+						currentPosition_um.Y / 1000.0,
+						currentPosition_um.Z / 1000.0,
 						extrusionAmount_mm),
 						currentSpeed);
 
@@ -345,13 +345,13 @@ namespace MatterHackers.MatterSlice
                 currentSpeed = speed;
             }
 
-            double xWritePosition = (double)(movePosition_um.x - extruderOffset_um[extruderIndex].x) / 1000.0;
-            double yWritePosition = (double)(movePosition_um.y - extruderOffset_um[extruderIndex].y) / 1000.0;
+            double xWritePosition = (double)(movePosition_um.X - extruderOffset_um[extruderIndex].X) / 1000.0;
+            double yWritePosition = (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].Y) / 1000.0;
             lineToWrite.Append(" X{0:0.###} Y{1:0.###}".FormatWith(xWritePosition, yWritePosition));
 
-            if (movePosition_um.z != currentPosition_um.z)
+            if (movePosition_um.Z != currentPosition_um.Z)
             {
-                double zWritePosition = (double)(movePosition_um.z - extruderOffset_um[extruderIndex].z) / 1000.0;
+                double zWritePosition = (double)(movePosition_um.Z - extruderOffset_um[extruderIndex].Z) / 1000.0;
 				if (lineWidth_um == 0
 					&& isRetracted)
 				{
@@ -384,7 +384,7 @@ namespace MatterHackers.MatterSlice
             }
 
             currentPosition_um = movePosition_um;
-            estimateCalculator.plan(new TimeEstimateCalculator.Position(currentPosition_um.x / 1000.0, currentPosition_um.y / 1000.0, currentPosition_um.z / 1000.0, extrusionAmount_mm), speed);
+            estimateCalculator.plan(new TimeEstimateCalculator.Position(currentPosition_um.X / 1000.0, currentPosition_um.Y / 1000.0, currentPosition_um.Z / 1000.0, extrusionAmount_mm), speed);
         }
 
 		public void WriteRetraction()
@@ -397,13 +397,13 @@ namespace MatterHackers.MatterSlice
 			{
 				gcodeFileStream.Write("G1 F{0} E{1:0.#####}\n".FormatWith(retractionSpeed * 60, extrusionAmount_mm - retractionAmount_mm));
 				currentSpeed = retractionSpeed;
-				estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition_um.x) / 1000.0, (currentPosition_um.y) / 1000.0, (double)(currentPosition_um.z) / 1000.0, extrusionAmount_mm - retractionAmount_mm), currentSpeed);
+				estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition_um.X) / 1000.0, (currentPosition_um.Y) / 1000.0, (double)(currentPosition_um.Z) / 1000.0, extrusionAmount_mm - retractionAmount_mm), currentSpeed);
 
 				AddRetractionWipeIfRequired(initialSpeed);
 
 				if (retractionZHop_mm > 0)
 				{
-					double zWritePosition = (double)(currentPosition_um.z - extruderOffset_um[extruderIndex].z) / 1000 + retractionZHop_mm;
+					double zWritePosition = (double)(currentPosition_um.Z - extruderOffset_um[extruderIndex].Z) / 1000 + retractionZHop_mm;
 					gcodeFileStream.Write("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
 				}
 
@@ -420,7 +420,7 @@ namespace MatterHackers.MatterSlice
 			//This wipes the extruder back along the previous path after retracting.
 			if (wipeAfterRetraction && retractionWipePath.Count >= 2)
 			{
-				Point3 lastP = retractionWipePath[retractionWipePath.Count - 1];
+				IntPoint lastP = retractionWipePath[retractionWipePath.Count - 1];
 				int indexStepDirection = -1;
 				int i = retractionWipePath.Count - 2;
 				double wipeDistanceMm = 10;
@@ -428,7 +428,7 @@ namespace MatterHackers.MatterSlice
 
 				while (wipeLeft > 0)
 				{
-					Point3 p = retractionWipePath[i];
+					IntPoint p = retractionWipePath[i];
 					long len = (lastP - p).Length();
 
 					//Check if we're out of moves
@@ -446,7 +446,7 @@ namespace MatterHackers.MatterSlice
 					//If move is longer than wipe remaining, calculate angle and move along path but stop short.
 					if (len > wipeLeft)
 					{
-						Point3 direction = p - lastP;
+						IntPoint direction = p - lastP;
 						long directionLength = direction.Length();
 						direction *= wipeLeft;
 						direction /= directionLength;
@@ -461,8 +461,8 @@ namespace MatterHackers.MatterSlice
 						currentSpeed = initialSpeed;
 						gcodeFileStream.Write("F{0} ".FormatWith(currentSpeed * 60));
 					}
-					gcodeFileStream.Write("X{0:0.###} Y{1:0.###}\n".FormatWith((p.x - extruderOffset_um[extruderIndex].x) / 1000.0, (p.y - extruderOffset_um[extruderIndex].y) / 1000.0));
-					estimateCalculator.plan(new TimeEstimateCalculator.Position(p.x / 1000.0, p.y / 1000.0, currentPosition_um.z / 1000.0, 0), currentSpeed);
+					gcodeFileStream.Write("X{0:0.###} Y{1:0.###}\n".FormatWith((p.X - extruderOffset_um[extruderIndex].X) / 1000.0, (p.Y - extruderOffset_um[extruderIndex].Y) / 1000.0));
+					estimateCalculator.plan(new TimeEstimateCalculator.Position(p.X / 1000.0, p.Y / 1000.0, currentPosition_um.Z / 1000.0, 0), currentSpeed);
 				}
 				retractionWipePath.Clear();
 			}

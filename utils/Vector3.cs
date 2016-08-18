@@ -19,6 +19,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using MSClipperLib;
 using System;
 
 namespace MatterHackers.MatterSlice
@@ -41,11 +42,11 @@ namespace MatterHackers.MatterSlice
 			z = _z;
 		}
 
-		public Vector3(Point3 v0)
+		public Vector3(IntPoint v0)
 		{
-			this.x = v0.x;
-			this.y = v0.y;
-			this.z = v0.z;
+			this.x = v0.X;
+			this.y = v0.Y;
+			this.z = v0.Z;
 		}
 
 		public static Vector3 operator +(Vector3 left, Vector3 right)
@@ -187,9 +188,9 @@ namespace MatterHackers.MatterSlice
 			m[2, 2] = double.Parse(values[8]);
 		}
 
-		public Point3 apply(Vector3 p)
+		public IntPoint apply(Vector3 p)
 		{
-			return new Point3(
+			return new IntPoint(
 				(p.x * m[0, 0] + p.y * m[1, 0] + p.z * m[2, 0]),
 				(p.x * m[0, 1] + p.y * m[1, 1] + p.z * m[2, 1]),
 				(p.x * m[0, 2] + p.y * m[1, 2] + p.z * m[2, 2]));

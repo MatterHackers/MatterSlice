@@ -29,10 +29,11 @@ either expressed or implied, of the FreeBSD Project.
 
 using System.Collections.Generic;
 using NUnit.Framework;
-using ClipperLib;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice.Tests
 {
+	using System;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
@@ -257,6 +258,55 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void EachLayersHeigherThanLast()
+		{
+			CheckLayersIncrement("cone", "spiralCone.gcode");
+		}
+
+		private static void CheckLayersIncrement(string stlFile, string gcodeFile)
+		{
+			string risingLayersStlFile = TestUtlities.GetStlPath(stlFile);
+			string risingLayersGCodeFileName = TestUtlities.GetTempGCodePath(gcodeFile);
+
+			ConfigSettings config = new ConfigSettings();
+			config.FirstLayerThickness = .2;
+			config.CenterObjectInXy = false;
+			config.LayerThickness = .2;
+			fffProcessor processor = new fffProcessor(config);
+			processor.SetTargetFile(risingLayersGCodeFileName);
+			processor.LoadStlFile(risingLayersStlFile);
+			// slice and save it
+			processor.DoProcessing();
+			processor.finalize();
+
+			string[] risingLayersGCodeContent = TestUtlities.LoadGCodeFile(risingLayersGCodeFileName);
+
+			// test .1 layer height
+			int layerCount = TestUtlities.CountLayers(risingLayersGCodeContent);
+			Assert.IsTrue(layerCount == 50);
+
+			MovementInfo startingPosition = new MovementInfo();
+			for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
+			{
+				string[] layerInfo = TestUtlities.GetGCodeForLayer(risingLayersGCodeContent, layerIndex);
+				int movementIndex = 0;
+				// check that all layers move up 
+				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo, startingPosition))
+				{
+					if (layerIndex > 0)
+					{
+						Assert.AreEqual(movement.position.z, .2 + layerIndex * .2, .001);
+						Assert.IsTrue(movement.position.z >= startingPosition.position.z);
+					}
+
+					// always go up
+					startingPosition.position = new Vector3(0, 0, Math.Max(startingPosition.position.z, movement.position.z));
+					movementIndex++;
+				}
+			}
+		}
+
+		[Test]
 		public void CorrectNumberOfLayersForLayerHeights()
 		{
 			// test .1 layer height
@@ -390,31 +440,42 @@ namespace MatterHackers.MatterSlice.Tests
 				string[] gcodeContents = TestUtlities.LoadGCodeFile(gcodeToCreate);
 				int layerCount = TestUtlities.CountLayers(gcodeContents);
 				bool firstPosition = true;
-				for(int i=0; i<layerCount; i++)
+				for(int layerIndex=0; layerIndex<layerCount; layerIndex++)
 				{
-					string[] layerGCode = TestUtlities.GetGCodeForLayer(gcodeContents, i);
-					MovementInfo lastMovement = new MovementInfo();
+					string[] layerGCode = TestUtlities.GetGCodeForLayer(gcodeContents, layerIndex);
+					MovementInfo lastExtrusionMovement = new MovementInfo();
+					int movementIndex = 0;
+					bool lastMoveIsExtrusion = true;
 					foreach (MovementInfo movement in TestUtlities.Movements(layerGCode))
 					{
 						if (!firstPosition)
 						{
-							bool isTravel = lastMovement.extrusion == movement.extrusion;
+							bool isTravel = lastExtrusionMovement.extrusion == movement.extrusion;
 							if (isTravel)
 							{
-								Vector3 lastPosition = lastMovement.position;
+								Vector3 lastPosition = lastExtrusionMovement.position;
 								lastPosition.z = 0;
 								Vector3 currenPosition = movement.position;
 								currenPosition.z = 0;
 								double xyLength = (lastPosition - currenPosition).Length;
-								if (xyLength > config.MinimumTravelToCauseRetraction)
+								if (xyLength > config.MinimumTravelToCauseRetraction
+									&& lastMoveIsExtrusion)
 								{
-									Assert.IsTrue(movement.position.z > lastMovement.position.z);
+									Assert.IsTrue(movement.position.z > lastExtrusionMovement.position.z);
 								}
+
+								lastMoveIsExtrusion = false;
+							}
+							else
+							{
+								lastExtrusionMovement = movement;
+								lastMoveIsExtrusion = true;
 							}
 						}
 
-						lastMovement = movement;
+						//lastExtrusionMovement = movement;
 						firstPosition = false;
+						movementIndex++;
 					}
 				}
 				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 1));

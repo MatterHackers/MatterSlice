@@ -19,7 +19,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using ClipperLib;
+using MSClipperLib;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -48,8 +48,8 @@ namespace MatterHackers.MatterSlice
 	public class Slicer
 	{
 		public List<MeshProcessingLayer> layers = new List<MeshProcessingLayer>();
-		public Point3 modelSize;
-		public Point3 modelMin;
+		public IntPoint modelSize;
+		public IntPoint modelMin;
 
 		public Slicer(OptimizedMesh ov, ConfigSettings config)
 		{
@@ -59,7 +59,7 @@ namespace MatterHackers.MatterSlice
 			modelSize = ov.containingCollection.size_um;
 			modelMin = ov.containingCollection.minXYZ_um;
 
-			long heightWithoutFirstLayer = modelSize.z - initialLayerThickness_um - config.BottomClipAmount_um;
+			long heightWithoutFirstLayer = modelSize.Z - initialLayerThickness_um - config.BottomClipAmount_um;
 			int countOfNormalThicknessLayers = Math.Max(0, (int)((heightWithoutFirstLayer / (double)layerThickness_um) + .5));
 
 			int layerCount = countOfNormalThicknessLayers;
@@ -77,7 +77,7 @@ namespace MatterHackers.MatterSlice
 			layers.Capacity = layerCount;
 			for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
 			{
-				int z;
+				long z;
 				if (layerIndex == 0)
 				{
 					z = initialLayerThickness_um / 2;
@@ -91,61 +91,61 @@ namespace MatterHackers.MatterSlice
 
 			for (int faceIndex = 0; faceIndex < ov.facesTriangle.Count; faceIndex++)
 			{
-				Point3 p0 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[0]].position;
-				Point3 p1 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[1]].position;
-				Point3 p2 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[2]].position;
-				long minZ = p0.z;
-				long maxZ = p0.z;
-				if (p1.z < minZ) minZ = p1.z;
-				if (p2.z < minZ) minZ = p2.z;
-				if (p1.z > maxZ) maxZ = p1.z;
-				if (p2.z > maxZ) maxZ = p2.z;
+				IntPoint p0 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[0]].position;
+				IntPoint p1 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[1]].position;
+				IntPoint p2 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[2]].position;
+				long minZ = p0.Z;
+				long maxZ = p0.Z;
+				if (p1.Z < minZ) minZ = p1.Z;
+				if (p2.Z < minZ) minZ = p2.Z;
+				if (p1.Z > maxZ) maxZ = p1.Z;
+				if (p2.Z > maxZ) maxZ = p2.Z;
 
 				for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
 				{
-					int z = layers[layerIndex].Z;
+					long z = layers[layerIndex].Z;
 					if (z < minZ || z > maxZ)
 					{
 						continue;
 					}
 
 					SlicePerimeterSegment polyCrossingAtThisZ;
-					if (p0.z < z && p1.z >= z && p2.z >= z)
+					if (p0.Z < z && p1.Z >= z && p2.Z >= z)
 					{
 						// p1   p2
 						// --------
 						//   p0
 						polyCrossingAtThisZ = GetCrossingAtZ(p0, p2, p1, z);
 					}
-					else if (p0.z >= z && p1.z < z && p2.z < z)
+					else if (p0.Z >= z && p1.Z < z && p2.Z < z)
 					{
 						//   p0
 						// --------
 						// p1  p2
 						polyCrossingAtThisZ = GetCrossingAtZ(p0, p1, p2, z);
 					}
-					else if (p1.z < z && p0.z >= z && p2.z >= z)
+					else if (p1.Z < z && p0.Z >= z && p2.Z >= z)
 					{
 						// p0   p2
 						// --------
 						//   p1
 						polyCrossingAtThisZ = GetCrossingAtZ(p1, p0, p2, z);
 					}
-					else if (p1.z >= z && p0.z < z && p2.z < z)
+					else if (p1.Z >= z && p0.Z < z && p2.Z < z)
 					{
 						//   p1
 						// --------
 						// p0  p2
 						polyCrossingAtThisZ = GetCrossingAtZ(p1, p2, p0, z);
 					}
-					else if (p2.z < z && p1.z >= z && p0.z >= z)
+					else if (p2.Z < z && p1.Z >= z && p0.Z >= z)
 					{
 						// p1   p0
 						// --------
 						//   p2
 						polyCrossingAtThisZ = GetCrossingAtZ(p2, p1, p0, z);
 					}
-					else if (p2.z >= z && p1.z < z && p0.z < z)
+					else if (p2.Z >= z && p1.Z < z && p0.Z < z)
 					{
 						//   p2
 						// --------
@@ -170,13 +170,15 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public SlicePerimeterSegment GetCrossingAtZ(Point3 singlePointOnSide, Point3 otherSide1, Point3 otherSide2, int z)
+		public SlicePerimeterSegment GetCrossingAtZ(IntPoint singlePointOnSide, IntPoint otherSide1, IntPoint otherSide2, long z)
 		{
 			SlicePerimeterSegment seg = new SlicePerimeterSegment();
-			seg.start.X = (long)(singlePointOnSide.x + (double)(otherSide1.x - singlePointOnSide.x) * (double)(z - singlePointOnSide.z) / (double)(otherSide1.z - singlePointOnSide.z) + .5);
-			seg.start.Y = (long)(singlePointOnSide.y + (double)(otherSide1.y - singlePointOnSide.y) * (double)(z - singlePointOnSide.z) / (double)(otherSide1.z - singlePointOnSide.z) + .5);
-			seg.end.X = (long)(singlePointOnSide.x + (double)(otherSide2.x - singlePointOnSide.x) * (double)(z - singlePointOnSide.z) / (double)(otherSide2.z - singlePointOnSide.z) + .5);
-			seg.end.Y = (long)(singlePointOnSide.y + (double)(otherSide2.y - singlePointOnSide.y) * (double)(z - singlePointOnSide.z) / (double)(otherSide2.z - singlePointOnSide.z) + .5);
+			seg.start.X = (long)(singlePointOnSide.X + (double)(otherSide1.X - singlePointOnSide.X) * (double)(z - singlePointOnSide.Z) / (double)(otherSide1.Z - singlePointOnSide.Z) + .5);
+			seg.start.Y = (long)(singlePointOnSide.Y + (double)(otherSide1.Y - singlePointOnSide.Y) * (double)(z - singlePointOnSide.Z) / (double)(otherSide1.Z - singlePointOnSide.Z) + .5);
+			seg.start.Z = z;
+			seg.end.X = (long)(singlePointOnSide.X + (double)(otherSide2.X - singlePointOnSide.X) * (double)(z - singlePointOnSide.Z) / (double)(otherSide2.Z - singlePointOnSide.Z) + .5);
+			seg.end.Y = (long)(singlePointOnSide.Y + (double)(otherSide2.Y - singlePointOnSide.Y) * (double)(z - singlePointOnSide.Z) / (double)(otherSide2.Z - singlePointOnSide.Z) + .5);
+			seg.end.Z = z;
 			return seg;
 		}
 

@@ -27,7 +27,7 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
-using ClipperLib;
+using MSClipperLib;
 using NUnit.Framework;
 using MatterHackers.MatterSlice;
 using System.Collections.Generic;
