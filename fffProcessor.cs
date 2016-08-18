@@ -819,6 +819,32 @@ namespace MatterHackers.MatterSlice
 							insetCount = CountInsetsToPrint(insetsToPrint);
 						}
 					}
+
+					// Find the thin lines for this layer and add them to the queue
+					if (false) // this code is just for test. LBB
+					{
+						// TODO: this is what it should look like
+						//Polygons thinLines;
+						//if (layerGcodePlanner.FindThinLines(island.IslandOutline.Offset(-extrusionWidth_um * 1), extrusionWidth_um - 2, out thinLines, true))
+						//{
+						//	fillPolygons.AddRange(thinLines);
+						//}
+
+						Polygon path = new Polygon(); // needs to be polygons, see above
+						Polygons thinLines;
+						foreach (var outline in island.IslandOutline.Offset(-extrusionWidth_um * 1))
+						{
+							foreach (var point in outline)
+							{
+								path.Add(new IntPoint(point, currentZ_um));
+							}
+						}
+
+						if (layerGcodePlanner.FindThinLines(path, extrusionWidth_um - 2, out thinLines, true))
+						{
+							fillPolygons.AddRange(thinLines);
+						}
+					}
 				}
 
 				// TODO: Put all of these segments into a list that can be queued together and still preserver their individual config settings.
@@ -832,38 +858,6 @@ namespace MatterHackers.MatterSlice
 				{
 					layerGcodePlanner.MoveInsideTheOuterPerimeter(extrusionWidth_um * 2);
 				}
-			}
-
-			// Find the thin lines for this layer and add them to the queue
-			if (false) // this code is just for test. LBB
-			{
-				Polygons fillPolygons = new Polygons();
-				foreach (var island in layer.Islands)
-				{
-					List<IntPoint> path = new List<IntPoint>();
-					List<PathAndWidth> thinLines;
-					foreach (var outline in island.IslandOutline.Offset(-extrusionWidth_um * 0))
-					{
-						foreach (var point in outline)
-						{
-							path.Add(new IntPoint(point, currentZ_um));
-						}
-					}
-
-					if (layerGcodePlanner.FindThinLines(path, extrusionWidth_um - 2, out thinLines, true))
-					{
-						foreach (var widthPath in thinLines)
-						{
-							Polygon thinPath = new Polygon();
-							foreach (var point in widthPath.Path)
-							{
-								thinPath.Add(new IntPoint(point.X, point.Y));
-							}
-							fillPolygons.Add(thinPath);
-						}
-					}
-				}
-				layerGcodePlanner.QueuePolygonsByOptimizer(fillPolygons, fillConfig);
 			}
 
 			layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(null);
