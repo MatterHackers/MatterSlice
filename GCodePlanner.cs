@@ -313,8 +313,8 @@ namespace MatterHackers.MatterSlice
 			{
 
 			}
-			polygons = MakeCloseSegmentsMergable(polygons, overlapMergeAmount_um, pathIsClosed);
 #endif
+			polygon = MakeCloseSegmentsMergable(polygon, overlapMergeAmount_um, pathIsClosed);
 
 			// make a copy that has every point duplicated (so that we have them as segments).
 			List<Segment> polySegments = Segment.ConvertPathToSegments(polygon);
