@@ -44,7 +44,7 @@ namespace MatterHackers.MatterSlice
 			this.End = end;
 		}
 
-		public static List<Segment> ConvertPathToSegments(List<IntPoint> path, bool pathIsClosed = true)
+		public static List<Segment> ConvertPathToSegments(IList<IntPoint> path, bool pathIsClosed = true)
 		{
 			List<Segment> polySegments = new List<Segment>(path.Count);
 			int endIndex = pathIsClosed ? path.Count : path.Count - 1;
@@ -98,7 +98,7 @@ namespace MatterHackers.MatterSlice
 			return polySegments;
 		}
 
-		public List<Segment> GetSplitSegmentForVertecies(List<IntPoint> splitPoints, long maxDistance)
+		public List<Segment> GetSplitSegmentForVertecies(Polygon splitPoints, long maxDistance)
 		{
 			IntPoint start2D = new IntPoint(Start.X, Start.Y);
 			IntPoint end2D = new IntPoint(End.X, End.Y);
@@ -304,14 +304,20 @@ namespace MatterHackers.MatterSlice
 		[Flags]
 		enum Altered { remove = 1, merged = 2 };
 
-		public bool FindThinLines(Polygon perimeter, long overlapMergeAmount_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
+		public bool FindThinLines(Polygon polygon, long overlapMergeAmount_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
 		{
 			bool pathHasMergeLines = false;
 
-			perimeter = MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um, pathIsClosed);
+#if false
+			for(int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex)
+			{
+
+			}
+			polygons = MakeCloseSegmentsMergable(polygons, overlapMergeAmount_um, pathIsClosed);
+#endif
 
 			// make a copy that has every point duplicated (so that we have them as segments).
-			List<Segment> polySegments = Segment.ConvertPathToSegments(perimeter);
+			List<Segment> polySegments = Segment.ConvertPathToSegments(polygon);
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
 
@@ -393,7 +399,7 @@ namespace MatterHackers.MatterSlice
 		}
 
 
-		public bool MergePerimeterOverlaps(List<IntPoint> perimeter, long overlapMergeAmount_um, out Polygons separatedPolygons, bool pathIsClosed = true)
+		public bool MergePerimeterOverlaps(Polygon perimeter, long overlapMergeAmount_um, out Polygons separatedPolygons, bool pathIsClosed = true)
 		{
 			bool pathWasOptomized = false;
 
@@ -844,7 +850,7 @@ namespace MatterHackers.MatterSlice
 			}
 			else if (outerPerimetersToAvoidCrossing != null)
 			{
-				List<IntPoint> pointList = new List<IntPoint>();
+				Polygon pointList = new Polygon();
 				if (outerPerimetersToAvoidCrossing.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pointList))
 				{
 					long lineLength_um = 0;
@@ -957,7 +963,7 @@ namespace MatterHackers.MatterSlice
 			return ret;
 		}
 
-		public List<IntPoint> MakeCloseSegmentsMergable(List<IntPoint> perimeter, long distanceNeedingAdd, bool pathIsClosed = true)
+		public Polygon MakeCloseSegmentsMergable(Polygon perimeter, long distanceNeedingAdd, bool pathIsClosed = true)
 		{
 			List<Segment> segments = Segment.ConvertPathToSegments(perimeter, pathIsClosed);
 
@@ -974,7 +980,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			List<IntPoint> segmentedPerimeter = new List<IntPoint>(segments.Count);
+			Polygon segmentedPerimeter = new Polygon(segments.Count);
 
 			foreach (var segment in segments)
 			{
@@ -999,7 +1005,7 @@ namespace MatterHackers.MatterSlice
 		/// </summary>
 		internal bool done;
 		internal int extruderIndex;
-		public List<IntPoint> points = new List<IntPoint>();
+		public Polygon points = new Polygon();
 
 		internal bool Retract { get; set; }
 
@@ -1013,7 +1019,7 @@ namespace MatterHackers.MatterSlice
 			this.done = copyPath.done;
 			this.extruderIndex = copyPath.extruderIndex;
 			this.Retract = copyPath.Retract;
-			this.points = new List<IntPoint>(copyPath.points);
+			this.points = new Polygon(copyPath.points);
 		}
 
 		public long Length(bool pathIsClosed)
