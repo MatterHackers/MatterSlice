@@ -62,7 +62,7 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				// check layer 0
 				string[] layer0Info = TestUtlities.GetGCodeForLayer(gcode, 0);
-				List<Polygons> layer0Polygons = TestUtlities.GetExtrusionPolygons(layer0Info);
+				Polygons layer0Polygons = TestUtlities.GetExtrusionPolygons(layer0Info);
 				// make sure there are 3
 				Assert.IsTrue(layer0Polygons.Count == 3);
 				// make sure they are in the right order (first layer is outside in)
@@ -71,7 +71,7 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				// check layer 1
 				string[] layer1Info = TestUtlities.GetGCodeForLayer(gcode, 1);
-				List<Polygons> layer1Polygons = TestUtlities.GetExtrusionPolygons(layer1Info);
+				Polygons layer1Polygons = TestUtlities.GetExtrusionPolygons(layer1Info);
 
 				// make sure there are 3
 				Assert.IsTrue(layer1Polygons.Count == 3);
@@ -114,6 +114,58 @@ namespace MatterHackers.MatterSlice.Tests
 			processor.finalize();
 
 			return boxGCodeFile;
+		}
+
+		[Test]
+		public void Has2WallRingsAllTheWayUp()
+		{
+			string ringStlFile = TestUtlities.GetStlPath("Thinning Walls Ring");
+			string ringGCodeFile = TestUtlities.GetTempGCodePath("Thinning Walls Ring.gcode");
+
+			ConfigSettings config = new ConfigSettings();
+			config.InfillPercent = 0;
+			config.NumberOfPerimeters = 1;
+			fffProcessor processor = new fffProcessor(config);
+			processor.SetTargetFile(ringGCodeFile);
+			processor.LoadStlFile(ringStlFile);
+			// slice and save it
+			processor.DoProcessing();
+			processor.finalize();
+
+			string[] gcodeLines = TestUtlities.LoadGCodeFile(ringGCodeFile);
+
+			int layerCount = TestUtlities.CountLayers(gcodeLines);
+			Assert.IsTrue(layerCount == 50);
+
+			for (int i = 2; i < layerCount - 3; i++)
+			{
+				string[] layerInfo = TestUtlities.GetGCodeForLayer(gcodeLines, i);
+
+				// check that all layers move up continuously
+				MovementInfo lastMovement = new MovementInfo();
+				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
+				{
+					Assert.IsTrue(movement.position.z > lastMovement.position.z);
+
+					lastMovement = movement;
+				}
+
+				Polygons layerPolygons = TestUtlities.GetExtrusionPolygons(layerInfo);
+
+				Assert.IsTrue(layerPolygons.Count == 2);
+
+				Assert.IsTrue(layerPolygons[0].Count > 10);
+				Assert.IsTrue(layerPolygons[1].Count > 10);
+
+				double radiusForPolygon = layerPolygons[0][0].LengthMm();
+				foreach (var polygon in layerPolygons)
+				{
+					foreach (var point in polygon)
+					{
+						Assert.AreEqual(polygon[0].LengthMm(), point.LengthMm(), .05);
+					}
+				}
+			}
 		}
 
 		private string CreateGcodeWithoutRaft(bool hasRaft)

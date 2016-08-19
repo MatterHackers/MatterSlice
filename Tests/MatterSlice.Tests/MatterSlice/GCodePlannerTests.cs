@@ -62,14 +62,14 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			// check that we can cut up a single segment
 			{
-				List<Segment> segmentsControl = Segment.ConvertPathToSegments(new List<IntPoint>()
+				List<Segment> segmentsControl = Segment.ConvertToSegments(new Polygon()
 				{
 					new IntPoint(0, 0),
 					new IntPoint(2500, 0),
 					new IntPoint(5000, 0),
 				}, false);
 
-				List<IntPoint> cuts = new List<IntPoint>()
+				Polygon cuts = new Polygon()
 				{
 					new IntPoint(2500, 0),
 					new IntPoint(2500, 401),
@@ -99,7 +99,7 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				List<IntPoint> perimeter = new List<IntPoint>()
+				Polygon perimeter = new Polygon()
 				{
 					new IntPoint(5000, 50),
 					new IntPoint(0, 10000),
@@ -109,7 +109,7 @@ namespace MatterHackers.MatterSlice.Tests
 					new IntPoint(10000, 50),
 				};
 				Assert.IsTrue(perimeter.Count == 6);
-				List<IntPoint> correctedPath = planner.MakeCloseSegmentsMergable(perimeter, 400 / 4);
+				Polygon correctedPath = planner.MakeCloseSegmentsMergable(perimeter, 400 / 4);
 				Assert.IsTrue(correctedPath.Count == 8);
 			}
 
@@ -120,7 +120,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				long mergeDistance = 400 / 4;
 				Segment segment = new Segment(new IntPoint(5000, 50), new IntPoint(0, 50));
-				List<Segment> segments = segment.GetSplitSegmentForVertecies(new List<IntPoint> { new IntPoint(4500, 0) }, mergeDistance);
+				List<Segment> segments = segment.GetSplitSegmentForVertecies(new Polygon { new IntPoint(4500, 0) }, mergeDistance);
 				Assert.IsTrue(segments.Count == 2);
 				Assert.IsTrue(segments[0] == new Segment(new IntPoint(5000, 50), new IntPoint(4500, 50)));
 				Assert.IsTrue(segments[1] == new Segment(new IntPoint(4500, 50), new IntPoint(0, 50)));
@@ -135,9 +135,9 @@ namespace MatterHackers.MatterSlice.Tests
 				int retractionMinimumDistance = 20;
 				long mergeDistance = 400 / 4;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				List<IntPoint> perimeter = new List<IntPoint>() { new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(4500, 0)};
+				Polygon perimeter = new Polygon() { new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(4500, 0)};
 				Assert.IsTrue(perimeter.Count == 4);
-				List<IntPoint> correctedPath = planner.MakeCloseSegmentsMergable(perimeter, mergeDistance, false);
+				Polygon correctedPath = planner.MakeCloseSegmentsMergable(perimeter, mergeDistance, false);
 				Assert.IsTrue(correctedPath.Count == 5);
 				Assert.IsTrue(correctedPath[0] == new IntPoint(5000, 50));
 				Assert.IsTrue(correctedPath[1] == new IntPoint(4500, 50));
@@ -156,7 +156,7 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				List<IntPoint> perimeter = new List<IntPoint>()
+				Polygon perimeter = new Polygon()
 				{
 					new IntPoint(15000, 0),
 					new IntPoint(15000, 10000),
@@ -166,7 +166,7 @@ namespace MatterHackers.MatterSlice.Tests
 					new IntPoint(0, 0),
 				};
 				Assert.IsTrue(perimeter.Count == 6);
-				List<IntPoint> correctedPath = planner.MakeCloseSegmentsMergable(perimeter, 400 / 4);
+				Polygon correctedPath = planner.MakeCloseSegmentsMergable(perimeter, 400 / 4);
 				Assert.IsTrue(correctedPath.Count == 8);
 			}
 		}
@@ -185,7 +185,7 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				List<IntPoint> perimeter = new List<IntPoint>() { new IntPoint(0, 0, 0), new IntPoint(5000, 0, 0), new IntPoint(5000, 5000, 0), new IntPoint(0, 5000, 0) };
+				Polygon perimeter = new Polygon() { new IntPoint(0, 0, 0), new IntPoint(5000, 0, 0), new IntPoint(5000, 5000, 0), new IntPoint(0, 5000, 0) };
 				Assert.IsTrue(perimeter.Count == 4);
 				Polygons thinLines;
 				bool foundThinLines = planner.FindThinLines(perimeter, 400 / 2, out thinLines);
@@ -202,7 +202,7 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				List<IntPoint> perimeter = new List<IntPoint>() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50) };
+				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50) };
 				Polygons thinLines;
 				bool foundThinLines = planner.FindThinLines(perimeter, 400, out thinLines);
 				Assert.IsTrue(foundThinLines);
@@ -220,7 +220,7 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				List<IntPoint> perimeter = new List<IntPoint>()
+				Polygon perimeter = new Polygon()
 				{
 					new IntPoint(5000, 50),
 					new IntPoint(0, 10000),
@@ -249,7 +249,7 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				List<IntPoint> perimeter = new List<IntPoint>()
+				Polygon perimeter = new Polygon()
 				{ 
 					// bottom of center line
 					new IntPoint(1000, 2500-25), new IntPoint(4000, 2500-25),
@@ -283,7 +283,7 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				List<IntPoint> perimeter = new List<IntPoint>() { new IntPoint(0, 0, 0), new IntPoint(5000, 0, 0), new IntPoint(5000, 5000, 0), new IntPoint(0, 5000, 0)};
+				Polygon perimeter = new Polygon() { new IntPoint(0, 0, 0), new IntPoint(5000, 0, 0), new IntPoint(5000, 5000, 0), new IntPoint(0, 5000, 0)};
 				Assert.IsTrue(perimeter.Count == 4);
 				Polygons thinLines;
 				planner.MergePerimeterOverlaps(perimeter, 400 / 4, out thinLines);
@@ -303,7 +303,7 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				List<IntPoint> perimeter = new List<IntPoint>() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50)};
+				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50)};
 				Polygons correctedPath;
 				planner.MergePerimeterOverlaps(perimeter, 400, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
@@ -319,7 +319,7 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				List<IntPoint> perimeter = new List<IntPoint>() { new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50) };
+				Polygon perimeter = new Polygon() { new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50) };
 				Polygons correctedPath;
 				planner.MergePerimeterOverlaps(perimeter, 200, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
@@ -337,7 +337,7 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				List<IntPoint> perimeter = new List<IntPoint>() { new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50) };
+				Polygon perimeter = new Polygon() { new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50) };
 				Polygons correctedPath;
 				planner.MergePerimeterOverlaps(perimeter, 400, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
@@ -353,7 +353,7 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				List<IntPoint> perimeter = new List<IntPoint>() { new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0)};
+				Polygon perimeter = new Polygon() { new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0)};
 				Polygons correctedPath;
 				planner.MergePerimeterOverlaps(perimeter, 400 / 4, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
@@ -368,7 +368,7 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				List<IntPoint> perimeter = new List<IntPoint>() { new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(4500, 0) };
+				Polygon perimeter = new Polygon() { new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(4500, 0) };
 				Polygons correctedPath;
 				bool removedLines = planner.MergePerimeterOverlaps(perimeter, 400, out correctedPath, false);
 				Assert.IsTrue(removedLines);
@@ -394,7 +394,7 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				List<IntPoint> perimeter = new List<IntPoint>()
+				Polygon perimeter = new Polygon()
 				{
 					new IntPoint(5000, 50),
 					new IntPoint(0, 10000),
@@ -423,7 +423,7 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				List<IntPoint> perimeter = new List<IntPoint>() 
+				Polygon perimeter = new Polygon() 
 				{ 
 					// bottom of center line
 					new IntPoint(1000, 2500-25), new IntPoint(4000, 2500-25),

@@ -64,9 +64,30 @@ namespace MatterHackers.MatterSlice.Tests
 			return Path.ChangeExtension(Path.Combine("..", "..", "..", "TestData", "Temp", file), "gcode");
 		}
 
-		public static List<Polygons> GetExtrusionPolygons(string[] gcode)
+		public static Polygons GetExtrusionPolygons(string[] gcode)
 		{
+			Polygons foundPolygons = new Polygons();
+			bool first = true;
+#if false
+			lastMovement = new MovementInfo();
+			// check that all moves are on the outside of the cylinder (not crossing to a new point)
+			foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
+			{
+				if (!first)
+				{
+					Assert.IsTrue((movement.position - lastMovement.position).Length < 2);
+
+					Vector3 xyOnly = new Vector3(movement.position.x, movement.position.y, 0);
+					Assert.AreEqual(radiusForLayer, xyOnly.Length, .3);
+				}
+
+				lastMovement = movement;
+				first = false;
+			}
+#endif
 			throw new NotImplementedException();
+
+			return foundPolygons;
 		}
 
 		public static string GetControlGCodePath(string file)

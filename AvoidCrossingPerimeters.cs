@@ -51,7 +51,7 @@ namespace MatterHackers.MatterSlice
 
 		static bool saveDebugData = false;
 		bool boundary = false;
-		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, List<IntPoint> pathThatIsInside)
+		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside)
 		{
 			if (saveDebugData)
 			{
@@ -122,7 +122,7 @@ namespace MatterHackers.MatterSlice
 			CalcMinMax();
 
 			long nomalizedStartX = rotatedStartPoint.X;
-			List<IntPoint> pointList = new List<IntPoint>();
+			Polygon pointList = new Polygon();
 			// Now walk trough the crossings, for every boundary we cross, find the initial cross point and the exit point.
 			// Then add all the points in between to the pointList and continue with the next boundary we will cross,
 			// until there are no more boundaries to cross.

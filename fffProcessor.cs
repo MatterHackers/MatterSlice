@@ -821,11 +821,11 @@ namespace MatterHackers.MatterSlice
 					}
 
 					// Find the thin lines for this layer and add them to the queue
-					if (false) // this code is just for test. LBB
+					if (true) // this code is just for test. LBB
 					{
-#if false
+#if true
 						// TODO: this is what it should look like
-						Polygons thinLines;
+						Polygons thinLines = null;
 						if (layerGcodePlanner.FindThinLines(island.IslandOutline.Offset(-extrusionWidth_um * 1), extrusionWidth_um - 2, out thinLines, true))
 						{
 							fillPolygons.AddRange(thinLines);

@@ -44,14 +44,25 @@ namespace MatterHackers.MatterSlice
 			this.End = end;
 		}
 
-		public static List<Segment> ConvertPathToSegments(IList<IntPoint> path, bool pathIsClosed = true)
+		public static List<Segment> ConvertToSegments(Polygons polygons, bool pathsAreClosed = true)
 		{
-			List<Segment> polySegments = new List<Segment>(path.Count);
-			int endIndex = pathIsClosed ? path.Count : path.Count - 1;
+			List<Segment> polySegments = new List<Segment>();
+			foreach (var polygon in polygons)
+			{
+				polySegments.AddRange(ConvertToSegments(polygon, pathsAreClosed));
+			}
+
+			return polySegments;
+		}
+
+		public static List<Segment> ConvertToSegments(Polygon polygon, bool pathIsClosed = true)
+		{
+			List<Segment> polySegments = new List<Segment>(polygon.Count);
+			int endIndex = pathIsClosed ? polygon.Count : polygon.Count - 1;
 			for (int i = 0; i < endIndex; i++)
 			{
-				IntPoint point = path[i];
-				IntPoint nextPoint = path[(i + 1) % path.Count];
+				IntPoint point = polygon[i];
+				IntPoint nextPoint = polygon[(i + 1) % polygon.Count];
 
 				polySegments.Add(new Segment()
 				{
@@ -306,18 +317,17 @@ namespace MatterHackers.MatterSlice
 
 		public bool FindThinLines(Polygon polygon, long overlapMergeAmount_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
 		{
+			return FindThinLines(new Polygons { polygon }, overlapMergeAmount_um, out onlyMergeLines, pathIsClosed);
+		}
+
+		public bool FindThinLines(Polygons polygons, long overlapMergeAmount_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
+		{
 			bool pathHasMergeLines = false;
 
-#if false
-			for(int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex)
-			{
-
-			}
-#endif
-			polygon = MakeCloseSegmentsMergable(polygon, overlapMergeAmount_um, pathIsClosed);
+			polygons = MakeCloseSegmentsMergable(polygons, overlapMergeAmount_um, pathIsClosed);
 
 			// make a copy that has every point duplicated (so that we have them as segments).
-			List<Segment> polySegments = Segment.ConvertPathToSegments(polygon);
+			List<Segment> polySegments = Segment.ConvertToSegments(polygons);
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
 
@@ -406,7 +416,7 @@ namespace MatterHackers.MatterSlice
 			perimeter = MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um, pathIsClosed);
 
 			// make a copy that has every point duplicated (so that we have them as segments).
-			List<Segment> polySegments = Segment.ConvertPathToSegments(perimeter, pathIsClosed);
+			List<Segment> polySegments = Segment.ConvertToSegments(perimeter, pathIsClosed);
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
 
@@ -963,14 +973,35 @@ namespace MatterHackers.MatterSlice
 			return ret;
 		}
 
-		public Polygon MakeCloseSegmentsMergable(Polygon perimeter, long distanceNeedingAdd, bool pathIsClosed = true)
+		public Polygons MakeCloseSegmentsMergable(Polygons polygonsToSplit, long distanceNeedingAdd, bool pathsAreClosed = true)
 		{
-			List<Segment> segments = Segment.ConvertPathToSegments(perimeter, pathIsClosed);
+			Polygons splitPolygons = new Polygons();
+			foreach(var polygonToSplit in polygonsToSplit)
+			{
+				Polygon accumulatedSplits = polygonToSplit;
+				foreach (var pointsToSplitOn in polygonsToSplit)
+				{
+					accumulatedSplits = MakeCloseSegmentsMergable(accumulatedSplits, pointsToSplitOn, distanceNeedingAdd, pathsAreClosed);
+				}
+				splitPolygons.Add(accumulatedSplits);
+			}
+
+			return splitPolygons;
+		}
+
+		public Polygon MakeCloseSegmentsMergable(Polygon polygonToSplit, long distanceNeedingAdd, bool pathIsClosed = true)
+		{
+			return MakeCloseSegmentsMergable(polygonToSplit, polygonToSplit, distanceNeedingAdd, pathIsClosed);
+		}
+
+		public Polygon MakeCloseSegmentsMergable(Polygon polygonToSplit, Polygon pointsToSplitOn, long distanceNeedingAdd, bool pathIsClosed = true)
+		{
+			List<Segment> segments = Segment.ConvertToSegments(polygonToSplit, pathIsClosed);
 
 			// for every segment
 			for (int segmentIndex = segments.Count - 1; segmentIndex >= 0; segmentIndex--)
 			{
-				List<Segment> newSegments = segments[segmentIndex].GetSplitSegmentForVertecies(perimeter, distanceNeedingAdd);
+				List<Segment> newSegments = segments[segmentIndex].GetSplitSegmentForVertecies(pointsToSplitOn, distanceNeedingAdd);
 				if (newSegments?.Count > 0)
 				{
 					// remove the old segment
@@ -980,20 +1011,20 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			Polygon segmentedPerimeter = new Polygon(segments.Count);
+			Polygon segmentedPolygon = new Polygon(segments.Count);
 
 			foreach (var segment in segments)
 			{
-				segmentedPerimeter.Add(segment.Start);
+				segmentedPolygon.Add(segment.Start);
 			}
 
 			if (!pathIsClosed)
 			{
 				// add the last point
-				segmentedPerimeter.Add(segments[segments.Count - 1].End);
+				segmentedPolygon.Add(segments[segments.Count - 1].End);
 			}
 
-			return segmentedPerimeter;
+			return segmentedPolygon;
 		}
 	}
 
