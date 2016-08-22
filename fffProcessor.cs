@@ -821,7 +821,7 @@ namespace MatterHackers.MatterSlice
 					}
 
 					// Find the thin lines for this layer and add them to the queue
-					if (true) // this code is just for test. LBB
+					if (config.FillThinGaps) // this code is just for test. LBB
 					{
 #if true
 						// TODO: this is what it should look like
