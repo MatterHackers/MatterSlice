@@ -377,7 +377,7 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.IsTrue(removedLines);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Count == 2);
-				Assert.IsTrue(correctedPath[0][0].Width == 0);
+				Assert.IsTrue(correctedPath[0][0].Width == 400);
 				Assert.IsTrue(correctedPath[0][0] == new IntPoint(5000, 50));
 				Assert.IsTrue(correctedPath[0][1] == new IntPoint(4500, 50));
 				Assert.IsTrue(correctedPath[1].Count == 2);

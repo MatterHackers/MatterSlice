@@ -484,7 +484,7 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		[Test]
+		[Test, Ignore("Not finished")]
 		public void AllMovesRequiringRetractionDoRetraction()
 		{
 			string baseFileName = "ab retraction test";
