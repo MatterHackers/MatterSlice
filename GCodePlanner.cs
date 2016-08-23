@@ -138,7 +138,7 @@ namespace MatterHackers.MatterSlice
 			// for every vertex
 			for (int splintIndex = 0; splintIndex < splitPoints.Count; splintIndex++)
 			{
-				IntPoint vertex = new IntPoint(splitPoints[splintIndex].X, splitPoints[splintIndex].Y) { Width = splitPoints[splintIndex].Width } - start2D;
+				IntPoint vertex = new IntPoint(splitPoints[splintIndex]) { Z = 0 } - start2D;
 				// if the vertex is close enough to the segment
 				long dotProduct = rightDirection.Dot(vertex);
 				if (Math.Abs(dotProduct) < maxDistanceNormalized)

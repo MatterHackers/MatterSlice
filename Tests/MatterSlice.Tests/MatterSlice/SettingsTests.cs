@@ -41,7 +41,7 @@ namespace MatterHackers.MatterSlice.Tests
 	public class SliceSettingsTests
 	{
 		#region Inset order tests
-		[Test, Ignore("Not finished")]
+		[Test, Category("FixNeeded")]
 		public void OuterPerimeterFirstCorrect()
 		{
 			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
@@ -484,7 +484,7 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		[Test, Ignore("Not finished")]
+		[Test, Category("FixNeeded")]
 		public void AllMovesRequiringRetractionDoRetraction()
 		{
 			string baseFileName = "ab retraction test";
