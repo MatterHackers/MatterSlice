@@ -114,6 +114,9 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("If set thin gaps between perimeter lines will be filled.")]
 		public bool FillThinGaps { get; set; } = false;
 
+		[SettingDescription("Detect and output walls than are less than the nozzle diameter. Output width will be nozzle diameter.")]
+		public bool ExpandThinWalls { get; set; } = false;
+
 		[SettingDescription("The width of the line to extrude for the first layer.")]
 		public double FirstLayerExtrusionWidth { get; set; }
 
