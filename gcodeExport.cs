@@ -57,7 +57,7 @@ namespace MatterHackers.MatterSlice
 		private bool wipeAfterRetraction;
 		private long zPos_um;
 
-		public long CurrentZ { get { return zPos_um; } } 
+		public long CurrentZ { get { return zPos_um; } }
 
 		public GCodeExport()
 		{
@@ -206,7 +206,7 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			if(beforeToolchangeCode != null && beforeToolchangeCode != "")
+			if (beforeToolchangeCode != null && beforeToolchangeCode != "")
 			{
 				WriteCode("; Before Tool Change GCode");
 				WriteCode(beforeToolchangeCode);
@@ -297,14 +297,14 @@ namespace MatterHackers.MatterSlice
 			gcodeFileStream.Write("{0}\n".FormatWith(line));
 		}
 
-        public void WriteMove(IntPoint movePosition_um, double speed, long lineWidth_um)
-        {
-            StringBuilder lineToWrite = new StringBuilder();
+		public void WriteMove(IntPoint movePosition_um, double speed, long lineWidth_um)
+		{
+			StringBuilder lineToWrite = new StringBuilder();
 
 			//Normal E handling.
 			if (lineWidth_um != 0)
-            {
-                IntPoint diff = movePosition_um - GetPosition();
+			{
+				IntPoint diff = movePosition_um - GetPosition();
 				if (isRetracted)
 				{
 					if (retractionZHop_mm > 0)
@@ -332,61 +332,61 @@ namespace MatterHackers.MatterSlice
 					isRetracted = false;
 				}
 
-                extrusionAmount_mm += extrusionPerMm * lineWidth_um / 1000.0 * diff.LengthMm();
-                lineToWrite.Append("G1");
-            }
-            else
-            {
-                lineToWrite.Append("G0");
-            }
+				extrusionAmount_mm += extrusionPerMm * lineWidth_um / 1000.0 * diff.LengthMm();
+				lineToWrite.Append("G1");
+			}
+			else
+			{
+				lineToWrite.Append("G0");
+			}
 
-            if (currentSpeed != speed)
-            {
-                lineToWrite.Append(" F{0}".FormatWith(speed * 60));
-                currentSpeed = speed;
-            }
+			if (currentSpeed != speed)
+			{
+				lineToWrite.Append(" F{0}".FormatWith(speed * 60));
+				currentSpeed = speed;
+			}
 
-            double xWritePosition = (double)(movePosition_um.X - extruderOffset_um[extruderIndex].X) / 1000.0;
-            double yWritePosition = (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].Y) / 1000.0;
-            lineToWrite.Append(" X{0:0.###} Y{1:0.###}".FormatWith(xWritePosition, yWritePosition));
+			double xWritePosition = (double)(movePosition_um.X - extruderOffset_um[extruderIndex].X) / 1000.0;
+			double yWritePosition = (double)(movePosition_um.Y - extruderOffset_um[extruderIndex].Y) / 1000.0;
+			lineToWrite.Append(" X{0:0.###} Y{1:0.###}".FormatWith(xWritePosition, yWritePosition));
 
-            if (movePosition_um.Z != currentPosition_um.Z)
-            {
-                double zWritePosition = (double)(movePosition_um.Z - extruderOffset_um[extruderIndex].Z) / 1000.0;
+			if (movePosition_um.Z != currentPosition_um.Z)
+			{
+				double zWritePosition = (double)(movePosition_um.Z - extruderOffset_um[extruderIndex].Z) / 1000.0;
 				if (lineWidth_um == 0
 					&& isRetracted)
 				{
 					zWritePosition += retractionZHop_mm;
 				}
 				lineToWrite.Append(" Z{0:0.###}".FormatWith(zWritePosition));
-            }
+			}
 
-            if (lineWidth_um != 0)
-            {
-                lineToWrite.Append(" E{0:0.#####}".FormatWith(extrusionAmount_mm));
-            }
+			if (lineWidth_um != 0)
+			{
+				lineToWrite.Append(" E{0:0.#####}".FormatWith(extrusionAmount_mm));
+			}
 
-            lineToWrite.Append("\n");
+			lineToWrite.Append("\n");
 
-            if (lineToWrite.Length > 0)
-            {
-                string lineAsString = lineToWrite.ToString();
-                gcodeFileStream.Write(lineAsString);
-            }
+			if (lineToWrite.Length > 0)
+			{
+				string lineAsString = lineToWrite.ToString();
+				gcodeFileStream.Write(lineAsString);
+			}
 
-            //If wipe enabled remember path, but stop at 100 moves to keep memory usage low
-            if (wipeAfterRetraction)
-            {
-                retractionWipePath.Add(movePosition_um);
-                if (retractionWipePath.Count > 100)
-                {
-                    retractionWipePath.RemoveAt(0);
-                }
-            }
+			//If wipe enabled remember path, but stop at 100 moves to keep memory usage low
+			if (wipeAfterRetraction)
+			{
+				retractionWipePath.Add(movePosition_um);
+				if (retractionWipePath.Count > 100)
+				{
+					retractionWipePath.RemoveAt(0);
+				}
+			}
 
-            currentPosition_um = movePosition_um;
-            estimateCalculator.plan(new TimeEstimateCalculator.Position(currentPosition_um.X / 1000.0, currentPosition_um.Y / 1000.0, currentPosition_um.Z / 1000.0, extrusionAmount_mm), speed);
-        }
+			currentPosition_um = movePosition_um;
+			estimateCalculator.plan(new TimeEstimateCalculator.Position(currentPosition_um.X / 1000.0, currentPosition_um.Y / 1000.0, currentPosition_um.Z / 1000.0, extrusionAmount_mm), speed);
+		}
 
 		public void WriteRetraction()
 		{

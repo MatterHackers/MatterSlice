@@ -64,9 +64,55 @@ namespace MatterHackers.MatterSlice.Tests
 			return Path.ChangeExtension(Path.Combine("..", "..", "..", "TestData", "Temp", file), "gcode");
 		}
 
-		public static List<Polygons> GetExtrusionPolygons(string[] gcode)
+		public static Polygons GetExtrusionPolygons(string[] gcode, ref MovementInfo movementInfo)
 		{
-			throw new NotImplementedException();
+			Polygons foundPolygons = new Polygons();
+
+			bool extruding = false;
+			// check that all moves are on the outside of the cylinder (not crossing to a new point)
+			int movementCount = 0;
+			foreach (MovementInfo movement in TestUtlities.Movements(gcode, movementInfo))
+			{
+				bool isExtrude = movement.extrusion != movementInfo.extrusion;
+
+				if (extruding)
+				{
+					if(isExtrude)
+					{
+						// add to the extrusion
+						foundPolygons[foundPolygons.Count-1].Add(new IntPoint(
+							(long)(movement.position.x * 1000),
+							(long)(movement.position.y * 1000),
+							(long)(movement.position.z * 1000)));
+					}
+					else
+					{
+						extruding = false;
+					}
+				}
+				else // not extruding
+				{ 
+					if (isExtrude)
+					{
+						// starting a new extrusion
+						foundPolygons.Add(new Polygon());
+						foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
+							(long)(movement.position.x * 1000),
+							(long)(movement.position.y * 1000),
+							(long)(movement.position.z * 1000)));
+						extruding = true;
+					}
+					else // do nothing waiting for extrude
+					{
+						int stop = 0;
+					}
+				}
+
+				movementInfo = movement;
+				movementCount++;
+			}
+
+			return foundPolygons;
 		}
 
 		public static string GetControlGCodePath(string file)

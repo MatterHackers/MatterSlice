@@ -111,6 +111,9 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The width of the filament being fed into the extruder, in millimeters.")]
 		public double FilamentDiameter { get; set; }
 
+		[SettingDescription("If set thin gaps between perimeter lines will be filled.")]
+		public bool FillThinGaps { get; set; } = false;
+
 		[SettingDescription("The width of the line to extrude for the first layer.")]
 		public double FirstLayerExtrusionWidth { get; set; }
 

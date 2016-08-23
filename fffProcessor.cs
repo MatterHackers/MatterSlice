@@ -805,13 +805,13 @@ namespace MatterHackers.MatterSlice
 							if (island.InsetToolPaths.Count > 0)
 							{
 								// Move to the closest inset 1 and print it
-								for (int insetIndex = island.InsetToolPaths.Count-1; insetIndex >= 0; insetIndex--)
+								for (int insetIndex = island.InsetToolPaths.Count - 1; insetIndex >= 0; insetIndex--)
 								{
 									limitDistance = QueueClosetsInset(
-										insetsToPrint[insetIndex], 
-										limitDistance, 
+										insetsToPrint[insetIndex],
+										limitDistance,
 										insetIndex == 0 ? inset0Config : insetXConfig,
-										layerIndex, 
+										layerIndex,
 										layerGcodePlanner);
 								}
 							}
@@ -821,15 +821,16 @@ namespace MatterHackers.MatterSlice
 					}
 
 					// Find the thin lines for this layer and add them to the queue
-					if (false) // this code is just for test. LBB
+					if (config.FillThinGaps) // this code is just for test. LBB
 					{
+#if true
 						// TODO: this is what it should look like
-						//Polygons thinLines;
-						//if (layerGcodePlanner.FindThinLines(island.IslandOutline.Offset(-extrusionWidth_um * 1), extrusionWidth_um - 2, out thinLines, true))
-						//{
-						//	fillPolygons.AddRange(thinLines);
-						//}
-
+						Polygons thinLines = null;
+						if (layerGcodePlanner.FindThinLines(island.IslandOutline.Offset(-extrusionWidth_um * 1), extrusionWidth_um - 2, out thinLines, true))
+						{
+							fillPolygons.AddRange(thinLines);
+						}
+#else
 						Polygon path = new Polygon(); // needs to be polygons, see above
 						Polygons thinLines;
 						foreach (var outline in island.IslandOutline.Offset(-extrusionWidth_um * 1))
@@ -844,6 +845,7 @@ namespace MatterHackers.MatterSlice
 						{
 							fillPolygons.AddRange(thinLines);
 						}
+#endif
 					}
 				}
 
