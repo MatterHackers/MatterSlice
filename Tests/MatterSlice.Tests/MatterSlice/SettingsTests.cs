@@ -120,11 +120,12 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void Has2WallRingsAllTheWayUp()
 		{
-			Has2WallRingsAllTheWayUp("SimpleHole", 25);
-			Has2WallRingsAllTheWayUp("Thinning Walls Ring", 45, true);
+			DoHas2WallRingsAllTheWayUp("SimpleHole", 25);
+			DoHas2WallRingsAllTheWayUp("CylinderWithHole", 50);
+			DoHas2WallRingsAllTheWayUp("Thinning Walls Ring", 45, true);
 		}
 
-		public void Has2WallRingsAllTheWayUp(string fileName, int expectedLayerCount, bool checkRadius = false)
+		public void DoHas2WallRingsAllTheWayUp(string fileName, int expectedLayerCount, bool checkRadius = false)
 		{
 			string stlFile = TestUtlities.GetStlPath(fileName);
 			string gCodeFile = TestUtlities.GetTempGCodePath(fileName + ".gcode");
@@ -508,40 +509,41 @@ namespace MatterHackers.MatterSlice.Tests
 				string[] gcodeContents = TestUtlities.LoadGCodeFile(gcodeToCreate);
 				int layerCount = TestUtlities.CountLayers(gcodeContents);
 				bool firstPosition = true;
-				for(int layerIndex=0; layerIndex<layerCount; layerIndex++)
+				MovementInfo lastMovement = new MovementInfo();
+				bool lastMoveIsExtrusion = true;
+				for (int layerIndex=0; layerIndex<layerCount; layerIndex++)
 				{
 					string[] layerGCode = TestUtlities.GetGCodeForLayer(gcodeContents, layerIndex);
-					MovementInfo lastExtrusionMovement = new MovementInfo();
 					int movementIndex = 0;
-					bool lastMoveIsExtrusion = true;
-					foreach (MovementInfo movement in TestUtlities.Movements(layerGCode))
+					foreach (MovementInfo movement in TestUtlities.Movements(layerGCode, lastMovement))
 					{
 						if (!firstPosition)
 						{
-							bool isTravel = lastExtrusionMovement.extrusion == movement.extrusion;
+							bool isTravel = lastMovement.extrusion == movement.extrusion;
 							if (isTravel)
 							{
-								Vector3 lastPosition = lastExtrusionMovement.position;
+								Vector3 lastPosition = lastMovement.position;
 								lastPosition.z = 0;
 								Vector3 currenPosition = movement.position;
 								currenPosition.z = 0;
 								double xyLength = (lastPosition - currenPosition).Length;
-								if (xyLength > config.MinimumTravelToCauseRetraction
+								if (xyLength > config.MinimumTravelToCauseRetraction * 2
 									&& lastMoveIsExtrusion)
 								{
-									Assert.IsTrue(movement.position.z > lastExtrusionMovement.position.z);
+									Assert.IsTrue(movement.position.z > lastMovement.position.z);
 								}
 
 								lastMoveIsExtrusion = false;
 							}
 							else
 							{
-								lastExtrusionMovement = movement;
 								lastMoveIsExtrusion = true;
 							}
+
+							lastMoveIsExtrusion = !isTravel;
 						}
 
-						//lastExtrusionMovement = movement;
+						lastMovement = movement;
 						firstPosition = false;
 						movementIndex++;
 					}

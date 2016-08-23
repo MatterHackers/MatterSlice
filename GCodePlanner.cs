@@ -409,8 +409,15 @@ namespace MatterHackers.MatterSlice
 		}
 
 
-		public bool MergePerimeterOverlaps(Polygon perimeter, long overlapMergeAmount_um, out Polygons separatedPolygons, bool pathIsClosed = true)
+		public static bool MergePerimeterOverlaps(Polygon perimeter, long overlapMergeAmount_um, out Polygons separatedPolygons, bool pathIsClosed = true)
 		{
+			separatedPolygons = new Polygons();
+
+			perimeter = Clipper.CleanPolygons(new Polygons() { perimeter }, overlapMergeAmount_um/10)[0];
+			if(perimeter.Count == 0)
+			{
+				return false;
+			}
 			bool pathWasOptomized = false;
 
 			perimeter = MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um, pathIsClosed);
@@ -468,7 +475,6 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// go through the polySegments and create a new polygon for every connected set of segments
-			separatedPolygons = new Polygons();
 			Polygon currentPolygon = new Polygon();
 			separatedPolygons.Add(currentPolygon);
 			// put in the first point
@@ -989,12 +995,12 @@ namespace MatterHackers.MatterSlice
 			return splitPolygons;
 		}
 
-		public Polygon MakeCloseSegmentsMergable(Polygon polygonToSplit, long distanceNeedingAdd, bool pathIsClosed = true)
+		public static Polygon MakeCloseSegmentsMergable(Polygon polygonToSplit, long distanceNeedingAdd, bool pathIsClosed = true)
 		{
 			return MakeCloseSegmentsMergable(polygonToSplit, polygonToSplit, distanceNeedingAdd, pathIsClosed);
 		}
 
-		public Polygon MakeCloseSegmentsMergable(Polygon polygonToSplit, Polygon pointsToSplitOn, long distanceNeedingAdd, bool pathIsClosed = true)
+		public static Polygon MakeCloseSegmentsMergable(Polygon polygonToSplit, Polygon pointsToSplitOn, long distanceNeedingAdd, bool pathIsClosed = true)
 		{
 			List<Segment> segments = Segment.ConvertToSegments(polygonToSplit, pathIsClosed);
 
