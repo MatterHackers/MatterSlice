@@ -95,9 +95,15 @@ namespace MatterHackers.MatterSlice
 			int endIndex = pathIsClosed ? path.Count : path.Count - 1;
 			for (int i = 0; i < endIndex; i++)
 			{
-				IntPoint point = new IntPoint(path[i].X, path[i].Y, zHeight);
+				IntPoint point = new IntPoint(path[i])
+				{
+					Z = zHeight
+				};
 				int nextIndex = (i + 1) % path.Count;
-				IntPoint nextPoint = new IntPoint(path[nextIndex].X, path[nextIndex].Y, zHeight);
+				IntPoint nextPoint = new IntPoint(path[nextIndex])
+				{
+					Z = zHeight
+				};
 
 				polySegments.Add(new Segment()
 				{
@@ -111,8 +117,14 @@ namespace MatterHackers.MatterSlice
 
 		public List<Segment> GetSplitSegmentForVertecies(Polygon splitPoints, long maxDistance)
 		{
-			IntPoint start2D = new IntPoint(Start.X, Start.Y);
-			IntPoint end2D = new IntPoint(End.X, End.Y);
+			IntPoint start2D = new IntPoint(Start)
+			{
+				Z = 0
+			};
+			IntPoint end2D = new IntPoint(End)
+			{
+				Z = 0
+			};
 
 			SortedList<long, IntPoint> requiredSplits2D = new SortedList<long, IntPoint>();
 
@@ -126,7 +138,7 @@ namespace MatterHackers.MatterSlice
 			// for every vertex
 			for (int splintIndex = 0; splintIndex < splitPoints.Count; splintIndex++)
 			{
-				IntPoint vertex = new IntPoint(splitPoints[splintIndex].X, splitPoints[splintIndex].Y) - start2D;
+				IntPoint vertex = new IntPoint(splitPoints[splintIndex].X, splitPoints[splintIndex].Y) { Width = splitPoints[splintIndex].Width } - start2D;
 				// if the vertex is close enough to the segment
 				long dotProduct = rightDirection.Dot(vertex);
 				if (Math.Abs(dotProduct) < maxDistanceNormalized)
@@ -413,12 +425,22 @@ namespace MatterHackers.MatterSlice
 		{
 			separatedPolygons = new Polygons();
 
-			perimeter = Clipper.CleanPolygons(new Polygons() { perimeter }, overlapMergeAmount_um/10)[0];
-			if(perimeter.Count == 0)
+			Polygons cleanedPolygs = Clipper.CleanPolygons(new Polygons() { perimeter }, overlapMergeAmount_um / 10);
+			perimeter = cleanedPolygs[0];
+
+			if (perimeter.Count == 0)
 			{
 				return false;
 			}
 			bool pathWasOptomized = false;
+
+			for(int i=0; i<perimeter.Count; i++)
+			{
+				perimeter[i] = new IntPoint(perimeter[i])
+				{
+					Width = overlapMergeAmount_um
+				};
+			}
 
 			perimeter = MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um, pathIsClosed);
 

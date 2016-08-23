@@ -333,9 +333,9 @@ namespace MatterHackers.MatterSlice.Tests
 				GCodePlanner.MergePerimeterOverlaps(perimeter, 200, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Count == 2);
-				Assert.IsTrue(correctedPath[0][0].Width == 0);
+				Assert.IsTrue(correctedPath[0][0].Width == 200);
 				Assert.IsTrue(correctedPath[1][0].Width == 250);
-				Assert.IsTrue(correctedPath[2][0].Width == 0);
+				Assert.IsTrue(correctedPath[2][0].Width == 200);
 			}
 
 			// A very simple collapse upper right start
@@ -385,7 +385,7 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.IsTrue(correctedPath[1][0] == new IntPoint(4500, 25));
 				Assert.IsTrue(correctedPath[1][1] == new IntPoint(0, 25));
 				Assert.IsTrue(correctedPath[2].Count == 2);
-				Assert.IsTrue(correctedPath[2][0].Width == 0);
+				Assert.IsTrue(correctedPath[2][0].Width == 400);
 			}
 
 			// A path that needs to have points inserted to do the correct thing

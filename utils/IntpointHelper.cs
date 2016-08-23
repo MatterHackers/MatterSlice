@@ -140,12 +140,18 @@ namespace MatterHackers.MatterSlice
 
 		public static IntPoint GetPerpendicularRight(this IntPoint thisPoint)
 		{
-			return new IntPoint(thisPoint.Y, -thisPoint.X);
+			return new IntPoint(thisPoint.Y, -thisPoint.X)
+			{
+				Width = thisPoint.Width
+			};
 		}
 
 		public static IntPoint GetPerpendicularLeft(this IntPoint thisPoint)
 		{
-			return new IntPoint(-thisPoint.Y, thisPoint.X);
+			return new IntPoint(-thisPoint.Y, thisPoint.X)
+			{
+				Width = thisPoint.Width
+			};
 		}
 
 		public static IntPoint GetRotated(this IntPoint thisPoint, double radians)
@@ -212,7 +218,10 @@ namespace MatterHackers.MatterSlice
 			long _len = thisPoint.Length();
 			if (_len < 1)
 			{
-				return new IntPoint(len, 0);
+				return new IntPoint(len, 0)
+				{
+					Width = thisPoint.Width
+				};
 			}
 
 			return thisPoint * len / _len;

@@ -527,7 +527,7 @@ namespace MatterHackers.MatterSlice.Tests
 								Vector3 currenPosition = movement.position;
 								currenPosition.z = 0;
 								double xyLength = (lastPosition - currenPosition).Length;
-								if (xyLength > config.MinimumTravelToCauseRetraction * 2
+								if (xyLength > config.MinimumTravelToCauseRetraction
 									&& lastMoveIsExtrusion)
 								{
 									Assert.IsTrue(movement.position.z > lastMovement.position.z);
