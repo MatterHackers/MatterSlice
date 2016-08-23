@@ -411,22 +411,34 @@ namespace MSClipperLib
 
 		public static IntPoint operator +(IntPoint p0, IntPoint p1)
 		{
-			return new IntPoint(p0.X + p1.X, p0.Y + p1.Y, p0.Z + p1.Z);
+			return new IntPoint(p0.X + p1.X, p0.Y + p1.Y, p0.Z + p1.Z)
+			{
+				Width = p0.Width
+			};
 		}
 
 		public static IntPoint operator -(IntPoint p0, IntPoint p1)
 		{
-			return new IntPoint(p0.X - p1.X, p0.Y - p1.Y, p0.Z - p1.Z);
+			return new IntPoint(p0.X - p1.X, p0.Y - p1.Y, p0.Z - p1.Z)
+			{
+				Width = p0.Width
+			};
 		}
 
 		public static IntPoint operator *(IntPoint p0, long i)
 		{
-			return new IntPoint(p0.X * i, p0.Y * i, p0.Z * i);
+			return new IntPoint(p0.X * i, p0.Y * i, p0.Z * i)
+			{
+				Width = p0.Width
+			};
 		}
 
 		public static IntPoint operator /(IntPoint p0, long i)
 		{
-			return new IntPoint(p0.X / i, p0.Y / i, p0.Z / i);
+			return new IntPoint(p0.X / i, p0.Y / i, p0.Z / i)
+			{
+				Width = p0.Width
+			};
 		}
 
 		/////////////////////////////////////////////////// end added for MatterSlice ///////////////////////////////////////////////////

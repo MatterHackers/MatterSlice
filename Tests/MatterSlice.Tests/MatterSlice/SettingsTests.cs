@@ -41,7 +41,7 @@ namespace MatterHackers.MatterSlice.Tests
 	public class SliceSettingsTests
 	{
 		#region Inset order tests
-		[Test, Ignore("Not finished")]
+		[Test, Category("FixNeeded")]
 		public void OuterPerimeterFirstCorrect()
 		{
 			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
@@ -484,7 +484,7 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		[Test]
+		[Test, Category("FixNeeded")]
 		public void AllMovesRequiringRetractionDoRetraction()
 		{
 			string baseFileName = "ab retraction test";
@@ -527,7 +527,7 @@ namespace MatterHackers.MatterSlice.Tests
 								Vector3 currenPosition = movement.position;
 								currenPosition.z = 0;
 								double xyLength = (lastPosition - currenPosition).Length;
-								if (xyLength > config.MinimumTravelToCauseRetraction * 2
+								if (xyLength > config.MinimumTravelToCauseRetraction
 									&& lastMoveIsExtrusion)
 								{
 									Assert.IsTrue(movement.position.z > lastMovement.position.z);
