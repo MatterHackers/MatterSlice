@@ -823,19 +823,20 @@ namespace MatterHackers.MatterSlice
 					// Find the thin lines for this layer and add them to the queue
 					if (config.FillThinGaps) // this code is just for test. LBB
 					{
-						// TODO: this is what it should look like
-						Polygons thinLines = null;
-						if (layerGcodePlanner.FindThinLines(island.IslandOutline.Offset(-extrusionWidth_um * 1), extrusionWidth_um - 2, out thinLines, true))
+						for (int perimeter = 0; perimeter < config.NumberOfPerimeters; perimeter++)
 						{
-							fillPolygons.AddRange(thinLines);
+							Polygons thinLines = null;
+							if (layerGcodePlanner.FindThinLines(island.IslandOutline.Offset(-extrusionWidth_um * (1 + perimeter)), extrusionWidth_um - extrusionWidth_um / 20, extrusionWidth_um / 5, out thinLines, true))
+							{
+								fillPolygons.AddRange(thinLines);
+							}
 						}
 					}
 
 					if (config.ExpandThinWalls) // this code is just for test. LBB
 					{
-						// TODO: this is what it should look like
 						Polygons thinLines = null;
-						if (layerGcodePlanner.FindThinLines(island.IslandOutline, extrusionWidth_um - 2, out thinLines, true))
+						if (layerGcodePlanner.FindThinLines(island.IslandOutline, extrusionWidth_um - 2, extrusionWidth_um / 5, out thinLines, true))
 						{
 							fillPolygons.AddRange(thinLines);
 						}
