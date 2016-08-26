@@ -327,12 +327,12 @@ namespace MatterHackers.MatterSlice
 		[Flags]
 		enum Altered { remove = 1, merged = 2 };
 
-		public bool FindThinLines(Polygon polygon, long overlapMergeAmount_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
+		public bool FindThinLines(Polygon polygon, long overlapMergeAmount_um, long minimumRequiredWidth_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
 		{
-			return FindThinLines(new Polygons { polygon }, overlapMergeAmount_um, out onlyMergeLines, pathIsClosed);
+			return FindThinLines(new Polygons { polygon }, overlapMergeAmount_um, minimumRequiredWidth_um, out onlyMergeLines, pathIsClosed);
 		}
 
-		public bool FindThinLines(Polygons polygons, long overlapMergeAmount_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
+		public bool FindThinLines(Polygons polygons, long overlapMergeAmount_um, long minimumRequiredWidth_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
 		{
 			bool pathHasMergeLines = false;
 
@@ -363,16 +363,20 @@ namespace MatterHackers.MatterSlice
 							long startEndWidth = Math.Abs((polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length());
 							long endStartWidth = Math.Abs((polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length());
 							long width = Math.Min(startEndWidth, endStartWidth);
-							polySegments[firstSegmentIndex].Start = (polySegments[firstSegmentIndex].Start + polySegments[checkSegmentIndex].End) / 2; // the start
-							polySegments[firstSegmentIndex].Start.Width = width;
-							polySegments[firstSegmentIndex].End = (polySegments[firstSegmentIndex].End + polySegments[checkSegmentIndex].Start) / 2; // the end
-							polySegments[firstSegmentIndex].End.Width = width;
 
-							markedAltered[firstSegmentIndex] = Altered.merged;
-							// mark this segment for removal
-							markedAltered[checkSegmentIndex] = Altered.remove;
-							// We only expect to find one match for each segment, so move on to the next segment
-							break;
+							if (width > minimumRequiredWidth_um)
+							{
+								polySegments[firstSegmentIndex].Start = (polySegments[firstSegmentIndex].Start + polySegments[checkSegmentIndex].End) / 2; // the start
+								polySegments[firstSegmentIndex].Start.Width = width;
+								polySegments[firstSegmentIndex].End = (polySegments[firstSegmentIndex].End + polySegments[checkSegmentIndex].Start) / 2; // the end
+								polySegments[firstSegmentIndex].End.Width = width;
+
+								markedAltered[firstSegmentIndex] = Altered.merged;
+								// mark this segment for removal
+								markedAltered[checkSegmentIndex] = Altered.remove;
+								// We only expect to find one match for each segment, so move on to the next segment
+								break;
+							}
 						}
 					}
 				}
@@ -416,6 +420,8 @@ namespace MatterHackers.MatterSlice
 			{
 				currentPolygon.Add(polySegments[polySegments.Count - 1].End);
 			}
+
+			Clipper.CleanPolygons(onlyMergeLines, overlapMergeAmount_um / 10);
 
 			return pathHasMergeLines;
 		}
