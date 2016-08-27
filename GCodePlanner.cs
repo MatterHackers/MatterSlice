@@ -421,7 +421,8 @@ namespace MatterHackers.MatterSlice
 				currentPolygon.Add(polySegments[polySegments.Count - 1].End);
 			}
 
-			Clipper.CleanPolygons(onlyMergeLines, overlapMergeAmount_um / 10);
+			long cleanDistance_um = overlapMergeAmount_um / 40;
+			Clipper.CleanPolygons(onlyMergeLines, cleanDistance_um);
 
 			return pathHasMergeLines;
 		}
@@ -431,7 +432,9 @@ namespace MatterHackers.MatterSlice
 		{
 			separatedPolygons = new Polygons();
 
-			Polygons cleanedPolygs = Clipper.CleanPolygons(new Polygons() { perimeter }, overlapMergeAmount_um / 10);
+			long cleanDistance_um = overlapMergeAmount_um / 40;
+
+			Polygons cleanedPolygs = Clipper.CleanPolygons(new Polygons() { perimeter }, cleanDistance_um);
 			perimeter = cleanedPolygs[0];
 
 			if (perimeter.Count == 0)
