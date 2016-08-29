@@ -836,8 +836,19 @@ namespace MatterHackers.MatterSlice
 					if (config.ExpandThinWalls) // this code is just for test. LBB
 					{
 						Polygons thinLines = null;
-						if (layerGcodePlanner.FindThinLines(island.IslandOutline, extrusionWidth_um - 2, extrusionWidth_um / 5, out thinLines, true))
+						// Collect all of the lines up to one third the extrusion diameter
+						if (layerGcodePlanner.FindThinLines(island.IslandOutline, extrusionWidth_um - 2, extrusionWidth_um / 3, out thinLines, true))
 						{
+							foreach(var polygon in thinLines)
+							{
+								for(int i=0; i<polygon.Count; i++)
+								{
+									polygon[i] = new IntPoint(polygon[i])
+									{
+										Width = extrusionWidth_um,
+									};
+								}
+							}
 							fillPolygons.AddRange(thinLines);
 						}
 					}
