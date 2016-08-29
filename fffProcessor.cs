@@ -280,11 +280,11 @@ namespace MatterHackers.MatterSlice
 
 					if (layerIndex == 0)
 					{
-						layer.GenerateInsets(config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, insetCount);
+						layer.GenerateInsets(config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, insetCount, config.ExpandThinWalls);
 					}
 					else
 					{
-						layer.GenerateInsets(config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, insetCount);
+						layer.GenerateInsets(config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, insetCount, config.ExpandThinWalls);
 					}
 				}
 				LogOutput.Log("Creating Insets {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
@@ -672,7 +672,14 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				islandOrderOptimizer.AddPolygon(layer.Islands[partIndex].InsetToolPaths[0][0]);
+				if (config.ExpandThinWalls)
+				{
+					islandOrderOptimizer.AddPolygon(layer.Islands[partIndex].IslandOutline[0]);
+				}
+				else
+				{
+					islandOrderOptimizer.AddPolygon(layer.Islands[partIndex].InsetToolPaths[0][0]);
+				}
 			}
 			islandOrderOptimizer.Optimize();
 
@@ -734,7 +741,8 @@ namespace MatterHackers.MatterSlice
 
 					// Figure out where the seam hiding start point is for inset 0 and move to that spot so
 					// we have the minimum travel while starting inset 0 after printing the rest of the insets
-					if (island?.InsetToolPaths?[0]?[0]?.Count > 0
+					if (island?.InsetToolPaths.Count > 0
+						&& island?.InsetToolPaths?[0]?[0]?.Count > 0
 						&& !config.ContinuousSpiralOuterPerimeter)
 					{
 						int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
@@ -821,7 +829,7 @@ namespace MatterHackers.MatterSlice
 					}
 
 					// Find the thin lines for this layer and add them to the queue
-					if (config.FillThinGaps) // this code is just for test. LBB
+					if (config.FillThinGaps)
 					{
 						for (int perimeter = 0; perimeter < config.NumberOfPerimeters; perimeter++)
 						{
@@ -833,11 +841,23 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 
-					if (config.ExpandThinWalls) // this code is just for test. LBB
+					if (config.ExpandThinWalls)
 					{
 						Polygons thinLines = null;
-						if (layerGcodePlanner.FindThinLines(island.IslandOutline, extrusionWidth_um - 2, extrusionWidth_um / 5, out thinLines, true))
+						// Collect all of the lines up to one third the extrusion diameter
+						string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(island.IslandOutline);
+						if (layerGcodePlanner.FindThinLines(island.IslandOutline, extrusionWidth_um - 2, extrusionWidth_um / 3, out thinLines, true))
 						{
+							foreach(var polygon in thinLines)
+							{
+								for(int i=0; i<polygon.Count; i++)
+								{
+									polygon[i] = new IntPoint(polygon[i])
+									{
+										Width = extrusionWidth_um,
+									};
+								}
+							}
 							fillPolygons.AddRange(thinLines);
 						}
 					}

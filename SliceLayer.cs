@@ -237,7 +237,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void GenerateInsets(int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
+		public void GenerateInsets(int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount, bool expandThinWalls)
 		{
 			SliceLayer layer = this;
 			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
@@ -245,14 +245,17 @@ namespace MatterHackers.MatterSlice
 				layer.Islands[islandIndex].GenerateInsets(extrusionWidth_um, outerExtrusionWidth_um, insetCount);
 			}
 
-			//Remove the parts which did not generate an inset. As these parts are too small to print,
-			// and later code can now assume that there is always minimum 1 inset line.
-			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
+			if (!expandThinWalls)
 			{
-				if (layer.Islands[islandIndex].InsetToolPaths.Count < 1)
+				//Remove the parts which did not generate an inset. As these parts are too small to print,
+				// and later code can now assume that there is always minimum 1 inset line.
+				for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 				{
-					layer.Islands.RemoveAt(islandIndex);
-					islandIndex -= 1;
+					if (layer.Islands[islandIndex].InsetToolPaths.Count < 1)
+					{
+						layer.Islands.RemoveAt(islandIndex);
+						islandIndex -= 1;
+					}
 				}
 			}
 		}
