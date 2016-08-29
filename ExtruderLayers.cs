@@ -47,6 +47,10 @@ namespace MatterHackers.MatterSlice
 			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 			{
 				LayerIsland island = layer.Islands[islandIndex];
+				if (island.InsetToolPaths.Count == 0)
+				{
+					continue;
+				}
 				// this is the entire extrusion width to make sure we are outside of the extrusion line
 				Polygons lastInset = island.InsetToolPaths[island.InsetToolPaths.Count - 1];
 				Polygons insetWithOffset = lastInset.Offset(-extrusionWidth_um);
