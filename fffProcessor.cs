@@ -655,7 +655,8 @@ namespace MatterHackers.MatterSlice
 				if (layer.Islands.Count == 1)
 				{
 					LayerIsland island = layer?.Islands?[0];
-					if (island?.InsetToolPaths?[0]?[0]?.Count > 0)
+					if (island?.InsetToolPaths ?.Count > 0
+						&& island?.InsetToolPaths?[0]?[0]?.Count > 0)
 					{
 						int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
 						layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundary);
@@ -834,7 +835,7 @@ namespace MatterHackers.MatterSlice
 						for (int perimeter = 0; perimeter < config.NumberOfPerimeters; perimeter++)
 						{
 							Polygons thinLines = null;
-							if (layerGcodePlanner.FindThinLines(island.IslandOutline.Offset(-extrusionWidth_um * (1 + perimeter)), extrusionWidth_um - extrusionWidth_um / 20, extrusionWidth_um / 5, out thinLines, true))
+							if (GCodePlanner.FindThinLines(island.IslandOutline.Offset(-extrusionWidth_um * (1 + perimeter)), extrusionWidth_um - extrusionWidth_um / 20, extrusionWidth_um / 5, out thinLines, true))
 							{
 								fillPolygons.AddRange(thinLines);
 							}
@@ -845,17 +846,20 @@ namespace MatterHackers.MatterSlice
 					{
 						Polygons thinLines = null;
 						// Collect all of the lines up to one third the extrusion diameter
-						string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(island.IslandOutline);
-						if (layerGcodePlanner.FindThinLines(island.IslandOutline, extrusionWidth_um - 2, extrusionWidth_um / 3, out thinLines, true))
+						//string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(island.IslandOutline);
+						if (GCodePlanner.FindThinLines(island.IslandOutline, extrusionWidth_um - 2, extrusionWidth_um / 3, out thinLines, true))
 						{
 							foreach(var polygon in thinLines)
 							{
 								for(int i=0; i<polygon.Count; i++)
 								{
-									polygon[i] = new IntPoint(polygon[i])
+									if (polygon[i].Width > 0)
 									{
-										Width = extrusionWidth_um,
-									};
+										polygon[i] = new IntPoint(polygon[i])
+										{
+											Width = extrusionWidth_um,
+										};
+									}
 								}
 							}
 							fillPolygons.AddRange(thinLines);

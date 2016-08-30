@@ -29,9 +29,8 @@ either expressed or implied, of the FreeBSD Project.
 
 using MSClipperLib;
 using NUnit.Framework;
-using System;
 using System.Collections.Generic;
-using System.IO;
+using MatterHackers.MatterSlice;
 
 namespace MatterHackers.MatterSlice.Tests
 {
@@ -191,13 +190,10 @@ namespace MatterHackers.MatterSlice.Tests
 				// |          |
 				// |__________|
 
-				int travelSpeed = 50;
-				int retractionMinimumDistance = 20;
-				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				Polygon perimeter = new Polygon() { new IntPoint(0, 0, 0), new IntPoint(5000, 0, 0), new IntPoint(5000, 5000, 0), new IntPoint(0, 5000, 0) };
 				Assert.IsTrue(perimeter.Count == 4);
 				Polygons thinLines;
-				bool foundThinLines = planner.FindThinLines(perimeter, 400 / 2, 0, out thinLines);
+				bool foundThinLines = GCodePlanner.FindThinLines(perimeter, 400 / 2, 0, out thinLines);
 				Assert.IsFalse(foundThinLines);
 				Assert.IsTrue(thinLines.Count == 1);
 				Assert.IsTrue(thinLines[0].Count == 0);
@@ -208,12 +204,9 @@ namespace MatterHackers.MatterSlice.Tests
 				//  ____________   
 				// s|__________|	  very simple  -> ----------
 
-				int travelSpeed = 50;
-				int retractionMinimumDistance = 20;
-				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50) };
 				Polygons thinLines;
-				bool foundThinLines = planner.FindThinLines(perimeter, 400, 0, out thinLines);
+				bool foundThinLines = GCodePlanner.FindThinLines(perimeter, 400, 0, out thinLines);
 				Assert.IsTrue(foundThinLines);
 				Assert.IsTrue(thinLines.Count == 1);
 				Assert.IsTrue(thinLines[0].Count == 2);
@@ -226,9 +219,6 @@ namespace MatterHackers.MatterSlice.Tests
 				// | \s___/ |   				  | \    / |
 				// |________|	create points ->  |__----__|
 
-				int travelSpeed = 50;
-				int retractionMinimumDistance = 20;
-				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				Polygon perimeter = new Polygon()
 				{
 					new IntPoint(5000, 50),
@@ -239,7 +229,7 @@ namespace MatterHackers.MatterSlice.Tests
 					new IntPoint(10000, 50),
 				};
 				Polygons thinLines;
-				bool foundThinLines = planner.FindThinLines(perimeter, 400, 0, out thinLines);
+				bool foundThinLines = GCodePlanner.FindThinLines(perimeter, 400, 0, out thinLines);
 				Assert.IsTrue(foundThinLines);
 				Assert.IsTrue(thinLines.Count == 1);
 				Assert.IsTrue(thinLines[0].Count == 2);
@@ -255,9 +245,6 @@ namespace MatterHackers.MatterSlice.Tests
 				//     |   |    |   |		and goes to ->  |   |    |   |
 				// 0,0 |___|    |___|					    |___|    |___|
 
-				int travelSpeed = 50;
-				int retractionMinimumDistance = 20;
-				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				Polygon perimeter = new Polygon()
 				{ 
 					// bottom of center line
@@ -270,7 +257,7 @@ namespace MatterHackers.MatterSlice.Tests
 					new IntPoint(1000, 5000), new IntPoint(0, 5000), new IntPoint(0, 0), new IntPoint(1000, 0),
 				};
 				Polygons thinLines;
-				bool foundThinLines = planner.FindThinLines(perimeter, 400, 0, out thinLines);
+				bool foundThinLines = GCodePlanner.FindThinLines(perimeter, 400, 0, out thinLines);
 				Assert.IsTrue(foundThinLines);
 				Assert.IsTrue(thinLines.Count == 1);
 				Assert.IsTrue(thinLines[0].Count == 2);

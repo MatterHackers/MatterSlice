@@ -327,12 +327,12 @@ namespace MatterHackers.MatterSlice
 		[Flags]
 		enum Altered { remove = 1, merged = 2 };
 
-		public bool FindThinLines(Polygon polygon, long overlapMergeAmount_um, long minimumRequiredWidth_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
+		public static bool FindThinLines(Polygon polygon, long overlapMergeAmount_um, long minimumRequiredWidth_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
 		{
 			return FindThinLines(new Polygons { polygon }, overlapMergeAmount_um, minimumRequiredWidth_um, out onlyMergeLines, pathIsClosed);
 		}
 
-		public bool FindThinLines(Polygons polygons, long overlapMergeAmount_um, long minimumRequiredWidth_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
+		public static bool FindThinLines(Polygons polygons, long overlapMergeAmount_um, long minimumRequiredWidth_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
 		{
 			bool pathHasMergeLines = false;
 
@@ -1010,7 +1010,7 @@ namespace MatterHackers.MatterSlice
 			return ret;
 		}
 
-		public Polygons MakeCloseSegmentsMergable(Polygons polygonsToSplit, long distanceNeedingAdd, bool pathsAreClosed = true)
+		public static Polygons MakeCloseSegmentsMergable(Polygons polygonsToSplit, long distanceNeedingAdd, bool pathsAreClosed = true)
 		{
 			Polygons splitPolygons = new Polygons();
 			foreach(var polygonToSplit in polygonsToSplit)
