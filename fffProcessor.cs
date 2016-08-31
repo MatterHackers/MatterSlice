@@ -862,6 +862,7 @@ namespace MatterHackers.MatterSlice
 									}
 								}
 							}
+
 							fillPolygons.AddRange(thinLines);
 						}
 					}

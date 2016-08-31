@@ -422,7 +422,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			long cleanDistance_um = overlapMergeAmount_um / 40;
-			Clipper.CleanPolygons(onlyMergeLines, cleanDistance_um);
+			//Clipper.CleanPolygons(onlyMergeLines, cleanDistance_um);
 
 			return pathHasMergeLines;
 		}
@@ -904,7 +904,10 @@ namespace MatterHackers.MatterSlice
 					// we can stay inside so move within the boundary
 					for (int pointIndex = 0; pointIndex < pointList.Count; pointIndex++)
 					{
-						path.points.Add(new IntPoint(pointList[pointIndex], CurrentZ));
+						path.points.Add(new IntPoint(pointList[pointIndex], CurrentZ)
+						{
+							Width = 0
+						});
 						if (pointIndex > 0)
 						{
 							lineLength_um += (pointList[pointIndex] - pointList[pointIndex - 1]).Length();
@@ -934,7 +937,10 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			path.points.Add(new IntPoint(positionToMoveTo, CurrentZ));
+			path.points.Add(new IntPoint(positionToMoveTo, CurrentZ)
+			{
+				Width = 0,
+			});
 			LastPosition = positionToMoveTo;
 		}
 
