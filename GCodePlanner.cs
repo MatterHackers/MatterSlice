@@ -422,7 +422,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			long cleanDistance_um = overlapMergeAmount_um / 40;
-			Clipper.CleanPolygons(onlyMergeLines, cleanDistance_um);
+			//Clipper.CleanPolygons(onlyMergeLines, cleanDistance_um);
 
 			return pathHasMergeLines;
 		}
@@ -934,7 +934,10 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			path.points.Add(new IntPoint(positionToMoveTo, CurrentZ));
+			path.points.Add(new IntPoint(positionToMoveTo, CurrentZ)
+			{
+				Width = 0,
+			});
 			LastPosition = positionToMoveTo;
 		}
 
