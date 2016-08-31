@@ -904,7 +904,10 @@ namespace MatterHackers.MatterSlice
 					// we can stay inside so move within the boundary
 					for (int pointIndex = 0; pointIndex < pointList.Count; pointIndex++)
 					{
-						path.points.Add(new IntPoint(pointList[pointIndex], CurrentZ));
+						path.points.Add(new IntPoint(pointList[pointIndex], CurrentZ)
+						{
+							Width = 0
+						});
 						if (pointIndex > 0)
 						{
 							lineLength_um += (pointList[pointIndex] - pointList[pointIndex - 1]).Length();
