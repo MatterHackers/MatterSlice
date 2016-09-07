@@ -835,7 +835,7 @@ namespace MatterHackers.MatterSlice
 						for (int perimeter = 0; perimeter < config.NumberOfPerimeters; perimeter++)
 						{
 							Polygons thinLines = null;
-							if (GCodePlanner.FindThinLines(island.IslandOutline.Offset(-extrusionWidth_um * (1 + perimeter)), extrusionWidth_um - extrusionWidth_um / 20, extrusionWidth_um / 5, out thinLines, true))
+							if (GCodePlanner.FindThinLines(island.IslandOutline.Offset(-extrusionWidth_um * (1 + perimeter)), extrusionWidth_um + 2, extrusionWidth_um / 5, out thinLines, true))
 							{
 								fillPolygons.AddRange(thinLines);
 							}
@@ -847,7 +847,7 @@ namespace MatterHackers.MatterSlice
 						Polygons thinLines = null;
 						// Collect all of the lines up to one third the extrusion diameter
 						//string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(island.IslandOutline);
-						if (GCodePlanner.FindThinLines(island.IslandOutline, extrusionWidth_um - 2, extrusionWidth_um / 3, out thinLines, true))
+						if (GCodePlanner.FindThinLines(island.IslandOutline, extrusionWidth_um + 2, extrusionWidth_um / 3, out thinLines, true))
 						{
 							foreach(var polygon in thinLines)
 							{
