@@ -791,7 +791,7 @@ namespace MatterHackers.MatterSlice
 							// write all the data for the polygon
 							for (int pointIndex = 1; pointIndex < polygon.Count; pointIndex++)
 							{
-								gcodeExport.WriteMove(polygon[pointIndex], speed, polygon[pointIndex].Width);
+								gcodeExport.WriteMove(polygon[pointIndex], speed, polygon[pointIndex-1].Width);
 							}
 						}
 					}
