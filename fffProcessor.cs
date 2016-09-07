@@ -951,7 +951,10 @@ namespace MatterHackers.MatterSlice
 						continue;
 					}
 
-					partOrderOptimizer.AddPolygon(layer.Islands[partIndex].InsetToolPaths[0][0]);
+					if (layer.Islands[partIndex].InsetToolPaths.Count > 0)
+					{
+						partOrderOptimizer.AddPolygon(layer.Islands[partIndex].InsetToolPaths[0][0]);
+					}
 				}
 				partOrderOptimizer.Optimize();
 
