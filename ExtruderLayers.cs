@@ -216,7 +216,10 @@ namespace MatterHackers.MatterSlice
 			{
 				if (boundsToConsider.Hit(islands[islandIndex].BoundingBox))
 				{
-					polysToIntersect = polysToIntersect.CreateUnion(islands[islandIndex].InsetToolPaths[islands[islandIndex].InsetToolPaths.Count - 1]);
+					if (islands[islandIndex].InsetToolPaths.Count > 0)
+					{
+						polysToIntersect = polysToIntersect.CreateUnion(islands[islandIndex].InsetToolPaths[islands[islandIndex].InsetToolPaths.Count - 1]);
+					}
 					polysToIntersect = Clipper.CleanPolygons(polysToIntersect, cleanDistance_um);
 				}
 			}
@@ -232,7 +235,10 @@ namespace MatterHackers.MatterSlice
 			{
 				if (boundsToConsider.Hit(islands[islandIndex].BoundingBox))
 				{
-					polygonsToSubtractFrom = polygonsToSubtractFrom.CreateDifference(islands[islandIndex].InsetToolPaths[islands[islandIndex].InsetToolPaths.Count - 1]);
+					if (islands[islandIndex].InsetToolPaths.Count > 0)
+					{
+						polygonsToSubtractFrom = polygonsToSubtractFrom.CreateDifference(islands[islandIndex].InsetToolPaths[islands[islandIndex].InsetToolPaths.Count - 1]);
+					}
 
 					polygonsToSubtractFrom = Clipper.CleanPolygons(polygonsToSubtractFrom, cleanDistance_um);
 				}
