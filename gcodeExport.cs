@@ -56,6 +56,7 @@ namespace MatterHackers.MatterSlice
 		private double unretractExtraOnExtruderSwitch_mm;
 		private bool wipeAfterRetraction;
 		private long zPos_um;
+		private string layerChangeCode;
 
 		public long CurrentZ { get { return zPos_um; } }
 
@@ -194,6 +195,15 @@ namespace MatterHackers.MatterSlice
 			this.beforeToolchangeCode = beforeToolchangeCode;
 		}
 
+		public void LayerChanged(int layerIndex)
+		{
+			if (!string.IsNullOrEmpty(layerChangeCode))
+			{
+				WriteCode("; Layer Change GCode");
+				WriteCode(layerChangeCode.Replace("[layer_num]", layerIndex.ToString()));
+			}
+		}
+
 		public void setZ(long z)
 		{
 			this.zPos_um = z;
@@ -206,7 +216,7 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			if (beforeToolchangeCode != null && beforeToolchangeCode != "")
+			if (!string.IsNullOrEmpty(beforeToolchangeCode))
 			{
 				WriteCode("; Before Tool Change GCode");
 				WriteCode(beforeToolchangeCode);
@@ -232,6 +242,11 @@ namespace MatterHackers.MatterSlice
 				WriteCode("; After Tool Change GCode");
 				WriteCode(toolChangeCode);
 			}
+		}
+
+		public void SetLayerChangeCode(string layerChangeCode)
+		{
+			this.layerChangeCode = layerChangeCode;
 		}
 
 		public void TellFileSize()
