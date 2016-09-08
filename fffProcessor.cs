@@ -173,6 +173,8 @@ namespace MatterHackers.MatterSlice
 
 			gcode.SetRetractionSettings(config.RetractionOnTravel, config.RetractionSpeed, config.RetractionOnExtruderSwitch, config.MinimumExtrusionBeforeRetraction, config.RetractionZHop, config.WipeAfterRetraction, config.UnretractExtraExtrusion, config.UnretractExtraOnExtruderSwitch);
 			gcode.SetToolChangeCode(config.ToolChangeCode, config.BeforeToolchangeCode);
+
+			gcode.SetLayerChangeCode(config.LayerChangeCode);
 		}
 
 		private void SliceModels(LayerDataStorage slicingData)
@@ -280,11 +282,11 @@ namespace MatterHackers.MatterSlice
 
 					if (layerIndex == 0)
 					{
-						layer.GenerateInsets(config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, insetCount, config.ExpandThinWalls);
+						layer.GenerateInsets(config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, insetCount, config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter);
 					}
 					else
 					{
-						layer.GenerateInsets(config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, insetCount, config.ExpandThinWalls);
+						layer.GenerateInsets(config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, insetCount, config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter);
 					}
 				}
 				LogOutput.Log("Creating Insets {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
@@ -455,7 +457,7 @@ namespace MatterHackers.MatterSlice
 					supportInterfaceConfig.SetData(config.FirstLayerSpeed - 1, config.ExtrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 
-				gcode.WriteComment("LAYER:{0}".FormatWith(layerIndex));
+				//gcode.WriteComment("LAYER:{0}".FormatWith(layerIndex));
 				if (layerIndex == 0)
 				{
 					gcode.SetExtrusion(config.FirstLayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
@@ -489,6 +491,8 @@ namespace MatterHackers.MatterSlice
 				}
 
 				gcode.setZ(z);
+
+				gcode.LayerChanged(layerIndex);
 
 				// We only create the skirt if we are on layer 0.
 				if (layerIndex == 0 && !config.ShouldGenerateRaft())
@@ -673,7 +677,7 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				if (config.ExpandThinWalls)
+				if (config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter)
 				{
 					islandOrderOptimizer.AddPolygon(layer.Islands[partIndex].IslandOutline[0]);
 				}
@@ -830,7 +834,7 @@ namespace MatterHackers.MatterSlice
 					}
 
 					// Find the thin lines for this layer and add them to the queue
-					if (config.FillThinGaps)
+					if (config.FillThinGaps && !config.ContinuousSpiralOuterPerimeter)
 					{
 						for (int perimeter = 0; perimeter < config.NumberOfPerimeters; perimeter++)
 						{
@@ -842,7 +846,7 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 
-					if (config.ExpandThinWalls)
+					if (config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter)
 					{
 						Polygons thinLines = null;
 						// Collect all of the lines up to one third the extrusion diameter

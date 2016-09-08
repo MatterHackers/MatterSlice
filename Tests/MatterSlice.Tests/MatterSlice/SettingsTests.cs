@@ -207,12 +207,19 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			CheckSpiralCone("cone", "spiralCone.gcode");
 
-			CheckSpiralCylinder("Cylinder50Sides", "Cylinder50Sides.gcode");
+			CheckSpiralCylinder("Cylinder50Sides", "Cylinder50Sides.gcode", 100);
+			CheckSpiralCylinder("Cylinder2Wall50Sides", "Cylinder2Wall50Sides.gcode", 100);
+			CheckSpiralCylinder("Thinning Walls Ring", "Thinning Walls Ring.gcode", 45);
 
-			CheckSpiralCylinder("Cylinder2Wall50Sides", "Cylinder2Wall50Sides.gcode");
+			// now do it again with thin walls enabled
+			CheckSpiralCone("cone", "spiralCone.gcode", true);
+
+			CheckSpiralCylinder("Cylinder50Sides", "Cylinder50Sides.gcode", 100, true);
+			CheckSpiralCylinder("Cylinder2Wall50Sides", "Cylinder2Wall50Sides.gcode", 100, true);
+			CheckSpiralCylinder("Thinning Walls Ring", "Thinning Walls Ring.gcode", 45, true);
 		}
 
-		private static void CheckSpiralCone(string stlFile, string gcodeFile)
+		private static void CheckSpiralCone(string stlFile, string gcodeFile, bool enableThinWalls = false)
 		{
 			string cylinderStlFile = TestUtlities.GetStlPath(stlFile);
 			string cylinderGCodeFileName = TestUtlities.GetTempGCodePath(gcodeFile);
@@ -221,6 +228,11 @@ namespace MatterHackers.MatterSlice.Tests
 			config.FirstLayerThickness = .2;
 			config.CenterObjectInXy = false;
 			config.LayerThickness = .2;
+			if (enableThinWalls)
+			{
+				config.ExpandThinWalls = true;
+				config.FillThinGaps = true;
+			}
 			config.NumberOfBottomLayers = 0;
 			config.ContinuousSpiralOuterPerimeter = true;
 			fffProcessor processor = new fffProcessor(config);
@@ -270,7 +282,7 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		private static void CheckSpiralCylinder(string stlFile, string gcodeFile)
+		private static void CheckSpiralCylinder(string stlFile, string gcodeFile, int expectedLayers, bool enableThinWalls = false)
 		{
 			string cylinderStlFile = TestUtlities.GetStlPath(stlFile);
 			string cylinderGCodeFileName = TestUtlities.GetTempGCodePath(gcodeFile);
@@ -279,6 +291,11 @@ namespace MatterHackers.MatterSlice.Tests
 			config.FirstLayerThickness = .2;
 			config.CenterObjectInXy = false;
 			config.LayerThickness = .2;
+			if(enableThinWalls)
+			{
+				config.ExpandThinWalls = true;
+				config.FillThinGaps = true;
+			}
 			config.NumberOfBottomLayers = 0;
 			config.ContinuousSpiralOuterPerimeter = true;
 			fffProcessor processor = new fffProcessor(config);
@@ -292,7 +309,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// test .1 layer height
 			int layerCount = TestUtlities.CountLayers(cylinderGCodeContent);
-			Assert.IsTrue(layerCount == 100);
+			Assert.IsTrue(layerCount == expectedLayers);
 
 			for (int i = 2; i < layerCount - 3; i++)
 			{

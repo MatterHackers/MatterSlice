@@ -265,6 +265,8 @@ namespace MatterHackers.MatterSlice
 
 		public string BeforeToolchangeCode { get; set; }
 
+		public string LayerChangeCode { get; set; } = "; LAYER:[layer_num]";
+
 		public string ToolChangeCode { get; set; }
 
 		[SettingDescription("This is the speed to print the top layer infill, mm/s.")]
