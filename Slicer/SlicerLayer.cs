@@ -106,7 +106,7 @@ namespace MatterHackers.MatterSlice
 			return total;
 		}
 
-		public void DumpPolygonsToGcode(System.IO.StreamWriter stream, double scale, double extrudeAmount)
+		public void DumpPolygonsToGcode(StreamWriter stream, double scale, double extrudeAmount)
 		{
 			for (int openPolygonIndex = 0; openPolygonIndex < openPolygonList.Count; openPolygonIndex++)
 			{
