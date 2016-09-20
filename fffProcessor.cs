@@ -717,13 +717,6 @@ namespace MatterHackers.MatterSlice
 				CalculateInfillData(slicingData, extruderIndex, layerIndex, island, bottomFillPolygons, fillPolygons, topFillPolygons, bridgePolygons);
 				bottomFillIslandPolygons.Add(bottomFillPolygons);
 
-				// Write the bridge polygons out first so the perimeter will have more to hold to while bridging the gaps.
-				// It would be even better to slow down the perimeters that are part of bridges but that is a bit harder.
-				if (bridgePolygons.Count > 0)
-				{
-					QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bridgePolygons, bridgeConfig, SupportWriteType.UnsupportedAreas);
-				}
-
 				if (config.NumberOfPerimeters > 0)
 				{
 					if (islandOrderIndex != lastPartIndex)
@@ -870,6 +863,13 @@ namespace MatterHackers.MatterSlice
 							fillPolygons.AddRange(thinLines);
 						}
 					}
+				}
+
+				// Write the bridge polygons after the perimeter so they will have more to hold to while bridging the gaps.
+				// It would be even better to slow down the perimeters that are part of bridges but that is for later.
+				if (bridgePolygons.Count > 0)
+				{
+					QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bridgePolygons, bridgeConfig, SupportWriteType.UnsupportedAreas);
 				}
 
 				// TODO: Put all of these segments into a list that can be queued together and still preserver their individual config settings.
