@@ -37,6 +37,7 @@ using System.Text.RegularExpressions;
 
 namespace MatterHackers.MatterSlice.Tests
 {
+	using System.Linq;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
@@ -47,12 +48,10 @@ namespace MatterHackers.MatterSlice.Tests
 		public double feedRate;
 	}
 
-	// TODO: Rename after changes
 	public static class TestUtlities
 	{
-		// HACK: Probably a way to do this via configuration rather than this fragile nonsense
-		static string matterSliceBaseDirectory = Path.Combine("..", "..", "..", "..", "..", "MatterSlice");
-		static string tempGCodePath = Path.Combine(matterSliceBaseDirectory, "GCode_Test");
+		private static string matterSliceBaseDirectory = TestContext.CurrentContext.ResolveMCCentralPath(7, "MatterControl", "Submodules", "MatterSlice");
+		private static string tempGCodePath = Path.Combine(matterSliceBaseDirectory, "GCode_Test");
 
 		public static string GetStlPath(string file)
 		{
@@ -61,7 +60,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 		public static string GetTempGCodePath(string file)
 		{
-			return Path.ChangeExtension(Path.Combine("..", "..", "..", "TestData", "Temp", file), "gcode");
+			return Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "Tests", "TestData", "Temp", file), "gcode");
 		}
 
 		public static Polygons GetExtrusionPolygons(string[] gcode, ref MovementInfo movementInfo)
@@ -288,6 +287,19 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 
 			return false;
+		}
+
+		public static string ResolveMCCentralPath(this TestContext context, int stepsToMCCentralParentFolder, params string[] paths)
+		{
+			var allPathSteps = new List<string> { context.WorkDirectory };
+			allPathSteps.AddRange(Enumerable.Repeat("..", stepsToMCCentralParentFolder));
+
+			if (paths.Any())
+			{
+				allPathSteps.AddRange(paths);
+			}
+
+			return Path.GetFullPath(Path.Combine(allPathSteps.ToArray()));
 		}
 	}
 }

@@ -193,7 +193,7 @@ namespace MatterHackers.MatterSlice.Tests
         {
             // lots from an actual file
             {
-                string pathToData = Path.Combine("..", "..", "..", "TestData", "TwoRingSegmentsTestData.txt");
+                string pathToData = TestContext.CurrentContext.ResolveMCCentralPath(7, "MatterControl", "Submodules", "MatterSlice", "Tests", "TestData", "TwoRingSegmentsTestData.txt");
 
                 string[] segmentsToCheck = File.ReadAllLines(pathToData);
                 CheckLayersAreSinglePolygon(segmentsToCheck, 2);
