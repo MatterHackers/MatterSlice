@@ -38,6 +38,7 @@ using System.Text.RegularExpressions;
 namespace MatterHackers.MatterSlice.Tests
 {
 	using System.Linq;
+	using System.Reflection;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
@@ -291,7 +292,9 @@ namespace MatterHackers.MatterSlice.Tests
 
 		public static string ResolveProjectPath(this TestContext context, int stepsToProjectRoot, params string[] relativePathSteps)
 		{
-			var allPathSteps = new List<string> { context.TestDirectory };
+			string assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+			var allPathSteps = new List<string> { assemblyPath };
 			allPathSteps.AddRange(Enumerable.Repeat("..", stepsToProjectRoot));
 
 			if (relativePathSteps.Any())
