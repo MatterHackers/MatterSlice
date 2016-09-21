@@ -291,7 +291,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 		public static string ResolveProjectPath(this TestContext context, int stepsToMCCentralParentFolder, params string[] paths)
 		{
-			var allPathSteps = new List<string> { context.WorkDirectory };
+			var allPathSteps = new List<string> { context.TestDirectory };
 			allPathSteps.AddRange(Enumerable.Repeat("..", stepsToMCCentralParentFolder));
 
 			if (paths.Any())
