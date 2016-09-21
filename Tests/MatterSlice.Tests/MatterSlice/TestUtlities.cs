@@ -50,7 +50,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 	public static class TestUtlities
 	{
-		private static string matterSliceBaseDirectory = TestContext.CurrentContext.ResolveMCCentralPath(7, "MatterControl", "Submodules", "MatterSlice");
+		private static string matterSliceBaseDirectory = TestContext.CurrentContext.ResolveProjectPath(4);
 		private static string tempGCodePath = Path.Combine(matterSliceBaseDirectory, "GCode_Test");
 
 		public static string GetStlPath(string file)
@@ -289,7 +289,7 @@ namespace MatterHackers.MatterSlice.Tests
 			return false;
 		}
 
-		public static string ResolveMCCentralPath(this TestContext context, int stepsToMCCentralParentFolder, params string[] paths)
+		public static string ResolveProjectPath(this TestContext context, int stepsToMCCentralParentFolder, params string[] paths)
 		{
 			var allPathSteps = new List<string> { context.WorkDirectory };
 			allPathSteps.AddRange(Enumerable.Repeat("..", stepsToMCCentralParentFolder));
