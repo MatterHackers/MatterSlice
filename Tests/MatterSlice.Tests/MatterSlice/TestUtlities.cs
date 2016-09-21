@@ -289,14 +289,14 @@ namespace MatterHackers.MatterSlice.Tests
 			return false;
 		}
 
-		public static string ResolveProjectPath(this TestContext context, int stepsToMCCentralParentFolder, params string[] paths)
+		public static string ResolveProjectPath(this TestContext context, int stepsToProjectRoot, params string[] relativePathSteps)
 		{
 			var allPathSteps = new List<string> { context.TestDirectory };
-			allPathSteps.AddRange(Enumerable.Repeat("..", stepsToMCCentralParentFolder));
+			allPathSteps.AddRange(Enumerable.Repeat("..", stepsToProjectRoot));
 
-			if (paths.Any())
+			if (relativePathSteps.Any())
 			{
-				allPathSteps.AddRange(paths);
+				allPathSteps.AddRange(relativePathSteps);
 			}
 
 			return Path.GetFullPath(Path.Combine(allPathSteps.ToArray()));
