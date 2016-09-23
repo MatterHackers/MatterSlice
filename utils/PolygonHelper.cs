@@ -105,6 +105,20 @@ namespace MatterHackers.MatterSlice
 			return polygon[polygon.Count - 1];
 		}
 
+		public static long MinX(this Polygon polygon)
+		{
+			long minX = long.MaxValue;
+			foreach(var point in polygon)
+			{
+				if(point.X < minX)
+				{
+					minX = point.X;
+				}
+			}
+
+			return minX;
+		}
+
 		public static IntPoint CenterOfMass(this Polygon polygon)
 		{
 			IntPoint center = new IntPoint();

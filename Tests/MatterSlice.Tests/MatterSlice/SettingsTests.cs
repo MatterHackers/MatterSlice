@@ -41,15 +41,18 @@ namespace MatterHackers.MatterSlice.Tests
 	public class SliceSettingsTests
 	{
 		#region Inset order tests
-		[Test, Category("FixNeeded")]
-		public void OuterPerimeterFirstCorrect()
+		[Test]
+		public void InnerPerimeterFirstCorrect()
 		{
+			// By default we need to do the inner perimeters first
 			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
 			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-perimeter.gcode");
 
 			ConfigSettings config = new ConfigSettings();
 			config.NumberOfPerimeters = 3;
 			config.InfillPercent = 0;
+			config.NumberOfTopLayers = 0;
+			config.NumberOfBottomLayers = 0;
 			fffProcessor processor = new fffProcessor(config);
 			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);
@@ -61,22 +64,68 @@ namespace MatterHackers.MatterSlice.Tests
 
 			MovementInfo movement = new MovementInfo();
 			{
-				// check layer 0
-				string[] layer0Info = TestUtlities.GetGCodeForLayer(gcode, 0);
+				// check layer 1
+				string[] layer0Info = TestUtlities.GetGCodeForLayer(gcode, 1);
 				Polygons layer0Polygons = TestUtlities.GetExtrusionPolygons(layer0Info, ref movement);
 				// make sure there are 3
 				Assert.IsTrue(layer0Polygons.Count == 3);
 				// make sure they are in the right order (first layer is outside in)
+				Assert.IsTrue(layer0Polygons[0].MinX() > layer0Polygons[1].MinX());
 			}
 
 			{
-				// check layer 1
-				string[] layer1Info = TestUtlities.GetGCodeForLayer(gcode, 1);
+				// check layer 2
+				string[] layer1Info = TestUtlities.GetGCodeForLayer(gcode, 2);
 				Polygons layer1Polygons = TestUtlities.GetExtrusionPolygons(layer1Info, ref movement);
 
 				// make sure there are 3
 				Assert.IsTrue(layer1Polygons.Count == 3);
 				// make sure they are in the right order (other layers are inside out)
+				Assert.IsTrue(layer1Polygons[0].MinX() > layer1Polygons[1].MinX());
+			}
+		}
+
+		[Test]
+		public void OuterPerimeterFirstCorrect()
+		{
+			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
+			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-perimeter.gcode");
+
+			ConfigSettings config = new ConfigSettings();
+			config.NumberOfPerimeters = 3;
+			config.OutsidePerimetersFirst = true;
+			config.InfillPercent = 0;
+			config.NumberOfTopLayers = 0;
+			config.NumberOfBottomLayers = 0;
+			fffProcessor processor = new fffProcessor(config);
+			processor.SetTargetFile(boxGCodeFile);
+			processor.LoadStlFile(box20MmStlFile);
+			// slice and save it
+			processor.DoProcessing();
+			processor.finalize();
+
+			string[] gcode = TestUtlities.LoadGCodeFile(boxGCodeFile);
+
+			MovementInfo movement = new MovementInfo();
+			{
+				// check layer 1
+				string[] layer0Info = TestUtlities.GetGCodeForLayer(gcode, 1);
+				Polygons layer0Polygons = TestUtlities.GetExtrusionPolygons(layer0Info, ref movement);
+				// make sure there are 3
+				Assert.IsTrue(layer0Polygons.Count == 3);
+				// make sure they are in the right order (first layer is outside in)
+				Assert.IsTrue(layer0Polygons[0].MinX() < layer0Polygons[1].MinX());
+			}
+
+			{
+				// check layer 2
+				string[] layer1Info = TestUtlities.GetGCodeForLayer(gcode, 2);
+				Polygons layer1Polygons = TestUtlities.GetExtrusionPolygons(layer1Info, ref movement);
+
+				// make sure there are 3
+				Assert.IsTrue(layer1Polygons.Count == 3);
+				// make sure they are in the right order (other layers are inside out)
+				Assert.IsTrue(layer1Polygons[0].MinX() < layer1Polygons[1].MinX());
 			}
 		}
 		#endregion
