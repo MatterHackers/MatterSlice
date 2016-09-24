@@ -235,6 +235,10 @@ namespace MatterHackers.MatterSlice
 				BinaryReader br = new BinaryReader(stlStream);
 				byte[] fileContents = br.ReadBytes((int)stlStream.Length);
 				int currentPosition = 80;
+				if(fileContents.Length < currentPosition)
+				{
+					return false;
+				}
 				uint numTriangles = System.BitConverter.ToUInt32(fileContents, currentPosition);
 				long bytesForNormals = numTriangles * 3 * 4;
 				long bytesForVertices = numTriangles * 3 * 4;
