@@ -78,7 +78,8 @@ namespace MatterHackers.MatterSlice
 
 		public void DoProcessing()
 		{
-			if (!gcode.IsOpened())
+			if (!gcode.IsOpened()
+				|| simpleMeshCollection.SimpleMeshes.Count == 0)
 			{
 				return;
 			}
