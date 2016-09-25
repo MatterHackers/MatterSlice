@@ -25,7 +25,14 @@ using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
+	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
+
+	public class InsetPaths
+	{
+		public Polygon InsetPath { get; set; }
+		public InsetPaths Children { get; set; }
+	}
 
 	/// <summary>
 	/// Represents the data for one island.
@@ -37,16 +44,16 @@ namespace MatterHackers.MatterSlice
 		/// <summary>
 		/// The outline of the island as defined by the original mesh polygons (not inset at all).
 		/// </summary>
-		public Polygons IslandOutline = new Polygons();
-		public Polygons AvoidCrossingBoundary = new Polygons();
+		public Polygons IslandOutline { get; set; } = new Polygons();
+		public Polygons AvoidCrossingBoundary { get; set; } = new Polygons();
 		/// <summary>
 		/// The IslandOutline inset as many times as there are perimeters for the part.
 		/// </summary>
-		public List<Polygons> InsetToolPaths = new List<Polygons>();
-		public Polygons SolidTopToolPaths = new Polygons();
-		public Polygons SolidBottomToolPaths = new Polygons();
-		public Polygons SolidInfillToolPaths = new Polygons();
-		public Polygons InfillToolPaths = new Polygons();
+		public List<Polygons> InsetToolPaths { get; set; } = new List<Polygons>();
+		public Polygons SolidTopToolPaths { get; set; } = new Polygons();
+		public Polygons SolidBottomToolPaths { get; set; } = new Polygons();
+		public Polygons SolidInfillToolPaths { get; set; } = new Polygons();
+		public Polygons InfillToolPaths { get; set; } = new Polygons();
 
 		private static readonly double minimumDistanceToCreateNewPosition = 10;
 

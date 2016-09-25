@@ -749,20 +749,21 @@ namespace MatterHackers.MatterSlice
 					}
 
 					// Put all the insets into a new list so we can keep track of what has been printed.
-					List<Polygons> insetsToPrint = new List<Polygons>(island.InsetToolPaths.Count);
+					// The island could be a rectangle with 4 screew holes. So, with 3 perimeters that colud be the outside 3 + the foles 4 * 3, 15 polygons.
+					List<Polygons> insetsForThisIsland = new List<Polygons>(island.InsetToolPaths.Count);
 					for (int insetIndex = 0; insetIndex < island.InsetToolPaths.Count; insetIndex++)
 					{
-						insetsToPrint.Add(new Polygons());
+						insetsForThisIsland.Add(new Polygons());
 						for (int polygonIndex = 0; polygonIndex < island.InsetToolPaths[insetIndex].Count; polygonIndex++)
 						{
 							if (island.InsetToolPaths[insetIndex][polygonIndex].Count > 0)
 							{
-								insetsToPrint[insetIndex].Add(island.InsetToolPaths[insetIndex][polygonIndex]);
+								insetsForThisIsland[insetIndex].Add(island.InsetToolPaths[insetIndex][polygonIndex]);
 							}
 						}
 					}
 
-					// If we are on the very first layer we start with the outside so that we can stick to the bed better.
+					// If we are on the very first layer we always start with the outside so that we can stick to the bed better.
 					if (config.OutsidePerimetersFirst || layerIndex == 0 || inset0Config.spiralize)
 					{
 						if (inset0Config.spiralize)
@@ -775,55 +776,57 @@ namespace MatterHackers.MatterSlice
 						}
 						else
 						{
-							int insetCount = CountInsetsToPrint(insetsToPrint);
+							int insetCount = CountInsetsToPrint(insetsForThisIsland);
 							while (insetCount > 0)
 							{
 								bool limitDistance = false;
 								if (island.InsetToolPaths.Count > 0)
 								{
-									QueueClosetsInset(insetsToPrint[0], limitDistance, inset0Config, layerIndex, layerGcodePlanner);
+									QueueClosetsInset(insetsForThisIsland[0], limitDistance, inset0Config, layerIndex, layerGcodePlanner, false);
 								}
 
 								if (island.InsetToolPaths.Count > 1)
 								{
 									// Move to the closest inset 1 and print it
-									limitDistance = QueueClosetsInset(insetsToPrint[1], limitDistance, insetXConfig, layerIndex, layerGcodePlanner);
+									limitDistance = QueueClosetsInset(insetsForThisIsland[1], limitDistance, insetXConfig, layerIndex, layerGcodePlanner, false);
 									for (int insetIndex = 2; insetIndex < island.InsetToolPaths.Count; insetIndex++)
 									{
 										limitDistance = QueueClosetsInset(
-											insetsToPrint[insetIndex],
+											insetsForThisIsland[insetIndex],
 											limitDistance,
 											insetIndex == 0 ? inset0Config : insetXConfig,
 											layerIndex,
-											layerGcodePlanner);
+											layerGcodePlanner, false);
 									}
 								}
 
-								insetCount = CountInsetsToPrint(insetsToPrint);
+								insetCount = CountInsetsToPrint(insetsForThisIsland);
 							}
 						}
 					}
 					else // This is so we can do overhangs better (the outside can stick a bit to the inside).
 					{
-						int insetCount = CountInsetsToPrint(insetsToPrint);
+						int insetCount = CountInsetsToPrint(insetsForThisIsland);
 						while (insetCount > 0)
 						{
 							bool limitDistance = false;
 							if (island.InsetToolPaths.Count > 0)
 							{
-								// Move to the closest inset 1 and print it
+								// Print the insets from inside to out (count - 1 to 0).
 								for (int insetIndex = island.InsetToolPaths.Count - 1; insetIndex >= 0; insetIndex--)
 								{
 									limitDistance = QueueClosetsInset(
-										insetsToPrint[insetIndex],
+										insetsForThisIsland[insetIndex],
 										limitDistance,
 										insetIndex == 0 ? inset0Config : insetXConfig,
 										layerIndex,
-										layerGcodePlanner);
+										layerGcodePlanner, true);
+
+									// Figue out if there is another inset
 								}
 							}
 
-							insetCount = CountInsetsToPrint(insetsToPrint);
+							insetCount = CountInsetsToPrint(insetsForThisIsland);
 						}
 					}
 
@@ -889,19 +892,21 @@ namespace MatterHackers.MatterSlice
 			layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(null);
 		}
 
-		private bool QueueClosetsInset(Polygons insetsConsider, bool limitDistance, GCodePathConfig pathConfig, int layerIndex, GCodePlanner gcodeLayer)
+		private bool QueueClosetsInset(Polygons insetsToConsider, bool limitDistance, GCodePathConfig pathConfig, int layerIndex, GCodePlanner gcodeLayer, bool printAllInsidersBeforeOutsides)
 		{
+			// This is the furthest away we will accept a new statring point
 			long maxDist_um = long.MaxValue;
 			if (limitDistance)
 			{
+				// Make it relative to the size of the nozzle
 				maxDist_um = config.ExtrusionWidth_um * 4;
 			}
 
 			int polygonPrintedIndex = -1;
 
-			for (int polygonIndex = 0; polygonIndex < insetsConsider.Count; polygonIndex++)
+			for (int polygonIndex = 0; polygonIndex < insetsToConsider.Count; polygonIndex++)
 			{
-				Polygon currentPolygon = insetsConsider[polygonIndex];
+				Polygon currentPolygon = insetsToConsider[polygonIndex];
 				int bestPoint = PathOrderOptimizer.GetClosestIndex(currentPolygon, gcodeLayer.LastPosition);
 				if (bestPoint > -1)
 				{
@@ -916,8 +921,8 @@ namespace MatterHackers.MatterSlice
 
 			if (polygonPrintedIndex > -1)
 			{
-				QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, new Polygons() { insetsConsider[polygonPrintedIndex] }, pathConfig, SupportWriteType.UnsupportedAreas);
-				insetsConsider.RemoveAt(polygonPrintedIndex);
+				QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, new Polygons() { insetsToConsider[polygonPrintedIndex] }, pathConfig, SupportWriteType.UnsupportedAreas);
+				insetsToConsider.RemoveAt(polygonPrintedIndex);
 				return true;
 			}
 

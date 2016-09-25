@@ -65,23 +65,23 @@ namespace MatterHackers.MatterSlice.Tests
 			MovementInfo movement = new MovementInfo();
 			{
 				// check layer 1
-				string[] layer0Info = TestUtlities.GetGCodeForLayer(gcode, 1);
-				Polygons layer0Polygons = TestUtlities.GetExtrusionPolygons(layer0Info, ref movement);
+				string[] layer1Info = TestUtlities.GetGCodeForLayer(gcode, 1);
+				Polygons layer1Polygons = TestUtlities.GetExtrusionPolygons(layer1Info, ref movement);
 				// make sure there are 3
-				Assert.IsTrue(layer0Polygons.Count == 3);
+				Assert.IsTrue(layer1Polygons.Count == 3);
 				// make sure they are in the right order (first layer is outside in)
-				Assert.IsTrue(layer0Polygons[0].MinX() > layer0Polygons[1].MinX());
+				Assert.IsTrue(layer1Polygons[0].MinX() > layer1Polygons[1].MinX());
 			}
 
 			{
 				// check layer 2
-				string[] layer1Info = TestUtlities.GetGCodeForLayer(gcode, 2);
-				Polygons layer1Polygons = TestUtlities.GetExtrusionPolygons(layer1Info, ref movement);
+				string[] layer2Info = TestUtlities.GetGCodeForLayer(gcode, 2);
+				Polygons layer2Polygons = TestUtlities.GetExtrusionPolygons(layer2Info, ref movement);
 
 				// make sure there are 3
-				Assert.IsTrue(layer1Polygons.Count == 3);
+				Assert.IsTrue(layer2Polygons.Count == 3);
 				// make sure they are in the right order (other layers are inside out)
-				Assert.IsTrue(layer1Polygons[0].MinX() > layer1Polygons[1].MinX());
+				Assert.IsTrue(layer2Polygons[0].MinX() > layer2Polygons[1].MinX());
 			}
 		}
 
@@ -109,26 +109,80 @@ namespace MatterHackers.MatterSlice.Tests
 			MovementInfo movement = new MovementInfo();
 			{
 				// check layer 1
-				string[] layer0Info = TestUtlities.GetGCodeForLayer(gcode, 1);
-				Polygons layer0Polygons = TestUtlities.GetExtrusionPolygons(layer0Info, ref movement);
+				string[] layer1Info = TestUtlities.GetGCodeForLayer(gcode, 1);
+				Polygons layer1Polygons = TestUtlities.GetExtrusionPolygons(layer1Info, ref movement);
 				// make sure there are 3
-				Assert.IsTrue(layer0Polygons.Count == 3);
+				Assert.IsTrue(layer1Polygons.Count == 3);
 				// make sure they are in the right order (first layer is outside in)
-				Assert.IsTrue(layer0Polygons[0].MinX() < layer0Polygons[1].MinX());
+				Assert.IsTrue(layer1Polygons[0].MinX() < layer1Polygons[1].MinX());
 			}
 
 			{
 				// check layer 2
-				string[] layer1Info = TestUtlities.GetGCodeForLayer(gcode, 2);
-				Polygons layer1Polygons = TestUtlities.GetExtrusionPolygons(layer1Info, ref movement);
+				string[] layer2Info = TestUtlities.GetGCodeForLayer(gcode, 2);
+				Polygons layer2Polygons = TestUtlities.GetExtrusionPolygons(layer2Info, ref movement);
 
 				// make sure there are 3
-				Assert.IsTrue(layer1Polygons.Count == 3);
+				Assert.IsTrue(layer2Polygons.Count == 3);
 				// make sure they are in the right order (other layers are inside out)
-				Assert.IsTrue(layer1Polygons[0].MinX() < layer1Polygons[1].MinX());
+				Assert.IsTrue(layer2Polygons[0].MinX() < layer2Polygons[1].MinX());
 			}
 		}
 		#endregion
+
+		[Test]
+		public void AllInsidesBeforeAnyOutsides()
+		{
+			string thinAttachStlFile = TestUtlities.GetStlPath("Thin Attach");
+			string thinAttachGCodeFile = TestUtlities.GetTempGCodePath("Thin Attach.gcode");
+
+			ConfigSettings config = new ConfigSettings();
+			config.NumberOfPerimeters = 2;
+			config.InfillPercent = 0;
+			config.NumberOfTopLayers = 0;
+			config.FirstLayerExtrusionWidth = .4;
+			config.NumberOfBottomLayers = 0;
+			fffProcessor processor = new fffProcessor(config);
+			processor.SetTargetFile(thinAttachGCodeFile);
+			processor.LoadStlFile(thinAttachStlFile);
+			// slice and save it
+			processor.DoProcessing();
+			processor.finalize();
+
+			string[] gcode = TestUtlities.LoadGCodeFile(thinAttachGCodeFile);
+
+			// should look like this
+			// ____________   ____________
+			// | _______  |	  | _______  |
+			// | |      | |	  | |      | |
+			// | |      | |___| |      | |
+			// | |      | ____  |      | |
+			// | |______| |   | |______| |
+			// |__________|   |__________|
+			MovementInfo movement = new MovementInfo();
+			{
+				// check layer 1
+				string[] layer1Info = TestUtlities.GetGCodeForLayer(gcode, 1);
+				Polygons layer1Polygons = TestUtlities.GetExtrusionPolygons(layer1Info, ref movement);
+				// make sure there are 5
+				Assert.IsTrue(layer1Polygons.Count == 3);
+				// make sure they are in the right order (two inner polygons print first)
+				Assert.IsTrue(layer1Polygons[0].MinX() > layer1Polygons[1].MinX());
+				Assert.IsTrue(layer1Polygons[0].MinX() > layer1Polygons[2].MinX());
+			}
+			 
+			{
+				// check layer 2
+				string[] layer2Info = TestUtlities.GetGCodeForLayer(gcode, 2);
+				Polygons layer2Polygons = TestUtlities.GetExtrusionPolygons(layer2Info, ref movement);
+
+				// make sure there are 3
+				Assert.IsTrue(layer2Polygons.Count == 3);
+				// make sure they are in the right order (two inner polygons print first)
+				Assert.IsTrue(layer2Polygons[0].MinX() > layer2Polygons[1].MinX());
+				Assert.IsTrue(layer2Polygons[0].MinX() > layer2Polygons[2].MinX());
+			}
+		}
 
 		private string CreateGCodeForLayerHeights(double firstLayerHeight, double otherLayerHeight, double bottomClip = 0)
 		{
