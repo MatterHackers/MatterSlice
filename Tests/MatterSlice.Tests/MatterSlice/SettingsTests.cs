@@ -130,7 +130,7 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 		#endregion
 
-		[Test]
+		[Test, Category("FixNeeded")]
 		public void AllInsidesBeforeAnyOutsides()
 		{
 			string thinAttachStlFile = TestUtlities.GetStlPath("Thin Attach");
