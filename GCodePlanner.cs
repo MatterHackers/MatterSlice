@@ -358,7 +358,6 @@ namespace MatterHackers.MatterSlice
 						long endDelta = (polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length();
 						if (endDelta < overlapMergeAmount_um)
 						{
-							pathHasMergeLines = true;
 							// move the first segments points to the average of the merge positions
 							long startEndWidth = Math.Abs((polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length());
 							long endStartWidth = Math.Abs((polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length());
@@ -366,16 +365,26 @@ namespace MatterHackers.MatterSlice
 
 							if (width > minimumRequiredWidth_um)
 							{
-								polySegments[firstSegmentIndex].Start = (polySegments[firstSegmentIndex].Start + polySegments[checkSegmentIndex].End) / 2; // the start
-								polySegments[firstSegmentIndex].Start.Width = width;
-								polySegments[firstSegmentIndex].End = (polySegments[firstSegmentIndex].End + polySegments[checkSegmentIndex].Start) / 2; // the end
-								polySegments[firstSegmentIndex].End.Width = width;
+								// We need to check if the new start position is on the inside of the curve. We can only add thin lines on the insides of our exisiting curves.
+								IntPoint newStartPosition = (polySegments[firstSegmentIndex].Start + polySegments[checkSegmentIndex].End) / 2; // the start;
+								IntPoint newStartDirection = newStartPosition - polySegments[firstSegmentIndex].Start;
+								IntPoint normalLeft = (polySegments[firstSegmentIndex].End - polySegments[firstSegmentIndex].Start).GetPerpendicularLeft();
+								long dotProduct = normalLeft.Dot(newStartDirection);
+								if (dotProduct > 0)
+								{
+									pathHasMergeLines = true;
 
-								markedAltered[firstSegmentIndex] = Altered.merged;
-								// mark this segment for removal
-								markedAltered[checkSegmentIndex] = Altered.remove;
-								// We only expect to find one match for each segment, so move on to the next segment
-								break;
+									polySegments[firstSegmentIndex].Start = newStartPosition;
+									polySegments[firstSegmentIndex].Start.Width = width;
+									polySegments[firstSegmentIndex].End = (polySegments[firstSegmentIndex].End + polySegments[checkSegmentIndex].Start) / 2; // the end
+									polySegments[firstSegmentIndex].End.Width = width;
+
+									markedAltered[firstSegmentIndex] = Altered.merged;
+									// mark this segment for removal
+									markedAltered[checkSegmentIndex] = Altered.remove;
+									// We only expect to find one match for each segment, so move on to the next segment
+									break;
+								}
 							}
 						}
 					}
