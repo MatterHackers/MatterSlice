@@ -263,6 +263,29 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.IsTrue(thinLines[0].Count == 2);
 				Assert.IsTrue(thinLines[0][0].Width == 52);
 			}
+
+			// Simple overlap that must not be generated (s is the start runing ccw)
+			{
+				//     s_____________ 5000,5000             s_____________
+				//     |    ____    |					    |    ____    |
+				//     |   |    |___|					    |   |    |   |
+				//     |   |     ___     this is too thin   |   |     ---  5000,2500
+				//     |   |____|   |		but most not    |   |____|   |
+				// 0,0 |____________|		go to	->      |____________|
+
+				Polygon perimeter = new Polygon()
+				{
+					new IntPoint(0, 5000), new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 2500-27),
+					new IntPoint(4000, 2500-27), new IntPoint(4000, 1000), new IntPoint(1000, 1000),
+					new IntPoint(1000, 4000), new IntPoint(4000, 4000), new IntPoint(4000, 2500+27), new IntPoint(5000, 2500+27),
+					new IntPoint(5000, 5000), new IntPoint(0, 5000),
+				};
+				Polygons thinLines;
+				bool foundThinLines = GCodePlanner.FindThinLines(perimeter, 400, 0, out thinLines);
+				Assert.IsFalse(foundThinLines);
+				Assert.IsTrue(thinLines.Count == 1);
+				Assert.IsTrue(thinLines[0].Count == 0);
+			}
 		}
 
 		[Test]
