@@ -204,7 +204,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void setZ(long z)
+		public void SetZ(long z)
 		{
 			this.zPos_um = z;
 		}
