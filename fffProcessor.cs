@@ -368,7 +368,7 @@ namespace MatterHackers.MatterSlice
 				gcode.WriteFanCommand(0);
 				gcode.ResetExtrusionValue();
 				gcode.WriteRetraction();
-				gcode.setZ(maxObjectHeight + 5000);
+				gcode.SetZ(maxObjectHeight + 5000);
 				gcode.WriteMove(gcode.GetPosition(), config.TravelSpeed, 0);
 				gcode.WriteMove(new IntPoint(slicingData.modelMin.X, slicingData.modelMin.Y, gcode.CurrentZ), config.TravelSpeed, 0);
 			}
@@ -491,7 +491,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				gcode.setZ(z);
+				gcode.SetZ(z);
 
 				gcode.LayerChanged(layerIndex);
 
@@ -544,7 +544,7 @@ namespace MatterHackers.MatterSlice
 				if (slicingData.support != null)
 				{
 					z += config.SupportAirGap_um;
-					gcode.setZ(z);
+					gcode.SetZ(z);
 					gcodeLayer.QueueTravel(gcodeLayer.LastPosition);
 
 					for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)

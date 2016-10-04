@@ -244,7 +244,6 @@ namespace MatterHackers.MatterSlice
 
 				// create the raft base
 				{
-					gcode.WriteComment("LAYER:-3");
 					gcode.WriteComment("RAFT BASE");
 					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 					if (config.RaftExtruder >= 0)
@@ -258,7 +257,10 @@ namespace MatterHackers.MatterSlice
 						gcodeLayer.SetExtruder(config.SupportExtruder);
 					}
 
-					gcode.setZ(config.RaftBaseThickness_um);
+					gcode.SetZ(config.RaftBaseThickness_um);
+					
+					gcode.LayerChanged(-3);
+
 					gcode.SetExtrusion(config.RaftBaseThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
 					// write the skirt around the raft
@@ -292,10 +294,10 @@ namespace MatterHackers.MatterSlice
 
 				// raft middle layers
 				{
-					gcode.WriteComment("LAYER:-2");
 					gcode.WriteComment("RAFT MIDDLE");
 					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
-					gcode.setZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um);
+					gcode.SetZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um);
+					gcode.LayerChanged(-2);
 					gcode.SetExtrusion(config.RaftInterfaceThicknes_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
 					Polygons raftLines = new Polygons();
@@ -307,10 +309,10 @@ namespace MatterHackers.MatterSlice
 
 				for (int raftSurfaceIndex = 1; raftSurfaceIndex <= config.RaftSurfaceLayers; raftSurfaceIndex++)
 				{
-					gcode.WriteComment("LAYER:-1");
 					gcode.WriteComment("RAFT SURFACE");
 					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
-					gcode.setZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um + config.RaftSurfaceThickness_um * raftSurfaceIndex);
+					gcode.SetZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um + config.RaftSurfaceThickness_um * raftSurfaceIndex);
+					gcode.LayerChanged(-1);
 					gcode.SetExtrusion(config.RaftSurfaceThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
 					Polygons raftLines = new Polygons();
