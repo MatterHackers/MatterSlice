@@ -168,7 +168,7 @@ namespace MatterHackers.MatterSlice.Tests
 			RefCenterOfMass = new IntPoint(com_x, com_y);
 		}
 
-		[Test, Ignore("Not Finished")]
+		[Test, Category("FixNeeded" /* Not Finished */)]
 		public void PolygonHelperTestCases()
 		{
 			findRefValues();
