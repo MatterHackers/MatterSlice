@@ -951,6 +951,13 @@ namespace MatterHackers.MatterSlice
 				int prevExtruder = gcodeLayer.GetExtruder();
 				bool extruderChanged = gcodeLayer.SetExtruder(extruderIndex);
 
+				if (extruderChanged)
+				{
+					slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, gcodeLayer, fillConfig, config);
+					//Make sure we wipe the old extruder on the wipe tower.
+					gcodeLayer.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[gcodeLayer.GetExtruder()]);
+				}
+
 				SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 
 				PathOrderOptimizer partOrderOptimizer = new PathOrderOptimizer(new IntPoint());
