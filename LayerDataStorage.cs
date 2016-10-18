@@ -373,10 +373,21 @@ namespace MatterHackers.MatterSlice
 			outputfillPolygons.Reverse();
 		}
 
+		public bool HaveWipeTower(ConfigSettings config)
+		{
+				if (extrudersThatHaveBeenPrimed == null
+					 || config.WipeTowerSize_um == 0
+					 || LastLayerWithChange(config) == -1)
+				{
+				return false;
+			}
+
+				return true;
+		}
+
 		public void PrimeOnWipeTower(int extruderIndex, int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
 		{
-			if (config.WipeTowerSize_um < 1 
-				|| extrudersThatHaveBeenPrimed == null
+			if (!HaveWipeTower(config)
 				|| layerIndex > LastLayerWithChange(config) + 1)
 			{
 				return;

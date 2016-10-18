@@ -114,8 +114,6 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			config.SetExtruderCount(slicingData.Extruders.Count);
-
 			writeGCode(slicingData);
 			if (MatterSlice.Canceled)
 			{
@@ -234,6 +232,8 @@ namespace MatterHackers.MatterSlice
 			}
 
 			MultiExtruders.ProcessBooleans(slicingData.Extruders, config.BooleanOpperations);
+
+			config.SetExtruderCount(slicingData.Extruders.Count);
 
 			MultiExtruders.RemoveExtruderIntersections(slicingData.Extruders);
 			MultiExtruders.OverlapMultipleExtrudersSlightly(slicingData.Extruders, config.MultiExtruderOverlapPercent);
@@ -508,7 +508,7 @@ namespace MatterHackers.MatterSlice
 					int prevExtruder = gcodeLayer.GetExtruder();
 					bool extruderChanged = gcodeLayer.SetExtruder(extruderIndex);
 
-					if (extruderChanged)
+					if (extruderChanged && slicingData.HaveWipeTower(config))
 					{
 						slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, gcodeLayer, fillConfig, config);
 						//Make sure we wipe the old extruder on the wipe tower.
@@ -951,7 +951,7 @@ namespace MatterHackers.MatterSlice
 				int prevExtruder = gcodeLayer.GetExtruder();
 				bool extruderChanged = gcodeLayer.SetExtruder(extruderIndex);
 
-				if (extruderChanged)
+				if (extruderChanged && slicingData.HaveWipeTower(config))
 				{
 					slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, gcodeLayer, fillConfig, config);
 					//Make sure we wipe the old extruder on the wipe tower.
