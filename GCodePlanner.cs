@@ -883,6 +883,11 @@ namespace MatterHackers.MatterSlice
 
 		public void QueuePolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
 		{
+			if(polygons.Count == 0)
+			{
+				return;
+			}
+
 			PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(LastPosition);
 			orderOptimizer.AddPolygons(polygons);
 
