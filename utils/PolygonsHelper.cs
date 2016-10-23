@@ -101,12 +101,12 @@ namespace MatterHackers.MatterSlice
 			return outputPolygons;
 		}
 
-		public static Polygons CreateLineDifference(this Polygons linePolygons, Polygons removePolygons)
+		public static Polygons CreateLineDifference(this Polygons areaToRemove, Polygons linePolygons)
 		{
 			Clipper clipper = new Clipper();
 
 			clipper.AddPaths(linePolygons, PolyType.ptSubject, false);
-			clipper.AddPaths(removePolygons, PolyType.ptClip, true);
+			clipper.AddPaths(areaToRemove, PolyType.ptClip, true);
 
 			PolyTree clippedLines = new PolyTree();
 
@@ -166,12 +166,12 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static Polygons CreateLineIntersections(this Polygons polygons, Polygons other)
+		public static Polygons CreateLineIntersections(this Polygons areaToIntersect, Polygons lines)
 		{
 			Clipper clipper = new Clipper();
 
-			clipper.AddPaths(other, PolyType.ptSubject, false);
-			clipper.AddPaths(polygons, PolyType.ptClip, true);
+			clipper.AddPaths(lines, PolyType.ptSubject, false);
+			clipper.AddPaths(areaToIntersect, PolyType.ptClip, true);
 
 			PolyTree clippedLines = new PolyTree();
 
