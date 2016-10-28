@@ -245,7 +245,7 @@ namespace MatterHackers.MatterSlice
 				// create the raft base
 				{
 					gcode.WriteComment("RAFT BASE");
-					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio, config.MergeOverlappingLines);
 					if (config.RaftExtruder >= 0)
 					{
 						// if we have a specified raft extruder use it
@@ -295,7 +295,7 @@ namespace MatterHackers.MatterSlice
 				// raft middle layers
 				{
 					gcode.WriteComment("RAFT MIDDLE");
-					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio, config.MergeOverlappingLines);
 					gcode.SetZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um);
 					gcode.LayerChanged(-2);
 					gcode.SetExtrusion(config.RaftInterfaceThicknes_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
@@ -310,7 +310,7 @@ namespace MatterHackers.MatterSlice
 				for (int raftSurfaceIndex = 1; raftSurfaceIndex <= config.RaftSurfaceLayers; raftSurfaceIndex++)
 				{
 					gcode.WriteComment("RAFT SURFACE");
-					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio, config.MergeOverlappingLines);
 					gcode.SetZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um + config.RaftSurfaceThickness_um * raftSurfaceIndex);
 					gcode.LayerChanged(-1);
 					gcode.SetExtrusion(config.RaftSurfaceThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
