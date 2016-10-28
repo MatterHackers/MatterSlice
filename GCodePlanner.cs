@@ -487,6 +487,13 @@ namespace MatterHackers.MatterSlice
 						long endDelta = (polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length();
 						if (endDelta < overlapMergeAmount_um)
 						{
+							// only considre the merge if the directions of the lines are towards eachother
+							var firstSegmentDirection = polySegments[firstSegmentIndex].End - polySegments[firstSegmentIndex].Start;
+							var checkSegmentDirection = polySegments[checkSegmentIndex].End - polySegments[checkSegmentIndex].Start;
+							if (firstSegmentDirection.Dot(checkSegmentDirection) > 0)
+							{
+								continue;
+							}
 							pathWasOptomized = true;
 							// move the first segments points to the average of the merge positions
 							long startEndWidth = Math.Abs((polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length());
