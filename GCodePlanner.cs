@@ -215,9 +215,11 @@ namespace MatterHackers.MatterSlice
 		private int travelSpeedFactor;
 
 		double perimeterStartEndOverlapRatio;
+		private bool mergeOverlappingLines;
 
-		public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um, double perimeterStartEndOverlap = 0)
+		public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um, double perimeterStartEndOverlap = 0, bool mergeOverlappingLines = false)
 		{
+			this.mergeOverlappingLines = mergeOverlappingLines;
 			this.gcodeExport = gcode;
 			travelConfig = new GCodePathConfig("travelConfig");
 			travelConfig.SetData(travelSpeed, 0, "travel");
@@ -751,7 +753,8 @@ namespace MatterHackers.MatterSlice
 					Polygons pathsWithOverlapsRemoved = null;
 					bool pathHadOverlaps = false;
 					bool pathIsClosed = true;
-					if (path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER")
+					if (mergeOverlappingLines
+						&& ( path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER"))
 					{
 						//string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(path);
 						if (perimeterStartEndOverlapRatio < 1)
