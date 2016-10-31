@@ -374,12 +374,12 @@ namespace MatterHackers.MatterSlice
 			List<int> collisions = new List<int>();
 			static bool newMethod = true;
 
-			public TouchingItemsIterator(IntRect bounds, List<Segment> polySegments, long overlapAmount)
+			public TouchingItemsIterator(List<Segment> polySegments, long overlapAmount)
 			{
 				if (newMethod)
 				{
 					this.bounds = bounds;
-					tree = new QuadTree<int>(5, bounds.left, bounds.bottom, bounds.right, bounds.top);
+					tree = new QuadTree<int>(5, new Quad());
 					for (int i = 0; i < polySegments.Count; i++)
 					{
 						var quad = new Quad(polySegments[i].Left - overlapAmount,
@@ -431,7 +431,7 @@ namespace MatterHackers.MatterSlice
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
 
-			var touchingEnumerator = new TouchingItemsIterator(Clipper.GetBounds(polygons), polySegments, overlapMergeAmount_um);
+			var touchingEnumerator = new TouchingItemsIterator(polySegments, overlapMergeAmount_um);
 			int segmentCount = polySegments.Count;
 			// now walk every segment and check if there is another segment that is similar enough to merge them together
 			for (int firstSegmentIndex = 0; firstSegmentIndex < segmentCount; firstSegmentIndex++)
@@ -556,7 +556,7 @@ namespace MatterHackers.MatterSlice
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
 
-			var touchingEnumerator = new TouchingItemsIterator(perimeter.GetBounds(), polySegments, overlapMergeAmount_um);
+			var touchingEnumerator = new TouchingItemsIterator(polySegments, overlapMergeAmount_um);
 			int segmentCount = polySegments.Count;
 			// now walk every segment and check if there is another segment that is similar enough to merge them together
 			for (int firstSegmentIndex = 0; firstSegmentIndex < segmentCount; firstSegmentIndex++)
