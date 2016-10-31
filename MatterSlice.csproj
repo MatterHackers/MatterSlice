@@ -127,6 +127,7 @@
     <Compile Include="Slicer\SlicerLayer.cs" />
     <Compile Include="Slicer\Slicer.cs" />
     <Compile Include="NewSupport.cs" />
+    <Compile Include="utils\QuadTree.cs" />
     <Compile Include="utils\Vector3.cs" />
     <Compile Include="main.cs" />
     <Compile Include="ConfigSettings.cs" />

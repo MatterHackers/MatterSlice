@@ -157,6 +157,42 @@ namespace MatterHackers.MatterSlice
 			return output;
 		}
 
+		public static IntRect GetBounds(this Polygon inPolygon)
+		{
+			if (inPolygon.Count == 0)
+			{
+				return new IntRect(0, 0, 0, 0);
+			}
+
+			IntRect result = new IntRect();
+			result.left = inPolygon[0].X;
+			result.right = result.left;
+			result.top = inPolygon[0].Y;
+			result.bottom = result.top;
+			for (int pointIndex = 1; pointIndex < inPolygon.Count; pointIndex++)
+			{
+				if (inPolygon[pointIndex].X < result.left)
+				{
+					result.left = inPolygon[pointIndex].X;
+				}
+				else if (inPolygon[pointIndex].X > result.right)
+				{
+					result.right = inPolygon[pointIndex].X;
+				}
+
+				if (inPolygon[pointIndex].Y < result.top)
+				{
+					result.top = inPolygon[pointIndex].Y;
+				}
+				else if (inPolygon[pointIndex].Y > result.bottom)
+				{
+					result.bottom = inPolygon[pointIndex].Y;
+				}
+			}
+
+			return result;
+		}
+		
 		public static Polygon CreateConvexHull(this Polygon inPolygon)
 		{
 			return new Polygon(GrahamScan.GetConvexHull(inPolygon));
