@@ -34,6 +34,7 @@ using MatterHackers.MatterSlice;
 
 namespace MatterHackers.MatterSlice.Tests
 {
+	using QuadTree;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
@@ -69,6 +70,29 @@ namespace MatterHackers.MatterSlice.Tests
 				&& pathsWithOverlapsRemoved.Count > 0;
 
 			Assert.IsFalse(pathHadOverlaps);
+		}
+
+		[Test]
+		public void QuadTreeWorking()
+		{
+			var tree = new QuadTree<int>(5, 10, 10, 2000, 2000);
+			tree.Insert(0, new Quad(50, 50, 60, 60));
+			tree.Insert(1, new Quad(52, 53, 60, 60));
+			//tree.Insert(0, new Quad(500, 50, 560, 60));
+			//tree.Insert(0, new Quad(20, 50, 61, 60));
+			//tree.Insert(0, new Quad(150, 50, 160, 60));
+			
+			
+			var collisions = new List<int>();
+
+			if (tree.FindCollisions(0, ref collisions))
+			{
+				for (int checkSegmentIndex = 0; checkSegmentIndex < collisions.Count; checkSegmentIndex++)
+				{
+				}
+			}
+
+			Assert.IsTrue(collisions.Count == 1);
 		}
 
 		[Test]

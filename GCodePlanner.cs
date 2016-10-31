@@ -25,6 +25,7 @@ using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
+	using QuadTree;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
@@ -32,6 +33,38 @@ namespace MatterHackers.MatterSlice
 	{
 		public IntPoint Start;
 		public IntPoint End;
+
+		public long Left
+		{
+			get
+			{
+				return Math.Min(Start.X, End.X);
+			}
+		}
+
+		public long Right
+		{
+			get
+			{
+				return Math.Max(Start.X, End.X);
+			}
+		}
+
+		public long Bottom
+		{
+			get
+			{
+				return Math.Min(Start.Y, End.Y);
+			}
+		}
+
+		public long Top
+		{
+			get
+			{
+				return Math.Max(Start.Y, End.Y);
+			}
+		}
 
 		public Segment()
 		{
@@ -334,6 +367,59 @@ namespace MatterHackers.MatterSlice
 			return FindThinLines(new Polygons { polygon }, overlapMergeAmount_um, minimumRequiredWidth_um, out onlyMergeLines, pathIsClosed);
 		}
 
+		internal class TouchingItemsIterator
+		{
+			IntRect bounds;
+			QuadTree<int> tree;
+			List<int> collisions = new List<int>();
+			static bool newMethod = true;
+
+			public TouchingItemsIterator(IntRect bounds, List<Segment> polySegments, long overlapAmount)
+			{
+				if (newMethod)
+				{
+					this.bounds = bounds;
+					tree = new QuadTree<int>(5, bounds.left, bounds.bottom, bounds.right, bounds.top);
+					for (int i = 0; i < polySegments.Count; i++)
+					{
+						var quad = new Quad(polySegments[i].Left - overlapAmount,
+							polySegments[i].Bottom - overlapAmount,
+							polySegments[i].Right + overlapAmount,
+							polySegments[i].Top + overlapAmount);
+
+						tree.Insert(i, ref quad);
+					}
+				}
+			}
+
+			internal IEnumerable<int> GetTouching(int firstSegmentIndex, int endIndexExclusive)
+			{
+				if (newMethod)
+				{
+					if (tree.FindCollisions(firstSegmentIndex, ref collisions))
+					{
+						for (int collisionIndex = 0; collisionIndex < collisions.Count; collisionIndex++)
+						{
+							int segmentIndex = collisions[collisionIndex];
+							if (segmentIndex <= firstSegmentIndex)
+							{
+								continue;
+							}
+
+							yield return segmentIndex;
+						}
+					}
+				}
+				else
+				{
+					for (int i = firstSegmentIndex; i < endIndexExclusive; i++)
+					{
+						yield return i;
+					}
+				}
+			}
+		}
+
 		public static bool FindThinLines(Polygons polygons, long overlapMergeAmount_um, long minimumRequiredWidth_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
 		{
 			bool pathHasMergeLines = false;
@@ -345,11 +431,12 @@ namespace MatterHackers.MatterSlice
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
 
+			var touchingEnumerator = new TouchingItemsIterator(Clipper.GetBounds(polygons), polySegments, overlapMergeAmount_um);
 			int segmentCount = polySegments.Count;
 			// now walk every segment and check if there is another segment that is similar enough to merge them together
 			for (int firstSegmentIndex = 0; firstSegmentIndex < segmentCount; firstSegmentIndex++)
 			{
-				for (int checkSegmentIndex = firstSegmentIndex + 1; checkSegmentIndex < segmentCount; checkSegmentIndex++)
+				foreach (int checkSegmentIndex in touchingEnumerator.GetTouching(firstSegmentIndex, segmentCount))
 				{
 					// The first point of start and the last point of check (the path will be coming back on itself).
 					long startDelta = (polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length();
@@ -454,7 +541,7 @@ namespace MatterHackers.MatterSlice
 			}
 			bool pathWasOptomized = false;
 
-			for(int i=0; i<perimeter.Count; i++)
+			for (int i = 0; i < perimeter.Count; i++)
 			{
 				perimeter[i] = new IntPoint(perimeter[i])
 				{
@@ -469,14 +556,12 @@ namespace MatterHackers.MatterSlice
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
 
+			var touchingEnumerator = new TouchingItemsIterator(perimeter.GetBounds(), polySegments, overlapMergeAmount_um);
 			int segmentCount = polySegments.Count;
 			// now walk every segment and check if there is another segment that is similar enough to merge them together
 			for (int firstSegmentIndex = 0; firstSegmentIndex < segmentCount; firstSegmentIndex++)
 			{
-				//polySegments[firstSegmentIndex].Start.Width = overlapMergeAmount_um;
-				//polySegments[firstSegmentIndex].End.Width = overlapMergeAmount_um;
-
-				for (int checkSegmentIndex = firstSegmentIndex + 1; checkSegmentIndex < segmentCount; checkSegmentIndex++)
+				foreach (int checkSegmentIndex in touchingEnumerator.GetTouching(firstSegmentIndex, segmentCount))
 				{
 					// The first point of start and the last point of check (the path will be coming back on itself).
 					long startDelta = (polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length();
@@ -1043,12 +1128,12 @@ namespace MatterHackers.MatterSlice
 		public static Polygons MakeCloseSegmentsMergable(Polygons polygonsToSplit, long distanceNeedingAdd, bool pathsAreClosed = true)
 		{
 			Polygons splitPolygons = new Polygons();
-			foreach(var polygonToSplit in polygonsToSplit)
+			for(int i=0; i < polygonsToSplit.Count; i++)
 			{
-				Polygon accumulatedSplits = polygonToSplit;
-				foreach (var pointsToSplitOn in polygonsToSplit)
+				Polygon accumulatedSplits = polygonsToSplit[i];
+				for(int j=0; j<polygonsToSplit.Count; j++)
 				{
-					accumulatedSplits = MakeCloseSegmentsMergable(accumulatedSplits, pointsToSplitOn, distanceNeedingAdd, pathsAreClosed);
+					accumulatedSplits = MakeCloseSegmentsMergable(accumulatedSplits, polygonsToSplit[j], distanceNeedingAdd, pathsAreClosed);
 				}
 				splitPolygons.Add(accumulatedSplits);
 			}
