@@ -157,6 +157,14 @@ namespace MatterHackers.MatterSlice
 			return output;
 		}
 
+		public static void ExpandToInclude(this IntRect inRect, IntRect otherRect)
+		{
+			if (otherRect.left < inRect.left) inRect.left = otherRect.left;
+			if (otherRect.top < inRect.top) inRect.top = otherRect.top;
+			if (otherRect.right > inRect.right) inRect.right = otherRect.right;
+			if (otherRect.bottom > inRect.bottom) inRect.bottom = otherRect.bottom;
+		}
+
 		public static IntRect GetBounds(this Polygon inPolygon)
 		{
 			if (inPolygon.Count == 0)
