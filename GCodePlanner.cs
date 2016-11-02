@@ -367,59 +367,6 @@ namespace MatterHackers.MatterSlice
 			return FindThinLines(new Polygons { polygon }, overlapMergeAmount_um, minimumRequiredWidth_um, out onlyMergeLines, pathIsClosed);
 		}
 
-		internal class TouchingItemsIterator
-		{
-			IntRect bounds;
-			QuadTree<int> tree;
-			List<int> collisions = new List<int>();
-			static bool newMethod = true;
-
-			public TouchingItemsIterator(IntRect bounds, List<Segment> polySegments, long overlapAmount)
-			{
-				if (newMethod)
-				{
-					this.bounds = bounds;
-					tree = new QuadTree<int>(5, bounds.left, bounds.bottom, bounds.right, bounds.top);
-					for (int i = 0; i < polySegments.Count; i++)
-					{
-						var quad = new Quad(polySegments[i].Left - overlapAmount,
-							polySegments[i].Bottom - overlapAmount,
-							polySegments[i].Right + overlapAmount,
-							polySegments[i].Top + overlapAmount);
-
-						tree.Insert(i, ref quad);
-					}
-				}
-			}
-
-			internal IEnumerable<int> GetTouching(int firstSegmentIndex, int endIndexExclusive)
-			{
-				if (newMethod)
-				{
-					if (tree.FindCollisions(firstSegmentIndex, ref collisions))
-					{
-						for (int collisionIndex = 0; collisionIndex < collisions.Count; collisionIndex++)
-						{
-							int segmentIndex = collisions[collisionIndex];
-							if (segmentIndex <= firstSegmentIndex)
-							{
-								continue;
-							}
-
-							yield return segmentIndex;
-						}
-					}
-				}
-				else
-				{
-					for (int i = firstSegmentIndex; i < endIndexExclusive; i++)
-					{
-						yield return i;
-					}
-				}
-			}
-		}
-
 		public static bool FindThinLines(Polygons polygons, long overlapMergeAmount_um, long minimumRequiredWidth_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
 		{
 			bool pathHasMergeLines = false;
@@ -431,7 +378,7 @@ namespace MatterHackers.MatterSlice
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
 
-			var touchingEnumerator = new TouchingItemsIterator(Clipper.GetBounds(polygons), polySegments, overlapMergeAmount_um);
+			var touchingEnumerator = new CloseSegmentsIterator(polySegments, overlapMergeAmount_um);
 			int segmentCount = polySegments.Count;
 			// now walk every segment and check if there is another segment that is similar enough to merge them together
 			for (int firstSegmentIndex = 0; firstSegmentIndex < segmentCount; firstSegmentIndex++)
@@ -556,7 +503,7 @@ namespace MatterHackers.MatterSlice
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
 
-			var touchingEnumerator = new TouchingItemsIterator(perimeter.GetBounds(), polySegments, overlapMergeAmount_um);
+			var touchingEnumerator = new CloseSegmentsIterator(polySegments, overlapMergeAmount_um);
 			int segmentCount = polySegments.Count;
 			// now walk every segment and check if there is another segment that is similar enough to merge them together
 			for (int firstSegmentIndex = 0; firstSegmentIndex < segmentCount; firstSegmentIndex++)
@@ -1149,6 +1096,8 @@ namespace MatterHackers.MatterSlice
 		public static Polygon MakeCloseSegmentsMergable(Polygon polygonToSplit, Polygon pointsToSplitOn, long distanceNeedingAdd, bool pathIsClosed = true)
 		{
 			List<Segment> segments = Segment.ConvertToSegments(polygonToSplit, pathIsClosed);
+
+			//var touchingEnumerator = new ClosePointsIterator(pointsToSplitOn, distanceNeedingAdd);
 
 			// for every segment
 			for (int segmentIndex = segments.Count - 1; segmentIndex >= 0; segmentIndex--)
