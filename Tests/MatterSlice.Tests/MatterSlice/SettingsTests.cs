@@ -608,7 +608,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// check that default is support printed with extruder 0
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_0_" + ".gcode");
+				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_0_.gcode");
 
 				ConfigSettings config = new ConfigSettings();
 				fffProcessor processor = new fffProcessor(config);
@@ -625,7 +625,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// check that support is printed with extruder 1
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_1b_" + ".gcode");
+				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_1b_.gcode");
 
 				ConfigSettings config = new ConfigSettings();
 				config.SupportExtruder = 1;
@@ -644,7 +644,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// check that support interface is printed with extruder 1
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_1i_" + ".gcode");
+				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_1i_.gcode");
 
 				ConfigSettings config = new ConfigSettings();
 				config.SupportInterfaceExtruder = 1;
@@ -663,7 +663,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// check that support and interface can be set separately
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_1b2i_" + ".gcode");
+				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_1b2i_.gcode");
 
 				ConfigSettings config = new ConfigSettings();
 				config.SupportExtruder = 1;
@@ -690,7 +690,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// check that default is support printed with extruder 0
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_retract_" + ".gcode");
+				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_retract_.gcode");
 
 				ConfigSettings config = new ConfigSettings();
 				config.RetractionZHop = 5;
