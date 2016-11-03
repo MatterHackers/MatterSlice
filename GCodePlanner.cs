@@ -148,7 +148,7 @@ namespace MatterHackers.MatterSlice
 			return polySegments;
 		}
 
-		public List<Segment> GetSplitSegmentForVertecies(Polygon splitPoints, long maxDistance)
+		public List<Segment> GetSplitSegmentForVertecies(ClosePointsIterator touchingEnumerator)
 		{
 			IntPoint start2D = new IntPoint(Start)
 			{
@@ -166,12 +166,13 @@ namespace MatterHackers.MatterSlice
 			long length = direction.Length();
 			long lengthSquared = length * length;
 			IntPoint rightDirection = direction.GetPerpendicularRight();
-			long maxDistanceNormalized = maxDistance * length;
+			long maxDistanceNormalized = touchingEnumerator.OverlapAmount * length;
 
 			// for every vertex
-			for (int splintIndex = 0; splintIndex < splitPoints.Count; splintIndex++)
+			foreach (int touchingPoint in touchingEnumerator.GetTouching(new Quad(this.Left, this.Bottom, this.Right, this.Top)))
+			//for (int splintIndex = 0; splintIndex < splitPoints.Count; splintIndex++)
 			{
-				IntPoint vertex = new IntPoint(splitPoints[splintIndex]) { Z = 0 } - start2D;
+				IntPoint vertex = new IntPoint(touchingEnumerator.SourcePoints[touchingPoint]) { Z = 0 } - start2D;
 				// if the vertex is close enough to the segment
 				long dotProduct = rightDirection.Dot(vertex);
 				if (Math.Abs(dotProduct) < maxDistanceNormalized)
@@ -1097,12 +1098,12 @@ namespace MatterHackers.MatterSlice
 		{
 			List<Segment> segments = Segment.ConvertToSegments(polygonToSplit, pathIsClosed);
 
-			//var touchingEnumerator = new ClosePointsIterator(pointsToSplitOn, distanceNeedingAdd);
+			var touchingEnumerator = new ClosePointsIterator(pointsToSplitOn, distanceNeedingAdd);
 
 			// for every segment
 			for (int segmentIndex = segments.Count - 1; segmentIndex >= 0; segmentIndex--)
 			{
-				List<Segment> newSegments = segments[segmentIndex].GetSplitSegmentForVertecies(pointsToSplitOn, distanceNeedingAdd);
+				List<Segment> newSegments = segments[segmentIndex].GetSplitSegmentForVertecies(touchingEnumerator);
 				if (newSegments?.Count > 0)
 				{
 					// remove the old segment
