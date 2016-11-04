@@ -664,7 +664,10 @@ namespace MatterHackers.MatterSlice
 						&& island?.InsetToolPaths?[0]?[0]?.Count > 0)
 					{
 						int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
-						layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundary);
+						if (config.AvoidCrossingPerimeters)
+						{
+							layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundary);
+						}
 						layerGcodePlanner.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
 					}
 				}
