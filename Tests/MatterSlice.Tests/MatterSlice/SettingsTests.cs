@@ -306,6 +306,84 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void DualMaterialPrintMovesCorrectly()
+		{
+			DualMaterialPrintMovesCorrectly(false);
+			DualMaterialPrintMovesCorrectly(true);
+		}
+
+		public void DualMaterialPrintMovesCorrectly(bool createWipeTower)
+		{
+			string leftPart = "Box Left";
+			string rightPart = "Box Right";
+			string leftStlFile = TestUtlities.GetStlPath(leftPart);
+			string rightStlFile = TestUtlities.GetStlPath(rightPart);
+
+			string outputGCodeFileName = TestUtlities.GetTempGCodePath("DualPartMoves");
+
+			ConfigSettings config = new ConfigSettings();
+			config.FirstLayerThickness = .2;
+			config.CenterObjectInXy = false;
+			config.LayerThickness = .2;
+			config.NumberOfBottomLayers = 0;
+			if (createWipeTower)
+			{
+				config.WipeTowerSize = 10;
+			}
+			else
+			{
+				config.WipeTowerSize = 0;
+			}
+			fffProcessor processor = new fffProcessor(config);
+			processor.SetTargetFile(outputGCodeFileName);
+			processor.LoadStlFile(leftStlFile);
+			processor.LoadStlFile(rightStlFile);
+			// slice and save it
+			processor.DoProcessing();
+			processor.finalize();
+
+			string[] gCodeContent = TestUtlities.LoadGCodeFile(outputGCodeFileName);
+
+			// test .1 layer height
+			int layerCount = TestUtlities.CountLayers(gCodeContent);
+			Assert.IsTrue(layerCount == 50);
+
+			bool hadMoveLessThan85 = false;
+
+			MovementInfo lastMovement = new MovementInfo();
+			for (int i = 0; i < layerCount - 3; i++)
+			{
+				string[] layerInfo = TestUtlities.GetGCodeForLayer(gCodeContent, i);
+
+				// check that all layers move up continuously
+				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo, lastMovement, onlyG1s: true))
+				{
+					if (i > 2)
+					{
+						if (createWipeTower)
+						{
+							Assert.IsTrue(movement.position.x > 75 && movement.position.y > 10, "Moves don't go to 0");
+							if(movement.position.x < 85)
+							{
+								hadMoveLessThan85 = true;
+							}
+						}
+						else
+						{
+							Assert.IsTrue(movement.position.x > 85 && movement.position.y > 10, "Moves don't go to 0");
+						}
+					}
+					lastMovement = movement;
+				}
+			}
+
+			if (createWipeTower)
+			{
+				Assert.IsTrue(hadMoveLessThan85, "found a wipe tower");
+			}
+		}
+
+		[Test]
 		public void SpiralVaseCreatesContinuousLift()
 		{
 			CheckSpiralCone("cone", "spiralCone.gcode");
@@ -530,7 +608,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// check that default is support printed with extruder 0
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_0_" + ".gcode");
+				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_0_.gcode");
 
 				ConfigSettings config = new ConfigSettings();
 				fffProcessor processor = new fffProcessor(config);
@@ -547,7 +625,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// check that support is printed with extruder 1
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_1b_" + ".gcode");
+				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_1b_.gcode");
 
 				ConfigSettings config = new ConfigSettings();
 				config.SupportExtruder = 1;
@@ -566,7 +644,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// check that support interface is printed with extruder 1
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_1i_" + ".gcode");
+				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_1i_.gcode");
 
 				ConfigSettings config = new ConfigSettings();
 				config.SupportInterfaceExtruder = 1;
@@ -585,7 +663,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// check that support and interface can be set separately
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_1b2i_" + ".gcode");
+				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_1b2i_.gcode");
 
 				ConfigSettings config = new ConfigSettings();
 				config.SupportExtruder = 1;
@@ -612,7 +690,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// check that default is support printed with extruder 0
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_retract_" + ".gcode");
+				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_retract_.gcode");
 
 				ConfigSettings config = new ConfigSettings();
 				config.RetractionZHop = 5;

@@ -114,8 +114,6 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			config.SetExtruderCount(slicingData.Extruders.Count);
-
 			writeGCode(slicingData);
 			if (MatterSlice.Canceled)
 			{
@@ -234,6 +232,8 @@ namespace MatterHackers.MatterSlice
 			}
 
 			MultiExtruders.ProcessBooleans(slicingData.Extruders, config.BooleanOpperations);
+
+			config.SetExtruderCount(slicingData.Extruders.Count);
 
 			MultiExtruders.RemoveExtruderIntersections(slicingData.Extruders);
 			MultiExtruders.OverlapMultipleExtrudersSlightly(slicingData.Extruders, config.MultiExtruderOverlapPercent);
@@ -468,7 +468,7 @@ namespace MatterHackers.MatterSlice
 					gcode.SetExtrusion(config.LayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 				}
 
-				GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+				GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio, config.MergeOverlappingLines);
 				if (layerIndex == 0
 					&& config.RetractionZHop > 0)
 				{
@@ -508,7 +508,7 @@ namespace MatterHackers.MatterSlice
 					int prevExtruder = gcodeLayer.GetExtruder();
 					bool extruderChanged = gcodeLayer.SetExtruder(extruderIndex);
 
-					if (extruderChanged)
+					if (extruderChanged && slicingData.HaveWipeTower(config))
 					{
 						slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, gcodeLayer, fillConfig, config);
 						//Make sure we wipe the old extruder on the wipe tower.
@@ -664,7 +664,10 @@ namespace MatterHackers.MatterSlice
 						&& island?.InsetToolPaths?[0]?[0]?.Count > 0)
 					{
 						int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
-						layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundary);
+						if (config.AvoidCrossingPerimeters)
+						{
+							layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundary);
+						}
 						layerGcodePlanner.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
 					}
 				}
@@ -951,7 +954,7 @@ namespace MatterHackers.MatterSlice
 				int prevExtruder = gcodeLayer.GetExtruder();
 				bool extruderChanged = gcodeLayer.SetExtruder(extruderIndex);
 
-				if (extruderChanged)
+				if (extruderChanged && slicingData.HaveWipeTower(config))
 				{
 					slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, gcodeLayer, fillConfig, config);
 					//Make sure we wipe the old extruder on the wipe tower.
@@ -1064,63 +1067,38 @@ namespace MatterHackers.MatterSlice
 		{
 			bool oldLoopValue = fillConfig.closedLoop;
 
-			if (config.GenerateSupport 
+			if (config.GenerateSupport
 				&& layerIndex > 0
 				&& !config.ContinuousSpiralOuterPerimeter)
 			{
-				Polygons supportOutlines = slicingData.support.GetRequiredSupportAreas(layerIndex).Offset(fillConfig.lineWidth_um/2);
+				Polygons supportOutlines = slicingData.support.GetRequiredSupportAreas(layerIndex).Offset(fillConfig.lineWidth_um / 2);
 
 				if (supportWriteType == SupportWriteType.UnsupportedAreas)
 				{
 					if (supportOutlines.Count > 0)
 					{
+						// write segments at normal height (don't write segments needing air gap)
 						fillConfig.closedLoop = false;
 						Polygons polysToWriteAtNormalHeight = new Polygons();
+						Polygons polysToWriteAtAirGapHeight = new Polygons();
 
-						Polygons polygonsToWriteAsLines = PolygonsHelper.ConvertToLines(polygonsToWrite);
-						foreach(Polygon poly in polygonsToWriteAsLines)
-						{
-							Polygons polygonsIntersectSupport = supportOutlines.CreateLineIntersections(new Polygons() { poly });
-							// write the bottoms that are not sitting on supported areas
-							if (polygonsIntersectSupport.Count == 0)
-							{
-								polysToWriteAtNormalHeight.Add(poly);
-							}
-						}
-
-						if (polysToWriteAtNormalHeight.Count > 0)
-						{
-							gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtNormalHeight, fillConfig);
-						}
+						GetSegmentsConsideringSupport(polygonsToWrite, supportOutlines, polysToWriteAtNormalHeight, polysToWriteAtAirGapHeight, false);
+						gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtNormalHeight, fillConfig);
 					}
 					else
 					{
 						gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, fillConfig);
 					}
 				}
-				else
+				else if (supportOutlines.Count > 0) // we are checking the supported areas
 				{
-					if (supportOutlines.Count > 0)
-					{
-						fillConfig.closedLoop = false;
-						Polygons polysToWriteAtAirGapHeight = new Polygons();
+					// detect and write segments at air gap height
+					fillConfig.closedLoop = false;
+					Polygons polysToWriteAtNormalHeight = new Polygons();
+					Polygons polysToWriteAtAirGapHeight = new Polygons();
 
-						Polygons polygonsToWriteAsLines = PolygonsHelper.ConvertToLines(polygonsToWrite);
-						foreach (Polygon poly in polygonsToWriteAsLines)
-						{
-							Polygons polygonsIntersectSupport = supportOutlines.CreateLineIntersections(new Polygons() { poly });
-							// write the bottoms that are not sitting on supported areas
-							if (polygonsIntersectSupport.Count > 0)
-							{
-								polysToWriteAtAirGapHeight.Add(poly);
-							}
-						}
-
-						if (polysToWriteAtAirGapHeight.Count > 0)
-						{
-							gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtAirGapHeight, fillConfig);
-						}
-					}
+					GetSegmentsConsideringSupport(polygonsToWrite, supportOutlines, polysToWriteAtNormalHeight, polysToWriteAtAirGapHeight, true);
+					gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtAirGapHeight, fillConfig);
 				}
 			}
 			else if (supportWriteType == SupportWriteType.UnsupportedAreas)
@@ -1129,6 +1107,38 @@ namespace MatterHackers.MatterSlice
 			}
 
 			fillConfig.closedLoop = oldLoopValue;
+		}
+
+		private void GetSegmentsConsideringSupport(Polygons polygonsToWrite, Polygons supportOutlines, Polygons polysToWriteAtNormalHeight, Polygons polysToWriteAtAirGapHeight, bool forAirGap)
+		{
+			// make an expanded area to constrain our segments to
+			Polygons maxSupportOutlines = supportOutlines.Offset(fillConfig.lineWidth_um *2 + config.SupportXYDistance_um);
+
+			Polygons polygonsToWriteAsLines = PolygonsHelper.ConvertToLines(polygonsToWrite);
+			foreach (Polygon poly in polygonsToWriteAsLines)
+			{
+				Polygons polygonsIntersectSupport = supportOutlines.CreateLineIntersections(new Polygons() { poly });
+				// write the bottoms that are not sitting on supported areas
+				if (polygonsIntersectSupport.Count == 0)
+				{
+					if (!forAirGap)
+					{
+						polysToWriteAtNormalHeight.Add(poly);
+					}
+				}
+				else
+				{
+					// clip the lines to the bigger support maxSupportOutlines
+					if (forAirGap)
+					{
+						polysToWriteAtAirGapHeight.AddRange(maxSupportOutlines.CreateLineIntersections(new Polygons() { poly }));
+					}
+					else
+					{
+						polysToWriteAtNormalHeight.AddRange(maxSupportOutlines.CreateLineDifference(new Polygons() { poly }));
+					}
+				}
+			}
 		}
 
 		private void CalculateInfillData(LayerDataStorage slicingData, int extruderIndex, int layerIndex, LayerIsland part, Polygons bottomFillLines, Polygons fillPolygons, Polygons topFillPolygons, Polygons bridgePolygons)

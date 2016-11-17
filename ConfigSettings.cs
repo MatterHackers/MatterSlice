@@ -117,6 +117,8 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("Detect and output walls than are less than the nozzle diameter. Output width will be nozzle diameter.")]
 		public bool ExpandThinWalls { get; set; } = false;
 
+		public bool MergeOverlappingLines { get; set; } = true;
+
 		[SettingDescription("The width of the line to extrude for the first layer.")]
 		public double FirstLayerExtrusionWidth { get; set; }
 

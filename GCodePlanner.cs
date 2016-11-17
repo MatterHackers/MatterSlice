@@ -215,9 +215,11 @@ namespace MatterHackers.MatterSlice
 		private int travelSpeedFactor;
 
 		double perimeterStartEndOverlapRatio;
+		private bool mergeOverlappingLines;
 
-		public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um, double perimeterStartEndOverlap = 0)
+		public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um, double perimeterStartEndOverlap = 0, bool mergeOverlappingLines = false)
 		{
+			this.mergeOverlappingLines = mergeOverlappingLines;
 			this.gcodeExport = gcode;
 			travelConfig = new GCodePathConfig("travelConfig");
 			travelConfig.SetData(travelSpeed, 0, "travel");
@@ -485,6 +487,13 @@ namespace MatterHackers.MatterSlice
 						long endDelta = (polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length();
 						if (endDelta < overlapMergeAmount_um)
 						{
+							// only considre the merge if the directions of the lines are towards eachother
+							var firstSegmentDirection = polySegments[firstSegmentIndex].End - polySegments[firstSegmentIndex].Start;
+							var checkSegmentDirection = polySegments[checkSegmentIndex].End - polySegments[checkSegmentIndex].Start;
+							if (firstSegmentDirection.Dot(checkSegmentDirection) > 0)
+							{
+								continue;
+							}
 							pathWasOptomized = true;
 							// move the first segments points to the average of the merge positions
 							long startEndWidth = Math.Abs((polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length());
@@ -751,7 +760,8 @@ namespace MatterHackers.MatterSlice
 					Polygons pathsWithOverlapsRemoved = null;
 					bool pathHadOverlaps = false;
 					bool pathIsClosed = true;
-					if (path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER")
+					if (mergeOverlappingLines
+						&& ( path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER"))
 					{
 						//string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(path);
 						if (perimeterStartEndOverlapRatio < 1)
@@ -883,6 +893,11 @@ namespace MatterHackers.MatterSlice
 
 		public void QueuePolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
 		{
+			if(polygons.Count == 0)
+			{
+				return;
+			}
+
 			PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(LastPosition);
 			orderOptimizer.AddPolygons(polygons);
 
