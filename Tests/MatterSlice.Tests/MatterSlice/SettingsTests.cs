@@ -682,7 +682,7 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		[Test, Category("FixNeeded")]
+		[Test]
 		public void AllMovesRequiringRetractionDoRetraction()
 		{
 			string baseFileName = "ab retraction test";
