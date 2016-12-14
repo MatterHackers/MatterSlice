@@ -130,7 +130,7 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 		#endregion
 
-		[Test, Category("FixNeeded")]
+		[Test, Category("WorkInProgress")]
 		public void AllInsidesBeforeAnyOutsides()
 		{
 			string thinAttachStlFile = TestUtlities.GetStlPath("Thin Attach");
@@ -682,7 +682,7 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		[Test, Category("FixNeeded")]
+		[Test]
 		public void AllMovesRequiringRetractionDoRetraction()
 		{
 			string baseFileName = "ab retraction test";

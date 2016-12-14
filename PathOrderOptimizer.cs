@@ -85,7 +85,7 @@ namespace MatterHackers.MatterSlice
 
 				// undo the rotation
 				nextPoint = nextPoint.GetRotated(-prevAngle);
-				double angle = Math.Atan2(nextPoint.Y, nextPoint.X); ;
+				double angle = Math.Atan2(nextPoint.Y, nextPoint.X);
 
 				return angle;
 			}
