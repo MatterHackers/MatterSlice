@@ -25,6 +25,7 @@ using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
+	using QuadTree;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
@@ -32,6 +33,38 @@ namespace MatterHackers.MatterSlice
 	{
 		public IntPoint Start;
 		public IntPoint End;
+
+		public long Left
+		{
+			get
+			{
+				return Math.Min(Start.X, End.X);
+			}
+		}
+
+		public long Right
+		{
+			get
+			{
+				return Math.Max(Start.X, End.X);
+			}
+		}
+
+		public long Bottom
+		{
+			get
+			{
+				return Math.Min(Start.Y, End.Y);
+			}
+		}
+
+		public long Top
+		{
+			get
+			{
+				return Math.Max(Start.Y, End.Y);
+			}
+		}
 
 		public Segment()
 		{
@@ -115,7 +148,7 @@ namespace MatterHackers.MatterSlice
 			return polySegments;
 		}
 
-		public List<Segment> GetSplitSegmentForVertecies(Polygon splitPoints, long maxDistance)
+		public List<Segment> GetSplitSegmentForVertecies(ClosePointsIterator touchingEnumerator)
 		{
 			IntPoint start2D = new IntPoint(Start)
 			{
@@ -133,12 +166,13 @@ namespace MatterHackers.MatterSlice
 			long length = direction.Length();
 			long lengthSquared = length * length;
 			IntPoint rightDirection = direction.GetPerpendicularRight();
-			long maxDistanceNormalized = maxDistance * length;
+			long maxDistanceNormalized = touchingEnumerator.OverlapAmount * length;
 
 			// for every vertex
-			for (int splintIndex = 0; splintIndex < splitPoints.Count; splintIndex++)
+			foreach (int touchingPoint in touchingEnumerator.GetTouching(new Quad(this.Left, this.Bottom, this.Right, this.Top)))
+			//for (int splintIndex = 0; splintIndex < splitPoints.Count; splintIndex++)
 			{
-				IntPoint vertex = new IntPoint(splitPoints[splintIndex]) { Z = 0 } - start2D;
+				IntPoint vertex = new IntPoint(touchingEnumerator.SourcePoints[touchingPoint]) { Z = 0 } - start2D;
 				// if the vertex is close enough to the segment
 				long dotProduct = rightDirection.Dot(vertex);
 				if (Math.Abs(dotProduct) < maxDistanceNormalized)
@@ -345,11 +379,12 @@ namespace MatterHackers.MatterSlice
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
 
+			var touchingEnumerator = new CloseSegmentsIterator(polySegments, overlapMergeAmount_um);
 			int segmentCount = polySegments.Count;
 			// now walk every segment and check if there is another segment that is similar enough to merge them together
 			for (int firstSegmentIndex = 0; firstSegmentIndex < segmentCount; firstSegmentIndex++)
 			{
-				for (int checkSegmentIndex = firstSegmentIndex + 1; checkSegmentIndex < segmentCount; checkSegmentIndex++)
+				foreach (int checkSegmentIndex in touchingEnumerator.GetTouching(firstSegmentIndex, segmentCount))
 				{
 					// The first point of start and the last point of check (the path will be coming back on itself).
 					long startDelta = (polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length();
@@ -454,7 +489,7 @@ namespace MatterHackers.MatterSlice
 			}
 			bool pathWasOptomized = false;
 
-			for(int i=0; i<perimeter.Count; i++)
+			for (int i = 0; i < perimeter.Count; i++)
 			{
 				perimeter[i] = new IntPoint(perimeter[i])
 				{
@@ -469,14 +504,12 @@ namespace MatterHackers.MatterSlice
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
 
+			var touchingEnumerator = new CloseSegmentsIterator(polySegments, overlapMergeAmount_um);
 			int segmentCount = polySegments.Count;
 			// now walk every segment and check if there is another segment that is similar enough to merge them together
 			for (int firstSegmentIndex = 0; firstSegmentIndex < segmentCount; firstSegmentIndex++)
 			{
-				//polySegments[firstSegmentIndex].Start.Width = overlapMergeAmount_um;
-				//polySegments[firstSegmentIndex].End.Width = overlapMergeAmount_um;
-
-				for (int checkSegmentIndex = firstSegmentIndex + 1; checkSegmentIndex < segmentCount; checkSegmentIndex++)
+				foreach (int checkSegmentIndex in touchingEnumerator.GetTouching(firstSegmentIndex, segmentCount))
 				{
 					// The first point of start and the last point of check (the path will be coming back on itself).
 					long startDelta = (polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length();
@@ -1043,12 +1076,12 @@ namespace MatterHackers.MatterSlice
 		public static Polygons MakeCloseSegmentsMergable(Polygons polygonsToSplit, long distanceNeedingAdd, bool pathsAreClosed = true)
 		{
 			Polygons splitPolygons = new Polygons();
-			foreach(var polygonToSplit in polygonsToSplit)
+			for(int i=0; i < polygonsToSplit.Count; i++)
 			{
-				Polygon accumulatedSplits = polygonToSplit;
-				foreach (var pointsToSplitOn in polygonsToSplit)
+				Polygon accumulatedSplits = polygonsToSplit[i];
+				for(int j=0; j<polygonsToSplit.Count; j++)
 				{
-					accumulatedSplits = MakeCloseSegmentsMergable(accumulatedSplits, pointsToSplitOn, distanceNeedingAdd, pathsAreClosed);
+					accumulatedSplits = MakeCloseSegmentsMergable(accumulatedSplits, polygonsToSplit[j], distanceNeedingAdd, pathsAreClosed);
 				}
 				splitPolygons.Add(accumulatedSplits);
 			}
@@ -1065,10 +1098,12 @@ namespace MatterHackers.MatterSlice
 		{
 			List<Segment> segments = Segment.ConvertToSegments(polygonToSplit, pathIsClosed);
 
+			var touchingEnumerator = new ClosePointsIterator(pointsToSplitOn, distanceNeedingAdd);
+
 			// for every segment
 			for (int segmentIndex = segments.Count - 1; segmentIndex >= 0; segmentIndex--)
 			{
-				List<Segment> newSegments = segments[segmentIndex].GetSplitSegmentForVertecies(pointsToSplitOn, distanceNeedingAdd);
+				List<Segment> newSegments = segments[segmentIndex].GetSplitSegmentForVertecies(touchingEnumerator);
 				if (newSegments?.Count > 0)
 				{
 					// remove the old segment
