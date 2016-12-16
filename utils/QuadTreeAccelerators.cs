@@ -9,7 +9,6 @@ namespace MatterHackers.MatterSlice
 		static bool newMethod = true;
 
 		QuadTree<int> tree;
-		List<int> collisions = new List<int>();
 
 		public CloseSegmentsIterator(List<Segment> polySegments, long overlapAmount)
 		{
@@ -48,18 +47,9 @@ namespace MatterHackers.MatterSlice
 		{
 			if (newMethod)
 			{
-				if (tree.FindCollisions(firstSegmentIndex, ref collisions))
+				foreach(var segmentIndex in tree.FindCollisions(firstSegmentIndex))
 				{
-					for (int collisionIndex = 0; collisionIndex < collisions.Count; collisionIndex++)
-					{
-						int segmentIndex = collisions[collisionIndex];
-						if (segmentIndex <= firstSegmentIndex)
-						{
-							continue;
-						}
-
-						yield return segmentIndex;
-					}
+					yield return segmentIndex;
 				}
 			}
 			else
@@ -76,7 +66,6 @@ namespace MatterHackers.MatterSlice
 	{
 		static bool newMethod = true;
 		QuadTree<int> tree;
-		List<int> collisions = new List<int>();
 
 		public List<IntPoint> SourcePoints { get; private set; }
 		public long OverlapAmount { get; private set; }
@@ -120,14 +109,9 @@ namespace MatterHackers.MatterSlice
 		{
 			if (newMethod)
 			{
-				if (tree.SearchArea(touchingBounds, ref collisions))
+				foreach (var index in tree.SearchArea(touchingBounds))
 				{
-					for (int collisionIndex = 0; collisionIndex < collisions.Count; collisionIndex++)
-					{
-						int pointIndex = collisions[collisionIndex];
-
-						yield return pointIndex;
-					}
+					yield return index;
 				}
 			}
 			else

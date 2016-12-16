@@ -81,18 +81,15 @@ namespace MatterHackers.MatterSlice.Tests
 			//tree.Insert(0, new Quad(500, 50, 560, 60));
 			//tree.Insert(0, new Quad(20, 50, 61, 60));
 			//tree.Insert(0, new Quad(150, 50, 160, 60));
-			
-			
-			var collisions = new List<int>();
 
-			if (tree.FindCollisions(0, ref collisions))
+
+			int count = 0;
+			foreach(var index in tree.FindCollisions(0))
 			{
-				for (int checkSegmentIndex = 0; checkSegmentIndex < collisions.Count; checkSegmentIndex++)
-				{
-				}
+				count++;
 			}
 
-			Assert.IsTrue(collisions.Count == 1);
+			Assert.IsTrue(count == 1);
 		}
 
 		[Test]

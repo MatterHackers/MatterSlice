@@ -888,7 +888,7 @@ namespace MatterHackers.MatterSlice
 				//After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
 				if (!config.ContinuousSpiralOuterPerimeter || layerIndex < config.NumberOfBottomLayers)
 				{
-					layerGcodePlanner.MoveInsideTheOuterPerimeter(extrusionWidth_um * 2);
+					layerGcodePlanner.MoveInsideTravelPerimeter();
 				}
 			}
 
@@ -1039,7 +1039,7 @@ namespace MatterHackers.MatterSlice
 					//After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
 					if (!config.ContinuousSpiralOuterPerimeter || layerIndex < config.NumberOfBottomLayers)
 					{
-						gcodeLayer.MoveInsideTheOuterPerimeter(extrusionWidth_um * 2);
+						gcodeLayer.MoveInsideTravelPerimeter();
 					}
 
 					// Print everything but the first perimeter from the outside in so the little parts have more to stick to.

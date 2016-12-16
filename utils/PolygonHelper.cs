@@ -304,6 +304,13 @@ namespace MatterHackers.MatterSlice
 			return Clipper.Orientation(polygon);
 		}
 
+		//returns 0 if false, +1 if true, -1 if pt ON polygon boundary
+		public static int PointIsInside(this Polygon polygon, IntPoint testPoint)
+		{
+			return Clipper.PointInPolygon(testPoint, polygon);
+		}
+
+
 		public static bool polygonCollidesWithlineSegment(Polygon poly, IntPoint startPoint, IntPoint endPoint)
 		{
 			IntPoint diff = endPoint - startPoint;

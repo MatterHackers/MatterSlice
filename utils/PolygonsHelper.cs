@@ -214,7 +214,7 @@ namespace MatterHackers.MatterSlice
 			return deepCopy;
 		}
 
-		public static bool Inside(this Polygons polygons, IntPoint testPoint)
+		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint)
 		{
 			if (polygons.Count < 1)
 			{
@@ -223,8 +223,7 @@ namespace MatterHackers.MatterSlice
 
 			// we can just test the first one first as we know that there is a special case in
 			// the slicer that all the other polygons are inside this one.
-			int positionOnOuterPerimeter = Clipper.PointInPolygon(testPoint, polygons[0]);
-			if (positionOnOuterPerimeter == 0) // not inside or on boundary
+			if (polygons[0].PointIsInside(testPoint) == 0) // not inside or on boundary
 			{
 				// If we are not inside the outer perimeter we are not inside.
 				return false;
@@ -232,8 +231,8 @@ namespace MatterHackers.MatterSlice
 
 			for (int polygonIndex = 1; polygonIndex < polygons.Count; polygonIndex++)
 			{
-				int positionOnHole = Clipper.PointInPolygon(testPoint, polygons[polygonIndex]);
-				if (positionOnHole == 1) // inside the hole
+				polygons[polygonIndex].PointIsInside(testPoint);
+				if (polygons[polygonIndex].PointIsInside(testPoint) == 1) // inside the hole
 				{
 					return false;
 				}

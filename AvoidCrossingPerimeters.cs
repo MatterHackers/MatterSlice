@@ -24,6 +24,7 @@ using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
+	using System;
 	using System.IO;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
@@ -66,14 +67,6 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			if ((endPoint - startPoint).ShorterThen(1500))
-			{
-				// If the movement is very short (not a lot of time to ooze filament)
-				// then don't add any points
-				return true;
-			}
-
-			bool addEndpoint = false;
 			//Check if we are inside the comb boundaries
 			if (!PointIsInsideBoundary(startPoint))
 			{
@@ -86,6 +79,7 @@ namespace MatterHackers.MatterSlice
 				pathThatIsInside.Add(startPoint);
 			}
 
+			bool addEndpoint = false;
 			if (!PointIsInsideBoundary(endPoint))
 			{
 				if (!MovePointInsideBoundary(ref endPoint))
@@ -97,16 +91,25 @@ namespace MatterHackers.MatterSlice
 				addEndpoint = true;
 			}
 
-			// Check if we are crossing any boundaries
-			if (!DoesLineCrossBoundary(startPoint, endPoint))
+			// get all the crossings
+
+			// if crossing are 0 
+			//We're not crossing any boundaries. So skip the comb generation.
+			if (!addEndpoint && pathThatIsInside.Count == 0)
 			{
-				//We're not crossing any boundaries. So skip the comb generation.
-				if (!addEndpoint && pathThatIsInside.Count == 0)
-				{
-					//Only skip if we didn't move the start and end point.
-					return true;
-				}
+				//Only skip if we didn't move the start and end point.
+				return true;
 			}
+
+			// else
+
+			// sort them in the order of the start end direction
+
+			// for each pair of crossings
+
+			// add a move to the start of the crossing
+			// try to go CW and CWW take the path that is the shortest and add it to the list
+
 
 			// Calculate the matrix to change points so they are in the direction of the line segment.
 			{
@@ -117,9 +120,6 @@ namespace MatterHackers.MatterSlice
 				this.rotatedEndPoint = lineToSameYMatrix.apply(endPoint);
 			}
 
-
-			// Calculate the minimum and maximum positions where we cross the comb boundary
-			CalcMinMax();
 
 			long nomalizedStartX = rotatedStartPoint.X;
 			Polygon pointList = new Polygon();
@@ -174,7 +174,6 @@ namespace MatterHackers.MatterSlice
 				pointList.Add(endPoint);
 			}
 
-#if false
 			// Optimize the pointList, skip each point we could already reach by connecting directly to the next point.
 			for (int startIndex = 0; startIndex < pointList.Count - 2; startIndex++)
 			{
@@ -199,7 +198,6 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 			}
-#endif
 
 			foreach (IntPoint point in pointList)
 			{
@@ -209,105 +207,90 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public bool MovePointInsideBoundary(ref IntPoint pointToMove, int maxDistanceToMove = 100)
+		public bool MovePointInsideBoundary(ref IntPoint pointToMove)
 		{
-			IntPoint newPosition = pointToMove;
-			long bestDist = 2000 * 2000;
-			for (int boundaryIndex = 0; boundaryIndex < boundaryPolygons.Count; boundaryIndex++)
+			if (boundaryPolygons.PointIsInside(pointToMove))
 			{
-				Polygon boundaryPolygon = boundaryPolygons[boundaryIndex];
+				// already inside
+				return false;
+			}
 
-				if (boundaryPolygon.Count < 1)
+			long bestDist = long.MaxValue;
+			IntPoint bestPosition = pointToMove;
+			IntPoint bestMoveNormal = new IntPoint();
+			foreach (var boundaryPolygon in boundaryPolygons)
+			{
+				if (boundaryPolygon.Count < 3)
 				{
 					continue;
 				}
 
-				IntPoint previousPoint = boundaryPolygon[boundaryPolygon.Count - 1];
+				IntPoint segmentStart = boundaryPolygon[boundaryPolygon.Count - 1];
 				for (int pointIndex = 0; pointIndex < boundaryPolygon.Count; pointIndex++)
 				{
-					IntPoint currentPoint = boundaryPolygon[pointIndex];
+					IntPoint pointRelStart = pointToMove - segmentStart;
+					long distFromStart = pointRelStart.Length();
+					if (distFromStart < bestDist)
+					{
+						bestDist = distFromStart;
+						bestPosition = segmentStart;
+					}
+
+					IntPoint segmentEnd = boundaryPolygon[pointIndex];
 
 					//Q = A + Normal( B - A ) * ((( B - A ) dot ( P - A )) / VSize( A - B ));
-					IntPoint deltaToCurrent = currentPoint - previousPoint;
-					long deltaLength = deltaToCurrent.Length();
-					long distToBoundarySegment = deltaToCurrent.Dot(pointToMove - previousPoint) / deltaLength;
-					if (distToBoundarySegment < 10)
+					IntPoint segmentDelta = segmentEnd - segmentStart;
+					IntPoint normal = segmentDelta.Normal(1000);
+					IntPoint normalToRight = normal.GetPerpendicularLeft();
+
+					long distanceFromStart = normal.Dot(pointRelStart) / 1000;
+
+					if (distanceFromStart >= 0 && distanceFromStart <= segmentDelta.Length())
 					{
-						distToBoundarySegment = 10;
+						long distToBoundarySegment = normalToRight.Dot(pointRelStart) / 1000;
+
+						if (Math.Abs(distToBoundarySegment) < bestDist)
+						{
+							IntPoint pointAlongCurrentSegment = pointToMove;
+							if (distToBoundarySegment != 0)
+							{
+								pointAlongCurrentSegment = pointToMove - normalToRight * distToBoundarySegment / 1000;
+							}
+
+							bestDist = Math.Abs(distToBoundarySegment);
+							bestPosition = pointAlongCurrentSegment;
+							bestMoveNormal = normalToRight;
+						}
 					}
 
-					if (distToBoundarySegment > deltaLength - 10)
-					{
-						distToBoundarySegment = deltaLength - 10;
-					}
-
-					IntPoint pointAlongCurrentSegment = previousPoint + deltaToCurrent * distToBoundarySegment / deltaLength;
-
-					long dist = (pointAlongCurrentSegment - pointToMove).LengthSquared();
-					if (dist < bestDist)
-					{
-						bestDist = dist;
-						newPosition = pointAlongCurrentSegment + ((currentPoint - previousPoint).Normal(maxDistanceToMove)).GetPerpendicularLeft();
-					}
-
-					previousPoint = currentPoint;
+					segmentStart = segmentEnd;
 				}
 			}
 
-			if (bestDist < 2000 * 2000)
+			pointToMove = bestPosition;
+
+			int tryCount = 0;
+			if (!boundaryPolygons.PointIsInside(pointToMove))
 			{
-				pointToMove = newPosition;
-				return true;
+				long normalLength = bestMoveNormal.Length();
+				do
+				{
+					pointToMove = bestPosition + (bestMoveNormal * (1<<tryCount) / normalLength) * ((tryCount % 2) == 0 ? 1 : -1);
+					tryCount++;
+				} while (!boundaryPolygons.PointIsInside(pointToMove) && tryCount < 10) ;
 			}
 
-			return false;
+			if(tryCount > 8)
+			{
+				return false;
+			}
+
+			return true;
 		}
 
 		public bool PointIsInsideBoundary(IntPoint pointToTest)
 		{
-			return boundaryPolygons.Inside(pointToTest);
-		}
-
-		private void CalcMinMax()
-		{
-			int errorDist = 100;
-			for (int boundaryIndex = 0; boundaryIndex < boundaryPolygons.Count; boundaryIndex++)
-			{
-				Polygon boundaryPolygon = boundaryPolygons[boundaryIndex];
-
-				minXPosition[boundaryIndex] = long.MaxValue;
-				maxXPosition[boundaryIndex] = long.MinValue;
-				IntPoint previousPosition = lineToSameYMatrix.apply(boundaryPolygon[boundaryPolygon.Count - 1]);
-				for (int pointIndex = 0; pointIndex < boundaryPolygon.Count; pointIndex++)
-				{
-					IntPoint currentPosition = lineToSameYMatrix.apply(boundaryPolygon[pointIndex]);
-					if ((previousPosition.Y + errorDist >= rotatedStartPoint.Y && currentPosition.Y - errorDist <= rotatedStartPoint.Y)
-						|| (currentPosition.Y + errorDist >= rotatedStartPoint.Y && previousPosition.Y - errorDist <= rotatedStartPoint.Y)) // prev -> current crosses the start -> end
-					{
-						if (currentPosition.Y != previousPosition.Y)
-						{
-							long x = previousPosition.X + (currentPosition.X - previousPosition.X) * (rotatedStartPoint.Y - previousPosition.Y) / (currentPosition.Y - previousPosition.Y);
-
-							if (x + errorDist >= rotatedStartPoint.X && x - errorDist <= rotatedEndPoint.X)
-							{
-								if (x - errorDist <= minXPosition[boundaryIndex])
-								{
-									minXPosition[boundaryIndex] = x;
-									indexOfMinX[boundaryIndex] = pointIndex;
-								}
-
-								if (x + errorDist > maxXPosition[boundaryIndex])
-								{
-									maxXPosition[boundaryIndex] = x;
-									indexOfMaxX[boundaryIndex] = pointIndex;
-								}
-							}
-						}
-					}
-
-					previousPosition = currentPosition;
-				}
-			}
+			return boundaryPolygons.PointIsInside(pointToTest);
 		}
 
 		private bool DoesLineCrossBoundary(IntPoint startPoint, IntPoint endPoint)

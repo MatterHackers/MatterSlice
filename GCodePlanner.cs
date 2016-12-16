@@ -589,7 +589,7 @@ namespace MatterHackers.MatterSlice
 			return this.travelSpeedFactor;
 		}
 
-		public void MoveInsideTheOuterPerimeter(int distance)
+		public void MoveInsideTravelPerimeter()
 		{
 			if (outerPerimetersToAvoidCrossing == null || outerPerimetersToAvoidCrossing.PointIsInsideBoundary(LastPosition))
 			{
@@ -597,10 +597,10 @@ namespace MatterHackers.MatterSlice
 			}
 
 			IntPoint p = LastPosition;
-			if (outerPerimetersToAvoidCrossing.MovePointInsideBoundary(ref p, distance))
+			if (outerPerimetersToAvoidCrossing.MovePointInsideBoundary(ref p))
 			{
 				//Move inside again, so we move out of tight 90deg corners
-				outerPerimetersToAvoidCrossing.MovePointInsideBoundary(ref p, distance);
+				outerPerimetersToAvoidCrossing.MovePointInsideBoundary(ref p);
 				if (outerPerimetersToAvoidCrossing.PointIsInsideBoundary(p))
 				{
 					QueueTravel(p);
