@@ -72,9 +72,9 @@ namespace MatterHackers.MatterSlice.Tests
 
 				{
 					IntPoint startPointInside = startPoint;
-					testHarness.MovePointInsideBoundary(ref startPointInside);
+					testHarness.MovePointInsideBoundary(startPointInside, out startPointInside);
 					IntPoint endPointInside = endPoint;
-					testHarness.MovePointInsideBoundary(ref endPointInside);
+					testHarness.MovePointInsideBoundary(endPointInside, out endPointInside);
 
 					Assert.IsTrue(testHarness.PointIsInsideBoundary(startPointInside));
 					Assert.IsTrue(testHarness.PointIsInsideBoundary(endPointInside));

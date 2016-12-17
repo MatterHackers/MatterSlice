@@ -70,7 +70,7 @@ namespace MatterHackers.MatterSlice
 			//Check if we are inside the comb boundaries
 			if (!PointIsInsideBoundary(startPoint))
 			{
-				if (!MovePointInsideBoundary(ref startPoint))
+				if (!MovePointInsideBoundary(startPoint, out startPoint))
 				{
 					//If we fail to move the point inside the comb boundary we need to retract.
 					return false;
@@ -82,7 +82,7 @@ namespace MatterHackers.MatterSlice
 			bool addEndpoint = false;
 			if (!PointIsInsideBoundary(endPoint))
 			{
-				if (!MovePointInsideBoundary(ref endPoint))
+				if (!MovePointInsideBoundary(endPoint, out endPoint))
 				{
 					//If we fail to move the point inside the comb boundary we need to retract.
 					return false;
@@ -207,16 +207,18 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public bool MovePointInsideBoundary(ref IntPoint pointToMove)
+		public bool MovePointInsideBoundary(IntPoint testPosition, out IntPoint inPolyPosition, int recursionDepth = 0)
 		{
-			if (boundaryPolygons.PointIsInside(pointToMove))
+			inPolyPosition = testPosition;
+
+			if (boundaryPolygons.PointIsInside(testPosition))
 			{
 				// already inside
 				return false;
 			}
 
 			long bestDist = long.MaxValue;
-			IntPoint bestPosition = pointToMove;
+			IntPoint bestPosition = inPolyPosition;
 			IntPoint bestMoveNormal = new IntPoint();
 			foreach (var boundaryPolygon in boundaryPolygons)
 			{
@@ -228,7 +230,7 @@ namespace MatterHackers.MatterSlice
 				IntPoint segmentStart = boundaryPolygon[boundaryPolygon.Count - 1];
 				for (int pointIndex = 0; pointIndex < boundaryPolygon.Count; pointIndex++)
 				{
-					IntPoint pointRelStart = pointToMove - segmentStart;
+					IntPoint pointRelStart = inPolyPosition - segmentStart;
 					long distFromStart = pointRelStart.Length();
 					if (distFromStart < bestDist)
 					{
@@ -238,7 +240,6 @@ namespace MatterHackers.MatterSlice
 
 					IntPoint segmentEnd = boundaryPolygon[pointIndex];
 
-					//Q = A + Normal( B - A ) * ((( B - A ) dot ( P - A )) / VSize( A - B ));
 					IntPoint segmentDelta = segmentEnd - segmentStart;
 					IntPoint normal = segmentDelta.Normal(1000);
 					IntPoint normalToRight = normal.GetPerpendicularLeft();
@@ -251,10 +252,10 @@ namespace MatterHackers.MatterSlice
 
 						if (Math.Abs(distToBoundarySegment) < bestDist)
 						{
-							IntPoint pointAlongCurrentSegment = pointToMove;
+							IntPoint pointAlongCurrentSegment = inPolyPosition;
 							if (distToBoundarySegment != 0)
 							{
-								pointAlongCurrentSegment = pointToMove - normalToRight * distToBoundarySegment / 1000;
+								pointAlongCurrentSegment = inPolyPosition - normalToRight * distToBoundarySegment / 1000;
 							}
 
 							bestDist = Math.Abs(distToBoundarySegment);
@@ -267,20 +268,26 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			pointToMove = bestPosition;
+			inPolyPosition = bestPosition;
 
-			int tryCount = 0;
-			if (!boundaryPolygons.PointIsInside(pointToMove))
+			if (!boundaryPolygons.PointIsInside(inPolyPosition))
 			{
 				long normalLength = bestMoveNormal.Length();
-				do
+				if (normalLength == 0)
 				{
-					pointToMove = bestPosition + (bestMoveNormal * (1<<tryCount) / normalLength) * ((tryCount % 2) == 0 ? 1 : -1);
-					tryCount++;
-				} while (!boundaryPolygons.PointIsInside(pointToMove) && tryCount < 10) ;
+					return false;
+				}
+			
+				if(recursionDepth < 6)
+				{
+					// try to perturbe the point back into the actual bounds
+					inPolyPosition = bestPosition + (bestMoveNormal * (1 << recursionDepth) / normalLength) * ((recursionDepth % 2) == 0 ? 1 : -1);
+					inPolyPosition += (bestMoveNormal.GetPerpendicularRight() * (1 << recursionDepth) / (normalLength * 2)) * ((recursionDepth % 3) == 0 ? 1 : -1);
+					MovePointInsideBoundary(inPolyPosition, out inPolyPosition, recursionDepth + 1);
+				}
 			}
 
-			if(tryCount > 8)
+			if(recursionDepth > 4)
 			{
 				return false;
 			}
