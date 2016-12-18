@@ -31,7 +31,7 @@ namespace MatterHackers.MatterSlice
 
 	public class AvoidCrossingPerimeters
 	{
-		private Polygons boundaryPolygons;
+		public Polygons BoundaryPolygons;
 
 		private int[] indexOfMaxX;
 		private int[] indexOfMinX;
@@ -40,14 +40,12 @@ namespace MatterHackers.MatterSlice
 
 		public AvoidCrossingPerimeters(Polygons boundaryPolygons)
 		{
-			this.boundaryPolygons = boundaryPolygons;
+			this.BoundaryPolygons = boundaryPolygons;
 			minXPosition = new long[boundaryPolygons.Count];
 			maxXPosition = new long[boundaryPolygons.Count];
 			indexOfMinX = new int[boundaryPolygons.Count];
 			indexOfMaxX = new int[boundaryPolygons.Count];
 		}
-
-		public List<IntPoint> CrossingPoints = new List<IntPoint>();
 
 		static bool saveDebugData = false;
 		bool boundary = false;
@@ -59,7 +57,7 @@ namespace MatterHackers.MatterSlice
 				{
 					if (boundary)
 					{
-						string pointsString = boundaryPolygons.WriteToString();
+						string pointsString = BoundaryPolygons.WriteToString();
 						sw.WriteLine(pointsString);
 					}
 					sw.WriteLine(startPoint.ToString() + "  " + endPoint.ToString());
@@ -67,9 +65,9 @@ namespace MatterHackers.MatterSlice
 			}
 
 			//Check if we are inside the comb boundaries
-			if (!PointIsInsideBoundary(startPoint))
+			if (!BoundaryPolygons.PointIsInside(startPoint))
 			{
-				if (!MovePointInsideBoundary(startPoint, out startPoint))
+				if (!BoundaryPolygons.MovePointInsideBoundary(startPoint, out startPoint))
 				{
 					//If we fail to move the point inside the comb boundary we need to retract.
 					return false;
@@ -79,9 +77,9 @@ namespace MatterHackers.MatterSlice
 			}
 
 			bool addEndpoint = false;
-			if (!PointIsInsideBoundary(endPoint))
+			if (!BoundaryPolygons.PointIsInside(endPoint))
 			{
-				if (!MovePointInsideBoundary(endPoint, out endPoint))
+				if (!BoundaryPolygons.MovePointInsideBoundary(endPoint, out endPoint))
 				{
 					//If we fail to move the point inside the comb boundary we need to retract.
 					return false;
@@ -91,7 +89,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// get all the crossings
-			FindCrossingPoints(startPoint, endPoint, CrossingPoints);
+			//FindCrossingPoints(startPoint, endPoint, CrossingPoints);
 
 			// if crossing are 0 
 			//We're not crossing any boundaries. So skip the comb generation.
@@ -150,122 +148,39 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
+		public bool PointIsInsideBoundary(IntPoint intPoint)
+		{
+			return BoundaryPolygons.PointIsInside(intPoint);
+		}
+
+		public bool MovePointInsideBoundary(IntPoint testPosition, out IntPoint inPolyPosition)
+		{
+			return BoundaryPolygons.MovePointInsideBoundary(testPosition, out inPolyPosition);
+		}
+
 		/// <summary>
 		/// The start and end points must already be in the bounding polygon
 		/// </summary>
 		/// <param name="startPoint"></param>
 		/// <param name="endPoint"></param>
 		/// <param name="crossingPoints"></param>
-		private void FindCrossingPoints(IntPoint startPoint, IntPoint endPoint, Polygon crossingPoints)
+		public void FindCrossingPoints(IntPoint startPoint, IntPoint endPoint, Polygon crossingPoints)
 		{
 			crossingPoints.Clear();
 
-			foreach (var boundaryPolygon in boundaryPolygons)
+			foreach (var boundaryPolygon in BoundaryPolygons)
 			{
 				for (int pointIndex = 0; pointIndex < boundaryPolygon.Count; pointIndex++)
 				{
 				}
 			}
-		}
-
-		public bool MovePointInsideBoundary(IntPoint testPosition, out IntPoint inPolyPosition, int recursionDepth = 0)
-		{
-			inPolyPosition = testPosition;
-
-			if (boundaryPolygons.PointIsInside(testPosition))
-			{
-				// already inside
-				return false;
-			}
-
-			long bestDist = long.MaxValue;
-			IntPoint bestPosition = inPolyPosition;
-			IntPoint bestMoveNormal = new IntPoint();
-			foreach (var boundaryPolygon in boundaryPolygons)
-			{
-				if (boundaryPolygon.Count < 3)
-				{
-					continue;
-				}
-
-				IntPoint segmentStart = boundaryPolygon[boundaryPolygon.Count - 1];
-				for (int pointIndex = 0; pointIndex < boundaryPolygon.Count; pointIndex++)
-				{
-					IntPoint pointRelStart = inPolyPosition - segmentStart;
-					long distFromStart = pointRelStart.Length();
-					if (distFromStart < bestDist)
-					{
-						bestDist = distFromStart;
-						bestPosition = segmentStart;
-					}
-
-					IntPoint segmentEnd = boundaryPolygon[pointIndex];
-
-					IntPoint segmentDelta = segmentEnd - segmentStart;
-					IntPoint normal = segmentDelta.Normal(1000);
-					IntPoint normalToRight = normal.GetPerpendicularLeft();
-
-					long distanceFromStart = normal.Dot(pointRelStart) / 1000;
-
-					if (distanceFromStart >= 0 && distanceFromStart <= segmentDelta.Length())
-					{
-						long distToBoundarySegment = normalToRight.Dot(pointRelStart) / 1000;
-
-						if (Math.Abs(distToBoundarySegment) < bestDist)
-						{
-							IntPoint pointAlongCurrentSegment = inPolyPosition;
-							if (distToBoundarySegment != 0)
-							{
-								pointAlongCurrentSegment = inPolyPosition - normalToRight * distToBoundarySegment / 1000;
-							}
-
-							bestDist = Math.Abs(distToBoundarySegment);
-							bestPosition = pointAlongCurrentSegment;
-							bestMoveNormal = normalToRight;
-						}
-					}
-
-					segmentStart = segmentEnd;
-				}
-			}
-
-			inPolyPosition = bestPosition;
-
-			if (!boundaryPolygons.PointIsInside(inPolyPosition))
-			{
-				long normalLength = bestMoveNormal.Length();
-				if (normalLength == 0)
-				{
-					return false;
-				}
-			
-				if(recursionDepth < 10)
-				{
-					// try to perturbe the point back into the actual bounds
-					inPolyPosition = bestPosition + (bestMoveNormal * (1 << recursionDepth) / normalLength) * ((recursionDepth % 2) == 0 ? 1 : -1);
-					inPolyPosition += (bestMoveNormal.GetPerpendicularRight() * (1 << recursionDepth) / (normalLength * 2)) * ((recursionDepth % 3) == 0 ? 1 : -1);
-					MovePointInsideBoundary(inPolyPosition, out inPolyPosition, recursionDepth + 1);
-				}
-			}
-
-			if(recursionDepth > 8)
-			{
-				return false;
-			}
-
-			return true;
-		}
-
-		public bool PointIsInsideBoundary(IntPoint pointToTest)
-		{
-			return boundaryPolygons.PointIsInside(pointToTest);
 		}
 
 		private bool DoesLineCrossBoundary(IntPoint startPoint, IntPoint endPoint)
 		{
-			for (int boundaryIndex = 0; boundaryIndex < boundaryPolygons.Count; boundaryIndex++)
+			for (int boundaryIndex = 0; boundaryIndex < BoundaryPolygons.Count; boundaryIndex++)
 			{
-				Polygon boundaryPolygon = boundaryPolygons[boundaryIndex];
+				Polygon boundaryPolygon = BoundaryPolygons[boundaryIndex];
 				if (boundaryPolygon.Count < 1)
 				{
 					continue;

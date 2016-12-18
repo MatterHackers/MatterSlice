@@ -34,7 +34,7 @@ namespace MatterHackers.MatterSlice
 
 	using Polygons = List<List<IntPoint>>;
 
-	internal static class PolygonsHelper
+	public static class PolygonsHelper
 	{
 		public enum LayerOpperation { EvenOdd, UnionAll };
 
@@ -99,6 +99,94 @@ namespace MatterHackers.MatterSlice
 			Polygons outputPolygons = Clipper.ClosedPathsFromPolyTree(intersectionResult);
 
 			return outputPolygons;
+		}
+
+		public static bool MovePointInsideBoundary(this Polygons boundaryPolygons, IntPoint testPosition, out IntPoint inPolyPosition, int recursionDepth = 0)
+		{
+			inPolyPosition = testPosition;
+
+			if (boundaryPolygons.PointIsInside(testPosition))
+			{
+				// already inside
+				return false;
+			}
+
+			long bestDist = long.MaxValue;
+			IntPoint bestPosition = inPolyPosition;
+			IntPoint bestMoveNormal = new IntPoint();
+			foreach (var boundaryPolygon in boundaryPolygons)
+			{
+				if (boundaryPolygon.Count < 3)
+				{
+					continue;
+				}
+
+				IntPoint segmentStart = boundaryPolygon[boundaryPolygon.Count - 1];
+				for (int pointIndex = 0; pointIndex < boundaryPolygon.Count; pointIndex++)
+				{
+					IntPoint pointRelStart = inPolyPosition - segmentStart;
+					long distFromStart = pointRelStart.Length();
+					if (distFromStart < bestDist)
+					{
+						bestDist = distFromStart;
+						bestPosition = segmentStart;
+					}
+
+					IntPoint segmentEnd = boundaryPolygon[pointIndex];
+
+					IntPoint segmentDelta = segmentEnd - segmentStart;
+					IntPoint normal = segmentDelta.Normal(1000);
+					IntPoint normalToRight = normal.GetPerpendicularLeft();
+
+					long distanceFromStart = normal.Dot(pointRelStart) / 1000;
+
+					if (distanceFromStart >= 0 && distanceFromStart <= segmentDelta.Length())
+					{
+						long distToBoundarySegment = normalToRight.Dot(pointRelStart) / 1000;
+
+						if (Math.Abs(distToBoundarySegment) < bestDist)
+						{
+							IntPoint pointAlongCurrentSegment = inPolyPosition;
+							if (distToBoundarySegment != 0)
+							{
+								pointAlongCurrentSegment = inPolyPosition - normalToRight * distToBoundarySegment / 1000;
+							}
+
+							bestDist = Math.Abs(distToBoundarySegment);
+							bestPosition = pointAlongCurrentSegment;
+							bestMoveNormal = normalToRight;
+						}
+					}
+
+					segmentStart = segmentEnd;
+				}
+			}
+
+			inPolyPosition = bestPosition;
+
+			if (!boundaryPolygons.PointIsInside(inPolyPosition))
+			{
+				long normalLength = bestMoveNormal.Length();
+				if (normalLength == 0)
+				{
+					return false;
+				}
+
+				if (recursionDepth < 10)
+				{
+					// try to perturbe the point back into the actual bounds
+					inPolyPosition = bestPosition + (bestMoveNormal * (1 << recursionDepth) / normalLength) * ((recursionDepth % 2) == 0 ? 1 : -1);
+					inPolyPosition += (bestMoveNormal.GetPerpendicularRight() * (1 << recursionDepth) / (normalLength * 2)) * ((recursionDepth % 3) == 0 ? 1 : -1);
+					boundaryPolygons.MovePointInsideBoundary(inPolyPosition, out inPolyPosition, recursionDepth + 1);
+				}
+			}
+
+			if (recursionDepth > 8)
+			{
+				return false;
+			}
+
+			return true;
 		}
 
 		public static Polygons CreateLineDifference(this Polygons areaToRemove, Polygons linePolygons)

@@ -591,7 +591,7 @@ namespace MatterHackers.MatterSlice
 
 		public void MoveInsideTravelPerimeter()
 		{
-			if (outerPerimetersToAvoidCrossing == null || outerPerimetersToAvoidCrossing.PointIsInsideBoundary(LastPosition))
+			if (outerPerimetersToAvoidCrossing == null)
 			{
 				return;
 			}
@@ -600,8 +600,7 @@ namespace MatterHackers.MatterSlice
 			if (outerPerimetersToAvoidCrossing.MovePointInsideBoundary(p, out p))
 			{
 				//Move inside again, so we move out of tight 90deg corners
-				outerPerimetersToAvoidCrossing.MovePointInsideBoundary(p, out p);
-				if (outerPerimetersToAvoidCrossing.PointIsInsideBoundary(p))
+				if (outerPerimetersToAvoidCrossing.MovePointInsideBoundary(p, out p))
 				{
 					QueueTravel(p);
 					//Make sure the that any retraction happens after this move, not before it by starting a new move path.

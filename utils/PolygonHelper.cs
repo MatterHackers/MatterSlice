@@ -26,6 +26,7 @@ using static System.Math;
 
 namespace MatterHackers.MatterSlice
 {
+	using System;
 	using Paths = List<List<IntPoint>>;
 
 	using Polygon = List<IntPoint>;
@@ -76,7 +77,7 @@ namespace MatterHackers.MatterSlice
 		}
 	}
 
-	internal static class PolygonHelper
+	public static class PolygonHelper
 	{
 		// operator to sort IntPoint by y
 		// (and then by X, where Y are equal)
@@ -117,6 +118,125 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return minX;
+		}
+
+		public static int FindTouchingEdge(this Polygon polygon, IntPoint position, long maxDistance = 0)
+		{
+			throw new NotImplementedException();
+		}
+
+		/// <summary>
+		/// return a sorted list of the crossings for this polygon
+		/// </summary>
+		/// <param name="polygon"></param>
+		/// <param name="start"></param>
+		/// <param name="end"></param>
+		/// <param name="crossings"></param>
+		public static void FindCrossingPoints(this Polygon polygon, IntPoint start, IntPoint end, List<Tuple<int, IntPoint>> crossings)
+		{
+			crossings.Clear();
+			IntPoint segmentDelta = end - start;
+			IntPoint normal = segmentDelta.Normal(1000);
+			IntPoint edgeStart = polygon[polygon.Count - 1];
+			for (int i = 0; i < polygon.Count; i++)
+			{
+				IntPoint edgeEnd = polygon[i];
+				IntPoint intersection;
+				if (CalcIntersection(start, end, edgeStart, edgeEnd, out intersection)
+					&& PointWithinStartEnd(edgeStart, edgeEnd, intersection))
+				{
+					IntPoint pointRelStart = intersection - start;
+					long distanceFromStart = normal.Dot(pointRelStart) / 1000;
+					if (distanceFromStart >= 0 && distanceFromStart <= segmentDelta.Length())
+					{
+						crossings.Add(new Tuple<int, IntPoint>(i, intersection));
+					}
+				}
+
+				edgeStart = edgeEnd;
+			}
+		}
+
+		public static bool PointWithinStartEnd(IntPoint start, IntPoint end, IntPoint testPosition)
+		{
+			IntPoint segmentDelta = end - start;
+			IntPoint normal = segmentDelta.Normal(1000);
+			IntPoint pointRelStart = testPosition - start;
+			long distanceFromStart = normal.Dot(pointRelStart) / 1000;
+
+			if (distanceFromStart >= 0 && distanceFromStart <= segmentDelta.Length())
+			{
+				return true;
+			}	
+
+			return false;
+		}
+
+		public static bool LineSegementsIntersect(IntPoint p, IntPoint p2, IntPoint q, IntPoint q2,
+			out IntPoint intersection)
+		{
+			intersection = new IntPoint();
+
+			var r = p2 - p;
+			var s = q2 - q;
+			var rxs = r.CrossXy(s);
+			var qpxr = (q - p).CrossXy(r);
+
+			// If r x s = 0 and (q - p) x r = 0, then the two lines are collinear.
+			if (rxs == 0 && qpxr == 0)
+			{
+				// 1. If either  0 <= (q - p) * r <= r * r or 0 <= (p - q) * s <= * s
+				// then the two lines are overlapping,
+
+				// 2. If neither 0 <= (q - p) * r = r * r nor 0 <= (p - q) * s <= s * s
+				// then the two lines are collinear but disjoint.
+				// No need to implement this expression, as it follows from the expression above.
+				return false;
+			}
+
+			// 3. If r x s = 0 and (q - p) x r != 0, then the two lines are parallel and non-intersecting.
+			if (rxs == 0 && qpxr != 0)
+			{
+				return false;
+			}
+
+			// t = (q - p) x s / (r x s)
+			var t = (q - p).CrossXy(s);
+			var u = (q - p).CrossXy(r);
+
+			// 4. If r x s != 0 and 0 <= t <= 1 and 0 <= u <= 1
+			// the two line segments meet at the point p + t r = q + u s.
+			if (rxs != 0 && (t > 0 && t <= rxs) && (u > 0 && u <= rxs))
+			{
+				// We can calculate the intersection point using either t or u.
+				intersection = p + r * t / rxs;
+
+				// An intersection was found.
+				return true;
+			}
+
+			// 5. Otherwise, the two line segments are not parallel but do not intersect.
+			return false;
+		}
+
+		public static bool CalcIntersection(IntPoint a1, IntPoint a2,
+									  IntPoint b1, IntPoint b2,
+									  out IntPoint position)
+		{
+			position = new IntPoint();
+
+			long intersection_epsilon = 1;
+			long num = (a1.Y - b1.Y) * (b2.X - b1.X) - (a1.X - b1.X) * (b2.Y - b1.Y);
+			long den = (a2.X - a1.X) * (b2.Y - b1.Y) - (a2.Y - a1.Y) * (b2.X - b1.X);
+			if (Math.Abs(den) < intersection_epsilon)
+			{
+				return false;
+			}
+
+			position.X = a1.X + (a2.X - a1.X) * num / den;
+			position.Y = a1.Y + (a2.Y - a1.Y) * num / den;
+	
+			return true;
 		}
 
 		public static IntPoint CenterOfMass(this Polygon polygon)
