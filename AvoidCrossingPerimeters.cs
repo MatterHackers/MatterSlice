@@ -32,6 +32,7 @@ namespace MatterHackers.MatterSlice
 	public class AvoidCrossingPerimeters
 	{
 		public Polygons BoundaryPolygons;
+		public List<Tuple<int, int, IntPoint>> Crossings = new List<Tuple<int, int, IntPoint>>();
 
 		private int[] indexOfMaxX;
 		private int[] indexOfMinX;
@@ -89,7 +90,29 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// get all the crossings
-			//FindCrossingPoints(startPoint, endPoint, CrossingPoints);
+			BoundaryPolygons.FindCrossingPoints(startPoint, endPoint, Crossings);
+			Crossings.Sort(new MatterHackers.MatterSlice.PolygonsHelper.DirectionSorter(startPoint, endPoint));
+
+			// remove duplicates
+			for(int i=0; i<Crossings.Count-1; i++)
+			{
+				while(i+1 < Crossings.Count
+					&& (Crossings[i].Item3 - Crossings[i+1].Item3).LengthSquared() < 4)
+				{
+					Crossings.RemoveAt(i);
+				}
+			}
+
+			// remove the start and end point if they are in the list
+			if (Crossings.Count > 0 && (Crossings[0].Item3 - startPoint).LengthSquared() < 4)
+			{
+				Crossings.RemoveAt(0);
+			}
+
+			if (Crossings.Count > 0 && (Crossings[Crossings.Count-1].Item3 - endPoint).LengthSquared() < 4)
+			{
+				Crossings.RemoveAt(Crossings.Count - 1);
+			}
 
 			// if crossing are 0 
 			//We're not crossing any boundaries. So skip the comb generation.
