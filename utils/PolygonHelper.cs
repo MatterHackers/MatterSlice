@@ -19,83 +19,20 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System.Collections.Generic;
 using System.IO;
-using static System.Math;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
 	using System;
-	using Paths = List<List<IntPoint>>;
 
 	using Polygon = List<IntPoint>;
 
 	using Polygons = List<List<IntPoint>>;
 
-	// Axis aligned boundary box
-	public class Aabb
-	{
-		public IntPoint min, max;
-
-		public Aabb()
-		{
-			min = new IntPoint(long.MinValue, long.MinValue);
-			max = new IntPoint(long.MinValue, long.MinValue);
-		}
-
-		public Aabb(Polygons polys)
-		{
-			min = new IntPoint(long.MinValue, long.MinValue);
-			max = new IntPoint(long.MinValue, long.MinValue);
-			Calculate(polys);
-		}
-
-		public void Calculate(Polygons polys)
-		{
-			min = new IntPoint(long.MaxValue, long.MaxValue);
-			max = new IntPoint(long.MinValue, long.MinValue);
-			for (int i = 0; i < polys.Count; i++)
-			{
-				for (int j = 0; j < polys[i].Count; j++)
-				{
-					if (min.X > polys[i][j].X) min.X = polys[i][j].X;
-					if (min.Y > polys[i][j].Y) min.Y = polys[i][j].Y;
-					if (max.X < polys[i][j].X) max.X = polys[i][j].X;
-					if (max.Y < polys[i][j].Y) max.Y = polys[i][j].Y;
-				}
-			}
-		}
-
-		public bool Hit(Aabb other)
-		{
-			if (max.X < other.min.X) return false;
-			if (min.X > other.max.X) return false;
-			if (max.Y < other.min.Y) return false;
-			if (min.Y > other.max.Y) return false;
-			return true;
-		}
-	}
-
 	public static class PolygonHelper
 	{
-		// operator to sort IntPoint by y
-		// (and then by X, where Y are equal)
-		public class IntPointSorterYX : IComparer<IntPoint>
-		{
-			public virtual int Compare(IntPoint a, IntPoint b)
-			{
-				if (a.Y == b.Y)
-				{
-					return a.X.CompareTo(b.X);
-				}
-				else
-				{
-					return a.Y.CompareTo(b.Y);
-				}
-			}
-		}
-
 		public static double Area(this Polygon polygon)
 		{
 			return Clipper.Area(polygon);
@@ -106,32 +43,95 @@ namespace MatterHackers.MatterSlice
 			return polygon[polygon.Count - 1];
 		}
 
-		public static long MinX(this Polygon polygon)
+		public static bool CalcIntersection(IntPoint a1, IntPoint a2,
+											  IntPoint b1, IntPoint b2,
+											  out IntPoint position)
 		{
-			long minX = long.MaxValue;
-			foreach(var point in polygon)
+			position = new IntPoint();
+
+			long intersection_epsilon = 1;
+			long num = (a1.Y - b1.Y) * (b2.X - b1.X) - (a1.X - b1.X) * (b2.Y - b1.Y);
+			long den = (a2.X - a1.X) * (b2.Y - b1.Y) - (a2.Y - a1.Y) * (b2.X - b1.X);
+			if (Math.Abs(den) < intersection_epsilon)
 			{
-				if(point.X < minX)
+				return false;
+			}
+
+			position.X = a1.X + (a2.X - a1.X) * num / den;
+			position.Y = a1.Y + (a2.Y - a1.Y) * num / den;
+
+			return true;
+		}
+
+		public static IntPoint CenterOfMass(this Polygon polygon)
+		{
+			IntPoint center = new IntPoint();
+			for (int positionIndex = 0; positionIndex < polygon.Count; positionIndex++)
+			{
+				center += polygon[positionIndex];
+			}
+
+			center /= polygon.Count;
+			return center;
+		}
+
+		public static Polygon CreateConvexHull(this Polygon inPolygon)
+		{
+			return new Polygon(GrahamScan.GetConvexHull(inPolygon));
+		}
+
+		public static Polygon CreateFromString(string polygonString)
+		{
+			Polygon output = new Polygon();
+			string[] intPointData = polygonString.Split(',');
+			for (int i = 0; i < intPointData.Length - 1; i += 2)
+			{
+				string elementX = intPointData[i];
+				string elementY = intPointData[i + 1];
+				IntPoint nextIntPoint = new IntPoint(int.Parse(elementX.Substring(2)), int.Parse(elementY.Substring(3)));
+				output.Add(nextIntPoint);
+			}
+
+			return output;
+		}
+
+		public static bool DescribesSameShape(this Polygon a, Polygon b)
+		{
+			if (a.Count != b.Count)
+			{
+				return false;
+			}
+
+			// find first same point
+			for (int indexB = 0; indexB < b.Count; indexB++)
+			{
+				if (a[0] == b[indexB])
 				{
-					minX = point.X;
+					// check if any point are different
+					for (int indexA = 1; indexA < a.Count; indexA++)
+					{
+						if (a[indexA] != b[(indexB + indexA) % b.Count])
+						{
+							return false;
+						}
+					}
+
+					// they are all the same
+					return true;
 				}
 			}
 
-			return minX;
+			return false;
 		}
 
-		public static int FindTouchingEdge(this Polygon polygon, IntPoint position, long maxDistance = 0)
+		public static void ExpandToInclude(this IntRect inRect, IntRect otherRect)
 		{
-			throw new NotImplementedException();
+			if (otherRect.left < inRect.left) inRect.left = otherRect.left;
+			if (otherRect.top < inRect.top) inRect.top = otherRect.top;
+			if (otherRect.right > inRect.right) inRect.right = otherRect.right;
+			if (otherRect.bottom > inRect.bottom) inRect.bottom = otherRect.bottom;
 		}
 
-		/// <summary>
-		/// return a sorted list of the crossings for this polygon
-		/// </summary>
-		/// <param name="polygon"></param>
-		/// <param name="start"></param>
-		/// <param name="end"></param>
-		/// <param name="crossings"></param>
 		public static void FindCrossingPoints(this Polygon polygon, IntPoint start, IntPoint end, List<Tuple<int, IntPoint>> crossings)
 		{
 			crossings.Clear();
@@ -157,23 +157,73 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static bool PointWithinStartEnd(IntPoint start, IntPoint end, IntPoint testPosition)
+		public static int FindTouchingEdge(this Polygon polygon, IntPoint position, long maxDistance = 0)
 		{
-			IntPoint segmentDelta = end - start;
-			IntPoint normal = segmentDelta.Normal(1000);
-			IntPoint pointRelStart = testPosition - start;
-			long distanceFromStart = normal.Dot(pointRelStart) / 1000;
+			throw new NotImplementedException();
+		}
 
-			if (distanceFromStart >= 0 && distanceFromStart <= segmentDelta.Length())
+		public static IntPoint getBoundaryPointWithOffset(Polygon poly, int point_idx, long offset)
+		{
+			IntPoint p0 = poly[(point_idx > 0) ? (point_idx - 1) : (poly.size() - 1)];
+			IntPoint p1 = poly[point_idx];
+			IntPoint p2 = poly[(point_idx < (poly.size() - 1)) ? (point_idx + 1) : 0];
+
+			IntPoint off0 = ((p1 - p0).Normal(1000)).CrossZ(); // 1.0 for some precision
+			IntPoint off1 = ((p2 - p1).Normal(1000)).CrossZ(); // 1.0 for some precision
+			IntPoint n = (off0 + off1).Normal(-offset);
+
+			return p1 + n;
+		}
+
+		public static IntRect GetBounds(this Polygon inPolygon)
+		{
+			if (inPolygon.Count == 0)
 			{
-				return true;
-			}	
+				return new IntRect(0, 0, 0, 0);
+			}
 
-			return false;
+			IntRect result = new IntRect();
+			result.left = inPolygon[0].X;
+			result.right = result.left;
+			result.top = inPolygon[0].Y;
+			result.bottom = result.top;
+			for (int pointIndex = 1; pointIndex < inPolygon.Count; pointIndex++)
+			{
+				if (inPolygon[pointIndex].X < result.left)
+				{
+					result.left = inPolygon[pointIndex].X;
+				}
+				else if (inPolygon[pointIndex].X > result.right)
+				{
+					result.right = inPolygon[pointIndex].X;
+				}
+
+				if (inPolygon[pointIndex].Y < result.top)
+				{
+					result.top = inPolygon[pointIndex].Y;
+				}
+				else if (inPolygon[pointIndex].Y > result.bottom)
+				{
+					result.bottom = inPolygon[pointIndex].Y;
+				}
+			}
+
+			return result;
+		}
+
+		public static bool Inside(this Polygon polygon, IntPoint testPoint)
+		{
+			int positionOnPolygon = Clipper.PointInPolygon(testPoint, polygon);
+			if (positionOnPolygon == 0) // not inside or on boundary
+			{
+				return false;
+			}
+
+			return true;
 		}
 
 		public static bool LineSegementsIntersect(IntPoint p, IntPoint p2, IntPoint q, IntPoint q2,
-			out IntPoint intersection)
+					out IntPoint intersection)
 		{
 			intersection = new IntPoint();
 
@@ -219,164 +269,18 @@ namespace MatterHackers.MatterSlice
 			return false;
 		}
 
-		public static bool CalcIntersection(IntPoint a1, IntPoint a2,
-									  IntPoint b1, IntPoint b2,
-									  out IntPoint position)
+		public static long MinX(this Polygon polygon)
 		{
-			position = new IntPoint();
-
-			long intersection_epsilon = 1;
-			long num = (a1.Y - b1.Y) * (b2.X - b1.X) - (a1.X - b1.X) * (b2.Y - b1.Y);
-			long den = (a2.X - a1.X) * (b2.Y - b1.Y) - (a2.Y - a1.Y) * (b2.X - b1.X);
-			if (Math.Abs(den) < intersection_epsilon)
+			long minX = long.MaxValue;
+			foreach (var point in polygon)
 			{
-				return false;
-			}
-
-			position.X = a1.X + (a2.X - a1.X) * num / den;
-			position.Y = a1.Y + (a2.Y - a1.Y) * num / den;
-	
-			return true;
-		}
-
-		public static IntPoint CenterOfMass(this Polygon polygon)
-		{
-			IntPoint center = new IntPoint();
-			for (int positionIndex = 0; positionIndex < polygon.Count; positionIndex++)
-			{
-				center += polygon[positionIndex];
-			}
-
-			center /= polygon.Count;
-			return center;
-		}
-
-		// true if p0 -> p1 -> p2 is strictly convex.
-		private static bool convex3(long x0, long y0, long x1, long y1, long x2, long y2)
-		{
-			return (y1 - y0) * (x1 - x2) > (x0 - x1) * (y2 - y1);
-		}
-
-		private static bool convex3(IntPoint p0, IntPoint p1, IntPoint p2)
-		{
-			return convex3(p0.X, p0.Y, p1.X, p1.Y, p2.X, p2.Y);
-		}
-
-		public static Polygon CreateFromString(string polygonString)
-		{
-			Polygon output = new Polygon();
-			string[] intPointData = polygonString.Split(',');
-			for (int i = 0; i < intPointData.Length - 1; i += 2)
-			{
-				string elementX = intPointData[i];
-				string elementY = intPointData[i + 1];
-				IntPoint nextIntPoint = new IntPoint(int.Parse(elementX.Substring(2)), int.Parse(elementY.Substring(3)));
-				output.Add(nextIntPoint);
-			}
-
-			return output;
-		}
-
-		public static void ExpandToInclude(this IntRect inRect, IntRect otherRect)
-		{
-			if (otherRect.left < inRect.left) inRect.left = otherRect.left;
-			if (otherRect.top < inRect.top) inRect.top = otherRect.top;
-			if (otherRect.right > inRect.right) inRect.right = otherRect.right;
-			if (otherRect.bottom > inRect.bottom) inRect.bottom = otherRect.bottom;
-		}
-
-		public static IntRect GetBounds(this Polygon inPolygon)
-		{
-			if (inPolygon.Count == 0)
-			{
-				return new IntRect(0, 0, 0, 0);
-			}
-
-			IntRect result = new IntRect();
-			result.left = inPolygon[0].X;
-			result.right = result.left;
-			result.top = inPolygon[0].Y;
-			result.bottom = result.top;
-			for (int pointIndex = 1; pointIndex < inPolygon.Count; pointIndex++)
-			{
-				if (inPolygon[pointIndex].X < result.left)
+				if (point.X < minX)
 				{
-					result.left = inPolygon[pointIndex].X;
-				}
-				else if (inPolygon[pointIndex].X > result.right)
-				{
-					result.right = inPolygon[pointIndex].X;
-				}
-
-				if (inPolygon[pointIndex].Y < result.top)
-				{
-					result.top = inPolygon[pointIndex].Y;
-				}
-				else if (inPolygon[pointIndex].Y > result.bottom)
-				{
-					result.bottom = inPolygon[pointIndex].Y;
+					minX = point.X;
 				}
 			}
 
-			return result;
-		}
-		
-		public static Polygon CreateConvexHull(this Polygon inPolygon)
-		{
-			return new Polygon(GrahamScan.GetConvexHull(inPolygon));
-		}
-
-		public static bool DescribesSameShape(this Polygon a, Polygon b)
-        {
-            if(a.Count != b.Count)
-            {
-                return false;
-            }
-
-            // find first same point
-            for(int indexB = 0; indexB < b.Count; indexB++)
-            {
-                if(a[0] == b[indexB])
-                {
-                    // check if any point are different
-                    for(int indexA = 1; indexA < a.Count; indexA++)
-                    {
-                        if(a[indexA] != b[(indexB + indexA)%b.Count])
-                        {
-                            return false;
-                        }
-                    }
-
-                    // they are all the same
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        public static IntPoint getBoundaryPointWithOffset(Polygon poly, int point_idx, long offset)
-        {
-			IntPoint p0 = poly[(point_idx > 0) ? (point_idx - 1) : (poly.size() - 1)];
-			IntPoint p1 = poly[point_idx];
-			IntPoint p2 = poly[(point_idx < (poly.size() - 1)) ? (point_idx + 1) : 0];
-
-			IntPoint off0 = ((p1 - p0).Normal(1000)).CrossZ(); // 1.0 for some precision
-			IntPoint off1 = ((p2 - p1).Normal(1000)).CrossZ(); // 1.0 for some precision
-			IntPoint n = (off0 + off1).Normal(-offset);
-
-			return p1 + n;
-		}
-
-		public static bool Inside(this Polygon polygon, IntPoint testPoint)
-		{
-			int positionOnPolygon = Clipper.PointInPolygon(testPoint, polygon);
-			if (positionOnPolygon == 0) // not inside or on boundary
-			{
-				return false;
-			}
-
-			return true;
+			return minX;
 		}
 
 		public static void OptimizePolygon(this Polygon polygon)
@@ -430,6 +334,20 @@ namespace MatterHackers.MatterSlice
 			return Clipper.PointInPolygon(testPoint, polygon);
 		}
 
+		public static bool PointWithinStartEnd(IntPoint start, IntPoint end, IntPoint testPosition)
+		{
+			IntPoint segmentDelta = end - start;
+			IntPoint normal = segmentDelta.Normal(1000);
+			IntPoint pointRelStart = testPosition - start;
+			long distanceFromStart = normal.Dot(pointRelStart) / 1000;
+
+			if (distanceFromStart >= 0 && distanceFromStart <= segmentDelta.Length())
+			{
+				return true;
+			}
+
+			return false;
+		}
 
 		public static bool polygonCollidesWithlineSegment(Polygon poly, IntPoint startPoint, IntPoint endPoint)
 		{
@@ -484,7 +402,8 @@ namespace MatterHackers.MatterSlice
 
 			return length;
 		}
-        public static void Reverse(this Polygon polygon)
+
+		public static void Reverse(this Polygon polygon)
 		{
 			polygon.Reverse();
 		}
@@ -530,6 +449,98 @@ namespace MatterHackers.MatterSlice
 				total += point.ToString() + ",";
 			}
 			return total;
+		}
+
+		// true if p0 -> p1 -> p2 is strictly convex.
+		private static bool convex3(long x0, long y0, long x1, long y1, long x2, long y2)
+		{
+			return (y1 - y0) * (x1 - x2) > (x0 - x1) * (y2 - y1);
+		}
+
+		private static bool convex3(IntPoint p0, IntPoint p1, IntPoint p2)
+		{
+			return convex3(p0.X, p0.Y, p1.X, p1.Y, p2.X, p2.Y);
+		}
+
+		public class DirectionSorter : IComparer<Tuple<int, IntPoint>>
+		{
+			private IntPoint direction;
+			private IntPoint start;
+
+			public DirectionSorter(IntPoint start, IntPoint end)
+			{
+				this.start = start;
+				this.direction = (end - start).Normal(1000);
+			}
+
+			public int Compare(Tuple<int, IntPoint> a, Tuple<int, IntPoint> b)
+			{
+				long distToA = direction.Dot(a.Item2 - start) / 1000;
+				long distToB = direction.Dot(b.Item2 - start) / 1000;
+
+				return distToA.CompareTo(distToB);
+			}
+		}
+
+		// operator to sort IntPoint by y
+		// (and then by X, where Y are equal)
+		public class IntPointSorterYX : IComparer<IntPoint>
+		{
+			public virtual int Compare(IntPoint a, IntPoint b)
+			{
+				if (a.Y == b.Y)
+				{
+					return a.X.CompareTo(b.X);
+				}
+				else
+				{
+					return a.Y.CompareTo(b.Y);
+				}
+			}
+		}
+	}
+
+	// Axis aligned boundary box
+	public class Aabb
+	{
+		public IntPoint min, max;
+
+		public Aabb()
+		{
+			min = new IntPoint(long.MinValue, long.MinValue);
+			max = new IntPoint(long.MinValue, long.MinValue);
+		}
+
+		public Aabb(Polygons polys)
+		{
+			min = new IntPoint(long.MinValue, long.MinValue);
+			max = new IntPoint(long.MinValue, long.MinValue);
+			Calculate(polys);
+		}
+
+		public void Calculate(Polygons polys)
+		{
+			min = new IntPoint(long.MaxValue, long.MaxValue);
+			max = new IntPoint(long.MinValue, long.MinValue);
+			for (int i = 0; i < polys.Count; i++)
+			{
+				for (int j = 0; j < polys[i].Count; j++)
+				{
+					if (min.X > polys[i][j].X) min.X = polys[i][j].X;
+					if (min.Y > polys[i][j].Y) min.Y = polys[i][j].Y;
+					if (max.X < polys[i][j].X) max.X = polys[i][j].X;
+					if (max.Y < polys[i][j].Y) max.Y = polys[i][j].Y;
+				}
+			}
+		}
+
+		public bool Hit(Aabb other)
+		{
+			if (max.X < other.min.X) return false;
+			if (min.X > other.max.X) return false;
+			if (max.Y < other.min.Y) return false;
+			if (min.Y > other.max.Y) return false;
+			return true;
 		}
 	}
 }

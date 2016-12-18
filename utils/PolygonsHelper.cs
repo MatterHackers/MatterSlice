@@ -19,9 +19,9 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System.Collections.Generic;
 using System.IO;
+using MSClipperLib;
 using static System.Math;
 
 namespace MatterHackers.MatterSlice
@@ -68,9 +68,128 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		public static Polygons ConvertToLines(Polygons polygons)
+		{
+			Polygons linePolygons = new Polygons();
+			foreach (Polygon polygon in polygons)
+			{
+				if (polygon.Count > 2)
+				{
+					for (int vertexIndex = 0; vertexIndex < polygon.Count; vertexIndex++)
+					{
+						linePolygons.Add(new Polygon() { polygon[vertexIndex], polygon[(vertexIndex + 1) % polygon.Count] });
+					}
+				}
+				else
+				{
+					linePolygons.Add(polygon);
+				}
+			}
+
+			return linePolygons;
+		}
+
 		public static Polygon CreateConvexHull(this Polygons polygons)
 		{
 			return polygons.SelectMany(s => s).ToList().CreateConvexHull();
+		}
+
+		public static Polygons CreateDifference(this Polygons polygons, Polygons other)
+		{
+			Polygons ret = new Polygons();
+			Clipper clipper = new Clipper();
+			clipper.AddPaths(polygons, PolyType.ptSubject, true);
+			clipper.AddPaths(other, PolyType.ptClip, true);
+			clipper.Execute(ClipType.ctDifference, ret);
+			return ret;
+		}
+
+		public static Polygons CreateFromString(string polygonsPackedString)
+		{
+			Polygons output = new Polygons();
+			string[] polygons = polygonsPackedString.Split('|');
+			foreach (string polygonString in polygons)
+			{
+				Polygon nextPoly = PolygonHelper.CreateFromString(polygonString);
+				if (nextPoly.Count > 0)
+				{
+					output.Add(nextPoly);
+				}
+			}
+			return output;
+		}
+
+		public static Polygons CreateIntersection(this Polygons polygons, Polygons other)
+		{
+			Polygons ret = new Polygons();
+			Clipper clipper = new Clipper();
+			clipper.AddPaths(polygons, PolyType.ptSubject, true);
+			clipper.AddPaths(other, PolyType.ptClip, true);
+			clipper.Execute(ClipType.ctIntersection, ret);
+			return ret;
+		}
+
+		public static Polygons CreateLineDifference(this Polygons areaToRemove, Polygons linePolygons)
+		{
+			Clipper clipper = new Clipper();
+
+			clipper.AddPaths(linePolygons, PolyType.ptSubject, false);
+			clipper.AddPaths(areaToRemove, PolyType.ptClip, true);
+
+			PolyTree clippedLines = new PolyTree();
+
+			clipper.Execute(ClipType.ctDifference, clippedLines);
+
+			return Clipper.OpenPathsFromPolyTree(clippedLines);
+		}
+
+		public static Polygons CreateLineIntersections(this Polygons areaToIntersect, Polygons lines)
+		{
+			Clipper clipper = new Clipper();
+
+			clipper.AddPaths(lines, PolyType.ptSubject, false);
+			clipper.AddPaths(areaToIntersect, PolyType.ptClip, true);
+
+			PolyTree clippedLines = new PolyTree();
+
+			clipper.Execute(ClipType.ctIntersection, clippedLines);
+
+			return Clipper.OpenPathsFromPolyTree(clippedLines);
+		}
+
+		public static Polygons CreateUnion(this Polygons polygons, Polygons other)
+		{
+			Clipper clipper = new Clipper();
+			clipper.AddPaths(polygons, PolyType.ptSubject, true);
+			clipper.AddPaths(other, PolyType.ptSubject, true);
+
+			Polygons ret = new Polygons();
+			clipper.Execute(ClipType.ctUnion, ret, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
+			return ret;
+		}
+
+		public static Polygons DeepCopy(this Polygons polygons)
+		{
+			Polygons deepCopy = new Polygons();
+			foreach (Polygon poly in polygons)
+			{
+				deepCopy.Add(new Polygon(poly));
+			}
+
+			return deepCopy;
+		}
+
+		public static void FindCrossingPoints(this Polygons polygons, IntPoint start, IntPoint end, List<Tuple<int, int, IntPoint>> crossings)
+		{
+			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
+			{
+				List<Tuple<int, IntPoint>> polyCrossings = new List<Tuple<int, IntPoint>>();
+				polygons[polyIndex].FindCrossingPoints(start, end, polyCrossings);
+				foreach (var crossing in polyCrossings)
+				{
+					crossings.Add(new Tuple<int, int, IntPoint>(polyIndex, crossing.Item1, crossing.Item2));
+				}
+			}
 		}
 
 		public static Polygons GetCorrectedWinding(this Polygons polygonsToFix)
@@ -189,117 +308,26 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public static Polygons CreateLineDifference(this Polygons areaToRemove, Polygons linePolygons)
+		public static Polygons Offset(this Polygons polygons, long distance)
 		{
-			Clipper clipper = new Clipper();
-
-			clipper.AddPaths(linePolygons, PolyType.ptSubject, false);
-			clipper.AddPaths(areaToRemove, PolyType.ptClip, true);
-
-			PolyTree clippedLines = new PolyTree();
-
-			clipper.Execute(ClipType.ctDifference, clippedLines);
-
-			return Clipper.OpenPathsFromPolyTree(clippedLines);
+			ClipperOffset offseter = new ClipperOffset();
+			offseter.AddPaths(polygons, JoinType.jtMiter, EndType.etClosedPolygon);
+			Paths solution = new Polygons();
+			offseter.Execute(ref solution, distance);
+			return solution;
 		}
 
-		public static Polygons CreateDifference(this Polygons polygons, Polygons other)
+		public static void OptimizePolygons(this Polygons polygons)
 		{
-			Polygons ret = new Polygons();
-			Clipper clipper = new Clipper();
-			clipper.AddPaths(polygons, PolyType.ptSubject, true);
-			clipper.AddPaths(other, PolyType.ptClip, true);
-			clipper.Execute(ClipType.ctDifference, ret);
-			return ret;
-		}
-
-		public static Polygons CreateFromString(string polygonsPackedString)
-		{
-			Polygons output = new Polygons();
-			string[] polygons = polygonsPackedString.Split('|');
-			foreach (string polygonString in polygons)
+			for (int n = 0; n < polygons.Count; n++)
 			{
-				Polygon nextPoly = PolygonHelper.CreateFromString(polygonString);
-				if (nextPoly.Count > 0)
+				polygons[n].OptimizePolygon();
+				if (polygons[n].Count < 3)
 				{
-					output.Add(nextPoly);
+					polygons.RemoveAt(n);
+					n--;
 				}
 			}
-			return output;
-		}
-
-		public static Polygons CreateIntersection(this Polygons polygons, Polygons other)
-		{
-			Polygons ret = new Polygons();
-			Clipper clipper = new Clipper();
-			clipper.AddPaths(polygons, PolyType.ptSubject, true);
-			clipper.AddPaths(other, PolyType.ptClip, true);
-			clipper.Execute(ClipType.ctIntersection, ret);
-			return ret;
-		}
-
-		public static void RemoveSmallAreas(this Polygons polygons, long extrusionWidth)
-		{
-			double areaOfExtrusion = (extrusionWidth / 1000.0) * (extrusionWidth / 1000.0); // convert from microns to mm's.
-			double minAreaSize = areaOfExtrusion / 2;
-			for (int outlineIndex = polygons.Count - 1; outlineIndex >= 0; outlineIndex--)
-			{
-				double area = Math.Abs(polygons[outlineIndex].Area()) / 1000.0 / 1000.0; // convert from microns to mm's.
-
-				// Only create an up/down Outline if the area is large enough. So you do not create tiny blobs of "trying to fill"
-				if (area < minAreaSize)
-				{
-					polygons.RemoveAt(outlineIndex);
-				}
-			}
-		}
-
-		public static Polygons CreateLineIntersections(this Polygons areaToIntersect, Polygons lines)
-		{
-			Clipper clipper = new Clipper();
-
-			clipper.AddPaths(lines, PolyType.ptSubject, false);
-			clipper.AddPaths(areaToIntersect, PolyType.ptClip, true);
-
-			PolyTree clippedLines = new PolyTree();
-
-			clipper.Execute(ClipType.ctIntersection, clippedLines);
-
-			return Clipper.OpenPathsFromPolyTree(clippedLines);
-		}
-
-		public static List<Polygons> ProcessIntoSeparatIslands(this Polygons polygons)
-		{
-			List<Polygons> ret = new List<Polygons>();
-			Clipper clipper = new Clipper();
-			PolyTree resultPolyTree = new PolyTree();
-			clipper.AddPaths(polygons, PolyType.ptSubject, true);
-			clipper.Execute(ClipType.ctUnion, resultPolyTree);
-
-			polygons.ProcessPolyTreeNodeIntoSeparatIslands(resultPolyTree, ret);
-			return ret;
-		}
-
-		public static Polygons CreateUnion(this Polygons polygons, Polygons other)
-		{
-			Clipper clipper = new Clipper();
-			clipper.AddPaths(polygons, PolyType.ptSubject, true);
-			clipper.AddPaths(other, PolyType.ptSubject, true);
-
-			Polygons ret = new Polygons();
-			clipper.Execute(ClipType.ctUnion, ret, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
-			return ret;
-		}
-
-		public static Polygons DeepCopy(this Polygons polygons)
-		{
-			Polygons deepCopy = new Polygons();
-			foreach (Polygon poly in polygons)
-			{
-				deepCopy.Add(new Polygon(poly));
-			}
-
-			return deepCopy;
 		}
 
 		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint)
@@ -327,28 +355,6 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return true;
-		}
-
-		public static Polygons Offset(this Polygons polygons, long distance)
-		{
-			ClipperOffset offseter = new ClipperOffset();
-			offseter.AddPaths(polygons, JoinType.jtMiter, EndType.etClosedPolygon);
-			Paths solution = new Polygons();
-			offseter.Execute(ref solution, distance);
-			return solution;
-		}
-
-		public static void OptimizePolygons(this Polygons polygons)
-		{
-			for (int n = 0; n < polygons.Count; n++)
-			{
-				polygons[n].OptimizePolygon();
-				if (polygons[n].Count < 3)
-				{
-					polygons.RemoveAt(n);
-					n--;
-				}
-			}
 		}
 
 		public static bool polygonCollidesWithlineSegment(Polygons polys, IntPoint transformed_startPoint, IntPoint transformed_endPoint, PointMatrix transformation_matrix)
@@ -399,6 +405,34 @@ namespace MatterHackers.MatterSlice
 			clipper.AddPaths(polygons, PolyType.ptSubject, true);
 			clipper.Execute(ClipType.ctUnion, ret);
 			return ret;
+		}
+
+		public static List<Polygons> ProcessIntoSeparatIslands(this Polygons polygons)
+		{
+			List<Polygons> ret = new List<Polygons>();
+			Clipper clipper = new Clipper();
+			PolyTree resultPolyTree = new PolyTree();
+			clipper.AddPaths(polygons, PolyType.ptSubject, true);
+			clipper.Execute(ClipType.ctUnion, resultPolyTree);
+
+			polygons.ProcessPolyTreeNodeIntoSeparatIslands(resultPolyTree, ret);
+			return ret;
+		}
+
+		public static void RemoveSmallAreas(this Polygons polygons, long extrusionWidth)
+		{
+			double areaOfExtrusion = (extrusionWidth / 1000.0) * (extrusionWidth / 1000.0); // convert from microns to mm's.
+			double minAreaSize = areaOfExtrusion / 2;
+			for (int outlineIndex = polygons.Count - 1; outlineIndex >= 0; outlineIndex--)
+			{
+				double area = Math.Abs(polygons[outlineIndex].Area()) / 1000.0 / 1000.0; // convert from microns to mm's.
+
+				// Only create an up/down Outline if the area is large enough. So you do not create tiny blobs of "trying to fill"
+				if (area < minAreaSize)
+				{
+					polygons.RemoveAt(outlineIndex);
+				}
+			}
 		}
 
 		public static void SaveToGCode(this Polygons polygons, string filename)
@@ -517,25 +551,24 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static Polygons ConvertToLines(Polygons polygons)
+		public class DirectionSorter : IComparer<Tuple<int, int, IntPoint>>
 		{
-			Polygons linePolygons = new Polygons();
-			foreach(Polygon polygon in polygons)
+			private IntPoint direction;
+			private IntPoint start;
+
+			public DirectionSorter(IntPoint start, IntPoint end)
 			{
-				if (polygon.Count > 2)
-				{
-					for (int vertexIndex = 0; vertexIndex < polygon.Count; vertexIndex++)
-					{
-						linePolygons.Add(new Polygon() { polygon[vertexIndex], polygon[(vertexIndex + 1) % polygon.Count] });
-					}
-				}
-				else
-				{
-					linePolygons.Add(polygon);
-				}
+				this.start = start;
+				this.direction = (end - start).Normal(1000);
 			}
 
-			return linePolygons;
+			public int Compare(Tuple<int, int, IntPoint> a, Tuple<int, int, IntPoint> b)
+			{
+				long distToA = direction.Dot(a.Item3 - start) / 1000;
+				long distToB = direction.Dot(b.Item3 - start) / 1000;
+
+				return distToA.CompareTo(distToB);
+			}
 		}
 	}
 }
