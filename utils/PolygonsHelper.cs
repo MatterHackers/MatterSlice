@@ -382,19 +382,14 @@ namespace MatterHackers.MatterSlice
 			return polygonCollidesWithlineSegment(polys, transformed_startPoint, transformed_endPoint, transformation_matrix);
 		}
 
-		public static long PolygonLength(this Polygons polygons)
+		public static long PolygonLength(this Polygons polygons, bool areClosed = true)
 		{
 			long length = 0;
 			for (int i = 0; i < polygons.Count; i++)
 			{
-				IntPoint previousPoint = polygons[i][polygons[i].Count - 1];
-				for (int n = 0; n < polygons[i].Count; n++)
-				{
-					IntPoint currentPoint = polygons[i][n];
-					length += (previousPoint - currentPoint).Length();
-					previousPoint = currentPoint;
-				}
+				length += polygons[i].PolygonLength(areClosed);
 			}
+
 			return length;
 		}
 

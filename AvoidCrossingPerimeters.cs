@@ -116,7 +116,9 @@ namespace MatterHackers.MatterSlice
 
 			// if crossing are 0 
 			//We're not crossing any boundaries. So skip the comb generation.
-			if (!addEndpoint && pathThatIsInside.Count == 0)
+			if (Crossings.Count == 0
+				&& !addEndpoint 
+				&& pathThatIsInside.Count == 0)
 			{
 				//Only skip if we didn't move the start and end point.
 				return true;
@@ -124,20 +126,42 @@ namespace MatterHackers.MatterSlice
 
 			// else
 
-			// sort them in the order of the start end direction
-
-			// for each pair of crossings
-
-			// add a move to the start of the crossing
-			// try to go CW and CWW take the path that is the shortest and add it to the list
-
 			Polygon pointList = new Polygon();
-			// Now walk trough the crossings, for every boundary we cross, find the initial cross point and the exit point.
+			// for each pair of crossings
+			if (Crossings.Count > 1)
+			{
+				long directionArround = BoundaryPolygons[Crossings[0].Item1].GetShortestDistanceAround(Crossings[0].Item2, Crossings[0].Item3, Crossings[1].Item2, Crossings[1].Item3);
+				if(directionArround < 0)
+				{
+					// the start intersection
+					pointList.Add(Crossings[0].Item3);
+
+					// add all the points between
+					var interator = RingArrayIterator(Crossings[0].Item2, Crossings[1].Item2, BoundaryPolygons[Crossings[0].Item1].Count);
+					foreach (int i in interator)
+					{
+						pointList.Add(BoundaryPolygons[Crossings[0].Item1][i]);
+					}
+
+					// the end intersection
+					pointList.Add(Crossings[1].Item3);
+				}
+				else
+				{
+					int a = 10;
+				}
+			}
+
+		   // add a move to the start of the crossing
+		   // try to go CW and CWW take the path that is the shortest and add it to the list
+
+ 			// Now walk trough the crossings, for every boundary we cross, find the initial cross point and the exit point.
 			// Then add all the points in between to the pointList and continue with the next boundary we will cross,
 			// until there are no more boundaries to cross.
 			// This gives a path from the start to finish curved around the holes that it encounters.
 			pointList.Add(endPoint);
 
+			#if false
 			// Optimize the pointList, skip each point we could already reach by connecting directly to the next point.
 			for (int startIndex = 0; startIndex < pointList.Count - 2; startIndex++)
 			{
@@ -162,6 +186,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 			}
+			#endif
 
 			foreach (IntPoint point in pointList)
 			{
@@ -169,6 +194,27 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return true;
+		}
+
+		public IEnumerable<int> RingArrayIterator(int start, int end, int count)
+		{
+			if (start < end)
+			{
+				for (int i = start; i != end; i = (i + 1) % count)
+				{
+					yield return i;
+				}
+			}
+			else
+			{
+				int i;
+				for (i = (start + count - 1) % count; i != end; i = (i + count - 1) % count)
+				{
+					yield return i;
+				}
+
+				yield return i;
+			}
 		}
 
 		public bool PointIsInsideBoundary(IntPoint intPoint)

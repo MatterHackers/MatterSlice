@@ -386,15 +386,19 @@ namespace MatterHackers.MatterSlice
 			return false;
 		}
 
-		public static long PolygonLength(this Polygon polygon)
+		public static long PolygonLength(this Polygon polygon, bool areClosed = true)
 		{
 			long length = 0;
-			if (polygon.Count > 0)
+			if (polygon.Count > 1)
 			{
-				IntPoint previousPoint = polygon[polygon.Count - 1];
-				for (int n = 0; n < polygon.Count; n++)
+				IntPoint previousPoint = polygon[0];
+				if (areClosed)
 				{
-					IntPoint currentPoint = polygon[n];
+					previousPoint = polygon[polygon.Count - 1];
+				}
+				for (int i = areClosed ? 0 : 1; i < polygon.Count; i++)
+				{
+					IntPoint currentPoint = polygon[i];
 					length += (previousPoint - currentPoint).Length();
 					previousPoint = currentPoint;
 				}
@@ -406,6 +410,61 @@ namespace MatterHackers.MatterSlice
 		public static void Reverse(this Polygon polygon)
 		{
 			polygon.Reverse();
+		}
+
+		public static long GetShortestDistanceAround(this Polygon polygon, int startEdgeIndex, IntPoint startPosition, int endEdgeIndex, IntPoint endPosition)
+		{
+			if (polygon.Count > 2)
+			{
+				bool donePositive = false;
+				bool doneNegative = false;
+				int lastPositiveIndex = (startEdgeIndex + 1) % polygon.Count;
+				int lastNegativeIndex = startEdgeIndex;
+				// Get distance to start point
+				long positiveDistance = (polygon[lastPositiveIndex] - startPosition).Length();
+				long negativeDistance = (polygon[lastNegativeIndex] - startPosition).Length();
+				bool first = true;
+				for (int i = 0; i < polygon.Count; i++)
+				{
+					int positiveIndex = (lastPositiveIndex + 1) % polygon.Count;
+					int negativeIndex = (lastNegativeIndex + polygon.Count - 1) % polygon.Count;
+					if (positiveIndex == endEdgeIndex)
+					{
+						donePositive = true;
+						positiveDistance += (polygon[positiveIndex] - endPosition).Length();
+					}
+					else if(!first)
+					{
+						positiveDistance += (polygon[positiveIndex] - polygon[lastPositiveIndex]).Length();
+					}
+					if (negativeIndex == endEdgeIndex)
+					{
+						doneNegative = true;
+						negativeDistance += (polygon[negativeIndex] - endPosition).Length();
+					}
+					else if (!first)
+{
+						negativeDistance += (polygon[negativeIndex] - polygon[lastNegativeIndex]).Length();
+					}
+
+					if (donePositive && negativeDistance > positiveDistance)
+					{
+						return positiveDistance;
+					}
+
+					if (doneNegative && positiveDistance > negativeDistance)
+					{
+						return -negativeDistance;
+					}
+
+					first = false;
+
+					lastPositiveIndex = positiveIndex;
+					lastNegativeIndex = negativeIndex;
+				}
+			}
+		
+			return 0;
 		}
 
 		public static void SaveToGCode(this Polygon polygon, string filename)
