@@ -416,54 +416,41 @@ namespace MatterHackers.MatterSlice
 		{
 			if (polygon.Count > 2)
 			{
-				bool donePositive = false;
-				bool doneNegative = false;
-				int lastPositiveIndex = (startEdgeIndex + 1) % polygon.Count;
-				int lastNegativeIndex = startEdgeIndex;
+				int lastPositiveIndex = startEdgeIndex;
 				// Get distance to start point
-				long positiveDistance = (polygon[lastPositiveIndex] - startPosition).Length();
-				long negativeDistance = (polygon[lastNegativeIndex] - startPosition).Length();
+				long positiveDistance = (polygon[(startEdgeIndex+1)% polygon.Count] - startPosition).Length();
+				long totalDistance = polygon.PolygonLength();
 				bool first = true;
 				for (int i = 0; i < polygon.Count; i++)
 				{
 					int positiveIndex = (lastPositiveIndex + 1) % polygon.Count;
-					int negativeIndex = (lastNegativeIndex + polygon.Count - 1) % polygon.Count;
-					if (positiveIndex == endEdgeIndex)
-					{
-						donePositive = true;
-						positiveDistance += (polygon[positiveIndex] - endPosition).Length();
-					}
-					else if(!first)
+					if (!first)
 					{
 						positiveDistance += (polygon[positiveIndex] - polygon[lastPositiveIndex]).Length();
 					}
-					if (negativeIndex == endEdgeIndex)
+					if (lastPositiveIndex == endEdgeIndex)
 					{
-						doneNegative = true;
-						negativeDistance += (polygon[negativeIndex] - endPosition).Length();
-					}
-					else if (!first)
-{
-						negativeDistance += (polygon[negativeIndex] - polygon[lastNegativeIndex]).Length();
-					}
-
-					if (donePositive && negativeDistance > positiveDistance)
-					{
-						return positiveDistance;
-					}
-
-					if (doneNegative && positiveDistance > negativeDistance)
-					{
-						return -negativeDistance;
+						positiveDistance -= (polygon[positiveIndex] - endPosition).Length();
+						if(positiveDistance < 0)
+						{
+							return positiveDistance;
+						}
+						break;
 					}
 
 					first = false;
 
 					lastPositiveIndex = positiveIndex;
-					lastNegativeIndex = negativeIndex;
 				}
+
+				if(positiveDistance < totalDistance/2)
+				{
+					return positiveDistance;
+				}
+
+				return -(totalDistance - positiveDistance);
 			}
-		
+
 			return 0;
 		}
 

@@ -168,6 +168,64 @@ namespace MatterHackers.MatterSlice.Tests
 			RefCenterOfMass = new IntPoint(com_x, com_y);
 		}
 
+		[Test]
+		public void CorrectDirectionMeasure()
+		{
+			{
+				// ______________2__
+				// |               |
+				// 3               |
+				// |               |
+				// |               |
+				// |               1
+				// |__0____________|
+
+				Polygon test = new Polygon();
+				test.Add(new IntPoint(0, 0));
+				test.Add(new IntPoint(40, 0));
+				test.Add(new IntPoint(40, 40));
+				test.Add(new IntPoint(0, 40));
+
+				Assert.AreEqual(20, test.GetShortestDistanceAround(0, new IntPoint(10, 0), 0, new IntPoint(30, 0)));
+				Assert.AreEqual(-20, test.GetShortestDistanceAround(0, new IntPoint(30, 0), 0, new IntPoint(10, 0)));
+				Assert.AreEqual(20, test.GetShortestDistanceAround(0, new IntPoint(30, 0), 1, new IntPoint(40, 10)));
+				Assert.AreEqual(-20, test.GetShortestDistanceAround(1, new IntPoint(40, 10), 0, new IntPoint(30, 0)));
+				Assert.AreEqual(60, test.GetShortestDistanceAround(3, new IntPoint(0, 10), 1, new IntPoint(40, 10)));
+				Assert.AreEqual(-60, test.GetShortestDistanceAround(1, new IntPoint(40, 10), 3, new IntPoint(0, 10)));
+				Assert.AreEqual(20, test.GetShortestDistanceAround(3, new IntPoint(0, 10), 0, new IntPoint(10, 0)));
+				Assert.AreEqual(-20, test.GetShortestDistanceAround(0, new IntPoint(10, 0), 3, new IntPoint(0, 10)));
+				Assert.AreEqual(50, test.GetShortestDistanceAround(3, new IntPoint(0, 5), 1, new IntPoint(40, 5)));
+				Assert.AreEqual(-50, test.GetShortestDistanceAround(1, new IntPoint(40, 5), 3, new IntPoint(0, 5)));
+			}
+
+			{
+				// ___1_____________
+				// |               |
+				// |               2
+				// |               |
+				// |               |
+				// 0               |
+				// |_____________3_|
+
+				Polygon test = new Polygon();
+				test.Add(new IntPoint(0, 0));
+				test.Add(new IntPoint(0, 40));
+				test.Add(new IntPoint(40, 40));
+				test.Add(new IntPoint(40, 0));
+
+				Assert.AreEqual(-20, test.GetShortestDistanceAround(3, new IntPoint(10, 0), 3, new IntPoint(30, 0)));
+				Assert.AreEqual(20, test.GetShortestDistanceAround(3, new IntPoint(30, 0), 3, new IntPoint(10, 0)));
+				Assert.AreEqual(-20, test.GetShortestDistanceAround(3, new IntPoint(30, 0), 2, new IntPoint(40, 10)));
+				Assert.AreEqual(20, test.GetShortestDistanceAround(2, new IntPoint(40, 10), 3, new IntPoint(30, 0)));
+				Assert.AreEqual(-60, test.GetShortestDistanceAround(0, new IntPoint(0, 10), 2, new IntPoint(40, 10)));
+				Assert.AreEqual(60, test.GetShortestDistanceAround(2, new IntPoint(40, 10), 0, new IntPoint(0, 10)));
+				Assert.AreEqual(-20, test.GetShortestDistanceAround(0, new IntPoint(0, 10), 3, new IntPoint(10, 0)));
+				Assert.AreEqual(20, test.GetShortestDistanceAround(3, new IntPoint(10, 0), 0, new IntPoint(0, 10)));
+				Assert.AreEqual(-50, test.GetShortestDistanceAround(0, new IntPoint(0, 5), 2, new IntPoint(40, 5)));
+				Assert.AreEqual(50, test.GetShortestDistanceAround(2, new IntPoint(40, 5), 0, new IntPoint(0, 5)));
+			}
+		}
+
 		[Test, Category("WorkInProgress" /* Not Finished */)]
 		public void PolygonHelperTestCases()
 		{

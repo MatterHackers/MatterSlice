@@ -48,6 +48,7 @@ namespace MatterHackers.MatterSlice
 			indexOfMaxX = new int[boundaryPolygons.Count];
 		}
 
+		public long DirectionArround { get; private set; }
 		static bool saveDebugData = false;
 		bool boundary = false;
 		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside)
@@ -130,25 +131,25 @@ namespace MatterHackers.MatterSlice
 			// for each pair of crossings
 			if (Crossings.Count > 1)
 			{
-				long directionArround = BoundaryPolygons[Crossings[0].Item1].GetShortestDistanceAround(Crossings[0].Item2, Crossings[0].Item3, Crossings[1].Item2, Crossings[1].Item3);
-				if(directionArround < 0)
+				DirectionArround = BoundaryPolygons[Crossings[0].Item1].GetShortestDistanceAround(Crossings[0].Item2, Crossings[0].Item3, Crossings[1].Item2, Crossings[1].Item3);
+				//if (directionArround < 0)
 				{
 					// the start intersection
-					pointList.Add(Crossings[0].Item3);
 
 					// add all the points between
-					var interator = RingArrayIterator(Crossings[0].Item2, Crossings[1].Item2, BoundaryPolygons[Crossings[0].Item1].Count);
+					IEnumerable<int> interator = null;
+					if (DirectionArround > 0)
+					{
+						interator = RingArrayIterator(Crossings[1].Item2, Crossings[0].Item2, BoundaryPolygons[Crossings[0].Item1].Count);
+					}
+					else
+					{
+						interator = RingArrayIterator(Crossings[0].Item2, Crossings[1].Item2, BoundaryPolygons[Crossings[0].Item1].Count);
+					}
 					foreach (int i in interator)
 					{
 						pointList.Add(BoundaryPolygons[Crossings[0].Item1][i]);
 					}
-
-					// the end intersection
-					pointList.Add(Crossings[1].Item3);
-				}
-				else
-				{
-					int a = 10;
 				}
 			}
 
