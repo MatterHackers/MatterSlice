@@ -34,6 +34,7 @@ using MatterHackers.MatterSlice;
 
 namespace MatterHackers.MatterSlice.Tests
 {
+	using QuadTree;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
@@ -72,6 +73,29 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void QuadTreeWorking()
+		{
+			var tree = new QuadTree<int>(5, 10, 10, 2000, 2000);
+			tree.Insert(0, new Quad(50, 50, 60, 60));
+			tree.Insert(1, new Quad(52, 53, 60, 60));
+			//tree.Insert(0, new Quad(500, 50, 560, 60));
+			//tree.Insert(0, new Quad(20, 50, 61, 60));
+			//tree.Insert(0, new Quad(150, 50, 160, 60));
+			
+			
+			var collisions = new List<int>();
+
+			if (tree.FindCollisions(0, ref collisions))
+			{
+				for (int checkSegmentIndex = 0; checkSegmentIndex < collisions.Count; checkSegmentIndex++)
+				{
+				}
+			}
+
+			Assert.IsTrue(collisions.Count == 1);
+		}
+
+		[Test]
 		public void MakeCloseSegmentsMergable()
 		{
 			// check that we can cut up a single segment
@@ -94,9 +118,10 @@ namespace MatterHackers.MatterSlice.Tests
 					Start = new IntPoint(0, 0),
 					End = new IntPoint(5000, 0),
 				};
-					
 
-				List<Segment> segmentsTest = segmentToCut.GetSplitSegmentForVertecies(cuts, 400);
+
+				var touchingEnumerator = new ClosePointsIterator(cuts, 400);
+				List<Segment> segmentsTest = segmentToCut.GetSplitSegmentForVertecies(touchingEnumerator);
 				Assert.IsTrue(segmentsControl.Count == segmentsTest.Count);
 				for(int i=0; i<segmentsTest.Count; i++)
 				{
@@ -131,7 +156,8 @@ namespace MatterHackers.MatterSlice.Tests
 
 				long mergeDistance = 400 / 4;
 				Segment segment = new Segment(new IntPoint(5000, 50), new IntPoint(0, 50));
-				List<Segment> segments = segment.GetSplitSegmentForVertecies(new Polygon { new IntPoint(4500, 0) }, mergeDistance);
+				var touchingEnumerator = new ClosePointsIterator(new Polygon { new IntPoint(4500, 0) }, mergeDistance);
+				List<Segment> segments = segment.GetSplitSegmentForVertecies(touchingEnumerator);
 				Assert.IsTrue(segments.Count == 2);
 				Assert.IsTrue(segments[0] == new Segment(new IntPoint(5000, 50), new IntPoint(4500, 50)));
 				Assert.IsTrue(segments[1] == new Segment(new IntPoint(4500, 50), new IntPoint(0, 50)));
