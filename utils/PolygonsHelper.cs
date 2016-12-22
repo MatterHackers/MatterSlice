@@ -357,31 +357,6 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public static bool polygonCollidesWithlineSegment(Polygons polys, IntPoint transformed_startPoint, IntPoint transformed_endPoint, PointMatrix transformation_matrix)
-		{
-			foreach (Polygon poly in polys)
-			{
-				if (poly.size() == 0) { continue; }
-				if (PolygonHelper.polygonCollidesWithlineSegment(poly, transformed_startPoint, transformed_endPoint, transformation_matrix))
-				{
-					return true;
-				}
-			}
-
-			return false;
-		}
-
-		public static bool polygonCollidesWithlineSegment(Polygons polys, IntPoint startPoint, IntPoint endPoint)
-		{
-			IntPoint diff = endPoint - startPoint;
-
-			PointMatrix transformation_matrix = new PointMatrix(diff);
-			IntPoint transformed_startPoint = transformation_matrix.apply(startPoint);
-			IntPoint transformed_endPoint = transformation_matrix.apply(endPoint);
-
-			return polygonCollidesWithlineSegment(polys, transformed_startPoint, transformed_endPoint, transformation_matrix);
-		}
-
 		public static long PolygonLength(this Polygons polygons, bool areClosed = true)
 		{
 			long length = 0;

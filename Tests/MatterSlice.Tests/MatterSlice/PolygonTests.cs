@@ -186,6 +186,11 @@ namespace MatterHackers.MatterSlice.Tests
 				test.Add(new IntPoint(40, 40));
 				test.Add(new IntPoint(0, 40));
 
+				TestCorrectCrossings(test, new IntPoint(20, -1), new IntPoint(20, 41), 0, 2);
+				TestCorrectCrossings(test, new IntPoint(-1, 20), new IntPoint(41, 20), 3, 1);
+				TestCorrectCrossings(test, new IntPoint(19, 41), new IntPoint(20, -1), 2, 0);
+				TestCorrectCrossings(test, new IntPoint(20, -1), new IntPoint(19, 41), 0, 2);
+
 				Assert.AreEqual(20, test.GetShortestDistanceAround(0, new IntPoint(10, 0), 0, new IntPoint(30, 0)));
 				Assert.AreEqual(-20, test.GetShortestDistanceAround(0, new IntPoint(30, 0), 0, new IntPoint(10, 0)));
 				Assert.AreEqual(20, test.GetShortestDistanceAround(0, new IntPoint(30, 0), 1, new IntPoint(40, 10)));
@@ -196,6 +201,8 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.AreEqual(-20, test.GetShortestDistanceAround(0, new IntPoint(10, 0), 3, new IntPoint(0, 10)));
 				Assert.AreEqual(50, test.GetShortestDistanceAround(3, new IntPoint(0, 5), 1, new IntPoint(40, 5)));
 				Assert.AreEqual(-50, test.GetShortestDistanceAround(1, new IntPoint(40, 5), 3, new IntPoint(0, 5)));
+				Assert.AreEqual(-79, test.GetShortestDistanceAround(2, new IntPoint(21, 40), 0, new IntPoint(20, 0)));
+				Assert.AreEqual(79, test.GetShortestDistanceAround(2, new IntPoint(19, 40), 0, new IntPoint(20, 0)));
 			}
 
 			{
@@ -223,7 +230,39 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.AreEqual(20, test.GetShortestDistanceAround(3, new IntPoint(10, 0), 0, new IntPoint(0, 10)));
 				Assert.AreEqual(-50, test.GetShortestDistanceAround(0, new IntPoint(0, 5), 2, new IntPoint(40, 5)));
 				Assert.AreEqual(50, test.GetShortestDistanceAround(2, new IntPoint(40, 5), 0, new IntPoint(0, 5)));
+				Assert.AreEqual(79, test.GetShortestDistanceAround(1, new IntPoint(21, 40), 3, new IntPoint(20, 0)));
+				Assert.AreEqual(-79, test.GetShortestDistanceAround(1, new IntPoint(19, 40), 3, new IntPoint(20, 0)));
 			}
+
+			{
+				// 404, 291   ___0____            S
+				//            |       _________
+				//            |               | 591, 236
+				//            |               1
+				//             |             |
+				//             3             |
+				//             |       ____2_| 587, 158
+				//   406, 121  |_______
+				//     E
+
+				Polygon test = new Polygon();
+				test.Add(new IntPoint(404, 291));
+				test.Add(new IntPoint(591, 236));
+				test.Add(new IntPoint(587, 158));
+				test.Add(new IntPoint(406, 121));
+
+				TestCorrectCrossings(test, new IntPoint(624, 251), new IntPoint(373, 142), 0, 3);
+			}
+		}
+
+		private void TestCorrectCrossings(Polygon poly, IntPoint start, IntPoint end, int expectedStartIndex, int expectedEndIndex)
+		{
+			List<Tuple<int, IntPoint>> polyCrossings = new List<Tuple<int, IntPoint>>();
+			poly.FindCrossingPoints(start, end, polyCrossings);
+			polyCrossings.Sort(new PolygonHelper.DirectionSorter(start, end));
+			Assert.AreEqual(2, polyCrossings.Count);
+			Assert.IsTrue(polyCrossings[0].Item1 == expectedStartIndex);
+			Assert.IsTrue(polyCrossings[1].Item1 == expectedEndIndex);
 		}
 
 		[Test, Category("WorkInProgress" /* Not Finished */)]

@@ -49,7 +49,10 @@ namespace MatterHackers.MatterSlice
 			{
 				foreach(var segmentIndex in tree.FindCollisions(firstSegmentIndex))
 				{
-					yield return segmentIndex;
+					if (segmentIndex >= firstSegmentIndex)
+					{
+						yield return segmentIndex;
+					}
 				}
 			}
 			else

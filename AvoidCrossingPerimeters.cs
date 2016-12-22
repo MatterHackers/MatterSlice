@@ -53,6 +53,7 @@ namespace MatterHackers.MatterSlice
 		bool boundary = false;
 		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside)
 		{
+			pathThatIsInside.Clear();
 			if (saveDebugData)
 			{
 				using (StreamWriter sw = File.AppendText("test.txt"))
@@ -91,6 +92,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// get all the crossings
+			Crossings.Clear();
 			BoundaryPolygons.FindCrossingPoints(startPoint, endPoint, Crossings);
 			Crossings.Sort(new MatterHackers.MatterSlice.PolygonsHelper.DirectionSorter(startPoint, endPoint));
 
@@ -127,40 +129,46 @@ namespace MatterHackers.MatterSlice
 
 			// else
 
-			Polygon pointList = new Polygon();
-			// for each pair of crossings
-			if (Crossings.Count > 1)
-			{
-				DirectionArround = BoundaryPolygons[Crossings[0].Item1].GetShortestDistanceAround(Crossings[0].Item2, Crossings[0].Item3, Crossings[1].Item2, Crossings[1].Item3);
-				//if (directionArround < 0)
-				{
-					// the start intersection
+			// add a move to the start of the crossing
+			// try to go CW and CWW take the path that is the shortest and add it to the list
 
-					// add all the points between
-					IEnumerable<int> interator = null;
-					if (DirectionArround > 0)
-					{
-						interator = RingArrayIterator(Crossings[1].Item2, Crossings[0].Item2, BoundaryPolygons[Crossings[0].Item1].Count);
-					}
-					else
-					{
-						interator = RingArrayIterator(Crossings[0].Item2, Crossings[1].Item2, BoundaryPolygons[Crossings[0].Item1].Count);
-					}
-					foreach (int i in interator)
-					{
-						pointList.Add(BoundaryPolygons[Crossings[0].Item1][i]);
-					}
-				}
-			}
-
-		   // add a move to the start of the crossing
-		   // try to go CW and CWW take the path that is the shortest and add it to the list
-
- 			// Now walk trough the crossings, for every boundary we cross, find the initial cross point and the exit point.
+			// Now walk trough the crossings, for every boundary we cross, find the initial cross point and the exit point.
 			// Then add all the points in between to the pointList and continue with the next boundary we will cross,
 			// until there are no more boundaries to cross.
 			// This gives a path from the start to finish curved around the holes that it encounters.
-			pointList.Add(endPoint);
+			// for each pair of crossings
+			foreach(Tuple<int, int> crossingPair in CrossingIterator(Crossings))
+			{
+				Tuple<int, int, IntPoint> crossingStart = Crossings[crossingPair.Item1];
+				Tuple<int, int, IntPoint> crossingEnd = Crossings[crossingPair.Item2];
+				DirectionArround = BoundaryPolygons[crossingStart.Item1].GetShortestDistanceAround(crossingStart.Item2, crossingStart.Item3, crossingEnd.Item2, crossingEnd.Item3);
+				// the start intersection for this crossing set
+				pathThatIsInside.Add(crossingStart.Item3);
+
+				// add all the points between
+				IEnumerable<int> interator = null;
+				if (DirectionArround > 0)
+				{
+					interator = RingArrayIterator(crossingStart.Item2 + 1, crossingEnd.Item2 + 1, BoundaryPolygons[crossingStart.Item1].Count, true);
+				}
+				else
+				{
+					interator = RingArrayIterator(crossingStart.Item2, crossingEnd.Item2, BoundaryPolygons[crossingStart.Item1].Count, false);
+				}
+				foreach (int i in interator)
+				{
+					pathThatIsInside.Add(BoundaryPolygons[crossingStart.Item1][i]);
+				}
+
+				// add the last intersection for this crossing set
+				pathThatIsInside.Add(crossingEnd.Item3);
+			}
+
+			// add the end point if needed
+			if (addEndpoint)
+			{
+				pathThatIsInside.Add(endPoint);
+			}
 
 			#if false
 			// Optimize the pointList, skip each point we could already reach by connecting directly to the next point.
@@ -189,32 +197,50 @@ namespace MatterHackers.MatterSlice
 			}
 			#endif
 
-			foreach (IntPoint point in pointList)
-			{
-				pathThatIsInside.Add(point);
-			}
-
 			return true;
 		}
 
-		public IEnumerable<int> RingArrayIterator(int start, int end, int count)
+		private IEnumerable<Tuple<int, int>> CrossingIterator(List<Tuple<int, int, IntPoint>> crossings)
 		{
-			if (start < end)
+			int startIndex = -1;
+			for(int i=0; i<crossings.Count; i++)
 			{
-				for (int i = start; i != end; i = (i + 1) % count)
+				// check if we are looking for a new set
+				if(startIndex == -1)
 				{
-					yield return i;
+					// this is the strat of the new set
+					startIndex = i;
 				}
-			}
-			else
-			{
-				int i;
-				for (i = (start + count - 1) % count; i != end; i = (i + count - 1) % count)
+				else // looking for the end of a set
 				{
-					yield return i;
+					// found the end of the same polygon
+					if(crossings[startIndex].Item1 == crossings[i].Item1)
+					{
+						// return the set
+						yield return new Tuple<int, int>(startIndex, i);
+						// we are now looking for a new set
+						startIndex = -1;
+					}
+					else // didn't find an end, consider it a new start
+					{
+						startIndex = i;
+					}
 				}
 
-				yield return i;
+			}
+		}
+
+		public IEnumerable<int> RingArrayIterator(int start, int end, int count, bool increment)
+		{
+			int incrementAmount = 1;
+			if (!increment)
+			{
+				start += count;
+				incrementAmount = -1;
+			}
+			for (int i = start; (i % count) != (end % count); i += incrementAmount)
+			{
+				yield return i % count;
 			}
 		}
 
@@ -226,24 +252,6 @@ namespace MatterHackers.MatterSlice
 		public bool MovePointInsideBoundary(IntPoint testPosition, out IntPoint inPolyPosition)
 		{
 			return BoundaryPolygons.MovePointInsideBoundary(testPosition, out inPolyPosition);
-		}
-
-		/// <summary>
-		/// The start and end points must already be in the bounding polygon
-		/// </summary>
-		/// <param name="startPoint"></param>
-		/// <param name="endPoint"></param>
-		/// <param name="crossingPoints"></param>
-		public void FindCrossingPoints(IntPoint startPoint, IntPoint endPoint, Polygon crossingPoints)
-		{
-			crossingPoints.Clear();
-
-			foreach (var boundaryPolygon in BoundaryPolygons)
-			{
-				for (int pointIndex = 0; pointIndex < boundaryPolygon.Count; pointIndex++)
-				{
-				}
-			}
 		}
 
 		private bool DoesLineCrossBoundary(IntPoint startPoint, IntPoint endPoint)

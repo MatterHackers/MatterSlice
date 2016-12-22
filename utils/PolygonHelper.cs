@@ -84,11 +84,16 @@ namespace MatterHackers.MatterSlice
 		{
 			Polygon output = new Polygon();
 			string[] intPointData = polygonString.Split(',');
-			for (int i = 0; i < intPointData.Length - 1; i += 2)
+			int increment = 2;
+			if (polygonString.Contains("width"))
+			{
+				increment = 4;
+			}
+			for (int i = 0; i < intPointData.Length - 1; i += increment)
 			{
 				string elementX = intPointData[i];
 				string elementY = intPointData[i + 1];
-				IntPoint nextIntPoint = new IntPoint(int.Parse(elementX.Substring(2)), int.Parse(elementY.Substring(3)));
+				IntPoint nextIntPoint = new IntPoint(int.Parse(elementX.Substring(elementX.IndexOf(':') + 1)), int.Parse(elementY.Substring(3)));
 				output.Add(nextIntPoint);
 			}
 
@@ -124,6 +129,37 @@ namespace MatterHackers.MatterSlice
 			return false;
 		}
 
+		// The main function that returns true if line segment 'p1q1'
+		// and 'p2q2' intersect.
+		public static bool DoIntersect(IntPoint startA, IntPoint endA, IntPoint startB, IntPoint endB)
+		{
+			// Find the four orientations needed for general and
+			// special cases
+			int o1 = Orientation(startA, endA, startB);
+			int o2 = Orientation(startA, endA, endB);
+			int o3 = Orientation(startB, endB, startA);
+			int o4 = Orientation(startB, endB, endA);
+
+			// General case
+			if (o1 != o2 && o3 != o4)
+				return true;
+
+			// Special Cases
+			// p1, q1 and p2 are colinear and p2 lies on segment p1q1
+			if (o1 == 0 && OnSegment(startA, startB, endA)) return true;
+
+			// p1, q1 and p2 are colinear and q2 lies on segment p1q1
+			if (o2 == 0 && OnSegment(startA, endB, endA)) return true;
+
+			// p2, q2 and p1 are colinear and p1 lies on segment p2q2
+			if (o3 == 0 && OnSegment(startB, startA, endB)) return true;
+
+			// p2, q2 and q1 are colinear and q1 lies on segment p2q2
+			if (o4 == 0 && OnSegment(startB, endA, endB)) return true;
+
+			return false; // Doesn't fall in any of the above cases
+		}
+
 		public static void ExpandToInclude(this IntRect inRect, IntRect otherRect)
 		{
 			if (otherRect.left < inRect.left) inRect.left = otherRect.left;
@@ -137,13 +173,13 @@ namespace MatterHackers.MatterSlice
 			crossings.Clear();
 			IntPoint segmentDelta = end - start;
 			IntPoint normal = segmentDelta.Normal(1000);
-			IntPoint edgeStart = polygon[polygon.Count - 1];
+			IntPoint edgeStart = polygon[0];
 			for (int i = 0; i < polygon.Count; i++)
 			{
-				IntPoint edgeEnd = polygon[i];
+				IntPoint edgeEnd = polygon[(i + 1) % polygon.Count];
 				IntPoint intersection;
-				if (CalcIntersection(start, end, edgeStart, edgeEnd, out intersection)
-					&& PointWithinStartEnd(edgeStart, edgeEnd, intersection))
+				if (DoIntersect(start, end, edgeStart, edgeEnd)
+				&& CalcIntersection(start, end, edgeStart, edgeEnd, out intersection))
 				{
 					IntPoint pointRelStart = intersection - start;
 					long distanceFromStart = normal.Dot(pointRelStart) / 1000;
@@ -211,6 +247,48 @@ namespace MatterHackers.MatterSlice
 			return result;
 		}
 
+		public static long GetShortestDistanceAround(this Polygon polygon, int startEdgeIndex, IntPoint startPosition, int endEdgeIndex, IntPoint endPosition)
+		{
+			if (polygon.Count > 2)
+			{
+				int lastPositiveIndex = startEdgeIndex;
+				// Get distance to start point
+				long positiveDistance = (polygon[(startEdgeIndex + 1) % polygon.Count] - startPosition).Length();
+				long totalDistance = polygon.PolygonLength();
+				bool first = true;
+				for (int i = 0; i < polygon.Count; i++)
+				{
+					int positiveIndex = (lastPositiveIndex + 1) % polygon.Count;
+					if (!first)
+					{
+						positiveDistance += (polygon[positiveIndex] - polygon[lastPositiveIndex]).Length();
+					}
+					if (lastPositiveIndex == endEdgeIndex)
+					{
+						positiveDistance -= (polygon[positiveIndex] - endPosition).Length();
+						if (positiveDistance < 0)
+						{
+							return positiveDistance;
+						}
+						break;
+					}
+
+					first = false;
+
+					lastPositiveIndex = positiveIndex;
+				}
+
+				if (positiveDistance < totalDistance / 2)
+				{
+					return positiveDistance;
+				}
+
+				return -(totalDistance - positiveDistance);
+			}
+
+			return 0;
+		}
+
 		public static bool Inside(this Polygon polygon, IntPoint testPoint)
 		{
 			int positionOnPolygon = Clipper.PointInPolygon(testPoint, polygon);
@@ -223,7 +301,7 @@ namespace MatterHackers.MatterSlice
 		}
 
 		public static bool LineSegementsIntersect(IntPoint p, IntPoint p2, IntPoint q, IntPoint q2,
-					out IntPoint intersection)
+							out IntPoint intersection)
 		{
 			intersection = new IntPoint();
 
@@ -283,6 +361,19 @@ namespace MatterHackers.MatterSlice
 			return minX;
 		}
 
+		// Given three colinear points p, q, r, the function checks if
+		// point q lies on line segment 'pr'
+		public static bool OnSegment(IntPoint p, IntPoint q, IntPoint r)
+		{
+			if (q.X <= Math.Max(p.X, r.X) && q.X >= Math.Min(p.X, r.X) &&
+				q.Y <= Math.Max(p.Y, r.Y) && q.Y >= Math.Min(p.Y, r.Y))
+			{
+				return true;
+			}
+
+			return false;
+		}
+
 		public static void OptimizePolygon(this Polygon polygon)
 		{
 			IntPoint previousPoint = polygon[polygon.Count - 1];
@@ -323,6 +414,26 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		// To find orientation of ordered triplet (p, q, r).
+		// The function returns following values
+		// 0 --> p, q and r are colinear
+		// 1 --> Clockwise
+		// 2 --> Counterclockwise
+		public static int Orientation(IntPoint start, IntPoint end, IntPoint test)
+		{
+			// See http://www.geeksforgeeks.org/orientation-3-ordered-points/
+			// for details of below formula.
+			long val = (end.Y - start.Y) * (test.X - end.X) -
+					  (end.X - start.X) * (test.Y - end.Y);
+
+			if (val == 0)
+			{
+				return 0;
+			}
+
+			return (val > 0) ? 1 : 2; // clock or counterclock wise
+		}
+
 		public static bool Orientation(this Polygon polygon)
 		{
 			return Clipper.Orientation(polygon);
@@ -332,58 +443,6 @@ namespace MatterHackers.MatterSlice
 		public static int PointIsInside(this Polygon polygon, IntPoint testPoint)
 		{
 			return Clipper.PointInPolygon(testPoint, polygon);
-		}
-
-		public static bool PointWithinStartEnd(IntPoint start, IntPoint end, IntPoint testPosition)
-		{
-			IntPoint segmentDelta = end - start;
-			IntPoint normal = segmentDelta.Normal(1000);
-			IntPoint pointRelStart = testPosition - start;
-			long distanceFromStart = normal.Dot(pointRelStart) / 1000;
-
-			if (distanceFromStart >= 0 && distanceFromStart <= segmentDelta.Length())
-			{
-				return true;
-			}
-
-			return false;
-		}
-
-		public static bool polygonCollidesWithlineSegment(Polygon poly, IntPoint startPoint, IntPoint endPoint)
-		{
-			IntPoint diff = endPoint - startPoint;
-
-			PointMatrix transformation_matrix = new PointMatrix(diff);
-			IntPoint transformed_startPoint = transformation_matrix.apply(startPoint);
-			IntPoint transformed_endPoint = transformation_matrix.apply(endPoint);
-
-			return polygonCollidesWithlineSegment(poly, transformed_startPoint, transformed_endPoint, transformation_matrix);
-		}
-
-		public static bool polygonCollidesWithlineSegment(Polygon poly, IntPoint transformed_startPoint, IntPoint transformed_endPoint, PointMatrix transformation_matrix)
-		{
-			IntPoint p0 = transformation_matrix.apply(poly.back());
-			foreach (IntPoint p1_ in poly)
-			{
-				IntPoint p1 = transformation_matrix.apply(p1_);
-				if ((p0.Y >= transformed_startPoint.Y && p1.Y <= transformed_startPoint.Y) || (p1.Y >= transformed_startPoint.Y && p0.Y <= transformed_startPoint.Y))
-				{
-					long x;
-					if (p1.Y == p0.Y)
-					{
-						x = p0.X;
-					}
-					else
-					{
-						x = p0.X + (p1.X - p0.X) * (transformed_startPoint.Y - p0.Y) / (p1.Y - p0.Y);
-					}
-
-					if (x >= transformed_startPoint.X && x <= transformed_endPoint.X)
-						return true;
-				}
-				p0 = p1;
-			}
-			return false;
 		}
 
 		public static long PolygonLength(this Polygon polygon, bool areClosed = true)
@@ -410,48 +469,6 @@ namespace MatterHackers.MatterSlice
 		public static void Reverse(this Polygon polygon)
 		{
 			polygon.Reverse();
-		}
-
-		public static long GetShortestDistanceAround(this Polygon polygon, int startEdgeIndex, IntPoint startPosition, int endEdgeIndex, IntPoint endPosition)
-		{
-			if (polygon.Count > 2)
-			{
-				int lastPositiveIndex = startEdgeIndex;
-				// Get distance to start point
-				long positiveDistance = (polygon[(startEdgeIndex+1)% polygon.Count] - startPosition).Length();
-				long totalDistance = polygon.PolygonLength();
-				bool first = true;
-				for (int i = 0; i < polygon.Count; i++)
-				{
-					int positiveIndex = (lastPositiveIndex + 1) % polygon.Count;
-					if (!first)
-					{
-						positiveDistance += (polygon[positiveIndex] - polygon[lastPositiveIndex]).Length();
-					}
-					if (lastPositiveIndex == endEdgeIndex)
-					{
-						positiveDistance -= (polygon[positiveIndex] - endPosition).Length();
-						if(positiveDistance < 0)
-						{
-							return positiveDistance;
-						}
-						break;
-					}
-
-					first = false;
-
-					lastPositiveIndex = positiveIndex;
-				}
-
-				if(positiveDistance < totalDistance/2)
-				{
-					return positiveDistance;
-				}
-
-				return -(totalDistance - positiveDistance);
-			}
-
-			return 0;
 		}
 
 		public static void SaveToGCode(this Polygon polygon, string filename)
