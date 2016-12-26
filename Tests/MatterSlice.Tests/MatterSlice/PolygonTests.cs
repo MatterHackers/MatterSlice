@@ -37,7 +37,7 @@ namespace MatterHackers.MatterSlice.Tests
 	using System;
 	using Polygon = List<IntPoint>;
 	using System.Reflection;
-
+	using Pathfinding;
 	[TestFixture, Category("MatterSlice.PolygonHelpers")]
 	public class PolygonHelperTests
 	{
@@ -191,18 +191,18 @@ namespace MatterHackers.MatterSlice.Tests
 				TestCorrectCrossings(test, new IntPoint(19, 41), new IntPoint(20, -1), 2, 0);
 				TestCorrectCrossings(test, new IntPoint(20, -1), new IntPoint(19, 41), 0, 2);
 
-				Assert.AreEqual(20, test.GetShortestDistanceAround(0, new IntPoint(10, 0), 0, new IntPoint(30, 0)));
-				Assert.AreEqual(-20, test.GetShortestDistanceAround(0, new IntPoint(30, 0), 0, new IntPoint(10, 0)));
-				Assert.AreEqual(20, test.GetShortestDistanceAround(0, new IntPoint(30, 0), 1, new IntPoint(40, 10)));
-				Assert.AreEqual(-20, test.GetShortestDistanceAround(1, new IntPoint(40, 10), 0, new IntPoint(30, 0)));
-				Assert.AreEqual(60, test.GetShortestDistanceAround(3, new IntPoint(0, 10), 1, new IntPoint(40, 10)));
-				Assert.AreEqual(-60, test.GetShortestDistanceAround(1, new IntPoint(40, 10), 3, new IntPoint(0, 10)));
-				Assert.AreEqual(20, test.GetShortestDistanceAround(3, new IntPoint(0, 10), 0, new IntPoint(10, 0)));
-				Assert.AreEqual(-20, test.GetShortestDistanceAround(0, new IntPoint(10, 0), 3, new IntPoint(0, 10)));
-				Assert.AreEqual(50, test.GetShortestDistanceAround(3, new IntPoint(0, 5), 1, new IntPoint(40, 5)));
-				Assert.AreEqual(-50, test.GetShortestDistanceAround(1, new IntPoint(40, 5), 3, new IntPoint(0, 5)));
-				Assert.AreEqual(-79, test.GetShortestDistanceAround(2, new IntPoint(21, 40), 0, new IntPoint(20, 0)));
-				Assert.AreEqual(79, test.GetShortestDistanceAround(2, new IntPoint(19, 40), 0, new IntPoint(20, 0)));
+				TestDistance(20, test, 0, new IntPoint(10, 0), 0, new IntPoint(30, 0));
+				TestDistance(-20, test, 0, new IntPoint(30, 0), 0, new IntPoint(10, 0));
+				TestDistance(20, test, 0, new IntPoint(30, 0), 1, new IntPoint(40, 10));
+				TestDistance(-20, test, 1, new IntPoint(40, 10), 0, new IntPoint(30, 0));
+				TestDistance(60, test, 3, new IntPoint(0, 10), 1, new IntPoint(40, 10));
+				TestDistance(-60, test, 1, new IntPoint(40, 10), 3, new IntPoint(0, 10));
+				TestDistance(20, test, 3, new IntPoint(0, 10), 0, new IntPoint(10, 0));
+				TestDistance(-20, test, 0, new IntPoint(10, 0), 3, new IntPoint(0, 10));
+				TestDistance(50, test, 3, new IntPoint(0, 5), 1, new IntPoint(40, 5));
+				TestDistance(-50, test, 1, new IntPoint(40, 5), 3, new IntPoint(0, 5));
+				TestDistance(-79, test, 2, new IntPoint(21, 40), 0, new IntPoint(20, 0));
+				TestDistance(79, test, 2, new IntPoint(19, 40), 0, new IntPoint(20, 0));
 			}
 
 			{
@@ -220,18 +220,18 @@ namespace MatterHackers.MatterSlice.Tests
 				test.Add(new IntPoint(40, 40));
 				test.Add(new IntPoint(40, 0));
 
-				Assert.AreEqual(-20, test.GetShortestDistanceAround(3, new IntPoint(10, 0), 3, new IntPoint(30, 0)));
-				Assert.AreEqual(20, test.GetShortestDistanceAround(3, new IntPoint(30, 0), 3, new IntPoint(10, 0)));
-				Assert.AreEqual(-20, test.GetShortestDistanceAround(3, new IntPoint(30, 0), 2, new IntPoint(40, 10)));
-				Assert.AreEqual(20, test.GetShortestDistanceAround(2, new IntPoint(40, 10), 3, new IntPoint(30, 0)));
-				Assert.AreEqual(-60, test.GetShortestDistanceAround(0, new IntPoint(0, 10), 2, new IntPoint(40, 10)));
-				Assert.AreEqual(60, test.GetShortestDistanceAround(2, new IntPoint(40, 10), 0, new IntPoint(0, 10)));
-				Assert.AreEqual(-20, test.GetShortestDistanceAround(0, new IntPoint(0, 10), 3, new IntPoint(10, 0)));
-				Assert.AreEqual(20, test.GetShortestDistanceAround(3, new IntPoint(10, 0), 0, new IntPoint(0, 10)));
-				Assert.AreEqual(-50, test.GetShortestDistanceAround(0, new IntPoint(0, 5), 2, new IntPoint(40, 5)));
-				Assert.AreEqual(50, test.GetShortestDistanceAround(2, new IntPoint(40, 5), 0, new IntPoint(0, 5)));
-				Assert.AreEqual(79, test.GetShortestDistanceAround(1, new IntPoint(21, 40), 3, new IntPoint(20, 0)));
-				Assert.AreEqual(-79, test.GetShortestDistanceAround(1, new IntPoint(19, 40), 3, new IntPoint(20, 0)));
+				TestDistance(-20, test, 3, new IntPoint(10, 0), 3, new IntPoint(30, 0));
+				TestDistance(20, test, 3, new IntPoint(30, 0), 3, new IntPoint(10, 0));
+				TestDistance(-20, test, 3, new IntPoint(30, 0), 2, new IntPoint(40, 10));
+				TestDistance(20, test, 2, new IntPoint(40, 10), 3, new IntPoint(30, 0));
+				TestDistance(-60, test, 0, new IntPoint(0, 10), 2, new IntPoint(40, 10));
+				TestDistance(60, test, 2, new IntPoint(40, 10), 0, new IntPoint(0, 10));
+				TestDistance(-20, test, 0, new IntPoint(0, 10), 3, new IntPoint(10, 0));
+				TestDistance(20, test, 3, new IntPoint(10, 0), 0, new IntPoint(0, 10));
+				TestDistance(-50, test, 0, new IntPoint(0, 5), 2, new IntPoint(40, 5));
+				TestDistance(50, test, 2, new IntPoint(40, 5), 0, new IntPoint(0, 5));
+				TestDistance(79, test, 1, new IntPoint(21, 40), 3, new IntPoint(20, 0));
+				TestDistance(-79, test, 1, new IntPoint(19, 40), 3, new IntPoint(20, 0));
 			}
 
 			{
@@ -253,6 +253,15 @@ namespace MatterHackers.MatterSlice.Tests
 
 				TestCorrectCrossings(test, new IntPoint(624, 251), new IntPoint(373, 142), 0, 3);
 			}
+		}
+
+		private void TestDistance(int expectedDistance, Polygon test, int startEdgeIndex, IntPoint startPosition, int endEdgeIndex, IntPoint endPosition)
+		{
+			Assert.AreEqual(expectedDistance, test.GetShortestDistanceAround(startEdgeIndex, startPosition, endEdgeIndex, endPosition));
+
+			var network = new IntPointPathNetwork(test);
+			var solver = new PathSolver<IntPointNode>();
+			//Path<IntPointNode> p = solver.FindPath(new IntPointNode(new IntPoint(10, 0)), new IntPointNode(new IntPoint(30, 0)), network, true);
 		}
 
 		private void TestCorrectCrossings(Polygon poly, IntPoint start, IntPoint end, int expectedStartIndex, int expectedEndIndex)

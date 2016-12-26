@@ -116,6 +116,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="clipper.cs" />
+    <Compile Include="Pathfinding\Datastructures\AStarStack.cs" />
+    <Compile Include="Pathfinding\Interfaces\IPathNetwork.cs" />
+    <Compile Include="Pathfinding\Interfaces\IPathNode.cs" />
+    <Compile Include="Pathfinding\Interfaces\IPoint.cs" />
+    <Compile Include="Pathfinding\Interfaces\PathLink.cs" />
+    <Compile Include="Pathfinding\IntPointPathing\IntPointNode.cs" />
+    <Compile Include="Pathfinding\IntPointPathing\IntPointPathNetwork.cs" />
+    <Compile Include="Pathfinding\Path.cs" />
+    <Compile Include="Pathfinding\PathSolver.cs" />
     <Compile Include="utils\QuadTreeAccelerators.cs" />
     <Compile Include="ExtruderLayers.cs" />
     <Compile Include="GCodePathConfig.cs" />

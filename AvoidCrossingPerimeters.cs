@@ -97,24 +97,33 @@ namespace MatterHackers.MatterSlice
 			Crossings.Sort(new MatterHackers.MatterSlice.PolygonsHelper.DirectionSorter(startPoint, endPoint));
 
 			// remove duplicates
-			for(int i=0; i<Crossings.Count-1; i++)
+			for (int i = 0; i < Crossings.Count - 1; i++)
 			{
-				while(i+1 < Crossings.Count
-					&& (Crossings[i].Item3 - Crossings[i+1].Item3).LengthSquared() < 4)
+				while (i + 1 < Crossings.Count
+					&& (Crossings[i].Item3 - Crossings[i + 1].Item3).LengthSquared() < 4)
 				{
 					Crossings.RemoveAt(i);
 				}
 			}
 
-			// remove the start and end point if they are in the list
-			if (Crossings.Count > 0 && (Crossings[0].Item3 - startPoint).LengthSquared() < 4)
+			if(Crossings.Count == 1)
 			{
-				Crossings.RemoveAt(0);
+				Crossings.Clear();
 			}
 
-			if (Crossings.Count > 0 && (Crossings[Crossings.Count-1].Item3 - endPoint).LengthSquared() < 4)
+			// remove the start and end point if they are in the list
+			if (Crossings.Count > 0
+				&& pathThatIsInside.Count > 0
+				&& Crossings[0].Item3 == pathThatIsInside[0])
 			{
-				Crossings.RemoveAt(Crossings.Count - 1);
+				pathThatIsInside.RemoveAt(0);
+			}
+
+			if (Crossings.Count > 0 
+				&& addEndpoint
+				&& Crossings[Crossings.Count-1].Item3 == endPoint)
+			{
+				addEndpoint = false;
 			}
 
 			// if crossing are 0 
@@ -155,9 +164,13 @@ namespace MatterHackers.MatterSlice
 				{
 					interator = RingArrayIterator(crossingStart.Item2, crossingEnd.Item2, BoundaryPolygons[crossingStart.Item1].Count, false);
 				}
-				foreach (int i in interator)
+
+				if (crossingStart.Item3 != crossingEnd.Item3)
 				{
-					pathThatIsInside.Add(BoundaryPolygons[crossingStart.Item1][i]);
+					foreach (int i in interator)
+					{
+						pathThatIsInside.Add(BoundaryPolygons[crossingStart.Item1][i]);
+					}
 				}
 
 				// add the last intersection for this crossing set
