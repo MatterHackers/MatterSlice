@@ -26,6 +26,7 @@ namespace MatterHackers.MatterSlice
 {
 	using System;
 	using System.IO;
+	using Pathfinding;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
@@ -48,7 +49,6 @@ namespace MatterHackers.MatterSlice
 			indexOfMaxX = new int[boundaryPolygons.Count];
 		}
 
-		public long DirectionArround { get; private set; }
 		static bool saveDebugData = false;
 		bool boundary = false;
 		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside)
@@ -150,26 +150,18 @@ namespace MatterHackers.MatterSlice
 			{
 				Tuple<int, int, IntPoint> crossingStart = Crossings[crossingPair.Item1];
 				Tuple<int, int, IntPoint> crossingEnd = Crossings[crossingPair.Item2];
-				DirectionArround = BoundaryPolygons[crossingStart.Item1].GetShortestDistanceAround(crossingStart.Item2, crossingStart.Item3, crossingEnd.Item2, crossingEnd.Item3);
+
+				var network = new IntPointPathNetwork(BoundaryPolygons[crossingStart.Item1]);
+				Path<IntPointNode> path = network.FindPath(crossingStart.Item2, crossingStart.Item3, crossingEnd.Item2, crossingEnd.Item3);
+
 				// the start intersection for this crossing set
 				pathThatIsInside.Add(crossingStart.Item3);
 
-				// add all the points between
-				IEnumerable<int> interator = null;
-				if (DirectionArround > 0)
-				{
-					interator = RingArrayIterator(crossingStart.Item2 + 1, crossingEnd.Item2 + 1, BoundaryPolygons[crossingStart.Item1].Count, true);
-				}
-				else
-				{
-					interator = RingArrayIterator(crossingStart.Item2, crossingEnd.Item2, BoundaryPolygons[crossingStart.Item1].Count, false);
-				}
-
 				if (crossingStart.Item3 != crossingEnd.Item3)
 				{
-					foreach (int i in interator)
+					foreach (var node in path.nodes)
 					{
-						pathThatIsInside.Add(BoundaryPolygons[crossingStart.Item1][i]);
+						pathThatIsInside.Add(node.LocalPoint);
 					}
 				}
 
@@ -240,20 +232,6 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-			}
-		}
-
-		public IEnumerable<int> RingArrayIterator(int start, int end, int count, bool increment)
-		{
-			int incrementAmount = 1;
-			if (!increment)
-			{
-				start += count;
-				incrementAmount = -1;
-			}
-			for (int i = start; (i % count) != (end % count); i += incrementAmount)
-			{
-				yield return i % count;
 			}
 		}
 

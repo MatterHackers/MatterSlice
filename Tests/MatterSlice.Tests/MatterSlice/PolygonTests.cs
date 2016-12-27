@@ -257,8 +257,6 @@ namespace MatterHackers.MatterSlice.Tests
 
 		private void TestDistance(Polygon test, int startEdgeIndex, IntPoint startPosition, int endEdgeIndex, IntPoint endPosition, int expectedDistance)
 		{
-			Assert.AreEqual(expectedDistance, test.GetShortestDistanceAround(startEdgeIndex, startPosition, endEdgeIndex, endPosition));
-
 			var network = new IntPointPathNetwork(test);
 			Path<IntPointNode> path = network.FindPath(startEdgeIndex, startPosition, endEdgeIndex, endPosition);
 			Assert.AreEqual(Math.Abs(expectedDistance), path.PathLength);

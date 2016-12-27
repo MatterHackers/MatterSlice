@@ -244,48 +244,6 @@ namespace MatterHackers.MatterSlice
 			return result;
 		}
 
-		public static long GetShortestDistanceAround(this Polygon polygon, int startEdgeIndex, IntPoint startPosition, int endEdgeIndex, IntPoint endPosition)
-		{
-			if (polygon.Count > 2)
-			{
-				int lastPositiveIndex = startEdgeIndex;
-				// Get distance to start point
-				long positiveDistance = (polygon[(startEdgeIndex + 1) % polygon.Count] - startPosition).Length();
-				long totalDistance = polygon.PolygonLength();
-				bool first = true;
-				for (int i = 0; i < polygon.Count; i++)
-				{
-					int positiveIndex = (lastPositiveIndex + 1) % polygon.Count;
-					if (!first)
-					{
-						positiveDistance += (polygon[positiveIndex] - polygon[lastPositiveIndex]).Length();
-					}
-					if (lastPositiveIndex == endEdgeIndex)
-					{
-						positiveDistance -= (polygon[positiveIndex] - endPosition).Length();
-						if (positiveDistance < 0)
-						{
-							return positiveDistance;
-						}
-						break;
-					}
-
-					first = false;
-
-					lastPositiveIndex = positiveIndex;
-				}
-
-				if (positiveDistance < totalDistance / 2)
-				{
-					return positiveDistance;
-				}
-
-				return -(totalDistance - positiveDistance);
-			}
-
-			return 0;
-		}
-
 		public static bool Inside(this Polygon polygon, IntPoint testPoint)
 		{
 			int positionOnPolygon = Clipper.PointInPolygon(testPoint, polygon);
