@@ -124,7 +124,6 @@
     <Compile Include="Pathfinding\IntPointPathing\IntPointNode.cs" />
     <Compile Include="Pathfinding\IntPointPathing\IntPointPathNetwork.cs" />
     <Compile Include="Pathfinding\Path.cs" />
-    <Compile Include="Pathfinding\PathSolver.cs" />
     <Compile Include="utils\QuadTreeAccelerators.cs" />
     <Compile Include="ExtruderLayers.cs" />
     <Compile Include="GCodePathConfig.cs" />

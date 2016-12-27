@@ -21,7 +21,7 @@ namespace Pathfinding
 {
     public interface IPathNode : IPoint, IComparable
     {
-        float BaseCost {
+        float CostMultiplier {
             get;
         }
 

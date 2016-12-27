@@ -21,7 +21,21 @@ namespace Pathfinding
 {
     public class PathLink : IEnumerable<IPathNode>
     {
-        public float Distance;
+		float distance;
+
+		public float Distance
+		{
+			get { return distance; }
+			set
+			{
+				if (value == 0)
+				{
+					int a = 0;
+				}
+
+				distance = value;
+			}
+		}
         public IPathNode nodeA;
         public IPathNode nodeB;
 

@@ -4,46 +4,148 @@ using MSClipperLib;
 
 namespace Pathfinding
 {
+	using Datastructures;
 	using MatterHackers.MatterSlice;
 	using Polygon = List<IntPoint>;
 
 	public class IntPointPathNetwork : IPathNetwork<IntPointNode>
 	{
 		private static int allocCount = 0;
-		private static int OFFSET = 10000;
 
-		private Dictionary<int, IntPointNode> _nodes = new Dictionary<int, IntPointNode>(100000);
-		private IPathNode _pathGoal = null;
-		private IPathNode _pathStart = null;
-
-		public IntPointPathNetwork(string data)
-		{
-			Setup(data, 10, 10);
-		}
+		private List<IntPointNode> Nodes = new List<IntPointNode>();
+		private IPathNode pathGoal = null;
+		private IPathNode pathStart = null;
 
 		public IntPointPathNetwork(Polygon data)
 		{
-			Setup(data);
+			for (int i = 0; i < data.Count; i++)
+			{
+				IntPointNode node = new IntPointNode(data[i]);
+				node.CostMultiplier = 1;
+				Nodes.Add(node);
+			}
+
+			int lastLinkIndex = data.Count - 1;
+			for (int i = 0; i < data.Count; i++)
+			{
+				AddPathLink(Nodes[lastLinkIndex], Nodes[i]);
+				lastLinkIndex = i;
+			}
 		}
 
-		public IntPointPathNetwork(string data, int width, int height)
+		public Path<IntPointNode> FindPath(int startEdgeIndex, IntPoint startPosition, int endEdgeIndex, IntPoint endPosition)
 		{
-			Setup(data, width, height);
+			var startNode = new IntPointNode(startPosition);
+			AddPathLink(startNode, Nodes[startEdgeIndex]);
+			AddPathLink(startNode, Nodes[(startEdgeIndex + 1) % Nodes.Count]);
+
+			var endNode = new IntPointNode(endPosition);
+			AddPathLink(endNode, Nodes[endEdgeIndex]);
+			AddPathLink(endNode, Nodes[(endEdgeIndex + 1) % Nodes.Count]);
+
+			if (startEdgeIndex == endEdgeIndex)
+			{
+				AddPathLink(startNode, endNode);
+			}
+
+			Nodes.Add(startNode);
+			Nodes.Add(endNode);
+
+			var path = FindPath(startNode, endNode, true);
+
+			Remove(startNode);
+			Remove(endNode);
+
+			return path;
 		}
 
-		public IntPointNode GetNode(int pX, int pY)
+		public Path<IntPointNode> FindPath(IPathNode start, IPathNode goal, bool reset)
 		{
-			return _nodes[pX + pY * OFFSET];
-		}
+			if (start == null || goal == null)
+			{
+				return new Path<IntPointNode>(new IntPointNode[] { }, 0f, PathStatus.DESTINATION_UNREACHABLE, 0);
+			}
 
-		public IntPointNode GetNode(IPoint pPoint)
-		{
-			return _nodes[pPoint.GetHashCode()];
+			if (start == goal)
+			{
+				return new Path<IntPointNode>(new IntPointNode[] { }, 0f, PathStatus.ALREADY_THERE, 0);
+			}
+
+			int testCount = 0;
+
+			if (reset)
+			{
+				Reset();
+			}
+
+			start.IsStartNode = true;
+			goal.IsGoalNode = true;
+			List<IntPointNode> resultNodeList = new List<IntPointNode>();
+
+			IPathNode currentNode = start;
+			IPathNode goalNode = goal;
+
+			currentNode.Visited = true;
+			currentNode.LinkLeadingHere = null;
+			AStarStack nodesToVisit = new AStarStack();
+			PathStatus pathResult = PathStatus.NOT_CALCULATED_YET;
+			testCount = 1;
+
+			while (pathResult == PathStatus.NOT_CALCULATED_YET)
+			{
+				foreach (PathLink l in currentNode.Links)
+				{
+					IPathNode otherNode = l.GetOtherNode(currentNode);
+
+					if (!otherNode.Visited)
+					{
+						TryQueueNewNode(otherNode, l, nodesToVisit, goalNode);
+					}
+				}
+
+				if (nodesToVisit.Count == 0)
+				{
+					pathResult = PathStatus.DESTINATION_UNREACHABLE;
+				}
+				else
+				{
+					currentNode = nodesToVisit.Pop();
+					testCount++;
+
+					// Console.WriteLine("testing new node: " + (currentNode as TileNode).localPoint);
+					currentNode.Visited = true;
+
+					if (currentNode == goalNode)
+					{
+						pathResult = PathStatus.FOUND_GOAL;
+					}
+				}
+			}
+
+			// Path finished, collect
+			float tLength = 0;
+
+			if (pathResult == PathStatus.FOUND_GOAL)
+			{
+				tLength = currentNode.PathCostHere;
+
+				while (currentNode != start)
+				{
+					resultNodeList.Add((IntPointNode)currentNode);
+					currentNode = currentNode.LinkLeadingHere.GetOtherNode(currentNode);
+				}
+
+				resultNodeList.Add((IntPointNode)currentNode);
+				resultNodeList.Reverse();
+			}
+
+			return new Path<IntPointNode>(resultNodeList.ToArray(), tLength, pathResult, testCount);
 		}
 
 		public void Reset()
 		{
-			foreach (IPathNode node in _nodes.Values)
+			Console.WriteLine("Reset " + Nodes.Count + " nodes");
+			foreach (IPathNode node in Nodes)
 			{
 				node.IsGoalNode = false;
 				node.IsStartNode = false;
@@ -52,83 +154,39 @@ namespace Pathfinding
 				node.Visited = false;
 				node.LinkLeadingHere = null;
 			}
-			Console.WriteLine("Reset " + _nodes.Values.Count + " nodes");
 		}
 
 		public void SetGoal(IPoint pPosition)
 		{
-			_pathGoal = _nodes[pPosition.GetHashCode()];
-			_pathGoal.IsGoalNode = true;
+			pathGoal = Nodes[pPosition.GetHashCode()];
+			pathGoal.IsGoalNode = true;
 		}
 
 		public void SetStart(IPoint pPosition)
 		{
-			_pathStart = _nodes[pPosition.GetHashCode()];
-			_pathStart.IsStartNode = true;
-		}
-
-		internal void Setup(Polygon data)
-		{
-			for (int i = 0; i < data.Count; i++)
-			{
-				IntPointNode n = new IntPointNode(data[i]);
-				n.number = 1;
-				_nodes.Add((int)n.localPoint.X + (int)n.localPoint.Y * OFFSET, n);
-			}
-		}
-
-		internal void Setup(string data, int width, int height)
-		{
-			string[] values = data.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-
-			//Console.WriteLine("value count " + values.Length);
-			for (int i = 0; i < values.Length; i++)
-			{
-				IntPointNode n = new IntPointNode(i % height, i / width);
-				n.number = Convert.ToInt32(values[i]);
-				_nodes.Add((int)n.localPoint.X + (int)n.localPoint.Y * OFFSET, n);
-			}
-
-			int size = (width * height);
-			for (int i = 0; i < size; i++)
-			{
-				int x = i % height;
-				int y = i / width;
-				// Console.WriteLine("setting links for " + x + ", " + y + ", i " + i);
-				IntPointNode start = GetNode(x, y);
-				IntPointNode outputNode;
-
-				if (TryGetNode(x + 1, y, out outputNode))
-				{
-					AddPathLink(start, outputNode);
-				}
-
-				if (TryGetNode(x - 1, y, out outputNode))
-				{
-					AddPathLink(start, outputNode);
-				}
-
-				if (TryGetNode(x, y + 1, out outputNode))
-				{
-					AddPathLink(start, outputNode);
-				}
-
-				if (TryGetNode(x, y - 1, out outputNode))
-				{
-					AddPathLink(start, outputNode);
-				}
-			}
-		}
-
-		internal bool TryGetNode(int pX, int pY, out IntPointNode outputNode)
-		{
-			return _nodes.TryGetValue(pX + pY * OFFSET, out outputNode);
+			pathStart = Nodes[pPosition.GetHashCode()];
+			pathStart.IsStartNode = true;
 		}
 
 		private static void IncAlloc()
 		{
 			allocCount++;
 			Console.WriteLine("Alloc count: " + allocCount);
+		}
+
+		private static void TryQueueNewNode(IPathNode pNewNode, PathLink pLink, AStarStack pNodesToVisit, IPathNode pGoal)
+		{
+			IPathNode previousNode = pLink.GetOtherNode(pNewNode);
+			float linkDistance = pLink.Distance;
+			float newPathCost = previousNode.PathCostHere + pNewNode.CostMultiplier * linkDistance;
+
+			if (pNewNode.LinkLeadingHere == null || (pNewNode.PathCostHere > newPathCost))
+			{
+				pNewNode.DistanceToGoal = pNewNode.DistanceTo(pGoal) * 2f;
+				pNewNode.PathCostHere = newPathCost;
+				pNewNode.LinkLeadingHere = pLink;
+				pNodesToVisit.Push(pNewNode);
+			}
 		}
 
 		private void AddPathLink(IntPointNode nodeA, IntPointNode nodeB)
@@ -140,9 +198,21 @@ namespace Pathfinding
 				link = new PathLink(nodeA, nodeB);
 			}
 
-			link.Distance = (nodeA.localPoint - nodeB.localPoint).Length();
+			link.Distance = (nodeA.LocalPoint - nodeB.LocalPoint).Length();
 			nodeA.Links.Add(link);
 			nodeB.Links.Add(link);
+		}
+
+		private void Remove(IntPointNode nodeToRemove)
+		{
+			for (int i = nodeToRemove.Links.Count - 1; i >= 0; i--)
+			{
+				var link = nodeToRemove.Links[i];
+				var otherNode = link.nodeA == nodeToRemove ? link.nodeB : link.nodeA;
+				nodeToRemove.Links.Remove(link);
+				otherNode.Links.Remove(link);
+			}
+			Nodes.Remove(nodeToRemove);
 		}
 	}
 }

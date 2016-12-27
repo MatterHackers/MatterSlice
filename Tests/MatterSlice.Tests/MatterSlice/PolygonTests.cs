@@ -191,18 +191,18 @@ namespace MatterHackers.MatterSlice.Tests
 				TestCorrectCrossings(test, new IntPoint(19, 41), new IntPoint(20, -1), 2, 0);
 				TestCorrectCrossings(test, new IntPoint(20, -1), new IntPoint(19, 41), 0, 2);
 
-				TestDistance(20, test, 0, new IntPoint(10, 0), 0, new IntPoint(30, 0));
-				TestDistance(-20, test, 0, new IntPoint(30, 0), 0, new IntPoint(10, 0));
-				TestDistance(20, test, 0, new IntPoint(30, 0), 1, new IntPoint(40, 10));
-				TestDistance(-20, test, 1, new IntPoint(40, 10), 0, new IntPoint(30, 0));
-				TestDistance(60, test, 3, new IntPoint(0, 10), 1, new IntPoint(40, 10));
-				TestDistance(-60, test, 1, new IntPoint(40, 10), 3, new IntPoint(0, 10));
-				TestDistance(20, test, 3, new IntPoint(0, 10), 0, new IntPoint(10, 0));
-				TestDistance(-20, test, 0, new IntPoint(10, 0), 3, new IntPoint(0, 10));
-				TestDistance(50, test, 3, new IntPoint(0, 5), 1, new IntPoint(40, 5));
-				TestDistance(-50, test, 1, new IntPoint(40, 5), 3, new IntPoint(0, 5));
-				TestDistance(-79, test, 2, new IntPoint(21, 40), 0, new IntPoint(20, 0));
-				TestDistance(79, test, 2, new IntPoint(19, 40), 0, new IntPoint(20, 0));
+				TestDistance(test, 0, new IntPoint(10, 0), 0, new IntPoint(30, 0), 20);
+				TestDistance(test, 0, new IntPoint(30, 0), 0, new IntPoint(10, 0), -20);
+				TestDistance(test, 0, new IntPoint(30, 0), 1, new IntPoint(40, 10), 20);
+				TestDistance(test, 1, new IntPoint(40, 10), 0, new IntPoint(30, 0), -20);
+				TestDistance(test, 3, new IntPoint(0, 10), 1, new IntPoint(40, 10), 60);
+				TestDistance(test, 1, new IntPoint(40, 10), 3, new IntPoint(0, 10), -60);
+				TestDistance(test, 3, new IntPoint(0, 10), 0, new IntPoint(10, 0), 20);
+				TestDistance(test, 0, new IntPoint(10, 0), 3, new IntPoint(0, 10), -20);
+				TestDistance(test, 3, new IntPoint(0, 5), 1, new IntPoint(40, 5), 50);
+				TestDistance(test, 1, new IntPoint(40, 5), 3, new IntPoint(0, 5), -50);
+				TestDistance(test, 2, new IntPoint(21, 40), 0, new IntPoint(20, 0), -79);
+				TestDistance(test, 2, new IntPoint(19, 40), 0, new IntPoint(20, 0), 79);
 			}
 
 			{
@@ -220,18 +220,18 @@ namespace MatterHackers.MatterSlice.Tests
 				test.Add(new IntPoint(40, 40));
 				test.Add(new IntPoint(40, 0));
 
-				TestDistance(-20, test, 3, new IntPoint(10, 0), 3, new IntPoint(30, 0));
-				TestDistance(20, test, 3, new IntPoint(30, 0), 3, new IntPoint(10, 0));
-				TestDistance(-20, test, 3, new IntPoint(30, 0), 2, new IntPoint(40, 10));
-				TestDistance(20, test, 2, new IntPoint(40, 10), 3, new IntPoint(30, 0));
-				TestDistance(-60, test, 0, new IntPoint(0, 10), 2, new IntPoint(40, 10));
-				TestDistance(60, test, 2, new IntPoint(40, 10), 0, new IntPoint(0, 10));
-				TestDistance(-20, test, 0, new IntPoint(0, 10), 3, new IntPoint(10, 0));
-				TestDistance(20, test, 3, new IntPoint(10, 0), 0, new IntPoint(0, 10));
-				TestDistance(-50, test, 0, new IntPoint(0, 5), 2, new IntPoint(40, 5));
-				TestDistance(50, test, 2, new IntPoint(40, 5), 0, new IntPoint(0, 5));
-				TestDistance(79, test, 1, new IntPoint(21, 40), 3, new IntPoint(20, 0));
-				TestDistance(-79, test, 1, new IntPoint(19, 40), 3, new IntPoint(20, 0));
+				TestDistance(test, 3, new IntPoint(10, 0), 3, new IntPoint(30, 0), -20);
+				TestDistance(test, 3, new IntPoint(30, 0), 3, new IntPoint(10, 0), 20);
+				TestDistance(test, 3, new IntPoint(30, 0), 2, new IntPoint(40, 10), -20);
+				TestDistance(test, 2, new IntPoint(40, 10), 3, new IntPoint(30, 0), 20);
+				TestDistance(test, 0, new IntPoint(0, 10), 2, new IntPoint(40, 10), -60);
+				TestDistance(test, 2, new IntPoint(40, 10), 0, new IntPoint(0, 10), 60);
+				TestDistance(test, 0, new IntPoint(0, 10), 3, new IntPoint(10, 0), -20);
+				TestDistance(test, 3, new IntPoint(10, 0), 0, new IntPoint(0, 10), 20);
+				TestDistance(test, 0, new IntPoint(0, 5), 2, new IntPoint(40, 5), -50);
+				TestDistance(test, 2, new IntPoint(40, 5), 0, new IntPoint(0, 5), 50);
+				TestDistance(test, 1, new IntPoint(21, 40), 3, new IntPoint(20, 0), 79);
+				TestDistance(test, 1, new IntPoint(19, 40), 3, new IntPoint(20, 0), -79);
 			}
 
 			{
@@ -255,13 +255,13 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		private void TestDistance(int expectedDistance, Polygon test, int startEdgeIndex, IntPoint startPosition, int endEdgeIndex, IntPoint endPosition)
+		private void TestDistance(Polygon test, int startEdgeIndex, IntPoint startPosition, int endEdgeIndex, IntPoint endPosition, int expectedDistance)
 		{
 			Assert.AreEqual(expectedDistance, test.GetShortestDistanceAround(startEdgeIndex, startPosition, endEdgeIndex, endPosition));
 
 			var network = new IntPointPathNetwork(test);
-			var solver = new PathSolver<IntPointNode>();
-			//Path<IntPointNode> p = solver.FindPath(new IntPointNode(new IntPoint(10, 0)), new IntPointNode(new IntPoint(30, 0)), network, true);
+			Path<IntPointNode> path = network.FindPath(startEdgeIndex, startPosition, endEdgeIndex, endPosition);
+			Assert.AreEqual(Math.Abs(expectedDistance), path.PathLength);
 		}
 
 		private void TestCorrectCrossings(Polygon poly, IntPoint start, IntPoint end, int expectedStartIndex, int expectedEndIndex)

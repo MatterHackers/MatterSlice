@@ -8,134 +8,41 @@ namespace Pathfinding
 {
 	public class IntPointNode : IPathNode
 	{
-		public int number = 0;
-
-		private IntPoint _localPoint;
-		private float _costHere;
-		private float _distanceToGoal;
-		private bool _isStartNode = false;
-		private bool _isGoalNode = false;
-		private bool _visited = false;
-		private List<PathLink> _links = new List<PathLink>();
-		private PathLink _previousLink = null;
-
 		#region IPathNode Members
 
 		public IntPointNode(int pX, int pY)
 		{
-			_localPoint = new IntPoint(pX, pY);
+			LocalPoint = new IntPoint(pX, pY);
 		}
 
 		public IntPointNode(IntPoint intPoint)
 		{
-			_localPoint = intPoint;
+			LocalPoint = intPoint;
 		}
 
-		public IntPoint localPoint
-		{
-			get
-			{
-				return _localPoint;
-			}
-		}
+		public IntPoint LocalPoint { get; private set; }
 
-		public float PathCostHere
-		{
-			get
-			{
-				return _costHere;
-			}
-			set
-			{
-				_costHere = value;
-			}
-		}
+		public float PathCostHere { get; set; }
 
-		public float DistanceToGoal
-		{
-			get
-			{
-				return _distanceToGoal;
-			}
-			set
-			{
-				_distanceToGoal = value;
-			}
-		}
+		public float DistanceToGoal { get; set; }
 
-		public float BaseCost
-		{
-			get
-			{
-				return number * 10;
-			}
-		}
+		public float CostMultiplier { get; set; } = 1;
 
-		public bool IsStartNode
-		{
-			get
-			{
-				return _isStartNode;
-			}
-			set
-			{
-				_isStartNode = value;
-			}
-		}
+		public bool IsStartNode { get; set; }
 
-		public bool IsGoalNode
-		{
-			get
-			{
-				return _isGoalNode;
-			}
-			set
-			{
-				_isGoalNode = value;
-			}
-		}
+		public bool IsGoalNode { get; set; }
 
-		public bool Visited
-		{
-			get
-			{
-				return _visited;
-			}
-			set
-			{
-				_visited = value;
-			}
-		}
+		public bool Visited { get; set; }
 
-		public List<PathLink> Links
-		{
-			get
-			{
-				return _links;
-			}
-			set
-			{
-				_links = value;
-			}
-		}
+		public List<PathLink> Links { get; private set; } = new List<PathLink>();
 
-		public PathLink LinkLeadingHere
-		{
-			get
-			{
-				return _previousLink;
-			}
-			set
-			{
-				_previousLink = value;
-			}
-		}
+		public PathLink LinkLeadingHere { get; set; }
 
 		public PathLink GetLinkTo(IPathNode pNode)
 		{
-			if (_links != null)
+			if (Links != null)
 			{
-				foreach (PathLink p in _links)
+				foreach (PathLink p in Links)
 				{
 					if (p.Contains(pNode))
 					{
@@ -149,12 +56,12 @@ namespace Pathfinding
 
 		public void AddLink(PathLink pLink)
 		{
-			_links.Add(pLink);
+			Links.Add(pLink);
 		}
 
 		public void RemoveLink(PathLink pLink)
 		{
-			_links.Remove(pLink);
+			Links.Remove(pLink);
 		}
 
 		#endregion
@@ -166,7 +73,7 @@ namespace Pathfinding
 			if (pPoint is IntPointNode)
 			{
 				IntPointNode otherNode = pPoint as IntPointNode;
-				return (_localPoint - otherNode._localPoint).Length();
+				return (LocalPoint - otherNode.LocalPoint).Length();
 			}
 			else {
 				throw new NotImplementedException();
@@ -175,7 +82,7 @@ namespace Pathfinding
 
 		public override int GetHashCode()
 		{
-			return (int)_localPoint.X + (int)(_localPoint.Y * 1000);
+			return (int)LocalPoint.X + (int)(LocalPoint.Y * 1000);
 		}
 
 		#endregion
@@ -205,7 +112,7 @@ namespace Pathfinding
 
 		public virtual long GetUniqueID()
 		{
-			return _localPoint.X ^ _localPoint.Y;
+			return LocalPoint.X ^ LocalPoint.Y;
 		}
 	}
 }
