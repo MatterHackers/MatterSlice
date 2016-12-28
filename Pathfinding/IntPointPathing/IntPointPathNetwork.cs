@@ -33,23 +33,54 @@ namespace Pathfinding
 			}
 		}
 
-		public Path<IntPointNode> FindPath(int startEdgeIndex, IntPoint startPosition, int endEdgeIndex, IntPoint endPosition)
+		public IntPointNode InsertNode(IntPoint newPosition, IntPoint linkToA, IntPoint linkToB)
 		{
-			var startNode = new IntPointNode(startPosition);
-			AddPathLink(startNode, Nodes[startEdgeIndex]);
-			AddPathLink(startNode, Nodes[(startEdgeIndex + 1) % Nodes.Count]);
+			IntPointNode nodeA = FindNode(linkToA);
+			IntPointNode nodeB = FindNode(linkToB);
 
-			var endNode = new IntPointNode(endPosition);
-			AddPathLink(endNode, Nodes[endEdgeIndex]);
-			AddPathLink(endNode, Nodes[(endEdgeIndex + 1) % Nodes.Count]);
-
-			if (startEdgeIndex == endEdgeIndex)
+			if(nodeA != null && nodeB != null)
 			{
-				AddPathLink(startNode, endNode);
+				return InsertNode(newPosition, nodeA, nodeB);
 			}
 
-			Nodes.Add(startNode);
-			Nodes.Add(endNode);
+			return null;
+		}
+		
+		public IntPointNode InsertNode(IntPoint newPosition, IntPointNode nodeA, IntPointNode nodeB)
+		{
+			var newNode = new IntPointNode(newPosition);
+			AddPathLink(newNode, nodeA);
+			AddPathLink(newNode, nodeB);
+
+			return newNode;
+		}
+
+		public IntPointNode FindNode(IntPoint position)
+		{
+			foreach(var node in Nodes)
+			{
+				if(node.Position == position)
+				{
+					return node;
+				}
+			}
+
+			return null;
+		}
+
+		public Path<IntPointNode> FindPath(IntPoint startPosition, IntPoint startLinkA, IntPoint startLinkB, 
+			IntPoint endPosition, IntPoint endLinkA, IntPoint endLinkB)
+		{
+			var startNode = InsertNode(startPosition, startLinkA, startLinkB);
+			var endNode = InsertNode(endPosition, endLinkA, endLinkB);
+
+			// if startPosition and endPosition are on the same line
+			if ((startLinkA == endLinkA && startLinkB == endLinkB)
+				|| (startLinkA == endLinkB && startLinkB == endLinkA))
+			{
+				// connect them
+				AddPathLink(startNode, endNode);
+			}
 
 			var path = FindPath(startNode, endNode, true);
 
@@ -189,7 +220,7 @@ namespace Pathfinding
 			}
 		}
 
-		private void AddPathLink(IntPointNode nodeA, IntPointNode nodeB)
+		private PathLink AddPathLink(IntPointNode nodeA, IntPointNode nodeB)
 		{
 			PathLink link = nodeB.GetLinkTo(nodeA);
 
@@ -198,9 +229,11 @@ namespace Pathfinding
 				link = new PathLink(nodeA, nodeB);
 			}
 
-			link.Distance = (nodeA.LocalPoint - nodeB.LocalPoint).Length();
+			link.Distance = (nodeA.Position - nodeB.Position).Length();
 			nodeA.Links.Add(link);
 			nodeB.Links.Add(link);
+
+			return link;
 		}
 
 		private void Remove(IntPointNode nodeToRemove)

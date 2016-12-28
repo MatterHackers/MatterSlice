@@ -35,18 +35,9 @@ namespace MatterHackers.MatterSlice
 		public Polygons BoundaryPolygons;
 		public List<Tuple<int, int, IntPoint>> Crossings = new List<Tuple<int, int, IntPoint>>();
 
-		private int[] indexOfMaxX;
-		private int[] indexOfMinX;
-		private long[] maxXPosition;
-		private long[] minXPosition;
-
 		public AvoidCrossingPerimeters(Polygons boundaryPolygons)
 		{
 			this.BoundaryPolygons = boundaryPolygons;
-			minXPosition = new long[boundaryPolygons.Count];
-			maxXPosition = new long[boundaryPolygons.Count];
-			indexOfMinX = new int[boundaryPolygons.Count];
-			indexOfMaxX = new int[boundaryPolygons.Count];
 		}
 
 		static bool saveDebugData = false;
@@ -152,7 +143,14 @@ namespace MatterHackers.MatterSlice
 				Tuple<int, int, IntPoint> crossingEnd = Crossings[crossingPair.Item2];
 
 				var network = new IntPointPathNetwork(BoundaryPolygons[crossingStart.Item1]);
-				Path<IntPointNode> path = network.FindPath(crossingStart.Item2, crossingStart.Item3, crossingEnd.Item2, crossingEnd.Item3);
+
+				IntPoint startLinkA = BoundaryPolygons[crossingStart.Item1][crossingStart.Item2];
+				IntPoint startLinkB = BoundaryPolygons[crossingStart.Item1][(crossingStart.Item2 + 1) % BoundaryPolygons[crossingStart.Item1].Count];
+
+				IntPoint endLinkA = BoundaryPolygons[crossingEnd.Item1][crossingEnd.Item2];
+				IntPoint endLinkB = BoundaryPolygons[crossingEnd.Item1][(crossingEnd.Item2 + 1) % BoundaryPolygons[crossingEnd.Item1].Count];
+
+				Path<IntPointNode> path = network.FindPath(crossingStart.Item3, startLinkA, startLinkB, crossingEnd.Item3, endLinkA, endLinkB);
 
 				// the start intersection for this crossing set
 				pathThatIsInside.Add(crossingStart.Item3);
@@ -161,7 +159,7 @@ namespace MatterHackers.MatterSlice
 				{
 					foreach (var node in path.nodes)
 					{
-						pathThatIsInside.Add(node.LocalPoint);
+						pathThatIsInside.Add(node.Position);
 					}
 				}
 
@@ -213,7 +211,7 @@ namespace MatterHackers.MatterSlice
 				// check if we are looking for a new set
 				if(startIndex == -1)
 				{
-					// this is the strat of the new set
+					// this is the start of the new set
 					startIndex = i;
 				}
 				else // looking for the end of a set
@@ -221,10 +219,19 @@ namespace MatterHackers.MatterSlice
 					// found the end of the same polygon
 					if(crossings[startIndex].Item1 == crossings[i].Item1)
 					{
-						// return the set
-						yield return new Tuple<int, int>(startIndex, i);
-						// we are now looking for a new set
-						startIndex = -1;
+						// if the midpoint of this segment is inside the polygon
+						if (PointIsInsideBoundary((crossings[startIndex].Item3 + crossings[i].Item3) / 2))
+						{
+							// we set the start to the end and keep looking
+							startIndex = i;
+						}
+						else
+						{
+							// return the set
+							yield return new Tuple<int, int>(startIndex, i);
+							// we are now looking for a new set
+							startIndex = i;
+						}
 					}
 					else // didn't find an end, consider it a new start
 					{

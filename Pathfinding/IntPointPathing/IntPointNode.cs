@@ -12,15 +12,15 @@ namespace Pathfinding
 
 		public IntPointNode(int pX, int pY)
 		{
-			LocalPoint = new IntPoint(pX, pY);
+			Position = new IntPoint(pX, pY);
 		}
 
 		public IntPointNode(IntPoint intPoint)
 		{
-			LocalPoint = intPoint;
+			Position = intPoint;
 		}
 
-		public IntPoint LocalPoint { get; private set; }
+		public IntPoint Position { get; private set; }
 
 		public float PathCostHere { get; set; }
 
@@ -73,7 +73,7 @@ namespace Pathfinding
 			if (pPoint is IntPointNode)
 			{
 				IntPointNode otherNode = pPoint as IntPointNode;
-				return (LocalPoint - otherNode.LocalPoint).Length();
+				return (Position - otherNode.Position).Length();
 			}
 			else {
 				throw new NotImplementedException();
@@ -82,7 +82,7 @@ namespace Pathfinding
 
 		public override int GetHashCode()
 		{
-			return (int)LocalPoint.X + (int)(LocalPoint.Y * 1000);
+			return (int)Position.X + (int)(Position.Y * 1000);
 		}
 
 		#endregion
@@ -112,7 +112,7 @@ namespace Pathfinding
 
 		public virtual long GetUniqueID()
 		{
-			return LocalPoint.X ^ LocalPoint.Y;
+			return Position.X ^ Position.Y;
 		}
 	}
 }
