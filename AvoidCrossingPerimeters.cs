@@ -32,148 +32,158 @@ namespace MatterHackers.MatterSlice
 
 	public class AvoidCrossingPerimeters
 	{
+		IntPointPathNetwork network = null;
+
 		public Polygons BoundaryPolygons;
 		public List<Tuple<int, int, IntPoint>> Crossings = new List<Tuple<int, int, IntPoint>>();
 
 		public AvoidCrossingPerimeters(Polygons boundaryPolygons)
 		{
 			this.BoundaryPolygons = boundaryPolygons;
+
+			network = new IntPointPathNetwork();
+			foreach(var polygon in BoundaryPolygons)
+			{
+				network.AddClosedPolygon(polygon);
+			}
 		}
 
 		static bool saveDebugData = false;
 		bool boundary = false;
 		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside)
 		{
-			pathThatIsInside.Clear();
-			if (saveDebugData)
+			using (WayPointsToRemove removePointList = new WayPointsToRemove(network))
 			{
-				using (StreamWriter sw = File.AppendText("test.txt"))
+				pathThatIsInside.Clear();
+				if (saveDebugData)
 				{
-					if (boundary)
+					using (StreamWriter sw = File.AppendText("test.txt"))
 					{
-						string pointsString = BoundaryPolygons.WriteToString();
-						sw.WriteLine(pointsString);
+						if (boundary)
+						{
+							string pointsString = BoundaryPolygons.WriteToString();
+							sw.WriteLine(pointsString);
+						}
+						sw.WriteLine(startPoint.ToString() + "  " + endPoint.ToString());
 					}
-					sw.WriteLine(startPoint.ToString() + "  " + endPoint.ToString());
 				}
-			}
 
-			//Check if we are inside the comb boundaries
-			if (!BoundaryPolygons.PointIsInside(startPoint))
-			{
-				if (!BoundaryPolygons.MovePointInsideBoundary(startPoint, out startPoint))
+				//Check if we are inside the comb boundaries
+				if (!BoundaryPolygons.PointIsInside(startPoint))
 				{
-					//If we fail to move the point inside the comb boundary we need to retract.
-					return false;
+					if (!BoundaryPolygons.MovePointInsideBoundary(startPoint, out startPoint))
+					{
+						//If we fail to move the point inside the comb boundary we need to retract.
+						return false;
+					}
+
+					pathThatIsInside.Add(startPoint);
 				}
 
-				pathThatIsInside.Add(startPoint);
-			}
-
-			bool addEndpoint = false;
-			if (!BoundaryPolygons.PointIsInside(endPoint))
-			{
-				if (!BoundaryPolygons.MovePointInsideBoundary(endPoint, out endPoint))
+				bool addEndpoint = false;
+				if (!BoundaryPolygons.PointIsInside(endPoint))
 				{
-					//If we fail to move the point inside the comb boundary we need to retract.
-					return false;
+					if (!BoundaryPolygons.MovePointInsideBoundary(endPoint, out endPoint))
+					{
+						//If we fail to move the point inside the comb boundary we need to retract.
+						return false;
+					}
+
+					addEndpoint = true;
 				}
 
-				addEndpoint = true;
-			}
-
-			// get all the crossings
-			Crossings.Clear();
-			BoundaryPolygons.FindCrossingPoints(startPoint, endPoint, Crossings);
-			Crossings.Sort(new MatterHackers.MatterSlice.PolygonsHelper.DirectionSorter(startPoint, endPoint));
-
-			// remove duplicates
-			for (int i = 0; i < Crossings.Count - 1; i++)
-			{
-				while (i + 1 < Crossings.Count
-					&& (Crossings[i].Item3 - Crossings[i + 1].Item3).LengthSquared() < 4)
-				{
-					Crossings.RemoveAt(i);
-				}
-			}
-
-			if(Crossings.Count == 1)
-			{
+				// get all the crossings
 				Crossings.Clear();
-			}
+				BoundaryPolygons.FindCrossingPoints(startPoint, endPoint, Crossings);
+				Crossings.Sort(new MatterHackers.MatterSlice.PolygonsHelper.DirectionSorter(startPoint, endPoint));
 
-			// remove the start and end point if they are in the list
-			if (Crossings.Count > 0
-				&& pathThatIsInside.Count > 0
-				&& Crossings[0].Item3 == pathThatIsInside[0])
-			{
-				pathThatIsInside.RemoveAt(0);
-			}
-
-			if (Crossings.Count > 0 
-				&& addEndpoint
-				&& Crossings[Crossings.Count-1].Item3 == endPoint)
-			{
-				addEndpoint = false;
-			}
-
-			// if crossing are 0 
-			//We're not crossing any boundaries. So skip the comb generation.
-			if (Crossings.Count == 0
-				&& !addEndpoint 
-				&& pathThatIsInside.Count == 0)
-			{
-				//Only skip if we didn't move the start and end point.
-				return true;
-			}
-
-			// else
-
-			// add a move to the start of the crossing
-			// try to go CW and CWW take the path that is the shortest and add it to the list
-
-			// Now walk trough the crossings, for every boundary we cross, find the initial cross point and the exit point.
-			// Then add all the points in between to the pointList and continue with the next boundary we will cross,
-			// until there are no more boundaries to cross.
-			// This gives a path from the start to finish curved around the holes that it encounters.
-			// for each pair of crossings
-			foreach(Tuple<int, int> crossingPair in CrossingIterator(Crossings))
-			{
-				Tuple<int, int, IntPoint> crossingStart = Crossings[crossingPair.Item1];
-				Tuple<int, int, IntPoint> crossingEnd = Crossings[crossingPair.Item2];
-
-				var network = new IntPointPathNetwork(BoundaryPolygons[crossingStart.Item1]);
-
-				IntPoint startLinkA = BoundaryPolygons[crossingStart.Item1][crossingStart.Item2];
-				IntPoint startLinkB = BoundaryPolygons[crossingStart.Item1][(crossingStart.Item2 + 1) % BoundaryPolygons[crossingStart.Item1].Count];
-
-				IntPoint endLinkA = BoundaryPolygons[crossingEnd.Item1][crossingEnd.Item2];
-				IntPoint endLinkB = BoundaryPolygons[crossingEnd.Item1][(crossingEnd.Item2 + 1) % BoundaryPolygons[crossingEnd.Item1].Count];
-
-				Path<IntPointNode> path = network.FindPath(crossingStart.Item3, startLinkA, startLinkB, crossingEnd.Item3, endLinkA, endLinkB);
-
-				// the start intersection for this crossing set
-				pathThatIsInside.Add(crossingStart.Item3);
-
-				if (crossingStart.Item3 != crossingEnd.Item3)
+				// remove duplicates
+				for (int i = 0; i < Crossings.Count - 1; i++)
 				{
-					foreach (var node in path.nodes)
+					while (i + 1 < Crossings.Count
+						&& (Crossings[i].Item3 - Crossings[i + 1].Item3).LengthSquared() < 4)
 					{
-						pathThatIsInside.Add(node.Position);
+						Crossings.RemoveAt(i);
 					}
 				}
 
-				// add the last intersection for this crossing set
-				pathThatIsInside.Add(crossingEnd.Item3);
-			}
+				if (Crossings.Count == 1)
+				{
+					Crossings.Clear();
+				}
 
-			// add the end point if needed
-			if (addEndpoint)
-			{
-				pathThatIsInside.Add(endPoint);
-			}
+				// remove the start and end point if they are in the list
+				if (Crossings.Count > 0
+					&& pathThatIsInside.Count > 0
+					&& Crossings[0].Item3 == pathThatIsInside[0])
+				{
+					pathThatIsInside.RemoveAt(0);
+				}
 
-			#if false
+				if (Crossings.Count > 0
+					&& addEndpoint
+					&& Crossings[Crossings.Count - 1].Item3 == endPoint)
+				{
+					addEndpoint = false;
+				}
+
+				// if crossing are 0 
+				//We're not crossing any boundaries. So skip the comb generation.
+				if (Crossings.Count == 0
+					&& !addEndpoint
+					&& pathThatIsInside.Count == 0)
+				{
+					//Only skip if we didn't move the start and end point.
+					return true;
+				}
+
+				// else
+
+				// add a move to the start of the crossing
+				// try to go CW and CWW take the path that is the shortest and add it to the list
+
+				// Now walk trough the crossings, for every boundary we cross, find the initial cross point and the exit point.
+				// Then add all the points in between to the pointList and continue with the next boundary we will cross,
+				// until there are no more boundaries to cross.
+				// This gives a path from the start to finish curved around the holes that it encounters.
+				// for each pair of crossings
+				foreach (Tuple<int, int> crossingPair in CrossingIterator(Crossings))
+				{
+					Tuple<int, int, IntPoint> crossingStart = Crossings[crossingPair.Item1];
+					Tuple<int, int, IntPoint> crossingEnd = Crossings[crossingPair.Item2];
+
+					var network = new IntPointPathNetwork(BoundaryPolygons[crossingStart.Item1]);
+
+					IntPoint startLinkA = BoundaryPolygons[crossingStart.Item1][crossingStart.Item2];
+					IntPoint startLinkB = BoundaryPolygons[crossingStart.Item1][(crossingStart.Item2 + 1) % BoundaryPolygons[crossingStart.Item1].Count];
+
+					IntPoint endLinkA = BoundaryPolygons[crossingEnd.Item1][crossingEnd.Item2];
+					IntPoint endLinkB = BoundaryPolygons[crossingEnd.Item1][(crossingEnd.Item2 + 1) % BoundaryPolygons[crossingEnd.Item1].Count];
+
+					Path<IntPointNode> path = network.FindPath(crossingStart.Item3, startLinkA, startLinkB, crossingEnd.Item3, endLinkA, endLinkB);
+
+					// the start intersection for this crossing set
+					pathThatIsInside.Add(crossingStart.Item3);
+
+					if (crossingStart.Item3 != crossingEnd.Item3)
+					{
+						foreach (var node in path.nodes)
+						{
+							pathThatIsInside.Add(node.Position);
+						}
+					}
+
+					// add the last intersection for this crossing set
+					pathThatIsInside.Add(crossingEnd.Item3);
+				}
+
+				// add the end point if needed
+				if (addEndpoint)
+				{
+					pathThatIsInside.Add(endPoint);
+				}
+
+#if false
 			// Optimize the pointList, skip each point we could already reach by connecting directly to the next point.
 			for (int startIndex = 0; startIndex < pointList.Count - 2; startIndex++)
 			{
@@ -198,9 +208,10 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 			}
-			#endif
+#endif
 
-			return true;
+				return true;
+			}
 		}
 
 		private IEnumerable<Tuple<int, int>> CrossingIterator(List<Tuple<int, int, IntPoint>> crossings)

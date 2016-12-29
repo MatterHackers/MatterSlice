@@ -8,6 +8,23 @@ namespace Pathfinding
 	using MatterHackers.MatterSlice;
 	using Polygon = List<IntPoint>;
 
+	public class WayPointsToRemove : List<IntPointNode>, IDisposable
+	{
+		IntPointPathNetwork network;
+		internal WayPointsToRemove(IntPointPathNetwork network)
+		{
+			this.network = network;
+		}
+		
+		public void Dispose()
+		{
+			for (int i = Count - 1; i >= 0; i--)
+			{
+				network.Remove(this[i]);
+			}
+		}
+	}
+
 	public class IntPointPathNetwork : IPathNetwork<IntPointNode>
 	{
 		private static int allocCount = 0;
@@ -16,12 +33,21 @@ namespace Pathfinding
 		private IPathNode pathGoal = null;
 		private IPathNode pathStart = null;
 
+		public IntPointPathNetwork()
+		{
+		}
+
 		public IntPointPathNetwork(Polygon data)
+		{
+			AddClosedPolygon(data);
+		}
+
+		public void AddClosedPolygon(Polygon data, float costMultiplier = 1)
 		{
 			for (int i = 0; i < data.Count; i++)
 			{
 				IntPointNode node = new IntPointNode(data[i]);
-				node.CostMultiplier = 1;
+				node.CostMultiplier = costMultiplier;
 				Nodes.Add(node);
 			}
 
@@ -71,23 +97,25 @@ namespace Pathfinding
 		public Path<IntPointNode> FindPath(IntPoint startPosition, IntPoint startLinkA, IntPoint startLinkB, 
 			IntPoint endPosition, IntPoint endLinkA, IntPoint endLinkB)
 		{
-			var startNode = InsertNode(startPosition, startLinkA, startLinkB);
-			var endNode = InsertNode(endPosition, endLinkA, endLinkB);
-
-			// if startPosition and endPosition are on the same line
-			if ((startLinkA == endLinkA && startLinkB == endLinkB)
-				|| (startLinkA == endLinkB && startLinkB == endLinkA))
+			using (WayPointsToRemove removePointList = new WayPointsToRemove(this))
 			{
-				// connect them
-				AddPathLink(startNode, endNode);
+				var startNode = InsertNode(startPosition, startLinkA, startLinkB);
+				removePointList.Add(startNode);
+				var endNode = InsertNode(endPosition, endLinkA, endLinkB);
+				removePointList.Add(endNode);
+
+				// if startPosition and endPosition are on the same line
+				if ((startLinkA == endLinkA && startLinkB == endLinkB)
+					|| (startLinkA == endLinkB && startLinkB == endLinkA))
+				{
+					// connect them
+					AddPathLink(startNode, endNode);
+				}
+
+				var path = FindPath(startNode, endNode, true);
+
+				return path;
 			}
-
-			var path = FindPath(startNode, endNode, true);
-
-			Remove(startNode);
-			Remove(endNode);
-
-			return path;
 		}
 
 		public Path<IntPointNode> FindPath(IPathNode start, IPathNode goal, bool reset)
@@ -236,7 +264,7 @@ namespace Pathfinding
 			return link;
 		}
 
-		private void Remove(IntPointNode nodeToRemove)
+		public void Remove(IntPointNode nodeToRemove)
 		{
 			for (int i = nodeToRemove.Links.Count - 1; i >= 0; i--)
 			{
