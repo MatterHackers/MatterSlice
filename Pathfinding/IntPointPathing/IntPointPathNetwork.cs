@@ -29,7 +29,7 @@ namespace Pathfinding
 	{
 		private static int allocCount = 0;
 
-		private List<IntPointNode> Nodes = new List<IntPointNode>();
+		public List<IntPointNode> Nodes { get; private set; } = new List<IntPointNode>();
 		private IPathNode pathGoal = null;
 		private IPathNode pathStart = null;
 
@@ -42,42 +42,50 @@ namespace Pathfinding
 			AddClosedPolygon(data);
 		}
 
-		public void AddClosedPolygon(Polygon data, float costMultiplier = 1)
+		public void AddClosedPolygon(Polygon polygon, float costMultiplier = 1)
 		{
-			for (int i = 0; i < data.Count; i++)
+			for (int i = 0; i < polygon.Count; i++)
 			{
-				IntPointNode node = new IntPointNode(data[i]);
+				IntPointNode node = new IntPointNode(polygon[i]);
 				node.CostMultiplier = costMultiplier;
 				Nodes.Add(node);
 			}
 
-			int lastLinkIndex = data.Count - 1;
-			for (int i = 0; i < data.Count; i++)
+			int lastLinkIndex = polygon.Count - 1;
+			for (int i = 0; i < polygon.Count; i++)
 			{
 				AddPathLink(Nodes[lastLinkIndex], Nodes[i]);
 				lastLinkIndex = i;
 			}
 		}
 
-		public IntPointNode InsertNode(IntPoint newPosition, IntPoint linkToA, IntPoint linkToB)
+		public IntPointNode AddNode(IntPoint newPosition, IntPoint linkToA, IntPoint linkToB, float costMultiplier = 1)
 		{
 			IntPointNode nodeA = FindNode(linkToA);
 			IntPointNode nodeB = FindNode(linkToB);
 
 			if(nodeA != null && nodeB != null)
 			{
-				return InsertNode(newPosition, nodeA, nodeB);
+				return AddNode(newPosition, nodeA, nodeB, costMultiplier);
 			}
 
 			return null;
 		}
 		
-		public IntPointNode InsertNode(IntPoint newPosition, IntPointNode nodeA, IntPointNode nodeB)
+		public IntPointNode AddNode(IntPoint newPosition, IntPointNode nodeA, IntPointNode nodeB, float costMultiplier = 1)
 		{
-			var newNode = new IntPointNode(newPosition);
+			IntPointNode newNode = AddNode(newPosition, costMultiplier);
+
 			AddPathLink(newNode, nodeA);
 			AddPathLink(newNode, nodeB);
 
+			return newNode;
+		}
+
+		public IntPointNode AddNode(IntPoint newPosition, float costMultiplier = 1)
+		{
+			var newNode = new IntPointNode(newPosition);
+			Nodes.Add(newNode);
 			return newNode;
 		}
 
@@ -99,9 +107,9 @@ namespace Pathfinding
 		{
 			using (WayPointsToRemove removePointList = new WayPointsToRemove(this))
 			{
-				var startNode = InsertNode(startPosition, startLinkA, startLinkB);
+				var startNode = AddNode(startPosition, startLinkA, startLinkB);
 				removePointList.Add(startNode);
-				var endNode = InsertNode(endPosition, endLinkA, endLinkB);
+				var endNode = AddNode(endPosition, endLinkA, endLinkB);
 				removePointList.Add(endNode);
 
 				// if startPosition and endPosition are on the same line
@@ -248,7 +256,7 @@ namespace Pathfinding
 			}
 		}
 
-		private PathLink AddPathLink(IntPointNode nodeA, IntPointNode nodeB)
+		public PathLink AddPathLink(IntPointNode nodeA, IntPointNode nodeB)
 		{
 			PathLink link = nodeB.GetLinkTo(nodeA);
 
@@ -266,14 +274,17 @@ namespace Pathfinding
 
 		public void Remove(IntPointNode nodeToRemove)
 		{
-			for (int i = nodeToRemove.Links.Count - 1; i >= 0; i--)
+			if (nodeToRemove != null)
 			{
-				var link = nodeToRemove.Links[i];
-				var otherNode = link.nodeA == nodeToRemove ? link.nodeB : link.nodeA;
-				nodeToRemove.Links.Remove(link);
-				otherNode.Links.Remove(link);
+				for (int i = nodeToRemove.Links.Count - 1; i >= 0; i--)
+				{
+					var link = nodeToRemove.Links[i];
+					var otherNode = link.nodeA == nodeToRemove ? link.nodeB : link.nodeA;
+					nodeToRemove.Links.Remove(link);
+					otherNode.Links.Remove(link);
+				}
+				Nodes.Remove(nodeToRemove);
 			}
-			Nodes.Remove(nodeToRemove);
 		}
 	}
 }

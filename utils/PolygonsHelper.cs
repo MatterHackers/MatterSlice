@@ -192,6 +192,39 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		public static bool SegmentTouching(this Polygons polygons, IntPoint start, IntPoint end)
+		{
+			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
+			{
+				List<Tuple<int, IntPoint>> polyCrossings = new List<Tuple<int, IntPoint>>();
+				if (polygons[polyIndex].SegmentTouching(start, end))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		public static Intersection FindIntersection(this Polygons polygons, IntPoint start, IntPoint end)
+		{
+			Intersection bestIntersection = Intersection.None;
+			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
+			{
+				var result = polygons[polyIndex].FindIntersection(start, end);
+				if (result == Intersection.Intersect)
+				{
+					return Intersection.Intersect;
+				}
+				else if (result == Intersection.Colinear)
+				{
+					bestIntersection = Intersection.Colinear;
+				}
+			}
+
+			return bestIntersection;
+		}
+
 		public static Polygons GetCorrectedWinding(this Polygons polygonsToFix)
 		{
 			polygonsToFix = Clipper.CleanPolygons(polygonsToFix);
@@ -220,21 +253,22 @@ namespace MatterHackers.MatterSlice
 			return outputPolygons;
 		}
 
-		public static bool MovePointInsideBoundary(this Polygons boundaryPolygons, IntPoint testPosition, out IntPoint inPolyPosition, int recursionDepth = 0)
+		public static bool MovePointInsideBoundary(this Polygons boundaryPolygons, IntPoint startPosition, out Tuple<int, int, IntPoint> polyPointPosition, int recursionDepth = 0)
 		{
-			inPolyPosition = testPosition;
+			Tuple<int, int, IntPoint> bestPolyPointPosition =  new Tuple<int, int, IntPoint>(0, 0, startPosition);
 
-			if (boundaryPolygons.PointIsInside(testPosition))
+			if (boundaryPolygons.PointIsInside(startPosition))
 			{
 				// already inside
+				polyPointPosition = bestPolyPointPosition;
 				return false;
 			}
 
 			long bestDist = long.MaxValue;
-			IntPoint bestPosition = inPolyPosition;
 			IntPoint bestMoveNormal = new IntPoint();
-			foreach (var boundaryPolygon in boundaryPolygons)
+			for(int polygonIndex = 0; polygonIndex < boundaryPolygons.Count; polygonIndex++)
 			{
+				var boundaryPolygon = boundaryPolygons[polygonIndex];
 				if (boundaryPolygon.Count < 3)
 				{
 					continue;
@@ -243,12 +277,12 @@ namespace MatterHackers.MatterSlice
 				IntPoint segmentStart = boundaryPolygon[boundaryPolygon.Count - 1];
 				for (int pointIndex = 0; pointIndex < boundaryPolygon.Count; pointIndex++)
 				{
-					IntPoint pointRelStart = inPolyPosition - segmentStart;
+					IntPoint pointRelStart = startPosition - segmentStart;
 					long distFromStart = pointRelStart.Length();
 					if (distFromStart < bestDist)
 					{
 						bestDist = distFromStart;
-						bestPosition = segmentStart;
+						bestPolyPointPosition = new Tuple<int, int, IntPoint>(polygonIndex, pointIndex, segmentStart);
 					}
 
 					IntPoint segmentEnd = boundaryPolygon[pointIndex];
@@ -265,14 +299,14 @@ namespace MatterHackers.MatterSlice
 
 						if (Math.Abs(distToBoundarySegment) < bestDist)
 						{
-							IntPoint pointAlongCurrentSegment = inPolyPosition;
+							IntPoint pointAlongCurrentSegment = startPosition;
 							if (distToBoundarySegment != 0)
 							{
-								pointAlongCurrentSegment = inPolyPosition - normalToRight * distToBoundarySegment / 1000;
+								pointAlongCurrentSegment = startPosition - normalToRight * distToBoundarySegment / 1000;
 							}
 
 							bestDist = Math.Abs(distToBoundarySegment);
-							bestPosition = pointAlongCurrentSegment;
+							bestPolyPointPosition = new Tuple<int, int, IntPoint>(polygonIndex, pointIndex, pointAlongCurrentSegment);
 							bestMoveNormal = normalToRight;
 						}
 					}
@@ -281,25 +315,25 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			inPolyPosition = bestPosition;
-
-			if (!boundaryPolygons.PointIsInside(inPolyPosition))
+			if (!boundaryPolygons.PointIsInside(bestPolyPointPosition.Item3))
 			{
 				long normalLength = bestMoveNormal.Length();
 				if (normalLength == 0)
 				{
+					polyPointPosition = bestPolyPointPosition;
 					return false;
 				}
 
 				if (recursionDepth < 10)
 				{
-					// try to perturbe the point back into the actual bounds
-					inPolyPosition = bestPosition + (bestMoveNormal * (1 << recursionDepth) / normalLength) * ((recursionDepth % 2) == 0 ? 1 : -1);
+					// try to perturb the point back into the actual bounds
+					IntPoint inPolyPosition = bestPolyPointPosition.Item3 + (bestMoveNormal * (1 << recursionDepth) / normalLength) * ((recursionDepth % 2) == 0 ? 1 : -1);
 					inPolyPosition += (bestMoveNormal.GetPerpendicularRight() * (1 << recursionDepth) / (normalLength * 2)) * ((recursionDepth % 3) == 0 ? 1 : -1);
-					boundaryPolygons.MovePointInsideBoundary(inPolyPosition, out inPolyPosition, recursionDepth + 1);
+					boundaryPolygons.MovePointInsideBoundary(inPolyPosition, out bestPolyPointPosition, recursionDepth + 1);
 				}
 			}
 
+			polyPointPosition = bestPolyPointPosition;
 			if (recursionDepth > 8)
 			{
 				return false;

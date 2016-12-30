@@ -31,6 +31,8 @@ namespace MatterHackers.MatterSlice
 
 	using Polygons = List<List<IntPoint>>;
 
+	public enum Intersection { None, Colinear, Intersect }
+
 	public static class PolygonHelper
 	{
 		public static double Area(this Polygon polygon)
@@ -129,9 +131,14 @@ namespace MatterHackers.MatterSlice
 			return false;
 		}
 
-		// The main function that returns true if line segment 'p1q1'
-		// and 'p2q2' intersect.
+		// The main function that returns true if line segment 'startA-endA'
+		// and 'startB-endB' intersect.
 		public static bool DoIntersect(IntPoint startA, IntPoint endA, IntPoint startB, IntPoint endB)
+		{
+			return GetIntersection(startA, endA, startB, endB) != Intersection.None;
+		}
+
+		public static Intersection GetIntersection(IntPoint startA, IntPoint endA, IntPoint startB, IntPoint endB)
 		{
 			// Find the four orientations needed for general and
 			// special cases
@@ -142,22 +149,24 @@ namespace MatterHackers.MatterSlice
 
 			// General case
 			if (o1 != o2 && o3 != o4)
-				return true;
+			{
+				return Intersection.Intersect;
+			}
 
 			// Special Cases
-			// p1, q1 and p2 are colinear and p2 lies on segment p1q1
-			if (o1 == 0 && OnSegment(startA, startB, endA)) return true;
+			// startA, endA and startB are collinear and startB lies on segment startA endA
+			if (o1 == 0 && OnSegment(startA, startB, endA)) return Intersection.Colinear;
 
-			// p1, q1 and p2 are colinear and q2 lies on segment p1q1
-			if (o2 == 0 && OnSegment(startA, endB, endA)) return true;
+			// startA, endA and startB are collinear and endB lies on segment startA-endA
+			if (o2 == 0 && OnSegment(startA, endB, endA)) return Intersection.Colinear;
 
-			// p2, q2 and p1 are colinear and p1 lies on segment p2q2
-			if (o3 == 0 && OnSegment(startB, startA, endB)) return true;
+			// startB, endB and startA are collinear and startA lies on segment startB-endB
+			if (o3 == 0 && OnSegment(startB, startA, endB)) return Intersection.Colinear;
 
-			// p2, q2 and q1 are colinear and q1 lies on segment p2q2
-			if (o4 == 0 && OnSegment(startB, endA, endB)) return true;
+			// startB, endB and endA are collinear and endA lies on segment startB-endB
+			if (o4 == 0 && OnSegment(startB, endA, endB)) return Intersection.Colinear;
 
-			return false; // Doesn't fall in any of the above cases
+			return Intersection.None; // Doesn't fall in any of the above cases
 		}
 
 		public static void ExpandToInclude(this IntRect inRect, IntRect otherRect)
@@ -190,11 +199,59 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static int FindTouchingEdge(this Polygon polygon, IntPoint position, long maxDistance = 0)
+		public static bool SegmentTouching(this Polygon polygon, IntPoint start, IntPoint end)
 		{
-			throw new NotImplementedException();
+			IntPoint segmentDelta = end - start;
+			IntPoint normal = segmentDelta.Normal(1000);
+			IntPoint edgeStart = polygon[0];
+			for (int i = 0; i < polygon.Count; i++)
+			{
+				IntPoint edgeEnd = polygon[(i + 1) % polygon.Count];
+				if (DoIntersect(start, end, edgeStart, edgeEnd))
+				{
+					return true;
+				}
+
+				edgeStart = edgeEnd;
+			}
+
+			return false;
 		}
 
+		public static Intersection FindIntersection(this Polygon polygon, IntPoint start, IntPoint end)
+		{
+			Intersection bestIntersection = Intersection.None;
+
+			IntPoint segmentDelta = end - start;
+			IntPoint normal = segmentDelta.Normal(1000);
+			IntPoint edgeStart = polygon[0];
+			for (int i = 0; i < polygon.Count; i++)
+			{
+				// if we share a vertex we cannot be crossing the line
+				IntPoint edgeEnd = polygon[(i + 1) % polygon.Count];
+				if (start == edgeStart || start == edgeEnd || end == edgeStart || end == edgeEnd)
+				{
+					bestIntersection = Intersection.Colinear;
+				}
+				else
+				{ 
+					var result = GetIntersection(start, end, edgeStart, edgeEnd);
+					if (result == Intersection.Intersect)
+					{
+						return Intersection.Intersect;
+					}
+					else if (result == Intersection.Colinear)
+					{
+						bestIntersection = Intersection.Colinear;
+					}
+				}
+
+				edgeStart = edgeEnd;
+			}
+
+			return bestIntersection;
+		}
+		
 		public static IntPoint getBoundaryPointWithOffset(Polygon poly, int point_idx, long offset)
 		{
 			IntPoint p0 = poly[(point_idx > 0) ? (point_idx - 1) : (poly.size() - 1)];
@@ -255,15 +312,28 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public static bool LineSegementsIntersect(IntPoint p, IntPoint p2, IntPoint q, IntPoint q2,
+		public static bool IsVertexConcave(this Polygon vertices, int vertex)
+		{
+			IntPoint current = vertices[vertex];
+			IntPoint next = vertices[(vertex + 1) % vertices.Count];
+			IntPoint previous = vertices[vertex == 0 ? vertices.Count - 1 : vertex - 1];
+
+			IntPoint left = new IntPoint(current.X - previous.X, current.Y - previous.Y);
+			IntPoint right = new IntPoint(next.X - current.X, next.Y - current.Y);
+
+			long cross = (left.X * right.Y) - (left.Y * right.X);
+
+			return cross < 0;
+		}
+		public static bool LineSegementsIntersect(IntPoint startA, IntPoint endA, IntPoint startB, IntPoint endB,
 							out IntPoint intersection)
 		{
 			intersection = new IntPoint();
 
-			var r = p2 - p;
-			var s = q2 - q;
+			var r = endA - startA;
+			var s = endB - startB;
 			var rxs = r.CrossXy(s);
-			var qpxr = (q - p).CrossXy(r);
+			var qpxr = (startB - startA).CrossXy(r);
 
 			// If r x s = 0 and (q - p) x r = 0, then the two lines are collinear.
 			if (rxs == 0 && qpxr == 0)
@@ -284,15 +354,15 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// t = (q - p) x s / (r x s)
-			var t = (q - p).CrossXy(s);
-			var u = (q - p).CrossXy(r);
+			var t = (startB - startA).CrossXy(s);
+			var u = (startB - startA).CrossXy(r);
 
 			// 4. If r x s != 0 and 0 <= t <= 1 and 0 <= u <= 1
 			// the two line segments meet at the point p + t r = q + u s.
 			if (rxs != 0 && (t > 0 && t <= rxs) && (u > 0 && u <= rxs))
 			{
 				// We can calculate the intersection point using either t or u.
-				intersection = p + r * t / rxs;
+				intersection = startA + r * t / rxs;
 
 				// An intersection was found.
 				return true;
@@ -371,7 +441,7 @@ namespace MatterHackers.MatterSlice
 
 		// To find orientation of ordered triplet (p, q, r).
 		// The function returns following values
-		// 0 --> p, q and r are colinear
+		// 0 --> p, q and r are collinear
 		// 1 --> Clockwise
 		// 2 --> Counterclockwise
 		public static int Orientation(IntPoint start, IntPoint end, IntPoint test)
@@ -386,7 +456,7 @@ namespace MatterHackers.MatterSlice
 				return 0;
 			}
 
-			return (val > 0) ? 1 : 2; // clock or counterclock wise
+			return (val > 0) ? 1 : 2; // clockwise or counterclockwise
 		}
 
 		public static bool Orientation(this Polygon polygon)

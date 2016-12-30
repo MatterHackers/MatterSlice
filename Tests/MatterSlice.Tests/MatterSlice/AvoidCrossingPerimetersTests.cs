@@ -91,48 +91,97 @@ namespace MatterHackers.MatterSlice.Tests
 				}
 			}
 
-			// Run a bunch of paths against a known test shape
-			// _____________________4______         ________________________________0________ (644, 415)
-			// |                          |         | (400, 421)                            |
-			// |                          |         1                                       |
-			// |                          |         |                                       |
-			// 5                          |         |                                       |
-			// |                          3         |                                       |
-			// |               (344, 325) |_______2_| (399, 324)                            |
-			// |                                                                            |
-			// |                                                                            |
-			// |      ___1____                    404, 291   ___0____                       |
-			// |      |       _________                      |       _________				|
-			// |      |               |                      |               | 591, 236		|
-			// |      |               2                      |               1				|
-			// |       |             |                       |             |				|
-			// |       0             |                       3             |				|
-			// |       |       ____3_|                        |       ____2_| 587, 158		|
-			// |       |_______                     406, 121  |_______                      7
-			// |                                                                            |
-			// |__6_________________________________________________________________________|
-			//
-			//
 			{
+				// ______________2__
+				// |               |
+				// 3               |
+				// |               |
+				// |               |
+				// |               1
+				// |__0____________|
+
+				Polygon test = new Polygon();
+				test.Add(new IntPoint(0, 0));
+				test.Add(new IntPoint(40, 0));
+				test.Add(new IntPoint(40, 40));
+				test.Add(new IntPoint(0, 40));
+
+				Polygons boundaryPolygons = new Polygons();
+				boundaryPolygons.Add(test);
+
+				// test moving across the lower part
+				{
+					IntPoint startPoint = new IntPoint(-10, 5);
+					IntPoint endPoint = new IntPoint(50, 5);
+					AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons);
+					Polygon insidePath = new Polygon();
+					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
+					Assert.AreEqual(4, insidePath.Count);
+					// move start to the 0th vertex
+					Assert.AreEqual(new IntPoint(0, 5), insidePath[0]);
+					Assert.AreEqual(boundaryPolygons[0][0], insidePath[1]);
+					Assert.AreEqual(boundaryPolygons[0][1], insidePath[2]);
+					Assert.AreEqual(new IntPoint(40, 5), insidePath[4]);
+				}
+
+				// test being just below the lower line
+				{
+					IntPoint startPoint = new IntPoint(10, -1);
+					IntPoint endPoint = new IntPoint(30, -1);
+					AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons);
+					Polygon insidePath = new Polygon();
+					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
+					Assert.AreEqual(2, insidePath.Count);
+					// move start to the 0th vertex
+					Assert.AreEqual(new IntPoint(10, 0), insidePath[0]);
+					Assert.AreEqual(new IntPoint(30, 0), insidePath[1]);
+				}
+			}
+
+			{
+				// Run a bunch of paths against a known test shape
+				// _____________________4______         ________________________________0________ (644, 415)
+				// | (85, 117)     (338, 428) |         | (400, 421)                            |
+				// |                          |         1                                       |
+				// |                          |         |                                       |
+				// 5                          |         |                                       |
+				// |                          3         |                                       |
+				// |               (344, 325) |_______2_| (399, 324)                            |
+				// |                                                                            |
+				// |                                                                            |
+				// |      ___1____                    404, 291   ___0____                       |
+				// |      |       _________                      |       _________              |
+				// |      |               |                      |               | 591, 236		|
+				// |      |               2                      |               1              |
+				// |       |             |                       |             |                |
+				// |       0             |                       3             |                |
+				// |       |       ____3_|                        |       ____2_| 587, 158		|
+				// |       |_______                     406, 121  |_______                      7
+				// |                                                                            |
+				// |__6_________________________________________________________________________|
+				//  (98, 81)                                                          (664, 75)
+				//
 				string partOutlineString = "x: 644, y: 415,x: 400, y: 421,x: 399, y: 324,x: 344, y: 325,x: 338, y: 428,x: 85, y: 417,x: 98, y: 81,x: 664, y: 75,";
 				partOutlineString += "| x:404, y: 291,x: 591, y: 236,x: 587, y: 158,x: 406, y: 121,";
 				partOutlineString += "| x:154, y: 162,x: 159, y: 235,x: 343, y: 290,x: 340, y: 114,|";
 				Polygons boundaryPolygons = PolygonsHelper.CreateFromString(partOutlineString);
-				IntPoint startPoint = new IntPoint(672, 435);
-				IntPoint endPoint = new IntPoint(251, 334);
-				AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons);
-				Polygon insidePath = new Polygon();
-				testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
-				Assert.AreEqual(5, insidePath.Count);
-				// move start to the 0th vertex
-				Assert.AreEqual(boundaryPolygons[0][1], insidePath[0]);
-				// next collide with edge 1
-				Assert.AreEqual(new IntPoint(400,365), insidePath[1]);
-				// the next 3 points are the is the 2 - 3 index
-				Assert.AreEqual(boundaryPolygons[0][2], insidePath[2]);
-				Assert.AreEqual(boundaryPolygons[0][3], insidePath[3]);
-				// the last point is created on the 3 edge
-				Assert.AreEqual(new IntPoint(343, 353), insidePath[4]);
+				{
+					IntPoint startPoint = new IntPoint(672, 435);
+					IntPoint endPoint = new IntPoint(251, 334);
+					AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons);
+					Polygon insidePath = new Polygon();
+					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
+					Assert.AreEqual(5, insidePath.Count);
+					// move start to the 0th vertex
+					Assert.AreEqual(boundaryPolygons[0][1], insidePath[0]);
+					// next collide with edge 1
+					Assert.AreEqual(new IntPoint(400, 365), insidePath[1]);
+					// the next 3 points are the is the 2 - 3 index
+					Assert.AreEqual(boundaryPolygons[0][2], insidePath[2]);
+					Assert.AreEqual(boundaryPolygons[0][3], insidePath[3]);
+					// the last point is created on the 3 edge
+					Assert.AreEqual(new IntPoint(343, 353), insidePath[4]);
+				}
 			}
 		}
 	}

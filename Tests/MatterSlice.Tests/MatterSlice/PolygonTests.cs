@@ -186,6 +186,8 @@ namespace MatterHackers.MatterSlice.Tests
 				test.Add(new IntPoint(40, 40));
 				test.Add(new IntPoint(0, 40));
 
+				Assert.AreEqual(Intersection.Colinear, test.FindIntersection(test[0], test[2]));
+
 				TestCorrectCrossings(test, new IntPoint(20, -1), new IntPoint(20, 41), 0, 2);
 				TestCorrectCrossings(test, new IntPoint(-1, 20), new IntPoint(41, 20), 3, 1);
 				TestCorrectCrossings(test, new IntPoint(19, 41), new IntPoint(20, -1), 2, 0);
