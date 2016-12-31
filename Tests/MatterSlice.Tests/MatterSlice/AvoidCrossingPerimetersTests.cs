@@ -81,13 +81,13 @@ namespace MatterHackers.MatterSlice.Tests
 
 					Polygon insidePath = new Polygon();
 					testHarness.CreatePathInsideBoundary(startPointInside, endPointInside, insidePath);
-					Assert.IsTrue(insidePath.Count > 7); // It needs to go around the cicle so it needs many points (2 is a definate fail).
+					Assert.IsTrue(insidePath.Count == 6); // It needs to go around the cicle so it needs many points (2 is a definate fail).
 				}
 
 				{
 					Polygon insidePath = new Polygon();
 					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
-					Assert.IsTrue(insidePath.Count > 9); // two more than the last test to get the points in the right place
+					Assert.IsTrue(insidePath.Count == 6); // two more than the last test to get the points in the right place
 				}
 			}
 
