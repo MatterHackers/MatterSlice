@@ -199,6 +199,19 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		public static int FindPoint(this Polygon polygon, IntPoint position)
+		{
+			for (int i = 0; i < polygon.Count; i++)
+			{
+				if (position == polygon[i])
+				{
+					return i;
+				}
+			}
+
+			return -1;
+		}
+
 		public static bool SegmentTouching(this Polygon polygon, IntPoint start, IntPoint end)
 		{
 			IntPoint segmentDelta = end - start;
@@ -325,6 +338,7 @@ namespace MatterHackers.MatterSlice
 
 			return cross < 0;
 		}
+
 		public static bool LineSegementsIntersect(IntPoint startA, IntPoint endA, IntPoint startB, IntPoint endB,
 							out IntPoint intersection)
 		{

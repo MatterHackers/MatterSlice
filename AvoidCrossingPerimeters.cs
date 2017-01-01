@@ -77,6 +77,24 @@ namespace MatterHackers.MatterSlice
 
 		private bool LinkIsInside(int nodeIndexA, int nodeIndexB)
 		{
+			IntPoint pointA = Waypoints.Nodes[nodeIndexA].Position;
+
+			Tuple<int, int> index = BoundaryPolygons.FindPoint(pointA);
+
+			if (index != null)
+			{
+				IntPoint pointB = Waypoints.Nodes[nodeIndexB].Position;
+
+				var polygon = BoundaryPolygons[index.Item1];
+
+				IntPoint next = polygon[(index.Item2 + 1) % polygon.Count];
+
+				if (pointB == next)
+				{
+					return true;
+				}
+			}
+
 			return BoundaryPolygons.PointIsInside((Waypoints.Nodes[nodeIndexA].Position + Waypoints.Nodes[nodeIndexB].Position) / 2);
 		}
 

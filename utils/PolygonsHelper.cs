@@ -192,6 +192,20 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		public static Tuple<int, int> FindPoint(this Polygons polygons, IntPoint position)
+		{
+			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
+			{
+				int pointIndex = polygons[polyIndex].FindPoint(position);
+				if (pointIndex != -1)
+				{
+					return new Tuple<int, int>(polyIndex, pointIndex);
+				}
+			}
+
+			return null;
+		}
+
 		public static bool SegmentTouching(this Polygons polygons, IntPoint start, IntPoint end)
 		{
 			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)

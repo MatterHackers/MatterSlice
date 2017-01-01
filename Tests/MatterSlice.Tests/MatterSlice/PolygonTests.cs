@@ -255,6 +255,16 @@ namespace MatterHackers.MatterSlice.Tests
 
 				TestCorrectCrossings(test, new IntPoint(624, 251), new IntPoint(373, 142), 0, 3);
 			}
+
+			{
+				Polygon test = new Polygon();
+				test.Add(new IntPoint(154, 162));
+				test.Add(new IntPoint(159, 235));
+				test.Add(new IntPoint(243, 290));
+				test.Add(new IntPoint(340, 114));
+
+					
+			}
 		}
 
 		private void TestDistance(Polygon test, int startEdgeIndex, IntPoint startPosition, int endEdgeIndex, IntPoint endPosition, int expectedDistance)

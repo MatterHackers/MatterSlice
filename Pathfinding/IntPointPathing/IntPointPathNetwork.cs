@@ -179,7 +179,6 @@ namespace Pathfinding
 					currentNode = nodesToVisit.Pop();
 					testCount++;
 
-					// Console.WriteLine("testing new node: " + (currentNode as TileNode).localPoint);
 					currentNode.Visited = true;
 
 					if (currentNode == goalNode)
@@ -211,7 +210,6 @@ namespace Pathfinding
 
 		public void Reset()
 		{
-			Console.WriteLine("Reset " + Nodes.Count + " nodes");
 			foreach (IPathNode node in Nodes)
 			{
 				node.IsGoalNode = false;
@@ -238,7 +236,6 @@ namespace Pathfinding
 		private static void IncAlloc()
 		{
 			allocCount++;
-			Console.WriteLine("Alloc count: " + allocCount);
 		}
 
 		private static void TryQueueNewNode(IPathNode pNewNode, PathLink pLink, AStarStack pNodesToVisit, IPathNode pGoal)
