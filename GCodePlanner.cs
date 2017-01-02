@@ -631,11 +631,11 @@ namespace MatterHackers.MatterSlice
 			this.extrudeSpeedFactor = speedFactor;
 		}
 
-		public void SetOuterPerimetersToAvoidCrossing(Polygons polygons)
+		public void SetOuterPerimetersToAvoidCrossing(AvoidCrossingPerimeters avoid)
 		{
-			if (polygons != null)
+			if (avoid != null)
 			{
-				outerPerimetersToAvoidCrossing = new AvoidCrossingPerimeters(polygons);
+				outerPerimetersToAvoidCrossing = avoid;
 			}
 			else
 			{

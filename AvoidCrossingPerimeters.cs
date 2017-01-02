@@ -99,8 +99,15 @@ namespace MatterHackers.MatterSlice
 		}
 
 		static bool storeBoundary = false;
-		public bool CreatePathInsideBoundary(IntPoint inStartPoint, IntPoint inEndPoint, Polygon pathThatIsInside)
+		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside)
 		{
+			// neither needed to be moved
+			if (BoundaryPolygons.FindIntersection(startPoint, endPoint) == Intersection.None
+				&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2))
+			{
+				return true;
+			}
+
 			using (WayPointsToRemove removePointList = new WayPointsToRemove(Waypoints))
 			{
 				pathThatIsInside.Clear();
@@ -109,42 +116,41 @@ namespace MatterHackers.MatterSlice
 					string pointsString = BoundaryPolygons.WriteToString();
 				}
 
-				IntPointNode startNode = null;
 				//Check if we are inside the boundaries
-				if (!BoundaryPolygons.PointIsInside(inStartPoint))
+				Tuple<int, int, IntPoint> startPolyPointPosition = null;
+				if (!BoundaryPolygons.PointIsInside(startPoint))
 				{
-					Tuple<int, int, IntPoint> startPolyPointPosition = null;
-					if (!BoundaryPolygons.MovePointInsideBoundary(inStartPoint, out startPolyPointPosition))
+					if (!BoundaryPolygons.MovePointInsideBoundary(startPoint, out startPolyPointPosition))
 					{
 						//If we fail to move the point inside the comb boundary we need to retract.
 						return false;
 					}
 
-					startNode = AddTempWayPoint(removePointList, startPolyPointPosition.Item3);
+					startPoint = startPolyPointPosition.Item3;
 				}
 
-				if(startNode == null)
+				Tuple<int, int, IntPoint> endPolyPointPosition = null;
+				if (!BoundaryPolygons.PointIsInside(endPoint))
 				{
-					startNode = AddTempWayPoint(removePointList, inStartPoint);
-				}
-
-				IntPointNode endNode = null;
-				if (!BoundaryPolygons.PointIsInside(inEndPoint))
-				{
-					Tuple<int, int, IntPoint> endPolyPointPosition = null;
-					if (!BoundaryPolygons.MovePointInsideBoundary(inEndPoint, out endPolyPointPosition))
+					if (!BoundaryPolygons.MovePointInsideBoundary(endPoint, out endPolyPointPosition))
 					{
 						//If we fail to move the point inside the comb boundary we need to retract.
 						return false;
 					}
 
-					endNode = AddTempWayPoint(removePointList, endPolyPointPosition.Item3);
+					endPoint = endPolyPointPosition.Item3;
 				}
 
-				if (endNode == null)
+				if (BoundaryPolygons.FindIntersection(startPoint, endPoint) == Intersection.None
+					&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2))
 				{
-					endNode = AddTempWayPoint(removePointList, inEndPoint);
+					pathThatIsInside.Add(startPoint);
+					pathThatIsInside.Add(endPoint);
+					return true;
 				}
+
+				IntPointNode startNode = AddTempWayPoint(removePointList, startPoint);
+				IntPointNode endNode = AddTempWayPoint(removePointList, endPoint);
 
 				// else
 

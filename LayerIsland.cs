@@ -45,7 +45,7 @@ namespace MatterHackers.MatterSlice
 		/// The outline of the island as defined by the original mesh polygons (not inset at all).
 		/// </summary>
 		public Polygons IslandOutline { get; set; } = new Polygons();
-		public Polygons AvoidCrossingBoundary { get; set; } = new Polygons();
+		public AvoidCrossingPerimeters AvoidCrossingBoundary { get; set; }
 		/// <summary>
 		/// The IslandOutline inset as many times as there are perimeters for the part.
 		/// </summary>
@@ -62,7 +62,7 @@ namespace MatterHackers.MatterSlice
 			LayerIsland part = this;
 			part.BoundingBox.Calculate(part.IslandOutline);
 
-			part.AvoidCrossingBoundary = part.IslandOutline.Offset(-extrusionWidth_um * 3 / 2);
+			part.AvoidCrossingBoundary = new AvoidCrossingPerimeters(part.IslandOutline.Offset(-extrusionWidth_um * 3 / 2));
 			if (insetCount == 0)
 			{
 				// if we have no insets defined still create one
