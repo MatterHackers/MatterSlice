@@ -19,25 +19,28 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System.Collections.Generic;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
 	using System;
-	using System.IO;
 	using Pathfinding;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
 	public class AvoidCrossingPerimeters
 	{
-		public IntPointPathNetwork Waypoints { get; private set; } = new IntPointPathNetwork();
-
 		public Polygons BoundaryPolygons;
+		private static bool storeBoundary = false;
 
 		public AvoidCrossingPerimeters(Polygons boundaryPolygons)
 		{
+			if (storeBoundary)
+			{
+				string pointsString = boundaryPolygons.WriteToString();
+			}
+
 			this.BoundaryPolygons = boundaryPolygons;
 
 			foreach (var polygon in BoundaryPolygons)
@@ -57,55 +60,10 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private void CreateLinks(int nodeIndexA, int nodeIndexBStart)
-		{
-			for (int nodeIndexB = nodeIndexBStart; nodeIndexB < Waypoints.Nodes.Count; nodeIndexB++)
-			{
-				if (nodeIndexA != nodeIndexB
-					&& LinkIsInside(nodeIndexA, nodeIndexB)
-					&& !LinkIntersectsPolygon(nodeIndexA, nodeIndexB))
-				{
-					Waypoints.AddPathLink(Waypoints.Nodes[nodeIndexA], Waypoints.Nodes[nodeIndexB]);
-				}
-			}
-		}
+		public IntPointPathNetwork Waypoints { get; private set; } = new IntPointPathNetwork();
 
-		private bool LinkIntersectsPolygon(int nodeIndexA, int nodeIndexB)
-		{
-			return BoundaryPolygons.FindIntersection(Waypoints.Nodes[nodeIndexA].Position, Waypoints.Nodes[nodeIndexB].Position) == Intersection.Intersect;
-		}
-
-		private bool LinkIsInside(int nodeIndexA, int nodeIndexB)
-		{
-			IntPoint pointA = Waypoints.Nodes[nodeIndexA].Position;
-
-			Tuple<int, int> index = BoundaryPolygons.FindPoint(pointA);
-
-			if (index != null)
-			{
-				IntPoint pointB = Waypoints.Nodes[nodeIndexB].Position;
-
-				var polygon = BoundaryPolygons[index.Item1];
-
-				IntPoint next = polygon[(index.Item2 + 1) % polygon.Count];
-
-				if (pointB == next)
-				{
-					return true;
-				}
-			}
-
-			return BoundaryPolygons.PointIsInside((Waypoints.Nodes[nodeIndexA].Position + Waypoints.Nodes[nodeIndexB].Position) / 2);
-		}
-
-		static bool storeBoundary = false;
 		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside)
 		{
-			if (storeBoundary)
-			{
-				string pointsString = BoundaryPolygons.WriteToString();
-			}
-
 			// neither needed to be moved
 			if (BoundaryPolygons.FindIntersection(startPoint, endPoint) == Intersection.None
 				&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2))
@@ -166,19 +124,6 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private IntPointNode AddTempWayPoint(WayPointsToRemove removePointList, IntPoint position)
-		{
-			var node = Waypoints.AddNode(position);
-			CreateLinks(Waypoints.Nodes.Count - 1, 0);
-			removePointList.Add(node);
-			return node;
-		}
-
-		public bool PointIsInsideBoundary(IntPoint intPoint)
-		{
-			return BoundaryPolygons.PointIsInside(intPoint);
-		}
-
 		public bool MovePointInsideBoundary(IntPoint testPosition, out IntPoint inPolyPosition)
 		{
 			inPolyPosition = testPosition;
@@ -195,6 +140,32 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return true;
+		}
+
+		public bool PointIsInsideBoundary(IntPoint intPoint)
+		{
+			return BoundaryPolygons.PointIsInside(intPoint);
+		}
+
+		private IntPointNode AddTempWayPoint(WayPointsToRemove removePointList, IntPoint position)
+		{
+			var node = Waypoints.AddNode(position);
+			CreateLinks(Waypoints.Nodes.Count - 1, 0);
+			removePointList.Add(node);
+			return node;
+		}
+
+		private void CreateLinks(int nodeIndexA, int nodeIndexBStart)
+		{
+			for (int nodeIndexB = nodeIndexBStart; nodeIndexB < Waypoints.Nodes.Count; nodeIndexB++)
+			{
+				if (nodeIndexA != nodeIndexB
+					&& LinkIsInside(nodeIndexA, nodeIndexB)
+					&& !LinkIntersectsPolygon(nodeIndexA, nodeIndexB))
+				{
+					Waypoints.AddPathLink(Waypoints.Nodes[nodeIndexA], Waypoints.Nodes[nodeIndexB]);
+				}
+			}
 		}
 
 		private bool DoesLineCrossBoundary(IntPoint startPoint, IntPoint endPoint)
@@ -226,7 +197,7 @@ namespace MatterHackers.MatterSlice
 						// if we terminate on the line that will count as crossing
 						return true;
 					}
-					
+
 					if (endSide == 0)
 					{
 						// if we terminate on the line that will count as crossing
@@ -237,6 +208,34 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 			return false;
+		}
+
+		private bool LinkIntersectsPolygon(int nodeIndexA, int nodeIndexB)
+		{
+			return BoundaryPolygons.FindIntersection(Waypoints.Nodes[nodeIndexA].Position, Waypoints.Nodes[nodeIndexB].Position) == Intersection.Intersect;
+		}
+
+		private bool LinkIsInside(int nodeIndexA, int nodeIndexB)
+		{
+			IntPoint pointA = Waypoints.Nodes[nodeIndexA].Position;
+
+			Tuple<int, int> index = BoundaryPolygons.FindPoint(pointA);
+
+			if (index != null)
+			{
+				IntPoint pointB = Waypoints.Nodes[nodeIndexB].Position;
+
+				var polygon = BoundaryPolygons[index.Item1];
+
+				IntPoint next = polygon[(index.Item2 + 1) % polygon.Count];
+
+				if (pointB == next)
+				{
+					return true;
+				}
+			}
+
+			return BoundaryPolygons.PointIsInside((Waypoints.Nodes[nodeIndexA].Position + Waypoints.Nodes[nodeIndexB].Position) / 2);
 		}
 	}
 }
