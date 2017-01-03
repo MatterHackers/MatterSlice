@@ -29,9 +29,7 @@ namespace MatterHackers.MatterSlice
 	using System;
 	using System.Linq;
 	using Paths = List<List<IntPoint>>;
-
 	using Polygon = List<IntPoint>;
-
 	using Polygons = List<List<IntPoint>>;
 
 	public static class PolygonsHelper
@@ -218,6 +216,16 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return false;
+		}
+
+		/// <summary>
+		/// Return a list of polygons of this polygon split into triangles
+		/// </summary>
+		/// <param name="polygons"></param>
+		/// <returns></returns>
+		public static Polygons Triangulate(this Polygons polygons)
+		{
+			throw new NotImplementedException();
 		}
 
 		public static Intersection FindIntersection(this Polygons polygons, IntPoint start, IntPoint end)

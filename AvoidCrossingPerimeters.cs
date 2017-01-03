@@ -101,6 +101,11 @@ namespace MatterHackers.MatterSlice
 		static bool storeBoundary = false;
 		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside)
 		{
+			if (storeBoundary)
+			{
+				string pointsString = BoundaryPolygons.WriteToString();
+			}
+
 			// neither needed to be moved
 			if (BoundaryPolygons.FindIntersection(startPoint, endPoint) == Intersection.None
 				&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2))
@@ -111,10 +116,6 @@ namespace MatterHackers.MatterSlice
 			using (WayPointsToRemove removePointList = new WayPointsToRemove(Waypoints))
 			{
 				pathThatIsInside.Clear();
-				if (storeBoundary)
-				{
-					string pointsString = BoundaryPolygons.WriteToString();
-				}
 
 				//Check if we are inside the boundaries
 				Tuple<int, int, IntPoint> startPolyPointPosition = null;
