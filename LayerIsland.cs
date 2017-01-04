@@ -62,7 +62,7 @@ namespace MatterHackers.MatterSlice
 			LayerIsland part = this;
 			part.BoundingBox.Calculate(part.IslandOutline);
 
-			part.AvoidCrossingBoundary = new AvoidCrossingPerimeters(part.IslandOutline.Offset(-extrusionWidth_um * 3 / 2));
+			part.AvoidCrossingBoundary = new AvoidCrossingPerimeters(part.IslandOutline, -extrusionWidth_um * 3 / 2);
 			if (insetCount == 0)
 			{
 				// if we have no insets defined still create one

@@ -51,7 +51,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |________|
 				string partOutlineString = "x:0, y:0,x:1000, y:0,x:1000, y:1000,x:0, y:1000,|x:100, y:100,x:0, y:900,x:900, y:900,x:900, y:0,|";
 				Polygons boundaryPolygons = PolygonsHelper.CreateFromString(partOutlineString);
-				AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons);
+				AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons, 0);
 				Assert.IsTrue(testHarness.PointIsInsideBoundary(new IntPoint(1, 1)));
 			}
 
@@ -68,7 +68,7 @@ namespace MatterHackers.MatterSlice.Tests
 				Polygons boundaryPolygons = PolygonsHelper.CreateFromString(partOutlineString);
 				IntPoint startPoint = new IntPoint(95765, 114600);
 				IntPoint endPoint = new IntPoint(99485, 96234);
-				AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons);
+				AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons, 0);
 
 				{
 					IntPoint startPointInside = startPoint;
@@ -113,7 +113,7 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					IntPoint startPoint = new IntPoint(-10, 5);
 					IntPoint endPoint = new IntPoint(50, 5);
-					AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons);
+					AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons, 0);
 					Polygon insidePath = new Polygon();
 					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
 					Assert.AreEqual(4, insidePath.Count);
@@ -128,7 +128,7 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					IntPoint startPoint = new IntPoint(10, -1);
 					IntPoint endPoint = new IntPoint(30, -1);
-					AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons);
+					AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons, 0);
 					Polygon insidePath = new Polygon();
 					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
 					Assert.AreEqual(2, insidePath.Count);
@@ -168,7 +168,7 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					IntPoint startPoint = new IntPoint(672, 435);
 					IntPoint endPoint = new IntPoint(251, 334);
-					AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons);
+					AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons, 0);
 					Polygon insidePath = new Polygon();
 					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
 					Assert.AreEqual(5, insidePath.Count);

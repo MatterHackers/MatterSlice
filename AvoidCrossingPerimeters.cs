@@ -31,17 +31,19 @@ namespace MatterHackers.MatterSlice
 
 	public class AvoidCrossingPerimeters
 	{
-		public Polygons BoundaryPolygons;
+		public Polygons OutlinePolygons { get; private set; }
+		public Polygons BoundaryPolygons { get; private set; }
 		private static bool storeBoundary = false;
 
-		public AvoidCrossingPerimeters(Polygons boundaryPolygons)
+		public AvoidCrossingPerimeters(Polygons outlinePolygons, long avoidInset)
 		{
+			OutlinePolygons = outlinePolygons;
+			BoundaryPolygons = outlinePolygons.Offset(avoidInset);
+
 			if (storeBoundary)
 			{
-				string pointsString = boundaryPolygons.WriteToString();
+				string pointsString = outlinePolygons.WriteToString();
 			}
-
-			this.BoundaryPolygons = boundaryPolygons;
 
 			foreach (var polygon in BoundaryPolygons)
 			{
