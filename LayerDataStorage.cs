@@ -186,6 +186,17 @@ namespace MatterHackers.MatterSlice
 
 				if (brimCount > 0)
 				{
+					Polygons unionedIslandOutlines = new Polygons();
+
+					// Grow each island by the current brim distance
+					// Union the island brims
+					unionedIslandOutlines = unionedIslandOutlines.CreateUnion(allOutlines);
+
+					if (storage.support != null)
+					{
+						unionedIslandOutlines = unionedIslandOutlines.CreateUnion(storage.support.GetBedOutlines());
+					}
+
 					Polygons brimLoops = new Polygons();
 
 					// Loop over the requested brimCount creating and unioning a new perimeter for each island
@@ -193,20 +204,8 @@ namespace MatterHackers.MatterSlice
 					{
 						int offsetDistance = extrusionWidth_um * brimIndex + extrusionWidth_um / 2;
 
-						Polygons unionedIslandOutlines = new Polygons();
-
-						// Grow each island by the current brim distance
-						foreach (var island in allOutlines)
-						{
-							var polygons = new Polygons();
-							polygons.Add(island);
-
-							// Union the island brims
-							unionedIslandOutlines = unionedIslandOutlines.CreateUnion(polygons.Offset(offsetDistance));
-						}
-
 						// Extend the polygons to account for the brim (ensures convex hull takes this data into account) 
-						brimLoops.AddAll(unionedIslandOutlines);
+						brimLoops.AddAll(unionedIslandOutlines.Offset(offsetDistance));
 					}
 
 					// TODO: This is a quick hack, reuse the skirt data to stuff in the brim. Good enough from proof of concept
