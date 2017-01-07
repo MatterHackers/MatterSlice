@@ -147,12 +147,6 @@ namespace MatterHackers.MatterSlice
 			int o3 = Orientation(startB, endB, startA);
 			int o4 = Orientation(startB, endB, endA);
 
-			// General case
-			if (o1 != o2 && o3 != o4)
-			{
-				return Intersection.Intersect;
-			}
-
 			// Special Cases
 			// startA, endA and startB are collinear and startB lies on segment startA endA
 			if (o1 == 0 && OnSegment(startA, startB, endA)) return Intersection.Colinear;
@@ -165,6 +159,12 @@ namespace MatterHackers.MatterSlice
 
 			// startB, endB and endA are collinear and endA lies on segment startB-endB
 			if (o4 == 0 && OnSegment(startB, endA, endB)) return Intersection.Colinear;
+
+			// General case
+			if (o1 != o2 && o3 != o4)
+			{
+				return Intersection.Intersect;
+			}
 
 			return Intersection.None; // Doesn't fall in any of the above cases
 		}
@@ -181,7 +181,7 @@ namespace MatterHackers.MatterSlice
 		{
 			crossings.Clear();
 			IntPoint segmentDelta = end - start;
-			IntPoint normal = segmentDelta.Normal(1000);
+			long segmentLength = segmentDelta.Length();
 			IntPoint edgeStart = polygon[0];
 			for (int i = 0; i < polygon.Count; i++)
 			{
@@ -191,7 +191,7 @@ namespace MatterHackers.MatterSlice
 					&& CalcIntersection(start, end, edgeStart, edgeEnd, out intersection))
 				{
 					IntPoint pointRelStart = intersection - start;
-					long distanceFromStart = normal.Dot(pointRelStart) / 1000;
+					long distanceFromStart = segmentDelta.Dot(pointRelStart) / segmentLength;
 					crossings.Add(new Tuple<int, IntPoint>(i, intersection));
 				}
 
@@ -234,7 +234,6 @@ namespace MatterHackers.MatterSlice
 		public static bool SegmentTouching(this Polygon polygon, IntPoint start, IntPoint end)
 		{
 			IntPoint segmentDelta = end - start;
-			IntPoint normal = segmentDelta.Normal(1000);
 			IntPoint edgeStart = polygon[0];
 			for (int i = 0; i < polygon.Count; i++)
 			{
@@ -255,7 +254,6 @@ namespace MatterHackers.MatterSlice
 			Intersection bestIntersection = Intersection.None;
 
 			IntPoint segmentDelta = end - start;
-			IntPoint normal = segmentDelta.Normal(1000);
 			IntPoint edgeStart = polygon[0];
 			for (int i = 0; i < polygon.Count; i++)
 			{
@@ -618,17 +616,19 @@ namespace MatterHackers.MatterSlice
 		{
 			private IntPoint direction;
 			private IntPoint start;
+			long length;
 
 			public DirectionSorter(IntPoint start, IntPoint end)
 			{
 				this.start = start;
-				this.direction = (end - start).Normal(1000);
+				this.direction = end - start;
+				length = direction.Length();
 			}
 
 			public int Compare(Tuple<int, IntPoint> a, Tuple<int, IntPoint> b)
 			{
-				long distToA = direction.Dot(a.Item2 - start) / 1000;
-				long distToB = direction.Dot(b.Item2 - start) / 1000;
+				long distToA = direction.Dot(a.Item2 - start) / length;
+				long distToB = direction.Dot(b.Item2 - start) / length;
 
 				return distToA.CompareTo(distToB);
 			}

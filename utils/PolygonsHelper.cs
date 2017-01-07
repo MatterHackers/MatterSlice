@@ -302,7 +302,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			long bestDist = long.MaxValue;
-			IntPoint bestMoveNormal = new IntPoint();
+			IntPoint bestMoveDelta = new IntPoint();
 			for(int polygonIndex = 0; polygonIndex < boundaryPolygons.Count; polygonIndex++)
 			{
 				var boundaryPolygon = boundaryPolygons[polygonIndex];
@@ -325,26 +325,27 @@ namespace MatterHackers.MatterSlice
 					IntPoint segmentEnd = boundaryPolygon[pointIndex];
 
 					IntPoint segmentDelta = segmentEnd - segmentStart;
-					IntPoint normal = segmentDelta.Normal(1000);
-					IntPoint normalToRight = normal.GetPerpendicularLeft();
+					long segmentLength = segmentDelta.Length();
+					IntPoint segmentLeft = segmentDelta.GetPerpendicularLeft();
+					long segmentLeftLength = segmentLeft.Length();
 
-					long distanceFromStart = normal.Dot(pointRelStart) / 1000;
+					long distanceFromStart = segmentDelta.Dot(pointRelStart) / segmentLength;
 
 					if (distanceFromStart >= 0 && distanceFromStart <= segmentDelta.Length())
 					{
-						long distToBoundarySegment = normalToRight.Dot(pointRelStart) / 1000;
+						long distToBoundarySegment = segmentLeft.Dot(pointRelStart) / segmentLeftLength;
 
 						if (Math.Abs(distToBoundarySegment) < bestDist)
 						{
 							IntPoint pointAlongCurrentSegment = startPosition;
 							if (distToBoundarySegment != 0)
 							{
-								pointAlongCurrentSegment = startPosition - normalToRight * distToBoundarySegment / 1000;
+								pointAlongCurrentSegment = startPosition - segmentLeft * distToBoundarySegment / segmentLeftLength;
 							}
 
 							bestDist = Math.Abs(distToBoundarySegment);
 							bestPolyPointPosition = new Tuple<int, int, IntPoint>(polygonIndex, pointIndex, pointAlongCurrentSegment);
-							bestMoveNormal = normalToRight;
+							bestMoveDelta = segmentLeft;
 						}
 					}
 
@@ -354,7 +355,7 @@ namespace MatterHackers.MatterSlice
 
 			if (!boundaryPolygons.PointIsInside(bestPolyPointPosition.Item3))
 			{
-				long normalLength = bestMoveNormal.Length();
+				long normalLength = bestMoveDelta.Length();
 				if (normalLength == 0)
 				{
 					polyPointPosition = bestPolyPointPosition;
@@ -364,8 +365,8 @@ namespace MatterHackers.MatterSlice
 				if (recursionDepth < 10)
 				{
 					// try to perturb the point back into the actual bounds
-					IntPoint inPolyPosition = bestPolyPointPosition.Item3 + (bestMoveNormal * (1 << recursionDepth) / normalLength) * ((recursionDepth % 2) == 0 ? 1 : -1);
-					inPolyPosition += (bestMoveNormal.GetPerpendicularRight() * (1 << recursionDepth) / (normalLength * 2)) * ((recursionDepth % 3) == 0 ? 1 : -1);
+					IntPoint inPolyPosition = bestPolyPointPosition.Item3 + (bestMoveDelta * (1 << recursionDepth) / normalLength) * ((recursionDepth % 2) == 0 ? 1 : -1);
+					inPolyPosition += (bestMoveDelta.GetPerpendicularRight() * (1 << recursionDepth) / (normalLength * 2)) * ((recursionDepth % 3) == 0 ? 1 : -1);
 					boundaryPolygons.MovePointInsideBoundary(inPolyPosition, out bestPolyPointPosition, recursionDepth + 1);
 				}
 			}
@@ -401,31 +402,67 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		private static IEnumerable<Tuple<int, int, IntPoint>> SkipSame(this IEnumerable<Tuple<int, int, IntPoint>> source)
+		{
+			Tuple<int, int, IntPoint> lastItem = new Tuple<int, int, IntPoint>(-1,-1, new IntPoint(long.MaxValue, long.MaxValue));
+			foreach (var item in source)
+			{
+				if(item.Item3 != lastItem.Item3)
+				{
+					yield return item;
+				}
+				lastItem = item;
+			}
+		}
+
 		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint)
 		{
-			if (polygons.Count < 1)
+			List<Tuple<int, int, IntPoint>> crossings = new List<Tuple<int, int, IntPoint>>();
+			polygons.FindCrossingPoints(testPoint, testPoint + new IntPoint(10000000, 0), crossings);
+			var ordered = crossings.OrderBy(c => c.Item3.X).SkipSame();
+
+			if (!ordered.Any())
 			{
 				return false;
 			}
 
-			// we can just test the first one first as we know that there is a special case in
-			// the slicer that all the other polygons are inside this one.
-			if (polygons[0].PointIsInside(testPoint) == 0) // not inside or on boundary
-			{
-				// If we are not inside the outer perimeter we are not inside.
-				return false;
-			}
+			bool oldValue = false;
 
-			for (int polygonIndex = 1; polygonIndex < polygons.Count; polygonIndex++)
+			if (true)
 			{
-				polygons[polygonIndex].PointIsInside(testPoint);
-				if (polygons[polygonIndex].PointIsInside(testPoint) == 1) // inside the hole
+				// we can just test the first one first as we know that there is a special case in
+				// the slicer that all the other polygons are inside this one.
+				if (polygons[0].PointIsInside(testPoint) == 0) // not inside or on boundary
 				{
-					return false;
+					// If we are not inside the outer perimeter we are not inside.
+				}
+				else
+				{
+					bool found = false;
+					for (int polygonIndex = 1; polygonIndex < polygons.Count; polygonIndex++)
+					{
+						polygons[polygonIndex].PointIsInside(testPoint);
+						if (polygons[polygonIndex].PointIsInside(testPoint) == 1) // inside the hole
+						{
+							found = true;
+							break;
+						}
+					}
+
+					if(!found)
+					{
+						oldValue = true;
+					}
 				}
 			}
 
-			return true;
+			bool newValue = (ordered.Count() % 2 == 1);
+			if(newValue != oldValue)
+			{
+				int a = 10;
+			}
+
+			return newValue;
 		}
 
 		public static long PolygonLength(this Polygons polygons, bool areClosed = true)
@@ -613,25 +650,25 @@ namespace MatterHackers.MatterSlice
 				ret.Add(polygons);
 			}
 		}
+	}
 
-		public class DirectionSorter : IComparer<Tuple<int, int, IntPoint>>
+	public class DirectionSorter : IComparer<Tuple<int, int, IntPoint>>
+	{
+		private IntPoint direction;
+		private IntPoint start;
+
+		public DirectionSorter(IntPoint start, IntPoint end)
 		{
-			private IntPoint direction;
-			private IntPoint start;
+			this.start = start;
+			this.direction = (end - start).Normal(1000);
+		}
 
-			public DirectionSorter(IntPoint start, IntPoint end)
-			{
-				this.start = start;
-				this.direction = (end - start).Normal(1000);
-			}
+		public int Compare(Tuple<int, int, IntPoint> a, Tuple<int, int, IntPoint> b)
+		{
+			long distToA = direction.Dot(a.Item3 - start) / 1000;
+			long distToB = direction.Dot(b.Item3 - start) / 1000;
 
-			public int Compare(Tuple<int, int, IntPoint> a, Tuple<int, int, IntPoint> b)
-			{
-				long distToA = direction.Dot(a.Item3 - start) / 1000;
-				long distToB = direction.Dot(b.Item3 - start) / 1000;
-
-				return distToA.CompareTo(distToB);
-			}
+			return distToA.CompareTo(distToB);
 		}
 	}
 }
