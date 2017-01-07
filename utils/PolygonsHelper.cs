@@ -28,6 +28,7 @@ namespace MatterHackers.MatterSlice
 {
 	using System;
 	using System.Linq;
+	using QuadTree;
 	using Paths = List<List<IntPoint>>;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
@@ -190,14 +191,28 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static Tuple<int, int> FindPoint(this Polygons polygons, IntPoint position)
+		public static Tuple<int, int> FindPoint(this Polygons polygons, IntPoint position, List<QuadTree<int>> pointQuadTrees = null)
 		{
-			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
+			if (pointQuadTrees != null)
 			{
-				int pointIndex = polygons[polyIndex].FindPoint(position);
-				if (pointIndex != -1)
+				for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
 				{
-					return new Tuple<int, int>(polyIndex, pointIndex);
+					int pointIndex = polygons[polyIndex].FindPoint(position, pointQuadTrees[polyIndex]);
+					if (pointIndex != -1)
+					{
+						return new Tuple<int, int>(polyIndex, pointIndex);
+					}
+				}
+			}
+			else
+			{
+				for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
+				{
+					int pointIndex = polygons[polyIndex].FindPoint(position);
+					if (pointIndex != -1)
+					{
+						return new Tuple<int, int>(polyIndex, pointIndex);
+					}
 				}
 			}
 
@@ -549,6 +564,28 @@ namespace MatterHackers.MatterSlice
 		public static int size(this Polygons polygons)
 		{
 			return polygons.Count;
+		}
+
+		public static List<QuadTree<int>> GetEdgeQuadTrees(this Polygons polygons)
+		{
+			var quadTrees = new List<QuadTree<int>>();
+			foreach(var polygon in polygons)
+			{
+				quadTrees.Add(polygon.GetEdgeQuadTree());
+			}
+
+			return quadTrees;
+		}
+
+		public static List<QuadTree<int>> GetPointQuadTrees(this Polygons polygons)
+		{
+			var quadTrees = new List<QuadTree<int>>();
+			foreach (var polygon in polygons)
+			{
+				quadTrees.Add(polygon.GetPointQuadTree());
+			}
+
+			return quadTrees;
 		}
 
 		public static string WriteToString(this Polygons polygons)

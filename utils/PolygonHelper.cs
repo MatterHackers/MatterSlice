@@ -26,7 +26,7 @@ using MSClipperLib;
 namespace MatterHackers.MatterSlice
 {
 	using System;
-
+	using QuadTree;
 	using Polygon = List<IntPoint>;
 
 	using Polygons = List<List<IntPoint>>;
@@ -199,13 +199,32 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static int FindPoint(this Polygon polygon, IntPoint position)
+		/// <summary>
+		/// Return the point index or -1 if not a vertex of the polygon
+		/// </summary>
+		/// <param name="polygon"></param>
+		/// <param name="position"></param>
+		/// <returns></returns>
+		public static int FindPoint(this Polygon polygon, IntPoint position, QuadTree<int> pointQuadTree = null)
 		{
-			for (int i = 0; i < polygon.Count; i++)
+			if (pointQuadTree != null)
 			{
-				if (position == polygon[i])
+				foreach(var index in pointQuadTree.SearchPoint(position.X, position.Y))
 				{
-					return i;
+					if (position == polygon[index])
+					{
+						return index;
+					}
+				}
+			}
+			else
+			{
+				for (int i = 0; i < polygon.Count; i++)
+				{
+					if (position == polygon[i])
+					{
+						return i;
+					}
 				}
 			}
 
@@ -242,7 +261,8 @@ namespace MatterHackers.MatterSlice
 			{
 				// if we share a vertex we cannot be crossing the line
 				IntPoint edgeEnd = polygon[(i + 1) % polygon.Count];
-				if (start == edgeStart || start == edgeEnd || end == edgeStart || end == edgeEnd)
+				if (start == edgeStart || start == edgeEnd || end == edgeStart || end == edgeEnd
+					|| start == polygon[i] || end == polygon[i])
 				{
 					bestIntersection = Intersection.Colinear;
 				}
@@ -481,6 +501,10 @@ namespace MatterHackers.MatterSlice
 		//returns 0 if false, +1 if true, -1 if pt ON polygon boundary
 		public static int PointIsInside(this Polygon polygon, IntPoint testPoint)
 		{
+			if (polygon.FindPoint(testPoint) != -1)
+			{
+				return -1;
+			}
 			return Clipper.PointInPolygon(testPoint, polygon);
 		}
 
@@ -541,6 +565,32 @@ namespace MatterHackers.MatterSlice
 		public static int size(this Polygon polygon)
 		{
 			return polygon.Count;
+		}
+
+		public static QuadTree<int> GetEdgeQuadTree(this Polygon polygon)
+		{
+			var bounds = polygon.GetBounds();
+			var quadTree = new QuadTree<int>(5, bounds.left, bounds.bottom, bounds.right, bounds.top);
+			var previousPoint = polygon[polygon.Count - 1];
+			for(int i=0; i<polygon.Count;i++)
+			{
+				quadTree.Insert(i, new Quad(Math.Min(previousPoint.X, polygon[i].X), Math.Min(previousPoint.Y, polygon[i].Y), Math.Max(previousPoint.X, polygon[i].X), Math.Max(previousPoint.Y, polygon[i].Y)));
+				previousPoint = polygon[i];
+			}
+
+			return quadTree;
+		}
+
+		public static QuadTree<int> GetPointQuadTree(this Polygon polygon)
+		{
+			var bounds = polygon.GetBounds();
+			var quadTree = new QuadTree<int>(5, bounds.left - 1, bounds.bottom - 1, bounds.right + 1, bounds.top + 1);
+			for (int i = 0; i < polygon.Count; i++)
+			{
+				quadTree.Insert(i, polygon[i].X-1, polygon[i].Y-1, polygon[i].X+1, polygon[i].Y+1);
+			}
+
+			return quadTree;
 		}
 
 		public static string WriteToString(this Polygon polygon)

@@ -26,19 +26,28 @@ namespace MatterHackers.MatterSlice
 {
 	using System;
 	using Pathfinding;
+	using QuadTree;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
 	public class AvoidCrossingPerimeters
 	{
 		public Polygons OutlinePolygons { get; private set; }
+		public List<QuadTree<int>> OutlineQuadTrees { get; private set; }
+
 		public Polygons BoundaryPolygons { get; private set; }
+		public List<QuadTree<int>> BoundaryEdgeQuadTrees { get; private set; }
+		public List<QuadTree<int>> BoundaryPointQuadTrees { get; private set; }
+
 		private static bool storeBoundary = false;
 
 		public AvoidCrossingPerimeters(Polygons outlinePolygons, long avoidInset)
 		{
 			OutlinePolygons = outlinePolygons;
+			OutlineQuadTrees = OutlinePolygons.GetEdgeQuadTrees();
 			BoundaryPolygons = outlinePolygons.Offset(avoidInset);
+			BoundaryEdgeQuadTrees = BoundaryPolygons.GetEdgeQuadTrees();
+			BoundaryPointQuadTrees = BoundaryPolygons.GetPointQuadTrees();
 
 			if (storeBoundary)
 			{
@@ -60,9 +69,12 @@ namespace MatterHackers.MatterSlice
 			{
 				CreateLinks(nodeIndexA, nodeIndexA + 1);
 			}
+
+			removePointList = new WayPointsToRemove(Waypoints);
 		}
 
 		public IntPointPathNetwork Waypoints { get; private set; } = new IntPointPathNetwork();
+		WayPointsToRemove removePointList;
 
 		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside)
 		{
@@ -73,57 +85,56 @@ namespace MatterHackers.MatterSlice
 				return true;
 			}
 
-			using (WayPointsToRemove removePointList = new WayPointsToRemove(Waypoints))
+			removePointList.Dispose();
+
+			pathThatIsInside.Clear();
+
+			//Check if we are inside the boundaries
+			Tuple<int, int, IntPoint> startPolyPointPosition = null;
+			if (!BoundaryPolygons.PointIsInside(startPoint))
 			{
-				pathThatIsInside.Clear();
-
-				//Check if we are inside the boundaries
-				Tuple<int, int, IntPoint> startPolyPointPosition = null;
-				if (!BoundaryPolygons.PointIsInside(startPoint))
+				if (!BoundaryPolygons.MovePointInsideBoundary(startPoint, out startPolyPointPosition))
 				{
-					if (!BoundaryPolygons.MovePointInsideBoundary(startPoint, out startPolyPointPosition))
-					{
-						//If we fail to move the point inside the comb boundary we need to retract.
-						return false;
-					}
-
-					startPoint = startPolyPointPosition.Item3;
+					//If we fail to move the point inside the comb boundary we need to retract.
+					return false;
 				}
 
-				Tuple<int, int, IntPoint> endPolyPointPosition = null;
-				if (!BoundaryPolygons.PointIsInside(endPoint))
-				{
-					if (!BoundaryPolygons.MovePointInsideBoundary(endPoint, out endPolyPointPosition))
-					{
-						//If we fail to move the point inside the comb boundary we need to retract.
-						return false;
-					}
+				startPoint = startPolyPointPosition.Item3;
+			}
 
-					endPoint = endPolyPointPosition.Item3;
+			Tuple<int, int, IntPoint> endPolyPointPosition = null;
+			if (!BoundaryPolygons.PointIsInside(endPoint))
+			{
+				if (!BoundaryPolygons.MovePointInsideBoundary(endPoint, out endPolyPointPosition))
+				{
+					//If we fail to move the point inside the comb boundary we need to retract.
+					return false;
 				}
 
-				if (BoundaryPolygons.FindIntersection(startPoint, endPoint) == Intersection.None
-					&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2))
-				{
-					pathThatIsInside.Add(startPoint);
-					pathThatIsInside.Add(endPoint);
-					return true;
-				}
+				endPoint = endPolyPointPosition.Item3;
+			}
 
-				IntPointNode startNode = AddTempWayPoint(removePointList, startPoint);
-				IntPointNode endNode = AddTempWayPoint(removePointList, endPoint);
-
-				// else
-
-				Path<IntPointNode> path = Waypoints.FindPath(startNode, endNode, true);
-
-				foreach (var node in path.nodes)
-				{
-					pathThatIsInside.Add(node.Position);
-				}
-
+			if (BoundaryPolygons.FindIntersection(startPoint, endPoint) == Intersection.None
+				&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2))
+			{
+				pathThatIsInside.Add(startPoint);
+				pathThatIsInside.Add(endPoint);
 				return true;
 			}
+
+			IntPointNode startNode = AddTempWayPoint(removePointList, startPoint);
+			IntPointNode endNode = AddTempWayPoint(removePointList, endPoint);
+
+			// else
+
+			Path<IntPointNode> path = Waypoints.FindPath(startNode, endNode, true);
+
+			foreach (var node in path.nodes)
+			{
+				pathThatIsInside.Add(node.Position);
+			}
+
+			return true;
 		}
 
 		public bool MovePointInsideBoundary(IntPoint testPosition, out IntPoint inPolyPosition)
@@ -221,7 +232,7 @@ namespace MatterHackers.MatterSlice
 		{
 			IntPoint pointA = Waypoints.Nodes[nodeIndexA].Position;
 
-			Tuple<int, int> index = BoundaryPolygons.FindPoint(pointA);
+			Tuple<int, int> index = BoundaryPolygons.FindPoint(pointA, BoundaryPointQuadTrees);
 
 			if (index != null)
 			{

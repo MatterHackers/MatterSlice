@@ -312,18 +312,9 @@ namespace QuadTree
 		/// <param name="x">The x coordinate.</param>
 		/// <param name="y">The y coordinate.</param>
 		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
-		public bool SearchPoint(long x, long y, ref List<T> values)
+		public IEnumerable<T> SearchPoint(long x, long y)
 		{
-			if (values != null)
-			{
-				values.Clear();
-			}
-			else
-			{
-				values = new List<T>();
-			}
-			root.SearchPoint(x, y, values);
-			return values.Count > 0;
+			return root.SearchPoint(x, y);
 		}
 
 		static Branch CreateBranch(QuadTree<T> tree, Branch parent, ref Quad quad)
@@ -444,7 +435,7 @@ namespace QuadTree
 				}
 			}
 
-			internal void SearchPoint(long x, long y, List<T> values)
+			internal IEnumerable<T> SearchPoint(long x, long y)
 			{
 				if (Leaves.Count > 0)
 				{
@@ -452,7 +443,7 @@ namespace QuadTree
 					{
 						if (Leaves[i].Quad.Contains(x, y))
 						{
-							values.Add(Leaves[i].Value);
+							yield return Leaves[i].Value;
 						}
 					}
 				}
@@ -461,7 +452,10 @@ namespace QuadTree
 				{
 					if (Branches[i] != null)
 					{
-						Branches[i].SearchPoint(x, y, values);
+						foreach(var index in Branches[i].SearchPoint(x, y))
+						{
+							yield return index;
+						}
 					}
 				}
 			}

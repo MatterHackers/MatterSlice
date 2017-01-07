@@ -6,13 +6,13 @@ namespace MatterHackers.MatterSlice
 {
 	public class CloseSegmentsIterator
 	{
-		static bool newMethod = true;
+		bool useQuadTree = true;
 
 		QuadTree<int> tree;
 
-		public CloseSegmentsIterator(List<Segment> polySegments, long overlapAmount)
+		public CloseSegmentsIterator(List<Segment> polySegments, long overlapAmount = 0, bool useQuadTree = true)
 		{
-			if (newMethod)
+			if (useQuadTree)
 			{
 				IntRect bounds = new IntRect();
 				List<Quad> quads = new List<Quad>(polySegments.Count);
@@ -45,7 +45,7 @@ namespace MatterHackers.MatterSlice
 
 		public IEnumerable<int> GetTouching(int firstSegmentIndex, int endIndexExclusive)
 		{
-			if (newMethod)
+			if (useQuadTree)
 			{
 				foreach(var segmentIndex in tree.FindCollisions(firstSegmentIndex))
 				{
