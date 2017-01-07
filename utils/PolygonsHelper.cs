@@ -178,12 +178,12 @@ namespace MatterHackers.MatterSlice
 			return deepCopy;
 		}
 
-		public static void FindCrossingPoints(this Polygons polygons, IntPoint start, IntPoint end, List<Tuple<int, int, IntPoint>> crossings)
+		public static void FindCrossingPoints(this Polygons polygons, IntPoint start, IntPoint end, List<Tuple<int, int, IntPoint>> crossings, List<QuadTree<int>> edgeQuadTrees = null)
 		{
 			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
 			{
 				List<Tuple<int, IntPoint>> polyCrossings = new List<Tuple<int, IntPoint>>();
-				polygons[polyIndex].FindCrossingPoints(start, end, polyCrossings);
+				polygons[polyIndex].FindCrossingPoints(start, end, polyCrossings, edgeQuadTrees == null ? null : edgeQuadTrees[polyIndex]);
 				foreach (var crossing in polyCrossings)
 				{
 					crossings.Add(new Tuple<int, int, IntPoint>(polyIndex, crossing.Item1, crossing.Item2));
@@ -243,12 +243,12 @@ namespace MatterHackers.MatterSlice
 			throw new NotImplementedException();
 		}
 
-		public static Intersection FindIntersection(this Polygons polygons, IntPoint start, IntPoint end)
+		public static Intersection FindIntersection(this Polygons polygons, IntPoint start, IntPoint end, List<QuadTree<int>> edgeQuadTrees = null)
 		{
 			Intersection bestIntersection = Intersection.None;
 			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
 			{
-				var result = polygons[polyIndex].FindIntersection(start, end);
+				var result = polygons[polyIndex].FindIntersection(start, end, edgeQuadTrees == null ? null : edgeQuadTrees[polyIndex]);
 				if (result == Intersection.Intersect)
 				{
 					return Intersection.Intersect;
@@ -415,10 +415,10 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint)
+		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint, List<QuadTree<int>> edgeQuadTrees = null)
 		{
 			List<Tuple<int, int, IntPoint>> crossings = new List<Tuple<int, int, IntPoint>>();
-			polygons.FindCrossingPoints(testPoint, testPoint + new IntPoint(10000000, 0), crossings);
+			polygons.FindCrossingPoints(testPoint, testPoint + new IntPoint(10000000, 0), crossings, edgeQuadTrees);
 			var ordered = crossings.OrderBy(c => c.Item3.X).SkipSame();
 
 			if (!ordered.Any())
@@ -426,43 +426,7 @@ namespace MatterHackers.MatterSlice
 				return false;
 			}
 
-			bool oldValue = false;
-
-			if (true)
-			{
-				// we can just test the first one first as we know that there is a special case in
-				// the slicer that all the other polygons are inside this one.
-				if (polygons[0].PointIsInside(testPoint) == 0) // not inside or on boundary
-				{
-					// If we are not inside the outer perimeter we are not inside.
-				}
-				else
-				{
-					bool found = false;
-					for (int polygonIndex = 1; polygonIndex < polygons.Count; polygonIndex++)
-					{
-						polygons[polygonIndex].PointIsInside(testPoint);
-						if (polygons[polygonIndex].PointIsInside(testPoint) == 1) // inside the hole
-						{
-							found = true;
-							break;
-						}
-					}
-
-					if(!found)
-					{
-						oldValue = true;
-					}
-				}
-			}
-
-			bool newValue = (ordered.Count() % 2 == 1);
-			if(newValue != oldValue)
-			{
-				int a = 10;
-			}
-
-			return newValue;
+			return (ordered.Count() % 2 == 1);
 		}
 
 		public static long PolygonLength(this Polygons polygons, bool areClosed = true)
@@ -603,23 +567,23 @@ namespace MatterHackers.MatterSlice
 			return polygons.Count;
 		}
 
-		public static List<QuadTree<int>> GetEdgeQuadTrees(this Polygons polygons)
+		public static List<QuadTree<int>> GetEdgeQuadTrees(this Polygons polygons, int splitCount = 5, long expandDist = 1)
 		{
 			var quadTrees = new List<QuadTree<int>>();
 			foreach(var polygon in polygons)
 			{
-				quadTrees.Add(polygon.GetEdgeQuadTree());
+				quadTrees.Add(polygon.GetEdgeQuadTree(splitCount, expandDist));
 			}
 
 			return quadTrees;
 		}
 
-		public static List<QuadTree<int>> GetPointQuadTrees(this Polygons polygons)
+		public static List<QuadTree<int>> GetPointQuadTrees(this Polygons polygons, int splitCount = 5, long expandDist = 1)
 		{
 			var quadTrees = new List<QuadTree<int>>();
 			foreach (var polygon in polygons)
 			{
-				quadTrees.Add(polygon.GetPointQuadTree());
+				quadTrees.Add(polygon.GetPointQuadTree(splitCount, expandDist));
 			}
 
 			return quadTrees;

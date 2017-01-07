@@ -489,6 +489,14 @@ namespace MSClipperLib
 			this.left = ir.left; this.top = ir.top;
 			this.right = ir.right; this.bottom = ir.bottom;
 		}
+
+		public void Inflate(long expandDist)
+		{
+			left -= expandDist;
+			bottom -= expandDist;
+			right += expandDist;
+			top += expandDist;
+		}
 	}
 
 	public enum ClipType { ctIntersection, ctUnion, ctDifference, ctXor };

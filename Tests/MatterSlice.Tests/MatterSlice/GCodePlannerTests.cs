@@ -117,7 +117,7 @@ namespace MatterHackers.MatterSlice.Tests
 				};
 
 
-				var touchingEnumerator = new ClosePointsIterator(cuts, 400);
+				var touchingEnumerator = new PolygonEdgeIterator(cuts, 400);
 				List<Segment> segmentsTest = segmentToCut.GetSplitSegmentForVertecies(touchingEnumerator);
 				Assert.IsTrue(segmentsControl.Count == segmentsTest.Count);
 				for(int i=0; i<segmentsTest.Count; i++)
@@ -153,7 +153,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				long mergeDistance = 400 / 4;
 				Segment segment = new Segment(new IntPoint(5000, 50), new IntPoint(0, 50));
-				var touchingEnumerator = new ClosePointsIterator(new Polygon { new IntPoint(4500, 0) }, mergeDistance);
+				var touchingEnumerator = new PolygonEdgeIterator(new Polygon { new IntPoint(4500, 0) }, mergeDistance);
 				List<Segment> segments = segment.GetSplitSegmentForVertecies(touchingEnumerator);
 				Assert.IsTrue(segments.Count == 2);
 				Assert.IsTrue(segments[0] == new Segment(new IntPoint(5000, 50), new IntPoint(4500, 50)));

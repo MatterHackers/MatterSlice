@@ -148,7 +148,7 @@ namespace MatterHackers.MatterSlice
 			return polySegments;
 		}
 
-		public List<Segment> GetSplitSegmentForVertecies(ClosePointsIterator touchingEnumerator)
+		public List<Segment> GetSplitSegmentForVertecies(PolygonEdgeIterator touchingEnumerator)
 		{
 			IntPoint start2D = new IntPoint(Start)
 			{
@@ -1097,7 +1097,7 @@ namespace MatterHackers.MatterSlice
 		{
 			List<Segment> segments = Segment.ConvertToSegments(polygonToSplit, pathIsClosed);
 
-			var touchingEnumerator = new ClosePointsIterator(pointsToSplitOn, distanceNeedingAdd);
+			var touchingEnumerator = new PolygonEdgeIterator(pointsToSplitOn, distanceNeedingAdd);
 
 			// for every segment
 			for (int segmentIndex = segments.Count - 1; segmentIndex >= 0; segmentIndex--)

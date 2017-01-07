@@ -79,7 +79,7 @@ namespace MatterHackers.MatterSlice
 		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside)
 		{
 			// neither needed to be moved
-			if (BoundaryPolygons.FindIntersection(startPoint, endPoint) == Intersection.None
+			if (BoundaryPolygons.FindIntersection(startPoint, endPoint, BoundaryEdgeQuadTrees) == Intersection.None
 				&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2))
 			{
 				return true;
@@ -225,7 +225,7 @@ namespace MatterHackers.MatterSlice
 
 		private bool LinkIntersectsPolygon(int nodeIndexA, int nodeIndexB)
 		{
-			return BoundaryPolygons.FindIntersection(Waypoints.Nodes[nodeIndexA].Position, Waypoints.Nodes[nodeIndexB].Position) == Intersection.Intersect;
+			return BoundaryPolygons.FindIntersection(Waypoints.Nodes[nodeIndexA].Position, Waypoints.Nodes[nodeIndexB].Position, BoundaryEdgeQuadTrees) == Intersection.Intersect;
 		}
 
 		private bool LinkIsInside(int nodeIndexA, int nodeIndexB)
@@ -248,7 +248,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			return BoundaryPolygons.PointIsInside((Waypoints.Nodes[nodeIndexA].Position + Waypoints.Nodes[nodeIndexB].Position) / 2);
+			return BoundaryPolygons.PointIsInside((Waypoints.Nodes[nodeIndexA].Position + Waypoints.Nodes[nodeIndexB].Position) / 2, BoundaryEdgeQuadTrees);
 		}
 	}
 }

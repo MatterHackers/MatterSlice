@@ -65,52 +65,31 @@ namespace MatterHackers.MatterSlice
 		}
 	}
 
-	public class ClosePointsIterator
+	public class PolygonEdgeIterator
 	{
-		static bool newMethod = true;
+		static bool newMethod = false;
 		QuadTree<int> tree;
 
 		public List<IntPoint> SourcePoints { get; private set; }
 		public long OverlapAmount { get; private set; }
 
-		public ClosePointsIterator(List<IntPoint> sourcePoints, long overlapAmount)
+		public PolygonEdgeIterator(List<IntPoint> sourcePoints, long overlapAmount, QuadTree<int> treeToUse = null)
 		{
 			this.OverlapAmount = overlapAmount;
 			this.SourcePoints = sourcePoints;
 			if (newMethod)
 			{
-				IntRect bounds = new IntRect();
-				List<Quad> quads = new List<Quad>(sourcePoints.Count);
-				for (int i = 0; i < sourcePoints.Count; i++)
+				tree = treeToUse;
+				if (tree == null)
 				{
-					var quad = new Quad(sourcePoints[i].X - overlapAmount,
-						sourcePoints[i].Y - overlapAmount,
-						sourcePoints[i].X + overlapAmount,
-						sourcePoints[i].Y + overlapAmount);
-
-					if (i == 0)
-					{
-						bounds = new IntRect(quad.MinX, quad.MinY, quad.MaxX, quad.MaxY);
-					}
-					else
-					{
-						bounds.ExpandToInclude(new IntRect(quad.MinX, quad.MinY, quad.MaxX, quad.MaxY));
-					}
-
-					quads.Add(quad);
-				}
-
-				tree = new QuadTree<int>(5, new Quad(bounds.left, bounds.top, bounds.right, bounds.bottom));
-				for (int i = 0; i < quads.Count; i++)
-				{
-					tree.Insert(i, quads[i]);
+					tree = sourcePoints.GetEdgeQuadTree(5, overlapAmount);
 				}
 			}
 		}
 
 		public IEnumerable<int> GetTouching(Quad touchingBounds)
 		{
-			if (newMethod)
+			if (tree != null)
 			{
 				foreach (var index in tree.SearchArea(touchingBounds))
 				{

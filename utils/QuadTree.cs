@@ -22,6 +22,7 @@
 
 using System;
 using System.Collections.Generic;
+using MSClipperLib;
 
 namespace QuadTree
 {
@@ -34,6 +35,15 @@ namespace QuadTree
 		public long MaxY;
 		public long MinX;
 		public long MinY;
+
+		public Quad(IntPoint start, IntPoint end) : this()
+		{
+			MinX = Math.Min(start.X, end.X) - 1;
+			MinY = Math.Min(start.Y, end.Y) - 1;
+			MaxX = Math.Max(start.X, end.X) + 1;
+			MaxY = Math.Max(start.Y, end.Y) + 1;
+		}
+
 		/// <summary>
 		/// Construct a new Quad.
 		/// </summary>

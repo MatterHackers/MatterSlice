@@ -177,14 +177,15 @@ namespace MatterHackers.MatterSlice
 			if (otherRect.bottom > inRect.bottom) inRect.bottom = otherRect.bottom;
 		}
 
-		public static void FindCrossingPoints(this Polygon polygon, IntPoint start, IntPoint end, List<Tuple<int, IntPoint>> crossings)
+		public static void FindCrossingPoints(this Polygon polygon, IntPoint start, IntPoint end, List<Tuple<int, IntPoint>> crossings, QuadTree<int> edgeQuadTree = null)
 		{
 			crossings.Clear();
 			IntPoint segmentDelta = end - start;
 			long segmentLength = segmentDelta.Length();
-			IntPoint edgeStart = polygon[0];
-			for (int i = 0; i < polygon.Count; i++)
+			var edgeIterator = new PolygonEdgeIterator(polygon, 1, edgeQuadTree);
+			foreach (var i in edgeIterator.GetTouching(new Quad(start, end)))
 			{
+				IntPoint edgeStart = polygon[i];
 				IntPoint edgeEnd = polygon[(i + 1) % polygon.Count];
 				IntPoint intersection;
 				if (DoIntersect(start, end, edgeStart, edgeEnd)
@@ -194,8 +195,6 @@ namespace MatterHackers.MatterSlice
 					long distanceFromStart = segmentDelta.Dot(pointRelStart) / segmentLength;
 					crossings.Add(new Tuple<int, IntPoint>(i, intersection));
 				}
-
-				edgeStart = edgeEnd;
 			}
 		}
 
@@ -249,14 +248,16 @@ namespace MatterHackers.MatterSlice
 			return false;
 		}
 
-		public static Intersection FindIntersection(this Polygon polygon, IntPoint start, IntPoint end)
+		public static Intersection FindIntersection(this Polygon polygon, IntPoint start, IntPoint end, QuadTree<int> edgeQuadTree = null)
 		{
 			Intersection bestIntersection = Intersection.None;
 
 			IntPoint segmentDelta = end - start;
-			IntPoint edgeStart = polygon[0];
-			for (int i = 0; i < polygon.Count; i++)
+			var edgeIterator = new PolygonEdgeIterator(polygon, 1, edgeQuadTree);
+			foreach (var i in edgeIterator.GetTouching(new Quad(start, end)))
 			{
+				IntPoint edgeStart = polygon[i];
+
 				// if we share a vertex we cannot be crossing the line
 				IntPoint edgeEnd = polygon[(i + 1) % polygon.Count];
 				if (start == edgeStart || start == edgeEnd || end == edgeStart || end == edgeEnd
@@ -276,8 +277,6 @@ namespace MatterHackers.MatterSlice
 						bestIntersection = Intersection.Colinear;
 					}
 				}
-
-				edgeStart = edgeEnd;
 			}
 
 			return bestIntersection;
@@ -319,13 +318,13 @@ namespace MatterHackers.MatterSlice
 					result.right = inPolygon[pointIndex].X;
 				}
 
-				if (inPolygon[pointIndex].Y < result.top)
-				{
-					result.top = inPolygon[pointIndex].Y;
-				}
-				else if (inPolygon[pointIndex].Y > result.bottom)
+				if (inPolygon[pointIndex].Y < result.bottom)
 				{
 					result.bottom = inPolygon[pointIndex].Y;
+				}
+				else if (inPolygon[pointIndex].Y > result.top)
+				{
+					result.top = inPolygon[pointIndex].Y;
 				}
 			}
 
@@ -565,27 +564,32 @@ namespace MatterHackers.MatterSlice
 			return polygon.Count;
 		}
 
-		public static QuadTree<int> GetEdgeQuadTree(this Polygon polygon)
+		public static QuadTree<int> GetEdgeQuadTree(this Polygon polygon, int splitCount = 5, long expandDist = 1)
 		{
 			var bounds = polygon.GetBounds();
-			var quadTree = new QuadTree<int>(5, bounds.left, bounds.bottom, bounds.right, bounds.top);
+			bounds.Inflate(expandDist);
+			var quadTree = new QuadTree<int>(splitCount, bounds.left, bounds.bottom, bounds.right, bounds.top);
 			var previousPoint = polygon[polygon.Count - 1];
 			for(int i=0; i<polygon.Count;i++)
 			{
-				quadTree.Insert(i, new Quad(Math.Min(previousPoint.X, polygon[i].X), Math.Min(previousPoint.Y, polygon[i].Y), Math.Max(previousPoint.X, polygon[i].X), Math.Max(previousPoint.Y, polygon[i].Y)));
+				quadTree.Insert(i, new Quad(Math.Min(previousPoint.X, polygon[i].X) - expandDist, 
+					Math.Min(previousPoint.Y, polygon[i].Y) - expandDist, 
+					Math.Max(previousPoint.X, polygon[i].X) + expandDist, 
+					Math.Max(previousPoint.Y, polygon[i].Y) + expandDist));
 				previousPoint = polygon[i];
 			}
 
 			return quadTree;
 		}
 
-		public static QuadTree<int> GetPointQuadTree(this Polygon polygon)
+		public static QuadTree<int> GetPointQuadTree(this Polygon polygon, int splitCount = 5, long expandDist = 1)
 		{
 			var bounds = polygon.GetBounds();
-			var quadTree = new QuadTree<int>(5, bounds.left - 1, bounds.bottom - 1, bounds.right + 1, bounds.top + 1);
+			bounds.Inflate(expandDist);
+			var quadTree = new QuadTree<int>(splitCount, bounds.left, bounds.bottom, bounds.right, bounds.top);
 			for (int i = 0; i < polygon.Count; i++)
 			{
-				quadTree.Insert(i, polygon[i].X-1, polygon[i].Y-1, polygon[i].X+1, polygon[i].Y+1);
+				quadTree.Insert(i, polygon[i].X - expandDist, polygon[i].Y - expandDist, polygon[i].X + expandDist, polygon[i].Y + expandDist);
 			}
 
 			return quadTree;
