@@ -290,11 +290,11 @@ namespace MatterHackers.MatterSlice
 			return outputPolygons;
 		}
 
-		public static bool MovePointInsideBoundary(this Polygons boundaryPolygons, IntPoint startPosition, out Tuple<int, int, IntPoint> polyPointPosition, int recursionDepth = 0)
+		public static bool MovePointInsideBoundary(this Polygons boundaryPolygons, IntPoint startPosition, out Tuple<int, int, IntPoint> polyPointPosition, List<QuadTree<int>> edgeQuadTrees = null, int recursionDepth = 0)
 		{
 			Tuple<int, int, IntPoint> bestPolyPointPosition =  new Tuple<int, int, IntPoint>(0, 0, startPosition);
 
-			if (boundaryPolygons.PointIsInside(startPosition))
+			if (boundaryPolygons.PointIsInside(startPosition, edgeQuadTrees))
 			{
 				// already inside
 				polyPointPosition = bestPolyPointPosition;
@@ -353,7 +353,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			if (!boundaryPolygons.PointIsInside(bestPolyPointPosition.Item3))
+			if (!boundaryPolygons.PointIsInside(bestPolyPointPosition.Item3, edgeQuadTrees))
 			{
 				long normalLength = bestMoveDelta.Length();
 				if (normalLength == 0)
@@ -367,7 +367,7 @@ namespace MatterHackers.MatterSlice
 					// try to perturb the point back into the actual bounds
 					IntPoint inPolyPosition = bestPolyPointPosition.Item3 + (bestMoveDelta * (1 << recursionDepth) / normalLength) * ((recursionDepth % 2) == 0 ? 1 : -1);
 					inPolyPosition += (bestMoveDelta.GetPerpendicularRight() * (1 << recursionDepth) / (normalLength * 2)) * ((recursionDepth % 3) == 0 ? 1 : -1);
-					boundaryPolygons.MovePointInsideBoundary(inPolyPosition, out bestPolyPointPosition, recursionDepth + 1);
+					boundaryPolygons.MovePointInsideBoundary(inPolyPosition, out bestPolyPointPosition, edgeQuadTrees, recursionDepth + 1);
 				}
 			}
 

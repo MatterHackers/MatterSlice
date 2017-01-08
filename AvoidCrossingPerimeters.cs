@@ -80,7 +80,7 @@ namespace MatterHackers.MatterSlice
 		{
 			// neither needed to be moved
 			if (BoundaryPolygons.FindIntersection(startPoint, endPoint, BoundaryEdgeQuadTrees) == Intersection.None
-				&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2))
+				&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2, BoundaryEdgeQuadTrees))
 			{
 				return true;
 			}
@@ -91,9 +91,9 @@ namespace MatterHackers.MatterSlice
 
 			//Check if we are inside the boundaries
 			Tuple<int, int, IntPoint> startPolyPointPosition = null;
-			if (!BoundaryPolygons.PointIsInside(startPoint))
+			if (!BoundaryPolygons.PointIsInside(startPoint, BoundaryEdgeQuadTrees))
 			{
-				if (!BoundaryPolygons.MovePointInsideBoundary(startPoint, out startPolyPointPosition))
+				if (!BoundaryPolygons.MovePointInsideBoundary(startPoint, out startPolyPointPosition, BoundaryEdgeQuadTrees))
 				{
 					//If we fail to move the point inside the comb boundary we need to retract.
 					return false;
@@ -103,9 +103,9 @@ namespace MatterHackers.MatterSlice
 			}
 
 			Tuple<int, int, IntPoint> endPolyPointPosition = null;
-			if (!BoundaryPolygons.PointIsInside(endPoint))
+			if (!BoundaryPolygons.PointIsInside(endPoint, BoundaryEdgeQuadTrees))
 			{
-				if (!BoundaryPolygons.MovePointInsideBoundary(endPoint, out endPolyPointPosition))
+				if (!BoundaryPolygons.MovePointInsideBoundary(endPoint, out endPolyPointPosition, BoundaryEdgeQuadTrees))
 				{
 					//If we fail to move the point inside the comb boundary we need to retract.
 					return false;
@@ -114,8 +114,8 @@ namespace MatterHackers.MatterSlice
 				endPoint = endPolyPointPosition.Item3;
 			}
 
-			if (BoundaryPolygons.FindIntersection(startPoint, endPoint) == Intersection.None
-				&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2))
+			if (BoundaryPolygons.FindIntersection(startPoint, endPoint, BoundaryEdgeQuadTrees) == Intersection.None
+				&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2, BoundaryEdgeQuadTrees))
 			{
 				pathThatIsInside.Add(startPoint);
 				pathThatIsInside.Add(endPoint);
