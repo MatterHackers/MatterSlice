@@ -85,11 +85,18 @@ namespace MatterHackers.MatterSlice.Tests
 					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(1, 5), testHarness.OutlineEdgeQuadTrees));
 					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(0, 5)));
 					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(0, 5), testHarness.OutlineEdgeQuadTrees));
+					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(40, 5)));
+					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(40, 5), testHarness.OutlineEdgeQuadTrees));
 
 					Polygon insidePath = new Polygon();
 					Tuple<int, int, IntPoint> outPoint;
 					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(startPoint));
 					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(startPoint, testHarness.OutlineEdgeQuadTrees));
+
+					// validate some dependant functions
+					Assert.IsTrue(PolygonHelper.OnSegment(test[0], new IntPoint(20, 0), test[1]));
+					Assert.IsFalse(PolygonHelper.OnSegment(test[0], new IntPoint(-10, 0), test[1]));
+					Assert.IsFalse(PolygonHelper.OnSegment(test[0], new IntPoint(50,0), test[1]));
 
 					// move startpoint inside
 					testHarness.OutlinePolygons.MovePointInsideBoundary(startPoint, out outPoint);

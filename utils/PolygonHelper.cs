@@ -360,53 +360,6 @@ namespace MatterHackers.MatterSlice
 			return cross < 0;
 		}
 
-		public static bool LineSegementsIntersect(IntPoint startA, IntPoint endA, IntPoint startB, IntPoint endB,
-							out IntPoint intersection)
-		{
-			intersection = new IntPoint();
-
-			var r = endA - startA;
-			var s = endB - startB;
-			var rxs = r.CrossXy(s);
-			var qpxr = (startB - startA).CrossXy(r);
-
-			// If r x s = 0 and (q - p) x r = 0, then the two lines are collinear.
-			if (rxs == 0 && qpxr == 0)
-			{
-				// 1. If either  0 <= (q - p) * r <= r * r or 0 <= (p - q) * s <= * s
-				// then the two lines are overlapping,
-
-				// 2. If neither 0 <= (q - p) * r = r * r nor 0 <= (p - q) * s <= s * s
-				// then the two lines are collinear but disjoint.
-				// No need to implement this expression, as it follows from the expression above.
-				return false;
-			}
-
-			// 3. If r x s = 0 and (q - p) x r != 0, then the two lines are parallel and non-intersecting.
-			if (rxs == 0 && qpxr != 0)
-			{
-				return false;
-			}
-
-			// t = (q - p) x s / (r x s)
-			var t = (startB - startA).CrossXy(s);
-			var u = (startB - startA).CrossXy(r);
-
-			// 4. If r x s != 0 and 0 <= t <= 1 and 0 <= u <= 1
-			// the two line segments meet at the point p + t r = q + u s.
-			if (rxs != 0 && (t > 0 && t <= rxs) && (u > 0 && u <= rxs))
-			{
-				// We can calculate the intersection point using either t or u.
-				intersection = startA + r * t / rxs;
-
-				// An intersection was found.
-				return true;
-			}
-
-			// 5. Otherwise, the two line segments are not parallel but do not intersect.
-			return false;
-		}
-
 		public static long MinX(this Polygon polygon)
 		{
 			long minX = long.MaxValue;
@@ -421,14 +374,37 @@ namespace MatterHackers.MatterSlice
 			return minX;
 		}
 
-		// Given three colinear points p, q, r, the function checks if
-		// point q lies on line segment 'pr'
-		public static bool OnSegment(IntPoint segmentStart, IntPoint checkPosition, IntPoint segmentEnd)
+		public static bool TouchingEdge(this Polygon polygon, IntPoint testPosition)
 		{
-			if (checkPosition.X <= Math.Max(segmentStart.X, segmentEnd.X) && checkPosition.X >= Math.Min(segmentStart.X, segmentEnd.X) &&
-				checkPosition.Y <= Math.Max(segmentStart.Y, segmentEnd.Y) && checkPosition.Y >= Math.Min(segmentStart.Y, segmentEnd.Y))
+			for(int i=0; i<polygon.Count; i++)
 			{
-				return true;
+				IntPoint edgeStart = polygon[i];
+				IntPoint edgeEnd = polygon[(i + 1) % polygon.Count];
+				if(OnSegment(edgeStart, testPosition, edgeEnd))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		public static bool OnSegment(IntPoint start, IntPoint testPosition, IntPoint end)
+		{
+			IntPoint segmentDelta = end - start;
+			long segmentLength = segmentDelta.Length();
+			IntPoint pointRelStart = testPosition - start;
+			long distanceFromStart = segmentDelta.Dot(pointRelStart) / segmentLength;
+
+			if (distanceFromStart >= 0 && distanceFromStart <= segmentLength)
+			{
+				IntPoint segmentDeltaLeft = segmentDelta.GetPerpendicularLeft();
+				long distanceFromStartLeft = segmentDeltaLeft.Dot(pointRelStart) / segmentLength;
+
+				if (distanceFromStartLeft == 0)
+				{
+					return true;
+				}
 			}
 
 			return false;

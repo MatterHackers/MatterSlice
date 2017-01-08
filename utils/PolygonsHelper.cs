@@ -230,6 +230,19 @@ namespace MatterHackers.MatterSlice
 			return null;
 		}
 
+		public static bool TouchingEdge(this Polygons polygons, IntPoint testPosition)
+		{
+			foreach(var polygon in polygons)
+			{
+				if(polygon.TouchingEdge(testPosition))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
 		public static bool SegmentTouching(this Polygons polygons, IntPoint start, IntPoint end)
 		{
 			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
@@ -441,6 +454,11 @@ namespace MatterHackers.MatterSlice
 
 		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint, List<QuadTree<int>> edgeQuadTrees = null)
 		{
+			if(polygons.TouchingEdge(testPoint))
+			{
+				return true;
+			}
+
 			var enumerator = polygons.FindCrossingPoints(testPoint, testPoint + new IntPoint(10000000, 0), edgeQuadTrees);
 			//var ordered = enumerator.OrderBy(c => c.Item3.X).Distinct(new MyComparer<Tuple<int, int, IntPoint>>());
 			//var ordered = enumerator.OrderBy(c => c.Item3.X).SkipSame();
