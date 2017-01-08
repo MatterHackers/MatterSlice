@@ -36,6 +36,14 @@ namespace QuadTree
 		public long MinX;
 		public long MinY;
 
+		public Quad(IntPoint testPosition, int expandDist = 1) : this()
+		{
+			MinX = testPosition.X - expandDist;
+			MinY = testPosition.Y - expandDist;
+			MaxX = testPosition.X + expandDist;
+			MaxY = testPosition.Y + expandDist;
+		}
+
 		public Quad(IntPoint start, IntPoint end) : this()
 		{
 			MinX = Math.Min(start.X, end.X) - 1;

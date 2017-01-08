@@ -374,9 +374,10 @@ namespace MatterHackers.MatterSlice
 			return minX;
 		}
 
-		public static bool TouchingEdge(this Polygon polygon, IntPoint testPosition)
+		public static bool TouchingEdge(this Polygon polygon, IntPoint testPosition, QuadTree<int> edgeQuadTree = null)
 		{
-			for(int i=0; i<polygon.Count; i++)
+			var edgeIterator = new PolygonEdgeIterator(polygon, 1, edgeQuadTree);
+			foreach (var i in edgeIterator.GetTouching(new Quad(testPosition)))
 			{
 				IntPoint edgeStart = polygon[i];
 				IntPoint edgeEnd = polygon[(i + 1) % polygon.Count];

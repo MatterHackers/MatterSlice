@@ -230,11 +230,11 @@ namespace MatterHackers.MatterSlice
 			return null;
 		}
 
-		public static bool TouchingEdge(this Polygons polygons, IntPoint testPosition)
+		public static bool TouchingEdge(this Polygons polygons, IntPoint testPosition, List<QuadTree<int>> edgeQuadTrees = null)
 		{
-			foreach(var polygon in polygons)
+			for(int i=0; i<polygons.Count; i++)
 			{
-				if(polygon.TouchingEdge(testPosition))
+				if(polygons[i].TouchingEdge(testPosition, edgeQuadTrees == null ? null : edgeQuadTrees[i]))
 				{
 					return true;
 				}
@@ -454,7 +454,7 @@ namespace MatterHackers.MatterSlice
 
 		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint, List<QuadTree<int>> edgeQuadTrees = null)
 		{
-			if(polygons.TouchingEdge(testPoint))
+			if(polygons.TouchingEdge(testPoint, edgeQuadTrees))
 			{
 				return true;
 			}
