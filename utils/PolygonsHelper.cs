@@ -178,6 +178,18 @@ namespace MatterHackers.MatterSlice
 			return deepCopy;
 		}
 
+		public static IntRect GetBounds(this Polygons polygons)
+		{
+			var totalBounds = new IntRect(long.MaxValue, long.MaxValue, long.MinValue, long.MinValue);
+			foreach (var polygon in polygons)
+			{
+				var polyBounds = polygon.GetBounds();
+				totalBounds = totalBounds.ExpandToInclude(polyBounds);
+			}
+
+			return totalBounds;
+		}
+
 		public static void FindCrossingPoints(this Polygons polygons, IntPoint start, IntPoint end, List<Tuple<int, int, IntPoint>> crossings, List<QuadTree<int>> edgeQuadTrees = null)
 		{
 			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
@@ -267,15 +279,15 @@ namespace MatterHackers.MatterSlice
 			polygonsToFix = Clipper.CleanPolygons(polygonsToFix);
 			Polygon boundsPolygon = new Polygon();
 			IntRect bounds = Clipper.GetBounds(polygonsToFix);
-			bounds.left -= 10;
-			bounds.bottom += 10;
-			bounds.right += 10;
-			bounds.top -= 10;
+			bounds.minX -= 10;
+			bounds.minY -= 10;
+			bounds.maxY += 10;
+			bounds.maxX += 10;
 
-			boundsPolygon.Add(new IntPoint(bounds.left, bounds.top));
-			boundsPolygon.Add(new IntPoint(bounds.right, bounds.top));
-			boundsPolygon.Add(new IntPoint(bounds.right, bounds.bottom));
-			boundsPolygon.Add(new IntPoint(bounds.left, bounds.bottom));
+			boundsPolygon.Add(new IntPoint(bounds.minX, bounds.minY));
+			boundsPolygon.Add(new IntPoint(bounds.maxX, bounds.minY));
+			boundsPolygon.Add(new IntPoint(bounds.maxX, bounds.maxY));
+			boundsPolygon.Add(new IntPoint(bounds.minX, bounds.maxY));
 
 			Clipper clipper = new Clipper();
 
@@ -513,10 +525,10 @@ namespace MatterHackers.MatterSlice
 		{
 			double scaleDenominator = 150;
 			IntRect bounds = Clipper.GetBounds(polygons);
-			long temp = bounds.bottom;
-			bounds.bottom = bounds.top;
-			bounds.top = temp;
-			IntPoint size = new IntPoint(bounds.right - bounds.left, bounds.top - bounds.bottom);
+			long temp = bounds.maxY;
+			bounds.maxY = bounds.minY;
+			bounds.minY = temp;
+			IntPoint size = new IntPoint(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY);
 			double scale = Max(size.X, size.Y) / scaleDenominator;
 			StreamWriter stream = new StreamWriter(filename);
 			stream.Write("<!DOCTYPE html><html><body>\n");
@@ -539,7 +551,7 @@ namespace MatterHackers.MatterSlice
 					{
 						stream.Write("L");
 					}
-					stream.Write("{0},{1} ", (double)(polygon[intPointIndex].X - bounds.left) / scale, (double)(polygon[intPointIndex].Y - bounds.bottom) / scale);
+					stream.Write("{0},{1} ", (double)(polygon[intPointIndex].X - bounds.minX) / scale, (double)(polygon[intPointIndex].Y - bounds.maxY) / scale);
 				}
 				stream.Write("Z\n");
 			}
@@ -552,7 +564,7 @@ namespace MatterHackers.MatterSlice
 				stream.Write("<polyline marker-mid='url(#MidMarker)' points=\"");
 				for (int n = 0; n < openPolygon.Count; n++)
 				{
-					stream.Write("{0},{1} ", (double)(openPolygon[n].X - bounds.left) / scale, (double)(openPolygon[n].Y - bounds.bottom) / scale);
+					stream.Write("{0},{1} ", (double)(openPolygon[n].X - bounds.minX) / scale, (double)(openPolygon[n].Y - bounds.maxY) / scale);
 				}
 				stream.Write("\" style=\"fill: none; stroke:red;stroke-width:1\" />\n");
 			}

@@ -169,12 +169,14 @@ namespace MatterHackers.MatterSlice
 			return Intersection.None; // Doesn't fall in any of the above cases
 		}
 
-		public static void ExpandToInclude(this IntRect inRect, IntRect otherRect)
+		public static IntRect ExpandToInclude(this IntRect inRect, IntRect otherRect)
 		{
-			if (otherRect.left < inRect.left) inRect.left = otherRect.left;
-			if (otherRect.top < inRect.top) inRect.top = otherRect.top;
-			if (otherRect.right > inRect.right) inRect.right = otherRect.right;
-			if (otherRect.bottom > inRect.bottom) inRect.bottom = otherRect.bottom;
+			if (otherRect.minX < inRect.minX) inRect.minX = otherRect.minX;
+			if (otherRect.minY < inRect.minY) inRect.minY = otherRect.minY;
+			if (otherRect.maxX > inRect.maxX) inRect.maxX = otherRect.maxX;
+			if (otherRect.maxY > inRect.maxY) inRect.maxY = otherRect.maxY;
+
+			return inRect;
 		}
 
 		public static void FindCrossingPoints(this Polygon polygon, IntPoint start, IntPoint end, List<Tuple<int, IntPoint>> crossings, QuadTree<int> edgeQuadTree = null)
@@ -303,28 +305,28 @@ namespace MatterHackers.MatterSlice
 			}
 
 			IntRect result = new IntRect();
-			result.left = inPolygon[0].X;
-			result.right = result.left;
-			result.top = inPolygon[0].Y;
-			result.bottom = result.top;
+			result.minX = inPolygon[0].X;
+			result.maxX = result.minX;
+			result.minY = inPolygon[0].Y;
+			result.maxY = result.minY;
 			for (int pointIndex = 1; pointIndex < inPolygon.Count; pointIndex++)
 			{
-				if (inPolygon[pointIndex].X < result.left)
+				if (inPolygon[pointIndex].X < result.minX)
 				{
-					result.left = inPolygon[pointIndex].X;
+					result.minX = inPolygon[pointIndex].X;
 				}
-				else if (inPolygon[pointIndex].X > result.right)
+				else if (inPolygon[pointIndex].X > result.maxX)
 				{
-					result.right = inPolygon[pointIndex].X;
+					result.maxX = inPolygon[pointIndex].X;
 				}
 
-				if (inPolygon[pointIndex].Y < result.bottom)
+				if (inPolygon[pointIndex].Y > result.maxY)
 				{
-					result.bottom = inPolygon[pointIndex].Y;
+					result.maxY = inPolygon[pointIndex].Y;
 				}
-				else if (inPolygon[pointIndex].Y > result.top)
+				else if (inPolygon[pointIndex].Y < result.minY)
 				{
-					result.top = inPolygon[pointIndex].Y;
+					result.minY = inPolygon[pointIndex].Y;
 				}
 			}
 
@@ -568,7 +570,7 @@ namespace MatterHackers.MatterSlice
 		{
 			var bounds = polygon.GetBounds();
 			bounds.Inflate(expandDist);
-			var quadTree = new QuadTree<int>(splitCount, bounds.left, bounds.bottom, bounds.right, bounds.top);
+			var quadTree = new QuadTree<int>(splitCount, bounds.minX, bounds.maxY, bounds.maxX, bounds.minY);
 			for(int i=0; i<polygon.Count;i++)
 			{
 				var currentPoint = polygon[i];
@@ -586,7 +588,7 @@ namespace MatterHackers.MatterSlice
 		{
 			var bounds = polygon.GetBounds();
 			bounds.Inflate(expandDist);
-			var quadTree = new QuadTree<int>(splitCount, bounds.left, bounds.bottom, bounds.right, bounds.top);
+			var quadTree = new QuadTree<int>(splitCount, bounds.minX, bounds.maxY, bounds.maxX, bounds.minY);
 			for (int i = 0; i < polygon.Count; i++)
 			{
 				quadTree.Insert(i, polygon[i].X - expandDist, polygon[i].Y - expandDist, polygon[i].X + expandDist, polygon[i].Y + expandDist);

@@ -35,7 +35,7 @@ namespace MatterHackers.MatterSlice
 					quads.Add(quad);
 				}
 
-				tree = new QuadTree<int>(5, new Quad(bounds.left, bounds.top, bounds.right, bounds.bottom));
+				tree = new QuadTree<int>(5, new Quad(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY));
 				for (int i = 0; i < quads.Count; i++)
 				{
 					tree.Insert(i, quads[i]);
