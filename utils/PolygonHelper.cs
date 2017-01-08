@@ -189,7 +189,10 @@ namespace MatterHackers.MatterSlice
 				IntPoint edgeStart = polygon[i];
 				IntPoint edgeEnd = polygon[(i + 1) % polygon.Count];
 				IntPoint intersection;
-				if (DoIntersect(start, end, edgeStart, edgeEnd)
+
+				if (!OnSegment(edgeStart, start, edgeEnd)
+					&& !OnSegment(edgeStart, end, edgeEnd)
+					&& DoIntersect(start, end, edgeStart, edgeEnd)
 					&& CalcIntersection(start, end, edgeStart, edgeEnd, out intersection))
 				{
 					IntPoint pointRelStart = intersection - start;
@@ -420,10 +423,10 @@ namespace MatterHackers.MatterSlice
 
 		// Given three colinear points p, q, r, the function checks if
 		// point q lies on line segment 'pr'
-		public static bool OnSegment(IntPoint p, IntPoint q, IntPoint r)
+		public static bool OnSegment(IntPoint segmentStart, IntPoint checkPosition, IntPoint segmentEnd)
 		{
-			if (q.X <= Math.Max(p.X, r.X) && q.X >= Math.Min(p.X, r.X) &&
-				q.Y <= Math.Max(p.Y, r.Y) && q.Y >= Math.Min(p.Y, r.Y))
+			if (checkPosition.X <= Math.Max(segmentStart.X, segmentEnd.X) && checkPosition.X >= Math.Min(segmentStart.X, segmentEnd.X) &&
+				checkPosition.Y <= Math.Max(segmentStart.Y, segmentEnd.Y) && checkPosition.Y >= Math.Min(segmentStart.Y, segmentEnd.Y))
 			{
 				return true;
 			}

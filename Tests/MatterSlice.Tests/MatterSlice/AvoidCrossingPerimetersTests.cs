@@ -55,42 +55,6 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.IsTrue(testHarness.PointIsInsideBoundary(new IntPoint(1, 1)));
 			}
 
-			// Here is a test case that was failing.
-			{
-				// Looks a little like this
-				// _____
-				// |   |
-				// | O |
-				// | O |
-				// |___|
-
-				string partOutlineString = "x:90501, y:80501,x:109500, y:80501,x:109500, y:119500,x:90501, y:119500,|x:97387, y:104041,x:95594, y:105213,x:94278, y:106903,x:93583, y:108929,x:93583, y:111071,x:94278, y:113097,x:95594, y:114787,x:97387, y:115959,x:99464, y:116485,x:101598, y:116307,x:103559, y:115447,x:105135, y:113996,x:106154, y:112113,x:106507, y:110000,x:106154, y:107887,x:105135, y:106004,x:103559, y:104553,x:101598, y:103693,x:99464, y:103515,|x:97387, y:84042,x:95594, y:85214,x:94278, y:86904,x:93583, y:88930,x:93583, y:91072,x:94278, y:93098,x:95594, y:94788,x:97387, y:95960,x:99464, y:96486,x:101598, y:96308,x:103559, y:95448,x:105135, y:93997,x:106154, y:92114,x:106507, y:90001,x:106154, y:87888,x:105135, y:86005,x:103559, y:84554,x:101598, y:83694,x:99464, y:83516,|";
-				Polygons boundaryPolygons = PolygonsHelper.CreateFromString(partOutlineString);
-				IntPoint startPoint = new IntPoint(95765, 114600);
-				IntPoint endPoint = new IntPoint(99485, 96234);
-				AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons, 0);
-
-				{
-					IntPoint startPointInside = startPoint;
-					testHarness.MovePointInsideBoundary(startPointInside, out startPointInside);
-					IntPoint endPointInside = endPoint;
-					testHarness.MovePointInsideBoundary(endPointInside, out endPointInside);
-
-					Assert.IsTrue(testHarness.PointIsInsideBoundary(startPointInside));
-					Assert.IsTrue(testHarness.PointIsInsideBoundary(endPointInside));
-
-					Polygon insidePath = new Polygon();
-					testHarness.CreatePathInsideBoundary(startPointInside, endPointInside, insidePath);
-					Assert.IsTrue(insidePath.Count == 6); // It needs to go around the cicle so it needs many points (2 is a definate fail).
-				}
-
-				{
-					Polygon insidePath = new Polygon();
-					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
-					Assert.IsTrue(insidePath.Count == 6); // two more than the last test to get the points in the right place
-				}
-			}
-
 			{
 				// ______________2__
 				// |               |
@@ -126,6 +90,8 @@ namespace MatterHackers.MatterSlice.Tests
 					Tuple<int, int, IntPoint> outPoint;
 					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(startPoint));
 					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(startPoint, testHarness.OutlineEdgeQuadTrees));
+
+					// move startpoint inside
 					testHarness.OutlinePolygons.MovePointInsideBoundary(startPoint, out outPoint);
 					Assert.AreEqual(new IntPoint(0, 5),  outPoint.Item3);
 					testHarness.OutlinePolygons.MovePointInsideBoundary(startPoint, out outPoint, testHarness.OutlineEdgeQuadTrees);
@@ -135,7 +101,20 @@ namespace MatterHackers.MatterSlice.Tests
 					testHarness.BoundaryPolygons.MovePointInsideBoundary(startPoint, out outPoint, testHarness.BoundaryEdgeQuadTrees);
 					Assert.AreEqual(new IntPoint(0, 5), outPoint.Item3);
 					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
-					Assert.AreEqual(4, insidePath.Count);
+
+					// move endpoint inside
+					testHarness.OutlinePolygons.MovePointInsideBoundary(endPoint, out outPoint);
+					Assert.AreEqual(new IntPoint(40, 5), outPoint.Item3);
+					testHarness.OutlinePolygons.MovePointInsideBoundary(endPoint, out outPoint, testHarness.OutlineEdgeQuadTrees);
+					Assert.AreEqual(new IntPoint(40, 5), outPoint.Item3);
+					testHarness.BoundaryPolygons.MovePointInsideBoundary(endPoint, out outPoint);
+					Assert.AreEqual(new IntPoint(40, 5), outPoint.Item3);
+					testHarness.BoundaryPolygons.MovePointInsideBoundary(endPoint, out outPoint, testHarness.BoundaryEdgeQuadTrees);
+					Assert.AreEqual(new IntPoint(40, 5), outPoint.Item3);
+
+					Assert.AreEqual(2, insidePath.Count);
+					Assert.AreEqual(new IntPoint(0, 5), insidePath[0]);
+					Assert.AreEqual(new IntPoint(40,5), insidePath[1]);
 					// move start to the 0th vertex
 					Assert.AreEqual(new IntPoint(0, 5), insidePath[0]);
 					Assert.AreEqual(boundaryPolygons[0][0], insidePath[1]);
@@ -200,6 +179,42 @@ namespace MatterHackers.MatterSlice.Tests
 					Assert.AreEqual(boundaryPolygons[0][3], insidePath[3]);
 					// the last point is created on the 3 edge
 					Assert.AreEqual(new IntPoint(343, 353), insidePath[4]);
+				}
+			}
+
+			// Here is a test case that was failing.
+			{
+				// Looks a little like this
+				// _____
+				// |   |
+				// | O |
+				// | O |
+				// |___|
+
+				string partOutlineString = "x:90501, y:80501,x:109500, y:80501,x:109500, y:119500,x:90501, y:119500,|x:97387, y:104041,x:95594, y:105213,x:94278, y:106903,x:93583, y:108929,x:93583, y:111071,x:94278, y:113097,x:95594, y:114787,x:97387, y:115959,x:99464, y:116485,x:101598, y:116307,x:103559, y:115447,x:105135, y:113996,x:106154, y:112113,x:106507, y:110000,x:106154, y:107887,x:105135, y:106004,x:103559, y:104553,x:101598, y:103693,x:99464, y:103515,|x:97387, y:84042,x:95594, y:85214,x:94278, y:86904,x:93583, y:88930,x:93583, y:91072,x:94278, y:93098,x:95594, y:94788,x:97387, y:95960,x:99464, y:96486,x:101598, y:96308,x:103559, y:95448,x:105135, y:93997,x:106154, y:92114,x:106507, y:90001,x:106154, y:87888,x:105135, y:86005,x:103559, y:84554,x:101598, y:83694,x:99464, y:83516,|";
+				Polygons boundaryPolygons = PolygonsHelper.CreateFromString(partOutlineString);
+				IntPoint startPoint = new IntPoint(95765, 114600);
+				IntPoint endPoint = new IntPoint(99485, 96234);
+				AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons, 0);
+
+				{
+					IntPoint startPointInside = startPoint;
+					testHarness.MovePointInsideBoundary(startPointInside, out startPointInside);
+					IntPoint endPointInside = endPoint;
+					testHarness.MovePointInsideBoundary(endPointInside, out endPointInside);
+
+					Assert.IsTrue(testHarness.PointIsInsideBoundary(startPointInside));
+					Assert.IsTrue(testHarness.PointIsInsideBoundary(endPointInside));
+
+					Polygon insidePath = new Polygon();
+					testHarness.CreatePathInsideBoundary(startPointInside, endPointInside, insidePath);
+					Assert.AreEqual(6, insidePath.Count); // It needs to go around the cicle so it needs many points (2 is a definate fail).
+				}
+
+				{
+					Polygon insidePath = new Polygon();
+					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
+					Assert.IsTrue(insidePath.Count == 6); // two more than the last test to get the points in the right place
 				}
 			}
 		}

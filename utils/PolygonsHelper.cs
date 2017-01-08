@@ -413,6 +413,19 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		class MyComparer<T> : IEqualityComparer<T> where T : Tuple<int, int, IntPoint>
+		{
+			public bool Equals(T a, T b)
+			{
+				return a.Item3.Equals(b.Item3);
+			}
+
+			public int GetHashCode(T obj)
+			{
+				return obj.Item3.GetHashCode();
+			}
+		}
+
 		private static IEnumerable<Tuple<int, int, IntPoint>> SkipSame(this IEnumerable<Tuple<int, int, IntPoint>> source)
 		{
 			Tuple<int, int, IntPoint> lastItem = new Tuple<int, int, IntPoint>(-1,-1, new IntPoint(long.MaxValue, long.MaxValue));
@@ -429,10 +442,13 @@ namespace MatterHackers.MatterSlice
 		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint, List<QuadTree<int>> edgeQuadTrees = null)
 		{
 			var enumerator = polygons.FindCrossingPoints(testPoint, testPoint + new IntPoint(10000000, 0), edgeQuadTrees);
-			var ordered = enumerator.OrderBy(c => c.Item3.X).SkipSame();
+			//var ordered = enumerator.OrderBy(c => c.Item3.X).Distinct(new MyComparer<Tuple<int, int, IntPoint>>());
+			//var ordered = enumerator.OrderBy(c => c.Item3.X).SkipSame();
+			var ordered = enumerator.OrderBy(c => c.Item3.X);
 
 			if (!ordered.Any())
 			{
+				// outside to the right
 				return false;
 			}
 
