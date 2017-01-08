@@ -67,7 +67,7 @@ namespace MatterHackers.MatterSlice
 
 	public class PolygonEdgeIterator
 	{
-		static bool newMethod = false;
+		static bool newMethod = true;
 		QuadTree<int> tree;
 
 		public List<IntPoint> SourcePoints { get; private set; }

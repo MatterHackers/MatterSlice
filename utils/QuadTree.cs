@@ -64,7 +64,15 @@ namespace QuadTree
 		/// </summary>
 		public bool Contains(ref Quad other)
 		{
-			return other.MinX >= MinX && other.MinY >= MinY && other.MaxX <= MaxX && other.MaxY <= MaxY;
+			if (MinX < other.MinX
+				&& MinY < other.MinY
+				&& MaxX > other.MaxX
+				&& MaxY > other.MaxY)
+			{
+				return true;
+			}
+
+			return false;
 		}
 
 		/// <summary>
@@ -72,7 +80,15 @@ namespace QuadTree
 		/// </summary>
 		public bool Contains(long x, long y)
 		{
-			return x > MinX && y > MinY && x < MaxX && y < MaxY;
+			if (x > MinX
+				&& y > MinY
+				&& x < MaxX
+				&& y < MaxY)
+			{
+				return true;
+			}
+
+			return false;
 		}
 
 		/// <summary>
@@ -80,7 +96,15 @@ namespace QuadTree
 		/// </summary>
 		public bool Intersects(ref Quad other)
 		{
-			return MinX < other.MaxX && MinY < other.MaxY && MaxX > other.MinX && MaxY > other.MinY;
+			if(MinX < other.MaxX 
+				&& MinY < other.MaxY 
+				&& MaxX > other.MinX 
+				&& MaxY > other.MinY)
+			{
+				return true;
+			}
+
+			return false;
 		}
 
 		/// <summary>

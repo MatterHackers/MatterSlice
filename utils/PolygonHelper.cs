@@ -569,14 +569,14 @@ namespace MatterHackers.MatterSlice
 			var bounds = polygon.GetBounds();
 			bounds.Inflate(expandDist);
 			var quadTree = new QuadTree<int>(splitCount, bounds.left, bounds.bottom, bounds.right, bounds.top);
-			var previousPoint = polygon[polygon.Count - 1];
 			for(int i=0; i<polygon.Count;i++)
 			{
-				quadTree.Insert(i, new Quad(Math.Min(previousPoint.X, polygon[i].X) - expandDist, 
-					Math.Min(previousPoint.Y, polygon[i].Y) - expandDist, 
-					Math.Max(previousPoint.X, polygon[i].X) + expandDist, 
-					Math.Max(previousPoint.Y, polygon[i].Y) + expandDist));
-				previousPoint = polygon[i];
+				var currentPoint = polygon[i];
+				var nextPoint = polygon[i == polygon.Count-1 ? 0 : i+1];
+				quadTree.Insert(i, new Quad(Math.Min(nextPoint.X, currentPoint.X) - expandDist, 
+					Math.Min(nextPoint.Y, currentPoint.Y) - expandDist, 
+					Math.Max(nextPoint.X, currentPoint.X) + expandDist, 
+					Math.Max(nextPoint.Y, currentPoint.Y) + expandDist));
 			}
 
 			return quadTree;
