@@ -33,7 +33,7 @@ namespace MatterHackers.MatterSlice
 	public class AvoidCrossingPerimeters
 	{
 		public Polygons OutlinePolygons { get; private set; }
-		public List<QuadTree<int>> OutlineQuadTrees { get; private set; }
+		public List<QuadTree<int>> OutlineEdgeQuadTrees { get; private set; }
 
 		public Polygons BoundaryPolygons { get; private set; }
 		public List<QuadTree<int>> BoundaryEdgeQuadTrees { get; private set; }
@@ -44,7 +44,7 @@ namespace MatterHackers.MatterSlice
 		public AvoidCrossingPerimeters(Polygons outlinePolygons, long avoidInset)
 		{
 			OutlinePolygons = outlinePolygons;
-			OutlineQuadTrees = OutlinePolygons.GetEdgeQuadTrees();
+			OutlineEdgeQuadTrees = OutlinePolygons.GetEdgeQuadTrees();
 			BoundaryPolygons = outlinePolygons.Offset(avoidInset);
 			BoundaryEdgeQuadTrees = BoundaryPolygons.GetEdgeQuadTrees();
 			BoundaryPointQuadTrees = BoundaryPolygons.GetPointQuadTrees();

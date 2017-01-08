@@ -38,6 +38,7 @@ namespace MatterHackers.MatterSlice.Tests
 	using Polygon = List<IntPoint>;
 	using System.Reflection;
 	using Pathfinding;
+	using System.Linq;
 	[TestFixture, Category("MatterSlice.PolygonHelpers")]
 	public class PolygonHelperTests
 	{
@@ -262,8 +263,6 @@ namespace MatterHackers.MatterSlice.Tests
 				test.Add(new IntPoint(159, 235));
 				test.Add(new IntPoint(243, 290));
 				test.Add(new IntPoint(340, 114));
-
-					
 			}
 		}
 
@@ -283,8 +282,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 		private void TestCorrectCrossings(Polygon poly, IntPoint start, IntPoint end, int expectedStartIndex, int expectedEndIndex)
 		{
-			List<Tuple<int, IntPoint>> polyCrossings = new List<Tuple<int, IntPoint>>();
-			poly.FindCrossingPoints(start, end, polyCrossings);
+			var polyCrossings = new List<Tuple<int, IntPoint>>(poly.FindCrossingPoints(start, end));
 			polyCrossings.Sort(new PolygonHelper.DirectionSorter(start, end));
 			Assert.AreEqual(2, polyCrossings.Count);
 			Assert.IsTrue(polyCrossings[0].Item1 == expectedStartIndex);

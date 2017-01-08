@@ -179,9 +179,8 @@ namespace MatterHackers.MatterSlice
 			return inRect;
 		}
 
-		public static void FindCrossingPoints(this Polygon polygon, IntPoint start, IntPoint end, List<Tuple<int, IntPoint>> crossings, QuadTree<int> edgeQuadTree = null)
+		public static IEnumerable<Tuple<int, IntPoint>> FindCrossingPoints(this Polygon polygon, IntPoint start, IntPoint end, QuadTree<int> edgeQuadTree = null)
 		{
-			crossings.Clear();
 			IntPoint segmentDelta = end - start;
 			long segmentLength = segmentDelta.Length();
 			var edgeIterator = new PolygonEdgeIterator(polygon, 1, edgeQuadTree);
@@ -195,7 +194,7 @@ namespace MatterHackers.MatterSlice
 				{
 					IntPoint pointRelStart = intersection - start;
 					long distanceFromStart = segmentDelta.Dot(pointRelStart) / segmentLength;
-					crossings.Add(new Tuple<int, IntPoint>(i, intersection));
+					yield return new Tuple<int, IntPoint>(i, intersection);
 				}
 			}
 		}

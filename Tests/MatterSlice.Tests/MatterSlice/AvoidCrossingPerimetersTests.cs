@@ -35,7 +35,7 @@ namespace MatterHackers.MatterSlice.Tests
 {
 	using Polygons = List<List<IntPoint>>;
 	using Polygon = List<IntPoint>;
-
+	using System;
 	[TestFixture, Category("MatterSlice")]
 	public class AvoidCrossingPerimetersTests
 	{
@@ -114,7 +114,26 @@ namespace MatterHackers.MatterSlice.Tests
 					IntPoint startPoint = new IntPoint(-10, 5);
 					IntPoint endPoint = new IntPoint(50, 5);
 					AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons, 0);
+
+					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(new IntPoint(-1, 5)));
+					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(new IntPoint(-1, 5), testHarness.OutlineEdgeQuadTrees));
+					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(1, 5)));
+					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(1, 5), testHarness.OutlineEdgeQuadTrees));
+					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(0, 5)));
+					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(0, 5), testHarness.OutlineEdgeQuadTrees));
+
 					Polygon insidePath = new Polygon();
+					Tuple<int, int, IntPoint> outPoint;
+					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(startPoint));
+					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(startPoint, testHarness.OutlineEdgeQuadTrees));
+					testHarness.OutlinePolygons.MovePointInsideBoundary(startPoint, out outPoint);
+					Assert.AreEqual(new IntPoint(0, 5),  outPoint.Item3);
+					testHarness.OutlinePolygons.MovePointInsideBoundary(startPoint, out outPoint, testHarness.OutlineEdgeQuadTrees);
+					Assert.AreEqual(new IntPoint(0, 5), outPoint.Item3);
+					testHarness.BoundaryPolygons.MovePointInsideBoundary(startPoint, out outPoint);
+					Assert.AreEqual(new IntPoint(0, 5), outPoint.Item3);
+					testHarness.BoundaryPolygons.MovePointInsideBoundary(startPoint, out outPoint, testHarness.BoundaryEdgeQuadTrees);
+					Assert.AreEqual(new IntPoint(0, 5), outPoint.Item3);
 					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
 					Assert.AreEqual(4, insidePath.Count);
 					// move start to the 0th vertex

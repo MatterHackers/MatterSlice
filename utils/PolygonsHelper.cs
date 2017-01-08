@@ -190,15 +190,14 @@ namespace MatterHackers.MatterSlice
 			return totalBounds;
 		}
 
-		public static void FindCrossingPoints(this Polygons polygons, IntPoint start, IntPoint end, List<Tuple<int, int, IntPoint>> crossings, List<QuadTree<int>> edgeQuadTrees = null)
+		public static IEnumerable<Tuple<int, int, IntPoint>> FindCrossingPoints(this Polygons polygons, IntPoint start, IntPoint end, List<QuadTree<int>> edgeQuadTrees = null)
 		{
 			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
 			{
 				List<Tuple<int, IntPoint>> polyCrossings = new List<Tuple<int, IntPoint>>();
-				polygons[polyIndex].FindCrossingPoints(start, end, polyCrossings, edgeQuadTrees == null ? null : edgeQuadTrees[polyIndex]);
-				foreach (var crossing in polyCrossings)
+				foreach(var crossing in polygons[polyIndex].FindCrossingPoints(start, end, edgeQuadTrees == null ? null : edgeQuadTrees[polyIndex]))
 				{
-					crossings.Add(new Tuple<int, int, IntPoint>(polyIndex, crossing.Item1, crossing.Item2));
+					yield return new Tuple<int, int, IntPoint>(polyIndex, crossing.Item1, crossing.Item2);
 				}
 			}
 		}
@@ -429,9 +428,8 @@ namespace MatterHackers.MatterSlice
 
 		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint, List<QuadTree<int>> edgeQuadTrees = null)
 		{
-			List<Tuple<int, int, IntPoint>> crossings = new List<Tuple<int, int, IntPoint>>();
-			polygons.FindCrossingPoints(testPoint, testPoint + new IntPoint(10000000, 0), crossings, edgeQuadTrees);
-			var ordered = crossings.OrderBy(c => c.Item3.X).SkipSame();
+			var enumerator = polygons.FindCrossingPoints(testPoint, testPoint + new IntPoint(10000000, 0), edgeQuadTrees);
+			var ordered = enumerator.OrderBy(c => c.Item3.X).SkipSame();
 
 			if (!ordered.Any())
 			{
