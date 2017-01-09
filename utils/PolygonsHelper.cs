@@ -461,14 +461,18 @@ namespace MatterHackers.MatterSlice
 
 			var enumerator = polygons.FindCrossingPoints(testPoint, testPoint + new IntPoint(10000000, 0), edgeQuadTrees);
 			//var ordered = enumerator.OrderBy(c => c.Item3.X).Distinct(new MyComparer<Tuple<int, int, IntPoint>>());
-			//var ordered = enumerator.OrderBy(c => c.Item3.X).SkipSame();
-			var ordered = enumerator.OrderBy(c => c.Item3.X);
+			var ordered = enumerator.OrderBy(c => c.Item3.X).SkipSame();
+			//var ordered = enumerator.OrderBy(c => c.Item3.X);
 
 			if (!ordered.Any())
 			{
 				// outside to the right
 				return false;
 			}
+
+			#if DEBUG
+			var array = ordered.ToArray();
+			#endif
 
 			return (ordered.Count() % 2 == 1);
 		}

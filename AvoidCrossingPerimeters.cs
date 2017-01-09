@@ -231,24 +231,46 @@ namespace MatterHackers.MatterSlice
 		private bool LinkIsInside(int nodeIndexA, int nodeIndexB)
 		{
 			IntPoint pointA = Waypoints.Nodes[nodeIndexA].Position;
+			IntPoint pointB = Waypoints.Nodes[nodeIndexB].Position;
 
 			Tuple<int, int> index = BoundaryPolygons.FindPoint(pointA, BoundaryPointQuadTrees);
-
 			if (index != null)
 			{
-				IntPoint pointB = Waypoints.Nodes[nodeIndexB].Position;
-
 				var polygon = BoundaryPolygons[index.Item1];
 
 				IntPoint next = polygon[(index.Item2 + 1) % polygon.Count];
+				if (pointB == next)
+				{
+					return true;
+				}
 
+				next = polygon[(index.Item2 + polygon.Count - 1) % polygon.Count];
 				if (pointB == next)
 				{
 					return true;
 				}
 			}
 
-			return BoundaryPolygons.PointIsInside((Waypoints.Nodes[nodeIndexA].Position + Waypoints.Nodes[nodeIndexB].Position) / 2, BoundaryEdgeQuadTrees);
+
+			if (!BoundaryPolygons.PointIsInside((pointA + pointB) / 2, BoundaryEdgeQuadTrees))
+			{
+				return false;
+			}
+
+			var crossings = new List<Tuple<int, int, IntPoint>>(BoundaryPolygons.FindCrossingPoints(pointA, pointB, BoundaryEdgeQuadTrees));
+			crossings.Sort(new MatterHackers.MatterSlice.DirectionSorter(pointA, pointB));
+			IntPoint start = pointA;
+			foreach(var crossing in crossings)
+			{
+				if(start != crossing.Item3
+					&& !BoundaryPolygons.PointIsInside((start + crossing.Item3) / 2, BoundaryEdgeQuadTrees))
+				{
+					return false;
+				}
+				start = crossing.Item3;
+			}
+
+			return true;
 		}
 	}
 }
