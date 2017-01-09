@@ -392,6 +392,16 @@ namespace MatterHackers.MatterSlice
 
 		public static bool OnSegment(IntPoint start, IntPoint testPosition, IntPoint end)
 		{
+			if(start == end)
+			{
+				if(testPosition == start)
+				{
+					return true;
+				}
+
+				return false;
+			}
+
 			IntPoint segmentDelta = end - start;
 			long segmentLength = segmentDelta.Length();
 			IntPoint pointRelStart = testPosition - start;
