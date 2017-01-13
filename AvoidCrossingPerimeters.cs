@@ -56,18 +56,7 @@ namespace MatterHackers.MatterSlice
 
 			foreach (var polygon in BoundaryPolygons)
 			{
-				for (int i = 0; i < polygon.Count; i++)
-				{
-					if (polygon.IsVertexConcave(i))
-					{
-						Waypoints.AddNode(polygon[i]);
-					}
-				}
-			}
-
-			for (int nodeIndexA = 0; nodeIndexA < Waypoints.Nodes.Count; nodeIndexA++)
-			{
-				CreateLinks(nodeIndexA, nodeIndexA + 1);
+				Waypoints.AddClosedPolygon(polygon);
 			}
 
 			removePointList = new WayPointsToRemove(Waypoints);
@@ -122,10 +111,31 @@ namespace MatterHackers.MatterSlice
 				return true;
 			}
 
+			var crossings = new List<Tuple<int, int, IntPoint>>(BoundaryPolygons.FindCrossingPoints(startPoint, endPoint, BoundaryEdgeQuadTrees));
+			crossings.Sort(new DirectionSorter(startPoint, endPoint));
+
 			IntPointNode startNode = AddTempWayPoint(removePointList, startPoint);
 			IntPointNode endNode = AddTempWayPoint(removePointList, endPoint);
 
-			// else
+			int index = 0;
+			IntPointNode previousNode = startNode;
+			foreach (var crossing in crossings.SkipSame())
+			{
+				// for every crossing try to connect it up in the waypoint data
+				IntPointNode crossingNode = AddTempWayPoint(removePointList, crossing.Item3);
+				if (BoundaryPolygons.PointIsInside((previousNode.Position + crossingNode.Position) / 2, BoundaryEdgeQuadTrees))
+				{
+					Waypoints.AddPathLink(previousNode, crossingNode);
+				}
+				// also connect it to the next and prev points on the polygon it came from
+				IntPointNode prevPolyPointNode = Waypoints.FindNode(BoundaryPolygons[crossing.Item1][crossing.Item2]);
+				Waypoints.AddPathLink(crossingNode, prevPolyPointNode);
+				IntPointNode nextPolyPointNode = Waypoints.FindNode(BoundaryPolygons[crossing.Item1][(crossing.Item2 + 1)%BoundaryPolygons[crossing.Item1].Count]);
+				Waypoints.AddPathLink(crossingNode, nextPolyPointNode);
+				previousNode = crossingNode;
+			}
+
+			Waypoints.AddPathLink(previousNode, endNode);
 
 			Path<IntPointNode> path = Waypoints.FindPath(startNode, endNode, true);
 
@@ -163,22 +173,8 @@ namespace MatterHackers.MatterSlice
 		private IntPointNode AddTempWayPoint(WayPointsToRemove removePointList, IntPoint position)
 		{
 			var node = Waypoints.AddNode(position);
-			CreateLinks(Waypoints.Nodes.Count - 1, 0);
 			removePointList.Add(node);
 			return node;
-		}
-
-		private void CreateLinks(int nodeIndexA, int nodeIndexBStart)
-		{
-			for (int nodeIndexB = nodeIndexBStart; nodeIndexB < Waypoints.Nodes.Count; nodeIndexB++)
-			{
-				if (nodeIndexA != nodeIndexB
-					&& LinkIsInside(nodeIndexA, nodeIndexB)
-					&& !LinkIntersectsPolygon(nodeIndexA, nodeIndexB))
-				{
-					Waypoints.AddPathLink(Waypoints.Nodes[nodeIndexA], Waypoints.Nodes[nodeIndexB]);
-				}
-			}
 		}
 
 		private bool DoesLineCrossBoundary(IntPoint startPoint, IntPoint endPoint)

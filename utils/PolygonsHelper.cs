@@ -439,7 +439,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private static IEnumerable<Tuple<int, int, IntPoint>> SkipSame(this IEnumerable<Tuple<int, int, IntPoint>> source)
+		public static IEnumerable<Tuple<int, int, IntPoint>> SkipSame(this IEnumerable<Tuple<int, int, IntPoint>> source)
 		{
 			Tuple<int, int, IntPoint> lastItem = new Tuple<int, int, IntPoint>(-1,-1, new IntPoint(long.MaxValue, long.MaxValue));
 			foreach (var item in source)
@@ -454,27 +454,23 @@ namespace MatterHackers.MatterSlice
 
 		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint, List<QuadTree<int>> edgeQuadTrees = null)
 		{
-			if(polygons.TouchingEdge(testPoint, edgeQuadTrees))
+			int insideCount = 0;
+			foreach(var polygon in polygons)
 			{
-				return true;
+				if (polygons.TouchingEdge(testPoint, edgeQuadTrees))
+				{
+					insideCount++;
+				}
+				else
+				{
+					if(polygon.PointIsInside(testPoint) != 0)
+					{
+						insideCount++;
+					}
+				}
 			}
 
-			var enumerator = polygons.FindCrossingPoints(testPoint, testPoint + new IntPoint(10000000, 0), edgeQuadTrees);
-			//var ordered = enumerator.OrderBy(c => c.Item3.X).Distinct(new MyComparer<Tuple<int, int, IntPoint>>());
-			var ordered = enumerator.OrderBy(c => c.Item3.X).SkipSame();
-			//var ordered = enumerator.OrderBy(c => c.Item3.X);
-
-			if (!ordered.Any())
-			{
-				// outside to the right
-				return false;
-			}
-
-			#if DEBUG
-			var array = ordered.ToArray();
-			#endif
-
-			return (ordered.Count() % 2 == 1);
+			return (insideCount % 2 == 1);
 		}
 
 		public static long PolygonLength(this Polygons polygons, bool areClosed = true)

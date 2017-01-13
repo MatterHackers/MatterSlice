@@ -44,6 +44,7 @@ namespace Pathfinding
 
 		public void AddClosedPolygon(Polygon polygon, float costMultiplier = 1)
 		{
+			int startNode = Nodes.Count;
 			for (int i = 0; i < polygon.Count; i++)
 			{
 				IntPointNode node = new IntPointNode(polygon[i]);
@@ -51,8 +52,8 @@ namespace Pathfinding
 				Nodes.Add(node);
 			}
 
-			int lastLinkIndex = polygon.Count - 1;
-			for (int i = 0; i < polygon.Count; i++)
+			int lastLinkIndex = polygon.Count - 1 + startNode;
+			for (int i = startNode; i < polygon.Count + startNode; i++)
 			{
 				AddPathLink(Nodes[lastLinkIndex], Nodes[i]);
 				lastLinkIndex = i;
