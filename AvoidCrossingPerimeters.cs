@@ -117,7 +117,6 @@ namespace MatterHackers.MatterSlice
 			IntPointNode startNode = AddTempWayPoint(removePointList, startPoint);
 			IntPointNode endNode = AddTempWayPoint(removePointList, endPoint);
 
-			int index = 0;
 			IntPointNode previousNode = startNode;
 			foreach (var crossing in crossings.SkipSame())
 			{
@@ -135,7 +134,10 @@ namespace MatterHackers.MatterSlice
 				previousNode = crossingNode;
 			}
 
-			Waypoints.AddPathLink(previousNode, endNode);
+			if (BoundaryPolygons.PointIsInside((previousNode.Position + endNode.Position) / 2, BoundaryEdgeQuadTrees))
+			{
+				Waypoints.AddPathLink(previousNode, endNode);
+			}
 
 			Path<IntPointNode> path = Waypoints.FindPath(startNode, endNode, true);
 

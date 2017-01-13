@@ -190,13 +190,18 @@ namespace MatterHackers.MatterSlice
 				IntPoint edgeEnd = polygon[(i + 1) % polygon.Count];
 				IntPoint intersection;
 
-				if (!OnSegment(edgeStart, start, edgeEnd)
-					&& !OnSegment(edgeStart, end, edgeEnd)
-					&& DoIntersect(start, end, edgeStart, edgeEnd)
+				if (OnSegment(edgeStart, start, edgeEnd))
+				{
+					yield return new Tuple<int, IntPoint>(i, start);
+				}
+				else if(OnSegment(edgeStart, end, edgeEnd))
+				{
+					yield return new Tuple<int, IntPoint>(i, end);
+				}
+				else if (DoIntersect(start, end, edgeStart, edgeEnd)
 					&& CalcIntersection(start, end, edgeStart, edgeEnd, out intersection))
 				{
 					IntPoint pointRelStart = intersection - start;
-					long distanceFromStart = segmentDelta.Dot(pointRelStart) / segmentLength;
 					yield return new Tuple<int, IntPoint>(i, intersection);
 				}
 			}
