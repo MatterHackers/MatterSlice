@@ -6,6 +6,22 @@ using Pathfinding;
 
 namespace Pathfinding
 {
+	public static class NodeExtensions
+	{
+		public static IEnumerable<IntPointNode> SkipSame(this IEnumerable<IntPointNode> source)
+		{
+			IntPointNode lastItem = new IntPointNode(int.MaxValue, int.MaxValue);
+			foreach (var item in source)
+			{
+				if (item != lastItem)
+				{
+					yield return item;
+				}
+				lastItem = item;
+			}
+		}
+	}
+
 	public class IntPointNode : IPathNode
 	{
 		#region IPathNode Members

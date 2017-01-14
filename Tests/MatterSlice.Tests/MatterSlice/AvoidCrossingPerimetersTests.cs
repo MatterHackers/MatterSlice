@@ -49,10 +49,33 @@ namespace MatterHackers.MatterSlice.Tests
 				// | |    | |
 				// | |____| |
 				// |________|
-				string partOutlineString = "x:0, y:0,x:1000, y:0,x:1000, y:1000,x:0, y:1000,|x:100, y:100,x:0, y:900,x:900, y:900,x:900, y:0,|";
+				string partOutlineString = "x:0, y:0,x:1000, y:0,x:1000, y:1000,x:0, y:1000,|x:100, y:100,x:100, y:900,x:900, y:900,x:900, y:0,|";
 				Polygons boundaryPolygons = PolygonsHelper.CreateFromString(partOutlineString);
+
 				AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons, 0);
 				Assert.IsTrue(testHarness.PointIsInsideBoundary(new IntPoint(1, 1)));
+				// test being just below the lower line
+				{
+					IntPoint startPoint = new IntPoint(-10, 10);
+					IntPoint endPoint = new IntPoint(1010, 10);
+					Polygon insidePath = new Polygon();
+					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
+					Assert.AreEqual(2, insidePath.Count);
+					// move start to the 0th vertex
+					Assert.AreEqual(new IntPoint(0, 10), insidePath[0]);
+					Assert.AreEqual(new IntPoint(1000, 10), insidePath[1]);
+				}
+
+				{
+					IntPoint startPoint = new IntPoint(-10, 500);
+					IntPoint endPoint = new IntPoint(1010, 500);
+					Polygon insidePath = new Polygon();
+					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
+					Assert.AreEqual(4, insidePath.Count);
+					// move start to the 0th vertex
+					Assert.AreEqual(new IntPoint(0, 500), insidePath[0]);
+					Assert.AreEqual(new IntPoint(1000, 500), insidePath[1]);
+				}
 			}
 
 			{
@@ -100,7 +123,10 @@ namespace MatterHackers.MatterSlice.Tests
 
 					// move startpoint inside
 					testHarness.OutlinePolygons.MovePointInsideBoundary(startPoint, out outPoint);
-					Assert.AreEqual(new IntPoint(0, 5),  outPoint.Item3);
+					Assert.AreEqual(0, outPoint.Item1);
+					Assert.AreEqual(3, outPoint.Item2);
+					Assert.AreEqual(new IntPoint(0, 5), outPoint.Item3);
+
 					testHarness.OutlinePolygons.MovePointInsideBoundary(startPoint, out outPoint, testHarness.OutlineEdgeQuadTrees);
 					Assert.AreEqual(new IntPoint(0, 5), outPoint.Item3);
 					testHarness.BoundaryPolygons.MovePointInsideBoundary(startPoint, out outPoint);
@@ -122,11 +148,6 @@ namespace MatterHackers.MatterSlice.Tests
 					Assert.AreEqual(2, insidePath.Count);
 					Assert.AreEqual(new IntPoint(0, 5), insidePath[0]);
 					Assert.AreEqual(new IntPoint(40,5), insidePath[1]);
-					// move start to the 0th vertex
-					Assert.AreEqual(new IntPoint(0, 5), insidePath[0]);
-					Assert.AreEqual(boundaryPolygons[0][0], insidePath[1]);
-					Assert.AreEqual(boundaryPolygons[0][1], insidePath[2]);
-					Assert.AreEqual(new IntPoint(40, 5), insidePath[4]);
 				}
 
 				// test being just below the lower line

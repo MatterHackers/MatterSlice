@@ -314,15 +314,15 @@ namespace MatterHackers.MatterSlice
 			return outputPolygons;
 		}
 
-		public static bool MovePointInsideBoundary(this Polygons boundaryPolygons, IntPoint startPosition, out Tuple<int, int, IntPoint> polyPointPosition, List<QuadTree<int>> edgeQuadTrees = null, int recursionDepth = 0)
+		public static void MovePointInsideBoundary(this Polygons boundaryPolygons, IntPoint startPosition, out Tuple<int, int, IntPoint> polyPointPosition, List<QuadTree<int>> edgeQuadTrees = null)
 		{
 			Tuple<int, int, IntPoint> bestPolyPointPosition =  new Tuple<int, int, IntPoint>(0, 0, startPosition);
 
 			if (boundaryPolygons.PointIsInside(startPosition, edgeQuadTrees))
 			{
 				// already inside
-				polyPointPosition = bestPolyPointPosition;
-				return false;
+				polyPointPosition = null;
+				return;
 			}
 
 			long bestDist = long.MaxValue;
@@ -335,9 +335,10 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				IntPoint segmentStart = boundaryPolygon[boundaryPolygon.Count - 1];
 				for (int pointIndex = 0; pointIndex < boundaryPolygon.Count; pointIndex++)
 				{
+					IntPoint segmentStart = boundaryPolygon[pointIndex];
+
 					IntPoint pointRelStart = startPosition - segmentStart;
 					long distFromStart = pointRelStart.Length();
 					if (distFromStart < bestDist)
@@ -346,7 +347,7 @@ namespace MatterHackers.MatterSlice
 						bestPolyPointPosition = new Tuple<int, int, IntPoint>(polygonIndex, pointIndex, segmentStart);
 					}
 
-					IntPoint segmentEnd = boundaryPolygon[pointIndex];
+					IntPoint segmentEnd = boundaryPolygon[(pointIndex + 1) % boundaryPolygon.Count];
 
 					IntPoint segmentDelta = segmentEnd - segmentStart;
 					long segmentLength = segmentDelta.Length();
@@ -377,31 +378,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			if (!boundaryPolygons.PointIsInside(bestPolyPointPosition.Item3, edgeQuadTrees))
-			{
-				long normalLength = bestMoveDelta.Length();
-				if (normalLength == 0)
-				{
-					polyPointPosition = bestPolyPointPosition;
-					return false;
-				}
-
-				if (recursionDepth < 10)
-				{
-					// try to perturb the point back into the actual bounds
-					IntPoint inPolyPosition = bestPolyPointPosition.Item3 + (bestMoveDelta * (1 << recursionDepth) / normalLength) * ((recursionDepth % 2) == 0 ? 1 : -1);
-					inPolyPosition += (bestMoveDelta.GetPerpendicularRight() * (1 << recursionDepth) / (normalLength * 2)) * ((recursionDepth % 3) == 0 ? 1 : -1);
-					boundaryPolygons.MovePointInsideBoundary(inPolyPosition, out bestPolyPointPosition, edgeQuadTrees, recursionDepth + 1);
-				}
-			}
-
 			polyPointPosition = bestPolyPointPosition;
-			if (recursionDepth > 8)
-			{
-				return false;
-			}
-
-			return true;
 		}
 
 		public static Polygons Offset(this Polygons polygons, long distance)
