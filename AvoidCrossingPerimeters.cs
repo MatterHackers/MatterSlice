@@ -120,14 +120,17 @@ namespace MatterHackers.MatterSlice
 			foreach (var crossing in crossings.SkipSame())
 			{
 				// for every crossing try to connect it up in the waypoint data
-				IntPointNode crossingNode = AddTempWayPoint(removePointList, crossing.Item3);
-				if (BoundaryPolygons.PointIsInside((previousNode.Position + crossingNode.Position) / 2, BoundaryEdgeQuadTrees))
+				if (Waypoints.FindNode(crossing.Item3) == null)
 				{
-					Waypoints.AddPathLink(previousNode, crossingNode);
+					IntPointNode crossingNode = AddTempWayPoint(removePointList, crossing.Item3);
+					if (BoundaryPolygons.PointIsInside((previousNode.Position + crossingNode.Position) / 2, BoundaryEdgeQuadTrees))
+					{
+						Waypoints.AddPathLink(previousNode, crossingNode);
+					}
+					// also connect it to the next and prev points on the polygon it came from
+					HookUpToEdge(crossingNode, crossing.Item1, crossing.Item2);
+					previousNode = crossingNode;
 				}
-				// also connect it to the next and prev points on the polygon it came from
-				HookUpToEdge(crossingNode, crossing.Item1, crossing.Item2);
-				previousNode = crossingNode;
 			}
 
 			if (BoundaryPolygons.PointIsInside((previousNode.Position + endNode.Position) / 2, BoundaryEdgeQuadTrees))

@@ -126,6 +126,11 @@ namespace Pathfinding
 
 		#endregion
 
+		public override string ToString()
+		{
+			return $"Pos: {Position.X}, {Position.Y} - Links: {Links.Count}";
+		}
+
 		public virtual long GetUniqueID()
 		{
 			return Position.X ^ Position.Y;
