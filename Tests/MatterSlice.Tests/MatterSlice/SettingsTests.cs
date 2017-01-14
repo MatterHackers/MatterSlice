@@ -708,6 +708,7 @@ namespace MatterHackers.MatterSlice.Tests
 				int layerCount = TestUtlities.CountLayers(gcodeContents);
 				bool firstPosition = true;
 				MovementInfo lastMovement = new MovementInfo();
+				MovementInfo lastExtrusion = new MovementInfo();
 				bool lastMoveIsExtrusion = true;
 				for (int layerIndex=0; layerIndex<layerCount; layerIndex++)
 				{
@@ -728,7 +729,7 @@ namespace MatterHackers.MatterSlice.Tests
 								if (xyLength > config.MinimumTravelToCauseRetraction
 									&& lastMoveIsExtrusion)
 								{
-									Assert.IsTrue(movement.position.z > lastMovement.position.z);
+									Assert.Greater(movement.position.z, lastExtrusion.position.z);
 								}
 
 								lastMoveIsExtrusion = false;
@@ -736,6 +737,7 @@ namespace MatterHackers.MatterSlice.Tests
 							else
 							{
 								lastMoveIsExtrusion = true;
+								lastExtrusion = movement;
 							}
 
 							lastMoveIsExtrusion = !isTravel;

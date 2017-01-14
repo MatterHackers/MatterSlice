@@ -8,16 +8,20 @@ namespace Pathfinding
 {
 	public static class NodeExtensions
 	{
-		public static IEnumerable<IntPointNode> SkipSame(this IEnumerable<IntPointNode> source)
+		public static IEnumerable<IntPointNode> SkipSamePosition(this IEnumerable<IntPointNode> source)
 		{
-			IntPointNode lastItem = new IntPointNode(int.MaxValue, int.MaxValue);
+			return SkipSamePosition(source, new IntPoint(long.MaxValue, long.MaxValue));
+		}
+
+		public static IEnumerable<IntPointNode> SkipSamePosition(this IEnumerable<IntPointNode> source, IntPoint skipPosition)
+		{
 			foreach (var item in source)
 			{
-				if (item != lastItem)
+				if (item.Position != skipPosition)
 				{
 					yield return item;
 				}
-				lastItem = item;
+				skipPosition = item.Position;
 			}
 		}
 	}
@@ -26,7 +30,7 @@ namespace Pathfinding
 	{
 		#region IPathNode Members
 
-		public IntPointNode(int pX, int pY)
+		public IntPointNode(long pX, long pY)
 		{
 			Position = new IntPoint(pX, pY);
 		}

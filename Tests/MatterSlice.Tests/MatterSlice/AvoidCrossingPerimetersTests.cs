@@ -44,13 +44,26 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			{
 				// a square with a hole (outside is ccw inside is cw)
-				// __________
-				// | _____  |
-				// | |    | |
-				// | |____| |
-				// |________|
-				string partOutlineString = "x:0, y:0,x:1000, y:0,x:1000, y:1000,x:0, y:1000,|x:100, y:100,x:100, y:900,x:900, y:900,x:900, y:0,|";
+				// _______________2__
+				// | __1__________  |
+				// 3 |            | |
+				// | |            2 |
+				// | |            | |
+				// | 0            | |
+				// | |__________3_| 1
+				// |__0_____________|
+				string partOutlineString = "x:0, y:0,x:1000, y:0,x:1000, y:1000,x:0, y:1000,|x:100, y:100,x:100, y:900,x:900, y:900,x:900, y:100,|";
 				Polygons boundaryPolygons = PolygonsHelper.CreateFromString(partOutlineString);
+
+				// test the inside polygon has correct crossings
+				{
+					string insidePartOutlineString = "x:100, y:100,x:100, y:900,x:900, y:900,x:900, y:100,|";
+					Polygons insideBoundaryPolygons = PolygonsHelper.CreateFromString(insidePartOutlineString);
+					IntPoint startPoint = new IntPoint(-10, 10);
+					IntPoint endPoint = new IntPoint(1010, 10);
+					var crossings = new List<Tuple<int, int, IntPoint>>(insideBoundaryPolygons.FindCrossingPoints(startPoint, endPoint));
+					crossings.Sort(new DirectionSorter(startPoint, endPoint));
+				}
 
 				AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons, 0);
 				Assert.IsTrue(testHarness.PointIsInsideBoundary(new IntPoint(1, 1)));
@@ -67,14 +80,33 @@ namespace MatterHackers.MatterSlice.Tests
 				}
 
 				{
-					IntPoint startPoint = new IntPoint(-10, 500);
-					IntPoint endPoint = new IntPoint(1010, 500);
+					IntPoint startPoint = new IntPoint(-10, 501);
+					IntPoint endPoint = new IntPoint(1010, 501);
 					Polygon insidePath = new Polygon();
 					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
-					Assert.AreEqual(4, insidePath.Count);
+					Assert.AreEqual(6, insidePath.Count);
 					// move start to the 0th vertex
-					Assert.AreEqual(new IntPoint(0, 500), insidePath[0]);
-					Assert.AreEqual(new IntPoint(1000, 500), insidePath[1]);
+					Assert.AreEqual(new IntPoint(0, 501), insidePath[0]);
+					Assert.AreEqual(new IntPoint(100, 501), insidePath[1]);
+					Assert.AreEqual(new IntPoint(100, 900), insidePath[2]);
+					Assert.AreEqual(new IntPoint(900, 900), insidePath[3]);
+					Assert.AreEqual(new IntPoint(900, 501), insidePath[4]);
+					Assert.AreEqual(new IntPoint(1000, 501), insidePath[5]);
+				}
+
+				{
+					IntPoint startPoint = new IntPoint(-10, 499);
+					IntPoint endPoint = new IntPoint(1010, 499);
+					Polygon insidePath = new Polygon();
+					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
+					Assert.AreEqual(6, insidePath.Count);
+					// move start to the 0th vertex
+					Assert.AreEqual(new IntPoint(0, 499), insidePath[0]);
+					Assert.AreEqual(new IntPoint(100, 499), insidePath[1]);
+					Assert.AreEqual(new IntPoint(100, 100), insidePath[2]);
+					Assert.AreEqual(new IntPoint(900, 100), insidePath[3]);
+					Assert.AreEqual(new IntPoint(900, 499), insidePath[4]);
+					Assert.AreEqual(new IntPoint(1000, 499), insidePath[5]);
 				}
 			}
 
@@ -197,9 +229,9 @@ namespace MatterHackers.MatterSlice.Tests
 					AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons, 0);
 					Polygon insidePath = new Polygon();
 					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
-					Assert.AreEqual(5, insidePath.Count);
+					Assert.AreEqual(6, insidePath.Count);
 					// move start to the 0th vertex
-					Assert.AreEqual(boundaryPolygons[0][1], insidePath[0]);
+					Assert.AreEqual(boundaryPolygons[0][0], insidePath[0]);
 					// next collide with edge 1
 					Assert.AreEqual(new IntPoint(400, 365), insidePath[1]);
 					// the next 3 points are the is the 2 - 3 index

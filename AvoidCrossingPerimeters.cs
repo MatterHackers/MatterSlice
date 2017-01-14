@@ -67,6 +67,11 @@ namespace MatterHackers.MatterSlice
 
 		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside)
 		{
+			if(BoundaryPolygons.Count == 0)
+			{
+				return false;
+			}
+
 			// neither needed to be moved
 			if (BoundaryPolygons.FindIntersection(startPoint, endPoint, BoundaryEdgeQuadTrees) == Intersection.None
 				&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2, BoundaryEdgeQuadTrees))
@@ -113,6 +118,15 @@ namespace MatterHackers.MatterSlice
 				return true;
 			}
 
+			if(startPolyPointPosition != null 
+				&& endPolyPointPosition != null
+				&& startPolyPointPosition.Item1 == endPolyPointPosition.Item1
+				&& startPolyPointPosition.Item2 == endPolyPointPosition.Item2)
+			{
+				// they are on the same edge hook them up
+				Waypoints.AddPathLink(startNode, endNode);
+			}
+
 			var crossings = new List<Tuple<int, int, IntPoint>>(BoundaryPolygons.FindCrossingPoints(startNode.Position, endNode.Position, BoundaryEdgeQuadTrees));
 			crossings.Sort(new DirectionSorter(startNode.Position, endNode.Position));
 
@@ -145,12 +159,15 @@ namespace MatterHackers.MatterSlice
 				pathThatIsInside.Add(startNode.Position);
 			}
 
-			foreach (var node in path.nodes.SkipSame())
+			var lastAdd = startNode.Position;
+			foreach (var node in path.nodes.SkipSamePosition(startNode.Position))
 			{
 				pathThatIsInside.Add(node.Position);
+				lastAdd = node.Position;
 			}
 
-			if (endPolyPointPosition != null)
+			if (endPolyPointPosition != null
+				&& endNode.Position != lastAdd)
 			{
 				pathThatIsInside.Add(endNode.Position);
 			}
