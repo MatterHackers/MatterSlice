@@ -30,7 +30,7 @@ either expressed or implied, of the FreeBSD Project.
 using System.Collections.Generic;
 using System.Text;
 
-namespace Pathfinding
+namespace MatterHackers.Pathfinding
 {
 	public enum PathStatus
 	{

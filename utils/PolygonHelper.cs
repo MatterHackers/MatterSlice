@@ -28,7 +28,6 @@ namespace MatterHackers.MatterSlice
 	using System;
 	using QuadTree;
 	using Polygon = List<IntPoint>;
-
 	using Polygons = List<List<IntPoint>>;
 
 	public enum Intersection { None, Colinear, Intersect }
@@ -169,16 +168,6 @@ namespace MatterHackers.MatterSlice
 			return Intersection.None; // Doesn't fall in any of the above cases
 		}
 
-		public static IntRect ExpandToInclude(this IntRect inRect, IntRect otherRect)
-		{
-			if (otherRect.minX < inRect.minX) inRect.minX = otherRect.minX;
-			if (otherRect.minY < inRect.minY) inRect.minY = otherRect.minY;
-			if (otherRect.maxX > inRect.maxX) inRect.maxX = otherRect.maxX;
-			if (otherRect.maxY > inRect.maxY) inRect.maxY = otherRect.maxY;
-
-			return inRect;
-		}
-
 		public static IEnumerable<Tuple<int, IntPoint>> FindCrossingPoints(this Polygon polygon, IntPoint start, IntPoint end, QuadTree<int> edgeQuadTree = null)
 		{
 			IntPoint segmentDelta = end - start;
@@ -302,42 +291,6 @@ namespace MatterHackers.MatterSlice
 			IntPoint n = (off0 + off1).Normal(-offset);
 
 			return p1 + n;
-		}
-
-		public static IntRect GetBounds(this Polygon inPolygon)
-		{
-			if (inPolygon.Count == 0)
-			{
-				return new IntRect(0, 0, 0, 0);
-			}
-
-			IntRect result = new IntRect();
-			result.minX = inPolygon[0].X;
-			result.maxX = result.minX;
-			result.minY = inPolygon[0].Y;
-			result.maxY = result.minY;
-			for (int pointIndex = 1; pointIndex < inPolygon.Count; pointIndex++)
-			{
-				if (inPolygon[pointIndex].X < result.minX)
-				{
-					result.minX = inPolygon[pointIndex].X;
-				}
-				else if (inPolygon[pointIndex].X > result.maxX)
-				{
-					result.maxX = inPolygon[pointIndex].X;
-				}
-
-				if (inPolygon[pointIndex].Y > result.maxY)
-				{
-					result.maxY = inPolygon[pointIndex].Y;
-				}
-				else if (inPolygon[pointIndex].Y < result.minY)
-				{
-					result.minY = inPolygon[pointIndex].Y;
-				}
-			}
-
-			return result;
 		}
 
 		public static bool Inside(this Polygon polygon, IntPoint testPoint)
@@ -558,37 +511,6 @@ namespace MatterHackers.MatterSlice
 		public static int size(this Polygon polygon)
 		{
 			return polygon.Count;
-		}
-
-		public static QuadTree<int> GetEdgeQuadTree(this Polygon polygon, int splitCount = 5, long expandDist = 1)
-		{
-			var bounds = polygon.GetBounds();
-			bounds.Inflate(expandDist);
-			var quadTree = new QuadTree<int>(splitCount, bounds.minX, bounds.maxY, bounds.maxX, bounds.minY);
-			for(int i=0; i<polygon.Count;i++)
-			{
-				var currentPoint = polygon[i];
-				var nextPoint = polygon[i == polygon.Count-1 ? 0 : i+1];
-				quadTree.Insert(i, new Quad(Math.Min(nextPoint.X, currentPoint.X) - expandDist, 
-					Math.Min(nextPoint.Y, currentPoint.Y) - expandDist, 
-					Math.Max(nextPoint.X, currentPoint.X) + expandDist, 
-					Math.Max(nextPoint.Y, currentPoint.Y) + expandDist));
-			}
-
-			return quadTree;
-		}
-
-		public static QuadTree<int> GetPointQuadTree(this Polygon polygon, int splitCount = 5, long expandDist = 1)
-		{
-			var bounds = polygon.GetBounds();
-			bounds.Inflate(expandDist);
-			var quadTree = new QuadTree<int>(splitCount, bounds.minX, bounds.maxY, bounds.maxX, bounds.minY);
-			for (int i = 0; i < polygon.Count; i++)
-			{
-				quadTree.Insert(i, polygon[i].X - expandDist, polygon[i].Y - expandDist, polygon[i].X + expandDist, polygon[i].Y + expandDist);
-			}
-
-			return quadTree;
 		}
 
 		public static string WriteToString(this Polygon polygon)

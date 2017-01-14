@@ -94,6 +94,14 @@
       <Project>{2c564be1-352d-4ddb-8226-f0981f983c60}</Project>
       <Name>MSClipperLib</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Pathfinding\Pathfinding.csproj">
+      <Project>{8cb3464f-6130-4edb-8dc6-ccd2697fafbb}</Project>
+      <Name>Pathfinding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\QuadTree\QuadTree.csproj">
+      <Project>{23ec3364-7c93-4169-9ab2-7181c66004c0}</Project>
+      <Name>QuadTree</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

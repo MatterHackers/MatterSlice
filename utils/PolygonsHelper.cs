@@ -178,18 +178,6 @@ namespace MatterHackers.MatterSlice
 			return deepCopy;
 		}
 
-		public static IntRect GetBounds(this Polygons polygons)
-		{
-			var totalBounds = new IntRect(long.MaxValue, long.MaxValue, long.MinValue, long.MinValue);
-			foreach (var polygon in polygons)
-			{
-				var polyBounds = polygon.GetBounds();
-				totalBounds = totalBounds.ExpandToInclude(polyBounds);
-			}
-
-			return totalBounds;
-		}
-
 		public static IEnumerable<Tuple<int, int, IntPoint>> FindCrossingPoints(this Polygons polygons, IntPoint start, IntPoint end, List<QuadTree<int>> edgeQuadTrees = null)
 		{
 			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)

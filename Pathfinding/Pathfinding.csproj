@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{2C564BE1-352D-4DDB-8226-F0981F983C60}</ProjectGuid>
+    <ProjectGuid>{8CB3464F-6130-4EDB-8DC6-CCD2697FAFBB}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MSClipperLib</RootNamespace>
-    <AssemblyName>MSClipperLib</AssemblyName>
+    <RootNamespace>MatterHackers.Pathfinding</RootNamespace>
+    <AssemblyName>Pathfinding</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ReleaseVersion>0.8.2</ReleaseVersion>
@@ -126,12 +126,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="clipper.cs" />
-    <Compile Include="IntRectExtensions.cs" />
-    <Compile Include="PolygonsExtensions.cs" />
-    <Compile Include="PolygonExtensions.cs" />
-    <Compile Include="IntPointExtensions.cs" />
+    <Compile Include="Datastructures\AStarStack.cs" />
+    <Compile Include="Interfaces\IPathNetwork.cs" />
+    <Compile Include="Interfaces\IPathNode.cs" />
+    <Compile Include="Interfaces\IPoint.cs" />
+    <Compile Include="Interfaces\PathLink.cs" />
+    <Compile Include="IntPointPathing\IntPointNode.cs" />
+    <Compile Include="IntPointPathing\IntPointPathNetwork.cs" />
+    <Compile Include="Path.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MSClipperLib\MSClipperLib.csproj">
+      <Project>{2c564be1-352d-4ddb-8226-f0981f983c60}</Project>
+      <Name>MSClipperLib</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

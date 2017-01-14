@@ -18,9 +18,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Pathfinding;
 
-namespace Pathfinding.Datastructures
+namespace MatterHackers.Pathfinding.Datastructures
 {
     public class AStarStack
     {

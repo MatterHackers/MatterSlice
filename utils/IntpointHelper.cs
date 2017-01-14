@@ -109,49 +109,7 @@ namespace MatterHackers.MatterSlice
 				return false;
 			}
 
-			return LengthSquared(polygon) <= length * length;
-		}
-
-		public static IntPoint CrossZ(this IntPoint thisPoint)
-		{
-			return new IntPoint(-thisPoint.Y, thisPoint.X);
-		}
-
-		public static long Dot(this IntPoint thisPoint, IntPoint p1)
-		{
-			return thisPoint.X * p1.X + thisPoint.Y * p1.Y + thisPoint.Z * p1.Z;
-		}
-
-		public static int GetLineSide(this IntPoint pointToTest, IntPoint start, IntPoint end)
-		{
-			//It is 0 on the line, and +1 on one side, -1 on the other side.
-			long distanceToLine = (end.Y - start.X) * (pointToTest.Y - start.Y) - (end.Y - start.Y) * (pointToTest.X - start.Y);
-			if (distanceToLine > 0)
-			{
-				return 1;
-			}
-			else if (distanceToLine < 0)
-			{
-				return -1;
-			}
-
-			return 0;
-		}
-
-		public static IntPoint GetPerpendicularRight(this IntPoint thisPoint)
-		{
-			return new IntPoint(thisPoint.Y, -thisPoint.X)
-			{
-				Width = thisPoint.Width
-			};
-		}
-
-		public static IntPoint GetPerpendicularLeft(this IntPoint thisPoint)
-		{
-			return new IntPoint(-thisPoint.Y, thisPoint.X)
-			{
-				Width = thisPoint.Width
-			};
+			return MSClipperLib.IntPointExtensions.LengthSquared(polygon) <= length * length;
 		}
 
 		public static IntPoint GetRotated(this IntPoint thisPoint, double radians)
@@ -190,22 +148,12 @@ namespace MatterHackers.MatterSlice
 			return thisPoint.LengthSquared() <= len * len;
 		}
 
-		public static long Length(this IntPoint thisPoint)
-		{
-			return (long)Sqrt(thisPoint.LengthSquared());
-		}
-
 		public static double LengthMm(this IntPoint thisPoint)
 		{
 			double fx = (double)(thisPoint.X) / 1000.0;
 			double fy = (double)(thisPoint.Y) / 1000.0;
 			double fz = (double)(thisPoint.Z) / 1000.0;
 			return Sqrt(fx * fx + fy * fy + fz * fz);
-		}
-
-		public static long LengthSquared(this IntPoint thisPoint)
-		{
-			return thisPoint.X * thisPoint.X + thisPoint.Y * thisPoint.Y + thisPoint.Z * thisPoint.Z;
 		}
 
 		public static bool LongerThen(this IntPoint p0, long len)

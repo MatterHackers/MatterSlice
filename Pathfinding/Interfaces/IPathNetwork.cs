@@ -17,7 +17,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Pathfinding
+namespace MatterHackers.Pathfinding
 {
     public interface IPathNetwork<T> where T : IPathNode
     {

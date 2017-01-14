@@ -30,7 +30,6 @@ either expressed or implied, of the FreeBSD Project.
 using MSClipperLib;
 using NUnit.Framework;
 using System.Collections.Generic;
-using MatterHackers.MatterSlice;
 
 namespace MatterHackers.MatterSlice.Tests
 {
