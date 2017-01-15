@@ -25,8 +25,6 @@ using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-	using System;
-	using QuadTree;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
@@ -57,26 +55,6 @@ namespace MatterHackers.MatterSlice
 		public static Polygon CreateConvexHull(this Polygon inPolygon)
 		{
 			return new Polygon(GrahamScan.GetConvexHull(inPolygon));
-		}
-
-		public static Polygon CreateFromString(string polygonString)
-		{
-			Polygon output = new Polygon();
-			string[] intPointData = polygonString.Split(',');
-			int increment = 2;
-			if (polygonString.Contains("width"))
-			{
-				increment = 4;
-			}
-			for (int i = 0; i < intPointData.Length - 1; i += increment)
-			{
-				string elementX = intPointData[i];
-				string elementY = intPointData[i + 1];
-				IntPoint nextIntPoint = new IntPoint(int.Parse(elementX.Substring(elementX.IndexOf(':') + 1)), int.Parse(elementY.Substring(3)));
-				output.Add(nextIntPoint);
-			}
-
-			return output;
 		}
 
 		public static bool DescribesSameShape(this Polygon a, Polygon b)
@@ -203,27 +181,6 @@ namespace MatterHackers.MatterSlice
 		public static bool Orientation(this Polygon polygon)
 		{
 			return Clipper.Orientation(polygon);
-		}
-
-		public static long PolygonLength(this Polygon polygon, bool areClosed = true)
-		{
-			long length = 0;
-			if (polygon.Count > 1)
-			{
-				IntPoint previousPoint = polygon[0];
-				if (areClosed)
-				{
-					previousPoint = polygon[polygon.Count - 1];
-				}
-				for (int i = areClosed ? 0 : 1; i < polygon.Count; i++)
-				{
-					IntPoint currentPoint = polygon[i];
-					length += (previousPoint - currentPoint).Length();
-					previousPoint = currentPoint;
-				}
-			}
-
-			return length;
 		}
 
 		public static void Reverse(this Polygon polygon)

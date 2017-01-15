@@ -1,5 +1,5 @@
 ﻿// Copyright(c) 2012 Erik Svedäng, Johannes Gotlén, 2017 Lars Brubaker
-// 
+//
 // This software is provided 'as-is', without any express or implied
 // warranty.In no event will the authors be held liable for any damages
 // arising from the use of this software.
@@ -19,9 +19,26 @@ using System.Collections.Generic;
 
 namespace MatterHackers.Pathfinding
 {
-    public class PathLink : IEnumerable<IPathNode>
-    {
-		float distance;
+	public class PathLink : IEnumerable<IPathNode>
+	{
+		public IPathNode nodeA;
+		public IPathNode nodeB;
+		private float distance;
+
+		public PathLink(IPathNode pNodeA, IPathNode pNodeB)
+		{
+			Distance = pNodeA.DistanceTo(pNodeB);
+			nodeA = pNodeA;
+			nodeB = pNodeB;
+		}
+
+		public int Count
+		{
+			get
+			{
+				return 2;
+			}
+		}
 
 		public float Distance
 		{
@@ -36,103 +53,98 @@ namespace MatterHackers.Pathfinding
 				distance = value;
 			}
 		}
-        public IPathNode nodeA;
-        public IPathNode nodeB;
 
-        public PathLink(IPathNode pNodeA, IPathNode pNodeB)
-        {
-            Distance = pNodeA.DistanceTo(pNodeB);
-            nodeA = pNodeA;
-            nodeB = pNodeB;
-        }
+		public IPathNode this[int index]
+		{
+			get
+			{
+				if (index == 0)
+				{
+					return nodeA;
+				}
 
-        public IPathNode GetOtherNode(IPathNode pSelf)
-        {
-            if (nodeA == pSelf) {
-                return nodeB;
-            }
-            else if (nodeB == pSelf) {
-                return nodeA;
-            }
-            else {
-                throw new Exception("Function must be used with a parameter that's contained by the link");
-            }
-        }
+				if (index == 1)
+				{
+					return nodeB;
+				}
 
-        public int IndexOf(IPathNode item)
-        {
-            throw new NotImplementedException();
-        }
+				return null;
+			}
+			set
+			{
+				if (index == 0)
+				{
+					nodeA = value;
+				}
 
-        public void Insert(int index, IPathNode item)
-        {
-            throw new NotImplementedException();
-        }
+				if (index == 1)
+				{
+					nodeB = value;
+				}
+			}
+		}
 
-        public void RemoveAt(int index)
-        {
-            throw new NotImplementedException();
-        }
+		public void Add(IPathNode item)
+		{
+			throw new NotImplementedException();
+		}
 
-        public IPathNode this[int index] {
-            get {
-                if (index == 0) {
-                    return nodeA;
-                }
-                
-                if (index == 1) {
-                    return nodeB;
-                }
-                
-                return null;
-            }
-            set {
-                if (index == 0) {
-                    nodeA = value;
-                }
-                
-                if (index == 1) {
-                    nodeB = value;
-                }
-            }
-        }
+		public void Clear()
+		{
+			nodeA = null;
+			nodeB = null;
+		}
 
-        public void Add(IPathNode item)
-        {
-            throw new NotImplementedException();
-        }
+		public bool Contains(IPathNode item)
+		{
+			if (nodeA == item || nodeB == item)
+			{
+				return true;
+			}
 
-        public void Clear()
-        {
-            nodeA = null;
-            nodeB = null;
-        }
+			return false;
+		}
 
-        public bool Contains(IPathNode item)
-        {
-            if (nodeA == item || nodeB == item) {
-                return true;
-            }
-            
-            return false;
-        }
+		public IEnumerator<IPathNode> GetEnumerator()
+		{
+			yield return nodeA;
+			yield return nodeB;
+		}
 
-        public int Count {
-            get {
-                return 2;
-            }
-        }
+		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+		{
+			yield return nodeA;
+			yield return nodeB;
+		}
 
-        public IEnumerator<IPathNode> GetEnumerator()
-        {
-            yield return nodeA;
-            yield return nodeB;
-        }
+		public IPathNode GetOtherNode(IPathNode pSelf)
+		{
+			if (nodeA == pSelf)
+			{
+				return nodeB;
+			}
+			else if (nodeB == pSelf)
+			{
+				return nodeA;
+			}
+			else {
+				throw new Exception("Function must be used with a parameter that's contained by the link");
+			}
+		}
 
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-        {
-            yield return nodeA;
-            yield return nodeB;
-        }
-    }
+		public int IndexOf(IPathNode item)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Insert(int index, IPathNode item)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void RemoveAt(int index)
+		{
+			throw new NotImplementedException();
+		}
+	}
 }

@@ -18,8 +18,8 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System.Collections.Generic;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -86,7 +86,7 @@ namespace MatterHackers.MatterSlice
 						Polygons largerInset = island.InsetToolPaths[insetIndex].Offset(-extrusionWidth_um / 2);
 						Polygons smallerInset = island.InsetToolPaths[insetIndex + 1].Offset(extrusionWidth_um / 2);
 
-						Polygons thinWalls = largerInset.CreateDifference(smallerInset).Offset(-extrusionWidth_um/4);
+						Polygons thinWalls = largerInset.CreateDifference(smallerInset).Offset(-extrusionWidth_um / 4);
 						if (thinWalls.Count > 0)
 						{
 							topOutlines.AddAll(thinWalls);

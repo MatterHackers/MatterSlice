@@ -1,5 +1,5 @@
 ﻿// Copyright(c) 2012 Erik Svedäng, Johannes Gotlén, 2017 Lars Brubaker
-// 
+//
 // This software is provided 'as-is', without any express or implied
 // warranty.In no event will the authors be held liable for any damages
 // arising from the use of this software.
@@ -19,52 +19,60 @@ using System.Collections.Generic;
 
 namespace MatterHackers.Pathfinding
 {
-    public interface IPathNode : IPoint, IComparable
-    {
-        float CostMultiplier {
-            get;
-        }
+	public interface IPathNode : IPoint, IComparable
+	{
+		float CostMultiplier
+		{
+			get;
+		}
 
-        float PathCostHere {
-            get;
-            set;
-        }
+		float DistanceToGoal
+		{
+			get;
+			set;
+		}
 
-        float DistanceToGoal {
-            get;
-            set;
-        }
+		bool IsGoalNode
+		{
+			set;
+			get;
+		}
 
-        bool IsStartNode {
-            get;
-            set;
-        }
+		bool IsStartNode
+		{
+			get;
+			set;
+		}
 
-        bool IsGoalNode {
-            set;
-            get;
-        }
+		PathLink LinkLeadingHere
+		{
+			get;
+			set;
+		}
 
-        bool Visited {
-            get;
-            set;
-        }
+		List<PathLink> Links
+		{
+			get;
+		}
 
-        void AddLink(PathLink pLink);
+		float PathCostHere
+		{
+			get;
+			set;
+		}
 
-        void RemoveLink(PathLink pLink);
+		bool Visited
+		{
+			get;
+			set;
+		}
 
-        List<PathLink> Links {
-            get;
-        }
+		void AddLink(PathLink pLink);
 
-        PathLink GetLinkTo(IPathNode pNode);
+		PathLink GetLinkTo(IPathNode pNode);
 
-        PathLink LinkLeadingHere {
-            get;
-            set;
-        }
+		long GetUniqueID();
 
-        long GetUniqueID();
-    }
+		void RemoveLink(PathLink pLink);
+	}
 }

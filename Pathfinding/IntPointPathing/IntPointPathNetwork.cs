@@ -1,5 +1,5 @@
 ﻿// Copyright(c) 2017 Lars Brubaker
-// 
+//
 // This software is provided 'as-is', without any express or implied
 // warranty.In no event will the authors be held liable for any damages
 // arising from the use of this software.
@@ -23,28 +23,10 @@ namespace MatterHackers.Pathfinding
 	using Datastructures;
 	using Polygon = List<IntPoint>;
 
-	public class WayPointsToRemove : List<IntPointNode>, IDisposable
-	{
-		IntPointPathNetwork network;
-		public WayPointsToRemove(IntPointPathNetwork network)
-		{
-			this.network = network;
-		}
-		
-		public void Dispose()
-		{
-			for (int i = Count - 1; i >= 0; i--)
-			{
-				network.Remove(this[i]);
-			}
-		}
-	}
-
 	public class IntPointPathNetwork : IPathNetwork<IntPointNode>
 	{
 		private static int allocCount = 0;
 
-		public List<IntPointNode> Nodes { get; private set; } = new List<IntPointNode>();
 		private IPathNode pathGoal = null;
 		private IPathNode pathStart = null;
 
@@ -56,6 +38,8 @@ namespace MatterHackers.Pathfinding
 		{
 			AddClosedPolygon(data);
 		}
+
+		public List<IntPointNode> Nodes { get; private set; } = new List<IntPointNode>();
 
 		public void AddClosedPolygon(Polygon polygon, float costMultiplier = 1)
 		{
@@ -80,14 +64,14 @@ namespace MatterHackers.Pathfinding
 			IntPointNode nodeA = FindNode(linkToA);
 			IntPointNode nodeB = FindNode(linkToB);
 
-			if(nodeA != null && nodeB != null)
+			if (nodeA != null && nodeB != null)
 			{
 				return AddNode(newPosition, nodeA, nodeB, costMultiplier);
 			}
 
 			return null;
 		}
-		
+
 		public IntPointNode AddNode(IntPoint newPosition, IntPointNode nodeA, IntPointNode nodeB, float costMultiplier = 1)
 		{
 			IntPointNode newNode = AddNode(newPosition, costMultiplier);
@@ -105,11 +89,27 @@ namespace MatterHackers.Pathfinding
 			return newNode;
 		}
 
+		public PathLink AddPathLink(IntPointNode nodeA, IntPointNode nodeB)
+		{
+			PathLink link = nodeB.GetLinkTo(nodeA);
+
+			if (link == null)
+			{
+				link = new PathLink(nodeA, nodeB);
+			}
+
+			link.Distance = (nodeA.Position - nodeB.Position).Length();
+			nodeA.Links.Add(link);
+			nodeB.Links.Add(link);
+
+			return link;
+		}
+
 		public IntPointNode FindNode(IntPoint position)
 		{
-			foreach(var node in Nodes)
+			foreach (var node in Nodes)
 			{
-				if(node.Position == position)
+				if (node.Position == position)
 				{
 					return node;
 				}
@@ -118,7 +118,7 @@ namespace MatterHackers.Pathfinding
 			return null;
 		}
 
-		public Path<IntPointNode> FindPath(IntPoint startPosition, IntPoint startLinkA, IntPoint startLinkB, 
+		public Path<IntPointNode> FindPath(IntPoint startPosition, IntPoint startLinkA, IntPoint startLinkB,
 			IntPoint endPosition, IntPoint endLinkA, IntPoint endLinkB)
 		{
 			using (WayPointsToRemove removePointList = new WayPointsToRemove(this))
@@ -224,6 +224,21 @@ namespace MatterHackers.Pathfinding
 			return new Path<IntPointNode>(resultNodeList.ToArray(), tLength, pathResult, testCount);
 		}
 
+		public void Remove(IntPointNode nodeToRemove)
+		{
+			if (nodeToRemove != null)
+			{
+				for (int i = nodeToRemove.Links.Count - 1; i >= 0; i--)
+				{
+					var link = nodeToRemove.Links[i];
+					var otherNode = link.nodeA == nodeToRemove ? link.nodeB : link.nodeA;
+					nodeToRemove.Links.Remove(link);
+					otherNode.Links.Remove(link);
+				}
+				Nodes.Remove(nodeToRemove);
+			}
+		}
+
 		public void Reset()
 		{
 			foreach (IPathNode node in Nodes)
@@ -268,35 +283,22 @@ namespace MatterHackers.Pathfinding
 				pNodesToVisit.Push(pNewNode);
 			}
 		}
+	}
 
-		public PathLink AddPathLink(IntPointNode nodeA, IntPointNode nodeB)
+	public class WayPointsToRemove : List<IntPointNode>, IDisposable
+	{
+		private IntPointPathNetwork network;
+
+		public WayPointsToRemove(IntPointPathNetwork network)
 		{
-			PathLink link = nodeB.GetLinkTo(nodeA);
-
-			if (link == null)
-			{
-				link = new PathLink(nodeA, nodeB);
-			}
-
-			link.Distance = (nodeA.Position - nodeB.Position).Length();
-			nodeA.Links.Add(link);
-			nodeB.Links.Add(link);
-
-			return link;
+			this.network = network;
 		}
 
-		public void Remove(IntPointNode nodeToRemove)
+		public void Dispose()
 		{
-			if (nodeToRemove != null)
+			for (int i = Count - 1; i >= 0; i--)
 			{
-				for (int i = nodeToRemove.Links.Count - 1; i >= 0; i--)
-				{
-					var link = nodeToRemove.Links[i];
-					var otherNode = link.nodeA == nodeToRemove ? link.nodeB : link.nodeA;
-					nodeToRemove.Links.Remove(link);
-					otherNode.Links.Remove(link);
-				}
-				Nodes.Remove(nodeToRemove);
+				network.Remove(this[i]);
 			}
 		}
 	}

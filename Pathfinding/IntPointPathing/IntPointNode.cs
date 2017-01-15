@@ -1,5 +1,5 @@
 ﻿// Copyright(c) 2017 Lars Brubaker
-// 
+//
 // This software is provided 'as-is', without any express or implied
 // warranty.In no event will the authors be held liable for any damages
 // arising from the use of this software.
@@ -54,23 +54,20 @@ namespace MatterHackers.Pathfinding
 			Position = intPoint;
 		}
 
-		public IntPoint Position { get; private set; }
-
-		public float PathCostHere { get; set; }
-
-		public float DistanceToGoal { get; set; }
-
 		public float CostMultiplier { get; set; } = 1;
-
-		public bool IsStartNode { get; set; }
-
+		public float DistanceToGoal { get; set; }
 		public bool IsGoalNode { get; set; }
-
+		public bool IsStartNode { get; set; }
+		public PathLink LinkLeadingHere { get; set; }
+		public List<PathLink> Links { get; private set; } = new List<PathLink>();
+		public float PathCostHere { get; set; }
+		public IntPoint Position { get; private set; }
 		public bool Visited { get; set; }
 
-		public List<PathLink> Links { get; private set; } = new List<PathLink>();
-
-		public PathLink LinkLeadingHere { get; set; }
+		public void AddLink(PathLink pLink)
+		{
+			Links.Add(pLink);
+		}
 
 		public PathLink GetLinkTo(IPathNode pNode)
 		{
@@ -88,17 +85,12 @@ namespace MatterHackers.Pathfinding
 			return null;
 		}
 
-		public void AddLink(PathLink pLink)
-		{
-			Links.Add(pLink);
-		}
-
 		public void RemoveLink(PathLink pLink)
 		{
 			Links.Remove(pLink);
 		}
 
-		#endregion
+		#endregion IPathNode Members
 
 		#region IPoint Members
 
@@ -119,7 +111,7 @@ namespace MatterHackers.Pathfinding
 			return (int)Position.X + (int)(Position.Y * 1000);
 		}
 
-		#endregion
+		#endregion IPoint Members
 
 		#region IComparable Members
 
@@ -142,16 +134,16 @@ namespace MatterHackers.Pathfinding
 			}
 		}
 
-		#endregion
-
-		public override string ToString()
-		{
-			return $"Pos: {Position.X}, {Position.Y} - Links: {Links.Count}";
-		}
+		#endregion IComparable Members
 
 		public virtual long GetUniqueID()
 		{
 			return Position.X ^ Position.Y;
+		}
+
+		public override string ToString()
+		{
+			return $"Pos: {Position.X}, {Position.Y} - Links: {Links.Count}";
 		}
 	}
 }

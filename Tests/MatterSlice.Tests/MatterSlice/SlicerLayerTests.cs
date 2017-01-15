@@ -27,57 +27,78 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
-using MSClipperLib;
-using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
+using MSClipperLib;
+using NUnit.Framework;
 
 namespace MatterHackers.MatterSlice.Tests
 {
-    [TestFixture, Category("MatterSlice.SlicerLayerTests")]
-    public class SlicerLayerTests
-    {
-        [TestFixtureSetUp]
-        public void TestSetup()
-        {
-            // Ensure the temp directory exists
-            string tempDirectory = Path.GetDirectoryName(TestUtlities.GetTempGCodePath("na"));
-            Directory.CreateDirectory(tempDirectory);
-        }
+	[TestFixture, Category("MatterSlice.SlicerLayerTests")]
+	public class SlicerLayerTests
+	{
+		[Test]
+		public void AlwaysRetractOnIslandChange()
+		{
+			string meshWithIslands = TestUtlities.GetStlPath("comb");
+			string gCodeWithIslands = TestUtlities.GetTempGCodePath("comb-box");
 
-        [Test]
-        public void CubePolygonWindingDirectionDoesNotMatter()
-        {
-            // simplified
-            {
-                // 								 (112500, 112500)
-                //                                     /|
-                //                                    / |
-                //                                   /  |
-                //                                  /   |
-                //                                 /    |
-                //                                /     |
-                //                               /      |
-                //                              /       |
-                //                             /        |
-                //                            /         |
-                //                       0 ^ /         2|^
-                //                          /           |
-                //                         /            |
-                //                        /             |
-                //                       /              |
-                //                      /               |
-                //                     /                |
-                //                    /                 |
-                //                   /                  |
-                //                  /                   o (112500, 94601)
-                //                 /                   3|^
-                // (92501, 92501) /_____________________| (112500, 92501)
-                //                         1 >
+			{
+				// load a model that has 3 islands
+				ConfigSettings config = new ConfigSettings();
+				// make sure no retractions are going to occure that are island crossing
+				config.MinimumTravelToCauseRetraction = 2000;
+				fffProcessor processor = new fffProcessor(config);
+				processor.SetTargetFile(gCodeWithIslands);
+				processor.LoadStlFile(meshWithIslands);
+				// slice and save it
+				processor.DoProcessing();
+				processor.finalize();
 
-                string[] segmentsToCheck = { "x: 92501, y: 92501 & x:112500, y: 112500 | x:92501, y:92501 & x:112500, y:92501 | x:112500, y: 94601 & x:112500, y: 112500 | x:112500, y: 92501 & x:112500, y: 94601 |" };
-                CheckLayersAreSinglePolygon(segmentsToCheck);
-            }
+				string[] gcodeContents = TestUtlities.LoadGCodeFile(gCodeWithIslands);
+				int numLayers = TestUtlities.CountLayers(gcodeContents);
+				for (int i = 1; i < numLayers - 1; i++)
+				{
+					string[] layer = TestUtlities.GetGCodeForLayer(gcodeContents, i);
+					int totalRetractions = TestUtlities.CountRetractions(layer);
+					Assert.IsTrue(totalRetractions == 6);
+				}
+			}
+		}
+
+		[Test]
+		public void CubePolygonWindingDirectionDoesNotMatter()
+		{
+			// simplified
+			{
+				// 								 (112500, 112500)
+				//                                     /|
+				//                                    / |
+				//                                   /  |
+				//                                  /   |
+				//                                 /    |
+				//                                /     |
+				//                               /      |
+				//                              /       |
+				//                             /        |
+				//                            /         |
+				//                       0 ^ /         2|^
+				//                          /           |
+				//                         /            |
+				//                        /             |
+				//                       /              |
+				//                      /               |
+				//                     /                |
+				//                    /                 |
+				//                   /                  |
+				//                  /                   o (112500, 94601)
+				//                 /                   3|^
+				// (92501, 92501) /_____________________| (112500, 92501)
+				//                         1 >
+
+				string[] segmentsToCheck = { "x: 92501, y: 92501 & x:112500, y: 112500 | x:92501, y:92501 & x:112500, y:92501 | x:112500, y: 94601 & x:112500, y: 112500 | x:112500, y: 92501 & x:112500, y: 94601 |" };
+				CheckLayersAreSinglePolygon(segmentsToCheck);
+			}
 
 			// simplified
 			{
@@ -138,151 +159,130 @@ namespace MatterHackers.MatterSlice.Tests
 				//  (112.5, 92.5) -> (112.5, 94.6)
 
 				string[] segmentsToCheck = { "x: 92501, y: 92501 & x:92501, y: 94601 | x:92501, y: 94601 & x:92501, y: 112500 | x:112500, y: 92501 & x:94601, y: 92501 | x:94601, y: 92501 & x:92501, y: 92501 | x:92501, y: 112500 & x:94601, y: 112500 | x:94601, y: 112500 & x:112500, y: 112500 | x:112500, y: 94601 & x:112500, y: 112500 | x:112500, y: 92501 & x:112500, y: 94601 |" };
-                CheckLayersAreSinglePolygon(segmentsToCheck);
-            }
+				CheckLayersAreSinglePolygon(segmentsToCheck);
+			}
 
-            // lots from an actual file
-            {
-                string pathToData = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "CubeSegmentsX2.txt");
+			// lots from an actual file
+			{
+				string pathToData = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "CubeSegmentsX2.txt");
 
-                string[] segmentsToCheck = File.ReadAllLines(pathToData);
-                CheckLayersAreSinglePolygon(segmentsToCheck);
-            }
-        }
+				string[] segmentsToCheck = File.ReadAllLines(pathToData);
+				CheckLayersAreSinglePolygon(segmentsToCheck);
+			}
+		}
 
-        [Test]
-        public void TetrahedronPolygonWindingDirectionDoesNotMatter()
-        {
-            // ccw
-            {
-                //      2
-                //     /\
-                //    /  \
-                //  0/____\ 1
+		[Test]
+		public void DumpSegmentsWorks()
+		{
+			List<SlicePerimeterSegment> testSegments = new List<SlicePerimeterSegment>();
+			testSegments.Add(new SlicePerimeterSegment(new IntPoint(1, 2), new IntPoint(3, 4)));
+			testSegments.Add(new SlicePerimeterSegment(new IntPoint(4, 2), new IntPoint(5, 4)));
+			testSegments.Add(new SlicePerimeterSegment(new IntPoint(3, 2), new IntPoint(9, 4)));
+			testSegments.Add(new SlicePerimeterSegment(new IntPoint(6, 2), new IntPoint(3, 7)));
 
-                string[] segmentsToCheck = { "x:0, y:0&x:10000, y:0|x:10000, y:0&x:5000, y:10000|x:5000, y:10000&x:0, y:0|", };
-                CheckLayersAreSinglePolygon(segmentsToCheck);
-            }
+			string segmentsString = MeshProcessingLayer.DumpSegmentListToString(testSegments);
+			List<SlicePerimeterSegment> outSegments = MeshProcessingLayer.CreateSegmentListFromString(segmentsString);
 
-            // cw
-            {
-                //      1
-                //     /\
-                //    /  \
-                //  0/____\ 2
+			Assert.True(testSegments.Count == outSegments.Count);
+			for (int i = 0; i < testSegments.Count; i++)
+			{
+				Assert.True(testSegments[i].start == outSegments[i].start);
+				Assert.True(testSegments[i].end == outSegments[i].end);
+			}
+		}
 
-                string[] segmentsToCheck = { "x:0, y:0&x:10000, y:0|x:5000, y:10000&x:0, y:0|x:10000, y:0&x:5000, y:10000|", };
-                CheckLayersAreSinglePolygon(segmentsToCheck);
-            }
-        }
+		[TestFixtureSetUp]
+		public void TestSetup()
+		{
+			// Ensure the temp directory exists
+			string tempDirectory = Path.GetDirectoryName(TestUtlities.GetTempGCodePath("na"));
+			Directory.CreateDirectory(tempDirectory);
+		}
 
-        private static void CheckLayersAreSinglePolygon(string[] segmentsToCheck, int expectedCount = 1)
-        {
-            foreach (string line in segmentsToCheck)
-            {
-                List<SlicePerimeterSegment> segmentsList = MeshProcessingLayer.CreateSegmentListFromString(line);
-                MeshProcessingLayer layer = new MeshProcessingLayer(1, line);
-                layer.MakePolygons();
+		[Test]
+		public void TetrahedronPolygonWindingDirectionDoesNotMatter()
+		{
+			// ccw
+			{
+				//      2
+				//     /\
+				//    /  \
+				//  0/____\ 1
 
-                Assert.IsTrue(layer.PolygonList.Count == expectedCount);
-            }
-        }
+				string[] segmentsToCheck = { "x:0, y:0&x:10000, y:0|x:10000, y:0&x:5000, y:10000|x:5000, y:10000&x:0, y:0|", };
+				CheckLayersAreSinglePolygon(segmentsToCheck);
+			}
 
-        [Test]
-        public void TwoRingSegmentsCreatedCorrectly()
-        {
-            // lots from an actual file
-            {
-                string pathToData = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "TwoRingSegmentsTestData.txt");
+			// cw
+			{
+				//      1
+				//     /\
+				//    /  \
+				//  0/____\ 2
 
-                string[] segmentsToCheck = File.ReadAllLines(pathToData);
-                CheckLayersAreSinglePolygon(segmentsToCheck, 2);
-            }
-        }
+				string[] segmentsToCheck = { "x:0, y:0&x:10000, y:0|x:5000, y:10000&x:0, y:0|x:10000, y:0&x:5000, y:10000|", };
+				CheckLayersAreSinglePolygon(segmentsToCheck);
+			}
+		}
 
-        [Test]
-        public void DumpSegmentsWorks()
-        {
-            List<SlicePerimeterSegment> testSegments = new List<SlicePerimeterSegment>();
-            testSegments.Add(new SlicePerimeterSegment(new IntPoint(1, 2), new IntPoint(3, 4)));
-            testSegments.Add(new SlicePerimeterSegment(new IntPoint(4, 2), new IntPoint(5, 4)));
-            testSegments.Add(new SlicePerimeterSegment(new IntPoint(3, 2), new IntPoint(9, 4)));
-            testSegments.Add(new SlicePerimeterSegment(new IntPoint(6, 2), new IntPoint(3, 7)));
+		[Test]
+		public void TwoRingSegmentsCreatedCorrectly()
+		{
+			// lots from an actual file
+			{
+				string pathToData = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "TwoRingSegmentsTestData.txt");
 
-            string segmentsString = MeshProcessingLayer.DumpSegmentListToString(testSegments);
-            List<SlicePerimeterSegment> outSegments = MeshProcessingLayer.CreateSegmentListFromString(segmentsString);
+				string[] segmentsToCheck = File.ReadAllLines(pathToData);
+				CheckLayersAreSinglePolygon(segmentsToCheck, 2);
+			}
+		}
 
-            Assert.True(testSegments.Count == outSegments.Count);
-            for (int i = 0; i < testSegments.Count; i++)
-            {
-                Assert.True(testSegments[i].start == outSegments[i].start);
-                Assert.True(testSegments[i].end == outSegments[i].end);
-            }
-        }
+		[Test]
+		public void WindingDirectionDoesNotMatter()
+		{
+			string manifoldFile = TestUtlities.GetStlPath("20mm-box");
+			string manifoldGCode = TestUtlities.GetTempGCodePath("20mm-box");
+			string nonManifoldFile = TestUtlities.GetStlPath("20mm-box bad winding");
+			string nonManifoldGCode = TestUtlities.GetTempGCodePath("20mm-box bad winding");
 
-        [Test]
-        public void AlwaysRetractOnIslandChange()
-        {
-            string meshWithIslands = TestUtlities.GetStlPath("comb");
-            string gCodeWithIslands = TestUtlities.GetTempGCodePath("comb-box");
+			{
+				// load a model that is correctly manifold
+				ConfigSettings config = new ConfigSettings();
+				fffProcessor processor = new fffProcessor(config);
+				processor.SetTargetFile(manifoldGCode);
+				processor.LoadStlFile(manifoldFile);
+				// slice and save it
+				processor.DoProcessing();
+				processor.finalize();
+			}
 
-            {
-                // load a model that has 3 islands
-                ConfigSettings config = new ConfigSettings();
-                // make sure no retractions are going to occure that are island crossing
-                config.MinimumTravelToCauseRetraction = 2000;
-                fffProcessor processor = new fffProcessor(config);
-                processor.SetTargetFile(gCodeWithIslands);
-                processor.LoadStlFile(meshWithIslands);
-                // slice and save it
-                processor.DoProcessing();
-                processor.finalize();
+			{
+				// load a model that has some faces pointing the wroing way
+				ConfigSettings config = new ConfigSettings();
+				fffProcessor processor = new fffProcessor(config);
+				processor.SetTargetFile(nonManifoldGCode);
+				processor.LoadStlFile(nonManifoldFile);
+				// slice and save it
+				processor.DoProcessing();
+				processor.finalize();
+			}
 
-                string[] gcodeContents = TestUtlities.LoadGCodeFile(gCodeWithIslands);
-                int numLayers = TestUtlities.CountLayers(gcodeContents);
-                for (int i = 1; i < numLayers - 1; i++)
-                {
-                    string[] layer = TestUtlities.GetGCodeForLayer(gcodeContents, i);
-                    int totalRetractions = TestUtlities.CountRetractions(layer);
-                    Assert.IsTrue(totalRetractions == 6);
-                }
-            }
-        }
+			// load both gcode files and check that they are the same
+			string manifoldGCodeContent = File.ReadAllText(manifoldGCode);
+			string nonManifoldGCodeContent = File.ReadAllText(nonManifoldGCode);
+			Assert.AreEqual(manifoldGCodeContent, nonManifoldGCodeContent);
+		}
 
-        [Test]
-        public void WindingDirectionDoesNotMatter()
-        {
-            string manifoldFile = TestUtlities.GetStlPath("20mm-box");
-            string manifoldGCode = TestUtlities.GetTempGCodePath("20mm-box");
-            string nonManifoldFile = TestUtlities.GetStlPath("20mm-box bad winding");
-            string nonManifoldGCode = TestUtlities.GetTempGCodePath("20mm-box bad winding");
+		private static void CheckLayersAreSinglePolygon(string[] segmentsToCheck, int expectedCount = 1)
+		{
+			foreach (string line in segmentsToCheck)
+			{
+				List<SlicePerimeterSegment> segmentsList = MeshProcessingLayer.CreateSegmentListFromString(line);
+				MeshProcessingLayer layer = new MeshProcessingLayer(1, line);
+				layer.MakePolygons();
 
-            {
-                // load a model that is correctly manifold
-                ConfigSettings config = new ConfigSettings();
-                fffProcessor processor = new fffProcessor(config);
-                processor.SetTargetFile(manifoldGCode);
-                processor.LoadStlFile(manifoldFile);
-                // slice and save it
-                processor.DoProcessing();
-                processor.finalize();
-            }
-
-            {
-                // load a model that has some faces pointing the wroing way
-                ConfigSettings config = new ConfigSettings();
-                fffProcessor processor = new fffProcessor(config);
-                processor.SetTargetFile(nonManifoldGCode);
-                processor.LoadStlFile(nonManifoldFile);
-                // slice and save it
-                processor.DoProcessing();
-                processor.finalize();
-            }
-
-            // load both gcode files and check that they are the same
-            string manifoldGCodeContent = File.ReadAllText(manifoldGCode);
-            string nonManifoldGCodeContent = File.ReadAllText(nonManifoldGCode);
-            Assert.AreEqual(manifoldGCodeContent, nonManifoldGCodeContent);
-        }
-    }
+				Assert.IsTrue(layer.PolygonList.Count == expectedCount);
+			}
+		}
+	}
 }

@@ -24,20 +24,13 @@ The integer point classes are used as soon as possible and represent microns in 
 Integer points are used to avoid floating point rounding errors, and because ClipperLib uses them.
 */
 
-using MSClipperLib;
-
 //Include Clipper to get the ClipperLib::IntPoint definition, which we reuse as Point definition.
 using System;
-using System.Collections.Generic;
-
+using MSClipperLib;
 using static System.Math;
 
 namespace MatterHackers.MatterSlice
 {
-	using Polygon = List<IntPoint>;
-
-	using Polygons = List<List<IntPoint>>;
-
 	public class PointMatrix
 	{
 		public double[] matrix = new double[4];
@@ -94,22 +87,6 @@ namespace MatterHackers.MatterSlice
 		public static long CrossXy(this IntPoint left, IntPoint right)
 		{
 			return left.X * right.Y - left.Y * right.X;
-		}
-
-
-		public static bool shorterThen(this IntPoint polygon, long length)
-		{
-			if (polygon.X > length || polygon.X < -length)
-			{
-				return false;
-			}
-
-			if (polygon.Y > length || polygon.Y < -length)
-			{
-				return false;
-			}
-
-			return MSClipperLib.IntPointExtensions.LengthSquared(polygon) <= length * length;
 		}
 
 		public static IntPoint GetRotated(this IntPoint thisPoint, double radians)
@@ -189,6 +166,21 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return thisPoint * len / _len;
+		}
+
+		public static bool shorterThen(this IntPoint polygon, long length)
+		{
+			if (polygon.X > length || polygon.X < -length)
+			{
+				return false;
+			}
+
+			if (polygon.Y > length || polygon.Y < -length)
+			{
+				return false;
+			}
+
+			return MSClipperLib.IntPointExtensions.LengthSquared(polygon) <= length * length;
 		}
 
 		public static bool ShorterThen(this IntPoint thisPoint, long len)

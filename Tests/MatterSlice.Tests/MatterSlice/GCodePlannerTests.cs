@@ -27,9 +27,9 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
+using System.Collections.Generic;
 using MSClipperLib;
 using NUnit.Framework;
-using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice.Tests
 {
@@ -57,151 +57,6 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
-		public void MergePathsIgnoringCollinearLines()
-		{
-			//GCodePath path = Newtonsoft.Json.JsonConvert.DeserializeObject<GCodePath>("{\"config\":{\"closedLoop\":true,\"lineWidth_um\":500,\"gcodeComment\":\"WALL-OUTER\",\"speed\":15.0,\"spiralize\":false,\"doSeamHiding\":true,\"Name\":\"inset0Config\"},\"points\":[{\"X\":0,\"Y\":6290,\"Width\":0,\"Z\":200},{\"X\":0,\"Y\":6290,\"Width\":0,\"Z\":200},{\"X\":0,\"Y\":6290,\"Width\":0,\"Z\":200},{\"X\":401,\"Y\":6277,\"Width\":0,\"Z\":200},{\"X\":787,\"Y\":6240,\"Width\":0,\"Z\":200},{\"X\":1185,\"Y\":6177,\"Width\":0,\"Z\":200},{\"X\":1564,\"Y\":6092,\"Width\":0,\"Z\":200},{\"X\":1944,\"Y\":5982,\"Width\":0,\"Z\":200},{\"X\":2315,\"Y\":5848,\"Width\":0,\"Z\":200},{\"X\":2671,\"Y\":5693,\"Width\":0,\"Z\":200},{\"X\":3036,\"Y\":5508,\"Width\":0,\"Z\":200},{\"X\":3369,\"Y\":5310,\"Width\":0,\"Z\":200},{\"X\":3691,\"Y\":5093,\"Width\":0,\"Z\":200}]}");
-			GCodePath path = Newtonsoft.Json.JsonConvert.DeserializeObject<GCodePath>("{\"config\":{\"closedLoop\":true,\"lineWidth_um\":500,\"gcodeComment\":\"WALL-OUTER\",\"speed\":15.0,\"spiralize\":false,\"doSeamHiding\":true,\"Name\":\"inset0Config\"},\"points\":[{\"X\":0,\"Y\":6290,\"Width\":0,\"Z\":200},{\"X\":0,\"Y\":6290,\"Width\":0,\"Z\":200},{\"X\":0,\"Y\":6290,\"Width\":0,\"Z\":200}]}");
-
-			Polygons pathsWithOverlapsRemoved;
-			bool pathIsClosed = false;
-
-			bool pathHadOverlaps = GCodePlanner.MergePerimeterOverlaps(path.points, path.config.lineWidth_um, out pathsWithOverlapsRemoved, pathIsClosed)
-				&& pathsWithOverlapsRemoved.Count > 0;
-
-			Assert.IsFalse(pathHadOverlaps);
-		}
-
-		[Test]
-		public void QuadTreeWorking()
-		{
-			var tree = new QuadTree<int>(5, 10, 10, 2000, 2000);
-			tree.Insert(0, new Quad(50, 50, 60, 60));
-			tree.Insert(1, new Quad(52, 53, 60, 60));
-			//tree.Insert(0, new Quad(500, 50, 560, 60));
-			//tree.Insert(0, new Quad(20, 50, 61, 60));
-			//tree.Insert(0, new Quad(150, 50, 160, 60));
-
-
-			int count = 0;
-			foreach(var index in tree.FindCollisions(0))
-			{
-				count++;
-			}
-
-			Assert.IsTrue(count == 1);
-		}
-
-		[Test]
-		public void MakeCloseSegmentsMergable()
-		{
-			// check that we can cut up a single segment
-			{
-				List<Segment> segmentsControl = Segment.ConvertToSegments(new Polygon()
-				{
-					new IntPoint(0, 0),
-					new IntPoint(2500, 0),
-					new IntPoint(5000, 0),
-				}, false);
-
-				Polygon cuts = new Polygon()
-				{
-					new IntPoint(2500, 0),
-					new IntPoint(2500, 401),
-				};
-
-				Segment segmentToCut = new Segment()
-				{
-					Start = new IntPoint(0, 0),
-					End = new IntPoint(5000, 0),
-				};
-
-
-				var touchingEnumerator = new PolygonEdgeIterator(cuts, 400);
-				List<Segment> segmentsTest = segmentToCut.GetSplitSegmentForVertecies(touchingEnumerator);
-				Assert.IsTrue(segmentsControl.Count == segmentsTest.Count);
-				for(int i=0; i<segmentsTest.Count; i++)
-				{
-					Assert.IsTrue(segmentsTest[i] == segmentsControl[i]);
-				}
-			}
-
-			// A path that needs to have points inserted to do the correct thing
-			{
-				// |\      /|                     |\      /|
-				// | \s___/ |   				  | \____/ |
-				// |________|	create points ->  |_.____._|
-
-				Polygon perimeter = new Polygon()
-				{
-					new IntPoint(5000, 50),
-					new IntPoint(0, 10000),
-					new IntPoint(0, 0),
-					new IntPoint(15000, 0),
-					new IntPoint(15000, 10000),
-					new IntPoint(10000, 50),
-				};
-				Assert.IsTrue(perimeter.Count == 6);
-				Polygon correctedPath = GCodePlanner.MakeCloseSegmentsMergable(perimeter, 400 / 4);
-				Assert.IsTrue(correctedPath.Count == 8);
-			}
-
-			// A path that has been clipped
-			{
-				//  ____________s             ____________ __
-				//           *    goes to  -> 
-
-				long mergeDistance = 400 / 4;
-				Segment segment = new Segment(new IntPoint(5000, 50), new IntPoint(0, 50));
-				var touchingEnumerator = new PolygonEdgeIterator(new Polygon { new IntPoint(4500, 0) }, mergeDistance);
-				List<Segment> segments = segment.GetSplitSegmentForVertecies(touchingEnumerator);
-				Assert.IsTrue(segments.Count == 2);
-				Assert.IsTrue(segments[0] == new Segment(new IntPoint(5000, 50), new IntPoint(4500, 50)));
-				Assert.IsTrue(segments[1] == new Segment(new IntPoint(4500, 50), new IntPoint(0, 50)));
-			}
-
-			// A path that has been clipped
-			{
-				//  ____________s   
-				//  |_________	  goes to  -> ----------
-
-				long mergeDistance = 400 / 4;
-				Polygon perimeter = new Polygon() { new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(4500, 0)};
-				Assert.IsTrue(perimeter.Count == 4);
-				Polygon correctedPath = GCodePlanner.MakeCloseSegmentsMergable(perimeter, mergeDistance, false);
-				Assert.IsTrue(correctedPath.Count == 5);
-				Assert.IsTrue(correctedPath[0] == new IntPoint(5000, 50));
-				Assert.IsTrue(correctedPath[1] == new IntPoint(4500, 50));
-				Assert.IsTrue(correctedPath[2] == new IntPoint(0, 50));
-				Assert.IsTrue(correctedPath[3] == new IntPoint(0, 0));
-				Assert.IsTrue(correctedPath[4] == new IntPoint(4500, 0));
-			}
-
-
-			// Make sure we work correctly when splitting the closing segment.
-			{
-				// |\      /|                     |\      /|
-				// | \____/ |   				  | \____/ |
-				// |_______s|	create points ->  |_.____._|
-
-				int travelSpeed = 50;
-				int retractionMinimumDistance = 20;
-				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				Polygon perimeter = new Polygon()
-				{
-					new IntPoint(15000, 0),
-					new IntPoint(15000, 10000),
-					new IntPoint(10000, 50),
-					new IntPoint(5000, 50),
-					new IntPoint(0, 10000),
-					new IntPoint(0, 0),
-				};
-				Assert.IsTrue(perimeter.Count == 6);
-				Polygon correctedPath = GCodePlanner.MakeCloseSegmentsMergable(perimeter, 400 / 4);
-				Assert.IsTrue(correctedPath.Count == 8);
-			}
-		}
-
-		[Test]
 		public void FindThinFeaturesTests()
 		{
 			// Make sure we don't do anything to a simple perimeter.
@@ -215,7 +70,7 @@ namespace MatterHackers.MatterSlice.Tests
 				Polygon perimeter = new Polygon() { new IntPoint(0, 0, 0), new IntPoint(5000, 0, 0), new IntPoint(5000, 5000, 0), new IntPoint(0, 5000, 0) };
 				Assert.IsTrue(perimeter.Count == 4);
 				Polygons thinLines;
-				bool foundThinLines = GCodePlanner.FindThinLines(perimeter, 400 / 2, 0, out thinLines);
+				bool foundThinLines = perimeter.FindThinLines(400 / 2, 0, out thinLines);
 				Assert.IsFalse(foundThinLines);
 				Assert.IsTrue(thinLines.Count == 1);
 				Assert.IsTrue(thinLines[0].Count == 0);
@@ -223,12 +78,12 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// A very simple collapse lower left start
 			{
-				//  ____________   
+				//  ____________
 				// s|__________|	  very simple  -> ----------
 
 				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50) };
 				Polygons thinLines;
-				bool foundThinLines = GCodePlanner.FindThinLines(perimeter, 400, 0, out thinLines);
+				bool foundThinLines = perimeter.FindThinLines(400, 0, out thinLines);
 				Assert.IsTrue(foundThinLines);
 				Assert.IsTrue(thinLines.Count == 1);
 				Assert.IsTrue(thinLines[0].Count == 2);
@@ -251,7 +106,7 @@ namespace MatterHackers.MatterSlice.Tests
 					new IntPoint(10000, 50),
 				};
 				Polygons thinLines;
-				bool foundThinLines = GCodePlanner.FindThinLines(perimeter, 400, 0, out thinLines);
+				bool foundThinLines = perimeter.FindThinLines(400, 0, out thinLines);
 				Assert.IsTrue(foundThinLines);
 				Assert.IsTrue(thinLines.Count == 1);
 				Assert.IsTrue(thinLines[0].Count == 2);
@@ -268,18 +123,18 @@ namespace MatterHackers.MatterSlice.Tests
 				// 0,0 |___|    |___|					    |___|    |___|
 
 				Polygon perimeter = new Polygon()
-				{ 
+				{
 					// bottom of center line
 					new IntPoint(1000, 2500-25), new IntPoint(4000, 2500-25),
 					// right leg
-					new IntPoint(4000, 0), new IntPoint(5000, 0), new IntPoint(5000, 5000), new IntPoint(4000, 5000), 
+					new IntPoint(4000, 0), new IntPoint(5000, 0), new IntPoint(5000, 5000), new IntPoint(4000, 5000),
 					// top of center line
 					new IntPoint(4000, 2500+27), new IntPoint(1000, 2500+27),
 					// left leg
 					new IntPoint(1000, 5000), new IntPoint(0, 5000), new IntPoint(0, 0), new IntPoint(1000, 0),
 				};
 				Polygons thinLines;
-				bool foundThinLines = GCodePlanner.FindThinLines(perimeter, 400, 0, out thinLines);
+				bool foundThinLines = perimeter.FindThinLines(400, 0, out thinLines);
 				Assert.IsTrue(foundThinLines);
 				Assert.IsTrue(thinLines.Count == 1);
 				Assert.IsTrue(thinLines[0].Count == 2);
@@ -303,7 +158,7 @@ namespace MatterHackers.MatterSlice.Tests
 					new IntPoint(5000, 5000), new IntPoint(0, 5000),
 				};
 				Polygons thinLines;
-				bool foundThinLines = GCodePlanner.FindThinLines(perimeter, 400, 0, out thinLines);
+				bool foundThinLines = perimeter.FindThinLines(400, 0, out thinLines);
 				Assert.IsFalse(foundThinLines);
 				Assert.IsTrue(thinLines.Count == 1);
 				Assert.IsTrue(thinLines[0].Count == 0);
@@ -324,10 +179,10 @@ namespace MatterHackers.MatterSlice.Tests
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				Polygon perimeter = new Polygon() { new IntPoint(0, 0, 0), new IntPoint(5000, 0, 0), new IntPoint(5000, 5000, 0), new IntPoint(0, 5000, 0)};
+				Polygon perimeter = new Polygon() { new IntPoint(0, 0, 0), new IntPoint(5000, 0, 0), new IntPoint(5000, 5000, 0), new IntPoint(0, 5000, 0) };
 				Assert.IsTrue(perimeter.Count == 4);
 				Polygons thinLines;
-				GCodePlanner.MergePerimeterOverlaps(perimeter, 400 / 4, out thinLines);
+				perimeter.MergePerimeterOverlaps(400 / 4, out thinLines);
 				Assert.IsTrue(thinLines.Count == 1);
 				Assert.IsTrue(thinLines[0].Count == 5); // it is 5 because we return a closed path (points = 0, 1, 2, 3, 0)
 				for (int i = 0; i < perimeter.Count; i++)
@@ -338,15 +193,15 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// A very simple collapse lower left start
 			{
-				//  ____________   
+				//  ____________
 				// s|__________|	  very simple  -> ----------
 
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50)};
+				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50) };
 				Polygons correctedPath;
-				GCodePlanner.MergePerimeterOverlaps(perimeter, 400, out correctedPath);
+				perimeter.MergePerimeterOverlaps(400, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Count == 2);
 				Assert.IsTrue(correctedPath[0][0].Width == 450);
@@ -354,7 +209,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// A very simple collapse upper left start
 			{
-				// s____________   
+				// s____________
 				//  |__________|	  very simple  -> ----------
 
 				int travelSpeed = 50;
@@ -362,7 +217,7 @@ namespace MatterHackers.MatterSlice.Tests
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
 				Polygon perimeter = new Polygon() { new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50) };
 				Polygons correctedPath;
-				GCodePlanner.MergePerimeterOverlaps(perimeter, 200, out correctedPath);
+				perimeter.MergePerimeterOverlaps(200, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Count == 2);
 				Assert.IsTrue(correctedPath[0][0].Width == 200);
@@ -372,12 +227,12 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// A very simple collapse upper right start
 			{
-				//  ____________s   
+				//  ____________s
 				//  |__________|	  very simple  -> ----------
 
 				Polygon perimeter = new Polygon() { new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50) };
 				Polygons correctedPath;
-				GCodePlanner.MergePerimeterOverlaps(perimeter, 400, out correctedPath);
+				perimeter.MergePerimeterOverlaps(400, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Count == 2);
 				Assert.IsTrue(correctedPath[0][0].Width == 450);
@@ -385,27 +240,27 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// A very simple collapse lower left start
 			{
-				//  ____________   
+				//  ____________
 				//  |__________|s	  very simple  -> ----------
 
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
 				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
-				Polygon perimeter = new Polygon() { new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0)};
+				Polygon perimeter = new Polygon() { new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0) };
 				Polygons correctedPath;
-				GCodePlanner.MergePerimeterOverlaps(perimeter, 400 / 4, out correctedPath);
+				perimeter.MergePerimeterOverlaps(400 / 4, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Count == 2);
 			}
 
 			// A path that has been clipped
 			{
-				//  ____________s   
+				//  ____________s
 				//  |_________	  goes to  -> ----------
 
 				Polygon perimeter = new Polygon() { new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(4500, 0) };
 				Polygons correctedPath;
-				bool removedLines = GCodePlanner.MergePerimeterOverlaps(perimeter, 400, out correctedPath, false);
+				bool removedLines = perimeter.MergePerimeterOverlaps(400, out correctedPath, false);
 				Assert.IsTrue(removedLines);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Count == 2);
@@ -436,7 +291,7 @@ namespace MatterHackers.MatterSlice.Tests
 					new IntPoint(10000, 50),
 				};
 				Polygons correctedPath;
-				GCodePlanner.MergePerimeterOverlaps(perimeter, 400, out correctedPath);
+				perimeter.MergePerimeterOverlaps(400, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Count == 4);
 				Assert.IsTrue(correctedPath[1].Count == 2);
@@ -452,24 +307,166 @@ namespace MatterHackers.MatterSlice.Tests
 				//     |   |    |   |		and goes to ->  |   |    |   |
 				// 0,0 |___|    |___|					    |___|    |___|
 
-				Polygon perimeter = new Polygon() 
-				{ 
+				Polygon perimeter = new Polygon()
+				{
 					// bottom of center line
 					new IntPoint(1000, 2500-25), new IntPoint(4000, 2500-25),
 					// right leg
-					new IntPoint(4000, 0), new IntPoint(5000, 0), new IntPoint(5000, 5000), new IntPoint(4000, 5000), 
+					new IntPoint(4000, 0), new IntPoint(5000, 0), new IntPoint(5000, 5000), new IntPoint(4000, 5000),
 					// top of center line
 					new IntPoint(4000, 2500+25), new IntPoint(1000, 2500+25),
 					// left leg
-					new IntPoint(1000, 5000), new IntPoint(0, 5000), new IntPoint(0, 0), new IntPoint(1000, 0), 
+					new IntPoint(1000, 5000), new IntPoint(0, 5000), new IntPoint(0, 0), new IntPoint(1000, 0),
 				};
 				Polygons correctedPath;
-				GCodePlanner.MergePerimeterOverlaps(perimeter, 400, out correctedPath);
+				perimeter.MergePerimeterOverlaps(400, out correctedPath);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Count == 2);
 				Assert.IsTrue(correctedPath[1].Count == 6);
 				Assert.IsTrue(correctedPath[2].Count == 6);
 			}
+		}
+
+		[Test]
+		public void MakeCloseSegmentsMergable()
+		{
+			// check that we can cut up a single segment
+			{
+				List<Segment> segmentsControl = Segment.ConvertToSegments(new Polygon()
+				{
+					new IntPoint(0, 0),
+					new IntPoint(2500, 0),
+					new IntPoint(5000, 0),
+				}, false);
+
+				Polygon cuts = new Polygon()
+				{
+					new IntPoint(2500, 0),
+					new IntPoint(2500, 401),
+				};
+
+				Segment segmentToCut = new Segment()
+				{
+					Start = new IntPoint(0, 0),
+					End = new IntPoint(5000, 0),
+				};
+
+				var touchingEnumerator = new PolygonEdgeIterator(cuts, 400);
+				List<Segment> segmentsTest = segmentToCut.GetSplitSegmentForVertecies(touchingEnumerator);
+				Assert.IsTrue(segmentsControl.Count == segmentsTest.Count);
+				for (int i = 0; i < segmentsTest.Count; i++)
+				{
+					Assert.IsTrue(segmentsTest[i] == segmentsControl[i]);
+				}
+			}
+
+			// A path that needs to have points inserted to do the correct thing
+			{
+				// |\      /|                     |\      /|
+				// | \s___/ |   				  | \____/ |
+				// |________|	create points ->  |_.____._|
+
+				Polygon perimeter = new Polygon()
+				{
+					new IntPoint(5000, 50),
+					new IntPoint(0, 10000),
+					new IntPoint(0, 0),
+					new IntPoint(15000, 0),
+					new IntPoint(15000, 10000),
+					new IntPoint(10000, 50),
+				};
+				Assert.IsTrue(perimeter.Count == 6);
+				Polygon correctedPath = perimeter.MakeCloseSegmentsMergable(400 / 4);
+				Assert.IsTrue(correctedPath.Count == 8);
+			}
+
+			// A path that has been clipped
+			{
+				//  ____________s             ____________ __
+				//           *    goes to  ->
+
+				long mergeDistance = 400 / 4;
+				Segment segment = new Segment(new IntPoint(5000, 50), new IntPoint(0, 50));
+				var touchingEnumerator = new PolygonEdgeIterator(new Polygon { new IntPoint(4500, 0) }, mergeDistance);
+				List<Segment> segments = segment.GetSplitSegmentForVertecies(touchingEnumerator);
+				Assert.IsTrue(segments.Count == 2);
+				Assert.IsTrue(segments[0] == new Segment(new IntPoint(5000, 50), new IntPoint(4500, 50)));
+				Assert.IsTrue(segments[1] == new Segment(new IntPoint(4500, 50), new IntPoint(0, 50)));
+			}
+
+			// A path that has been clipped
+			{
+				//  ____________s
+				//  |_________	  goes to  -> ----------
+
+				long mergeDistance = 400 / 4;
+				Polygon perimeter = new Polygon() { new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(4500, 0) };
+				Assert.IsTrue(perimeter.Count == 4);
+				Polygon correctedPath = perimeter.MakeCloseSegmentsMergable(mergeDistance, false);
+				Assert.IsTrue(correctedPath.Count == 5);
+				Assert.IsTrue(correctedPath[0] == new IntPoint(5000, 50));
+				Assert.IsTrue(correctedPath[1] == new IntPoint(4500, 50));
+				Assert.IsTrue(correctedPath[2] == new IntPoint(0, 50));
+				Assert.IsTrue(correctedPath[3] == new IntPoint(0, 0));
+				Assert.IsTrue(correctedPath[4] == new IntPoint(4500, 0));
+			}
+
+			// Make sure we work correctly when splitting the closing segment.
+			{
+				// |\      /|                     |\      /|
+				// | \____/ |   				  | \____/ |
+				// |_______s|	create points ->  |_.____._|
+
+				int travelSpeed = 50;
+				int retractionMinimumDistance = 20;
+				GCodePlanner planner = new GCodePlanner(new GCodeExport(), travelSpeed, retractionMinimumDistance);
+				Polygon perimeter = new Polygon()
+				{
+					new IntPoint(15000, 0),
+					new IntPoint(15000, 10000),
+					new IntPoint(10000, 50),
+					new IntPoint(5000, 50),
+					new IntPoint(0, 10000),
+					new IntPoint(0, 0),
+				};
+				Assert.IsTrue(perimeter.Count == 6);
+				Polygon correctedPath = perimeter.MakeCloseSegmentsMergable(400 / 4);
+				Assert.IsTrue(correctedPath.Count == 8);
+			}
+		}
+
+		[Test]
+		public void MergePathsIgnoringCollinearLines()
+		{
+			//GCodePath path = Newtonsoft.Json.JsonConvert.DeserializeObject<GCodePath>("{\"config\":{\"closedLoop\":true,\"lineWidth_um\":500,\"gcodeComment\":\"WALL-OUTER\",\"speed\":15.0,\"spiralize\":false,\"doSeamHiding\":true,\"Name\":\"inset0Config\"},\"points\":[{\"X\":0,\"Y\":6290,\"Width\":0,\"Z\":200},{\"X\":0,\"Y\":6290,\"Width\":0,\"Z\":200},{\"X\":0,\"Y\":6290,\"Width\":0,\"Z\":200},{\"X\":401,\"Y\":6277,\"Width\":0,\"Z\":200},{\"X\":787,\"Y\":6240,\"Width\":0,\"Z\":200},{\"X\":1185,\"Y\":6177,\"Width\":0,\"Z\":200},{\"X\":1564,\"Y\":6092,\"Width\":0,\"Z\":200},{\"X\":1944,\"Y\":5982,\"Width\":0,\"Z\":200},{\"X\":2315,\"Y\":5848,\"Width\":0,\"Z\":200},{\"X\":2671,\"Y\":5693,\"Width\":0,\"Z\":200},{\"X\":3036,\"Y\":5508,\"Width\":0,\"Z\":200},{\"X\":3369,\"Y\":5310,\"Width\":0,\"Z\":200},{\"X\":3691,\"Y\":5093,\"Width\":0,\"Z\":200}]}");
+			GCodePath path = Newtonsoft.Json.JsonConvert.DeserializeObject<GCodePath>("{\"config\":{\"closedLoop\":true,\"lineWidth_um\":500,\"gcodeComment\":\"WALL-OUTER\",\"speed\":15.0,\"spiralize\":false,\"doSeamHiding\":true,\"Name\":\"inset0Config\"},\"points\":[{\"X\":0,\"Y\":6290,\"Width\":0,\"Z\":200},{\"X\":0,\"Y\":6290,\"Width\":0,\"Z\":200},{\"X\":0,\"Y\":6290,\"Width\":0,\"Z\":200}]}");
+
+			Polygons pathsWithOverlapsRemoved;
+			bool pathIsClosed = false;
+
+			bool pathHadOverlaps = path.points.MergePerimeterOverlaps(path.config.lineWidth_um, out pathsWithOverlapsRemoved, pathIsClosed)
+				&& pathsWithOverlapsRemoved.Count > 0;
+
+			Assert.IsFalse(pathHadOverlaps);
+		}
+
+		[Test]
+		public void QuadTreeWorking()
+		{
+			var tree = new QuadTree<int>(5, 10, 10, 2000, 2000);
+			tree.Insert(0, new Quad(50, 50, 60, 60));
+			tree.Insert(1, new Quad(52, 53, 60, 60));
+			//tree.Insert(0, new Quad(500, 50, 560, 60));
+			//tree.Insert(0, new Quad(20, 50, 61, 60));
+			//tree.Insert(0, new Quad(150, 50, 160, 60));
+
+			int count = 0;
+			foreach (var index in tree.FindCollisions(0))
+			{
+				count++;
+			}
+
+			Assert.IsTrue(count == 1);
 		}
 	}
 }

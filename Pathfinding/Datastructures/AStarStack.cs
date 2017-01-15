@@ -1,5 +1,5 @@
 ﻿// Copyright(c) 2012 Erik Svedäng, Johannes Gotlén, 2017 Lars Brubaker
-// 
+//
 // This software is provided 'as-is', without any express or implied
 // warranty.In no event will the authors be held liable for any damages
 // arising from the use of this software.
@@ -14,45 +14,47 @@
 //    misrepresented as being the original software.
 // 3. This notice may not be removed or altered from any source distribution.
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace MatterHackers.Pathfinding.Datastructures
 {
-    public class AStarStack
-    {
-        Dictionary<long, IPathNode> _nodes = new Dictionary<long, IPathNode>();
-        
-        public void Push(IPathNode pNode)
-        {
-            _nodes[pNode.GetUniqueID()] = pNode;
-        }
+	public class AStarStack
+	{
+		private Dictionary<long, IPathNode> _nodes = new Dictionary<long, IPathNode>();
 
-        public IPathNode Pop()
-        {
-            IPathNode result = null;
-            
-            foreach (IPathNode p in _nodes.Values) {
-                if (result == null || p.CompareTo(result) == 1) {
-                    result = p;    //p has a shorter distance than result
-                }
-            }
-            
-            if (result == null) {
-                return null;
-            }
-            else {
-                _nodes.Remove(result.GetUniqueID());
-                return result;  
-            }
-        }
+		public int Count
+		{
+			get
+			{
+				return _nodes.Values.Count;
+			}
+		}
 
-        public int Count {
-            get {
-                return _nodes.Values.Count;
-            }
-        }
-    }
+		public IPathNode Pop()
+		{
+			IPathNode result = null;
+
+			foreach (IPathNode p in _nodes.Values)
+			{
+				if (result == null || p.CompareTo(result) == 1)
+				{
+					result = p;    //p has a shorter distance than result
+				}
+			}
+
+			if (result == null)
+			{
+				return null;
+			}
+			else {
+				_nodes.Remove(result.GetUniqueID());
+				return result;
+			}
+		}
+
+		public void Push(IPathNode pNode)
+		{
+			_nodes[pNode.GetUniqueID()] = pNode;
+		}
+	}
 }

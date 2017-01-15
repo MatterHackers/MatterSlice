@@ -33,8 +33,28 @@ namespace MSClipperLib
 {
 	using Polygon = List<IntPoint>;
 
-	public static class PolygonExtensions
+	public static class CLPolygonExtensions
 	{
+		public static Polygon CreateFromString(string polygonString)
+		{
+			Polygon output = new Polygon();
+			string[] intPointData = polygonString.Split(',');
+			int increment = 2;
+			if (polygonString.Contains("width"))
+			{
+				increment = 4;
+			}
+			for (int i = 0; i < intPointData.Length - 1; i += increment)
+			{
+				string elementX = intPointData[i];
+				string elementY = intPointData[i + 1];
+				IntPoint nextIntPoint = new IntPoint(int.Parse(elementX.Substring(elementX.IndexOf(':') + 1)), int.Parse(elementY.Substring(3)));
+				output.Add(nextIntPoint);
+			}
+
+			return output;
+		}
+
 		public static IntRect GetBounds(this Polygon inPolygon)
 		{
 			if (inPolygon.Count == 0)
@@ -69,6 +89,27 @@ namespace MSClipperLib
 			}
 
 			return result;
+		}
+
+		public static long PolygonLength(this Polygon polygon, bool areClosed = true)
+		{
+			long length = 0;
+			if (polygon.Count > 1)
+			{
+				IntPoint previousPoint = polygon[0];
+				if (areClosed)
+				{
+					previousPoint = polygon[polygon.Count - 1];
+				}
+				for (int i = areClosed ? 0 : 1; i < polygon.Count; i++)
+				{
+					IntPoint currentPoint = polygon[i];
+					length += (previousPoint - currentPoint).Length();
+					previousPoint = currentPoint;
+				}
+			}
+
+			return length;
 		}
 
 		public static string WriteToString(this Polygon polygon)

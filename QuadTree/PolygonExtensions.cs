@@ -34,10 +34,11 @@ using MSClipperLib;
 namespace MatterHackers.QuadTree
 {
 	using Polygon = List<IntPoint>;
+	using Polygons = List<List<IntPoint>>;
 
 	public enum Intersection { None, Colinear, Intersect }
 
-	public static class PolygonExtensions
+	public static class QTPolygonExtensions
 	{
 		public static bool CalcIntersection(IntPoint a1, IntPoint a2,
 													  IntPoint b1, IntPoint b2,
@@ -160,6 +161,11 @@ namespace MatterHackers.QuadTree
 			return -1;
 		}
 
+		public static bool FindThinLines(this Polygon polygon, long overlapMergeAmount_um, long minimumRequiredWidth_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
+		{
+			return QTPolygonsExtensions.FindThinLines(new Polygons { polygon }, overlapMergeAmount_um, minimumRequiredWidth_um, out onlyMergeLines, pathIsClosed);
+		}
+
 		public static QuadTree<int> GetEdgeQuadTree(this Polygon polygon, int splitCount = 5, long expandDist = 1)
 		{
 			var bounds = polygon.GetBounds();
@@ -220,6 +226,156 @@ namespace MatterHackers.QuadTree
 			}
 
 			return quadTree;
+		}
+
+		public static Polygon MakeCloseSegmentsMergable(this Polygon polygonToSplit, long distanceNeedingAdd, bool pathIsClosed = true)
+		{
+			return MakeCloseSegmentsMergable(polygonToSplit, polygonToSplit, distanceNeedingAdd, pathIsClosed);
+		}
+
+		public static Polygon MakeCloseSegmentsMergable(this Polygon polygonToSplit, Polygon pointsToSplitOn, long distanceNeedingAdd, bool pathIsClosed = true)
+		{
+			List<Segment> segments = Segment.ConvertToSegments(polygonToSplit, pathIsClosed);
+
+			var touchingEnumerator = new PolygonEdgeIterator(pointsToSplitOn, distanceNeedingAdd);
+
+			// for every segment
+			for (int segmentIndex = segments.Count - 1; segmentIndex >= 0; segmentIndex--)
+			{
+				List<Segment> newSegments = segments[segmentIndex].GetSplitSegmentForVertecies(touchingEnumerator);
+				if (newSegments?.Count > 0)
+				{
+					// remove the old segment
+					segments.RemoveAt(segmentIndex);
+					// add the new ones
+					segments.InsertRange(segmentIndex, newSegments);
+				}
+			}
+
+			Polygon segmentedPolygon = new Polygon(segments.Count);
+
+			foreach (var segment in segments)
+			{
+				segmentedPolygon.Add(segment.Start);
+			}
+
+			if (!pathIsClosed)
+			{
+				// add the last point
+				segmentedPolygon.Add(segments[segments.Count - 1].End);
+			}
+
+			return segmentedPolygon;
+		}
+
+		public static bool MergePerimeterOverlaps(this Polygon perimeter, long overlapMergeAmount_um, out Polygons separatedPolygons, bool pathIsClosed = true)
+		{
+			separatedPolygons = new Polygons();
+
+			long cleanDistance_um = overlapMergeAmount_um / 40;
+
+			Polygons cleanedPolygs = Clipper.CleanPolygons(new Polygons() { perimeter }, cleanDistance_um);
+			perimeter = cleanedPolygs[0];
+
+			if (perimeter.Count == 0)
+			{
+				return false;
+			}
+			bool pathWasOptomized = false;
+
+			for (int i = 0; i < perimeter.Count; i++)
+			{
+				perimeter[i] = new IntPoint(perimeter[i])
+				{
+					Width = overlapMergeAmount_um
+				};
+			}
+
+			perimeter = QTPolygonExtensions.MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um, pathIsClosed);
+
+			// make a copy that has every point duplicated (so that we have them as segments).
+			List<Segment> polySegments = Segment.ConvertToSegments(perimeter, pathIsClosed);
+
+			Altered[] markedAltered = new Altered[polySegments.Count];
+
+			var touchingEnumerator = new CloseSegmentsIterator(polySegments, overlapMergeAmount_um);
+			int segmentCount = polySegments.Count;
+			// now walk every segment and check if there is another segment that is similar enough to merge them together
+			for (int firstSegmentIndex = 0; firstSegmentIndex < segmentCount; firstSegmentIndex++)
+			{
+				foreach (int checkSegmentIndex in touchingEnumerator.GetTouching(firstSegmentIndex, segmentCount))
+				{
+					// The first point of start and the last point of check (the path will be coming back on itself).
+					long startDelta = (polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length();
+					// if the segments are similar enough
+					if (startDelta < overlapMergeAmount_um)
+					{
+						// The last point of start and the first point of check (the path will be coming back on itself).
+						long endDelta = (polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length();
+						if (endDelta < overlapMergeAmount_um)
+						{
+							// only considre the merge if the directions of the lines are towards eachother
+							var firstSegmentDirection = polySegments[firstSegmentIndex].End - polySegments[firstSegmentIndex].Start;
+							var checkSegmentDirection = polySegments[checkSegmentIndex].End - polySegments[checkSegmentIndex].Start;
+							if (firstSegmentDirection.Dot(checkSegmentDirection) > 0)
+							{
+								continue;
+							}
+							pathWasOptomized = true;
+							// move the first segments points to the average of the merge positions
+							long startEndWidth = Math.Abs((polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length());
+							long endStartWidth = Math.Abs((polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length());
+							long width = Math.Min(startEndWidth, endStartWidth) + overlapMergeAmount_um;
+							polySegments[firstSegmentIndex].Start = (polySegments[firstSegmentIndex].Start + polySegments[checkSegmentIndex].End) / 2; // the start
+							polySegments[firstSegmentIndex].Start.Width = width;
+							polySegments[firstSegmentIndex].End = (polySegments[firstSegmentIndex].End + polySegments[checkSegmentIndex].Start) / 2; // the end
+							polySegments[firstSegmentIndex].End.Width = width;
+
+							markedAltered[firstSegmentIndex] = Altered.merged;
+							// mark this segment for removal
+							markedAltered[checkSegmentIndex] = Altered.remove;
+							// We only expect to find one match for each segment, so move on to the next segment
+							break;
+						}
+					}
+				}
+			}
+
+			// remove the marked segments
+			for (int segmentIndex = segmentCount - 1; segmentIndex >= 0; segmentIndex--)
+			{
+				if (markedAltered[segmentIndex] == Altered.remove)
+				{
+					polySegments.RemoveAt(segmentIndex);
+				}
+			}
+
+			// go through the polySegments and create a new polygon for every connected set of segments
+			Polygon currentPolygon = new Polygon();
+			separatedPolygons.Add(currentPolygon);
+			// put in the first point
+			for (int segmentIndex = 0; segmentIndex < polySegments.Count; segmentIndex++)
+			{
+				// add the start point
+				currentPolygon.Add(polySegments[segmentIndex].Start);
+
+				// if the next segment is not connected to this one
+				if (segmentIndex < polySegments.Count - 1
+					&& polySegments[segmentIndex].End != polySegments[segmentIndex + 1].Start)
+				{
+					// add the end point
+					currentPolygon.Add(polySegments[segmentIndex].End);
+
+					// create a new polygon
+					currentPolygon = new Polygon();
+					separatedPolygons.Add(currentPolygon);
+				}
+			}
+
+			// add the end point
+			currentPolygon.Add(polySegments[polySegments.Count - 1].End);
+
+			return pathWasOptomized;
 		}
 
 		public static bool OnSegment(IntPoint start, IntPoint testPosition, IntPoint end)

@@ -28,19 +28,19 @@ either expressed or implied, of the FreeBSD Project.
 */
 
 using System.Collections.Generic;
-using NUnit.Framework;
 using MSClipperLib;
+using NUnit.Framework;
 
 namespace MatterHackers.MatterSlice.Tests
 {
 	using System;
-	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
 	[TestFixture, Category("MatterSlice")]
 	public class SliceSettingsTests
 	{
 		#region Inset order tests
+
 		[Test]
 		public void InnerPerimeterFirstCorrect()
 		{
@@ -128,7 +128,8 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.IsTrue(layer2Polygons[0].MinX() < layer2Polygons[1].MinX());
 			}
 		}
-		#endregion
+
+		#endregion Inset order tests
 
 		[Test, Category("WorkInProgress")]
 		public void AllInsidesBeforeAnyOutsides()
@@ -170,7 +171,7 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.IsTrue(layer1Polygons[0].MinX() > layer1Polygons[1].MinX());
 				Assert.IsTrue(layer1Polygons[0].MinX() > layer1Polygons[2].MinX());
 			}
-			 
+
 			{
 				// check layer 2
 				string[] layer2Info = TestUtlities.GetGCodeForLayer(gcode, 2);
@@ -184,403 +185,75 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		private string CreateGCodeForLayerHeights(double firstLayerHeight, double otherLayerHeight, double bottomClip = 0)
-		{
-			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
-			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}_o{1}_c{2}.gcode".FormatWith(firstLayerHeight, otherLayerHeight, bottomClip));
-
-			ConfigSettings config = new ConfigSettings();
-			config.FirstLayerThickness = firstLayerHeight;
-			config.LayerThickness = otherLayerHeight;
-			config.BottomClipAmount = bottomClip;
-			fffProcessor processor = new fffProcessor(config);
-			processor.SetTargetFile(boxGCodeFile);
-			processor.LoadStlFile(box20MmStlFile);
-			// slice and save it
-			processor.DoProcessing();
-			processor.finalize();
-
-			return boxGCodeFile;
-		}
-
-		private string CreateGCodeWithRaft(bool hasRaft)
-		{
-			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
-			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
-
-			ConfigSettings config = new ConfigSettings();
-			config.EnableRaft = hasRaft;
-			fffProcessor processor = new fffProcessor(config);
-			processor.SetTargetFile(boxGCodeFile);
-			processor.LoadStlFile(box20MmStlFile);
-			// slice and save it
-			processor.DoProcessing();
-			processor.finalize();
-
-			return boxGCodeFile;
-		}
-
 		[Test]
-		public void Has2WallRingsAllTheWayUp()
+		public void AllMovesRequiringRetractionDoRetraction()
 		{
-			DoHas2WallRingsAllTheWayUp("SimpleHole", 25);
-			DoHas2WallRingsAllTheWayUp("CylinderWithHole", 50);
-			DoHas2WallRingsAllTheWayUp("Thinning Walls Ring", 45, true);
-		}
+			string baseFileName = "ab retraction test";
+			string stlToLoad = TestUtlities.GetStlPath(baseFileName + ".stl");
 
-		public void DoHas2WallRingsAllTheWayUp(string fileName, int expectedLayerCount, bool checkRadius = false)
-		{
-			string stlFile = TestUtlities.GetStlPath(fileName);
-			string gCodeFile = TestUtlities.GetTempGCodePath(fileName + ".gcode");
-
-			ConfigSettings config = new ConfigSettings();
-			config.InfillPercent = 0;
-			config.NumberOfPerimeters = 1;
-			config.FirstLayerExtrusionWidth = .2;
-			config.LayerThickness = .2;
-			config.NumberOfBottomLayers = 0;
-			config.NumberOfTopLayers = 0;
-			fffProcessor processor = new fffProcessor(config);
-			processor.SetTargetFile(gCodeFile);
-			processor.LoadStlFile(stlFile);
-			// slice and save it
-			processor.DoProcessing();
-			processor.finalize();
-
-			string[] gcodeLines = TestUtlities.LoadGCodeFile(gCodeFile);
-
-			int layerCount = TestUtlities.CountLayers(gcodeLines);
-			Assert.IsTrue(layerCount == expectedLayerCount);
-
-			MovementInfo movement = new MovementInfo();
-			for (int i = 0; i < layerCount - 3; i++)
+			// check that default is support printed with extruder 0
 			{
-				string[] layerInfo = TestUtlities.GetGCodeForLayer(gcodeLines, i);
+				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_retract_.gcode");
 
-				if (i > 0)
+				ConfigSettings config = new ConfigSettings();
+				config.RetractionZHop = 5;
+				config.MinimumTravelToCauseRetraction = 2;
+				config.MinimumExtrusionBeforeRetraction = 0;
+				config.FirstLayerExtrusionWidth = .5;
+				fffProcessor processor = new fffProcessor(config);
+				processor.SetTargetFile(gcodeToCreate);
+				processor.LoadStlFile(stlToLoad);
+				// slice and save it
+				processor.DoProcessing();
+				processor.finalize();
+
+				string[] gcodeContents = TestUtlities.LoadGCodeFile(gcodeToCreate);
+				int layerCount = TestUtlities.CountLayers(gcodeContents);
+				bool firstPosition = true;
+				MovementInfo lastMovement = new MovementInfo();
+				MovementInfo lastExtrusion = new MovementInfo();
+				bool lastMoveIsExtrusion = true;
+				for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
 				{
-					Polygons layerPolygons = TestUtlities.GetExtrusionPolygons(layerInfo, ref movement);
-
-					Assert.IsTrue(layerPolygons.Count == 2);
-
-					if (checkRadius)
+					string[] layerGCode = TestUtlities.GetGCodeForLayer(gcodeContents, layerIndex);
+					int movementIndex = 0;
+					foreach (MovementInfo movement in TestUtlities.Movements(layerGCode, lastMovement))
 					{
-						Assert.IsTrue(layerPolygons[0].Count > 10);
-						Assert.IsTrue(layerPolygons[1].Count > 10);
-
-						if (false)
+						if (!firstPosition)
 						{
-							foreach (var polygon in layerPolygons)
+							bool isTravel = lastMovement.extrusion == movement.extrusion;
+							if (isTravel)
 							{
-								double radiusForPolygon = polygon[0].LengthMm();
-								foreach (var point in polygon)
+								Vector3 lastPosition = lastMovement.position;
+								lastPosition.z = 0;
+								Vector3 currenPosition = movement.position;
+								currenPosition.z = 0;
+								double xyLength = (lastPosition - currenPosition).Length;
+								if (xyLength > config.MinimumTravelToCauseRetraction
+									&& lastMoveIsExtrusion)
 								{
-									Assert.AreEqual(radiusForPolygon, point.LengthMm(), 15);
+									Assert.Greater(movement.position.z, lastExtrusion.position.z);
 								}
+
+								lastMoveIsExtrusion = false;
 							}
-						}
-					}
-				}
-				else
-				{
-					TestUtlities.GetExtrusionPolygons(layerInfo, ref movement);
-				}
-			}
-		}
-
-		private string CreateGcodeWithoutRaft(bool hasRaft)
-		{
-			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
-			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
-
-			ConfigSettings config = new ConfigSettings();
-			config.EnableRaft = hasRaft;
-			fffProcessor processor = new fffProcessor(config);
-			processor.SetTargetFile(boxGCodeFile);
-			processor.LoadStlFile(box20MmStlFile);
-			// slice and save it
-			processor.DoProcessing();
-			processor.finalize();
-
-			return boxGCodeFile;
-		}
-
-		[Test]
-		public void DualMaterialPrintMovesCorrectly()
-		{
-			DualMaterialPrintMovesCorrectly(false);
-			DualMaterialPrintMovesCorrectly(true);
-		}
-
-		public void DualMaterialPrintMovesCorrectly(bool createWipeTower)
-		{
-			string leftPart = "Box Left";
-			string rightPart = "Box Right";
-			string leftStlFile = TestUtlities.GetStlPath(leftPart);
-			string rightStlFile = TestUtlities.GetStlPath(rightPart);
-
-			string outputGCodeFileName = TestUtlities.GetTempGCodePath("DualPartMoves");
-
-			ConfigSettings config = new ConfigSettings();
-			config.FirstLayerThickness = .2;
-			config.CenterObjectInXy = false;
-			config.LayerThickness = .2;
-			config.NumberOfBottomLayers = 0;
-			if (createWipeTower)
-			{
-				config.WipeTowerSize = 10;
-			}
-			else
-			{
-				config.WipeTowerSize = 0;
-			}
-			fffProcessor processor = new fffProcessor(config);
-			processor.SetTargetFile(outputGCodeFileName);
-			processor.LoadStlFile(leftStlFile);
-			processor.LoadStlFile(rightStlFile);
-			// slice and save it
-			processor.DoProcessing();
-			processor.finalize();
-
-			string[] gCodeContent = TestUtlities.LoadGCodeFile(outputGCodeFileName);
-
-			// test .1 layer height
-			int layerCount = TestUtlities.CountLayers(gCodeContent);
-			Assert.IsTrue(layerCount == 50);
-
-			bool hadMoveLessThan85 = false;
-
-			MovementInfo lastMovement = new MovementInfo();
-			for (int i = 0; i < layerCount - 3; i++)
-			{
-				string[] layerInfo = TestUtlities.GetGCodeForLayer(gCodeContent, i);
-
-				// check that all layers move up continuously
-				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo, lastMovement, onlyG1s: true))
-				{
-					if (i > 2)
-					{
-						if (createWipeTower)
-						{
-							Assert.IsTrue(movement.position.x > 75 && movement.position.y > 10, "Moves don't go to 0");
-							if(movement.position.x < 85)
+							else
 							{
-								hadMoveLessThan85 = true;
+								lastMoveIsExtrusion = true;
+								lastExtrusion = movement;
 							}
+
+							lastMoveIsExtrusion = !isTravel;
 						}
-						else
-						{
-							Assert.IsTrue(movement.position.x > 85 && movement.position.y > 10, "Moves don't go to 0");
-						}
+
+						lastMovement = movement;
+						firstPosition = false;
+						movementIndex++;
 					}
-					lastMovement = movement;
 				}
+				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 1));
+				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 2));
 			}
-
-			if (createWipeTower)
-			{
-				Assert.IsTrue(hadMoveLessThan85, "found a wipe tower");
-			}
-		}
-
-		[Test]
-		public void SpiralVaseCreatesContinuousLift()
-		{
-			CheckSpiralCone("cone", "spiralCone.gcode");
-
-			CheckSpiralCylinder("Cylinder50Sides", "Cylinder50Sides.gcode", 100);
-			CheckSpiralCylinder("Cylinder2Wall50Sides", "Cylinder2Wall50Sides.gcode", 100);
-			CheckSpiralCylinder("Thinning Walls Ring", "Thinning Walls Ring.gcode", 45);
-
-			// now do it again with thin walls enabled
-			CheckSpiralCone("cone", "spiralCone.gcode", true);
-
-			CheckSpiralCylinder("Cylinder50Sides", "Cylinder50Sides.gcode", 100, true);
-			CheckSpiralCylinder("Cylinder2Wall50Sides", "Cylinder2Wall50Sides.gcode", 100, true);
-			CheckSpiralCylinder("Thinning Walls Ring", "Thinning Walls Ring.gcode", 45, true);
-		}
-
-		private static void CheckSpiralCone(string stlFile, string gcodeFile, bool enableThinWalls = false)
-		{
-			string cylinderStlFile = TestUtlities.GetStlPath(stlFile);
-			string cylinderGCodeFileName = TestUtlities.GetTempGCodePath(gcodeFile);
-
-			ConfigSettings config = new ConfigSettings();
-			config.FirstLayerThickness = .2;
-			config.CenterObjectInXy = false;
-			config.LayerThickness = .2;
-			if (enableThinWalls)
-			{
-				config.ExpandThinWalls = true;
-				config.FillThinGaps = true;
-			}
-			config.NumberOfBottomLayers = 0;
-			config.ContinuousSpiralOuterPerimeter = true;
-			fffProcessor processor = new fffProcessor(config);
-			processor.SetTargetFile(cylinderGCodeFileName);
-			processor.LoadStlFile(cylinderStlFile);
-			// slice and save it
-			processor.DoProcessing();
-			processor.finalize();
-
-			string[] cylinderGCodeContent = TestUtlities.LoadGCodeFile(cylinderGCodeFileName);
-
-			// test .1 layer height
-			int layerCount = TestUtlities.CountLayers(cylinderGCodeContent);
-			Assert.IsTrue(layerCount == 50);
-
-			for (int i = 2; i < layerCount - 3; i++)
-			{
-				string[] layerInfo = TestUtlities.GetGCodeForLayer(cylinderGCodeContent, i);
-
-				// check that all layers move up continuously
-				MovementInfo lastMovement = new MovementInfo();
-				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
-				{
-					Assert.IsTrue(movement.position.z > lastMovement.position.z);
-
-					lastMovement = movement;
-				}
-
-				double radiusForLayer = 5.0 + (20.0 - 5.0) / layerCount * i;
-
-				bool first = true;
-				lastMovement = new MovementInfo();
-				// check that all moves are on the outside of the cylinder (not crossing to a new point)
-				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
-				{
-					if (!first)
-					{
-						Assert.IsTrue((movement.position - lastMovement.position).Length < 2);
-
-						Vector3 xyOnly = new Vector3(movement.position.x, movement.position.y, 0);
-						Assert.AreEqual(radiusForLayer, xyOnly.Length, .3);
-					}
-
-					lastMovement = movement;
-					first = false;
-				}
-			}
-		}
-
-		private static void CheckSpiralCylinder(string stlFile, string gcodeFile, int expectedLayers, bool enableThinWalls = false)
-		{
-			string cylinderStlFile = TestUtlities.GetStlPath(stlFile);
-			string cylinderGCodeFileName = TestUtlities.GetTempGCodePath(gcodeFile);
-
-			ConfigSettings config = new ConfigSettings();
-			config.FirstLayerThickness = .2;
-			config.CenterObjectInXy = false;
-			config.LayerThickness = .2;
-			if(enableThinWalls)
-			{
-				config.ExpandThinWalls = true;
-				config.FillThinGaps = true;
-			}
-			config.NumberOfBottomLayers = 0;
-			config.ContinuousSpiralOuterPerimeter = true;
-			fffProcessor processor = new fffProcessor(config);
-			processor.SetTargetFile(cylinderGCodeFileName);
-			processor.LoadStlFile(cylinderStlFile);
-			// slice and save it
-			processor.DoProcessing();
-			processor.finalize();
-
-			string[] cylinderGCodeContent = TestUtlities.LoadGCodeFile(cylinderGCodeFileName);
-
-			// test .1 layer height
-			int layerCount = TestUtlities.CountLayers(cylinderGCodeContent);
-			Assert.IsTrue(layerCount == expectedLayers);
-
-			for (int i = 2; i < layerCount - 3; i++)
-			{
-				string[] layerInfo = TestUtlities.GetGCodeForLayer(cylinderGCodeContent, i);
-
-				// check that all layers move up continuously
-				MovementInfo lastMovement = new MovementInfo();
-				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
-				{
-					Assert.IsTrue(movement.position.z > lastMovement.position.z);
-
-					lastMovement = movement;
-				}
-
-				bool first = true;
-				lastMovement = new MovementInfo();
-				// check that all moves are on the outside of the cylinder (not crossing to a new point)
-				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
-				{
-					if (!first)
-					{
-						Assert.IsTrue((movement.position - lastMovement.position).Length < 2);
-
-						Vector3 xyOnly = new Vector3(movement.position.x, movement.position.y, 0);
-						Assert.AreEqual(9.8, xyOnly.Length, .3);
-					}
-
-					lastMovement = movement;
-					first = false;
-				}
-			}
-		}
-
-		[Test]
-		public void EachLayersHeigherThanLast()
-		{
-			CheckLayersIncrement("cone", "spiralCone.gcode");
-		}
-
-		private static void CheckLayersIncrement(string stlFile, string gcodeFile)
-		{
-			string risingLayersStlFile = TestUtlities.GetStlPath(stlFile);
-			string risingLayersGCodeFileName = TestUtlities.GetTempGCodePath(gcodeFile);
-
-			ConfigSettings config = new ConfigSettings();
-			config.FirstLayerThickness = .2;
-			config.CenterObjectInXy = false;
-			config.LayerThickness = .2;
-			fffProcessor processor = new fffProcessor(config);
-			processor.SetTargetFile(risingLayersGCodeFileName);
-			processor.LoadStlFile(risingLayersStlFile);
-			// slice and save it
-			processor.DoProcessing();
-			processor.finalize();
-
-			string[] risingLayersGCodeContent = TestUtlities.LoadGCodeFile(risingLayersGCodeFileName);
-
-			// test .1 layer height
-			int layerCount = TestUtlities.CountLayers(risingLayersGCodeContent);
-			Assert.IsTrue(layerCount == 50);
-
-			MovementInfo startingPosition = new MovementInfo();
-			for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
-			{
-				string[] layerInfo = TestUtlities.GetGCodeForLayer(risingLayersGCodeContent, layerIndex);
-				int movementIndex = 0;
-				// check that all layers move up 
-				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo, startingPosition))
-				{
-					if (layerIndex > 0)
-					{
-						Assert.AreEqual(movement.position.z, .2 + layerIndex * .2, .001);
-						Assert.IsTrue(movement.position.z >= startingPosition.position.z);
-					}
-
-					// always go up
-					startingPosition.position = new Vector3(0, 0, Math.Max(startingPosition.position.z, movement.position.z));
-					movementIndex++;
-				}
-			}
-		}
-
-		[Test]
-		public void CorrectNumberOfLayersForLayerHeights()
-		{
-			// test .1 layer height
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.1, .1))) == 100);
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .1))) == 99);
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2))) == 50);
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.05, .2))) == 51);
 		}
 
 		[Test]
@@ -593,18 +266,10 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
-		public void ExportGCodeWithRaft()
-		{
-			//test that file has raft
-			Assert.IsTrue(TestUtlities.CheckForRaft(TestUtlities.LoadGCodeFile(CreateGCodeWithRaft(true))) == true);
-			Assert.IsTrue(TestUtlities.CheckForRaft(TestUtlities.LoadGCodeFile(CreateGcodeWithoutRaft(false))) == false);
-		}
-
-		[Test]
 		public void CanSetExtruderForSupportMaterial()
 		{
 			string baseFileName = "Support Material 2 Bars";
-            string stlToLoad = TestUtlities.GetStlPath(baseFileName + ".stl");
+			string stlToLoad = TestUtlities.GetStlPath(baseFileName + ".stl");
 
 			// check that default is support printed with extruder 0
 			{
@@ -683,74 +348,410 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
-		public void AllMovesRequiringRetractionDoRetraction()
+		public void CorrectNumberOfLayersForLayerHeights()
 		{
-			string baseFileName = "ab retraction test";
-			string stlToLoad = TestUtlities.GetStlPath(baseFileName + ".stl");
+			// test .1 layer height
+			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.1, .1))) == 100);
+			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .1))) == 99);
+			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2))) == 50);
+			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.05, .2))) == 51);
+		}
 
-			// check that default is support printed with extruder 0
+		public void DoHas2WallRingsAllTheWayUp(string fileName, int expectedLayerCount, bool checkRadius = false)
+		{
+			string stlFile = TestUtlities.GetStlPath(fileName);
+			string gCodeFile = TestUtlities.GetTempGCodePath(fileName + ".gcode");
+
+			ConfigSettings config = new ConfigSettings();
+			config.InfillPercent = 0;
+			config.NumberOfPerimeters = 1;
+			config.FirstLayerExtrusionWidth = .2;
+			config.LayerThickness = .2;
+			config.NumberOfBottomLayers = 0;
+			config.NumberOfTopLayers = 0;
+			fffProcessor processor = new fffProcessor(config);
+			processor.SetTargetFile(gCodeFile);
+			processor.LoadStlFile(stlFile);
+			// slice and save it
+			processor.DoProcessing();
+			processor.finalize();
+
+			string[] gcodeLines = TestUtlities.LoadGCodeFile(gCodeFile);
+
+			int layerCount = TestUtlities.CountLayers(gcodeLines);
+			Assert.IsTrue(layerCount == expectedLayerCount);
+
+			MovementInfo movement = new MovementInfo();
+			for (int i = 0; i < layerCount - 3; i++)
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_retract_.gcode");
+				string[] layerInfo = TestUtlities.GetGCodeForLayer(gcodeLines, i);
 
-				ConfigSettings config = new ConfigSettings();
-				config.RetractionZHop = 5;
-				config.MinimumTravelToCauseRetraction = 2;
-				config.MinimumExtrusionBeforeRetraction = 0;
-				config.FirstLayerExtrusionWidth = .5;
-				fffProcessor processor = new fffProcessor(config);
-				processor.SetTargetFile(gcodeToCreate);
-				processor.LoadStlFile(stlToLoad);
-				// slice and save it
-				processor.DoProcessing();
-				processor.finalize();
-
-				string[] gcodeContents = TestUtlities.LoadGCodeFile(gcodeToCreate);
-				int layerCount = TestUtlities.CountLayers(gcodeContents);
-				bool firstPosition = true;
-				MovementInfo lastMovement = new MovementInfo();
-				MovementInfo lastExtrusion = new MovementInfo();
-				bool lastMoveIsExtrusion = true;
-				for (int layerIndex=0; layerIndex<layerCount; layerIndex++)
+				if (i > 0)
 				{
-					string[] layerGCode = TestUtlities.GetGCodeForLayer(gcodeContents, layerIndex);
-					int movementIndex = 0;
-					foreach (MovementInfo movement in TestUtlities.Movements(layerGCode, lastMovement))
+					Polygons layerPolygons = TestUtlities.GetExtrusionPolygons(layerInfo, ref movement);
+
+					Assert.IsTrue(layerPolygons.Count == 2);
+
+					if (checkRadius)
 					{
-						if (!firstPosition)
+						Assert.IsTrue(layerPolygons[0].Count > 10);
+						Assert.IsTrue(layerPolygons[1].Count > 10);
+
+						if (false)
 						{
-							bool isTravel = lastMovement.extrusion == movement.extrusion;
-							if (isTravel)
+							foreach (var polygon in layerPolygons)
 							{
-								Vector3 lastPosition = lastMovement.position;
-								lastPosition.z = 0;
-								Vector3 currenPosition = movement.position;
-								currenPosition.z = 0;
-								double xyLength = (lastPosition - currenPosition).Length;
-								if (xyLength > config.MinimumTravelToCauseRetraction
-									&& lastMoveIsExtrusion)
+								double radiusForPolygon = polygon[0].LengthMm();
+								foreach (var point in polygon)
 								{
-									Assert.Greater(movement.position.z, lastExtrusion.position.z);
+									Assert.AreEqual(radiusForPolygon, point.LengthMm(), 15);
 								}
-
-								lastMoveIsExtrusion = false;
 							}
-							else
-							{
-								lastMoveIsExtrusion = true;
-								lastExtrusion = movement;
-							}
-
-							lastMoveIsExtrusion = !isTravel;
 						}
-
-						lastMovement = movement;
-						firstPosition = false;
-						movementIndex++;
 					}
 				}
-				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 1));
-				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 2));
+				else
+				{
+					TestUtlities.GetExtrusionPolygons(layerInfo, ref movement);
+				}
 			}
+		}
+
+		[Test]
+		public void DualMaterialPrintMovesCorrectly()
+		{
+			DualMaterialPrintMovesCorrectly(false);
+			DualMaterialPrintMovesCorrectly(true);
+		}
+
+		public void DualMaterialPrintMovesCorrectly(bool createWipeTower)
+		{
+			string leftPart = "Box Left";
+			string rightPart = "Box Right";
+			string leftStlFile = TestUtlities.GetStlPath(leftPart);
+			string rightStlFile = TestUtlities.GetStlPath(rightPart);
+
+			string outputGCodeFileName = TestUtlities.GetTempGCodePath("DualPartMoves");
+
+			ConfigSettings config = new ConfigSettings();
+			config.FirstLayerThickness = .2;
+			config.CenterObjectInXy = false;
+			config.LayerThickness = .2;
+			config.NumberOfBottomLayers = 0;
+			if (createWipeTower)
+			{
+				config.WipeTowerSize = 10;
+			}
+			else
+			{
+				config.WipeTowerSize = 0;
+			}
+			fffProcessor processor = new fffProcessor(config);
+			processor.SetTargetFile(outputGCodeFileName);
+			processor.LoadStlFile(leftStlFile);
+			processor.LoadStlFile(rightStlFile);
+			// slice and save it
+			processor.DoProcessing();
+			processor.finalize();
+
+			string[] gCodeContent = TestUtlities.LoadGCodeFile(outputGCodeFileName);
+
+			// test .1 layer height
+			int layerCount = TestUtlities.CountLayers(gCodeContent);
+			Assert.IsTrue(layerCount == 50);
+
+			bool hadMoveLessThan85 = false;
+
+			MovementInfo lastMovement = new MovementInfo();
+			for (int i = 0; i < layerCount - 3; i++)
+			{
+				string[] layerInfo = TestUtlities.GetGCodeForLayer(gCodeContent, i);
+
+				// check that all layers move up continuously
+				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo, lastMovement, onlyG1s: true))
+				{
+					if (i > 2)
+					{
+						if (createWipeTower)
+						{
+							Assert.IsTrue(movement.position.x > 75 && movement.position.y > 10, "Moves don't go to 0");
+							if (movement.position.x < 85)
+							{
+								hadMoveLessThan85 = true;
+							}
+						}
+						else
+						{
+							Assert.IsTrue(movement.position.x > 85 && movement.position.y > 10, "Moves don't go to 0");
+						}
+					}
+					lastMovement = movement;
+				}
+			}
+
+			if (createWipeTower)
+			{
+				Assert.IsTrue(hadMoveLessThan85, "found a wipe tower");
+			}
+		}
+
+		[Test]
+		public void EachLayersHeigherThanLast()
+		{
+			CheckLayersIncrement("cone", "spiralCone.gcode");
+		}
+
+		[Test]
+		public void ExportGCodeWithRaft()
+		{
+			//test that file has raft
+			Assert.IsTrue(TestUtlities.CheckForRaft(TestUtlities.LoadGCodeFile(CreateGCodeWithRaft(true))) == true);
+			Assert.IsTrue(TestUtlities.CheckForRaft(TestUtlities.LoadGCodeFile(CreateGcodeWithoutRaft(false))) == false);
+		}
+
+		[Test]
+		public void Has2WallRingsAllTheWayUp()
+		{
+			DoHas2WallRingsAllTheWayUp("SimpleHole", 25);
+			DoHas2WallRingsAllTheWayUp("CylinderWithHole", 50);
+			DoHas2WallRingsAllTheWayUp("Thinning Walls Ring", 45, true);
+		}
+
+		[Test]
+		public void SpiralVaseCreatesContinuousLift()
+		{
+			CheckSpiralCone("cone", "spiralCone.gcode");
+
+			CheckSpiralCylinder("Cylinder50Sides", "Cylinder50Sides.gcode", 100);
+			CheckSpiralCylinder("Cylinder2Wall50Sides", "Cylinder2Wall50Sides.gcode", 100);
+			CheckSpiralCylinder("Thinning Walls Ring", "Thinning Walls Ring.gcode", 45);
+
+			// now do it again with thin walls enabled
+			CheckSpiralCone("cone", "spiralCone.gcode", true);
+
+			CheckSpiralCylinder("Cylinder50Sides", "Cylinder50Sides.gcode", 100, true);
+			CheckSpiralCylinder("Cylinder2Wall50Sides", "Cylinder2Wall50Sides.gcode", 100, true);
+			CheckSpiralCylinder("Thinning Walls Ring", "Thinning Walls Ring.gcode", 45, true);
+		}
+
+		private static void CheckLayersIncrement(string stlFile, string gcodeFile)
+		{
+			string risingLayersStlFile = TestUtlities.GetStlPath(stlFile);
+			string risingLayersGCodeFileName = TestUtlities.GetTempGCodePath(gcodeFile);
+
+			ConfigSettings config = new ConfigSettings();
+			config.FirstLayerThickness = .2;
+			config.CenterObjectInXy = false;
+			config.LayerThickness = .2;
+			fffProcessor processor = new fffProcessor(config);
+			processor.SetTargetFile(risingLayersGCodeFileName);
+			processor.LoadStlFile(risingLayersStlFile);
+			// slice and save it
+			processor.DoProcessing();
+			processor.finalize();
+
+			string[] risingLayersGCodeContent = TestUtlities.LoadGCodeFile(risingLayersGCodeFileName);
+
+			// test .1 layer height
+			int layerCount = TestUtlities.CountLayers(risingLayersGCodeContent);
+			Assert.IsTrue(layerCount == 50);
+
+			MovementInfo startingPosition = new MovementInfo();
+			for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
+			{
+				string[] layerInfo = TestUtlities.GetGCodeForLayer(risingLayersGCodeContent, layerIndex);
+				int movementIndex = 0;
+				// check that all layers move up
+				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo, startingPosition))
+				{
+					if (layerIndex > 0)
+					{
+						Assert.AreEqual(movement.position.z, .2 + layerIndex * .2, .001);
+						Assert.IsTrue(movement.position.z >= startingPosition.position.z);
+					}
+
+					// always go up
+					startingPosition.position = new Vector3(0, 0, Math.Max(startingPosition.position.z, movement.position.z));
+					movementIndex++;
+				}
+			}
+		}
+
+		private static void CheckSpiralCone(string stlFile, string gcodeFile, bool enableThinWalls = false)
+		{
+			string cylinderStlFile = TestUtlities.GetStlPath(stlFile);
+			string cylinderGCodeFileName = TestUtlities.GetTempGCodePath(gcodeFile);
+
+			ConfigSettings config = new ConfigSettings();
+			config.FirstLayerThickness = .2;
+			config.CenterObjectInXy = false;
+			config.LayerThickness = .2;
+			if (enableThinWalls)
+			{
+				config.ExpandThinWalls = true;
+				config.FillThinGaps = true;
+			}
+			config.NumberOfBottomLayers = 0;
+			config.ContinuousSpiralOuterPerimeter = true;
+			fffProcessor processor = new fffProcessor(config);
+			processor.SetTargetFile(cylinderGCodeFileName);
+			processor.LoadStlFile(cylinderStlFile);
+			// slice and save it
+			processor.DoProcessing();
+			processor.finalize();
+
+			string[] cylinderGCodeContent = TestUtlities.LoadGCodeFile(cylinderGCodeFileName);
+
+			// test .1 layer height
+			int layerCount = TestUtlities.CountLayers(cylinderGCodeContent);
+			Assert.IsTrue(layerCount == 50);
+
+			for (int i = 2; i < layerCount - 3; i++)
+			{
+				string[] layerInfo = TestUtlities.GetGCodeForLayer(cylinderGCodeContent, i);
+
+				// check that all layers move up continuously
+				MovementInfo lastMovement = new MovementInfo();
+				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
+				{
+					Assert.IsTrue(movement.position.z > lastMovement.position.z);
+
+					lastMovement = movement;
+				}
+
+				double radiusForLayer = 5.0 + (20.0 - 5.0) / layerCount * i;
+
+				bool first = true;
+				lastMovement = new MovementInfo();
+				// check that all moves are on the outside of the cylinder (not crossing to a new point)
+				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
+				{
+					if (!first)
+					{
+						Assert.IsTrue((movement.position - lastMovement.position).Length < 2);
+
+						Vector3 xyOnly = new Vector3(movement.position.x, movement.position.y, 0);
+						Assert.AreEqual(radiusForLayer, xyOnly.Length, .3);
+					}
+
+					lastMovement = movement;
+					first = false;
+				}
+			}
+		}
+
+		private static void CheckSpiralCylinder(string stlFile, string gcodeFile, int expectedLayers, bool enableThinWalls = false)
+		{
+			string cylinderStlFile = TestUtlities.GetStlPath(stlFile);
+			string cylinderGCodeFileName = TestUtlities.GetTempGCodePath(gcodeFile);
+
+			ConfigSettings config = new ConfigSettings();
+			config.FirstLayerThickness = .2;
+			config.CenterObjectInXy = false;
+			config.LayerThickness = .2;
+			if (enableThinWalls)
+			{
+				config.ExpandThinWalls = true;
+				config.FillThinGaps = true;
+			}
+			config.NumberOfBottomLayers = 0;
+			config.ContinuousSpiralOuterPerimeter = true;
+			fffProcessor processor = new fffProcessor(config);
+			processor.SetTargetFile(cylinderGCodeFileName);
+			processor.LoadStlFile(cylinderStlFile);
+			// slice and save it
+			processor.DoProcessing();
+			processor.finalize();
+
+			string[] cylinderGCodeContent = TestUtlities.LoadGCodeFile(cylinderGCodeFileName);
+
+			// test .1 layer height
+			int layerCount = TestUtlities.CountLayers(cylinderGCodeContent);
+			Assert.IsTrue(layerCount == expectedLayers);
+
+			for (int i = 2; i < layerCount - 3; i++)
+			{
+				string[] layerInfo = TestUtlities.GetGCodeForLayer(cylinderGCodeContent, i);
+
+				// check that all layers move up continuously
+				MovementInfo lastMovement = new MovementInfo();
+				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
+				{
+					Assert.IsTrue(movement.position.z > lastMovement.position.z);
+
+					lastMovement = movement;
+				}
+
+				bool first = true;
+				lastMovement = new MovementInfo();
+				// check that all moves are on the outside of the cylinder (not crossing to a new point)
+				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
+				{
+					if (!first)
+					{
+						Assert.IsTrue((movement.position - lastMovement.position).Length < 2);
+
+						Vector3 xyOnly = new Vector3(movement.position.x, movement.position.y, 0);
+						Assert.AreEqual(9.8, xyOnly.Length, .3);
+					}
+
+					lastMovement = movement;
+					first = false;
+				}
+			}
+		}
+
+		private string CreateGCodeForLayerHeights(double firstLayerHeight, double otherLayerHeight, double bottomClip = 0)
+		{
+			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
+			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}_o{1}_c{2}.gcode".FormatWith(firstLayerHeight, otherLayerHeight, bottomClip));
+
+			ConfigSettings config = new ConfigSettings();
+			config.FirstLayerThickness = firstLayerHeight;
+			config.LayerThickness = otherLayerHeight;
+			config.BottomClipAmount = bottomClip;
+			fffProcessor processor = new fffProcessor(config);
+			processor.SetTargetFile(boxGCodeFile);
+			processor.LoadStlFile(box20MmStlFile);
+			// slice and save it
+			processor.DoProcessing();
+			processor.finalize();
+
+			return boxGCodeFile;
+		}
+
+		private string CreateGcodeWithoutRaft(bool hasRaft)
+		{
+			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
+			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
+
+			ConfigSettings config = new ConfigSettings();
+			config.EnableRaft = hasRaft;
+			fffProcessor processor = new fffProcessor(config);
+			processor.SetTargetFile(boxGCodeFile);
+			processor.LoadStlFile(box20MmStlFile);
+			// slice and save it
+			processor.DoProcessing();
+			processor.finalize();
+
+			return boxGCodeFile;
+		}
+
+		private string CreateGCodeWithRaft(bool hasRaft)
+		{
+			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
+			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
+
+			ConfigSettings config = new ConfigSettings();
+			config.EnableRaft = hasRaft;
+			fffProcessor processor = new fffProcessor(config);
+			processor.SetTargetFile(boxGCodeFile);
+			processor.LoadStlFile(box20MmStlFile);
+			// slice and save it
+			processor.DoProcessing();
+			processor.finalize();
+
+			return boxGCodeFile;
 		}
 	}
 }

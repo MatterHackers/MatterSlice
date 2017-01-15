@@ -34,8 +34,23 @@ namespace MSClipperLib
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
-	public static class PolygonsExtensions
+	public static class CLPolygonsExtensions
 	{
+		public static Polygons CreateFromString(string polygonsPackedString)
+		{
+			Polygons output = new Polygons();
+			string[] polygons = polygonsPackedString.Split('|');
+			foreach (string polygonString in polygons)
+			{
+				Polygon nextPoly = CLPolygonExtensions.CreateFromString(polygonString);
+				if (nextPoly.Count > 0)
+				{
+					output.Add(nextPoly);
+				}
+			}
+			return output;
+		}
+
 		public static IntRect GetBounds(this Polygons polygons)
 		{
 			var totalBounds = new IntRect(long.MaxValue, long.MaxValue, long.MinValue, long.MinValue);
@@ -55,6 +70,17 @@ namespace MSClipperLib
 			Polygons solution = new Polygons();
 			offseter.Execute(ref solution, distance);
 			return solution;
+		}
+
+		public static long PolygonLength(this Polygons polygons, bool areClosed = true)
+		{
+			long length = 0;
+			for (int i = 0; i < polygons.Count; i++)
+			{
+				length += polygons[i].PolygonLength(areClosed);
+			}
+
+			return length;
 		}
 
 		public static string WriteToString(this Polygons polygons)

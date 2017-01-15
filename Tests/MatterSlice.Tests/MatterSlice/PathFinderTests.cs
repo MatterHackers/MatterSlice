@@ -27,17 +27,18 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
+using System.Collections.Generic;
 using MSClipperLib;
 using NUnit.Framework;
-using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice.Tests
 {
-	using Polygons = List<List<IntPoint>>;
-	using Polygon = List<IntPoint>;
 	using System;
 	using Pathfinding;
 	using QuadTree;
+	using Polygon = List<IntPoint>;
+	using Polygons = List<List<IntPoint>>;
+
 	[TestFixture, Category("MatterSlice")]
 	public class PathFinderTests
 	{
@@ -55,12 +56,12 @@ namespace MatterHackers.MatterSlice.Tests
 				// | |__________3_| 1
 				// |__0_____________|
 				string partOutlineString = "x:0, y:0,x:1000, y:0,x:1000, y:1000,x:0, y:1000,|x:100, y:100,x:100, y:900,x:900, y:900,x:900, y:100,|";
-				Polygons boundaryPolygons = PolygonsHelper.CreateFromString(partOutlineString);
+				Polygons boundaryPolygons = CLPolygonsExtensions.CreateFromString(partOutlineString);
 
 				// test the inside polygon has correct crossings
 				{
 					string insidePartOutlineString = "x:100, y:100,x:100, y:900,x:900, y:900,x:900, y:100,|";
-					Polygons insideBoundaryPolygons = PolygonsHelper.CreateFromString(insidePartOutlineString);
+					Polygons insideBoundaryPolygons = CLPolygonsExtensions.CreateFromString(insidePartOutlineString);
 					IntPoint startPoint = new IntPoint(-10, 10);
 					IntPoint endPoint = new IntPoint(1010, 10);
 					var crossings = new List<Tuple<int, int, IntPoint>>(insideBoundaryPolygons.FindCrossingPoints(startPoint, endPoint));
@@ -151,9 +152,9 @@ namespace MatterHackers.MatterSlice.Tests
 					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(startPoint, testHarness.OutlineEdgeQuadTrees));
 
 					// validate some dependant functions
-					Assert.IsTrue(PolygonExtensions.OnSegment(test[0], new IntPoint(20, 0), test[1]));
-					Assert.IsFalse(PolygonExtensions.OnSegment(test[0], new IntPoint(-10, 0), test[1]));
-					Assert.IsFalse(PolygonExtensions.OnSegment(test[0], new IntPoint(50,0), test[1]));
+					Assert.IsTrue(QTPolygonExtensions.OnSegment(test[0], new IntPoint(20, 0), test[1]));
+					Assert.IsFalse(QTPolygonExtensions.OnSegment(test[0], new IntPoint(-10, 0), test[1]));
+					Assert.IsFalse(QTPolygonExtensions.OnSegment(test[0], new IntPoint(50, 0), test[1]));
 
 					// move startpoint inside
 					testHarness.OutlinePolygons.MovePointInsideBoundary(startPoint, out outPoint);
@@ -181,7 +182,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 					Assert.AreEqual(2, insidePath.Count);
 					Assert.AreEqual(new IntPoint(0, 5), insidePath[0]);
-					Assert.AreEqual(new IntPoint(40,5), insidePath[1]);
+					Assert.AreEqual(new IntPoint(40, 5), insidePath[1]);
 				}
 
 				// test being just below the lower line
@@ -224,7 +225,7 @@ namespace MatterHackers.MatterSlice.Tests
 				string partOutlineString = "x: 644, y: 415,x: 400, y: 421,x: 399, y: 324,x: 344, y: 325,x: 338, y: 428,x: 85, y: 417,x: 98, y: 81,x: 664, y: 75,";
 				partOutlineString += "| x:404, y: 291,x: 591, y: 236,x: 587, y: 158,x: 406, y: 121,";
 				partOutlineString += "| x:154, y: 162,x: 159, y: 235,x: 343, y: 290,x: 340, y: 114,|";
-				Polygons boundaryPolygons = PolygonsHelper.CreateFromString(partOutlineString);
+				Polygons boundaryPolygons = CLPolygonsExtensions.CreateFromString(partOutlineString);
 				{
 					IntPoint startPoint = new IntPoint(672, 435);
 					IntPoint endPoint = new IntPoint(251, 334);
@@ -254,7 +255,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |___|
 
 				string partOutlineString = "x:90501, y:80501,x:109500, y:80501,x:109500, y:119500,x:90501, y:119500,|x:97387, y:104041,x:95594, y:105213,x:94278, y:106903,x:93583, y:108929,x:93583, y:111071,x:94278, y:113097,x:95594, y:114787,x:97387, y:115959,x:99464, y:116485,x:101598, y:116307,x:103559, y:115447,x:105135, y:113996,x:106154, y:112113,x:106507, y:110000,x:106154, y:107887,x:105135, y:106004,x:103559, y:104553,x:101598, y:103693,x:99464, y:103515,|x:97387, y:84042,x:95594, y:85214,x:94278, y:86904,x:93583, y:88930,x:93583, y:91072,x:94278, y:93098,x:95594, y:94788,x:97387, y:95960,x:99464, y:96486,x:101598, y:96308,x:103559, y:95448,x:105135, y:93997,x:106154, y:92114,x:106507, y:90001,x:106154, y:87888,x:105135, y:86005,x:103559, y:84554,x:101598, y:83694,x:99464, y:83516,|";
-				Polygons boundaryPolygons = PolygonsHelper.CreateFromString(partOutlineString);
+				Polygons boundaryPolygons = CLPolygonsExtensions.CreateFromString(partOutlineString);
 				IntPoint startPoint = new IntPoint(95765, 114600);
 				IntPoint endPoint = new IntPoint(99485, 96234);
 				PathFinder testHarness = new PathFinder(boundaryPolygons, 0);

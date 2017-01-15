@@ -27,19 +27,17 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
-using MSClipperLib;
-using NUnit.Framework;
-using MatterHackers.MatterSlice;
 using System.Collections.Generic;
 using MatterHackers.QuadTree;
+using MSClipperLib;
+using NUnit.Framework;
 
 namespace MatterHackers.MatterSlice.Tests
 {
 	using System;
-	using Polygon = List<IntPoint>;
-	using System.Reflection;
-	using System.Linq;
 	using Pathfinding;
+	using Polygon = List<IntPoint>;
+
 	[TestFixture, Category("MatterSlice.PolygonHelpers")]
 	public class PolygonHelperTests
 	{
@@ -140,6 +138,15 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
+		private void TestCorrectCrossings(Polygon poly, IntPoint start, IntPoint end, int expectedStartIndex, int expectedEndIndex)
+		{
+			var polyCrossings = new List<Tuple<int, IntPoint>>(poly.FindCrossingPoints(start, end));
+			polyCrossings.Sort(new IntPointDirectionSorter(start, end));
+			Assert.AreEqual(2, polyCrossings.Count);
+			Assert.IsTrue(polyCrossings[0].Item1 == expectedStartIndex);
+			Assert.IsTrue(polyCrossings[1].Item1 == expectedEndIndex);
+		}
+
 		private void TestDistance(Polygon test, int startEdgeIndex, IntPoint startPosition, int endEdgeIndex, IntPoint endPosition, int expectedDistance)
 		{
 			var network = new IntPointPathNetwork(test);
@@ -152,15 +159,6 @@ namespace MatterHackers.MatterSlice.Tests
 
 			Path<IntPointNode> path = network.FindPath(startPosition, startLinkA, startLinkB, endPosition, endLinkA, endLinkB);
 			Assert.AreEqual(Math.Abs(expectedDistance), path.PathLength);
-		}
-
-		private void TestCorrectCrossings(Polygon poly, IntPoint start, IntPoint end, int expectedStartIndex, int expectedEndIndex)
-		{
-			var polyCrossings = new List<Tuple<int, IntPoint>>(poly.FindCrossingPoints(start, end));
-			polyCrossings.Sort(new IntPointDirectionSorter(start, end));
-			Assert.AreEqual(2, polyCrossings.Count);
-			Assert.IsTrue(polyCrossings[0].Item1 == expectedStartIndex);
-			Assert.IsTrue(polyCrossings[1].Item1 == expectedEndIndex);
 		}
 	}
 }

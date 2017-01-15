@@ -29,7 +29,6 @@ namespace MatterHackers.MatterSlice
 	using System;
 	using System.Linq;
 	using QuadTree;
-	using Paths = List<List<IntPoint>>;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
@@ -103,21 +102,6 @@ namespace MatterHackers.MatterSlice
 			return ret;
 		}
 
-		public static Polygons CreateFromString(string polygonsPackedString)
-		{
-			Polygons output = new Polygons();
-			string[] polygons = polygonsPackedString.Split('|');
-			foreach (string polygonString in polygons)
-			{
-				Polygon nextPoly = PolygonHelper.CreateFromString(polygonString);
-				if (nextPoly.Count > 0)
-				{
-					output.Add(nextPoly);
-				}
-			}
-			return output;
-		}
-
 		public static Polygons CreateIntersection(this Polygons polygons, Polygons other)
 		{
 			Polygons ret = new Polygons();
@@ -178,30 +162,6 @@ namespace MatterHackers.MatterSlice
 			return deepCopy;
 		}
 
-		public static bool SegmentTouching(this Polygons polygons, IntPoint start, IntPoint end)
-		{
-			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
-			{
-				List<Tuple<int, IntPoint>> polyCrossings = new List<Tuple<int, IntPoint>>();
-				if (polygons[polyIndex].SegmentTouching(start, end))
-				{
-					return true;
-				}
-			}
-
-			return false;
-		}
-
-		/// <summary>
-		/// Return a list of polygons of this polygon split into triangles
-		/// </summary>
-		/// <param name="polygons"></param>
-		/// <returns></returns>
-		public static Polygons Triangulate(this Polygons polygons)
-		{
-			throw new NotImplementedException();
-		}
-
 		public static Polygons GetCorrectedWinding(this Polygons polygonsToFix)
 		{
 			polygonsToFix = Clipper.CleanPolygons(polygonsToFix);
@@ -241,30 +201,6 @@ namespace MatterHackers.MatterSlice
 					n--;
 				}
 			}
-		}
-
-		class MyComparer<T> : IEqualityComparer<T> where T : Tuple<int, int, IntPoint>
-		{
-			public bool Equals(T a, T b)
-			{
-				return a.Item3.Equals(b.Item3);
-			}
-
-			public int GetHashCode(T obj)
-			{
-				return obj.Item3.GetHashCode();
-			}
-		}
-
-		public static long PolygonLength(this Polygons polygons, bool areClosed = true)
-		{
-			long length = 0;
-			for (int i = 0; i < polygons.Count; i++)
-			{
-				length += polygons[i].PolygonLength(areClosed);
-			}
-
-			return length;
 		}
 
 		public static Polygons ProcessEvenOdd(this Polygons polygons)
@@ -389,9 +325,33 @@ namespace MatterHackers.MatterSlice
 			stream.Close();
 		}
 
+		public static bool SegmentTouching(this Polygons polygons, IntPoint start, IntPoint end)
+		{
+			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
+			{
+				List<Tuple<int, IntPoint>> polyCrossings = new List<Tuple<int, IntPoint>>();
+				if (polygons[polyIndex].SegmentTouching(start, end))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
 		public static int size(this Polygons polygons)
 		{
 			return polygons.Count;
+		}
+
+		/// <summary>
+		/// Return a list of polygons of this polygon split into triangles
+		/// </summary>
+		/// <param name="polygons"></param>
+		/// <returns></returns>
+		public static Polygons Triangulate(this Polygons polygons)
+		{
+			throw new NotImplementedException();
 		}
 
 		private static void ProcessPolyTreeNodeIntoSeparatIslands(this Polygons polygonsIn, PolyNode node, List<Polygons> ret)
@@ -407,6 +367,19 @@ namespace MatterHackers.MatterSlice
 					polygonsIn.ProcessPolyTreeNodeIntoSeparatIslands(child.Childs[i], ret);
 				}
 				ret.Add(polygons);
+			}
+		}
+
+		private class MyComparer<T> : IEqualityComparer<T> where T : Tuple<int, int, IntPoint>
+		{
+			public bool Equals(T a, T b)
+			{
+				return a.Item3.Equals(b.Item3);
+			}
+
+			public int GetHashCode(T obj)
+			{
+				return obj.Item3.GetHashCode();
 			}
 		}
 	}

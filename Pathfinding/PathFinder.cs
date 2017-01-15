@@ -53,8 +53,8 @@ namespace MatterHackers.Pathfinding
 			}
 
 			// hook up path segments between the separate islands
-			// this could be done with some merge close edges and finding candidates that way
-			// for new just make sure that every island is connected to its closest neighbor
+			// this is done with merge close edges and finding candidates
+			// then joining the ends of the merged segments with the closest points
 
 			removePointList = new WayPointsToRemove(Waypoints);
 		}

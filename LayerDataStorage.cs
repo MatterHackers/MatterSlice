@@ -19,14 +19,13 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System.Collections.Generic;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
 	using System;
 	using System.IO;
-	using System.Linq;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
@@ -41,12 +40,71 @@ namespace MatterHackers.MatterSlice
 		public List<Polygons> wipeShield = new List<Polygons>();
 		public Polygons wipeTower = new Polygons();
 
+		private bool[] extrudersThatHaveBeenPrimed = null;
+
 		public void CreateIslandData()
 		{
 			for (int extruderIndex = 0; extruderIndex < Extruders.Count; extruderIndex++)
 			{
 				Extruders[extruderIndex].CreateIslandData();
 			}
+		}
+
+		public void CreateWipeShield(int totalLayers, ConfigSettings config)
+		{
+			if (config.WipeShieldDistanceFromShapes_um <= 0)
+			{
+				return;
+			}
+
+			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
+			{
+				Polygons wipeShield = new Polygons();
+				for (int extruderIndex = 0; extruderIndex < this.Extruders.Count; extruderIndex++)
+				{
+					for (int islandIndex = 0; islandIndex < this.Extruders[extruderIndex].Layers[layerIndex].Islands.Count; islandIndex++)
+					{
+						wipeShield = wipeShield.CreateUnion(this.Extruders[extruderIndex].Layers[layerIndex].Islands[islandIndex].IslandOutline.Offset(config.WipeShieldDistanceFromShapes_um));
+					}
+				}
+				this.wipeShield.Add(wipeShield);
+			}
+
+			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
+			{
+				this.wipeShield[layerIndex] = this.wipeShield[layerIndex].Offset(-1000).Offset(1000);
+			}
+
+			int offsetAngle = (int)Math.Tan(60.0 * Math.PI / 180) * config.LayerThickness_um;//Allow for a 60deg angle in the wipeShield.
+			for (int layerIndex = 1; layerIndex < totalLayers; layerIndex++)
+			{
+				this.wipeShield[layerIndex] = this.wipeShield[layerIndex].CreateUnion(this.wipeShield[layerIndex - 1].Offset(-offsetAngle));
+			}
+
+			for (int layerIndex = totalLayers - 1; layerIndex > 0; layerIndex--)
+			{
+				this.wipeShield[layerIndex - 1] = this.wipeShield[layerIndex - 1].CreateUnion(this.wipeShield[layerIndex].Offset(-offsetAngle));
+			}
+		}
+
+		public void CreateWipeTower(int totalLayers, ConfigSettings config)
+		{
+			if (config.WipeTowerSize_um < 1
+				|| LastLayerWithChange(config) == -1)
+			{
+				return;
+			}
+
+			extrudersThatHaveBeenPrimed = new bool[config.MaxExtruderCount()];
+
+			Polygon wipeTowerShape = new Polygon();
+			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000));
+			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000 + config.WipeTowerSize_um));
+			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000 + config.WipeTowerSize_um));
+			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000));
+
+			this.wipeTower.Add(wipeTowerShape);
+			this.wipePoint = new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um / 2, this.modelMax.Y + 3000 + config.WipeTowerSize_um / 2);
 		}
 
 		public void DumpLayerparts(string filename)
@@ -82,6 +140,28 @@ namespace MatterHackers.MatterSlice
 			}
 			streamToWriteTo.Write("</body></html>");
 			streamToWriteTo.Close();
+		}
+
+		public void EnsureWipeTowerIsSolid(int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
+		{
+			if (layerIndex >= LastLayerWithChange(config)
+				|| extrudersThatHaveBeenPrimed == null)
+			{
+				return;
+			}
+
+			// print all of the extruder loops that have not already been printed
+			for (int extruderIndex = 0; extruderIndex < config.MaxExtruderCount(); extruderIndex++)
+			{
+				if (!extrudersThatHaveBeenPrimed[extruderIndex])
+				{
+					// write the loops for this extruder, but don't change to it. We are just filling the prime tower.
+					PrimeOnWipeTower(extruderIndex, 0, gcodeLayer, fillConfig, config);
+				}
+
+				// clear the history of printer extruders for the next layer
+				extrudersThatHaveBeenPrimed[extruderIndex] = false;
+			}
 		}
 
 		public void GenerateRaftOutlines(int extraDistanceAroundPart_um, ConfigSettings config)
@@ -133,10 +213,10 @@ namespace MatterHackers.MatterSlice
 
 			Polygons skirtPolygons = GetSkirtBounds(config, storage, externalOnly, distance, extrusionWidth_um, brimCount);
 
-			// Find convex hull for the skirt outline 
+			// Find convex hull for the skirt outline
 			Polygons convexHull = new Polygons(new[] { skirtPolygons.CreateConvexHull() });
 
-			// Create skirt loops from the ConvexHull 
+			// Create skirt loops from the ConvexHull
 			for (int skirtLoop = 0; skirtLoop < numberOfLoops; skirtLoop++)
 			{
 				int offsetDistance = distance + extrusionWidth_um * skirtLoop + extrusionWidth_um / 2;
@@ -152,79 +232,51 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private static Polygons GetSkirtBounds(ConfigSettings config, LayerDataStorage storage, bool externalOnly, int distance, int extrusionWidth_um, int brimCount)
+		public void GenerateWipeTowerInfill(int extruderIndex, Polygons partOutline, Polygons outputfillPolygons, long extrusionWidth_um, ConfigSettings config)
 		{
-			bool hasWipeTower = storage.wipeTower.PolygonLength() > 0;
+			Polygons outlineForExtruder = partOutline.Offset(-extrusionWidth_um * extruderIndex);
 
-			Polygons skirtPolygons = hasWipeTower ? new Polygons(storage.wipeTower) : new Polygons();
-
-			if (config.EnableRaft)
+			long insetPerLoop = extrusionWidth_um * config.MaxExtruderCount();
+			while (outlineForExtruder.Count > 0)
 			{
-				skirtPolygons = skirtPolygons.CreateUnion(storage.raftOutline);
-			}
-			else
-			{
-				Polygons allOutlines = new Polygons();
-
-				// Loop over every extruder
-				for (int extrudeIndex = 0; extrudeIndex < storage.Extruders.Count; extrudeIndex++)
+				for (int polygonIndex = 0; polygonIndex < outlineForExtruder.Count; polygonIndex++)
 				{
-					// Only process the first extruder on spiral vase or 
-					// skip extruders that have empty layers
-					if (config.ContinuousSpiralOuterPerimeter)
-					{
-						SliceLayer layer0 = storage.Extruders[extrudeIndex].Layers[0];
-						allOutlines.AddAll(layer0.Islands[0]?.IslandOutline);
-
-						break;
-					}
-
-					// Add the layers outline to allOutlines
-					SliceLayer layer = storage.Extruders[extrudeIndex].Layers[0];
-					allOutlines.AddAll(layer.AllOutlines);
+					Polygon newInset = outlineForExtruder[polygonIndex];
+					newInset.Add(newInset[0]); // add in the last move so it is a solid polygon
+					outputfillPolygons.Add(newInset);
 				}
-
-				if (brimCount > 0)
-				{
-					Polygons unionedIslandOutlines = new Polygons();
-
-					// Grow each island by the current brim distance
-					// Union the island brims
-					unionedIslandOutlines = unionedIslandOutlines.CreateUnion(allOutlines);
-
-					if (storage.support != null)
-					{
-						unionedIslandOutlines = unionedIslandOutlines.CreateUnion(storage.support.GetBedOutlines());
-					}
-
-					Polygons brimLoops = new Polygons();
-
-					// Loop over the requested brimCount creating and unioning a new perimeter for each island
-					for (int brimIndex = 0; brimIndex < brimCount; brimIndex++)
-					{
-						int offsetDistance = extrusionWidth_um * brimIndex + extrusionWidth_um / 2;
-
-						// Extend the polygons to account for the brim (ensures convex hull takes this data into account) 
-						brimLoops.AddAll(unionedIslandOutlines.Offset(offsetDistance));
-					}
-
-					// TODO: This is a quick hack, reuse the skirt data to stuff in the brim. Good enough from proof of concept
-					storage.skirt.AddAll(brimLoops);
-
-					skirtPolygons = skirtPolygons.CreateUnion(brimLoops);
-				}
-				else
-				{
-					skirtPolygons = skirtPolygons.CreateUnion(allOutlines);
-				}
-
-				if (storage.support != null)
-				{
-					skirtPolygons = skirtPolygons.CreateUnion(storage.support.GetBedOutlines());
-				}
+				outlineForExtruder = outlineForExtruder.Offset(-insetPerLoop);
 			}
 
-			return skirtPolygons;
+			outputfillPolygons.Reverse();
+		}
+
+		public bool HaveWipeTower(ConfigSettings config)
+		{
+			if (extrudersThatHaveBeenPrimed == null
+				 || config.WipeTowerSize_um == 0
+				 || LastLayerWithChange(config) == -1)
+			{
+				return false;
+			}
+
+			return true;
+		}
+
+		public void PrimeOnWipeTower(int extruderIndex, int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
+		{
+			if (!HaveWipeTower(config)
+				|| layerIndex > LastLayerWithChange(config) + 1)
+			{
+				return;
+			}
+
+			//If we changed extruder, print the wipe/prime tower for this nozzle;
+			Polygons fillPolygons = new Polygons();
+			GenerateWipeTowerInfill(extruderIndex, this.wipeTower, fillPolygons, fillConfig.lineWidth_um, config);
+			gcodeLayer.QueuePolygons(fillPolygons, fillConfig);
+
+			extrudersThatHaveBeenPrimed[extruderIndex] = true;
 		}
 
 		public void WriteRaftGCodeIfRequired(GCodeExport gcode, ConfigSettings config)
@@ -257,7 +309,7 @@ namespace MatterHackers.MatterSlice
 					}
 
 					gcode.SetZ(config.RaftBaseThickness_um);
-					
+
 					gcode.LayerChanged(-3);
 
 					gcode.SetExtrusion(config.RaftBaseThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
@@ -331,76 +383,82 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void CreateWipeTower(int totalLayers, ConfigSettings config)
+		private static Polygons GetSkirtBounds(ConfigSettings config, LayerDataStorage storage, bool externalOnly, int distance, int extrusionWidth_um, int brimCount)
 		{
-			if (config.WipeTowerSize_um < 1
-				|| LastLayerWithChange(config) == -1)
+			bool hasWipeTower = storage.wipeTower.PolygonLength() > 0;
+
+			Polygons skirtPolygons = hasWipeTower ? new Polygons(storage.wipeTower) : new Polygons();
+
+			if (config.EnableRaft)
 			{
-				return;
+				skirtPolygons = skirtPolygons.CreateUnion(storage.raftOutline);
 			}
-
-			extrudersThatHaveBeenPrimed = new bool[config.MaxExtruderCount()];
-
-			Polygon wipeTowerShape = new Polygon();
-			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000));
-			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000 + config.WipeTowerSize_um));
-			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000 + config.WipeTowerSize_um));
-			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000));
-
-			this.wipeTower.Add(wipeTowerShape);
-			this.wipePoint = new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um / 2, this.modelMax.Y + 3000 + config.WipeTowerSize_um / 2);
-		}
-
-		bool[] extrudersThatHaveBeenPrimed = null;
-
-		public void GenerateWipeTowerInfill(int extruderIndex, Polygons partOutline, Polygons outputfillPolygons, long extrusionWidth_um, ConfigSettings config)
-		{
-			Polygons outlineForExtruder = partOutline.Offset(-extrusionWidth_um * extruderIndex);
-
-			long insetPerLoop = extrusionWidth_um * config.MaxExtruderCount();
-			while (outlineForExtruder.Count > 0)
+			else
 			{
-				for (int polygonIndex = 0; polygonIndex < outlineForExtruder.Count; polygonIndex++)
+				Polygons allOutlines = new Polygons();
+
+				// Loop over every extruder
+				for (int extrudeIndex = 0; extrudeIndex < storage.Extruders.Count; extrudeIndex++)
 				{
-					Polygon newInset = outlineForExtruder[polygonIndex];
-					newInset.Add(newInset[0]); // add in the last move so it is a solid polygon
-					outputfillPolygons.Add(newInset);
+					// Only process the first extruder on spiral vase or
+					// skip extruders that have empty layers
+					if (config.ContinuousSpiralOuterPerimeter)
+					{
+						SliceLayer layer0 = storage.Extruders[extrudeIndex].Layers[0];
+						allOutlines.AddAll(layer0.Islands[0]?.IslandOutline);
+
+						break;
+					}
+
+					// Add the layers outline to allOutlines
+					SliceLayer layer = storage.Extruders[extrudeIndex].Layers[0];
+					allOutlines.AddAll(layer.AllOutlines);
 				}
-				outlineForExtruder = outlineForExtruder.Offset(-insetPerLoop);
-			}
 
-			outputfillPolygons.Reverse();
-		}
-
-		public bool HaveWipeTower(ConfigSettings config)
-		{
-				if (extrudersThatHaveBeenPrimed == null
-					 || config.WipeTowerSize_um == 0
-					 || LastLayerWithChange(config) == -1)
+				if (brimCount > 0)
 				{
-				return false;
+					Polygons unionedIslandOutlines = new Polygons();
+
+					// Grow each island by the current brim distance
+					// Union the island brims
+					unionedIslandOutlines = unionedIslandOutlines.CreateUnion(allOutlines);
+
+					if (storage.support != null)
+					{
+						unionedIslandOutlines = unionedIslandOutlines.CreateUnion(storage.support.GetBedOutlines());
+					}
+
+					Polygons brimLoops = new Polygons();
+
+					// Loop over the requested brimCount creating and unioning a new perimeter for each island
+					for (int brimIndex = 0; brimIndex < brimCount; brimIndex++)
+					{
+						int offsetDistance = extrusionWidth_um * brimIndex + extrusionWidth_um / 2;
+
+						// Extend the polygons to account for the brim (ensures convex hull takes this data into account)
+						brimLoops.AddAll(unionedIslandOutlines.Offset(offsetDistance));
+					}
+
+					// TODO: This is a quick hack, reuse the skirt data to stuff in the brim. Good enough from proof of concept
+					storage.skirt.AddAll(brimLoops);
+
+					skirtPolygons = skirtPolygons.CreateUnion(brimLoops);
+				}
+				else
+				{
+					skirtPolygons = skirtPolygons.CreateUnion(allOutlines);
+				}
+
+				if (storage.support != null)
+				{
+					skirtPolygons = skirtPolygons.CreateUnion(storage.support.GetBedOutlines());
+				}
 			}
 
-				return true;
+			return skirtPolygons;
 		}
 
-		public void PrimeOnWipeTower(int extruderIndex, int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
-		{
-			if (!HaveWipeTower(config)
-				|| layerIndex > LastLayerWithChange(config) + 1)
-			{
-				return;
-			}
-
-			//If we changed extruder, print the wipe/prime tower for this nozzle;
-			Polygons fillPolygons = new Polygons();
-			GenerateWipeTowerInfill(extruderIndex, this.wipeTower, fillPolygons, fillConfig.lineWidth_um, config);
-			gcodeLayer.QueuePolygons(fillPolygons, fillConfig);
-
-			extrudersThatHaveBeenPrimed[extruderIndex] = true;
-		}
-
-		int LastLayerWithChange(ConfigSettings config)
+		private int LastLayerWithChange(ConfigSettings config)
 		{
 			int numLayers = Extruders[0].Layers.Count;
 			int firstExtruderWithData = -1;
@@ -408,17 +466,17 @@ namespace MatterHackers.MatterSlice
 			{
 				for (int extruderToCheck = 0; extruderToCheck < config.MaxExtruderCount(); extruderToCheck++)
 				{
-					if((extruderToCheck < Extruders.Count && Extruders[extruderToCheck].Layers[checkLayer].AllOutlines.Count > 0)
-						|| (config.SupportExtruder == extruderToCheck && support != null && support.HasNormalSupport(checkLayer) )
-						|| (config.SupportInterfaceExtruder == extruderToCheck && support != null && support.HasInterfaceSupport(checkLayer)) )
+					if ((extruderToCheck < Extruders.Count && Extruders[extruderToCheck].Layers[checkLayer].AllOutlines.Count > 0)
+						|| (config.SupportExtruder == extruderToCheck && support != null && support.HasNormalSupport(checkLayer))
+						|| (config.SupportInterfaceExtruder == extruderToCheck && support != null && support.HasInterfaceSupport(checkLayer)))
 					{
-						if(firstExtruderWithData == -1)
+						if (firstExtruderWithData == -1)
 						{
 							firstExtruderWithData = extruderToCheck;
 						}
 						else
 						{
-							if(firstExtruderWithData != extruderToCheck)
+							if (firstExtruderWithData != extruderToCheck)
 							{
 								return checkLayer;
 							}
@@ -428,65 +486,6 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return -1;
-		}
-
-		public void EnsureWipeTowerIsSolid(int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
-		{
-			if(layerIndex >= LastLayerWithChange(config)
-				|| extrudersThatHaveBeenPrimed == null)
-			{
-				return;
-			}
-
-			// print all of the extruder loops that have not already been printed
-			for (int extruderIndex = 0; extruderIndex < config.MaxExtruderCount(); extruderIndex++)
-			{
-				if (!extrudersThatHaveBeenPrimed[extruderIndex])
-				{
-					// write the loops for this extruder, but don't change to it. We are just filling the prime tower.
-					PrimeOnWipeTower(extruderIndex, 0, gcodeLayer, fillConfig, config);
-				}
-
-				// clear the history of printer extruders for the next layer
-				extrudersThatHaveBeenPrimed[extruderIndex] = false;
-			}
-		}
-
-		public void CreateWipeShield(int totalLayers, ConfigSettings config)
-		{
-			if (config.WipeShieldDistanceFromShapes_um <= 0)
-			{
-				return;
-			}
-
-			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
-			{
-				Polygons wipeShield = new Polygons();
-				for (int extruderIndex = 0; extruderIndex < this.Extruders.Count; extruderIndex++)
-				{
-					for (int islandIndex = 0; islandIndex < this.Extruders[extruderIndex].Layers[layerIndex].Islands.Count; islandIndex++)
-					{
-						wipeShield = wipeShield.CreateUnion(this.Extruders[extruderIndex].Layers[layerIndex].Islands[islandIndex].IslandOutline.Offset(config.WipeShieldDistanceFromShapes_um));
-					}
-				}
-				this.wipeShield.Add(wipeShield);
-			}
-
-			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
-			{
-				this.wipeShield[layerIndex] = this.wipeShield[layerIndex].Offset(-1000).Offset(1000);
-			}
-
-			int offsetAngle = (int)Math.Tan(60.0 * Math.PI / 180) * config.LayerThickness_um;//Allow for a 60deg angle in the wipeShield.
-			for (int layerIndex = 1; layerIndex < totalLayers; layerIndex++)
-			{
-				this.wipeShield[layerIndex] = this.wipeShield[layerIndex].CreateUnion(this.wipeShield[layerIndex - 1].Offset(-offsetAngle));
-			}
-
-			for (int layerIndex = totalLayers - 1; layerIndex > 0; layerIndex--)
-			{
-				this.wipeShield[layerIndex - 1] = this.wipeShield[layerIndex - 1].CreateUnion(this.wipeShield[layerIndex].Offset(-offsetAngle));
-			}
 		}
 	}
 }

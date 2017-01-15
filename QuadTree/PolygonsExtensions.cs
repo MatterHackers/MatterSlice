@@ -33,9 +33,14 @@ using MSClipperLib;
 
 namespace MatterHackers.QuadTree
 {
+	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
-	public static class PolygonsExtensions
+	[Flags]
+	internal enum Altered
+	{ remove = 1, merged = 2 };
+
+	public static class QTPolygonsExtensions
 	{
 		public static IEnumerable<Tuple<int, int, IntPoint>> FindCrossingPoints(this Polygons polygons, IntPoint start, IntPoint end, List<QuadTree<int>> edgeQuadTrees = null)
 		{
@@ -96,6 +101,111 @@ namespace MatterHackers.QuadTree
 			return null;
 		}
 
+		public static bool FindThinLines(this Polygons polygons, long overlapMergeAmount_um, long minimumRequiredWidth_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
+		{
+			bool pathHasMergeLines = false;
+
+			polygons = MakeCloseSegmentsMergable(polygons, overlapMergeAmount_um, pathIsClosed);
+
+			// make a copy that has every point duplicated (so that we have them as segments).
+			List<Segment> polySegments = Segment.ConvertToSegments(polygons);
+
+			Altered[] markedAltered = new Altered[polySegments.Count];
+
+			var touchingEnumerator = new CloseSegmentsIterator(polySegments, overlapMergeAmount_um);
+			int segmentCount = polySegments.Count;
+			// now walk every segment and check if there is another segment that is similar enough to merge them together
+			for (int firstSegmentIndex = 0; firstSegmentIndex < segmentCount; firstSegmentIndex++)
+			{
+				foreach (int checkSegmentIndex in touchingEnumerator.GetTouching(firstSegmentIndex, segmentCount))
+				{
+					// The first point of start and the last point of check (the path will be coming back on itself).
+					long startDelta = (polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length();
+					// if the segments are similar enough
+					if (startDelta < overlapMergeAmount_um)
+					{
+						// The last point of start and the first point of check (the path will be coming back on itself).
+						long endDelta = (polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length();
+						if (endDelta < overlapMergeAmount_um)
+						{
+							// move the first segments points to the average of the merge positions
+							long startEndWidth = Math.Abs((polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length());
+							long endStartWidth = Math.Abs((polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length());
+							long width = Math.Min(startEndWidth, endStartWidth);
+
+							if (width > minimumRequiredWidth_um)
+							{
+								// We need to check if the new start position is on the inside of the curve. We can only add thin lines on the insides of our exisiting curves.
+								IntPoint newStartPosition = (polySegments[firstSegmentIndex].Start + polySegments[checkSegmentIndex].End) / 2; // the start;
+								IntPoint newStartDirection = newStartPosition - polySegments[firstSegmentIndex].Start;
+								IntPoint normalLeft = (polySegments[firstSegmentIndex].End - polySegments[firstSegmentIndex].Start).GetPerpendicularLeft();
+								long dotProduct = normalLeft.Dot(newStartDirection);
+								if (dotProduct > 0)
+								{
+									pathHasMergeLines = true;
+
+									polySegments[firstSegmentIndex].Start = newStartPosition;
+									polySegments[firstSegmentIndex].Start.Width = width;
+									polySegments[firstSegmentIndex].End = (polySegments[firstSegmentIndex].End + polySegments[checkSegmentIndex].Start) / 2; // the end
+									polySegments[firstSegmentIndex].End.Width = width;
+
+									markedAltered[firstSegmentIndex] = Altered.merged;
+									// mark this segment for removal
+									markedAltered[checkSegmentIndex] = Altered.remove;
+									// We only expect to find one match for each segment, so move on to the next segment
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+
+			// remove the marked segments
+			for (int segmentIndex = segmentCount - 1; segmentIndex >= 0; segmentIndex--)
+			{
+				// remove every segment that has not been merged
+				if (markedAltered[segmentIndex] != Altered.merged)
+				{
+					polySegments.RemoveAt(segmentIndex);
+				}
+			}
+
+			// go through the polySegments and create a new polygon for every connected set of segments
+			onlyMergeLines = new Polygons();
+			Polygon currentPolygon = new Polygon();
+			onlyMergeLines.Add(currentPolygon);
+			// put in the first point
+			for (int segmentIndex = 0; segmentIndex < polySegments.Count; segmentIndex++)
+			{
+				// add the start point
+				currentPolygon.Add(polySegments[segmentIndex].Start);
+
+				// if the next segment is not connected to this one
+				if (segmentIndex < polySegments.Count - 1
+					&& polySegments[segmentIndex].End != polySegments[segmentIndex + 1].Start)
+				{
+					// add the end point
+					currentPolygon.Add(polySegments[segmentIndex].End);
+
+					// create a new polygon
+					currentPolygon = new Polygon();
+					onlyMergeLines.Add(currentPolygon);
+				}
+			}
+
+			// add the end point
+			if (polySegments.Count > 0)
+			{
+				currentPolygon.Add(polySegments[polySegments.Count - 1].End);
+			}
+
+			long cleanDistance_um = overlapMergeAmount_um / 40;
+			//Clipper.CleanPolygons(onlyMergeLines, cleanDistance_um);
+
+			return pathHasMergeLines;
+		}
+
 		public static List<QuadTree<int>> GetEdgeQuadTrees(this Polygons polygons, int splitCount = 5, long expandDist = 1)
 		{
 			var quadTrees = new List<QuadTree<int>>();
@@ -116,6 +226,22 @@ namespace MatterHackers.QuadTree
 			}
 
 			return quadTrees;
+		}
+
+		public static Polygons MakeCloseSegmentsMergable(this Polygons polygonsToSplit, long distanceNeedingAdd, bool pathsAreClosed = true)
+		{
+			Polygons splitPolygons = new Polygons();
+			for (int i = 0; i < polygonsToSplit.Count; i++)
+			{
+				Polygon accumulatedSplits = polygonsToSplit[i];
+				for (int j = 0; j < polygonsToSplit.Count; j++)
+				{
+					accumulatedSplits = QTPolygonExtensions.MakeCloseSegmentsMergable(accumulatedSplits, polygonsToSplit[j], distanceNeedingAdd, pathsAreClosed);
+				}
+				splitPolygons.Add(accumulatedSplits);
+			}
+
+			return splitPolygons;
 		}
 
 		public static void MovePointInsideBoundary(this Polygons boundaryPolygons, IntPoint startPosition, out Tuple<int, int, IntPoint> polyPointPosition, List<QuadTree<int>> edgeQuadTrees = null)

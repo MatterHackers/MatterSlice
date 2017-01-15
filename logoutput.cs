@@ -19,20 +19,14 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System;
-using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
 	public static class LogOutput
 	{
+		public static EventHandler GetLogWrites;
 		public static int verbose_level;
-
-		public static void LogError(string message)
-		{
-			Console.Write(message);
-		}
 
 		public static void _log(string message)
 		{
@@ -44,8 +38,6 @@ namespace MatterHackers.MatterSlice
 			Console.Write(message);
 		}
 
-		public static EventHandler GetLogWrites;
-
 		public static void Log(string output)
 		{
 			Console.Write(output);
@@ -54,6 +46,11 @@ namespace MatterHackers.MatterSlice
 			{
 				GetLogWrites(output, null);
 			}
+		}
+
+		public static void LogError(string message)
+		{
+			Console.Write(message);
 		}
 
 		public static void logProgress(string type, int value, int maxValue)
