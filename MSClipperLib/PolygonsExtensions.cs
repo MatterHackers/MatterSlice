@@ -31,6 +31,7 @@ using System.Collections.Generic;
 
 namespace MSClipperLib
 {
+	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
 	public static class PolygonsExtensions
@@ -45,6 +46,25 @@ namespace MSClipperLib
 			}
 
 			return totalBounds;
+		}
+
+		public static Polygons Offset(this Polygons polygons, long distance)
+		{
+			ClipperOffset offseter = new ClipperOffset();
+			offseter.AddPaths(polygons, JoinType.jtMiter, EndType.etClosedPolygon);
+			Polygons solution = new Polygons();
+			offseter.Execute(ref solution, distance);
+			return solution;
+		}
+
+		public static string WriteToString(this Polygons polygons)
+		{
+			string total = "";
+			foreach (Polygon polygon in polygons)
+			{
+				total += polygon.WriteToString() + "|";
+			}
+			return total;
 		}
 	}
 }

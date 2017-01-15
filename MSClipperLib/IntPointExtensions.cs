@@ -30,27 +30,9 @@ either expressed or implied, of the FreeBSD Project.
 namespace MSClipperLib
 {
 	using static System.Math;
+
 	public static class IntPointExtensions
 	{
-		public static long Length(this IntPoint thisPoint)
-		{
-			return (long)Sqrt(thisPoint.LengthSquared());
-		}
-
-		public static long LengthSquared(this IntPoint thisPoint)
-		{
-			return thisPoint.X * thisPoint.X + thisPoint.Y * thisPoint.Y + thisPoint.Z * thisPoint.Z;
-		}
-		public static IntPoint GetPerpendicularRightXY(this IntPoint thisPoint)
-		{
-			return new IntPoint(thisPoint.Y, -thisPoint.X, thisPoint.Z);
-		}
-
-		public static IntPoint GetPerpendicularLeftXY(this IntPoint thisPoint)
-		{
-			return new IntPoint(-thisPoint.Y, thisPoint.X, thisPoint.Z);
-		}
-
 		public static IntPoint CrossZ(this IntPoint thisPoint)
 		{
 			return new IntPoint(-thisPoint.Y, thisPoint.X);
@@ -77,22 +59,6 @@ namespace MSClipperLib
 			return 0;
 		}
 
-		public static IntPoint GetPerpendicularRight(this IntPoint thisPoint)
-		{
-			return new IntPoint(thisPoint.Y, -thisPoint.X)
-			{
-				Width = thisPoint.Width
-			};
-		}
-
-		public static IntPoint GetPerpendicularLeft(this IntPoint thisPoint)
-		{
-			return new IntPoint(-thisPoint.Y, thisPoint.X)
-			{
-				Width = thisPoint.Width
-			};
-		}
-
 		public static int GetLineSideXY(this IntPoint pointToTest, IntPoint start, IntPoint end)
 		{
 			//It is 0 on the line, and +1 on one side, -1 on the other side.
@@ -107,6 +73,42 @@ namespace MSClipperLib
 			}
 
 			return 0;
+		}
+
+		public static IntPoint GetPerpendicularLeft(this IntPoint thisPoint)
+		{
+			return new IntPoint(-thisPoint.Y, thisPoint.X)
+			{
+				Width = thisPoint.Width
+			};
+		}
+
+		public static IntPoint GetPerpendicularLeftXY(this IntPoint thisPoint)
+		{
+			return new IntPoint(-thisPoint.Y, thisPoint.X, thisPoint.Z);
+		}
+
+		public static IntPoint GetPerpendicularRight(this IntPoint thisPoint)
+		{
+			return new IntPoint(thisPoint.Y, -thisPoint.X)
+			{
+				Width = thisPoint.Width
+			};
+		}
+
+		public static IntPoint GetPerpendicularRightXY(this IntPoint thisPoint)
+		{
+			return new IntPoint(thisPoint.Y, -thisPoint.X, thisPoint.Z);
+		}
+
+		public static long Length(this IntPoint thisPoint)
+		{
+			return (long)Sqrt(thisPoint.LengthSquared());
+		}
+
+		public static long LengthSquared(this IntPoint thisPoint)
+		{
+			return thisPoint.X * thisPoint.X + thisPoint.Y * thisPoint.Y + thisPoint.Z * thisPoint.Z;
 		}
 	}
 }

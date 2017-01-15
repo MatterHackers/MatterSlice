@@ -73,7 +73,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MatterSlice\CreateTopAndBottomsTests.cs" />
-    <Compile Include="MatterSlice\AvoidCrossingPerimetersTests.cs" />
+    <Compile Include="MatterSlice\PathFinderTests.cs" />
     <Compile Include="MatterSlice\BridgeTests.cs" />
     <Compile Include="MatterSlice\ClipperTests.cs" />
     <Compile Include="MatterSlice\PathOrderTests.cs" />

@@ -36,8 +36,10 @@ namespace MatterHackers.MatterSlice.Tests
 	using Polygons = List<List<IntPoint>>;
 	using Polygon = List<IntPoint>;
 	using System;
+	using Pathfinding;
+	using QuadTree;
 	[TestFixture, Category("MatterSlice")]
-	public class AvoidCrossingPerimetersTests
+	public class PathFinderTests
 	{
 		[Test]
 		public void InsideOutsidePoints()
@@ -62,10 +64,10 @@ namespace MatterHackers.MatterSlice.Tests
 					IntPoint startPoint = new IntPoint(-10, 10);
 					IntPoint endPoint = new IntPoint(1010, 10);
 					var crossings = new List<Tuple<int, int, IntPoint>>(insideBoundaryPolygons.FindCrossingPoints(startPoint, endPoint));
-					crossings.Sort(new DirectionSorter(startPoint, endPoint));
+					crossings.Sort(new PolygonAndPointDirectionSorter(startPoint, endPoint));
 				}
 
-				AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons, 0);
+				PathFinder testHarness = new PathFinder(boundaryPolygons, 0);
 				Assert.IsTrue(testHarness.PointIsInsideBoundary(new IntPoint(1, 1)));
 				// test being just below the lower line
 				{
@@ -132,7 +134,7 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					IntPoint startPoint = new IntPoint(-10, 5);
 					IntPoint endPoint = new IntPoint(50, 5);
-					AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons, 0);
+					PathFinder testHarness = new PathFinder(boundaryPolygons, 0);
 
 					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(new IntPoint(-1, 5)));
 					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(new IntPoint(-1, 5), testHarness.OutlineEdgeQuadTrees));
@@ -149,9 +151,9 @@ namespace MatterHackers.MatterSlice.Tests
 					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(startPoint, testHarness.OutlineEdgeQuadTrees));
 
 					// validate some dependant functions
-					Assert.IsTrue(PolygonHelper.OnSegment(test[0], new IntPoint(20, 0), test[1]));
-					Assert.IsFalse(PolygonHelper.OnSegment(test[0], new IntPoint(-10, 0), test[1]));
-					Assert.IsFalse(PolygonHelper.OnSegment(test[0], new IntPoint(50,0), test[1]));
+					Assert.IsTrue(PolygonExtensions.OnSegment(test[0], new IntPoint(20, 0), test[1]));
+					Assert.IsFalse(PolygonExtensions.OnSegment(test[0], new IntPoint(-10, 0), test[1]));
+					Assert.IsFalse(PolygonExtensions.OnSegment(test[0], new IntPoint(50,0), test[1]));
 
 					// move startpoint inside
 					testHarness.OutlinePolygons.MovePointInsideBoundary(startPoint, out outPoint);
@@ -186,7 +188,7 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					IntPoint startPoint = new IntPoint(10, -1);
 					IntPoint endPoint = new IntPoint(30, -1);
-					AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons, 0);
+					PathFinder testHarness = new PathFinder(boundaryPolygons, 0);
 					Polygon insidePath = new Polygon();
 					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
 					Assert.AreEqual(2, insidePath.Count);
@@ -226,7 +228,7 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					IntPoint startPoint = new IntPoint(672, 435);
 					IntPoint endPoint = new IntPoint(251, 334);
-					AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons, 0);
+					PathFinder testHarness = new PathFinder(boundaryPolygons, 0);
 					Polygon insidePath = new Polygon();
 					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
 					Assert.AreEqual(6, insidePath.Count);
@@ -255,7 +257,7 @@ namespace MatterHackers.MatterSlice.Tests
 				Polygons boundaryPolygons = PolygonsHelper.CreateFromString(partOutlineString);
 				IntPoint startPoint = new IntPoint(95765, 114600);
 				IntPoint endPoint = new IntPoint(99485, 96234);
-				AvoidCrossingPerimeters testHarness = new AvoidCrossingPerimeters(boundaryPolygons, 0);
+				PathFinder testHarness = new PathFinder(boundaryPolygons, 0);
 
 				{
 					IntPoint startPointInside = startPoint;

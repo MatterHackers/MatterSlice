@@ -126,6 +126,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DirectionSorter.cs" />
+    <Compile Include="PathFinder.cs" />
     <Compile Include="Datastructures\AStarStack.cs" />
     <Compile Include="Interfaces\IPathNetwork.cs" />
     <Compile Include="Interfaces\IPathNode.cs" />
@@ -140,6 +142,10 @@
     <ProjectReference Include="..\MSClipperLib\MSClipperLib.csproj">
       <Project>{2c564be1-352d-4ddb-8226-f0981f983c60}</Project>
       <Name>MSClipperLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\QuadTree\QuadTree.csproj">
+      <Project>{23ec3364-7c93-4169-9ab2-7181c66004c0}</Project>
+      <Name>QuadTree</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

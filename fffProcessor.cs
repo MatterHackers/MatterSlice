@@ -666,7 +666,7 @@ namespace MatterHackers.MatterSlice
 						int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
 						if (config.AvoidCrossingPerimeters)
 						{
-							layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundary);
+							layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(island.PathFinder);
 						}
 						layerGcodePlanner.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
 					}
@@ -705,7 +705,7 @@ namespace MatterHackers.MatterSlice
 
 				if (config.AvoidCrossingPerimeters)
 				{
-					layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundary);
+					layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(island.PathFinder);
 				}
 				else
 				{
@@ -991,7 +991,7 @@ namespace MatterHackers.MatterSlice
 
 					if (config.AvoidCrossingPerimeters)
 					{
-						gcodeLayer.SetOuterPerimetersToAvoidCrossing(part.AvoidCrossingBoundary);
+						gcodeLayer.SetOuterPerimetersToAvoidCrossing(part.PathFinder);
 					}
 					else
 					{

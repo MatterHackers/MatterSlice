@@ -70,5 +70,15 @@ namespace MSClipperLib
 
 			return result;
 		}
+
+		public static string WriteToString(this Polygon polygon)
+		{
+			string total = "";
+			foreach (IntPoint point in polygon)
+			{
+				total += point.ToString() + ",";
+			}
+			return total;
+		}
 	}
 }

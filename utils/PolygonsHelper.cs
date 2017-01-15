@@ -178,59 +178,6 @@ namespace MatterHackers.MatterSlice
 			return deepCopy;
 		}
 
-		public static IEnumerable<Tuple<int, int, IntPoint>> FindCrossingPoints(this Polygons polygons, IntPoint start, IntPoint end, List<QuadTree<int>> edgeQuadTrees = null)
-		{
-			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
-			{
-				List<Tuple<int, IntPoint>> polyCrossings = new List<Tuple<int, IntPoint>>();
-				foreach(var crossing in polygons[polyIndex].FindCrossingPoints(start, end, edgeQuadTrees == null ? null : edgeQuadTrees[polyIndex]))
-				{
-					yield return new Tuple<int, int, IntPoint>(polyIndex, crossing.Item1, crossing.Item2);
-				}
-			}
-		}
-
-		public static Tuple<int, int> FindPoint(this Polygons polygons, IntPoint position, List<QuadTree<int>> pointQuadTrees = null)
-		{
-			if (pointQuadTrees != null)
-			{
-				for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
-				{
-					int pointIndex = polygons[polyIndex].FindPoint(position, pointQuadTrees[polyIndex]);
-					if (pointIndex != -1)
-					{
-						return new Tuple<int, int>(polyIndex, pointIndex);
-					}
-				}
-			}
-			else
-			{
-				for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
-				{
-					int pointIndex = polygons[polyIndex].FindPoint(position);
-					if (pointIndex != -1)
-					{
-						return new Tuple<int, int>(polyIndex, pointIndex);
-					}
-				}
-			}
-
-			return null;
-		}
-
-		public static bool TouchingEdge(this Polygons polygons, IntPoint testPosition, List<QuadTree<int>> edgeQuadTrees = null)
-		{
-			for(int i=0; i<polygons.Count; i++)
-			{
-				if(polygons[i].TouchingEdge(testPosition, edgeQuadTrees == null ? null : edgeQuadTrees[i]))
-				{
-					return true;
-				}
-			}
-
-			return false;
-		}
-
 		public static bool SegmentTouching(this Polygons polygons, IntPoint start, IntPoint end)
 		{
 			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
@@ -253,25 +200,6 @@ namespace MatterHackers.MatterSlice
 		public static Polygons Triangulate(this Polygons polygons)
 		{
 			throw new NotImplementedException();
-		}
-
-		public static Intersection FindIntersection(this Polygons polygons, IntPoint start, IntPoint end, List<QuadTree<int>> edgeQuadTrees = null)
-		{
-			Intersection bestIntersection = Intersection.None;
-			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
-			{
-				var result = polygons[polyIndex].FindIntersection(start, end, edgeQuadTrees == null ? null : edgeQuadTrees[polyIndex]);
-				if (result == Intersection.Intersect)
-				{
-					return Intersection.Intersect;
-				}
-				else if (result == Intersection.Colinear)
-				{
-					bestIntersection = Intersection.Colinear;
-				}
-			}
-
-			return bestIntersection;
 		}
 
 		public static Polygons GetCorrectedWinding(this Polygons polygonsToFix)
@@ -302,82 +230,6 @@ namespace MatterHackers.MatterSlice
 			return outputPolygons;
 		}
 
-		public static void MovePointInsideBoundary(this Polygons boundaryPolygons, IntPoint startPosition, out Tuple<int, int, IntPoint> polyPointPosition, List<QuadTree<int>> edgeQuadTrees = null)
-		{
-			Tuple<int, int, IntPoint> bestPolyPointPosition =  new Tuple<int, int, IntPoint>(0, 0, startPosition);
-
-			if (boundaryPolygons.PointIsInside(startPosition, edgeQuadTrees))
-			{
-				// already inside
-				polyPointPosition = null;
-				return;
-			}
-
-			long bestDist = long.MaxValue;
-			IntPoint bestMoveDelta = new IntPoint();
-			for(int polygonIndex = 0; polygonIndex < boundaryPolygons.Count; polygonIndex++)
-			{
-				var boundaryPolygon = boundaryPolygons[polygonIndex];
-				if (boundaryPolygon.Count < 3)
-				{
-					continue;
-				}
-
-				for (int pointIndex = 0; pointIndex < boundaryPolygon.Count; pointIndex++)
-				{
-					IntPoint segmentStart = boundaryPolygon[pointIndex];
-
-					IntPoint pointRelStart = startPosition - segmentStart;
-					long distFromStart = pointRelStart.Length();
-					if (distFromStart < bestDist)
-					{
-						bestDist = distFromStart;
-						bestPolyPointPosition = new Tuple<int, int, IntPoint>(polygonIndex, pointIndex, segmentStart);
-					}
-
-					IntPoint segmentEnd = boundaryPolygon[(pointIndex + 1) % boundaryPolygon.Count];
-
-					IntPoint segmentDelta = segmentEnd - segmentStart;
-					long segmentLength = segmentDelta.Length();
-					IntPoint segmentLeft = segmentDelta.GetPerpendicularLeft();
-					long segmentLeftLength = segmentLeft.Length();
-
-					long distanceFromStart = segmentDelta.Dot(pointRelStart) / segmentLength;
-
-					if (distanceFromStart >= 0 && distanceFromStart <= segmentDelta.Length())
-					{
-						long distToBoundarySegment = segmentLeft.Dot(pointRelStart) / segmentLeftLength;
-
-						if (Math.Abs(distToBoundarySegment) < bestDist)
-						{
-							IntPoint pointAlongCurrentSegment = startPosition;
-							if (distToBoundarySegment != 0)
-							{
-								pointAlongCurrentSegment = startPosition - segmentLeft * distToBoundarySegment / segmentLeftLength;
-							}
-
-							bestDist = Math.Abs(distToBoundarySegment);
-							bestPolyPointPosition = new Tuple<int, int, IntPoint>(polygonIndex, pointIndex, pointAlongCurrentSegment);
-							bestMoveDelta = segmentLeft;
-						}
-					}
-
-					segmentStart = segmentEnd;
-				}
-			}
-
-			polyPointPosition = bestPolyPointPosition;
-		}
-
-		public static Polygons Offset(this Polygons polygons, long distance)
-		{
-			ClipperOffset offseter = new ClipperOffset();
-			offseter.AddPaths(polygons, JoinType.jtMiter, EndType.etClosedPolygon);
-			Paths solution = new Polygons();
-			offseter.Execute(ref solution, distance);
-			return solution;
-		}
-
 		public static void OptimizePolygons(this Polygons polygons)
 		{
 			for (int n = 0; n < polygons.Count; n++)
@@ -402,40 +254,6 @@ namespace MatterHackers.MatterSlice
 			{
 				return obj.Item3.GetHashCode();
 			}
-		}
-
-		public static IEnumerable<Tuple<int, int, IntPoint>> SkipSame(this IEnumerable<Tuple<int, int, IntPoint>> source)
-		{
-			Tuple<int, int, IntPoint> lastItem = new Tuple<int, int, IntPoint>(-1,-1, new IntPoint(long.MaxValue, long.MaxValue));
-			foreach (var item in source)
-			{
-				if(item.Item3 != lastItem.Item3)
-				{
-					yield return item;
-				}
-				lastItem = item;
-			}
-		}
-
-		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint, List<QuadTree<int>> edgeQuadTrees = null)
-		{
-			int insideCount = 0;
-			foreach(var polygon in polygons)
-			{
-				if (polygons.TouchingEdge(testPoint, edgeQuadTrees))
-				{
-					insideCount++;
-				}
-				else
-				{
-					if(polygon.PointIsInside(testPoint) != 0)
-					{
-						insideCount++;
-					}
-				}
-			}
-
-			return (insideCount % 2 == 1);
 		}
 
 		public static long PolygonLength(this Polygons polygons, bool areClosed = true)
@@ -576,38 +394,6 @@ namespace MatterHackers.MatterSlice
 			return polygons.Count;
 		}
 
-		public static List<QuadTree<int>> GetEdgeQuadTrees(this Polygons polygons, int splitCount = 5, long expandDist = 1)
-		{
-			var quadTrees = new List<QuadTree<int>>();
-			foreach(var polygon in polygons)
-			{
-				quadTrees.Add(polygon.GetEdgeQuadTree(splitCount, expandDist));
-			}
-
-			return quadTrees;
-		}
-
-		public static List<QuadTree<int>> GetPointQuadTrees(this Polygons polygons, int splitCount = 5, long expandDist = 1)
-		{
-			var quadTrees = new List<QuadTree<int>>();
-			foreach (var polygon in polygons)
-			{
-				quadTrees.Add(polygon.GetPointQuadTree(splitCount, expandDist));
-			}
-
-			return quadTrees;
-		}
-
-		public static string WriteToString(this Polygons polygons)
-		{
-			string total = "";
-			foreach (Polygon polygon in polygons)
-			{
-				total += polygon.WriteToString() + "|";
-			}
-			return total;
-		}
-
 		private static void ProcessPolyTreeNodeIntoSeparatIslands(this Polygons polygonsIn, PolyNode node, List<Polygons> ret)
 		{
 			for (int n = 0; n < node.ChildCount; n++)
@@ -622,26 +408,6 @@ namespace MatterHackers.MatterSlice
 				}
 				ret.Add(polygons);
 			}
-		}
-	}
-
-	public class DirectionSorter : IComparer<Tuple<int, int, IntPoint>>
-	{
-		private IntPoint direction;
-		private IntPoint start;
-
-		public DirectionSorter(IntPoint start, IntPoint end)
-		{
-			this.start = start;
-			this.direction = (end - start).Normal(1000);
-		}
-
-		public int Compare(Tuple<int, int, IntPoint> a, Tuple<int, int, IntPoint> b)
-		{
-			long distToA = direction.Dot(a.Item3 - start) / 1000;
-			long distToB = direction.Dot(b.Item3 - start) / 1000;
-
-			return distToA.CompareTo(distToB);
 		}
 	}
 }

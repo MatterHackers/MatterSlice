@@ -34,9 +34,8 @@ namespace MatterHackers.QuadTree
 {
 	public class CloseSegmentsIterator
 	{
-		bool useQuadTree = true;
-
-		QuadTree<int> tree;
+		private QuadTree<int> tree;
+		private bool useQuadTree = true;
 
 		public CloseSegmentsIterator(List<Segment> polySegments, long overlapAmount = 0, bool useQuadTree = true)
 		{
@@ -51,7 +50,7 @@ namespace MatterHackers.QuadTree
 						polySegments[i].Right + overlapAmount,
 						polySegments[i].Top + overlapAmount);
 
-					if(i==0)
+					if (i == 0)
 					{
 						bounds = new IntRect(quad.MinX, quad.MinY, quad.MaxX, quad.MaxY);
 					}
@@ -75,7 +74,7 @@ namespace MatterHackers.QuadTree
 		{
 			if (useQuadTree)
 			{
-				foreach(var segmentIndex in tree.FindCollisions(firstSegmentIndex))
+				foreach (var segmentIndex in tree.FindCollisions(firstSegmentIndex))
 				{
 					if (segmentIndex >= firstSegmentIndex)
 					{
@@ -95,11 +94,8 @@ namespace MatterHackers.QuadTree
 
 	public class PolygonEdgeIterator
 	{
-		static bool newMethod = true;
-		QuadTree<int> tree;
-
-		public List<IntPoint> SourcePoints { get; private set; }
-		public long OverlapAmount { get; private set; }
+		private static bool newMethod = true;
+		private QuadTree<int> tree;
 
 		public PolygonEdgeIterator(List<IntPoint> sourcePoints, long overlapAmount, QuadTree<int> treeToUse = null)
 		{
@@ -114,6 +110,9 @@ namespace MatterHackers.QuadTree
 				}
 			}
 		}
+
+		public long OverlapAmount { get; private set; }
+		public List<IntPoint> SourcePoints { get; private set; }
 
 		public IEnumerable<int> GetTouching(Quad touchingBounds)
 		{

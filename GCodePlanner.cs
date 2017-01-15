@@ -25,6 +25,7 @@ using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
+	using Pathfinding;
 	using QuadTree;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
@@ -53,7 +54,7 @@ namespace MatterHackers.MatterSlice
 			get; private set;
 		}
 
-		private AvoidCrossingPerimeters outerPerimetersToAvoidCrossing;
+		private PathFinder pathFinder;
 
 		private List<GCodePath> paths = new List<GCodePath>();
 
@@ -76,7 +77,7 @@ namespace MatterHackers.MatterSlice
 			travelConfig.SetData(travelSpeed, 0, "travel");
 
 			LastPosition = gcode.GetPositionXY();
-			outerPerimetersToAvoidCrossing = null;
+			pathFinder = null;
 			extrudeSpeedFactor = 100;
 			travelSpeedFactor = 100;
 			extraTime = 0.0;
@@ -408,16 +409,16 @@ namespace MatterHackers.MatterSlice
 
 		public void MoveInsideTravelPerimeter()
 		{
-			if (outerPerimetersToAvoidCrossing == null)
+			if (pathFinder == null)
 			{
 				return;
 			}
 
 			IntPoint p = LastPosition;
-			if (outerPerimetersToAvoidCrossing.MovePointInsideBoundary(p, out p))
+			if (pathFinder.MovePointInsideBoundary(p, out p))
 			{
 				//Move inside again, so we move out of tight 90deg corners
-				if (outerPerimetersToAvoidCrossing.MovePointInsideBoundary(p, out p))
+				if (pathFinder.MovePointInsideBoundary(p, out p))
 				{
 					QueueTravel(p);
 					//Make sure the that any retraction happens after this move, not before it by starting a new move path.
@@ -448,15 +449,15 @@ namespace MatterHackers.MatterSlice
 			this.extrudeSpeedFactor = speedFactor;
 		}
 
-		public void SetOuterPerimetersToAvoidCrossing(AvoidCrossingPerimeters avoid)
+		public void SetOuterPerimetersToAvoidCrossing(PathFinder pathFinder)
 		{
-			if (avoid != null)
+			if (pathFinder != null)
 			{
-				outerPerimetersToAvoidCrossing = avoid;
+				this.pathFinder = pathFinder;
 			}
 			else
 			{
-				outerPerimetersToAvoidCrossing = null;
+				this.pathFinder = null;
 			}
 		}
 
@@ -768,10 +769,10 @@ namespace MatterHackers.MatterSlice
 				path.Retract = true;
 				forceRetraction = false;
 			}
-			else if (outerPerimetersToAvoidCrossing != null)
+			else if (pathFinder != null)
 			{
 				Polygon pointList = new Polygon();
-				if (outerPerimetersToAvoidCrossing.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pointList))
+				if (pathFinder.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pointList))
 				{
 					long lineLength_um = 0;
 					// we can stay inside so move within the boundary

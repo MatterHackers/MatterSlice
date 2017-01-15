@@ -27,7 +27,6 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
-using System.Collections.Generic;
 using System.Text;
 
 namespace MatterHackers.Pathfinding
@@ -42,10 +41,6 @@ namespace MatterHackers.Pathfinding
 
 	public struct Path<PathNodeType> where PathNodeType : IPathNode
 	{
-		public PathNodeType[] Nodes { get; private set; }
-		public int PathSearchTestCount { get; private set; }
-		public PathStatus Status { get; private set; }
-
 		public Path(PathNodeType[] pNodes, float pathLength, PathStatus pStatus, int pPathSearchTestCount)
 		{
 			Nodes = pNodes;
@@ -70,7 +65,10 @@ namespace MatterHackers.Pathfinding
 			}
 		}
 
+		public PathNodeType[] Nodes { get; private set; }
 		public float PathLength { get; private set; }
+		public int PathSearchTestCount { get; private set; }
+		public PathStatus Status { get; private set; }
 
 		public static bool operator !=(Path<PathNodeType> a, Path<PathNodeType> b)
 		{
@@ -88,7 +86,7 @@ namespace MatterHackers.Pathfinding
 			{
 				return false;
 			}
-			
+
 			var other = (Path<PathNodeType>)pOther;
 			if (Status != other.Status)
 			{

@@ -29,7 +29,6 @@ either expressed or implied, of the FreeBSD Project.
 
 namespace MSClipperLib
 {
-	using static System.Math;
 	public static class IntRectExtensions
 	{
 		public static IntRect ExpandToInclude(this IntRect inRect, IntRect otherRect)
@@ -41,6 +40,5 @@ namespace MSClipperLib
 
 			return inRect;
 		}
-
 	}
 }

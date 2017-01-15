@@ -31,6 +31,7 @@ using MSClipperLib;
 using NUnit.Framework;
 using MatterHackers.MatterSlice;
 using System.Collections.Generic;
+using MatterHackers.QuadTree;
 
 namespace MatterHackers.MatterSlice.Tests
 {
@@ -156,7 +157,7 @@ namespace MatterHackers.MatterSlice.Tests
 		private void TestCorrectCrossings(Polygon poly, IntPoint start, IntPoint end, int expectedStartIndex, int expectedEndIndex)
 		{
 			var polyCrossings = new List<Tuple<int, IntPoint>>(poly.FindCrossingPoints(start, end));
-			polyCrossings.Sort(new PolygonHelper.DirectionSorter(start, end));
+			polyCrossings.Sort(new IntPointDirectionSorter(start, end));
 			Assert.AreEqual(2, polyCrossings.Count);
 			Assert.IsTrue(polyCrossings[0].Item1 == expectedStartIndex);
 			Assert.IsTrue(polyCrossings[1].Item1 == expectedEndIndex);

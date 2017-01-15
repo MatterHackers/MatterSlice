@@ -149,9 +149,6 @@
     <Compile Include="SimpleMesh.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AvoidCrossingPerimeters.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="utils\PolygonHelper.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -104,9 +104,9 @@ namespace MatterHackers.QuadTree
 		/// </summary>
 		public bool Intersects(ref Quad other)
 		{
-			if(MinX < other.MaxX 
-				&& MinY < other.MaxY 
-				&& MaxX > other.MinX 
+			if (MinX < other.MaxX
+				&& MinY < other.MaxY
+				&& MaxX > other.MinX
 				&& MaxY > other.MinY)
 			{
 				return true;
@@ -143,7 +143,8 @@ namespace MatterHackers.QuadTree
 
 		internal Dictionary<T, Leaf> leafLookup = new Dictionary<T, Leaf>();
 		internal int splitCount;
-		 Branch root;
+		private Branch root;
+
 		/// <summary>
 		/// Creates a new QuadTree.
 		/// </summary>
@@ -163,7 +164,6 @@ namespace MatterHackers.QuadTree
 		public QuadTree(int splitCount, Quad region)
 			: this(splitCount, ref region)
 		{
-
 		}
 
 		/// <summary>
@@ -177,7 +177,6 @@ namespace MatterHackers.QuadTree
 		public QuadTree(int splitCount, long minX, long minY, long maxX, long maxY)
 			: this(splitCount, new Quad(minX, minY, maxX, maxY))
 		{
-
 		}
 
 		/// <summary>
@@ -201,6 +200,7 @@ namespace MatterHackers.QuadTree
 			root.Tree = this;
 			leafLookup.Clear();
 		}
+
 		/// <summary>
 		/// Count how many branches are in the QuadTree.
 		/// </summary>
@@ -243,7 +243,7 @@ namespace MatterHackers.QuadTree
 					{
 						if (branch.Branches[i] != null)
 						{
-							foreach(var index in branch.Branches[i].SearchQuad(leaf.Quad))
+							foreach (var index in branch.Branches[i].SearchQuad(leaf.Quad))
 							{
 								yield return index;
 							}
@@ -359,7 +359,7 @@ namespace MatterHackers.QuadTree
 			return root.SearchPoint(x, y);
 		}
 
-		static Branch CreateBranch(QuadTree<T> tree, Branch parent, ref Quad quad)
+		private static Branch CreateBranch(QuadTree<T> tree, Branch parent, ref Quad quad)
 		{
 			var branch = branchPool.Count > 0 ? branchPool.Pop() : new Branch();
 			branch.Tree = tree;
@@ -374,7 +374,7 @@ namespace MatterHackers.QuadTree
 			return branch;
 		}
 
-		static Leaf CreateLeaf(T value, ref Quad quad)
+		private static Leaf CreateLeaf(T value, ref Quad quad)
 		{
 			var leaf = leafPool.Count > 0 ? leafPool.Pop() : new Leaf();
 			leaf.Value = value;
@@ -382,7 +382,7 @@ namespace MatterHackers.QuadTree
 			return leaf;
 		}
 
-		void CountBranches(Branch branch, ref int count)
+		private void CountBranches(Branch branch, ref int count)
 		{
 			++count;
 			if (branch.Split)
@@ -407,6 +407,7 @@ namespace MatterHackers.QuadTree
 			internal Quad[] Quads = new Quad[4];
 			internal bool Split;
 			internal QuadTree<T> Tree;
+
 			internal void Clear()
 			{
 				Tree = null;
@@ -494,7 +495,7 @@ namespace MatterHackers.QuadTree
 				{
 					if (Branches[i] != null)
 					{
-						foreach(var index in Branches[i].SearchPoint(x, y))
+						foreach (var index in Branches[i].SearchPoint(x, y))
 						{
 							yield return index;
 						}

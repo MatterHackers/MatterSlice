@@ -22,26 +22,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System.Collections.Generic;
 using MSClipperLib;
 
-namespace MatterHackers.MatterSlice
+namespace MatterHackers.Pathfinding
 {
 	using System;
-	using Pathfinding;
 	using QuadTree;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
-	public class AvoidCrossingPerimeters
+	public class PathFinder
 	{
-		public Polygons OutlinePolygons { get; private set; }
-		public List<QuadTree<int>> OutlineEdgeQuadTrees { get; private set; }
-
-		public Polygons BoundaryPolygons { get; private set; }
-		public List<QuadTree<int>> BoundaryEdgeQuadTrees { get; private set; }
-		public List<QuadTree<int>> BoundaryPointQuadTrees { get; private set; }
-
 		private static bool storeBoundary = false;
+		private WayPointsToRemove removePointList;
 
-		public AvoidCrossingPerimeters(Polygons outlinePolygons, long avoidInset)
+		public PathFinder(Polygons outlinePolygons, long avoidInset)
 		{
 			OutlinePolygons = outlinePolygons;
 			OutlineEdgeQuadTrees = OutlinePolygons.GetEdgeQuadTrees();
@@ -63,16 +56,19 @@ namespace MatterHackers.MatterSlice
 			// this could be done with some merge close edges and finding candidates that way
 			// for new just make sure that every island is connected to its closest neighbor
 
-
 			removePointList = new WayPointsToRemove(Waypoints);
 		}
 
+		public List<QuadTree<int>> BoundaryEdgeQuadTrees { get; private set; }
+		public List<QuadTree<int>> BoundaryPointQuadTrees { get; private set; }
+		public Polygons BoundaryPolygons { get; private set; }
+		public List<QuadTree<int>> OutlineEdgeQuadTrees { get; private set; }
+		public Polygons OutlinePolygons { get; private set; }
 		public IntPointPathNetwork Waypoints { get; private set; } = new IntPointPathNetwork();
-		WayPointsToRemove removePointList;
 
 		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside)
 		{
-			if(BoundaryPolygons.Count == 0)
+			if (BoundaryPolygons.Count == 0)
 			{
 				return false;
 			}
@@ -90,7 +86,7 @@ namespace MatterHackers.MatterSlice
 
 			//Check if we are inside the boundaries
 			IntPointNode startNode = null;
-			Tuple <int, int, IntPoint> startPolyPointPosition = null;
+			Tuple<int, int, IntPoint> startPolyPointPosition = null;
 			BoundaryPolygons.MovePointInsideBoundary(startPoint, out startPolyPointPosition, BoundaryEdgeQuadTrees);
 			if (startPolyPointPosition == null)
 			{
@@ -123,7 +119,7 @@ namespace MatterHackers.MatterSlice
 				return true;
 			}
 
-			if(startPolyPointPosition != null 
+			if (startPolyPointPosition != null
 				&& endPolyPointPosition != null
 				&& startPolyPointPosition.Item1 == endPolyPointPosition.Item1
 				&& startPolyPointPosition.Item2 == endPolyPointPosition.Item2)
@@ -133,7 +129,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			var crossings = new List<Tuple<int, int, IntPoint>>(BoundaryPolygons.FindCrossingPoints(startNode.Position, endNode.Position, BoundaryEdgeQuadTrees));
-			crossings.Sort(new DirectionSorter(startNode.Position, endNode.Position));
+			crossings.Sort(new PolygonAndPointDirectionSorter(startNode.Position, endNode.Position));
 
 			IntPointNode previousNode = startNode;
 			foreach (var crossing in crossings.SkipSame())
@@ -159,7 +155,7 @@ namespace MatterHackers.MatterSlice
 
 			Path<IntPointNode> path = Waypoints.FindPath(startNode, endNode, true);
 
-			if(startPolyPointPosition != null)
+			if (startPolyPointPosition != null)
 			{
 				pathThatIsInside.Add(startNode.Position);
 			}
@@ -177,22 +173,12 @@ namespace MatterHackers.MatterSlice
 				pathThatIsInside.Add(endNode.Position);
 			}
 
-			if(path.Nodes.Length == 0)
+			if (path.Nodes.Length == 0)
 			{
 				return false;
 			}
 
 			return true;
-		}
-
-		private void HookUpToEdge(IntPointNode crossingNode, int polyIndex, int pointIndex)
-		{
-			int count = BoundaryPolygons[polyIndex].Count;
-			pointIndex = (pointIndex + count) % count;
-			IntPointNode prevPolyPointNode = Waypoints.FindNode(BoundaryPolygons[polyIndex][pointIndex]);
-			Waypoints.AddPathLink(crossingNode, prevPolyPointNode);
-			IntPointNode nextPolyPointNode = Waypoints.FindNode(BoundaryPolygons[polyIndex][(pointIndex + 1) % count]);
-			Waypoints.AddPathLink(crossingNode, nextPolyPointNode);
 		}
 
 		public bool MovePointInsideBoundary(IntPoint testPosition, out IntPoint inPolyPosition)
@@ -264,6 +250,16 @@ namespace MatterHackers.MatterSlice
 			return false;
 		}
 
+		private void HookUpToEdge(IntPointNode crossingNode, int polyIndex, int pointIndex)
+		{
+			int count = BoundaryPolygons[polyIndex].Count;
+			pointIndex = (pointIndex + count) % count;
+			IntPointNode prevPolyPointNode = Waypoints.FindNode(BoundaryPolygons[polyIndex][pointIndex]);
+			Waypoints.AddPathLink(crossingNode, prevPolyPointNode);
+			IntPointNode nextPolyPointNode = Waypoints.FindNode(BoundaryPolygons[polyIndex][(pointIndex + 1) % count]);
+			Waypoints.AddPathLink(crossingNode, nextPolyPointNode);
+		}
+
 		private bool LinkIntersectsPolygon(int nodeIndexA, int nodeIndexB)
 		{
 			return BoundaryPolygons.FindIntersection(Waypoints.Nodes[nodeIndexA].Position, Waypoints.Nodes[nodeIndexB].Position, BoundaryEdgeQuadTrees) == Intersection.Intersect;
@@ -292,18 +288,17 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-
 			if (!BoundaryPolygons.PointIsInside((pointA + pointB) / 2, BoundaryEdgeQuadTrees))
 			{
 				return false;
 			}
 
 			var crossings = new List<Tuple<int, int, IntPoint>>(BoundaryPolygons.FindCrossingPoints(pointA, pointB, BoundaryEdgeQuadTrees));
-			crossings.Sort(new MatterHackers.MatterSlice.DirectionSorter(pointA, pointB));
+			crossings.Sort(new PolygonAndPointDirectionSorter(pointA, pointB));
 			IntPoint start = pointA;
-			foreach(var crossing in crossings)
+			foreach (var crossing in crossings)
 			{
-				if(start != crossing.Item3
+				if (start != crossing.Item3
 					&& !BoundaryPolygons.PointIsInside((start + crossing.Item3) / 2, BoundaryEdgeQuadTrees))
 				{
 					return false;

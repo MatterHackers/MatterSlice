@@ -25,6 +25,7 @@ using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
+	using Pathfinding;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
@@ -45,7 +46,7 @@ namespace MatterHackers.MatterSlice
 		/// The outline of the island as defined by the original mesh polygons (not inset at all).
 		/// </summary>
 		public Polygons IslandOutline { get; set; } = new Polygons();
-		public AvoidCrossingPerimeters AvoidCrossingBoundary { get; set; }
+		public PathFinder PathFinder { get; private set; }
 		/// <summary>
 		/// The IslandOutline inset as many times as there are perimeters for the part.
 		/// </summary>
@@ -62,7 +63,7 @@ namespace MatterHackers.MatterSlice
 			LayerIsland part = this;
 			part.BoundingBox.Calculate(part.IslandOutline);
 
-			part.AvoidCrossingBoundary = new AvoidCrossingPerimeters(part.IslandOutline, -extrusionWidth_um * 3 / 2);
+			part.PathFinder = new PathFinder(part.IslandOutline, -extrusionWidth_um * 3 / 2);
 			if (insetCount == 0)
 			{
 				// if we have no insets defined still create one
