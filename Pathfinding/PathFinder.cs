@@ -53,6 +53,11 @@ namespace MatterHackers.Pathfinding
 			}
 
 			// hook up path segments between the separate islands
+			Polygons thinLines;
+			if (OutlinePolygons.FindThinLines(avoidInset*-2, 0, out thinLines))
+			{
+				ThinLinePolygons = thinLines;
+			}
 			// this is done with merge close edges and finding candidates
 			// then joining the ends of the merged segments with the closest points
 
@@ -64,6 +69,7 @@ namespace MatterHackers.Pathfinding
 		public Polygons BoundaryPolygons { get; private set; }
 		public List<QuadTree<int>> OutlineEdgeQuadTrees { get; private set; }
 		public Polygons OutlinePolygons { get; private set; }
+		public Polygons ThinLinePolygons { get; private set; }
 		public IntPointPathNetwork Waypoints { get; private set; } = new IntPointPathNetwork();
 
 		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside)

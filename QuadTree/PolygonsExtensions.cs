@@ -101,18 +101,27 @@ namespace MatterHackers.QuadTree
 			return null;
 		}
 
-		public static bool FindThinLines(this Polygons polygons, long overlapMergeAmount_um, long minimumRequiredWidth_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
+		/// <summary>
+		/// Create the list of polygon segments (not closed) that represent the parts of the source polygons that are close (almost touching).
+		/// </summary>
+		/// <param name="polygons"></param>
+		/// <param name="overlapMergeAmount">If edges are this distance or less (but greater than minimumRequiredWidth) they will generate edges</param>
+		/// <param name="minimumRequiredWidth">If the distance is less this they will not be generated</param>
+		/// <param name="onlyMergeLines"></param>
+		/// <param name="pathIsClosed"></param>
+		/// <returns></returns>
+		public static bool FindThinLines(this Polygons polygons, long overlapMergeAmount, long minimumRequiredWidth, out Polygons onlyMergeLines, bool pathIsClosed = true)
 		{
 			bool pathHasMergeLines = false;
 
-			polygons = MakeCloseSegmentsMergable(polygons, overlapMergeAmount_um, pathIsClosed);
+			polygons = MakeCloseSegmentsMergable(polygons, overlapMergeAmount, pathIsClosed);
 
 			// make a copy that has every point duplicated (so that we have them as segments).
 			List<Segment> polySegments = Segment.ConvertToSegments(polygons);
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
 
-			var touchingEnumerator = new CloseSegmentsIterator(polySegments, overlapMergeAmount_um);
+			var touchingEnumerator = new CloseSegmentsIterator(polySegments, overlapMergeAmount);
 			int segmentCount = polySegments.Count;
 			// now walk every segment and check if there is another segment that is similar enough to merge them together
 			for (int firstSegmentIndex = 0; firstSegmentIndex < segmentCount; firstSegmentIndex++)
@@ -122,18 +131,18 @@ namespace MatterHackers.QuadTree
 					// The first point of start and the last point of check (the path will be coming back on itself).
 					long startDelta = (polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length();
 					// if the segments are similar enough
-					if (startDelta < overlapMergeAmount_um)
+					if (startDelta < overlapMergeAmount)
 					{
 						// The last point of start and the first point of check (the path will be coming back on itself).
 						long endDelta = (polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length();
-						if (endDelta < overlapMergeAmount_um)
+						if (endDelta < overlapMergeAmount)
 						{
 							// move the first segments points to the average of the merge positions
 							long startEndWidth = Math.Abs((polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length());
 							long endStartWidth = Math.Abs((polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length());
 							long width = Math.Min(startEndWidth, endStartWidth);
 
-							if (width > minimumRequiredWidth_um)
+							if (width > minimumRequiredWidth)
 							{
 								// We need to check if the new start position is on the inside of the curve. We can only add thin lines on the insides of our exisiting curves.
 								IntPoint newStartPosition = (polySegments[firstSegmentIndex].Start + polySegments[checkSegmentIndex].End) / 2; // the start;
@@ -200,8 +209,8 @@ namespace MatterHackers.QuadTree
 				currentPolygon.Add(polySegments[polySegments.Count - 1].End);
 			}
 
-			long cleanDistance_um = overlapMergeAmount_um / 40;
-			//Clipper.CleanPolygons(onlyMergeLines, cleanDistance_um);
+			//long cleanDistance = overlapMergeAmount / 40;
+			//Clipper.CleanPolygons(onlyMergeLines, cleanDistance);
 
 			return pathHasMergeLines;
 		}
