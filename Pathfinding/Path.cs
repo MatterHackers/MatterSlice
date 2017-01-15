@@ -42,16 +42,16 @@ namespace MatterHackers.Pathfinding
 
 	public struct Path<PathNodeType> where PathNodeType : IPathNode
 	{
-		public PathNodeType[] nodes;
-		public int pathSearchTestCount;
-		public PathStatus status;
+		public PathNodeType[] Nodes { get; private set; }
+		public int PathSearchTestCount { get; private set; }
+		public PathStatus Status { get; private set; }
 
 		public Path(PathNodeType[] pNodes, float pathLength, PathStatus pStatus, int pPathSearchTestCount)
 		{
-			nodes = pNodes;
+			Nodes = pNodes;
 			PathLength = pathLength;
-			status = pStatus;
-			pathSearchTestCount = pPathSearchTestCount;
+			Status = pStatus;
+			PathSearchTestCount = pPathSearchTestCount;
 		}
 
 		public static Path<PathNodeType> EMPTY
@@ -66,7 +66,7 @@ namespace MatterHackers.Pathfinding
 		{
 			get
 			{
-				return nodes[nodes.Length - 1];
+				return Nodes[Nodes.Length - 1];
 			}
 		}
 
@@ -90,7 +90,7 @@ namespace MatterHackers.Pathfinding
 			}
 			
 			var other = (Path<PathNodeType>)pOther;
-			if (status != other.status)
+			if (Status != other.Status)
 			{
 				return false;
 			}
@@ -101,7 +101,7 @@ namespace MatterHackers.Pathfinding
 
 			for (int i = 0; i < PathLength; i++)
 			{
-				if ((System.IEquatable<PathNodeType>)nodes[i] != (System.IEquatable<PathNodeType>)other.nodes[i])
+				if ((System.IEquatable<PathNodeType>)Nodes[i] != (System.IEquatable<PathNodeType>)other.Nodes[i])
 				{
 					return false;
 				}
@@ -115,7 +115,7 @@ namespace MatterHackers.Pathfinding
 			StringBuilder sb = new StringBuilder();
 			sb.Append("Path: \n[ ");
 
-			foreach (IPathNode ipn in nodes)
+			foreach (IPathNode ipn in Nodes)
 			{
 				sb.Append(ipn.ToString() + ",\n");
 			}

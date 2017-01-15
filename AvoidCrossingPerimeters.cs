@@ -59,6 +59,11 @@ namespace MatterHackers.MatterSlice
 				Waypoints.AddClosedPolygon(polygon);
 			}
 
+			// hook up path segments between the separate islands
+			// this could be done with some merge close edges and finding candidates that way
+			// for new just make sure that every island is connected to its closest neighbor
+
+
 			removePointList = new WayPointsToRemove(Waypoints);
 		}
 
@@ -160,7 +165,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			var lastAdd = startNode.Position;
-			foreach (var node in path.nodes.SkipSamePosition(startNode.Position))
+			foreach (var node in path.Nodes.SkipSamePosition(startNode.Position))
 			{
 				pathThatIsInside.Add(node.Position);
 				lastAdd = node.Position;
@@ -170,6 +175,11 @@ namespace MatterHackers.MatterSlice
 				&& endNode.Position != lastAdd)
 			{
 				pathThatIsInside.Add(endNode.Position);
+			}
+
+			if(path.Nodes.Length == 0)
+			{
+				return false;
 			}
 
 			return true;
