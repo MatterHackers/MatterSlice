@@ -19,9 +19,9 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System;
 using System.Collections.Generic;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -34,6 +34,7 @@ namespace MatterHackers.MatterSlice
 		public List<LayerIsland> Islands = null;
 		public long LayerZ;
 		private static bool OUTPUT_DEBUG_DATA = false;
+
 		public static bool GetSingleIslandAngle(Polygons outline, Polygon island, out double bridgeAngle, string debugName)
 		{
 			bridgeAngle = -1;
@@ -116,24 +117,10 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public void GenerateFillConsideringBridging(Polygons bottomFillIsland, Polygons bottomFillLines, ConfigSettings config, Polygons bridgePolygons, string debugName = "")
-		{
-			double bridgeAngle = 0;
-			if (this.BridgeAngle(bottomFillIsland, out bridgeAngle))
-			{
-				// TODO: Make this code handle very complex pathing between different sizes or layouts of support under the island to fill.
-				Infill.GenerateLinePaths(bottomFillIsland, bridgePolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, bridgeAngle);
-			}
-			else
-			{
-				Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
-			}
-		}
-
 		public bool BridgeAngle(Polygons areaAboveToFill, out double bridgeAngle, string debugName = "")
 		{
 			SliceLayer layerToRestOn = this;
-            bridgeAngle = -1;
+			bridgeAngle = -1;
 			Aabb boundaryBox = new Aabb(areaAboveToFill);
 			//To detect if we have a bridge, first calculate the intersection of the current layer with the previous layer.
 			// This gives us the islands that the layer rests on.
@@ -237,6 +224,20 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		public void GenerateFillConsideringBridging(Polygons bottomFillIsland, Polygons bottomFillLines, ConfigSettings config, Polygons bridgePolygons, string debugName = "")
+		{
+			double bridgeAngle = 0;
+			if (this.BridgeAngle(bottomFillIsland, out bridgeAngle))
+			{
+				// TODO: Make this code handle very complex pathing between different sizes or layouts of support under the island to fill.
+				Infill.GenerateLinePaths(bottomFillIsland, bridgePolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, bridgeAngle);
+			}
+			else
+			{
+				Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+			}
+		}
+
 		public void GenerateInsets(int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount, bool expandThinWalls)
 		{
 			SliceLayer layer = this;
@@ -271,5 +272,5 @@ namespace MatterHackers.MatterSlice
 				angle -= 360;
 			}
 		}
-    }
+	}
 }

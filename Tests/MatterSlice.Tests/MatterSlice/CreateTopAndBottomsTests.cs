@@ -27,131 +27,131 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
+using System.Collections.Generic;
 using MSClipperLib;
 using NUnit.Framework;
-using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice.Tests
 {
-    using Polygons = List<List<IntPoint>>;
+	using Polygons = List<List<IntPoint>>;
 
-    [TestFixture, Category("MatterSlice")]
-    public class CreateToAndBottomTests
-    {
-        [Test]
-        public void CorrectNumberOfBottoms()
-        {
-            // 3 bottom layers and no top layers
-            {
-                // A simple cube that should have enough bottom layers
-                string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
-                Polygons partOutline = PolygonsHelper.CreateFromString(inset0OutlineString);
-                int numLayers = 10;
-                ExtruderLayers extruder = CreateLayerData(partOutline, numLayers);
-                GenerateLayers(extruder, 400, 3, 0);
-                Assert.IsTrue(extruder.OnlyHasBottom(0));
-                Assert.IsTrue(extruder.OnlyHasSolidInfill(1));
-                Assert.IsTrue(extruder.OnlyHasSolidInfill(2));
-                Assert.IsTrue(extruder.OnlyHasInfill(3));
-            }
+	[TestFixture, Category("MatterSlice")]
+	public class CreateToAndBottomTests
+	{
+		[Test]
+		public void CorrectNumberOfBottoms()
+		{
+			// 3 bottom layers and no top layers
+			{
+				// A simple cube that should have enough bottom layers
+				string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
+				Polygons partOutline = CLPolygonsExtensions.CreateFromString(inset0OutlineString);
+				int numLayers = 10;
+				ExtruderLayers extruder = CreateLayerData(partOutline, numLayers);
+				GenerateLayers(extruder, 400, 3, 0);
+				Assert.IsTrue(extruder.OnlyHasBottom(0));
+				Assert.IsTrue(extruder.OnlyHasSolidInfill(1));
+				Assert.IsTrue(extruder.OnlyHasSolidInfill(2));
+				Assert.IsTrue(extruder.OnlyHasInfill(3));
+			}
 
-            // 3 bottom layers and 1 top layer
-            {
-                string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
-                Polygons inset0Outline = PolygonsHelper.CreateFromString(inset0OutlineString);
-                int numLayers = 10;
-                ExtruderLayers extruder = CreateLayerData(inset0Outline, numLayers);
-                GenerateLayers(extruder, 400, 3, 1);
-                Assert.IsTrue(extruder.OnlyHasBottom(0));
-                Assert.IsTrue(extruder.OnlyHasSolidInfill(1));
-                Assert.IsTrue(extruder.OnlyHasSolidInfill(2));
-                Assert.IsTrue(extruder.OnlyHasInfill(3));
-            }
+			// 3 bottom layers and 1 top layer
+			{
+				string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
+				Polygons inset0Outline = CLPolygonsExtensions.CreateFromString(inset0OutlineString);
+				int numLayers = 10;
+				ExtruderLayers extruder = CreateLayerData(inset0Outline, numLayers);
+				GenerateLayers(extruder, 400, 3, 1);
+				Assert.IsTrue(extruder.OnlyHasBottom(0));
+				Assert.IsTrue(extruder.OnlyHasSolidInfill(1));
+				Assert.IsTrue(extruder.OnlyHasSolidInfill(2));
+				Assert.IsTrue(extruder.OnlyHasInfill(3));
+			}
 
-            // 3 bottom layers and 3 top layers
-            {
-                string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
-                Polygons inset0Outline = PolygonsHelper.CreateFromString(inset0OutlineString);
-                int numLayers = 10;
-                ExtruderLayers extruder = CreateLayerData(inset0Outline, numLayers);
-                GenerateLayers(extruder, 400, 3, 3);
-                Assert.IsTrue(extruder.OnlyHasBottom(0));
-                Assert.IsTrue(extruder.OnlyHasSolidInfill(1));
-                Assert.IsTrue(extruder.OnlyHasSolidInfill(2));
-                Assert.IsTrue(extruder.OnlyHasInfill(3));
-            }
-        }
+			// 3 bottom layers and 3 top layers
+			{
+				string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
+				Polygons inset0Outline = CLPolygonsExtensions.CreateFromString(inset0OutlineString);
+				int numLayers = 10;
+				ExtruderLayers extruder = CreateLayerData(inset0Outline, numLayers);
+				GenerateLayers(extruder, 400, 3, 3);
+				Assert.IsTrue(extruder.OnlyHasBottom(0));
+				Assert.IsTrue(extruder.OnlyHasSolidInfill(1));
+				Assert.IsTrue(extruder.OnlyHasSolidInfill(2));
+				Assert.IsTrue(extruder.OnlyHasInfill(3));
+			}
+		}
 
-        [Test]
-        public void CorrectNumberOfTops()
-        {
-            // 3 top layers and no bottom layers
-            {
-                // A simple cube that should have enough bottom layers
-                string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
-                Polygons inset0Outline = PolygonsHelper.CreateFromString(inset0OutlineString);
-                int numLayers = 10;
-                ExtruderLayers extruder = CreateLayerData(inset0Outline, numLayers);
-                GenerateLayers(extruder, 400, 0, 3);
-                Assert.IsTrue(extruder.OnlyHasTop(9));
-                Assert.IsTrue(extruder.OnlyHasSolidInfill(8));
-                Assert.IsTrue(extruder.OnlyHasSolidInfill(7));
-                Assert.IsTrue(extruder.OnlyHasInfill(6));
-            }
+		[Test]
+		public void CorrectNumberOfTops()
+		{
+			// 3 top layers and no bottom layers
+			{
+				// A simple cube that should have enough bottom layers
+				string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
+				Polygons inset0Outline = CLPolygonsExtensions.CreateFromString(inset0OutlineString);
+				int numLayers = 10;
+				ExtruderLayers extruder = CreateLayerData(inset0Outline, numLayers);
+				GenerateLayers(extruder, 400, 0, 3);
+				Assert.IsTrue(extruder.OnlyHasTop(9));
+				Assert.IsTrue(extruder.OnlyHasSolidInfill(8));
+				Assert.IsTrue(extruder.OnlyHasSolidInfill(7));
+				Assert.IsTrue(extruder.OnlyHasInfill(6));
+			}
 
-            // 3 top layers and 1 bottom layer
-            {
-                string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
-                Polygons inset0Outline = PolygonsHelper.CreateFromString(inset0OutlineString);
-                int numLayers = 10;
-                ExtruderLayers extruder = CreateLayerData(inset0Outline, numLayers);
-                GenerateLayers(extruder, 400, 3, 1);
-                Assert.IsTrue(extruder.OnlyHasBottom(0));
-                Assert.IsTrue(extruder.OnlyHasSolidInfill(1));
-                Assert.IsTrue(extruder.OnlyHasSolidInfill(2));
-                Assert.IsTrue(extruder.OnlyHasInfill(3));
-            }
+			// 3 top layers and 1 bottom layer
+			{
+				string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
+				Polygons inset0Outline = CLPolygonsExtensions.CreateFromString(inset0OutlineString);
+				int numLayers = 10;
+				ExtruderLayers extruder = CreateLayerData(inset0Outline, numLayers);
+				GenerateLayers(extruder, 400, 3, 1);
+				Assert.IsTrue(extruder.OnlyHasBottom(0));
+				Assert.IsTrue(extruder.OnlyHasSolidInfill(1));
+				Assert.IsTrue(extruder.OnlyHasSolidInfill(2));
+				Assert.IsTrue(extruder.OnlyHasInfill(3));
+			}
 
-            // 3 top layers and 3 bottom layers
-            {
-                string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
-                Polygons inset0Outline = PolygonsHelper.CreateFromString(inset0OutlineString);
-                int numLayers = 10;
-                ExtruderLayers extruder = CreateLayerData(inset0Outline, numLayers);
-                GenerateLayers(extruder, 400, 3, 3);
-                Assert.IsTrue(extruder.OnlyHasBottom(0));
-                Assert.IsTrue(extruder.OnlyHasSolidInfill(1));
-                Assert.IsTrue(extruder.OnlyHasSolidInfill(2));
-                Assert.IsTrue(extruder.OnlyHasInfill(3));
-            }
-        }
+			// 3 top layers and 3 bottom layers
+			{
+				string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
+				Polygons inset0Outline = CLPolygonsExtensions.CreateFromString(inset0OutlineString);
+				int numLayers = 10;
+				ExtruderLayers extruder = CreateLayerData(inset0Outline, numLayers);
+				GenerateLayers(extruder, 400, 3, 3);
+				Assert.IsTrue(extruder.OnlyHasBottom(0));
+				Assert.IsTrue(extruder.OnlyHasSolidInfill(1));
+				Assert.IsTrue(extruder.OnlyHasSolidInfill(2));
+				Assert.IsTrue(extruder.OnlyHasInfill(3));
+			}
+		}
 
-        private static void GenerateLayers(ExtruderLayers extruder, int extrusionWidthUm, int bottomLayers, int topLayers)
-        {
-            int numLayers = extruder.Layers.Count;
-            for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
-            {
-                extruder.GenerateTopAndBottoms(layerIndex, extrusionWidthUm, extrusionWidthUm, bottomLayers, topLayers);
-            }
-        }
+		private static ExtruderLayers CreateLayerData(Polygons inset0Outline, int numLayers)
+		{
+			ExtruderLayers layerData = new ExtruderLayers();
+			layerData.Layers = new List<SliceLayer>();
+			for (int i = 0; i < numLayers; i++)
+			{
+				SliceLayer layer = new SliceLayer();
+				layer.Islands = new List<LayerIsland>();
+				LayerIsland part = new LayerIsland();
+				part.InsetToolPaths = new List<Polygons>();
+				part.InsetToolPaths.Add(inset0Outline);
+				part.BoundingBox = new Aabb(inset0Outline);
+				layer.Islands.Add(part);
+				layerData.Layers.Add(layer);
+			}
 
-        private static ExtruderLayers CreateLayerData(Polygons inset0Outline, int numLayers)
-        {
-            ExtruderLayers layerData = new ExtruderLayers();
-            layerData.Layers = new List<SliceLayer>();
-            for (int i = 0; i < numLayers; i++)
-            {
-                SliceLayer layer = new SliceLayer();
-                layer.Islands = new List<LayerIsland>();
-                LayerIsland part = new LayerIsland();
-                part.InsetToolPaths = new List<Polygons>();
-                part.InsetToolPaths.Add(inset0Outline);
-                part.BoundingBox = new Aabb(inset0Outline);
-                layer.Islands.Add(part);
-                layerData.Layers.Add(layer);
-            }
+			return layerData;
+		}
 
-            return layerData;
-        }
-    }
+		private static void GenerateLayers(ExtruderLayers extruder, int extrusionWidthUm, int bottomLayers, int topLayers)
+		{
+			int numLayers = extruder.Layers.Count;
+			for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
+			{
+				extruder.GenerateTopAndBottoms(layerIndex, extrusionWidthUm, extrusionWidthUm, bottomLayers, topLayers);
+			}
+		}
+	}
 }

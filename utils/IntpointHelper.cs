@@ -24,20 +24,13 @@ The integer point classes are used as soon as possible and represent microns in 
 Integer points are used to avoid floating point rounding errors, and because ClipperLib uses them.
 */
 
-using MSClipperLib;
-
 //Include Clipper to get the ClipperLib::IntPoint definition, which we reuse as Point definition.
 using System;
-using System.Collections.Generic;
-
+using MSClipperLib;
 using static System.Math;
 
 namespace MatterHackers.MatterSlice
 {
-	using Polygon = List<IntPoint>;
-
-	using Polygons = List<List<IntPoint>>;
-
 	public class PointMatrix
 	{
 		public double[] matrix = new double[4];
@@ -96,64 +89,6 @@ namespace MatterHackers.MatterSlice
 			return left.X * right.Y - left.Y * right.X;
 		}
 
-
-		public static bool shorterThen(this IntPoint polygon, long length)
-		{
-			if (polygon.X > length || polygon.X < -length)
-			{
-				return false;
-			}
-
-			if (polygon.Y > length || polygon.Y < -length)
-			{
-				return false;
-			}
-
-			return LengthSquared(polygon) <= length * length;
-		}
-
-		public static IntPoint CrossZ(this IntPoint thisPoint)
-		{
-			return new IntPoint(-thisPoint.Y, thisPoint.X);
-		}
-
-		public static long Dot(this IntPoint thisPoint, IntPoint p1)
-		{
-			return thisPoint.X * p1.X + thisPoint.Y * p1.Y + thisPoint.Z * p1.Z;
-		}
-
-		public static int GetLineSide(this IntPoint pointToTest, IntPoint start, IntPoint end)
-		{
-			//It is 0 on the line, and +1 on one side, -1 on the other side.
-			long distanceToLine = (end.Y - start.X) * (pointToTest.Y - start.Y) - (end.Y - start.Y) * (pointToTest.X - start.Y);
-			if (distanceToLine > 0)
-			{
-				return 1;
-			}
-			else if (distanceToLine < 0)
-			{
-				return -1;
-			}
-
-			return 0;
-		}
-
-		public static IntPoint GetPerpendicularRight(this IntPoint thisPoint)
-		{
-			return new IntPoint(thisPoint.Y, -thisPoint.X)
-			{
-				Width = thisPoint.Width
-			};
-		}
-
-		public static IntPoint GetPerpendicularLeft(this IntPoint thisPoint)
-		{
-			return new IntPoint(-thisPoint.Y, thisPoint.X)
-			{
-				Width = thisPoint.Width
-			};
-		}
-
 		public static IntPoint GetRotated(this IntPoint thisPoint, double radians)
 		{
 			double CosVal, SinVal;
@@ -190,22 +125,12 @@ namespace MatterHackers.MatterSlice
 			return thisPoint.LengthSquared() <= len * len;
 		}
 
-		public static long Length(this IntPoint thisPoint)
-		{
-			return (long)Sqrt(thisPoint.LengthSquared());
-		}
-
 		public static double LengthMm(this IntPoint thisPoint)
 		{
 			double fx = (double)(thisPoint.X) / 1000.0;
 			double fy = (double)(thisPoint.Y) / 1000.0;
 			double fz = (double)(thisPoint.Z) / 1000.0;
 			return Sqrt(fx * fx + fy * fy + fz * fz);
-		}
-
-		public static long LengthSquared(this IntPoint thisPoint)
-		{
-			return thisPoint.X * thisPoint.X + thisPoint.Y * thisPoint.Y + thisPoint.Z * thisPoint.Z;
 		}
 
 		public static bool LongerThen(this IntPoint p0, long len)
@@ -241,6 +166,21 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return thisPoint * len / _len;
+		}
+
+		public static bool shorterThen(this IntPoint polygon, long length)
+		{
+			if (polygon.X > length || polygon.X < -length)
+			{
+				return false;
+			}
+
+			if (polygon.Y > length || polygon.Y < -length)
+			{
+				return false;
+			}
+
+			return MSClipperLib.IntPointExtensions.LengthSquared(polygon) <= length * length;
 		}
 
 		public static bool ShorterThen(this IntPoint thisPoint, long len)

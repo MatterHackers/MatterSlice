@@ -20,195 +20,60 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 using System;
-using MSClipperLib;
 using System.Collections.Generic;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+	using Pathfinding;
 	using QuadTree;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
-	public class Segment
+	public class GCodePath
 	{
-		public IntPoint Start;
-		public IntPoint End;
+		public GCodePathConfig config;
 
-		public long Left
+		public Polygon points = new Polygon();
+
+		/// <summary>
+		/// Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
+		/// </summary>
+		internal bool done;
+
+		internal int extruderIndex;
+
+		public GCodePath()
 		{
-			get
+		}
+
+		public GCodePath(GCodePath copyPath)
+		{
+			this.config = copyPath.config;
+			this.done = copyPath.done;
+			this.extruderIndex = copyPath.extruderIndex;
+			this.Retract = copyPath.Retract;
+			this.points = new Polygon(copyPath.points);
+		}
+
+		internal bool Retract { get; set; }
+
+		public long Length(bool pathIsClosed)
+		{
+			long totalLength = 0;
+			for (int pointIndex = 0; pointIndex < points.Count - 1; pointIndex++)
 			{
-				return Math.Min(Start.X, End.X);
-			}
-		}
-
-		public long Right
-		{
-			get
-			{
-				return Math.Max(Start.X, End.X);
-			}
-		}
-
-		public long Bottom
-		{
-			get
-			{
-				return Math.Min(Start.Y, End.Y);
-			}
-		}
-
-		public long Top
-		{
-			get
-			{
-				return Math.Max(Start.Y, End.Y);
-			}
-		}
-
-		public Segment()
-		{
-
-		}
-
-		public Segment(IntPoint start, IntPoint end)
-		{
-			this.Start = start;
-			this.End = end;
-		}
-
-		public static List<Segment> ConvertToSegments(Polygons polygons, bool pathsAreClosed = true)
-		{
-			List<Segment> polySegments = new List<Segment>();
-			foreach (var polygon in polygons)
-			{
-				polySegments.AddRange(ConvertToSegments(polygon, pathsAreClosed));
+				// Calculate distance between 2 points
+				totalLength += (points[pointIndex] - points[pointIndex + 1]).Length();
 			}
 
-			return polySegments;
-		}
-
-		public static List<Segment> ConvertToSegments(Polygon polygon, bool pathIsClosed = true)
-		{
-			List<Segment> polySegments = new List<Segment>(polygon.Count);
-			int endIndex = pathIsClosed ? polygon.Count : polygon.Count - 1;
-			for (int i = 0; i < endIndex; i++)
+			if (pathIsClosed)
 			{
-				IntPoint point = polygon[i];
-				IntPoint nextPoint = polygon[(i + 1) % polygon.Count];
-
-				polySegments.Add(new Segment()
-				{
-					Start = point,
-					End = nextPoint,
-				});
+				// add in the move back to the start
+				totalLength += (points[points.Count - 1] - points[0]).Length();
 			}
 
-			return polySegments;
-		}
-
-		public long LengthSquared()
-		{
-			return (this.End - this.Start).LengthSquared();
-		}
-
-		public static bool operator ==(Segment p0, Segment p1)
-		{
-			return p0.Start == p1.Start && p0.End == p1.End;
-		}
-
-		public static bool operator !=(Segment p0, Segment p1)
-		{
-			return p0.Start != p1.Start || p0.End != p1.End;
-		}
-
-		public static List<Segment> ConvertPathToSegments(IList<IntPoint> path, long zHeight, bool pathIsClosed = true)
-		{
-			List<Segment> polySegments = new List<Segment>(path.Count);
-			int endIndex = pathIsClosed ? path.Count : path.Count - 1;
-			for (int i = 0; i < endIndex; i++)
-			{
-				IntPoint point = new IntPoint(path[i])
-				{
-					Z = zHeight
-				};
-				int nextIndex = (i + 1) % path.Count;
-				IntPoint nextPoint = new IntPoint(path[nextIndex])
-				{
-					Z = zHeight
-				};
-
-				polySegments.Add(new Segment()
-				{
-					Start = point,
-					End = nextPoint,
-				});
-			}
-
-			return polySegments;
-		}
-
-		public List<Segment> GetSplitSegmentForVertecies(ClosePointsIterator touchingEnumerator)
-		{
-			IntPoint start2D = new IntPoint(Start)
-			{
-				Z = 0
-			};
-			IntPoint end2D = new IntPoint(End)
-			{
-				Z = 0
-			};
-
-			SortedList<long, IntPoint> requiredSplits2D = new SortedList<long, IntPoint>();
-
-			// get some data we will need for the operations
-			IntPoint direction = (end2D - start2D);
-			long length = direction.Length();
-			long lengthSquared = length * length;
-			IntPoint rightDirection = direction.GetPerpendicularRight();
-			long maxDistanceNormalized = touchingEnumerator.OverlapAmount * length;
-
-			// for every vertex
-			foreach (int touchingPoint in touchingEnumerator.GetTouching(new Quad(this.Left, this.Bottom, this.Right, this.Top)))
-			//for (int splintIndex = 0; splintIndex < splitPoints.Count; splintIndex++)
-			{
-				IntPoint vertex = new IntPoint(touchingEnumerator.SourcePoints[touchingPoint]) { Z = 0 } - start2D;
-				// if the vertex is close enough to the segment
-				long dotProduct = rightDirection.Dot(vertex);
-				if (Math.Abs(dotProduct) < maxDistanceNormalized)
-				{
-					long dotProduct2 = direction.Dot(vertex);
-					if (dotProduct2 > 0 && dotProduct2 < lengthSquared)
-					{
-						long distance = dotProduct2 / length;
-						// don't add if there is already a point at this position
-						if (!requiredSplits2D.ContainsKey(distance))
-						{
-							// we are close enough to the line split it
-							requiredSplits2D.Add(distance, start2D + direction.Normal(distance));
-						}
-					}
-				}
-			}
-
-			if (requiredSplits2D.Count > 0)
-			{
-				// add in the start and end
-				if (!requiredSplits2D.ContainsKey(0))
-				{
-					requiredSplits2D.Add(0, start2D);
-				}
-				if (!requiredSplits2D.ContainsKey(length))
-				{
-					requiredSplits2D.Add(length, end2D);
-				}
-				// convert to a segment list
-				List<Segment> newSegments = Segment.ConvertPathToSegments(requiredSplits2D.Values, Start.Z, false);
-				// return them;
-				return newSegments;
-			}
-
-			return null;
+			return totalLength;
 		}
 	}
 
@@ -229,27 +94,14 @@ namespace MatterHackers.MatterSlice
 
 		private GCodeExport gcodeExport = new GCodeExport();
 
-		public long CurrentZ { get { return gcodeExport.CurrentZ; } }
-
-		public IntPoint LastPosition
-		{
-			get; private set;
-		}
-
-		private AvoidCrossingPerimeters outerPerimetersToAvoidCrossing;
-
-		private List<GCodePath> paths = new List<GCodePath>();
-
-		private int retractionMinimumDistance_um;
-
-		private double totalPrintTime;
-
-		private GCodePathConfig travelConfig;
-
-		private int travelSpeedFactor;
-
-		double perimeterStartEndOverlapRatio;
 		private bool mergeOverlappingLines;
+		private PathFinder pathFinder;
+		private List<GCodePath> paths = new List<GCodePath>();
+		private double perimeterStartEndOverlapRatio;
+		private int retractionMinimumDistance_um;
+		private double totalPrintTime;
+		private GCodePathConfig travelConfig;
+		private int travelSpeedFactor;
 
 		public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um, double perimeterStartEndOverlap = 0, bool mergeOverlappingLines = false)
 		{
@@ -259,7 +111,7 @@ namespace MatterHackers.MatterSlice
 			travelConfig.SetData(travelSpeed, 0, "travel");
 
 			LastPosition = gcode.GetPositionXY();
-			outerPerimetersToAvoidCrossing = null;
+			pathFinder = null;
 			extrudeSpeedFactor = 100;
 			travelSpeedFactor = 100;
 			extraTime = 0.0;
@@ -270,6 +122,59 @@ namespace MatterHackers.MatterSlice
 			this.retractionMinimumDistance_um = retractionMinimumDistance_um;
 
 			this.perimeterStartEndOverlapRatio = Math.Max(0, Math.Min(1, perimeterStartEndOverlap));
+		}
+
+		public long CurrentZ { get { return gcodeExport.CurrentZ; } }
+
+		public IntPoint LastPosition
+		{
+			get; private set;
+		}
+
+		public static GCodePath TrimPerimeter(GCodePath inPath, double perimeterStartEndOverlapRatio)
+		{
+			GCodePath path = new GCodePath(inPath);
+			long currentDistance = 0;
+			long targetDistance = (long)(path.config.lineWidth_um * (1 - perimeterStartEndOverlapRatio));
+
+			if (path.points.Count > 1)
+			{
+				for (int pointIndex = path.points.Count - 1; pointIndex > 0; pointIndex--)
+				{
+					// Calculate distance between 2 points
+					currentDistance = (path.points[pointIndex] - path.points[pointIndex - 1]).Length();
+
+					// If distance exceeds clip distance:
+					//  - Sets the new last path point
+					if (currentDistance > targetDistance)
+					{
+						long newDistance = currentDistance - targetDistance;
+						if (targetDistance > 50) // Don't clip segments less than 50 um. We get too much truncation error.
+						{
+							IntPoint dir = (path.points[pointIndex] - path.points[pointIndex - 1]) * newDistance / currentDistance;
+
+							IntPoint clippedEndpoint = path.points[pointIndex - 1] + dir;
+
+							path.points[pointIndex] = clippedEndpoint;
+						}
+						break;
+					}
+					else if (currentDistance == targetDistance)
+					{
+						// Pops off last point because it is at the limit distance
+						path.points.RemoveAt(path.points.Count - 1);
+						break;
+					}
+					else
+					{
+						// Pops last point and reduces distance remaining to target
+						targetDistance -= currentDistance;
+						path.points.RemoveAt(path.points.Count - 1);
+					}
+				}
+			}
+
+			return path;
 		}
 
 		public void ForceMinimumLayerTime(double minTime, int minimumPrintingSpeed)
@@ -360,254 +265,180 @@ namespace MatterHackers.MatterSlice
 			return this.extrudeSpeedFactor;
 		}
 
-		[Flags]
-		enum Altered { remove = 1, merged = 2 };
-
-		public static bool FindThinLines(Polygon polygon, long overlapMergeAmount_um, long minimumRequiredWidth_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
-		{
-			return FindThinLines(new Polygons { polygon }, overlapMergeAmount_um, minimumRequiredWidth_um, out onlyMergeLines, pathIsClosed);
-		}
-
-		public static bool FindThinLines(Polygons polygons, long overlapMergeAmount_um, long minimumRequiredWidth_um, out Polygons onlyMergeLines, bool pathIsClosed = true)
-		{
-			bool pathHasMergeLines = false;
-
-			polygons = MakeCloseSegmentsMergable(polygons, overlapMergeAmount_um, pathIsClosed);
-
-			// make a copy that has every point duplicated (so that we have them as segments).
-			List<Segment> polySegments = Segment.ConvertToSegments(polygons);
-
-			Altered[] markedAltered = new Altered[polySegments.Count];
-
-			var touchingEnumerator = new CloseSegmentsIterator(polySegments, overlapMergeAmount_um);
-			int segmentCount = polySegments.Count;
-			// now walk every segment and check if there is another segment that is similar enough to merge them together
-			for (int firstSegmentIndex = 0; firstSegmentIndex < segmentCount; firstSegmentIndex++)
-			{
-				foreach (int checkSegmentIndex in touchingEnumerator.GetTouching(firstSegmentIndex, segmentCount))
-				{
-					// The first point of start and the last point of check (the path will be coming back on itself).
-					long startDelta = (polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length();
-					// if the segments are similar enough
-					if (startDelta < overlapMergeAmount_um)
-					{
-						// The last point of start and the first point of check (the path will be coming back on itself).
-						long endDelta = (polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length();
-						if (endDelta < overlapMergeAmount_um)
-						{
-							// move the first segments points to the average of the merge positions
-							long startEndWidth = Math.Abs((polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length());
-							long endStartWidth = Math.Abs((polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length());
-							long width = Math.Min(startEndWidth, endStartWidth);
-
-							if (width > minimumRequiredWidth_um)
-							{
-								// We need to check if the new start position is on the inside of the curve. We can only add thin lines on the insides of our exisiting curves.
-								IntPoint newStartPosition = (polySegments[firstSegmentIndex].Start + polySegments[checkSegmentIndex].End) / 2; // the start;
-								IntPoint newStartDirection = newStartPosition - polySegments[firstSegmentIndex].Start;
-								IntPoint normalLeft = (polySegments[firstSegmentIndex].End - polySegments[firstSegmentIndex].Start).GetPerpendicularLeft();
-								long dotProduct = normalLeft.Dot(newStartDirection);
-								if (dotProduct > 0)
-								{
-									pathHasMergeLines = true;
-
-									polySegments[firstSegmentIndex].Start = newStartPosition;
-									polySegments[firstSegmentIndex].Start.Width = width;
-									polySegments[firstSegmentIndex].End = (polySegments[firstSegmentIndex].End + polySegments[checkSegmentIndex].Start) / 2; // the end
-									polySegments[firstSegmentIndex].End.Width = width;
-
-									markedAltered[firstSegmentIndex] = Altered.merged;
-									// mark this segment for removal
-									markedAltered[checkSegmentIndex] = Altered.remove;
-									// We only expect to find one match for each segment, so move on to the next segment
-									break;
-								}
-							}
-						}
-					}
-				}
-			}
-
-			// remove the marked segments
-			for (int segmentIndex = segmentCount - 1; segmentIndex >= 0; segmentIndex--)
-			{
-				// remove every segment that has not been merged
-				if (markedAltered[segmentIndex] != Altered.merged)
-				{
-					polySegments.RemoveAt(segmentIndex);
-				}
-			}
-
-			// go through the polySegments and create a new polygon for every connected set of segments
-			onlyMergeLines = new Polygons();
-			Polygon currentPolygon = new Polygon();
-			onlyMergeLines.Add(currentPolygon);
-			// put in the first point
-			for (int segmentIndex = 0; segmentIndex < polySegments.Count; segmentIndex++)
-			{
-				// add the start point
-				currentPolygon.Add(polySegments[segmentIndex].Start);
-
-				// if the next segment is not connected to this one
-				if (segmentIndex < polySegments.Count - 1
-					&& polySegments[segmentIndex].End != polySegments[segmentIndex + 1].Start)
-				{
-					// add the end point
-					currentPolygon.Add(polySegments[segmentIndex].End);
-
-					// create a new polygon
-					currentPolygon = new Polygon();
-					onlyMergeLines.Add(currentPolygon);
-				}
-			}
-
-			// add the end point
-			if (polySegments.Count > 0)
-			{
-				currentPolygon.Add(polySegments[polySegments.Count - 1].End);
-			}
-
-			long cleanDistance_um = overlapMergeAmount_um / 40;
-			//Clipper.CleanPolygons(onlyMergeLines, cleanDistance_um);
-
-			return pathHasMergeLines;
-		}
-
-
-		public static bool MergePerimeterOverlaps(Polygon perimeter, long overlapMergeAmount_um, out Polygons separatedPolygons, bool pathIsClosed = true)
-		{
-			separatedPolygons = new Polygons();
-
-			long cleanDistance_um = overlapMergeAmount_um / 40;
-
-			Polygons cleanedPolygs = Clipper.CleanPolygons(new Polygons() { perimeter }, cleanDistance_um);
-			perimeter = cleanedPolygs[0];
-
-			if (perimeter.Count == 0)
-			{
-				return false;
-			}
-			bool pathWasOptomized = false;
-
-			for (int i = 0; i < perimeter.Count; i++)
-			{
-				perimeter[i] = new IntPoint(perimeter[i])
-				{
-					Width = overlapMergeAmount_um
-				};
-			}
-
-			perimeter = MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um, pathIsClosed);
-
-			// make a copy that has every point duplicated (so that we have them as segments).
-			List<Segment> polySegments = Segment.ConvertToSegments(perimeter, pathIsClosed);
-
-			Altered[] markedAltered = new Altered[polySegments.Count];
-
-			var touchingEnumerator = new CloseSegmentsIterator(polySegments, overlapMergeAmount_um);
-			int segmentCount = polySegments.Count;
-			// now walk every segment and check if there is another segment that is similar enough to merge them together
-			for (int firstSegmentIndex = 0; firstSegmentIndex < segmentCount; firstSegmentIndex++)
-			{
-				foreach (int checkSegmentIndex in touchingEnumerator.GetTouching(firstSegmentIndex, segmentCount))
-				{
-					// The first point of start and the last point of check (the path will be coming back on itself).
-					long startDelta = (polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length();
-					// if the segments are similar enough
-					if (startDelta < overlapMergeAmount_um)
-					{
-						// The last point of start and the first point of check (the path will be coming back on itself).
-						long endDelta = (polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length();
-						if (endDelta < overlapMergeAmount_um)
-						{
-							// only considre the merge if the directions of the lines are towards eachother
-							var firstSegmentDirection = polySegments[firstSegmentIndex].End - polySegments[firstSegmentIndex].Start;
-							var checkSegmentDirection = polySegments[checkSegmentIndex].End - polySegments[checkSegmentIndex].Start;
-							if (firstSegmentDirection.Dot(checkSegmentDirection) > 0)
-							{
-								continue;
-							}
-							pathWasOptomized = true;
-							// move the first segments points to the average of the merge positions
-							long startEndWidth = Math.Abs((polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length());
-							long endStartWidth = Math.Abs((polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length());
-							long width = Math.Min(startEndWidth, endStartWidth) + overlapMergeAmount_um;
-							polySegments[firstSegmentIndex].Start = (polySegments[firstSegmentIndex].Start + polySegments[checkSegmentIndex].End) / 2; // the start
-							polySegments[firstSegmentIndex].Start.Width = width;
-							polySegments[firstSegmentIndex].End = (polySegments[firstSegmentIndex].End + polySegments[checkSegmentIndex].Start) / 2; // the end
-							polySegments[firstSegmentIndex].End.Width = width;
-
-							markedAltered[firstSegmentIndex] = Altered.merged;
-							// mark this segment for removal
-							markedAltered[checkSegmentIndex] = Altered.remove;
-							// We only expect to find one match for each segment, so move on to the next segment
-							break;
-						}
-					}
-				}
-			}
-
-			// remove the marked segments
-			for (int segmentIndex = segmentCount - 1; segmentIndex >= 0; segmentIndex--)
-			{
-				if (markedAltered[segmentIndex] == Altered.remove)
-				{
-					polySegments.RemoveAt(segmentIndex);
-				}
-			}
-
-			// go through the polySegments and create a new polygon for every connected set of segments
-			Polygon currentPolygon = new Polygon();
-			separatedPolygons.Add(currentPolygon);
-			// put in the first point
-			for (int segmentIndex = 0; segmentIndex < polySegments.Count; segmentIndex++)
-			{
-				// add the start point
-				currentPolygon.Add(polySegments[segmentIndex].Start);
-
-				// if the next segment is not connected to this one
-				if (segmentIndex < polySegments.Count - 1
-					&& polySegments[segmentIndex].End != polySegments[segmentIndex + 1].Start)
-				{
-					// add the end point
-					currentPolygon.Add(polySegments[segmentIndex].End);
-
-					// create a new polygon
-					currentPolygon = new Polygon();
-					separatedPolygons.Add(currentPolygon);
-				}
-			}
-
-			// add the end point
-			currentPolygon.Add(polySegments[polySegments.Count - 1].End);
-
-			return pathWasOptomized;
-		}
-
 		public int getTravelSpeedFactor()
 		{
 			return this.travelSpeedFactor;
 		}
 
-		public void MoveInsideTheOuterPerimeter(int distance)
+		public void MoveInsideTravelPerimeter()
 		{
-			if (outerPerimetersToAvoidCrossing == null || outerPerimetersToAvoidCrossing.PointIsInsideBoundary(LastPosition))
+			if (pathFinder == null)
 			{
 				return;
 			}
 
 			IntPoint p = LastPosition;
-			if (outerPerimetersToAvoidCrossing.MovePointInsideBoundary(ref p, distance))
+			if (pathFinder.MovePointInsideBoundary(p, out p))
 			{
 				//Move inside again, so we move out of tight 90deg corners
-				outerPerimetersToAvoidCrossing.MovePointInsideBoundary(ref p, distance);
-				if (outerPerimetersToAvoidCrossing.PointIsInsideBoundary(p))
+				if (pathFinder.MovePointInsideBoundary(p, out p))
 				{
 					QueueTravel(p);
 					//Make sure the that any retraction happens after this move, not before it by starting a new move path.
 					ForceNewPathStart();
 				}
 			}
+		}
+
+		public void QueueExtrusionMove(IntPoint destination, GCodePathConfig config)
+		{
+			GetLatestPathWithConfig(config).points.Add(new IntPoint(destination, CurrentZ));
+			LastPosition = destination;
+		}
+
+		public void QueuePolygon(Polygon polygon, int startIndex, GCodePathConfig config)
+		{
+			IntPoint currentPosition = polygon[startIndex];
+
+			if (!config.spiralize
+				&& (LastPosition.X != currentPosition.X
+				|| LastPosition.Y != currentPosition.Y))
+			{
+				QueueTravel(currentPosition);
+			}
+
+			if (config.closedLoop)
+			{
+				for (int positionIndex = 1; positionIndex < polygon.Count; positionIndex++)
+				{
+					IntPoint destination = polygon[(startIndex + positionIndex) % polygon.Count];
+					QueueExtrusionMove(destination, config);
+					currentPosition = destination;
+				}
+
+				// We need to actually close the polygon so go back to the first point
+				if (polygon.Count > 2)
+				{
+					QueueExtrusionMove(polygon[startIndex], config);
+				}
+			}
+			else // we are not closed
+			{
+				if (startIndex == 0)
+				{
+					for (int positionIndex = 1; positionIndex < polygon.Count; positionIndex++)
+					{
+						IntPoint destination = polygon[positionIndex];
+						QueueExtrusionMove(destination, config);
+						currentPosition = destination;
+					}
+				}
+				else
+				{
+					for (int positionIndex = polygon.Count - 1; positionIndex >= 1; positionIndex--)
+					{
+						IntPoint destination = polygon[(startIndex + positionIndex) % polygon.Count];
+						QueueExtrusionMove(destination, config);
+						currentPosition = destination;
+					}
+				}
+			}
+		}
+
+		public void QueuePolygons(Polygons polygons, GCodePathConfig config)
+		{
+			foreach (var polygon in polygons)
+			{
+				QueuePolygon(polygon, 0, config);
+			}
+		}
+
+		public void QueuePolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
+		{
+			if (polygons.Count == 0)
+			{
+				return;
+			}
+
+			PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(LastPosition);
+			orderOptimizer.AddPolygons(polygons);
+
+			orderOptimizer.Optimize(config);
+
+			for (int i = 0; i < orderOptimizer.bestIslandOrderIndex.Count; i++)
+			{
+				int polygonIndex = orderOptimizer.bestIslandOrderIndex[i];
+				QueuePolygon(polygons[polygonIndex], orderOptimizer.startIndexInPolygon[polygonIndex], config);
+			}
+		}
+
+		public void QueueTravel(IntPoint positionToMoveTo)
+		{
+			GCodePath path = GetLatestPathWithConfig(travelConfig);
+
+			if (forceRetraction)
+			{
+				path.Retract = true;
+				forceRetraction = false;
+			}
+			else if (pathFinder != null)
+			{
+				Polygon pointList = new Polygon();
+				if (pathFinder.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pointList))
+				{
+					long lineLength_um = 0;
+					if (pointList.Count > 0)
+					{
+						lineLength_um += (LastPosition - pointList[0]).Length();
+					}
+
+					// we can stay inside so move within the boundary
+					for (int pointIndex = 0; pointIndex < pointList.Count; pointIndex++)
+					{
+						path.points.Add(new IntPoint(pointList[pointIndex], CurrentZ)
+						{
+							Width = 0
+						});
+						if (pointIndex > 0)
+						{
+							lineLength_um += (pointList[pointIndex] - pointList[pointIndex - 1]).Length();
+						}
+					}
+
+					// and add in the last bit
+					if (pointList.Count > 1)
+					{
+						lineLength_um += (LastPosition - pointList[pointList.Count - 1]).Length();
+					}
+
+					// If the internal move is very long (> retractionMinimumDistance_um), do a retraction
+					if (lineLength_um > retractionMinimumDistance_um)
+					{
+						path.Retract = true;
+					}
+				}
+				else
+				{
+					if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um))
+					{
+						// We are moving relatively far and are going to cross a boundary so do a retraction.
+						path.Retract = true;
+					}
+				}
+			}
+			else
+			{
+				if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um))
+				{
+					path.Retract = true;
+				}
+			}
+
+			path.points.Add(new IntPoint(positionToMoveTo, CurrentZ)
+			{
+				Width = 0,
+			});
+			LastPosition = positionToMoveTo;
 		}
 
 		public void SetAlwaysRetract(bool alwaysRetract)
@@ -632,15 +463,15 @@ namespace MatterHackers.MatterSlice
 			this.extrudeSpeedFactor = speedFactor;
 		}
 
-		public void SetOuterPerimetersToAvoidCrossing(Polygons polygons)
+		public void SetOuterPerimetersToAvoidCrossing(PathFinder pathFinder)
 		{
-			if (polygons != null)
+			if (pathFinder != null)
 			{
-				outerPerimetersToAvoidCrossing = new AvoidCrossingPerimeters(polygons);
+				this.pathFinder = pathFinder;
 			}
 			else
 			{
-				outerPerimetersToAvoidCrossing = null;
+				this.pathFinder = null;
 			}
 		}
 
@@ -648,12 +479,6 @@ namespace MatterHackers.MatterSlice
 		{
 			if (speedFactor < 1) speedFactor = 1;
 			this.travelSpeedFactor = speedFactor;
-		}
-
-		public void QueueExtrusionMove(IntPoint destination, GCodePathConfig config)
-		{
-			GetLatestPathWithConfig(config).points.Add(new IntPoint(destination, CurrentZ));
-			LastPosition = destination;
 		}
 
 		public void WriteQueuedGCode(int layerThickness, int fanSpeedPercent = -1, int bridgeFanSpeedPercent = -1)
@@ -748,7 +573,6 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-
 				bool spiralize = path.config.spiralize;
 				if (spiralize)
 				{
@@ -794,7 +618,7 @@ namespace MatterHackers.MatterSlice
 					bool pathHadOverlaps = false;
 					bool pathIsClosed = true;
 					if (mergeOverlappingLines
-						&& ( path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER"))
+						&& (path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER"))
 					{
 						//string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(path);
 						if (perimeterStartEndOverlapRatio < 1)
@@ -811,7 +635,7 @@ namespace MatterHackers.MatterSlice
 							// have to add in the position we are currently at
 							path.points.Insert(0, gcodeExport.GetPosition());
 							//string openPerimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(path);
-							pathHadOverlaps = MergePerimeterOverlaps(path.points, path.config.lineWidth_um, out pathsWithOverlapsRemoved, pathIsClosed)
+							pathHadOverlaps = path.points.MergePerimeterOverlaps(path.config.lineWidth_um, out pathsWithOverlapsRemoved, pathIsClosed)
 								&& pathsWithOverlapsRemoved.Count > 0;
 							//string trimmedString = Newtonsoft.Json.JsonConvert.SerializeObject(pathsWithOverlapsRemoved);
 						}
@@ -843,7 +667,7 @@ namespace MatterHackers.MatterSlice
 							// write all the data for the polygon
 							for (int pointIndex = 1; pointIndex < polygon.Count; pointIndex++)
 							{
-								gcodeExport.WriteMove(polygon[pointIndex], speed, polygon[pointIndex-1].Width);
+								gcodeExport.WriteMove(polygon[pointIndex], speed, polygon[pointIndex - 1].Width);
 							}
 						}
 					}
@@ -865,186 +689,6 @@ namespace MatterHackers.MatterSlice
 			}
 
 			gcodeExport.UpdateTotalPrintTime();
-		}
-
-		public void QueuePolygons(Polygons polygons, GCodePathConfig config)
-		{
-			foreach (var polygon in polygons)
-			{
-				QueuePolygon(polygon, 0, config);
-			}
-		}
-
-		public void QueuePolygon(Polygon polygon, int startIndex, GCodePathConfig config)
-		{
-			IntPoint currentPosition = polygon[startIndex];
-
-			if (!config.spiralize
-				&& (LastPosition.X != currentPosition.X
-				|| LastPosition.Y != currentPosition.Y))
-			{
-				QueueTravel(currentPosition);
-			}
-
-			if (config.closedLoop)
-			{
-				for (int positionIndex = 1; positionIndex < polygon.Count; positionIndex++)
-				{
-					IntPoint destination = polygon[(startIndex + positionIndex) % polygon.Count];
-					QueueExtrusionMove(destination, config);
-					currentPosition = destination;
-				}
-
-				// We need to actually close the polygon so go back to the first point
-				if (polygon.Count > 2)
-				{
-					QueueExtrusionMove(polygon[startIndex], config);
-				}
-			}
-			else // we are not closed
-			{
-				if (startIndex == 0)
-				{
-					for (int positionIndex = 1; positionIndex < polygon.Count; positionIndex++)
-					{
-						IntPoint destination = polygon[positionIndex];
-						QueueExtrusionMove(destination, config);
-						currentPosition = destination;
-					}
-				}
-				else
-				{
-					for (int positionIndex = polygon.Count - 1; positionIndex >= 1; positionIndex--)
-					{
-						IntPoint destination = polygon[(startIndex + positionIndex) % polygon.Count];
-						QueueExtrusionMove(destination, config);
-						currentPosition = destination;
-					}
-				}
-			}
-		}
-
-		public void QueuePolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
-		{
-			if(polygons.Count == 0)
-			{
-				return;
-			}
-
-			PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(LastPosition);
-			orderOptimizer.AddPolygons(polygons);
-
-			orderOptimizer.Optimize(config);
-
-			for (int i = 0; i < orderOptimizer.bestIslandOrderIndex.Count; i++)
-			{
-				int polygonIndex = orderOptimizer.bestIslandOrderIndex[i];
-				QueuePolygon(polygons[polygonIndex], orderOptimizer.startIndexInPolygon[polygonIndex], config);
-			}
-		}
-
-		public void QueueTravel(IntPoint positionToMoveTo)
-		{
-			GCodePath path = GetLatestPathWithConfig(travelConfig);
-
-			if (forceRetraction)
-			{
-				path.Retract = true;
-				forceRetraction = false;
-			}
-			else if (outerPerimetersToAvoidCrossing != null)
-			{
-				Polygon pointList = new Polygon();
-				if (outerPerimetersToAvoidCrossing.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pointList))
-				{
-					long lineLength_um = 0;
-					// we can stay inside so move within the boundary
-					for (int pointIndex = 0; pointIndex < pointList.Count; pointIndex++)
-					{
-						path.points.Add(new IntPoint(pointList[pointIndex], CurrentZ)
-						{
-							Width = 0
-						});
-						if (pointIndex > 0)
-						{
-							lineLength_um += (pointList[pointIndex] - pointList[pointIndex - 1]).Length();
-						}
-					}
-
-					// If the internal move is very long (20 mm), do a retraction anyway
-					if (lineLength_um > retractionMinimumDistance_um)
-					{
-						path.Retract = true;
-					}
-				}
-				else
-				{
-					if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um))
-					{
-						// We are moving relatively far and are going to cross a boundary so do a retraction.
-						path.Retract = true;
-					}
-				}
-			}
-			else if (alwaysRetract)
-			{
-				if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um))
-				{
-					path.Retract = true;
-				}
-			}
-
-			path.points.Add(new IntPoint(positionToMoveTo, CurrentZ)
-			{
-				Width = 0,
-			});
-			LastPosition = positionToMoveTo;
-		}
-
-		public static GCodePath TrimPerimeter(GCodePath inPath, double perimeterStartEndOverlapRatio)
-		{
-			GCodePath path = new GCodePath(inPath);
-			long currentDistance = 0;
-			long targetDistance = (long)(path.config.lineWidth_um * (1 - perimeterStartEndOverlapRatio));
-
-			if (path.points.Count > 1)
-			{
-				for (int pointIndex = path.points.Count - 1; pointIndex > 0; pointIndex--)
-				{
-					// Calculate distance between 2 points
-					currentDistance = (path.points[pointIndex] - path.points[pointIndex - 1]).Length();
-
-					// If distance exceeds clip distance:
-					//  - Sets the new last path point
-					if (currentDistance > targetDistance)
-					{
-						long newDistance = currentDistance - targetDistance;
-						if (targetDistance > 50) // Don't clip segments less than 50 um. We get too much truncation error.
-						{
-							IntPoint dir = (path.points[pointIndex] - path.points[pointIndex - 1]) * newDistance / currentDistance;
-
-							IntPoint clippedEndpoint = path.points[pointIndex - 1] + dir;
-
-							path.points[pointIndex] = clippedEndpoint;
-						}
-						break;
-					}
-					else if (currentDistance == targetDistance)
-					{
-						// Pops off last point because it is at the limit distance
-						path.points.RemoveAt(path.points.Count - 1);
-						break;
-					}
-					else
-					{
-						// Pops last point and reduces distance remaining to target
-						targetDistance -= currentDistance;
-						path.points.RemoveAt(path.points.Count - 1);
-					}
-				}
-			}
-
-			return path;
 		}
 
 		private void ForceNewPathStart()
@@ -1071,106 +715,6 @@ namespace MatterHackers.MatterSlice
 			ret.extruderIndex = currentExtruderIndex;
 			ret.done = false;
 			return ret;
-		}
-
-		public static Polygons MakeCloseSegmentsMergable(Polygons polygonsToSplit, long distanceNeedingAdd, bool pathsAreClosed = true)
-		{
-			Polygons splitPolygons = new Polygons();
-			for(int i=0; i < polygonsToSplit.Count; i++)
-			{
-				Polygon accumulatedSplits = polygonsToSplit[i];
-				for(int j=0; j<polygonsToSplit.Count; j++)
-				{
-					accumulatedSplits = MakeCloseSegmentsMergable(accumulatedSplits, polygonsToSplit[j], distanceNeedingAdd, pathsAreClosed);
-				}
-				splitPolygons.Add(accumulatedSplits);
-			}
-
-			return splitPolygons;
-		}
-
-		public static Polygon MakeCloseSegmentsMergable(Polygon polygonToSplit, long distanceNeedingAdd, bool pathIsClosed = true)
-		{
-			return MakeCloseSegmentsMergable(polygonToSplit, polygonToSplit, distanceNeedingAdd, pathIsClosed);
-		}
-
-		public static Polygon MakeCloseSegmentsMergable(Polygon polygonToSplit, Polygon pointsToSplitOn, long distanceNeedingAdd, bool pathIsClosed = true)
-		{
-			List<Segment> segments = Segment.ConvertToSegments(polygonToSplit, pathIsClosed);
-
-			var touchingEnumerator = new ClosePointsIterator(pointsToSplitOn, distanceNeedingAdd);
-
-			// for every segment
-			for (int segmentIndex = segments.Count - 1; segmentIndex >= 0; segmentIndex--)
-			{
-				List<Segment> newSegments = segments[segmentIndex].GetSplitSegmentForVertecies(touchingEnumerator);
-				if (newSegments?.Count > 0)
-				{
-					// remove the old segment
-					segments.RemoveAt(segmentIndex);
-					// add the new ones
-					segments.InsertRange(segmentIndex, newSegments);
-				}
-			}
-
-			Polygon segmentedPolygon = new Polygon(segments.Count);
-
-			foreach (var segment in segments)
-			{
-				segmentedPolygon.Add(segment.Start);
-			}
-
-			if (!pathIsClosed)
-			{
-				// add the last point
-				segmentedPolygon.Add(segments[segments.Count - 1].End);
-			}
-
-			return segmentedPolygon;
-		}
-	}
-
-	public class GCodePath
-	{
-		public GCodePathConfig config;
-		/// <summary>
-		/// Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
-		/// </summary>
-		internal bool done;
-		internal int extruderIndex;
-		public Polygon points = new Polygon();
-
-		internal bool Retract { get; set; }
-
-		public GCodePath()
-		{
-		}
-
-		public GCodePath(GCodePath copyPath)
-		{
-			this.config = copyPath.config;
-			this.done = copyPath.done;
-			this.extruderIndex = copyPath.extruderIndex;
-			this.Retract = copyPath.Retract;
-			this.points = new Polygon(copyPath.points);
-		}
-
-		public long Length(bool pathIsClosed)
-		{
-			long totalLength = 0;
-			for (int pointIndex = 0; pointIndex < points.Count - 1; pointIndex++)
-			{
-				// Calculate distance between 2 points
-				totalLength += (points[pointIndex] - points[pointIndex + 1]).Length();
-			}
-
-			if (pathIsClosed)
-			{
-				// add in the move back to the start
-				totalLength += (points[points.Count - 1] - points[0]).Length();
-			}
-
-			return totalLength;
 		}
 	}
 }

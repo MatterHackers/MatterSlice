@@ -27,13 +27,13 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
-using MSClipperLib;
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
+using MSClipperLib;
+using NUnit.Framework;
 
 namespace MatterHackers.MatterSlice.Tests
 {
@@ -44,24 +44,96 @@ namespace MatterHackers.MatterSlice.Tests
 
 	public struct MovementInfo
 	{
-		public Vector3 position;
+		public string line;
 		public double extrusion;
 		public double feedRate;
+		public Vector3 position;
 	}
 
 	public static class TestUtlities
 	{
 		private static string matterSliceBaseDirectory = TestContext.CurrentContext.ResolveProjectPath(4);
+		private static Regex numberRegex = new Regex(@"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?");
 		private static string tempGCodePath = Path.Combine(matterSliceBaseDirectory, "GCode_Test");
 
-		public static string GetStlPath(string file)
+		public static bool CheckForRaft(string[] gcodefile)
 		{
-			return Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "SampleSTLs", file), "stl");
+			bool hasRaft = false;
+
+			foreach (string line in gcodefile)
+			{
+				if (line.Contains("RAFT"))
+				{
+					hasRaft = true;
+				}
+			}
+			return hasRaft;
 		}
 
-		public static string GetTempGCodePath(string file)
+		public static void ClearTempGCode()
 		{
-			return Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "Tests", "TestData", "Temp", file), "gcode");
+			if (Directory.Exists(tempGCodePath))
+			{
+				Directory.Delete(tempGCodePath, true);
+				while (Directory.Exists(tempGCodePath))
+				{
+				}
+			}
+			Directory.CreateDirectory(tempGCodePath);
+			while (!Directory.Exists(tempGCodePath))
+			{
+			}
+		}
+
+		public static int CountLayers(string[] gcodeContents)
+		{
+			int layers = 0;
+			int layerCount = 0;
+			foreach (string line in gcodeContents)
+			{
+				if (line.Contains("Layer count"))
+				{
+					layerCount = int.Parse(line.Split(':')[1]);
+				}
+
+				if (line.Contains("LAYER:"))
+				{
+					layers++;
+				}
+			}
+
+			if (layerCount != layers)
+			{
+				throw new Exception("The reported layers and counted layers should be the same.");
+			}
+
+			return layers;
+		}
+
+		public static int CountRetractions(string[] layer)
+		{
+			int retractions = 0;
+			foreach (string line in layer)
+			{
+				if (line.StartsWith("G1 "))
+				{
+					if (line.Contains("E")
+						&& !line.Contains("X")
+						&& !line.Contains("Y")
+						&& !line.Contains("Z"))
+					{
+						retractions++;
+					}
+				}
+			}
+
+			return retractions;
+		}
+
+		public static string GetControlGCodePath(string file)
+		{
+			string fileAndPath = Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "GCode_Control", file), "gcode");
+			return fileAndPath;
 		}
 
 		public static Polygons GetExtrusionPolygons(string[] gcode, ref MovementInfo movementInfo)
@@ -123,83 +195,6 @@ namespace MatterHackers.MatterSlice.Tests
 			return foundPolygons;
 		}
 
-		public static string GetControlGCodePath(string file)
-		{
-			string fileAndPath = Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "GCode_Control", file), "gcode");
-			return fileAndPath;
-		}
-
-		public static string[] LoadGCodeFile(string gcodeFile)
-		{
-			return File.ReadAllLines(gcodeFile);
-		}
-
-		public static int CountLayers(string[] gcodeContents)
-		{
-			int layers = 0;
-			int layerCount = 0;
-			foreach (string line in gcodeContents)
-			{
-				if (line.Contains("Layer count"))
-				{
-					layerCount = int.Parse(line.Split(':')[1]);
-				}
-
-				if (line.Contains("LAYER:"))
-				{
-					layers++;
-				}
-			}
-
-			if (layerCount != layers)
-			{
-				throw new Exception("The reported layers and counted layers should be the same.");
-			}
-
-			return layers;
-		}
-
-		public static bool CheckForRaft(string[] gcodefile)
-		{
-			bool hasRaft = false;
-
-			foreach (string line in gcodefile)
-			{
-				if (line.Contains("RAFT"))
-				{
-					hasRaft = true;
-				}
-			}
-			return hasRaft;
-		}
-
-		public static void ClearTempGCode()
-		{
-			if (Directory.Exists(tempGCodePath))
-			{
-				Directory.Delete(tempGCodePath, true);
-				while (Directory.Exists(tempGCodePath))
-				{
-				}
-			}
-			Directory.CreateDirectory(tempGCodePath);
-			while (!Directory.Exists(tempGCodePath))
-			{
-			}
-		}
-
-		private static Regex numberRegex = new Regex(@"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?");
-
-		private static double GetNextNumber(String source, ref int startIndex)
-		{
-			Match numberMatch = numberRegex.Match(source, startIndex);
-			String returnString = numberMatch.Value;
-			startIndex = numberMatch.Index + numberMatch.Length;
-			double returnVal;
-			double.TryParse(returnString, NumberStyles.Number, CultureInfo.InvariantCulture, out returnVal);
-			return returnVal;
-		}
-
 		public static bool GetFirstNumberAfter(string stringToCheckAfter, string stringWithNumber, ref double readValue, int startIndex = 0)
 		{
 			int stringPos = stringWithNumber.IndexOf(stringToCheckAfter, startIndex);
@@ -212,36 +207,6 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 
 			return false;
-		}
-
-		public static IEnumerable<MovementInfo> Movements(string[] gcodeContents, Nullable<MovementInfo> startingMovement = null, bool onlyG1s = false)
-		{
-			MovementInfo currentPosition = new MovementInfo();
-			if (startingMovement != null)
-			{
-				currentPosition = startingMovement.Value;
-			}
-			foreach (string inLine in gcodeContents)
-			{
-				string line = inLine;
-				// make sure we don't parse comments
-				if (line.Contains(";"))
-				{
-					line = line.Split(';')[0];
-				}
-
-				if ((!onlyG1s && line.StartsWith("G0 "))
-					|| line.StartsWith("G1 "))
-				{
-					GetFirstNumberAfter("X", line, ref currentPosition.position.x);
-					GetFirstNumberAfter("Y", line, ref currentPosition.position.y);
-					GetFirstNumberAfter("Z", line, ref currentPosition.position.z);
-					GetFirstNumberAfter("E", line, ref currentPosition.extrusion);
-					GetFirstNumberAfter("F", line, ref currentPosition.feedRate);
-
-					yield return currentPosition;
-				}
-			}
 		}
 
 		public static string[] GetGCodeForLayer(string[] gcodeContents, int layerIndex)
@@ -264,24 +229,65 @@ namespace MatterHackers.MatterSlice.Tests
 			return layerLines.ToArray();
 		}
 
-		public static int CountRetractions(string[] layer)
+		public static string GetStlPath(string file)
 		{
-			int retractions = 0;
-			foreach (string line in layer)
+			return Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "SampleSTLs", file), "stl");
+		}
+
+		public static string GetTempGCodePath(string file)
+		{
+			return Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "Tests", "TestData", "Temp", file), "gcode");
+		}
+
+		public static string[] LoadGCodeFile(string gcodeFile)
+		{
+			return File.ReadAllLines(gcodeFile);
+		}
+
+		public static IEnumerable<MovementInfo> Movements(string[] gcodeContents, Nullable<MovementInfo> startingMovement = null, bool onlyG1s = false)
+		{
+			MovementInfo currentPosition = new MovementInfo();
+			if (startingMovement != null)
 			{
-				if (line.StartsWith("G1 "))
+				currentPosition = startingMovement.Value;
+			}
+			foreach (string inLine in gcodeContents)
+			{
+				string line = inLine;
+				currentPosition.line = line;
+				// make sure we don't parse comments
+				if (line.Contains(";"))
 				{
-					if (line.Contains("E")
-						&& !line.Contains("X")
-						&& !line.Contains("Y")
-						&& !line.Contains("Z"))
-					{
-						retractions++;
-					}
+					line = line.Split(';')[0];
+				}
+
+				if ((!onlyG1s && line.StartsWith("G0 "))
+					|| line.StartsWith("G1 "))
+				{
+					GetFirstNumberAfter("X", line, ref currentPosition.position.x);
+					GetFirstNumberAfter("Y", line, ref currentPosition.position.y);
+					GetFirstNumberAfter("Z", line, ref currentPosition.position.z);
+					GetFirstNumberAfter("E", line, ref currentPosition.extrusion);
+					GetFirstNumberAfter("F", line, ref currentPosition.feedRate);
+
+					yield return currentPosition;
 				}
 			}
+		}
 
-			return retractions;
+		public static string ResolveProjectPath(this TestContext context, int stepsToProjectRoot, params string[] relativePathSteps)
+		{
+			string assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+			var allPathSteps = new List<string> { assemblyPath };
+			allPathSteps.AddRange(Enumerable.Repeat("..", stepsToProjectRoot));
+
+			if (relativePathSteps.Any())
+			{
+				allPathSteps.AddRange(relativePathSteps);
+			}
+
+			return Path.GetFullPath(Path.Combine(allPathSteps.ToArray()));
 		}
 
 		internal static bool UsesExtruder(string[] gcodeContent, int extruderIndex)
@@ -298,19 +304,14 @@ namespace MatterHackers.MatterSlice.Tests
 			return false;
 		}
 
-		public static string ResolveProjectPath(this TestContext context, int stepsToProjectRoot, params string[] relativePathSteps)
+		private static double GetNextNumber(String source, ref int startIndex)
 		{
-			string assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-			var allPathSteps = new List<string> { assemblyPath };
-			allPathSteps.AddRange(Enumerable.Repeat("..", stepsToProjectRoot));
-
-			if (relativePathSteps.Any())
-			{
-				allPathSteps.AddRange(relativePathSteps);
-			}
-
-			return Path.GetFullPath(Path.Combine(allPathSteps.ToArray()));
+			Match numberMatch = numberRegex.Match(source, startIndex);
+			String returnString = numberMatch.Value;
+			startIndex = numberMatch.Index + numberMatch.Length;
+			double returnVal;
+			double.TryParse(returnString, NumberStyles.Number, CultureInfo.InvariantCulture, out returnVal);
+			return returnVal;
 		}
 	}
 }

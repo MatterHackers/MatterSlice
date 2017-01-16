@@ -18,9 +18,9 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System;
 using System.Collections.Generic;
+using MSClipperLib;
 
 // TODO:
 // split the part into multiple areas for support pillars
@@ -46,47 +46,28 @@ namespace MatterHackers.MatterSlice
 
 	public class NewSupport
 	{
-		static double cleanDistance_um = 10;
+		//List<Polygons> pushedUpTopOutlines = new List<Polygons>();
+		internal List<Polygons> airGappedBottomOutlines = new List<Polygons>();
 
 		internal List<Polygons> allPartOutlines = new List<Polygons>();
-		internal List<Polygons> insetPartOutlines = new List<Polygons>();
 		internal List<Polygons> allPotentialSupportOutlines = new List<Polygons>();
 		internal List<Polygons> allRequiredSupportOutlines = new List<Polygons>();
 		internal List<Polygons> easyGrabDistanceOutlines = new List<Polygons>();
-		//List<Polygons> pushedUpTopOutlines = new List<Polygons>();
-		internal List<Polygons> airGappedBottomOutlines = new List<Polygons>();
-		internal List<Polygons> supportOutlines = new List<Polygons>();
+		internal List<Polygons> insetPartOutlines = new List<Polygons>();
 		internal List<Polygons> interfaceLayers = new List<Polygons>();
-
-		double grabDistanceMm;
-
-		public Polygons GetRequiredSupportAreas(int layerIndex)
-		{
-			layerIndex--;
-			if (layerIndex < interfaceLayers.Count && layerIndex >= 0)
-			{
-				if (interfaceLayers[layerIndex].Count > 0)
-				{
-					return interfaceLayers[layerIndex];
-				}
-				else if(layerIndex < supportOutlines.Count)
-				{
-					return supportOutlines[layerIndex];
-				}
-			}
-
-			return new Polygons();
-		}
+		internal List<Polygons> supportOutlines = new List<Polygons>();
+		private static double cleanDistance_um = 10;
+		private double grabDistanceMm;
 
 		public NewSupport(ConfigSettings config, List<ExtruderLayers> Extruders, double grabDistanceMm)
 		{
 			cleanDistance_um = config.ExtrusionWidth_um / 10;
-            long supportWidth_um = (long)(config.ExtrusionWidth_um * (100-config.SupportPercent) / 100);
-            this.grabDistanceMm = grabDistanceMm;
+			long supportWidth_um = (long)(config.ExtrusionWidth_um * (100 - config.SupportPercent) / 100);
+			this.grabDistanceMm = grabDistanceMm;
 			// create starting support outlines
 			allPartOutlines = CalculateAllPartOutlines(config, Extruders);
 
-			insetPartOutlines = CreateInsetPartOutlines(allPartOutlines, config.ExtrusionWidth_um/2);
+			insetPartOutlines = CreateInsetPartOutlines(allPartOutlines, config.ExtrusionWidth_um / 2);
 
 			allPotentialSupportOutlines = FindAllPotentialSupportOutlines(insetPartOutlines, supportWidth_um);
 
@@ -115,155 +96,145 @@ namespace MatterHackers.MatterSlice
 			supportOutlines = CalculateDifferencePerLayer(supportOutlines, airGappedBottomOutlines);
 		}
 
-		private static List<Polygons> RemoveSupportFromInternalSpaces(List<Polygons> inputPolys, List<Polygons> allPartOutlines)
-		{
-			int numLayers = inputPolys.Count;
-
-			Polygons accumulatedLayers = new Polygons();
-			for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
-			{
-				accumulatedLayers = accumulatedLayers.CreateUnion(allPartOutlines[layerIndex]);
-				accumulatedLayers = Clipper.CleanPolygons(accumulatedLayers, cleanDistance_um);
-
-				inputPolys[layerIndex] = inputPolys[layerIndex].CreateDifference(accumulatedLayers);
-				inputPolys[layerIndex] = Clipper.CleanPolygons(inputPolys[layerIndex], cleanDistance_um);
-			}
-
-			return inputPolys;
-		}
-
-		static List<Polygons> CreateEmptyPolygons(int numLayers)
-		{
-			List<Polygons> polygonsList = new List<Polygons>();
-			for (int i = 0; i < numLayers; i++)
-			{
-				polygonsList.Add(new Polygons());
-			}
-
-			return polygonsList;
-		}
-
-		private static List<Polygons> CalculateAllPartOutlines(ConfigSettings config, List<ExtruderLayers> Extruders)
-		{
-			int numLayers = Extruders[0].Layers.Count;
-
-			List<Polygons> allPartOutlines = CreateEmptyPolygons(numLayers);
-
-			foreach (var extruder in Extruders)
-			{
-				// calculate the combined outlines for everything
-				for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
-				{
-					allPartOutlines[layerIndex] = allPartOutlines[layerIndex].CreateUnion(extruder.Layers[layerIndex].AllOutlines);
-				}
-			}
-
-			return allPartOutlines;
-		}
-
-		private static List<Polygons> CreateInsetPartOutlines(List<Polygons> inputPolys, long insetAmount_um)
-		{
-			int numLayers = inputPolys.Count;
-			List<Polygons> allInsetOutlines = CreateEmptyPolygons(numLayers);
-			// calculate all the non-supported areas
-			for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
-			{
-				Polygons insetPolygons = Clipper.CleanPolygons(inputPolys[layerIndex].Offset(-insetAmount_um), cleanDistance_um);
-				List<Polygons> insetIslands = insetPolygons.ProcessIntoSeparatIslands();
-
-				foreach (Polygons insetOutline in insetIslands)
-				{
-					insetOutline.RemoveSmallAreas(insetAmount_um*2);
-					foreach (var islandPart in insetOutline)
-					{
-						allInsetOutlines[layerIndex].Add(islandPart);
-					}
-				}
-			}
-
-			return allInsetOutlines;
-		}
-
-		private static List<Polygons> FindAllPotentialSupportOutlines(List<Polygons> inputPolys, long supportWidth_um)
-		{
-			int numLayers = inputPolys.Count;
-			List<Polygons> allPotentialSupportOutlines = CreateEmptyPolygons(numLayers);
-			// calculate all the non-supported areas
-			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
-			{
-				Polygons aboveLayerPolys = inputPolys[layerIndex + 1];
-				Polygons curLayerPolys = inputPolys[layerIndex].Offset(supportWidth_um);
-				Polygons areasNeedingSupport = aboveLayerPolys.CreateDifference(curLayerPolys);
-				allPotentialSupportOutlines[layerIndex] = Clipper.CleanPolygons(areasNeedingSupport, cleanDistance_um);
-			}
-
-			return allPotentialSupportOutlines;
-		}
-
-		private static List<Polygons> RemoveSelfSupportedSections(List<Polygons> inputPolys, long supportWidth_um)
-		{
-			int numLayers = inputPolys.Count;
-
-			List<Polygons> allRequiredSupportOutlines = CreateEmptyPolygons(numLayers);
-			// calculate all the non-supported areas
-			for (int layerIndex = numLayers - 1; layerIndex > 0; layerIndex--)
-			{
-				if (inputPolys[layerIndex - 1].Count > 0)
-				{
-					if (inputPolys[layerIndex].Count > 0)
-					{
-						Polygons expandedLayerBellow = inputPolys[layerIndex - 1].Offset(supportWidth_um);
-
-						allRequiredSupportOutlines[layerIndex] = inputPolys[layerIndex].CreateDifference(expandedLayerBellow);
-						allRequiredSupportOutlines[layerIndex] = Clipper.CleanPolygons(allRequiredSupportOutlines[layerIndex], cleanDistance_um);
-					}
-				}
-				else
-				{
-					allRequiredSupportOutlines[layerIndex] = inputPolys[layerIndex].DeepCopy();
-				}
-			}
-
-			return allRequiredSupportOutlines;
-		}
-
-		private static List<Polygons> ExpandToEasyGrabDistance(List<Polygons> inputPolys, long grabDistance_um)
-		{
-			int numLayers = inputPolys.Count;
-
-			List<Polygons> easyGrabDistanceOutlines = CreateEmptyPolygons(numLayers);
-			for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
-			{
-				Polygons curLayerPolys = inputPolys[layerIndex];
-				easyGrabDistanceOutlines[layerIndex] = Clipper.CleanPolygons(curLayerPolys.Offset(grabDistance_um), cleanDistance_um);
-			}
-
-			return easyGrabDistanceOutlines;
-		}
-
 		public Polygons GetBedOutlines()
 		{
 			return supportOutlines[0].CreateUnion(interfaceLayers[0]);
 		}
 
-		private static List<Polygons> PushUpTops(List<Polygons> inputPolys, ConfigSettings config)
+		public Polygons GetRequiredSupportAreas(int layerIndex)
 		{
-			int numLayers = inputPolys.Count;
-
-			return inputPolys;
-			int layersFor2Mm = 2000 / config.LayerThickness_um;
-			List<Polygons> pushedUpPolys = CreateEmptyPolygons(numLayers);
-			for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
+			layerIndex--;
+			if (layerIndex < interfaceLayers.Count && layerIndex >= 0)
 			{
-				for (int layerToAddToIndex = Math.Min(layerIndex + layersFor2Mm, numLayers - 1); layerToAddToIndex >= 0; layerToAddToIndex--)
+				if (interfaceLayers[layerIndex].Count > 0)
 				{
+					return interfaceLayers[layerIndex];
 				}
-
-				Polygons curLayerPolys = inputPolys[layerIndex];
-				pushedUpPolys[layerIndex] = Clipper.CleanPolygons(curLayerPolys.Offset(config.ExtrusionWidth_um + config.SupportXYDistance_um), cleanDistance_um);
+				else if (layerIndex < supportOutlines.Count)
+				{
+					return supportOutlines[layerIndex];
+				}
 			}
 
-			return pushedUpPolys;
+			return new Polygons();
+		}
+
+		public bool HasInterfaceSupport(int layerIndex)
+		{
+			return interfaceLayers[layerIndex].Count > 0;
+		}
+
+		public bool HasNormalSupport(int layerIndex)
+		{
+			return supportOutlines[layerIndex].Count > 0;
+		}
+
+		public void QueueAirGappedBottomLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig)
+		{
+			// normal support
+			Polygons currentAirGappedBottoms = airGappedBottomOutlines[layerIndex];
+			currentAirGappedBottoms = currentAirGappedBottoms.Offset(-config.ExtrusionWidth_um / 2);
+			List<Polygons> supportIslands = currentAirGappedBottoms.ProcessIntoSeparatIslands();
+
+			foreach (Polygons islandOutline in supportIslands)
+			{
+				// force a retract if changing islands
+				if (config.RetractWhenChangingIslands)
+				{
+					gcodeLayer.ForceRetract();
+				}
+
+				Polygons islandInfillLines = new Polygons();
+				// render a grid of support
+				if (config.GenerateSupportPerimeter)
+				{
+					Polygons outlines = Clipper.CleanPolygons(islandOutline, config.ExtrusionWidth_um / 4);
+					gcodeLayer.QueuePolygonsByOptimizer(outlines, supportNormalConfig);
+				}
+				Polygons infillOutline = islandOutline.Offset(-config.ExtrusionWidth_um / 2);
+				switch (config.SupportType)
+				{
+					case ConfigConstants.SUPPORT_TYPE.GRID:
+						Infill.GenerateGridInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
+						break;
+
+					case ConfigConstants.SUPPORT_TYPE.LINES:
+						Infill.GenerateLineInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
+						break;
+				}
+				gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, supportNormalConfig);
+			}
+		}
+
+		public void QueueInterfaceSupportLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportInterfaceConfig)
+		{
+			// interface
+			Polygons currentInterfaceOutlines2 = interfaceLayers[layerIndex].Offset(-config.ExtrusionWidth_um / 2);
+			if (currentInterfaceOutlines2.Count > 0)
+			{
+				List<Polygons> interfaceIslands = currentInterfaceOutlines2.ProcessIntoSeparatIslands();
+
+				foreach (Polygons interfaceOutline in interfaceIslands)
+				{
+					// force a retract if changing islands
+					if (config.RetractWhenChangingIslands)
+					{
+						gcodeLayer.ForceRetract();
+					}
+
+					Polygons supportLines = new Polygons();
+					Infill.GenerateLineInfill(config, interfaceOutline, supportLines, config.InfillStartingAngle + 90, config.ExtrusionWidth_um);
+					gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportInterfaceConfig);
+				}
+			}
+		}
+
+		public void QueueNormalSupportLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig)
+		{
+			// normal support
+			Polygons currentSupportOutlines = supportOutlines[layerIndex];
+			currentSupportOutlines = currentSupportOutlines.Offset(-supportNormalConfig.lineWidth_um / 2);
+			List<Polygons> supportIslands = currentSupportOutlines.ProcessIntoSeparatIslands();
+
+			foreach (Polygons islandOutline in supportIslands)
+			{
+				// force a retract if changing islands
+				if (config.RetractWhenChangingIslands)
+				{
+					gcodeLayer.ForceRetract();
+				}
+
+				Polygons islandInfillLines = new Polygons();
+				// render a grid of support
+				if (config.GenerateSupportPerimeter)
+				{
+					Polygons outlines = Clipper.CleanPolygons(islandOutline, config.ExtrusionWidth_um / 4);
+					gcodeLayer.QueuePolygonsByOptimizer(outlines, supportNormalConfig);
+				}
+
+				Polygons infillOutline = islandOutline.Offset(-supportNormalConfig.lineWidth_um / 2);
+
+				if (layerIndex == 0)
+				{
+					// on the first layer print this as solid
+					Infill.GenerateLineInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.ExtrusionWidth_um);
+				}
+				else
+				{
+					switch (config.SupportType)
+					{
+						case ConfigConstants.SUPPORT_TYPE.GRID:
+							Infill.GenerateGridInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
+							break;
+
+						case ConfigConstants.SUPPORT_TYPE.LINES:
+							Infill.GenerateLineInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
+							break;
+					}
+				}
+
+				gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, supportNormalConfig);
+			}
 		}
 
 		private static List<Polygons> AccumulateDownPolygons(ConfigSettings config, List<Polygons> inputPolys, List<Polygons> allPartOutlines)
@@ -324,6 +295,57 @@ namespace MatterHackers.MatterSlice
 			return allDownOutlines;
 		}
 
+		private static List<Polygons> CalculateAllPartOutlines(ConfigSettings config, List<ExtruderLayers> Extruders)
+		{
+			int numLayers = Extruders[0].Layers.Count;
+
+			List<Polygons> allPartOutlines = CreateEmptyPolygons(numLayers);
+
+			foreach (var extruder in Extruders)
+			{
+				// calculate the combined outlines for everything
+				for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
+				{
+					allPartOutlines[layerIndex] = allPartOutlines[layerIndex].CreateUnion(extruder.Layers[layerIndex].AllOutlines);
+				}
+			}
+
+			return allPartOutlines;
+		}
+
+		private static List<Polygons> CalculateDifferencePerLayer(List<Polygons> inputPolys, List<Polygons> outlinesToRemove)
+		{
+			int numLayers = inputPolys.Count;
+
+			List<Polygons> diferenceLayers = CreateEmptyPolygons(numLayers);
+			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
+			{
+				Polygons curRequiredSupport = inputPolys[layerIndex];
+				Polygons totalSupportThisLayer = curRequiredSupport.CreateDifference(outlinesToRemove[layerIndex]);
+
+				diferenceLayers[layerIndex] = Clipper.CleanPolygons(totalSupportThisLayer, cleanDistance_um);
+			}
+
+			return diferenceLayers;
+		}
+
+		private static List<Polygons> ClipToXyDistance(List<Polygons> inputPolys, List<Polygons> allPartOutlines, ConfigSettings config)
+		{
+			int numLayers = inputPolys.Count;
+
+			List<Polygons> clippedToXyOutlines = CreateEmptyPolygons(numLayers);
+			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
+			{
+				Polygons curRequiredSupport = inputPolys[layerIndex];
+				Polygons expandedlayerPolys = allPartOutlines[layerIndex].Offset(config.SupportXYDistance_um);
+				Polygons totalSupportThisLayer = curRequiredSupport.CreateDifference(expandedlayerPolys);
+
+				clippedToXyOutlines[layerIndex] = Clipper.CleanPolygons(totalSupportThisLayer, cleanDistance_um);
+			}
+
+			return clippedToXyOutlines;
+		}
+
 		private static List<Polygons> CreateAirGappedBottomLayers(List<Polygons> inputPolys, List<Polygons> allPartOutlines)
 		{
 			int numLayers = inputPolys.Count;
@@ -340,6 +362,40 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return airGappedBottoms;
+		}
+
+		private static List<Polygons> CreateEmptyPolygons(int numLayers)
+		{
+			List<Polygons> polygonsList = new List<Polygons>();
+			for (int i = 0; i < numLayers; i++)
+			{
+				polygonsList.Add(new Polygons());
+			}
+
+			return polygonsList;
+		}
+
+		private static List<Polygons> CreateInsetPartOutlines(List<Polygons> inputPolys, long insetAmount_um)
+		{
+			int numLayers = inputPolys.Count;
+			List<Polygons> allInsetOutlines = CreateEmptyPolygons(numLayers);
+			// calculate all the non-supported areas
+			for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
+			{
+				Polygons insetPolygons = Clipper.CleanPolygons(inputPolys[layerIndex].Offset(-insetAmount_um), cleanDistance_um);
+				List<Polygons> insetIslands = insetPolygons.ProcessIntoSeparatIslands();
+
+				foreach (Polygons insetOutline in insetIslands)
+				{
+					insetOutline.RemoveSmallAreas(insetAmount_um * 2);
+					foreach (var islandPart in insetOutline)
+					{
+						allInsetOutlines[layerIndex].Add(islandPart);
+					}
+				}
+			}
+
+			return allInsetOutlines;
 		}
 
 		private static List<Polygons> CreateInterfaceLayers(List<Polygons> inputPolys, int numInterfaceLayers)
@@ -366,155 +422,98 @@ namespace MatterHackers.MatterSlice
 			return allInterfaceLayers;
 		}
 
-		private static List<Polygons> ClipToXyDistance(List<Polygons> inputPolys, List<Polygons> allPartOutlines, ConfigSettings config)
+		private static List<Polygons> ExpandToEasyGrabDistance(List<Polygons> inputPolys, long grabDistance_um)
 		{
 			int numLayers = inputPolys.Count;
 
-			List<Polygons> clippedToXyOutlines = CreateEmptyPolygons(numLayers);
-			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
+			List<Polygons> easyGrabDistanceOutlines = CreateEmptyPolygons(numLayers);
+			for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
 			{
-				Polygons curRequiredSupport = inputPolys[layerIndex];
-				Polygons expandedlayerPolys = allPartOutlines[layerIndex].Offset(config.SupportXYDistance_um);
-				Polygons totalSupportThisLayer = curRequiredSupport.CreateDifference(expandedlayerPolys);
-
-				clippedToXyOutlines[layerIndex] = Clipper.CleanPolygons(totalSupportThisLayer, cleanDistance_um);
+				Polygons curLayerPolys = inputPolys[layerIndex];
+				easyGrabDistanceOutlines[layerIndex] = Clipper.CleanPolygons(curLayerPolys.Offset(grabDistance_um), cleanDistance_um);
 			}
 
-			return clippedToXyOutlines;
+			return easyGrabDistanceOutlines;
 		}
 
-		private static List<Polygons> CalculateDifferencePerLayer(List<Polygons> inputPolys, List<Polygons> outlinesToRemove)
+		private static List<Polygons> FindAllPotentialSupportOutlines(List<Polygons> inputPolys, long supportWidth_um)
+		{
+			int numLayers = inputPolys.Count;
+			List<Polygons> allPotentialSupportOutlines = CreateEmptyPolygons(numLayers);
+			// calculate all the non-supported areas
+			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
+			{
+				Polygons aboveLayerPolys = inputPolys[layerIndex + 1];
+				Polygons curLayerPolys = inputPolys[layerIndex].Offset(supportWidth_um);
+				Polygons areasNeedingSupport = aboveLayerPolys.CreateDifference(curLayerPolys);
+				allPotentialSupportOutlines[layerIndex] = Clipper.CleanPolygons(areasNeedingSupport, cleanDistance_um);
+			}
+
+			return allPotentialSupportOutlines;
+		}
+
+		private static List<Polygons> PushUpTops(List<Polygons> inputPolys, ConfigSettings config)
 		{
 			int numLayers = inputPolys.Count;
 
-			List<Polygons> diferenceLayers = CreateEmptyPolygons(numLayers);
-			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
+			return inputPolys;
+			int layersFor2Mm = 2000 / config.LayerThickness_um;
+			List<Polygons> pushedUpPolys = CreateEmptyPolygons(numLayers);
+			for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
 			{
-				Polygons curRequiredSupport = inputPolys[layerIndex];
-				Polygons totalSupportThisLayer = curRequiredSupport.CreateDifference(outlinesToRemove[layerIndex]);
+				for (int layerToAddToIndex = Math.Min(layerIndex + layersFor2Mm, numLayers - 1); layerToAddToIndex >= 0; layerToAddToIndex--)
+				{
+				}
 
-				diferenceLayers[layerIndex] = Clipper.CleanPolygons(totalSupportThisLayer, cleanDistance_um);
+				Polygons curLayerPolys = inputPolys[layerIndex];
+				pushedUpPolys[layerIndex] = Clipper.CleanPolygons(curLayerPolys.Offset(config.ExtrusionWidth_um + config.SupportXYDistance_um), cleanDistance_um);
 			}
 
-			return diferenceLayers;
+			return pushedUpPolys;
 		}
 
-		public bool HasNormalSupport(int layerIndex)
+		private static List<Polygons> RemoveSelfSupportedSections(List<Polygons> inputPolys, long supportWidth_um)
 		{
-			return supportOutlines[layerIndex].Count > 0;
-		}
+			int numLayers = inputPolys.Count;
 
-		public bool HasInterfaceSupport(int layerIndex)
-		{
-			return interfaceLayers[layerIndex].Count > 0;
-		}
-
-		public void QueueNormalSupportLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig)
-		{
-			// normal support
-			Polygons currentSupportOutlines = supportOutlines[layerIndex];
-			currentSupportOutlines = currentSupportOutlines.Offset(-supportNormalConfig.lineWidth_um / 2);
-			List<Polygons> supportIslands = currentSupportOutlines.ProcessIntoSeparatIslands();
-
-			foreach (Polygons islandOutline in supportIslands)
+			List<Polygons> allRequiredSupportOutlines = CreateEmptyPolygons(numLayers);
+			// calculate all the non-supported areas
+			for (int layerIndex = numLayers - 1; layerIndex > 0; layerIndex--)
 			{
-				// force a retract if changing islands
-				if (config.RetractWhenChangingIslands)
+				if (inputPolys[layerIndex - 1].Count > 0)
 				{
-					gcodeLayer.ForceRetract();
-				}
+					if (inputPolys[layerIndex].Count > 0)
+					{
+						Polygons expandedLayerBellow = inputPolys[layerIndex - 1].Offset(supportWidth_um);
 
-				Polygons islandInfillLines = new Polygons();
-				// render a grid of support
-				if (config.GenerateSupportPerimeter)
-				{
-					Polygons outlines = Clipper.CleanPolygons(islandOutline, config.ExtrusionWidth_um / 4);
-					gcodeLayer.QueuePolygonsByOptimizer(outlines, supportNormalConfig);
-				}
-
-				Polygons infillOutline = islandOutline.Offset(-supportNormalConfig.lineWidth_um / 2);
-
-				if (layerIndex == 0)
-				{
-					// on the first layer print this as solid
-					Infill.GenerateLineInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.ExtrusionWidth_um);
+						allRequiredSupportOutlines[layerIndex] = inputPolys[layerIndex].CreateDifference(expandedLayerBellow);
+						allRequiredSupportOutlines[layerIndex] = Clipper.CleanPolygons(allRequiredSupportOutlines[layerIndex], cleanDistance_um);
+					}
 				}
 				else
 				{
-					switch (config.SupportType)
-					{
-						case ConfigConstants.SUPPORT_TYPE.GRID:
-							Infill.GenerateGridInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
-							break;
-
-						case ConfigConstants.SUPPORT_TYPE.LINES:
-							Infill.GenerateLineInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
-							break;
-					}
+					allRequiredSupportOutlines[layerIndex] = inputPolys[layerIndex].DeepCopy();
 				}
-
-				gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, supportNormalConfig);
 			}
+
+			return allRequiredSupportOutlines;
 		}
 
-		public void QueueInterfaceSupportLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportInterfaceConfig)
+		private static List<Polygons> RemoveSupportFromInternalSpaces(List<Polygons> inputPolys, List<Polygons> allPartOutlines)
 		{
-			// interface
-			Polygons currentInterfaceOutlines2 = interfaceLayers[layerIndex].Offset(-config.ExtrusionWidth_um / 2);
-			if (currentInterfaceOutlines2.Count > 0)
+			int numLayers = inputPolys.Count;
+
+			Polygons accumulatedLayers = new Polygons();
+			for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
 			{
-				List<Polygons> interfaceIslands = currentInterfaceOutlines2.ProcessIntoSeparatIslands();
+				accumulatedLayers = accumulatedLayers.CreateUnion(allPartOutlines[layerIndex]);
+				accumulatedLayers = Clipper.CleanPolygons(accumulatedLayers, cleanDistance_um);
 
-				foreach (Polygons interfaceOutline in interfaceIslands)
-				{
-					// force a retract if changing islands
-					if (config.RetractWhenChangingIslands)
-					{
-						gcodeLayer.ForceRetract();
-					}
-
-					Polygons supportLines = new Polygons();
-					Infill.GenerateLineInfill(config, interfaceOutline, supportLines, config.InfillStartingAngle + 90, config.ExtrusionWidth_um);
-					gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportInterfaceConfig);
-				}
+				inputPolys[layerIndex] = inputPolys[layerIndex].CreateDifference(accumulatedLayers);
+				inputPolys[layerIndex] = Clipper.CleanPolygons(inputPolys[layerIndex], cleanDistance_um);
 			}
-		}
 
-		public void QueueAirGappedBottomLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig)
-		{
-			// normal support
-			Polygons currentAirGappedBottoms = airGappedBottomOutlines[layerIndex];
-			currentAirGappedBottoms = currentAirGappedBottoms.Offset(-config.ExtrusionWidth_um / 2);
-			List<Polygons> supportIslands = currentAirGappedBottoms.ProcessIntoSeparatIslands();
-
-			foreach (Polygons islandOutline in supportIslands)
-			{
-				// force a retract if changing islands
-				if (config.RetractWhenChangingIslands)
-				{
-					gcodeLayer.ForceRetract();
-				}
-
-				Polygons islandInfillLines = new Polygons();
-				// render a grid of support
-				if (config.GenerateSupportPerimeter)
-				{
-					Polygons outlines = Clipper.CleanPolygons(islandOutline, config.ExtrusionWidth_um / 4);
-					gcodeLayer.QueuePolygonsByOptimizer(outlines, supportNormalConfig);
-				}
-				Polygons infillOutline = islandOutline.Offset(-config.ExtrusionWidth_um / 2);
-				switch (config.SupportType)
-				{
-					case ConfigConstants.SUPPORT_TYPE.GRID:
-						Infill.GenerateGridInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
-						break;
-
-					case ConfigConstants.SUPPORT_TYPE.LINES:
-						Infill.GenerateLineInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
-						break;
-				}
-				gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, supportNormalConfig);
-			}
+			return inputPolys;
 		}
 	}
 }

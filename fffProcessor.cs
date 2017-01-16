@@ -19,13 +19,14 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+	using QuadTree;
 	using Polygon = List<IntPoint>;
 
 	using Polygons = List<List<IntPoint>>;
@@ -55,7 +56,7 @@ namespace MatterHackers.MatterSlice
 		private GCodePathConfig topFillConfig = new GCodePathConfig("topFillConfig");
 		private GCodePathConfig bottomFillConfig = new GCodePathConfig("bottomFillConfig");
 		private GCodePathConfig airGappedBottomConfig = new GCodePathConfig("airGappedBottomConfig");
-        private GCodePathConfig bridgeConfig = new GCodePathConfig("bridgeConfig");
+		private GCodePathConfig bridgeConfig = new GCodePathConfig("bridgeConfig");
 		private GCodePathConfig supportNormalConfig = new GCodePathConfig("supportNormalConfig");
 		private GCodePathConfig supportInterfaceConfig = new GCodePathConfig("supportInterfaceConfig");
 
@@ -160,7 +161,7 @@ namespace MatterHackers.MatterSlice
 			topFillConfig.SetData(config.TopInfillSpeed, extrusionWidth, "TOP-FILL", false);
 			bottomFillConfig.SetData(config.InfillSpeed, extrusionWidth, "BOTTOM-FILL", false);
 			airGappedBottomConfig.SetData(config.FirstLayerSpeed, extrusionWidth, "AIR-GAP", false);
-            bridgeConfig.SetData(config.BridgeSpeed, extrusionWidth, "BRIDGE");
+			bridgeConfig.SetData(config.BridgeSpeed, extrusionWidth, "BRIDGE");
 
 			supportNormalConfig.SetData(config.SupportMaterialSpeed, extrusionWidth, "SUPPORT");
 			supportInterfaceConfig.SetData(config.SupportMaterialSpeed - 1, extrusionWidth, "SUPPORT-INTERFACE");
@@ -418,7 +419,7 @@ namespace MatterHackers.MatterSlice
 					return;
 				}
 
-				if(config.outputOnlyFirstLayer && layerIndex > 0)
+				if (config.outputOnlyFirstLayer && layerIndex > 0)
 				{
 					break;
 				}
@@ -437,7 +438,7 @@ namespace MatterHackers.MatterSlice
 					topFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "TOP-FILL", false);
 					bottomFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "BOTTOM-FILL", false);
 					airGappedBottomConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "AIR-GAP", false);
-                    bridgeConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "BRIDGE");
+					bridgeConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "BRIDGE");
 
 					supportNormalConfig.SetData(config.FirstLayerSpeed, config.SupportExtrusionWidth_um, "SUPPORT");
 					supportInterfaceConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um, "SUPPORT-INTERFACE");
@@ -452,7 +453,7 @@ namespace MatterHackers.MatterSlice
 					topFillConfig.SetData(config.TopInfillSpeed, config.ExtrusionWidth_um, "TOP-FILL", false);
 					bottomFillConfig.SetData(config.InfillSpeed, config.ExtrusionWidth_um, "BOTTOM-FILL", false);
 					airGappedBottomConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um, "AIR-GAP", false);
-                    bridgeConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um, "BRIDGE");
+					bridgeConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um, "BRIDGE");
 
 					supportNormalConfig.SetData(config.SupportMaterialSpeed, config.SupportExtrusionWidth_um, "SUPPORT");
 					supportInterfaceConfig.SetData(config.FirstLayerSpeed - 1, config.ExtrusionWidth_um, "SUPPORT-INTERFACE");
@@ -629,14 +630,14 @@ namespace MatterHackers.MatterSlice
 		//Add a single layer from a single extruder to the GCode
 		private void QueueExtruderLayerToGCode(LayerDataStorage slicingData, GCodePlanner layerGcodePlanner, int extruderIndex, int layerIndex, int extrusionWidth_um, long currentZ_um)
 		{
-			if(extruderIndex > slicingData.Extruders.Count-1)
+			if (extruderIndex > slicingData.Extruders.Count - 1)
 			{
 				return;
 			}
 
 			SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 
-			if(layer.AllOutlines.Count == 0
+			if (layer.AllOutlines.Count == 0
 				&& config.WipeShieldDistanceFromObject == 0)
 			{
 				// don't do anything on this layer
@@ -660,13 +661,13 @@ namespace MatterHackers.MatterSlice
 				if (layer.Islands.Count == 1)
 				{
 					LayerIsland island = layer?.Islands?[0];
-					if (island?.InsetToolPaths ?.Count > 0
+					if (island?.InsetToolPaths?.Count > 0
 						&& island?.InsetToolPaths?[0]?[0]?.Count > 0)
 					{
 						int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
 						if (config.AvoidCrossingPerimeters)
 						{
-							layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundary);
+							layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(island.PathFinder);
 						}
 						layerGcodePlanner.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
 					}
@@ -705,7 +706,7 @@ namespace MatterHackers.MatterSlice
 
 				if (config.AvoidCrossingPerimeters)
 				{
-					layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(island.AvoidCrossingBoundary);
+					layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(island.PathFinder);
 				}
 				else
 				{
@@ -839,7 +840,7 @@ namespace MatterHackers.MatterSlice
 						for (int perimeter = 0; perimeter < config.NumberOfPerimeters; perimeter++)
 						{
 							Polygons thinLines = null;
-							if (GCodePlanner.FindThinLines(island.IslandOutline.Offset(-extrusionWidth_um * (1 + perimeter)), extrusionWidth_um + 2, extrusionWidth_um / 5, out thinLines, true))
+							if (island.IslandOutline.Offset(-extrusionWidth_um * (1 + perimeter)).FindThinLines(extrusionWidth_um + 2, extrusionWidth_um / 5, out thinLines, true))
 							{
 								fillPolygons.AddRange(thinLines);
 							}
@@ -851,11 +852,11 @@ namespace MatterHackers.MatterSlice
 						Polygons thinLines = null;
 						// Collect all of the lines up to one third the extrusion diameter
 						//string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(island.IslandOutline);
-						if (GCodePlanner.FindThinLines(island.IslandOutline, extrusionWidth_um + 2, extrusionWidth_um / 3, out thinLines, true))
+						if (island.IslandOutline.FindThinLines(extrusionWidth_um + 2, extrusionWidth_um / 3, out thinLines, true))
 						{
-							foreach(var polygon in thinLines)
+							foreach (var polygon in thinLines)
 							{
-								for(int i=0; i<polygon.Count; i++)
+								for (int i = 0; i < polygon.Count; i++)
 								{
 									if (polygon[i].Width > 0)
 									{
@@ -888,7 +889,7 @@ namespace MatterHackers.MatterSlice
 				//After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
 				if (!config.ContinuousSpiralOuterPerimeter || layerIndex < config.NumberOfBottomLayers)
 				{
-					layerGcodePlanner.MoveInsideTheOuterPerimeter(extrusionWidth_um * 2);
+					layerGcodePlanner.MoveInsideTravelPerimeter();
 				}
 			}
 
@@ -936,7 +937,7 @@ namespace MatterHackers.MatterSlice
 		private int CountInsetsToPrint(List<Polygons> insetsToPrint)
 		{
 			int total = 0;
-			foreach(Polygons polygons in insetsToPrint)
+			foreach (Polygons polygons in insetsToPrint)
 			{
 				total += polygons.Count;
 			}
@@ -991,7 +992,7 @@ namespace MatterHackers.MatterSlice
 
 					if (config.AvoidCrossingPerimeters)
 					{
-						gcodeLayer.SetOuterPerimetersToAvoidCrossing(part.AvoidCrossingBoundary);
+						gcodeLayer.SetOuterPerimetersToAvoidCrossing(part.PathFinder);
 					}
 					else
 					{
@@ -1023,7 +1024,7 @@ namespace MatterHackers.MatterSlice
 							{
 								gcodeLayer.ForceRetract();
 							}
-							
+
 							lastPartIndex = inlandIndex;
 						}
 
@@ -1039,7 +1040,7 @@ namespace MatterHackers.MatterSlice
 					//After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
 					if (!config.ContinuousSpiralOuterPerimeter || layerIndex < config.NumberOfBottomLayers)
 					{
-						gcodeLayer.MoveInsideTheOuterPerimeter(extrusionWidth_um * 2);
+						gcodeLayer.MoveInsideTravelPerimeter();
 					}
 
 					// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
@@ -1112,7 +1113,7 @@ namespace MatterHackers.MatterSlice
 		private void GetSegmentsConsideringSupport(Polygons polygonsToWrite, Polygons supportOutlines, Polygons polysToWriteAtNormalHeight, Polygons polysToWriteAtAirGapHeight, bool forAirGap)
 		{
 			// make an expanded area to constrain our segments to
-			Polygons maxSupportOutlines = supportOutlines.Offset(fillConfig.lineWidth_um *2 + config.SupportXYDistance_um);
+			Polygons maxSupportOutlines = supportOutlines.Offset(fillConfig.lineWidth_um * 2 + config.SupportXYDistance_um);
 
 			Polygons polygonsToWriteAsLines = PolygonsHelper.ConvertToLines(polygonsToWrite);
 			foreach (Polygon poly in polygonsToWriteAsLines)

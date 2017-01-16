@@ -29,80 +29,41 @@ using System.Collections.Generic;
 
 public class TimeEstimateCalculator
 {
-	private double MINIMUM_PLANNER_SPEED = 0.05;// (mm/sec)
-
-	private double[] max_feedrate = new double[] { 600, 600, 40, 25 };
-	private double minimumfeedrate = 0.01;
-	private double acceleration = 3000;
-	private double[] max_acceleration = new double[] { 9000, 9000, 100, 10000 };
-	private double max_xy_jerk = 20.0;
-	private double max_z_jerk = 0.4;
-	private double max_e_jerk = 5.0;
-
+	public static int E_AXIS = 3;
 	public static int NUM_AXIS = 4;
 	public static int X_AXIS = 0;
 	public static int Y_AXIS = 1;
 	public static int Z_AXIS = 2;
-	public static int E_AXIS = 3;
-
-	public class Position
-	{
-		public double this[int index]
-		{
-			get
-			{
-				return axis[index];
-			}
-			set
-			{
-				axis[index] = value;
-			}
-		}
-
-		public Position()
-		{
-			for (int n = 0; n < NUM_AXIS; n++) axis[n] = 0;
-		}
-
-		public Position(double x, double y, double z, double e)
-		{
-			axis[0] = x; axis[1] = y; axis[2] = z; axis[3] = e;
-		}
-
-		public double[] axis = new double[NUM_AXIS];
-	};
-
-	public class Block
-	{
-		public bool recalculate_flag;
-
-		public double accelerate_until;
-		public double decelerate_after;
-		public double initial_feedrate;
-		public double final_feedrate;
-
-		public double entry_speed;
-		public double max_entry_speed;
-		public bool nominal_length_flag;
-
-		public double nominal_feedrate;
-		public double maxTravel;
-		public double distance;
-		public double acceleration;
-		public Position delta = new Position();
-		public Position absDelta = new Position();
-	};
-
+	private double acceleration = 3000;
+	private List<Block> blocks = new List<Block>();
+	private Position currentPosition = new Position();
+	private double[] max_acceleration = new double[] { 9000, 9000, 100, 10000 };
+	private double max_e_jerk = 5.0;
+	private double[] max_feedrate = new double[] { 600, 600, 40, 25 };
+	private double max_xy_jerk = 20.0;
+	private double max_z_jerk = 0.4;
+	private double MINIMUM_PLANNER_SPEED = 0.05;// (mm/sec)
+	private double minimumfeedrate = 0.01;
 	private Position previous_feedrate;
+
 	private double previous_nominal_feedrate;
 
-	private Position currentPosition = new Position();
-
-	private List<Block> blocks = new List<Block>();
-
-	public void setPosition(Position newPos)
+	public double calculate()
 	{
-		currentPosition = newPos;
+		reverse_pass();
+		forward_pass();
+		recalculate_trapezoids();
+
+		double totalTime = 0;
+		for (int n = 0; n < blocks.Count; n++)
+		{
+			double plateau_distance = blocks[n].decelerate_after - blocks[n].accelerate_until;
+
+			totalTime += acceleration_time_from_distance(blocks[n].initial_feedrate, blocks[n].accelerate_until, blocks[n].acceleration);
+			totalTime += plateau_distance / blocks[n].nominal_feedrate;
+			totalTime += acceleration_time_from_distance(blocks[n].final_feedrate, (blocks[n].distance - blocks[n].decelerate_after), blocks[n].acceleration);
+		}
+		return totalTime;
 	}
 
 	public void plan(Position newPos, double feedrate)
@@ -204,16 +165,16 @@ public class TimeEstimateCalculator
 		blocks.Clear();
 	}
 
-	// Calculates the maximum allowable speed at this point when you must be able to reach target_velocity using the
-	// acceleration within the allotted distance.
-	private static double max_allowable_speed(double acceleration, double target_velocity, double distance)
+	public void setPosition(Position newPos)
 	{
-		return Math.Sqrt(target_velocity * target_velocity - 2 * acceleration * distance);
+		currentPosition = newPos;
 	}
 
-	private static double square(double a)
+	// This function gives the time it needs to accelerate from an initial speed to reach a final distance.
+	private static double acceleration_time_from_distance(double initial_feedrate, double distance, double acceleration)
 	{
-		return a * a;
+		double discriminant = Math.Sqrt(square(initial_feedrate) - 2 * acceleration * -distance);
+		return (-initial_feedrate + discriminant) / acceleration;
 	}
 
 	// Calculates the distance (not time) it takes to accelerate from initial_rate to target_rate using the given acceleration:
@@ -235,41 +196,46 @@ public class TimeEstimateCalculator
 		return (2.0 * acceleration * distance - square(initial_rate) + square(final_rate)) / (4.0 * acceleration);
 	}
 
-	// This function gives the time it needs to accelerate from an initial speed to reach a final distance.
-	private static double acceleration_time_from_distance(double initial_feedrate, double distance, double acceleration)
+	// Calculates the maximum allowable speed at this point when you must be able to reach target_velocity using the
+	// acceleration within the allotted distance.
+	private static double max_allowable_speed(double acceleration, double target_velocity, double distance)
 	{
-		double discriminant = Math.Sqrt(square(initial_feedrate) - 2 * acceleration * -distance);
-		return (-initial_feedrate + discriminant) / acceleration;
+		return Math.Sqrt(target_velocity * target_velocity - 2 * acceleration * distance);
 	}
 
-	public double calculate()
+	private static double square(double a)
 	{
-		reverse_pass();
-		forward_pass();
-		recalculate_trapezoids();
-
-		double totalTime = 0;
-		for (int n = 0; n < blocks.Count; n++)
-		{
-			double plateau_distance = blocks[n].decelerate_after - blocks[n].accelerate_until;
-
-			totalTime += acceleration_time_from_distance(blocks[n].initial_feedrate, blocks[n].accelerate_until, blocks[n].acceleration);
-			totalTime += plateau_distance / blocks[n].nominal_feedrate;
-			totalTime += acceleration_time_from_distance(blocks[n].final_feedrate, (blocks[n].distance - blocks[n].decelerate_after), blocks[n].acceleration);
-		}
-		return totalTime;
+		return a * a;
 	}
 
-	private void reverse_pass()
+	// Calculates trapezoid parameters so that the entry- and exit-speed is compensated by the provided factors.
+	private void calculate_trapezoid_for_block(Block block, double entry_factor, double exit_factor)
 	{
-		Block[] block = new Block[] { null, null, null };
-		for (int n = blocks.Count - 1; n >= 0; n--)
+		double initial_feedrate = block.nominal_feedrate * entry_factor;
+		double final_feedrate = block.nominal_feedrate * exit_factor;
+
+		double acceleration = block.acceleration;
+		double accelerate_distance = estimate_acceleration_distance(initial_feedrate, block.nominal_feedrate, acceleration);
+		double decelerate_distance = estimate_acceleration_distance(block.nominal_feedrate, final_feedrate, -acceleration);
+
+		// Calculate the size of Plateau of Nominal Rate.
+		double plateau_distance = block.distance - accelerate_distance - decelerate_distance;
+
+		// Is the Plateau of Nominal Rate smaller than nothing? That means no cruising, and we will
+		// have to use intersection_distance() to calculate when to abort acceleration and start braking
+		// in order to reach the final_rate exactly at the end of this block.
+		if (plateau_distance < 0)
 		{
-			block[2] = block[1];
-			block[1] = block[0];
-			block[0] = blocks[n];
-			planner_reverse_pass_kernel(block[0], block[1], block[2]);
+			accelerate_distance = intersection_distance(initial_feedrate, final_feedrate, acceleration, block.distance);
+			accelerate_distance = Math.Max(accelerate_distance, 0.0); // Check limits due to numerical round-off
+			accelerate_distance = Math.Min(accelerate_distance, block.distance);//(We can cast here to unsigned, because the above line ensures that we are above zero)
+			plateau_distance = 0;
 		}
+
+		block.accelerate_until = accelerate_distance;
+		block.decelerate_after = accelerate_distance + plateau_distance;
+		block.initial_feedrate = initial_feedrate;
+		block.final_feedrate = final_feedrate;
 	}
 
 	private void forward_pass()
@@ -283,6 +249,57 @@ public class TimeEstimateCalculator
 			planner_forward_pass_kernel(block[0], block[1], block[2]);
 		}
 		planner_forward_pass_kernel(block[1], block[2], null);
+	}
+
+	// The kernel called by accelerationPlanner::calculate() when scanning the plan from first to last entry.
+	private void planner_forward_pass_kernel(Block previous, Block current, Block next)
+	{
+		if (previous == null)
+			return;
+
+		// If the previous block is an acceleration block, but it is not long enough to complete the
+		// full speed change within the block, we need to adjust the entry speed accordingly. Entry
+		// speeds have already been reset, maximized, and reverse planned by reverse planner.
+		// If nominal length is true, max junction speed is guaranteed to be reached. No need to recheck.
+		if (!previous.nominal_length_flag)
+		{
+			if (previous.entry_speed < current.entry_speed)
+			{
+				double entry_speed = Math.Min(current.entry_speed, max_allowable_speed(-previous.acceleration, previous.entry_speed, previous.distance));
+
+				// Check for junction speed change
+				if (current.entry_speed != entry_speed)
+				{
+					current.entry_speed = entry_speed;
+					current.recalculate_flag = true;
+				}
+			}
+		}
+	}
+
+	// The kernel called by accelerationPlanner::calculate() when scanning the plan from last to first entry.
+	private void planner_reverse_pass_kernel(Block previous, Block current, Block next)
+	{
+		if (current == null || next == null)
+			return;
+
+		// If entry speed is already at the maximum entry speed, no need to recheck. Block is cruising.
+		// If not, block in state of acceleration or deceleration. Reset entry speed to maximum and
+		// check for maximum allowable speed reductions to ensure maximum possible planned speed.
+		if (current.entry_speed != current.max_entry_speed)
+		{
+			// If nominal length true, max junction speed is guaranteed to be reached. Only compute
+			// for max allowable speed if block is decelerating and nominal length is false.
+			if ((!current.nominal_length_flag) && (current.max_entry_speed > next.entry_speed))
+			{
+				current.entry_speed = Math.Min(current.max_entry_speed, max_allowable_speed(-current.acceleration, next.entry_speed, current.distance));
+			}
+			else
+			{
+				current.entry_speed = current.max_entry_speed;
+			}
+			current.recalculate_flag = true;
+		}
 	}
 
 	// Recalculates the trapezoid speed profiles for all blocks in the plan according to the
@@ -316,84 +333,60 @@ public class TimeEstimateCalculator
 		}
 	}
 
-	// Calculates trapezoid parameters so that the entry- and exit-speed is compensated by the provided factors.
-	private void calculate_trapezoid_for_block(Block block, double entry_factor, double exit_factor)
+	private void reverse_pass()
 	{
-		double initial_feedrate = block.nominal_feedrate * entry_factor;
-		double final_feedrate = block.nominal_feedrate * exit_factor;
-
-		double acceleration = block.acceleration;
-		double accelerate_distance = estimate_acceleration_distance(initial_feedrate, block.nominal_feedrate, acceleration);
-		double decelerate_distance = estimate_acceleration_distance(block.nominal_feedrate, final_feedrate, -acceleration);
-
-		// Calculate the size of Plateau of Nominal Rate.
-		double plateau_distance = block.distance - accelerate_distance - decelerate_distance;
-
-		// Is the Plateau of Nominal Rate smaller than nothing? That means no cruising, and we will
-		// have to use intersection_distance() to calculate when to abort acceleration and start braking
-		// in order to reach the final_rate exactly at the end of this block.
-		if (plateau_distance < 0)
+		Block[] block = new Block[] { null, null, null };
+		for (int n = blocks.Count - 1; n >= 0; n--)
 		{
-			accelerate_distance = intersection_distance(initial_feedrate, final_feedrate, acceleration, block.distance);
-			accelerate_distance = Math.Max(accelerate_distance, 0.0); // Check limits due to numerical round-off
-			accelerate_distance = Math.Min(accelerate_distance, block.distance);//(We can cast here to unsigned, because the above line ensures that we are above zero)
-			plateau_distance = 0;
-		}
-
-		block.accelerate_until = accelerate_distance;
-		block.decelerate_after = accelerate_distance + plateau_distance;
-		block.initial_feedrate = initial_feedrate;
-		block.final_feedrate = final_feedrate;
-	}
-
-	// The kernel called by accelerationPlanner::calculate() when scanning the plan from last to first entry.
-	private void planner_reverse_pass_kernel(Block previous, Block current, Block next)
-	{
-		if (current == null || next == null)
-			return;
-
-		// If entry speed is already at the maximum entry speed, no need to recheck. Block is cruising.
-		// If not, block in state of acceleration or deceleration. Reset entry speed to maximum and
-		// check for maximum allowable speed reductions to ensure maximum possible planned speed.
-		if (current.entry_speed != current.max_entry_speed)
-		{
-			// If nominal length true, max junction speed is guaranteed to be reached. Only compute
-			// for max allowable speed if block is decelerating and nominal length is false.
-			if ((!current.nominal_length_flag) && (current.max_entry_speed > next.entry_speed))
-			{
-				current.entry_speed = Math.Min(current.max_entry_speed, max_allowable_speed(-current.acceleration, next.entry_speed, current.distance));
-			}
-			else
-			{
-				current.entry_speed = current.max_entry_speed;
-			}
-			current.recalculate_flag = true;
+			block[2] = block[1];
+			block[1] = block[0];
+			block[0] = blocks[n];
+			planner_reverse_pass_kernel(block[0], block[1], block[2]);
 		}
 	}
 
-	// The kernel called by accelerationPlanner::calculate() when scanning the plan from first to last entry.
-	private void planner_forward_pass_kernel(Block previous, Block current, Block next)
+	public class Block
 	{
-		if (previous == null)
-			return;
+		public Position absDelta = new Position();
+		public double accelerate_until;
+		public double acceleration;
+		public double decelerate_after;
+		public Position delta = new Position();
+		public double distance;
+		public double entry_speed;
+		public double final_feedrate;
+		public double initial_feedrate;
+		public double max_entry_speed;
+		public double maxTravel;
+		public double nominal_feedrate;
+		public bool nominal_length_flag;
+		public bool recalculate_flag;
+	};
 
-		// If the previous block is an acceleration block, but it is not long enough to complete the
-		// full speed change within the block, we need to adjust the entry speed accordingly. Entry
-		// speeds have already been reset, maximized, and reverse planned by reverse planner.
-		// If nominal length is true, max junction speed is guaranteed to be reached. No need to recheck.
-		if (!previous.nominal_length_flag)
+	public class Position
+	{
+		public double[] axis = new double[NUM_AXIS];
+
+		public Position()
 		{
-			if (previous.entry_speed < current.entry_speed)
-			{
-				double entry_speed = Math.Min(current.entry_speed, max_allowable_speed(-previous.acceleration, previous.entry_speed, previous.distance));
+			for (int n = 0; n < NUM_AXIS; n++) axis[n] = 0;
+		}
 
-				// Check for junction speed change
-				if (current.entry_speed != entry_speed)
-				{
-					current.entry_speed = entry_speed;
-					current.recalculate_flag = true;
-				}
+		public Position(double x, double y, double z, double e)
+		{
+			axis[0] = x; axis[1] = y; axis[2] = z; axis[3] = e;
+		}
+
+		public double this[int index]
+		{
+			get
+			{
+				return axis[index];
+			}
+			set
+			{
+				axis[index] = value;
 			}
 		}
-	}
+	};
 }

@@ -115,8 +115,6 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="clipper.cs" />
-    <Compile Include="utils\QuadTreeAccelerators.cs" />
     <Compile Include="ExtruderLayers.cs" />
     <Compile Include="GCodePathConfig.cs" />
     <Compile Include="GCodePlanner.cs" />
@@ -128,7 +126,7 @@
     <Compile Include="Slicer\SlicerLayer.cs" />
     <Compile Include="Slicer\Slicer.cs" />
     <Compile Include="NewSupport.cs" />
-    <Compile Include="utils\QuadTree.cs" />
+    <Compile Include="utils\Triangulate.cs" />
     <Compile Include="utils\Vector3.cs" />
     <Compile Include="main.cs" />
     <Compile Include="ConfigSettings.cs" />
@@ -149,9 +147,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="SimpleMesh.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="AvoidCrossingPerimeters.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="utils\PolygonHelper.cs" />
@@ -193,6 +188,20 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="MSClipperLib\MSClipperLib.csproj">
+      <Project>{2c564be1-352d-4ddb-8226-f0981f983c60}</Project>
+      <Name>MSClipperLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="Pathfinding\Pathfinding.csproj">
+      <Project>{8cb3464f-6130-4edb-8dc6-ccd2697fafbb}</Project>
+      <Name>Pathfinding</Name>
+    </ProjectReference>
+    <ProjectReference Include="QuadTree\QuadTree.csproj">
+      <Project>{23ec3364-7c93-4169-9ab2-7181c66004c0}</Project>
+      <Name>QuadTree</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
