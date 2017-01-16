@@ -19,8 +19,8 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System.Collections.Generic;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -53,7 +53,9 @@ namespace MatterHackers.MatterSlice
 		public Polygons PolygonList = new Polygons();
 		public List<SlicePerimeterSegment> SegmentList = new List<SlicePerimeterSegment>();
 
+		private static readonly bool runLookupTest = false;
 		private Polygons openPolygonList = new Polygons();
+		private Dictionary<long, List<int>> startIndexes = new Dictionary<long, List<int>>();
 		private long z;
 
 		public MeshProcessingLayer(long z)
@@ -84,9 +86,9 @@ namespace MatterHackers.MatterSlice
 						string[] coordinates = point.Split(',');
 						string elementX = coordinates[0];
 						string elementY = coordinates[1];
-                        int xIndex = elementX.IndexOf("x:");
-                        int yIndex = elementY.IndexOf("y:");
-						outPoints.Add(new IntPoint(int.Parse(elementX.Substring(xIndex+2)), int.Parse(elementY.Substring(yIndex+2))));
+						int xIndex = elementX.IndexOf("x:");
+						int yIndex = elementY.IndexOf("y:");
+						outPoints.Add(new IntPoint(int.Parse(elementX.Substring(xIndex + 2)), int.Parse(elementY.Substring(yIndex + 2))));
 					}
 					output.Add(new SlicePerimeterSegment(outPoints[0], outPoints[1]));
 				}
@@ -273,7 +275,7 @@ namespace MatterHackers.MatterSlice
 					{
 						if (openPolygonList[bestA].Count > openPolygonList[bestB].Count)
 						{
-							for (int indexB = openPolygonList[bestB].Count-1; indexB >=0; indexB--)
+							for (int indexB = openPolygonList[bestB].Count - 1; indexB >= 0; indexB--)
 							{
 								openPolygonList[bestA].Add(openPolygonList[bestB][indexB]);
 							}
@@ -320,6 +322,20 @@ namespace MatterHackers.MatterSlice
 			//Finally optimize all the polygons. Every point removed saves time in the long run.
 			double minimumDistanceToCreateNewPosition = 10;
 			PolygonList = Clipper.CleanPolygons(PolygonList, minimumDistanceToCreateNewPosition);
+		}
+
+		private void CreateFastIndexLookup()
+		{
+			for (int startingSegmentIndex = 0; startingSegmentIndex < SegmentList.Count; startingSegmentIndex++)
+			{
+				long positionKey = GetPositionKey(SegmentList[startingSegmentIndex].start);
+				if (!startIndexes.ContainsKey(positionKey))
+				{
+					startIndexes.Add(positionKey, new List<int>());
+				}
+
+				startIndexes[positionKey].Add(startingSegmentIndex);
+			}
 		}
 
 		private GapCloserResult FindPolygonGapCloser(IntPoint ip0, IntPoint ip1)
@@ -414,27 +430,11 @@ namespace MatterHackers.MatterSlice
 			return ret;
 		}
 
-		Dictionary<long, List<int>> startIndexes = new Dictionary<long, List<int>>();
-		private void CreateFastIndexLookup()
-		{
-			for (int startingSegmentIndex = 0; startingSegmentIndex < SegmentList.Count; startingSegmentIndex++)
-			{
-				long positionKey = GetPositionKey(SegmentList[startingSegmentIndex].start);
-				if (!startIndexes.ContainsKey(positionKey))
-				{
-					startIndexes.Add(positionKey, new List<int>());
-				}
-
-				startIndexes[positionKey].Add(startingSegmentIndex);
-			}
-		}
-
 		private long GetPositionKey(IntPoint intPoint)
 		{
 			return intPoint.X + (intPoint.Y << 31);
 		}
 
-		static readonly bool runLookupTest = false;
 		private int GetTouchingSegmentIndex(IntPoint addedSegmentEndPoint)
 		{
 			int searchSegmentIndex = -1;

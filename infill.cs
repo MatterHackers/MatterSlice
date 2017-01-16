@@ -19,9 +19,9 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System;
 using System.Collections.Generic;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -31,149 +31,74 @@ namespace MatterHackers.MatterSlice
 
 	public static class Infill
 	{
-		public static void GenerateLinePaths(Polygons polygonToInfill, Polygons infillLinesToPrint, int lineSpacing, int infillExtendIntoPerimeter_um, double rotation, long rotationOffset = 0)
+		private static IntPoint hexOffset = new IntPoint(0, 0);
+
+		public static void GenerateConcentricInfill(ConfigSettings config, Polygons partOutline, Polygons fillPolygons, long extrusionWidthOverride_um = 0)
 		{
-			if (polygonToInfill.Count > 0)
+			if (extrusionWidthOverride_um == 0)
 			{
-				Polygons outlines = polygonToInfill.Offset(infillExtendIntoPerimeter_um);
-				if (outlines.Count > 0)
+				extrusionWidthOverride_um = config.ExtrusionWidth_um;
+			}
+
+			Polygons outlineCopy = new Polygons(partOutline);
+			foreach (Polygon outline in outlineCopy)
+			{
+				if (outline.Count > 0)
 				{
-					PointMatrix matrix = new PointMatrix(-(rotation + 90)); // we are rotating the part so we rotate by the negative so the lines go the way we expect
-
-					outlines.ApplyMatrix(matrix);
-
-					Aabb boundary = new Aabb(outlines);
-
-					boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing - rotationOffset;
-					int xLineCount = (int)((boundary.max.X - boundary.min.X + (lineSpacing - 1)) / lineSpacing);
-					Polygons unclipedPatern = new Polygons();
-
-					long firstX = boundary.min.X / lineSpacing * lineSpacing;
-					for (int lineIndex = 0; lineIndex < xLineCount; lineIndex++)
+					outline.Add(outline[0]);
+				}
+			}
+			int linespacing_um = (int)(extrusionWidthOverride_um / (config.InfillPercent / 100));
+			while (outlineCopy.Count > 0)
+			{
+				for (int outlineIndex = 0; outlineIndex < outlineCopy.Count; outlineIndex++)
+				{
+					Polygon r = outlineCopy[outlineIndex];
+					fillPolygons.Add(r);
+				}
+				outlineCopy = outlineCopy.Offset(-linespacing_um);
+				foreach (Polygon outline in outlineCopy)
+				{
+					if (outline.Count > 0)
 					{
-						Polygon line = new Polygon();
-						line.Add(new IntPoint(firstX + lineIndex * lineSpacing, boundary.min.Y));
-						line.Add(new IntPoint(firstX + lineIndex * lineSpacing, boundary.max.Y));
-						unclipedPatern.Add(line);
+						outline.Add(outline[0]);
 					}
-
-					PolyTree ret = new PolyTree();
-					Clipper clipper = new Clipper();
-					clipper.AddPaths(unclipedPatern, PolyType.ptSubject, false);
-					clipper.AddPaths(outlines, PolyType.ptClip, true);
-					clipper.Execute(ClipType.ctIntersection, ret, PolyFillType.pftPositive, PolyFillType.pftEvenOdd);
-
-					Polygons newSegments = Clipper.OpenPathsFromPolyTree(ret);
-					PointMatrix inversematrix = new PointMatrix((rotation + 90));
-					newSegments.ApplyMatrix(inversematrix);
-
-					infillLinesToPrint.AddRange(newSegments);
 				}
 			}
 		}
 
-		private static IEnumerable<IntPoint> StartPositionIterator(Aabb boundary, int lineSpacing, int layerIndex)
+		public static void GenerateGridInfill(ConfigSettings config, Polygons partOutline, Polygons fillPolygons, double fillAngle, int linespacing_um = 0)
 		{
-			int perIncrementOffset = (int)(lineSpacing * Math.Sqrt(3) / 2 + .5);
-			int yLineCount = (int)((boundary.max.Y - boundary.min.Y + perIncrementOffset) / perIncrementOffset) + 1;
-
-			switch (layerIndex % 3)
+			if (linespacing_um == 0)
 			{
-				case 0: // left to right
-					for (int yIndex = 0; yIndex < yLineCount; yIndex++)
-					{
-						long yPosition = boundary.min.Y + yIndex * perIncrementOffset;
-						bool removeXOffset = ((yPosition / perIncrementOffset) % 2) == 0;
-						long xOffsetForY = lineSpacing / 2;
-						if (removeXOffset) // if we are at every other y
-						{
-							xOffsetForY = 0;
-						}
-						long firstX = boundary.min.X + xOffsetForY;
-
-						yield return new IntPoint(firstX, yPosition);
-					}
-					break;
-
-				case 1: // left to top
-					{
-						IntPoint nextPoint = new IntPoint();
-						for (int yIndex = yLineCount; yIndex >= 0; yIndex--)
-						{
-							long yPosition = boundary.min.Y + yIndex * perIncrementOffset;
-							bool createLineSegment = ((yPosition / perIncrementOffset) % 2) == 0;
-							if (createLineSegment)
-							{
-								nextPoint = new IntPoint(boundary.min.X, yPosition);
-								yield return nextPoint;
-							}
-						}
-
-						IntPoint positionAdd = new IntPoint(lineSpacing, 0);
-						nextPoint += positionAdd;
-						while (nextPoint.X > boundary.min.X
-							&& nextPoint.X < boundary.max.X)
-						{
-							yield return nextPoint;
-							nextPoint += positionAdd;
-						}
-					}
-					break;
-
-				case 2: // top to right
-					{
-						IntPoint nextPoint = new IntPoint();
-						for (int yIndex = 0; yIndex < yLineCount; yIndex++)
-						{
-							long yPosition = boundary.min.Y + yIndex * perIncrementOffset;
-							bool createLineSegment = ((yPosition / perIncrementOffset) % 2) == 0;
-							if (createLineSegment)
-							{
-								nextPoint = new IntPoint(boundary.min.X, yPosition);
-								yield return nextPoint;
-							}
-						}
-
-						IntPoint positionAdd = new IntPoint(lineSpacing, 0);
-						nextPoint += positionAdd;
-						while (nextPoint.X > boundary.min.X
-							&& nextPoint.X < boundary.max.X)
-						{
-							yield return nextPoint;
-							nextPoint += positionAdd;
-						}
-					}
-					break;
+				if (config.InfillPercent <= 0)
+				{
+					throw new Exception("infillPercent must be greater than 0.");
+				}
+				linespacing_um = (int)(config.ExtrusionWidth_um / (config.InfillPercent / 100) * 2);
 			}
+
+			Infill.GenerateLinePaths(partOutline, fillPolygons, linespacing_um, config.InfillExtendIntoPerimeter_um, fillAngle);
+
+			fillAngle += 90;
+			if (fillAngle > 360)
+			{
+				fillAngle -= 360;
+			}
+
+			Infill.GenerateLinePaths(partOutline, fillPolygons, linespacing_um, config.InfillExtendIntoPerimeter_um, fillAngle);
 		}
 
-		private static IEnumerable<IntPoint> IncrementPositionIterator(IntPoint startPoint, Aabb boundary, int lineSpacing, int layerIndex)
+		public static void GenerateHexagonInfill(ConfigSettings config, Polygons partOutline, Polygons fillPolygons, double fillAngle, int layerIndex)
 		{
-			IntPoint positionAdd = new IntPoint(lineSpacing, 0);
-			int perIncrementOffset = (int)(lineSpacing * Math.Sqrt(3) / 2 + .5);
-			switch (layerIndex % 3)
+			if (config.InfillPercent <= 0)
 			{
-				case 0: // left to right
-					positionAdd = new IntPoint(lineSpacing, 0);
-					break;
-
-				case 1: // left to top
-					positionAdd = new IntPoint(lineSpacing / 2, perIncrementOffset);
-					break;
-
-				case 2: // top to right
-					positionAdd = new IntPoint(lineSpacing / 2, -perIncrementOffset);
-					break;
+				throw new Exception("infillPercent must be greater than 0.");
 			}
-			IntPoint nextPoint = startPoint;
-			do
-			{
-				yield return nextPoint;
-				nextPoint += positionAdd;
-			} while (nextPoint.X > boundary.min.X
-				&& nextPoint.X < boundary.max.X
-				&& nextPoint.Y > boundary.min.Y
-				&& nextPoint.Y < boundary.max.Y);
+
+			int linespacing_um = (int)(config.ExtrusionWidth_um / (config.InfillPercent / 100) * 3 * .66);
+
+			Infill.GenerateHexLinePaths(partOutline, fillPolygons, linespacing_um, config.InfillExtendIntoPerimeter_um, fillAngle, layerIndex);
 		}
 
 		public static void GenerateHexLinePaths(Polygons in_outline, Polygons result, int lineSpacing, int infillExtendIntoPerimeter_um, double rotationDegrees, int layerIndex)
@@ -268,40 +193,45 @@ namespace MatterHackers.MatterSlice
 			GenerateLinePaths(partOutline, fillPolygons, linespacing_um, config.InfillExtendIntoPerimeter_um, fillAngle);
 		}
 
-		public static void GenerateGridInfill(ConfigSettings config, Polygons partOutline, Polygons fillPolygons, double fillAngle, int linespacing_um = 0)
+		public static void GenerateLinePaths(Polygons polygonToInfill, Polygons infillLinesToPrint, int lineSpacing, int infillExtendIntoPerimeter_um, double rotation, long rotationOffset = 0)
 		{
-			if (linespacing_um == 0)
+			if (polygonToInfill.Count > 0)
 			{
-				if (config.InfillPercent <= 0)
+				Polygons outlines = polygonToInfill.Offset(infillExtendIntoPerimeter_um);
+				if (outlines.Count > 0)
 				{
-					throw new Exception("infillPercent must be greater than 0.");
+					PointMatrix matrix = new PointMatrix(-(rotation + 90)); // we are rotating the part so we rotate by the negative so the lines go the way we expect
+
+					outlines.ApplyMatrix(matrix);
+
+					Aabb boundary = new Aabb(outlines);
+
+					boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing - rotationOffset;
+					int xLineCount = (int)((boundary.max.X - boundary.min.X + (lineSpacing - 1)) / lineSpacing);
+					Polygons unclipedPatern = new Polygons();
+
+					long firstX = boundary.min.X / lineSpacing * lineSpacing;
+					for (int lineIndex = 0; lineIndex < xLineCount; lineIndex++)
+					{
+						Polygon line = new Polygon();
+						line.Add(new IntPoint(firstX + lineIndex * lineSpacing, boundary.min.Y));
+						line.Add(new IntPoint(firstX + lineIndex * lineSpacing, boundary.max.Y));
+						unclipedPatern.Add(line);
+					}
+
+					PolyTree ret = new PolyTree();
+					Clipper clipper = new Clipper();
+					clipper.AddPaths(unclipedPatern, PolyType.ptSubject, false);
+					clipper.AddPaths(outlines, PolyType.ptClip, true);
+					clipper.Execute(ClipType.ctIntersection, ret, PolyFillType.pftPositive, PolyFillType.pftEvenOdd);
+
+					Polygons newSegments = Clipper.OpenPathsFromPolyTree(ret);
+					PointMatrix inversematrix = new PointMatrix((rotation + 90));
+					newSegments.ApplyMatrix(inversematrix);
+
+					infillLinesToPrint.AddRange(newSegments);
 				}
-				linespacing_um = (int)(config.ExtrusionWidth_um / (config.InfillPercent / 100) * 2);
 			}
-
-			Infill.GenerateLinePaths(partOutline, fillPolygons, linespacing_um, config.InfillExtendIntoPerimeter_um, fillAngle);
-
-			fillAngle += 90;
-			if (fillAngle > 360)
-			{
-				fillAngle -= 360;
-			}
-
-			Infill.GenerateLinePaths(partOutline, fillPolygons, linespacing_um, config.InfillExtendIntoPerimeter_um, fillAngle);
-		}
-
-		private static IntPoint hexOffset = new IntPoint(0, 0);
-
-		public static void GenerateHexagonInfill(ConfigSettings config, Polygons partOutline, Polygons fillPolygons, double fillAngle, int layerIndex)
-		{
-			if (config.InfillPercent <= 0)
-			{
-				throw new Exception("infillPercent must be greater than 0.");
-			}
-
-			int linespacing_um = (int)(config.ExtrusionWidth_um / (config.InfillPercent / 100) * 3 * .66);
-
-			Infill.GenerateHexLinePaths(partOutline, fillPolygons, linespacing_um, config.InfillExtendIntoPerimeter_um, fillAngle, layerIndex);
 		}
 
 		public static void GenerateTriangleInfill(ConfigSettings config, Polygons partOutline, Polygons fillPolygons, double fillAngle)
@@ -334,37 +264,107 @@ namespace MatterHackers.MatterSlice
 			Infill.GenerateLinePaths(partOutline, fillPolygons, linespacing_um, config.InfillExtendIntoPerimeter_um, fillAngle, offset);
 		}
 
-		public static void GenerateConcentricInfill(ConfigSettings config, Polygons partOutline, Polygons fillPolygons, long extrusionWidthOverride_um = 0)
+		private static IEnumerable<IntPoint> IncrementPositionIterator(IntPoint startPoint, Aabb boundary, int lineSpacing, int layerIndex)
 		{
-			if (extrusionWidthOverride_um == 0)
+			IntPoint positionAdd = new IntPoint(lineSpacing, 0);
+			int perIncrementOffset = (int)(lineSpacing * Math.Sqrt(3) / 2 + .5);
+			switch (layerIndex % 3)
 			{
-				extrusionWidthOverride_um = config.ExtrusionWidth_um;
-			}
+				case 0: // left to right
+					positionAdd = new IntPoint(lineSpacing, 0);
+					break;
 
-			Polygons outlineCopy = new Polygons(partOutline);
-			foreach (Polygon outline in outlineCopy)
-			{
-				if (outline.Count > 0)
-				{
-					outline.Add(outline[0]);
-				}
+				case 1: // left to top
+					positionAdd = new IntPoint(lineSpacing / 2, perIncrementOffset);
+					break;
+
+				case 2: // top to right
+					positionAdd = new IntPoint(lineSpacing / 2, -perIncrementOffset);
+					break;
 			}
-			int linespacing_um = (int)(extrusionWidthOverride_um / (config.InfillPercent / 100));
-			while (outlineCopy.Count > 0)
+			IntPoint nextPoint = startPoint;
+			do
 			{
-				for (int outlineIndex = 0; outlineIndex < outlineCopy.Count; outlineIndex++)
-				{
-					Polygon r = outlineCopy[outlineIndex];
-					fillPolygons.Add(r);
-				}
-				outlineCopy = outlineCopy.Offset(-linespacing_um);
-				foreach (Polygon outline in outlineCopy)
-				{
-					if (outline.Count > 0)
+				yield return nextPoint;
+				nextPoint += positionAdd;
+			} while (nextPoint.X > boundary.min.X
+				&& nextPoint.X < boundary.max.X
+				&& nextPoint.Y > boundary.min.Y
+				&& nextPoint.Y < boundary.max.Y);
+		}
+
+		private static IEnumerable<IntPoint> StartPositionIterator(Aabb boundary, int lineSpacing, int layerIndex)
+		{
+			int perIncrementOffset = (int)(lineSpacing * Math.Sqrt(3) / 2 + .5);
+			int yLineCount = (int)((boundary.max.Y - boundary.min.Y + perIncrementOffset) / perIncrementOffset) + 1;
+
+			switch (layerIndex % 3)
+			{
+				case 0: // left to right
+					for (int yIndex = 0; yIndex < yLineCount; yIndex++)
 					{
-						outline.Add(outline[0]);
+						long yPosition = boundary.min.Y + yIndex * perIncrementOffset;
+						bool removeXOffset = ((yPosition / perIncrementOffset) % 2) == 0;
+						long xOffsetForY = lineSpacing / 2;
+						if (removeXOffset) // if we are at every other y
+						{
+							xOffsetForY = 0;
+						}
+						long firstX = boundary.min.X + xOffsetForY;
+
+						yield return new IntPoint(firstX, yPosition);
 					}
-				}
+					break;
+
+				case 1: // left to top
+					{
+						IntPoint nextPoint = new IntPoint();
+						for (int yIndex = yLineCount; yIndex >= 0; yIndex--)
+						{
+							long yPosition = boundary.min.Y + yIndex * perIncrementOffset;
+							bool createLineSegment = ((yPosition / perIncrementOffset) % 2) == 0;
+							if (createLineSegment)
+							{
+								nextPoint = new IntPoint(boundary.min.X, yPosition);
+								yield return nextPoint;
+							}
+						}
+
+						IntPoint positionAdd = new IntPoint(lineSpacing, 0);
+						nextPoint += positionAdd;
+						while (nextPoint.X > boundary.min.X
+							&& nextPoint.X < boundary.max.X)
+						{
+							yield return nextPoint;
+							nextPoint += positionAdd;
+						}
+					}
+					break;
+
+				case 2: // top to right
+					{
+						IntPoint nextPoint = new IntPoint();
+						for (int yIndex = 0; yIndex < yLineCount; yIndex++)
+						{
+							long yPosition = boundary.min.Y + yIndex * perIncrementOffset;
+							bool createLineSegment = ((yPosition / perIncrementOffset) % 2) == 0;
+							if (createLineSegment)
+							{
+								nextPoint = new IntPoint(boundary.min.X, yPosition);
+								yield return nextPoint;
+							}
+						}
+
+						IntPoint positionAdd = new IntPoint(lineSpacing, 0);
+						nextPoint += positionAdd;
+						while (nextPoint.X > boundary.min.X
+							&& nextPoint.X < boundary.max.X)
+						{
+							yield return nextPoint;
+							nextPoint += positionAdd;
+						}
+					}
+					break;
 			}
 		}
 	}

@@ -1,6 +1,6 @@
 ﻿//The MIT License(MIT)
 
-//Copyright(c) 2015 ChevyRay
+//Copyright(c) 2015 ChevyRay, 2017 Lars Brubaker
 
 //Permission is hereby granted, free of charge, to any person obtaining a copy
 //of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,9 @@
 
 using System;
 using System.Collections.Generic;
+using MSClipperLib;
 
-namespace QuadTree
+namespace MatterHackers.QuadTree
 {
 	/// <summary>
 	/// Used by the QuadTree to represent a rectangular area.
@@ -34,6 +35,23 @@ namespace QuadTree
 		public long MaxY;
 		public long MinX;
 		public long MinY;
+
+		public Quad(IntPoint testPosition, int expandDist = 1) : this()
+		{
+			MinX = testPosition.X - expandDist;
+			MinY = testPosition.Y - expandDist;
+			MaxX = testPosition.X + expandDist;
+			MaxY = testPosition.Y + expandDist;
+		}
+
+		public Quad(IntPoint start, IntPoint end) : this()
+		{
+			MinX = Math.Min(start.X, end.X) - 1;
+			MinY = Math.Min(start.Y, end.Y) - 1;
+			MaxX = Math.Max(start.X, end.X) + 1;
+			MaxY = Math.Max(start.Y, end.Y) + 1;
+		}
+
 		/// <summary>
 		/// Construct a new Quad.
 		/// </summary>
@@ -54,7 +72,15 @@ namespace QuadTree
 		/// </summary>
 		public bool Contains(ref Quad other)
 		{
-			return other.MinX >= MinX && other.MinY >= MinY && other.MaxX <= MaxX && other.MaxY <= MaxY;
+			if (MinX < other.MinX
+				&& MinY < other.MinY
+				&& MaxX > other.MaxX
+				&& MaxY > other.MaxY)
+			{
+				return true;
+			}
+
+			return false;
 		}
 
 		/// <summary>
@@ -62,7 +88,15 @@ namespace QuadTree
 		/// </summary>
 		public bool Contains(long x, long y)
 		{
-			return x > MinX && y > MinY && x < MaxX && y < MaxY;
+			if (x > MinX
+				&& y > MinY
+				&& x < MaxX
+				&& y < MaxY)
+			{
+				return true;
+			}
+
+			return false;
 		}
 
 		/// <summary>
@@ -70,7 +104,15 @@ namespace QuadTree
 		/// </summary>
 		public bool Intersects(ref Quad other)
 		{
-			return MinX < other.MaxX && MinY < other.MaxY && MaxX > other.MinX && MaxY > other.MinY;
+			if (MinX < other.MaxX
+				&& MinY < other.MaxY
+				&& MaxX > other.MinX
+				&& MaxY > other.MinY)
+			{
+				return true;
+			}
+
+			return false;
 		}
 
 		/// <summary>
@@ -101,7 +143,8 @@ namespace QuadTree
 
 		internal Dictionary<T, Leaf> leafLookup = new Dictionary<T, Leaf>();
 		internal int splitCount;
-		 Branch root;
+		private Branch root;
+
 		/// <summary>
 		/// Creates a new QuadTree.
 		/// </summary>
@@ -121,7 +164,6 @@ namespace QuadTree
 		public QuadTree(int splitCount, Quad region)
 			: this(splitCount, ref region)
 		{
-
 		}
 
 		/// <summary>
@@ -135,7 +177,6 @@ namespace QuadTree
 		public QuadTree(int splitCount, long minX, long minY, long maxX, long maxY)
 			: this(splitCount, new Quad(minX, minY, maxX, maxY))
 		{
-
 		}
 
 		/// <summary>
@@ -159,6 +200,7 @@ namespace QuadTree
 			root.Tree = this;
 			leafLookup.Clear();
 		}
+
 		/// <summary>
 		/// Count how many branches are in the QuadTree.
 		/// </summary>
@@ -175,17 +217,8 @@ namespace QuadTree
 		/// <returns>True if any collisions were found.</returns>
 		/// <param name="value">The value to check collisions against.</param>
 		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
-		public bool FindCollisions(T value, ref List<T> values)
+		public IEnumerable<T> FindCollisions(T value)
 		{
-			if (values != null)
-			{
-				values.Clear();
-			}
-			else
-			{
-				values = new List<T>(leafLookup.Count);
-			}
-
 			Leaf leaf;
 			if (leafLookup.TryGetValue(value, out leaf))
 			{
@@ -198,7 +231,7 @@ namespace QuadTree
 					{
 						if (leaf != branch.Leaves[i] && leaf.Quad.Intersects(ref branch.Leaves[i].Quad))
 						{
-							values.Add(branch.Leaves[i].Value);
+							yield return branch.Leaves[i].Value;
 						}
 					}
 				}
@@ -210,7 +243,10 @@ namespace QuadTree
 					{
 						if (branch.Branches[i] != null)
 						{
-							branch.Branches[i].SearchQuad(ref leaf.Quad, values);
+							foreach (var index in branch.Branches[i].SearchQuad(leaf.Quad))
+							{
+								yield return index;
+							}
 						}
 					}
 				}
@@ -225,14 +261,13 @@ namespace QuadTree
 						{
 							if (leaf.Quad.Intersects(ref branch.Leaves[i].Quad))
 							{
-								values.Add(branch.Leaves[i].Value);
+								yield return branch.Leaves[i].Value;
 							}
 						}
 					}
 					branch = branch.Parent;
 				}
 			}
-			return values.Count > 0;
 		}
 
 		/// <summary>
@@ -281,19 +316,9 @@ namespace QuadTree
 		/// <returns>True if any values were found.</returns>
 		/// <param name="quad">The area to search.</param>
 		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
-		public bool SearchArea(ref Quad quad, ref List<T> values)
+		public IEnumerable<T> SearchArea(ref Quad quad)
 		{
-			if (values != null)
-			{
-				values.Clear();
-			}
-			else
-			{
-				values = new List<T>();
-			}
-
-			root.SearchQuad(ref quad, values);
-			return values.Count > 0;
+			return root.SearchQuad(quad);
 		}
 
 		/// <summary>
@@ -302,9 +327,9 @@ namespace QuadTree
 		/// <returns>True if any values were found.</returns>
 		/// <param name="quad">The area to search.</param>
 		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
-		public bool SearchArea(Quad quad, ref List<T> values)
+		public IEnumerable<T> SearchArea(Quad quad)
 		{
-			return SearchArea(ref quad, ref values);
+			return SearchArea(ref quad);
 		}
 
 		/// <summary>
@@ -316,10 +341,10 @@ namespace QuadTree
 		/// <param name="width">Width of the search area.</param>
 		/// <param name="height">Height of the search area.</param>
 		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
-		public bool SearchArea(long x, long y, long width, long height, ref List<T> values)
+		public IEnumerable<T> SearchArea(long x, long y, long width, long height)
 		{
 			var quad = new Quad(x, y, x + width, y + height);
-			return SearchArea(ref quad, ref values);
+			return SearchArea(ref quad);
 		}
 
 		/// <summary>
@@ -329,21 +354,12 @@ namespace QuadTree
 		/// <param name="x">The x coordinate.</param>
 		/// <param name="y">The y coordinate.</param>
 		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
-		public bool SearchPoint(long x, long y, ref List<T> values)
+		public IEnumerable<T> SearchPoint(long x, long y)
 		{
-			if (values != null)
-			{
-				values.Clear();
-			}
-			else
-			{
-				values = new List<T>();
-			}
-			root.SearchPoint(x, y, values);
-			return values.Count > 0;
+			return root.SearchPoint(x, y);
 		}
 
-		static Branch CreateBranch(QuadTree<T> tree, Branch parent, ref Quad quad)
+		private static Branch CreateBranch(QuadTree<T> tree, Branch parent, ref Quad quad)
 		{
 			var branch = branchPool.Count > 0 ? branchPool.Pop() : new Branch();
 			branch.Tree = tree;
@@ -358,7 +374,7 @@ namespace QuadTree
 			return branch;
 		}
 
-		static Leaf CreateLeaf(T value, ref Quad quad)
+		private static Leaf CreateLeaf(T value, ref Quad quad)
 		{
 			var leaf = leafPool.Count > 0 ? leafPool.Pop() : new Leaf();
 			leaf.Value = value;
@@ -366,7 +382,7 @@ namespace QuadTree
 			return leaf;
 		}
 
-		void CountBranches(Branch branch, ref int count)
+		private void CountBranches(Branch branch, ref int count)
 		{
 			++count;
 			if (branch.Split)
@@ -391,6 +407,7 @@ namespace QuadTree
 			internal Quad[] Quads = new Quad[4];
 			internal bool Split;
 			internal QuadTree<T> Tree;
+
 			internal void Clear()
 			{
 				Tree = null;
@@ -461,7 +478,7 @@ namespace QuadTree
 				}
 			}
 
-			internal void SearchPoint(long x, long y, List<T> values)
+			internal IEnumerable<T> SearchPoint(long x, long y)
 			{
 				if (Leaves.Count > 0)
 				{
@@ -469,7 +486,7 @@ namespace QuadTree
 					{
 						if (Leaves[i].Quad.Contains(x, y))
 						{
-							values.Add(Leaves[i].Value);
+							yield return Leaves[i].Value;
 						}
 					}
 				}
@@ -478,12 +495,15 @@ namespace QuadTree
 				{
 					if (Branches[i] != null)
 					{
-						Branches[i].SearchPoint(x, y, values);
+						foreach (var index in Branches[i].SearchPoint(x, y))
+						{
+							yield return index;
+						}
 					}
 				}
 			}
 
-			internal void SearchQuad(ref Quad quad, List<T> values)
+			internal IEnumerable<T> SearchQuad(Quad quad)
 			{
 				if (Leaves.Count > 0)
 				{
@@ -491,7 +511,7 @@ namespace QuadTree
 					{
 						if (quad.Intersects(ref Leaves[i].Quad))
 						{
-							values.Add(Leaves[i].Value);
+							yield return Leaves[i].Value;
 						}
 					}
 				}
@@ -500,7 +520,7 @@ namespace QuadTree
 				{
 					if (Branches[i] != null)
 					{
-						Branches[i].SearchQuad(ref quad, values);
+						Branches[i].SearchQuad(quad);
 					}
 				}
 			}
