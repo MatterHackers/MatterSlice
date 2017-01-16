@@ -199,6 +199,7 @@ namespace MatterHackers.MatterSlice.Tests
 				config.RetractionZHop = 5;
 				config.MinimumTravelToCauseRetraction = 2;
 				config.MinimumExtrusionBeforeRetraction = 0;
+				config.MergeOverlappingLines = false;
 				config.FirstLayerExtrusionWidth = .5;
 				fffProcessor processor = new fffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
@@ -232,7 +233,7 @@ namespace MatterHackers.MatterSlice.Tests
 								if (xyLength > config.MinimumTravelToCauseRetraction
 									&& lastMoveIsExtrusion)
 								{
-									Assert.Greater(movement.position.z, lastExtrusion.position.z);
+									 Assert.Greater(movement.position.z, lastExtrusion.position.z);
 								}
 
 								lastMoveIsExtrusion = false;

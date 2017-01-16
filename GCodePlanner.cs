@@ -400,7 +400,13 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 
-					// If the internal move is very long (20 mm), do a retraction anyway
+					// and add in the last bit
+					if (pointList.Count > 1)
+					{
+						lineLength_um += (LastPosition - pointList[pointList.Count - 1]).Length();
+					}
+
+					// If the internal move is very long (> retractionMinimumDistance_um), do a retraction
 					if (lineLength_um > retractionMinimumDistance_um)
 					{
 						path.Retract = true;
@@ -415,7 +421,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 			}
-			else if (alwaysRetract)
+			else
 			{
 				if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um))
 				{
