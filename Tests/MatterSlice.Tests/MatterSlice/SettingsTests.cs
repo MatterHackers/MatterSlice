@@ -565,10 +565,15 @@ namespace MatterHackers.MatterSlice.Tests
 				// check that all layers move up
 				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo, startingPosition))
 				{
-					if (layerIndex > 0)
+					if (movement.line.Contains("X")
+						|| movement.line.Contains("Y")
+						|| movement.line.Contains("Z"))
 					{
-						Assert.AreEqual(movement.position.z, .2 + layerIndex * .2, .001);
-						Assert.IsTrue(movement.position.z >= startingPosition.position.z);
+						if (layerIndex > 0)
+						{
+							Assert.AreEqual(movement.position.z, .2 + layerIndex * .2, .001);
+							Assert.IsTrue(movement.position.z >= startingPosition.position.z);
+						}
 					}
 
 					// always go up

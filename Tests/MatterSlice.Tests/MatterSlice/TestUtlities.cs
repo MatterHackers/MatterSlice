@@ -44,6 +44,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 	public struct MovementInfo
 	{
+		public string line;
 		public double extrusion;
 		public double feedRate;
 		public Vector3 position;
@@ -253,6 +254,7 @@ namespace MatterHackers.MatterSlice.Tests
 			foreach (string inLine in gcodeContents)
 			{
 				string line = inLine;
+				currentPosition.line = line;
 				// make sure we don't parse comments
 				if (line.Contains(";"))
 				{
