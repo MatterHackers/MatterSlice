@@ -140,10 +140,11 @@ namespace MatterHackers.Pathfinding
 			IntPointNode previousNode = startNode;
 			foreach (var crossing in crossings.SkipSame())
 			{
+				IntPointNode crossingNode = Waypoints.FindNode(crossing.Item3);
 				// for every crossing try to connect it up in the waypoint data
-				if (Waypoints.FindNode(crossing.Item3) == null)
+				if (crossingNode == null)
 				{
-					IntPointNode crossingNode = AddTempWayPoint(removePointList, crossing.Item3);
+					crossingNode = AddTempWayPoint(removePointList, crossing.Item3);
 					if (BoundaryPolygons.PointIsInside((previousNode.Position + crossingNode.Position) / 2, BoundaryEdgeQuadTrees))
 					{
 						Waypoints.AddPathLink(previousNode, crossingNode);
@@ -152,6 +153,20 @@ namespace MatterHackers.Pathfinding
 					HookUpToEdge(crossingNode, crossing.Item1, crossing.Item2);
 					previousNode = crossingNode;
 				}
+
+				if(crossingNode != startNode
+					&& startNode.Links.Count == 0)
+				{
+					// connect the start to the first node
+					Waypoints.AddPathLink(crossingNode, startNode);
+				}
+			}
+
+			if (previousNode != endNode
+				&& endNode.Links.Count == 0)
+			{
+				// connect the last crossing to the end node
+				Waypoints.AddPathLink(previousNode, endNode);
 			}
 
 			if (BoundaryPolygons.PointIsInside((previousNode.Position + endNode.Position) / 2, BoundaryEdgeQuadTrees))
