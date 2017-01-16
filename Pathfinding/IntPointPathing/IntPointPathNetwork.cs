@@ -36,14 +36,16 @@ namespace MatterHackers.Pathfinding
 
 		public IntPointPathNetwork(Polygon data)
 		{
-			AddClosedPolygon(data);
+			AddPolygon(data);
 		}
 
 		public List<IntPointNode> Nodes { get; private set; } = new List<IntPointNode>();
 
-		public void AddClosedPolygon(Polygon polygon, float costMultiplier = 1)
+		public void AddPolygon(Polygon polygon, bool closed = true, float costMultiplier = 1)
 		{
+			// remember what node we started with
 			int startNode = Nodes.Count;
+			// add all the points of the polygon
 			for (int i = 0; i < polygon.Count; i++)
 			{
 				IntPointNode node = new IntPointNode(polygon[i]);
@@ -51,11 +53,22 @@ namespace MatterHackers.Pathfinding
 				Nodes.Add(node);
 			}
 
-			int lastLinkIndex = polygon.Count - 1 + startNode;
-			for (int i = startNode; i < polygon.Count + startNode; i++)
+			// add all the links to the new nodes we added
+			if (closed)
 			{
-				AddPathLink(Nodes[lastLinkIndex], Nodes[i]);
-				lastLinkIndex = i;
+				int lastLinkIndex = polygon.Count - 1 + startNode;
+				for (int i = startNode; i < polygon.Count + startNode; i++)
+				{
+					AddPathLink(Nodes[lastLinkIndex], Nodes[i]);
+					lastLinkIndex = i;
+				}
+			}
+			else
+			{
+				for (int i = startNode + 1; i < polygon.Count + startNode; i++)
+				{
+					AddPathLink(Nodes[i-1], Nodes[i]);
+				}
 			}
 		}
 

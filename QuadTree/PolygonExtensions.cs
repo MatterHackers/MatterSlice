@@ -60,11 +60,41 @@ namespace MatterHackers.QuadTree
 			return true;
 		}
 
+		public static IntPoint Center(this Polygon polygon)
+		{
+			IntPoint center = new IntPoint();
+			for (int positionIndex = 0; positionIndex < polygon.Count; positionIndex++)
+			{
+				center += polygon[positionIndex];
+			}
+
+			center /= polygon.Count;
+			return center;
+		}
+
 		// The main function that returns true if line segment 'startA-endA'
 		// and 'startB-endB' intersect.
 		public static bool DoIntersect(IntPoint startA, IntPoint endA, IntPoint startB, IntPoint endB)
 		{
 			return GetIntersection(startA, endA, startB, endB) != Intersection.None;
+		}
+
+		public static Tuple<int, IntPoint> FindClosestPoint(this Polygon polygon, IntPoint position)
+		{
+			var polyPointPosition = new Tuple<int, IntPoint>(-1, position);
+
+			long bestDist = long.MaxValue;
+			for (int pointIndex = 0; pointIndex < polygon.Count; pointIndex++)
+			{
+				long length = (polygon[pointIndex] - position).Length();
+				if (length < bestDist)
+				{
+					bestDist = length;
+					polyPointPosition = new Tuple<int, IntPoint>(pointIndex, polygon[pointIndex]);
+				}
+			}
+
+			return polyPointPosition;
 		}
 
 		public static IEnumerable<Tuple<int, IntPoint>> FindCrossingPoints(this Polygon polygon, IntPoint start, IntPoint end, QuadTree<int> edgeQuadTree = null)

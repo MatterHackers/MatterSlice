@@ -49,7 +49,7 @@ namespace MatterHackers.Pathfinding
 
 			foreach (var polygon in BoundaryPolygons)
 			{
-				Waypoints.AddClosedPolygon(polygon);
+				Waypoints.AddPolygon(polygon);
 			}
 
 			// hook up path segments between the separate islands
@@ -57,9 +57,28 @@ namespace MatterHackers.Pathfinding
 			if (OutlinePolygons.FindThinLines(avoidInset*-2, 0, out thinLines))
 			{
 				ThinLinePolygons = thinLines;
+				foreach (var polygon in ThinLinePolygons)
+				{
+					if (polygon.Count > 1
+						&& polygon.PolygonLength() > avoidInset/-4)
+					{
+						Waypoints.AddPolygon(polygon);
+						// now hook up the start and end of this polygon to the existing way points
+						var closestStart = BoundaryPolygons.FindClosestPoint(polygon[0]);
+						var closestEnd = BoundaryPolygons.FindClosestPoint(polygon[polygon.Count-1]); // last point
+						if (OutlinePolygons.PointIsInside((closestStart.Item3 + closestEnd.Item3) / 2, OutlineEdgeQuadTrees))
+						{
+							IntPointNode nodeA = Waypoints.FindNode(closestStart.Item3);
+							IntPointNode nodeB = Waypoints.FindNode(closestEnd.Item3);
+							Waypoints.AddPathLink(nodeA, nodeB);
+						}
+					}
+				}
 			}
+
 			// this is done with merge close edges and finding candidates
 			// then joining the ends of the merged segments with the closest points
+
 
 			removePointList = new WayPointsToRemove(Waypoints);
 		}
