@@ -31,6 +31,7 @@ namespace MatterHackers.Pathfinding
 
 	public class PathFinder
 	{
+		static bool simpleHookup = true;
 		private static bool storeBoundary = false;
 		private WayPointsToRemove removePointList;
 
@@ -53,32 +54,55 @@ namespace MatterHackers.Pathfinding
 			}
 
 			// hook up path segments between the separate islands
-			Polygons thinLines;
-			if (OutlinePolygons.FindThinLines(avoidInset*-2, 0, out thinLines))
+			if (simpleHookup) // do a simple hookup
 			{
-				ThinLinePolygons = thinLines;
-				foreach (var polygon in ThinLinePolygons)
+				for (int indexA = 0; indexA < BoundaryPolygons.Count - 1; indexA++)
 				{
-					if (polygon.Count > 1
-						&& polygon.PolygonLength() > avoidInset/-4)
+					// find the closest two point between A and any other polygon
+					IntPoint bestAPos = BoundaryPolygons[indexA].Center();
+					var bestBPoly = BoundaryPolygons.FindClosestPoint(bestAPos, indexA);
+					bestAPos = BoundaryPolygons[indexA].FindClosestPoint(bestBPoly.Item3).Item2;
+					var bestBPos = BoundaryPolygons[bestBPoly.Item1].FindClosestPoint(bestAPos).Item2;
+					bestAPos = BoundaryPolygons[indexA].FindClosestPoint(bestBPos).Item2;
+					bestBPos = BoundaryPolygons[bestBPoly.Item1].FindClosestPoint(bestAPos).Item2;
+
+					// hook the polygons up along this connection
+					IntPointNode nodeA = Waypoints.FindNode(bestAPos);
+					IntPointNode nodeB = Waypoints.FindNode(bestBPos);
+					Waypoints.AddPathLink(nodeA, nodeB);
+					if((nodeA.Position - nodeB.Position).Length() > 10000)
 					{
-						Waypoints.AddPolygon(polygon);
-						// now hook up the start and end of this polygon to the existing way points
-						var closestStart = BoundaryPolygons.FindClosestPoint(polygon[0]);
-						var closestEnd = BoundaryPolygons.FindClosestPoint(polygon[polygon.Count-1]); // last point
-						if (OutlinePolygons.PointIsInside((closestStart.Item3 + closestEnd.Item3) / 2, OutlineEdgeQuadTrees))
+						int a = 0;
+					}
+				}
+			}
+			else // hook up using thin lines code
+			{
+				// this is done with merge close edges and finding candidates
+				// then joining the ends of the merged segments with the closest points
+				Polygons thinLines;
+				if (OutlinePolygons.FindThinLines(avoidInset * -2, 0, out thinLines))
+				{
+					ThinLinePolygons = thinLines;
+					foreach (var polygon in ThinLinePolygons)
+					{
+						if (polygon.Count > 1
+							&& polygon.PolygonLength() > avoidInset / -4)
 						{
-							IntPointNode nodeA = Waypoints.FindNode(closestStart.Item3);
-							IntPointNode nodeB = Waypoints.FindNode(closestEnd.Item3);
-							Waypoints.AddPathLink(nodeA, nodeB);
+							Waypoints.AddPolygon(polygon, false);
+							// now hook up the start and end of this polygon to the existing way points
+							var closestStart = BoundaryPolygons.FindClosestPoint(polygon[0]);
+							var closestEnd = BoundaryPolygons.FindClosestPoint(polygon[polygon.Count - 1]); // last point
+							if (OutlinePolygons.PointIsInside((closestStart.Item3 + closestEnd.Item3) / 2, OutlineEdgeQuadTrees))
+							{
+								IntPointNode nodeA = Waypoints.FindNode(closestStart.Item3);
+								IntPointNode nodeB = Waypoints.FindNode(closestEnd.Item3);
+								Waypoints.AddPathLink(nodeA, nodeB);
+							}
 						}
 					}
 				}
 			}
-
-			// this is done with merge close edges and finding candidates
-			// then joining the ends of the merged segments with the closest points
-
 
 			removePointList = new WayPointsToRemove(Waypoints);
 		}
@@ -93,6 +117,9 @@ namespace MatterHackers.Pathfinding
 
 		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside)
 		{
+			double z = startPoint.Z;
+			startPoint.Z = 0;
+			endPoint.Z = 0;
 			if (BoundaryPolygons.Count == 0)
 			{
 				return false;
@@ -139,8 +166,8 @@ namespace MatterHackers.Pathfinding
 			if (BoundaryPolygons.FindIntersection(startPoint, endPoint, BoundaryEdgeQuadTrees) != Intersection.Intersect
 				&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2, BoundaryEdgeQuadTrees))
 			{
-				pathThatIsInside.Add(startPoint);
-				pathThatIsInside.Add(endPoint);
+				pathThatIsInside.Add(new IntPoint(startPoint, z));
+				pathThatIsInside.Add(new IntPoint(endPoint, z));
 				return true;
 			}
 
@@ -197,20 +224,20 @@ namespace MatterHackers.Pathfinding
 
 			if (startPolyPointPosition != null)
 			{
-				pathThatIsInside.Add(startNode.Position);
+				pathThatIsInside.Add(new IntPoint(startNode.Position, z));
 			}
 
 			var lastAdd = startNode.Position;
 			foreach (var node in path.Nodes.SkipSamePosition(startNode.Position))
 			{
-				pathThatIsInside.Add(node.Position);
+				pathThatIsInside.Add(new IntPoint(node.Position, z));
 				lastAdd = node.Position;
 			}
 
 			if (endPolyPointPosition != null
 				&& endNode.Position != lastAdd)
 			{
-				pathThatIsInside.Add(endNode.Position);
+				pathThatIsInside.Add(new IntPoint(endNode.Position, z));
 			}
 
 			if (path.Nodes.Length == 0)

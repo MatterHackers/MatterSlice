@@ -253,19 +253,22 @@ namespace MatterHackers.QuadTree
 			return splitPolygons;
 		}
 
-		public static Tuple<int, int, IntPoint> FindClosestPoint(this Polygons boundaryPolygons, IntPoint position)
+		public static Tuple<int, int, IntPoint> FindClosestPoint(this Polygons boundaryPolygons, IntPoint position, int indexToSkip = -1)
 		{
 			var polyPointPosition = new Tuple<int, int, IntPoint>(-1, -1, position);
 
 			long bestDist = long.MaxValue;
 			for (int polygonIndex = 0; polygonIndex < boundaryPolygons.Count; polygonIndex++)
 			{
-				Tuple<int, IntPoint > closestToPoly = boundaryPolygons[polygonIndex].FindClosestPoint(position);
-				long length = (closestToPoly.Item2 - position).Length();
-				if (length < bestDist)
+				if (polygonIndex != indexToSkip)
 				{
-					bestDist = length;
-					polyPointPosition = new Tuple<int, int, IntPoint>(polygonIndex, closestToPoly.Item1, closestToPoly.Item2);
+					Tuple<int, IntPoint> closestToPoly = boundaryPolygons[polygonIndex].FindClosestPoint(position);
+					long length = (closestToPoly.Item2 - position).Length();
+					if (length < bestDist)
+					{
+						bestDist = length;
+						polyPointPosition = new Tuple<int, int, IntPoint>(polygonIndex, closestToPoly.Item1, closestToPoly.Item2);
+					}
 				}
 			}
 
