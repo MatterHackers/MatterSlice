@@ -662,6 +662,15 @@ namespace MatterHackers.MatterSlice
 							}
 
 							// move to the start of this polygon
+							Polygon pointList = new Polygon();
+							if (pathFinder != null && pathFinder.CreatePathInsideBoundary(LastPosition, polygon[0], pointList))
+							{
+								for (int pointIndex = 0; pointIndex < pointList.Count; pointIndex++)
+								{
+									gcodeExport.WriteMove(pointList[pointIndex], travelConfig.speed, 0);
+								}
+							}
+
 							gcodeExport.WriteMove(polygon[0], travelConfig.speed, 0);
 
 							// write all the data for the polygon
