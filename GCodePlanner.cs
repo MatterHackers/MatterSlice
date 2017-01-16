@@ -387,6 +387,11 @@ namespace MatterHackers.MatterSlice
 				if (pathFinder.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pointList))
 				{
 					long lineLength_um = 0;
+					if (pointList.Count > 0)
+					{
+						lineLength_um += (LastPosition - pointList[0]).Length();
+					}
+
 					// we can stay inside so move within the boundary
 					for (int pointIndex = 0; pointIndex < pointList.Count; pointIndex++)
 					{
