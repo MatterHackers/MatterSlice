@@ -651,7 +651,7 @@ namespace MatterHackers.MatterSlice
 				layerGcodePlanner.SetAlwaysRetract(!config.AvoidCrossingPerimeters);
 			}
 
-			// Move to the best point start point for this layer
+			// Move to the best start point for this layer
 			if (!config.ContinuousSpiralOuterPerimeter
 				&& layerIndex > 0
 				&& layerIndex < slicingData.Extruders[extruderIndex].Layers.Count - 2)
@@ -742,16 +742,6 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 
-					// Figure out where the seam hiding start point is for inset 0 and move to that spot so
-					// we have the minimum travel while starting inset 0 after printing the rest of the insets
-					if (island?.InsetToolPaths.Count > 0
-						&& island?.InsetToolPaths?[0]?[0]?.Count > 0
-						&& !config.ContinuousSpiralOuterPerimeter)
-					{
-						int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
-						layerGcodePlanner.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
-					}
-
 					// Put all the insets into a new list so we can keep track of what has been printed.
 					// The island could be a rectangle with 4 screew holes. So, with 3 perimeters that colud be the outside 3 + the foles 4 * 3, 15 polygons.
 					List<Polygons> insetsForThisIsland = new List<Polygons>(island.InsetToolPaths.Count);
@@ -810,6 +800,16 @@ namespace MatterHackers.MatterSlice
 					}
 					else // This is so we can do overhangs better (the outside can stick a bit to the inside).
 					{
+						// Figure out where the seam hiding start point is for inset 0 and move to that spot so
+						// we have the minimum travel while starting inset 0 after printing the rest of the insets
+						if (island?.InsetToolPaths.Count > 0
+							&& island?.InsetToolPaths?[0]?[0]?.Count > 0
+							&& !config.ContinuousSpiralOuterPerimeter)
+						{
+							int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
+							layerGcodePlanner.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
+						}
+
 						int insetCount = CountInsetsToPrint(insetsForThisIsland);
 						while (insetCount > 0)
 						{
