@@ -469,7 +469,7 @@ namespace MatterHackers.MatterSlice
 					gcode.SetExtrusion(config.LayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 				}
 
-				GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio, config.MergeOverlappingLines);
+				GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 				if (layerIndex == 0
 					&& config.RetractionZHop > 0)
 				{
@@ -577,6 +577,31 @@ namespace MatterHackers.MatterSlice
 
 			//Store the object height for when we are printing multiple objects, as we need to clear every one of them when moving to the next position.
 			maxObjectHeight = Math.Max(maxObjectHeight, slicingData.modelSize.Z);
+		}
+
+		void QueuePerimeterWithMergOverlaps(Polygon perimeterToCheckForMerge, int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig config)
+		{
+			Polygons pathsWithOverlapsRemoved = null;
+			bool pathHadOverlaps = false;
+			bool pathIsClosed = true;
+
+			if (perimeterToCheckForMerge.Count > 2)
+			{
+				pathHadOverlaps = perimeterToCheckForMerge.MergePerimeterOverlaps(config.lineWidth_um, out pathsWithOverlapsRemoved, pathIsClosed)
+					&& pathsWithOverlapsRemoved.Count > 0;
+			}
+
+			if (pathHadOverlaps)
+			{
+				bool oldClosedLoop = config.closedLoop;
+				config.closedLoop = false;
+				QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, pathsWithOverlapsRemoved, config, SupportWriteType.UnsupportedAreas);
+				config.closedLoop = oldClosedLoop;
+			}
+			else
+			{
+				QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, new Polygons() { perimeterToCheckForMerge }, config, SupportWriteType.UnsupportedAreas);
+			}
 		}
 
 		private int GetFanSpeed(int layerIndex, GCodePlanner gcodeLayer)
@@ -925,7 +950,14 @@ namespace MatterHackers.MatterSlice
 
 			if (polygonPrintedIndex > -1)
 			{
-				QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, new Polygons() { insetsToConsider[polygonPrintedIndex] }, pathConfig, SupportWriteType.UnsupportedAreas);
+				if (config.MergeOverlappingLines)
+				{
+					QueuePerimeterWithMergOverlaps(insetsToConsider[polygonPrintedIndex], layerIndex, gcodeLayer, pathConfig);
+				}
+				else
+				{
+					QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, new Polygons() { insetsToConsider[polygonPrintedIndex] }, pathConfig, SupportWriteType.UnsupportedAreas);
+				}
 				insetsToConsider.RemoveAt(polygonPrintedIndex);
 				return true;
 			}
