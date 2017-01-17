@@ -461,7 +461,7 @@ namespace MatterHackers.MatterSlice
 			this.extrudeSpeedFactor = speedFactor;
 		}
 
-		public void SetOuterPerimetersToAvoidCrossing(PathFinder pathFinder)
+		public void SetPathFinder(PathFinder pathFinder)
 		{
 			if (pathFinder != null)
 			{

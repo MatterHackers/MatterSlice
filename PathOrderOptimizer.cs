@@ -261,7 +261,7 @@ namespace MatterHackers.MatterSlice
 					// this is our new seam hiding code
 					int bestPointIndex;
 					if (config != null
-						&& config.doSeamHiding
+						&& config.DoSeamHiding
 						&& !config.spiralize)
 					{
 						bestPointIndex = GetBestIndex(currentPolygon, config.lineWidth_um);

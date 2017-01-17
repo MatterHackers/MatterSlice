@@ -48,7 +48,7 @@ namespace MatterHackers.MatterSlice
 
 		private GCodePathConfig inset0Config = new GCodePathConfig("inset0Config")
 		{
-			doSeamHiding = true,
+			DoSeamHiding = true,
 		};
 
 		private GCodePathConfig insetXConfig = new GCodePathConfig("insetXConfig");
@@ -676,7 +676,7 @@ namespace MatterHackers.MatterSlice
 				layerGcodePlanner.SetAlwaysRetract(!config.AvoidCrossingPerimeters);
 			}
 
-			// Move to the best point start point for this layer
+			// Move to the best start point for this layer
 			if (!config.ContinuousSpiralOuterPerimeter
 				&& layerIndex > 0
 				&& layerIndex < slicingData.Extruders[extruderIndex].Layers.Count - 2)
@@ -692,7 +692,7 @@ namespace MatterHackers.MatterSlice
 						int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
 						if (config.AvoidCrossingPerimeters)
 						{
-							layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(island.PathFinder);
+							layerGcodePlanner.SetPathFinder(island.PathFinder);
 						}
 						layerGcodePlanner.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
 					}
@@ -731,7 +731,7 @@ namespace MatterHackers.MatterSlice
 
 				if (config.AvoidCrossingPerimeters)
 				{
-					layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(island.PathFinder);
+					layerGcodePlanner.SetPathFinder(island.PathFinder);
 				}
 				else
 				{
@@ -765,16 +765,6 @@ namespace MatterHackers.MatterSlice
 						{
 							inset0Config.spiralize = true;
 						}
-					}
-
-					// Figure out where the seam hiding start point is for inset 0 and move to that spot so
-					// we have the minimum travel while starting inset 0 after printing the rest of the insets
-					if (island?.InsetToolPaths.Count > 0
-						&& island?.InsetToolPaths?[0]?[0]?.Count > 0
-						&& !config.ContinuousSpiralOuterPerimeter)
-					{
-						int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
-						layerGcodePlanner.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
 					}
 
 					// Put all the insets into a new list so we can keep track of what has been printed.
@@ -811,22 +801,13 @@ namespace MatterHackers.MatterSlice
 								bool limitDistance = false;
 								if (island.InsetToolPaths.Count > 0)
 								{
-									QueueClosetsInset(insetsForThisIsland[0], limitDistance, inset0Config, layerIndex, layerGcodePlanner, false);
+									QueueClosetsInset(insetsForThisIsland[0], limitDistance, inset0Config, layerIndex, layerGcodePlanner);
 								}
 
-								if (island.InsetToolPaths.Count > 1)
+								// Move to the closest inset 1 and print it
+								for (int insetIndex = 1; insetIndex < island.InsetToolPaths.Count; insetIndex++)
 								{
-									// Move to the closest inset 1 and print it
-									limitDistance = QueueClosetsInset(insetsForThisIsland[1], limitDistance, insetXConfig, layerIndex, layerGcodePlanner, false);
-									for (int insetIndex = 2; insetIndex < island.InsetToolPaths.Count; insetIndex++)
-									{
-										limitDistance = QueueClosetsInset(
-											insetsForThisIsland[insetIndex],
-											limitDistance,
-											insetIndex == 0 ? inset0Config : insetXConfig,
-											layerIndex,
-											layerGcodePlanner, false);
-									}
+									limitDistance = QueueClosetsInset(insetsForThisIsland[insetIndex], limitDistance, insetXConfig, layerIndex, layerGcodePlanner);
 								}
 
 								insetCount = CountInsetsToPrint(insetsForThisIsland);
@@ -844,12 +825,24 @@ namespace MatterHackers.MatterSlice
 								// Print the insets from inside to out (count - 1 to 0).
 								for (int insetIndex = island.InsetToolPaths.Count - 1; insetIndex >= 0; insetIndex--)
 								{
+
+									if (!config.ContinuousSpiralOuterPerimeter
+										&& insetIndex == island.InsetToolPaths.Count - 1)
+									{
+										int matching0Index = 0;
+										if (FindMatchingInset0(limitDistance, layerIndex, layerGcodePlanner, out matching0Index))
+										{
+											int bestPoint = PathOrderOptimizer.GetBestIndex(insetsForThisIsland[0][matching0Index], config.ExtrusionWidth_um);
+											layerGcodePlanner.QueueTravel(island.InsetToolPaths[0][matching0Index][bestPoint]);
+										}
+									}
+
 									limitDistance = QueueClosetsInset(
 										insetsForThisIsland[insetIndex],
 										limitDistance,
 										insetIndex == 0 ? inset0Config : insetXConfig,
 										layerIndex,
-										layerGcodePlanner, true);
+										layerGcodePlanner);
 
 									// Figue out if there is another inset
 								}
@@ -918,10 +911,16 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			layerGcodePlanner.SetOuterPerimetersToAvoidCrossing(null);
+			layerGcodePlanner.SetPathFinder(null);
 		}
 
-		private bool QueueClosetsInset(Polygons insetsToConsider, bool limitDistance, GCodePathConfig pathConfig, int layerIndex, GCodePlanner gcodeLayer, bool printAllInsidersBeforeOutsides)
+		private bool FindMatchingInset0(bool limitDistance, int layerIndex, GCodePlanner layerGcodePlanner, out int matching0Index)
+		{
+			matching0Index = 0;
+			return false;
+		}
+
+		private bool QueueClosetsInset(Polygons insetsToConsider, bool limitDistance, GCodePathConfig pathConfig, int layerIndex, GCodePlanner gcodeLayer)
 		{
 			// This is the furthest away we will accept a new statring point
 			long maxDist_um = long.MaxValue;
@@ -1024,7 +1023,7 @@ namespace MatterHackers.MatterSlice
 
 					if (config.AvoidCrossingPerimeters)
 					{
-						gcodeLayer.SetOuterPerimetersToAvoidCrossing(part.PathFinder);
+						gcodeLayer.SetPathFinder(part.PathFinder);
 					}
 					else
 					{
@@ -1090,7 +1089,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			gcodeLayer.SetOuterPerimetersToAvoidCrossing(null);
+			gcodeLayer.SetPathFinder(null);
 		}
 
 		private enum SupportWriteType
