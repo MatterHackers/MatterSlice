@@ -27,7 +27,7 @@ namespace MatterHackers.MatterSlice
 	public class GCodePathConfig
 	{
 		public bool closedLoop = true;
-		public bool doSeamHiding;
+		public bool DoSeamHiding { get; set; }
 		public string gcodeComment;
 		public int lineWidth_um;
 		public double speed;

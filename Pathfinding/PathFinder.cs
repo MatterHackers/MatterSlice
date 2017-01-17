@@ -70,10 +70,6 @@ namespace MatterHackers.Pathfinding
 					IntPointNode nodeA = Waypoints.FindNode(bestAPos);
 					IntPointNode nodeB = Waypoints.FindNode(bestBPos);
 					Waypoints.AddPathLink(nodeA, nodeB);
-					if((nodeA.Position - nodeB.Position).Length() > 10000)
-					{
-						int a = 0;
-					}
 				}
 			}
 			else // hook up using thin lines code

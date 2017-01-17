@@ -94,8 +94,7 @@ namespace MatterHackers.MatterSlice
 
 		private GCodeExport gcodeExport = new GCodeExport();
 
-		private bool mergeOverlappingLines;
-		private PathFinder pathFinder;
+		public PathFinder PathFinder { get; private set; }
 		private List<GCodePath> paths = new List<GCodePath>();
 		private double perimeterStartEndOverlapRatio;
 		private int retractionMinimumDistance_um;
@@ -103,15 +102,14 @@ namespace MatterHackers.MatterSlice
 		private GCodePathConfig travelConfig;
 		private int travelSpeedFactor;
 
-		public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um, double perimeterStartEndOverlap = 0, bool mergeOverlappingLines = false)
+		public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um, double perimeterStartEndOverlap = 0)
 		{
-			this.mergeOverlappingLines = mergeOverlappingLines;
 			this.gcodeExport = gcode;
 			travelConfig = new GCodePathConfig("travelConfig");
 			travelConfig.SetData(travelSpeed, 0, "travel");
 
 			LastPosition = gcode.GetPositionXY();
-			pathFinder = null;
+			PathFinder = null;
 			extrudeSpeedFactor = 100;
 			travelSpeedFactor = 100;
 			extraTime = 0.0;
@@ -272,16 +270,16 @@ namespace MatterHackers.MatterSlice
 
 		public void MoveInsideTravelPerimeter()
 		{
-			if (pathFinder == null)
+			if (PathFinder == null)
 			{
 				return;
 			}
 
 			IntPoint p = LastPosition;
-			if (pathFinder.MovePointInsideBoundary(p, out p))
+			if (PathFinder.MovePointInsideBoundary(p, out p))
 			{
 				//Move inside again, so we move out of tight 90deg corners
-				if (pathFinder.MovePointInsideBoundary(p, out p))
+				if (PathFinder.MovePointInsideBoundary(p, out p))
 				{
 					QueueTravel(p);
 					//Make sure the that any retraction happens after this move, not before it by starting a new move path.
@@ -381,10 +379,10 @@ namespace MatterHackers.MatterSlice
 				path.Retract = true;
 				forceRetraction = false;
 			}
-			else if (pathFinder != null)
+			else if (PathFinder != null)
 			{
 				Polygon pointList = new Polygon();
-				if (pathFinder.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pointList))
+				if (PathFinder.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pointList))
 				{
 					long lineLength_um = 0;
 					if (pointList.Count > 0)
@@ -463,15 +461,15 @@ namespace MatterHackers.MatterSlice
 			this.extrudeSpeedFactor = speedFactor;
 		}
 
-		public void SetOuterPerimetersToAvoidCrossing(PathFinder pathFinder)
+		public void SetPathFinder(PathFinder pathFinder)
 		{
 			if (pathFinder != null)
 			{
-				this.pathFinder = pathFinder;
+				this.PathFinder = pathFinder;
 			}
 			else
 			{
-				this.pathFinder = null;
+				this.PathFinder = null;
 			}
 		}
 
@@ -614,85 +612,25 @@ namespace MatterHackers.MatterSlice
 				else
 				{
 					// This is test code to remove double drawn small perimeter lines.
-					Polygons pathsWithOverlapsRemoved = null;
-					bool pathHadOverlaps = false;
-					bool pathIsClosed = true;
-					if (mergeOverlappingLines
-						&& (path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER"))
+					if (path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER")
 					{
 						//string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(path);
 						if (perimeterStartEndOverlapRatio < 1)
 						{
 							path = TrimPerimeter(path, perimeterStartEndOverlapRatio);
-							//string trimmedString = Newtonsoft.Json.JsonConvert.SerializeObject(path);
-							// it was closed but now it isn't
-							pathIsClosed = false;
-						}
-
-						if (path.config.lineWidth_um > 0
-							&& path.points.Count > 2)
-						{
-							// have to add in the position we are currently at
-							path.points.Insert(0, gcodeExport.GetPosition());
-							//string openPerimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(path);
-							pathHadOverlaps = path.points.MergePerimeterOverlaps(path.config.lineWidth_um, out pathsWithOverlapsRemoved, pathIsClosed)
-								&& pathsWithOverlapsRemoved.Count > 0;
-							//string trimmedString = Newtonsoft.Json.JsonConvert.SerializeObject(pathsWithOverlapsRemoved);
 						}
 					}
 
-					if (pathHadOverlaps)
+					int outputCount = path.points.Count;
+					for (int i = 0; i < outputCount; i++)
 					{
-						for (int polygonIndex = 0; polygonIndex < pathsWithOverlapsRemoved.Count; polygonIndex++)
+						long lineWidth_um = path.config.lineWidth_um;
+						if (path.points[i].Width != 0)
 						{
-							Polygon polygon = pathsWithOverlapsRemoved[polygonIndex];
-
-							if (polygon.Count == 2)
-							{
-								// make sure the path is ordered with the first point the closest to where we are now
-								IntPoint currentPosition = gcodeExport.GetPosition();
-								// if the second point is closer swap them
-								if ((polygon[1] - currentPosition).LengthSquared() < (polygon[0] - currentPosition).LengthSquared())
-								{
-									// swap them
-									IntPoint temp = polygon[0];
-									polygon[0] = polygon[1];
-									polygon[1] = temp;
-								}
-							}
-
-							// move to the start of this polygon
-							Polygon pointList = new Polygon();
-							if (pathFinder != null && pathFinder.CreatePathInsideBoundary(LastPosition, polygon[0], pointList))
-							{
-								for (int pointIndex = 0; pointIndex < pointList.Count; pointIndex++)
-								{
-									gcodeExport.WriteMove(pointList[pointIndex], travelConfig.speed, 0);
-								}
-							}
-
-							gcodeExport.WriteMove(polygon[0], travelConfig.speed, 0);
-
-							// write all the data for the polygon
-							for (int pointIndex = 1; pointIndex < polygon.Count; pointIndex++)
-							{
-								gcodeExport.WriteMove(polygon[pointIndex], speed, polygon[pointIndex - 1].Width);
-							}
+							lineWidth_um = path.points[i].Width;
 						}
-					}
-					else
-					{
-						int outputCount = path.points.Count;
-						for (int i = 0; i < outputCount; i++)
-						{
-							long lineWidth_um = path.config.lineWidth_um;
-							if (path.points[i].Width != 0)
-							{
-								lineWidth_um = path.points[i].Width;
-							}
 
-							gcodeExport.WriteMove(path.points[i], speed, lineWidth_um);
-						}
+						gcodeExport.WriteMove(path.points[i], speed, lineWidth_um);
 					}
 				}
 			}
