@@ -39,6 +39,7 @@ namespace MatterHackers.Pathfinding
 		{
 			OutlinePolygons = outlinePolygons;
 			OutlineEdgeQuadTrees = OutlinePolygons.GetEdgeQuadTrees();
+			OutlinePointQuadTrees = OutlinePolygons.GetPointQuadTrees();
 			BoundaryPolygons = outlinePolygons.Offset(avoidInset);
 			BoundaryEdgeQuadTrees = BoundaryPolygons.GetEdgeQuadTrees();
 			BoundaryPointQuadTrees = BoundaryPolygons.GetPointQuadTrees();
@@ -107,6 +108,7 @@ namespace MatterHackers.Pathfinding
 		public List<QuadTree<int>> BoundaryPointQuadTrees { get; private set; }
 		public Polygons BoundaryPolygons { get; private set; }
 		public List<QuadTree<int>> OutlineEdgeQuadTrees { get; private set; }
+		public List<QuadTree<int>> OutlinePointQuadTrees { get; private set; }
 		public Polygons OutlinePolygons { get; private set; }
 		public Polygons ThinLinePolygons { get; private set; }
 		public IntPointPathNetwork Waypoints { get; private set; } = new IntPointPathNetwork();
@@ -207,8 +209,19 @@ namespace MatterHackers.Pathfinding
 			if (previousNode != endNode
 				&& endNode.Links.Count == 0)
 			{
-				// connect the last crossing to the end node
-				Waypoints.AddPathLink(previousNode, endNode);
+				if (BoundaryPolygons.PointIsInside((previousNode.Position + endNode.Position) / 2, BoundaryEdgeQuadTrees))
+				{
+					// connect the last crossing to the end node
+					Waypoints.AddPathLink(previousNode, endNode);
+				}
+				else // hook the end node up to the closest line
+				{
+					var closestEdgeToEnd = BoundaryPolygons.FindClosestPoint(endNode.Position).Item3;
+
+					// hook the polygons up along this connection
+					IntPointNode nodeA = Waypoints.FindNode(closestEdgeToEnd);
+					Waypoints.AddPathLink(endNode, nodeA);
+				}
 			}
 
 			if (BoundaryPolygons.PointIsInside((previousNode.Position + endNode.Position) / 2, BoundaryEdgeQuadTrees))
@@ -247,7 +260,12 @@ namespace MatterHackers.Pathfinding
 				var start = pathThatIsInside[i];
 				var end = pathThatIsInside[i+1];
 				
-				if(!OutlinePolygons.PointIsInside((start + end) /2))
+				if(!OutlinePolygons.PointIsInside(start + (end - start) / 4, OutlinePointQuadTrees)
+					|| !OutlinePolygons.PointIsInside(start + (end - start) / 2, OutlinePointQuadTrees)
+					|| !OutlinePolygons.PointIsInside(start + (end - start) * 3 / 4, OutlinePointQuadTrees)
+					|| !OutlinePolygons.PointIsInside(start + (end - start) / 10, OutlinePointQuadTrees)
+					|| !OutlinePolygons.PointIsInside(start + (end - start) * 9 / 10, OutlinePointQuadTrees)
+					)
 				{
 					// an easy way to get the path
 					string startEndString = $"start:({startPoint.X}, {startPoint.Y}), end:({endPoint.X}, {endPoint.Y})";
