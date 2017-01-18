@@ -241,6 +241,23 @@ namespace MatterHackers.Pathfinding
 				return false;
 			}
 
+			#if DEBUG // check that the path we are going to use does not exit the outline
+			for(int i=0; i<pathThatIsInside.Count-1; i++)
+			{
+				var start = pathThatIsInside[i];
+				var end = pathThatIsInside[i+1];
+				
+				if(!OutlinePolygons.PointIsInside((start + end) /2))
+				{
+					// an easy way to get the path
+					string startEndString = $"start:({startPoint.X}, {startPoint.Y}), end:({endPoint.X}, {endPoint.Y})";
+					string outlineString = OutlinePolygons.WriteToString();
+					// just some code to set a break point on
+					int a = 0;
+				}
+			}
+			#endif
+
 			return true;
 		}
 
