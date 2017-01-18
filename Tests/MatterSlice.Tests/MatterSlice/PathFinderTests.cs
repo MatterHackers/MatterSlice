@@ -86,7 +86,7 @@ namespace MatterHackers.MatterSlice.Tests
 					IntPoint startPoint = new IntPoint(-10, 501);
 					IntPoint endPoint = new IntPoint(1010, 501);
 					Polygon insidePath = new Polygon();
-					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
+					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath, false);
 					Assert.AreEqual(6, insidePath.Count);
 					// move start to the 0th vertex
 					Assert.AreEqual(new IntPoint(0, 501), insidePath[0]);
@@ -98,10 +98,23 @@ namespace MatterHackers.MatterSlice.Tests
 				}
 
 				{
+					IntPoint startPoint = new IntPoint(-10, 501);
+					IntPoint endPoint = new IntPoint(1010, 501);
+					Polygon insidePath = new Polygon();
+					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath, true);
+					Assert.AreEqual(4, insidePath.Count);
+					// move start to the 0th vertex
+					Assert.AreEqual(new IntPoint(0, 501), insidePath[0]);
+					Assert.AreEqual(new IntPoint(100, 900), insidePath[1]);
+					Assert.AreEqual(new IntPoint(900, 900), insidePath[2]);
+					Assert.AreEqual(new IntPoint(1000, 501), insidePath[3]);
+				}
+
+				{
 					IntPoint startPoint = new IntPoint(-10, 499);
 					IntPoint endPoint = new IntPoint(1010, 499);
 					Polygon insidePath = new Polygon();
-					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
+					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath, false);
 					Assert.AreEqual(6, insidePath.Count);
 					// move start to the 0th vertex
 					Assert.AreEqual(new IntPoint(0, 499), insidePath[0]);
@@ -231,7 +244,7 @@ namespace MatterHackers.MatterSlice.Tests
 					IntPoint endPoint = new IntPoint(251, 334);
 					PathFinder testHarness = new PathFinder(boundaryPolygons, 0);
 					Polygon insidePath = new Polygon();
-					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
+					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath, false);
 					Assert.AreEqual(6, insidePath.Count);
 					// move start to the 0th vertex
 					Assert.AreEqual(boundaryPolygons[0][0], insidePath[0]);

@@ -25,13 +25,14 @@ using MSClipperLib;
 namespace MatterHackers.Pathfinding
 {
 	using System;
+	using System.Linq;
 	using QuadTree;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
 	public class PathFinder
 	{
-		static bool simpleHookup = true;
+		private static bool simpleHookup = true;
 		private static bool storeBoundary = false;
 		private WayPointsToRemove removePointList;
 
@@ -39,6 +40,7 @@ namespace MatterHackers.Pathfinding
 		{
 			OutlinePolygons = outlinePolygons;
 			OutlineEdgeQuadTrees = OutlinePolygons.GetEdgeQuadTrees();
+			OutlinePointQuadTrees = OutlinePolygons.GetPointQuadTrees();
 			BoundaryPolygons = outlinePolygons.Offset(avoidInset);
 			BoundaryEdgeQuadTrees = BoundaryPolygons.GetEdgeQuadTrees();
 			BoundaryPointQuadTrees = BoundaryPolygons.GetPointQuadTrees();
@@ -107,11 +109,12 @@ namespace MatterHackers.Pathfinding
 		public List<QuadTree<int>> BoundaryPointQuadTrees { get; private set; }
 		public Polygons BoundaryPolygons { get; private set; }
 		public List<QuadTree<int>> OutlineEdgeQuadTrees { get; private set; }
+		public List<QuadTree<int>> OutlinePointQuadTrees { get; private set; }
 		public Polygons OutlinePolygons { get; private set; }
 		public Polygons ThinLinePolygons { get; private set; }
 		public IntPointPathNetwork Waypoints { get; private set; } = new IntPointPathNetwork();
 
-		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside)
+		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside, bool optomizePath = true)
 		{
 			double z = startPoint.Z;
 			startPoint.Z = 0;
@@ -196,7 +199,7 @@ namespace MatterHackers.Pathfinding
 					previousNode = crossingNode;
 				}
 
-				if(crossingNode != startNode
+				if (crossingNode != startNode
 					&& startNode.Links.Count == 0)
 				{
 					// connect the start to the first node
@@ -207,8 +210,19 @@ namespace MatterHackers.Pathfinding
 			if (previousNode != endNode
 				&& endNode.Links.Count == 0)
 			{
-				// connect the last crossing to the end node
-				Waypoints.AddPathLink(previousNode, endNode);
+				if (BoundaryPolygons.PointIsInside((previousNode.Position + endNode.Position) / 2, BoundaryEdgeQuadTrees))
+				{
+					// connect the last crossing to the end node
+					Waypoints.AddPathLink(previousNode, endNode);
+				}
+				else // hook the end node up to the closest line
+				{
+					var closestEdgeToEnd = BoundaryPolygons.FindClosestPoint(endNode.Position).Item3;
+
+					// hook the polygons up along this connection
+					IntPointNode nodeA = Waypoints.FindNode(closestEdgeToEnd);
+					Waypoints.AddPathLink(endNode, nodeA);
+				}
 			}
 
 			if (BoundaryPolygons.PointIsInside((previousNode.Position + endNode.Position) / 2, BoundaryEdgeQuadTrees))
@@ -241,6 +255,34 @@ namespace MatterHackers.Pathfinding
 				return false;
 			}
 
+			if (optomizePath)
+			{
+				OptomizePathPoints(pathThatIsInside);
+			}
+
+			if (true)// check that the path we are going to use does not exit the outline
+			{
+				for (int i = 0; i < pathThatIsInside.Count - 1; i++)
+				{
+					var start = pathThatIsInside[i];
+					var end = pathThatIsInside[i + 1];
+
+					if (!OutlinePolygons.PointIsInside(start + (end - start) / 4, OutlinePointQuadTrees)
+						|| !OutlinePolygons.PointIsInside(start + (end - start) / 2, OutlinePointQuadTrees)
+						|| !OutlinePolygons.PointIsInside(start + (end - start) * 3 / 4, OutlinePointQuadTrees)
+						|| !OutlinePolygons.PointIsInside(start + (end - start) / 10, OutlinePointQuadTrees)
+						|| !OutlinePolygons.PointIsInside(start + (end - start) * 9 / 10, OutlinePointQuadTrees)
+						)
+					{
+						// an easy way to get the path
+						string startEndString = $"start:({startPoint.X}, {startPoint.Y}), end:({endPoint.X}, {endPoint.Y})";
+						string outlineString = OutlinePolygons.WriteToString();
+						// just some code to set a break point on
+						int a = 0;
+					}
+				}
+			}
+
 			return true;
 		}
 
@@ -271,48 +313,6 @@ namespace MatterHackers.Pathfinding
 			return node;
 		}
 
-		private bool DoesLineCrossBoundary(IntPoint startPoint, IntPoint endPoint)
-		{
-			for (int boundaryIndex = 0; boundaryIndex < BoundaryPolygons.Count; boundaryIndex++)
-			{
-				Polygon boundaryPolygon = BoundaryPolygons[boundaryIndex];
-				if (boundaryPolygon.Count < 1)
-				{
-					continue;
-				}
-
-				IntPoint lastPosition = boundaryPolygon[boundaryPolygon.Count - 1];
-				for (int pointIndex = 0; pointIndex < boundaryPolygon.Count; pointIndex++)
-				{
-					IntPoint currentPosition = boundaryPolygon[pointIndex];
-					int startSide = startPoint.GetLineSide(lastPosition, currentPosition);
-					int endSide = endPoint.GetLineSide(lastPosition, currentPosition);
-					if (startSide != 0)
-					{
-						if (startSide + endSide == 0)
-						{
-							// each point is distinctly on a different side
-							return true;
-						}
-					}
-					else
-					{
-						// if we terminate on the line that will count as crossing
-						return true;
-					}
-
-					if (endSide == 0)
-					{
-						// if we terminate on the line that will count as crossing
-						return true;
-					}
-
-					lastPosition = currentPosition;
-				}
-			}
-			return false;
-		}
-
 		private void HookUpToEdge(IntPointNode crossingNode, int polyIndex, int pointIndex)
 		{
 			int count = BoundaryPolygons[polyIndex].Count;
@@ -323,53 +323,44 @@ namespace MatterHackers.Pathfinding
 			Waypoints.AddPathLink(crossingNode, nextPolyPointNode);
 		}
 
-		private bool LinkIntersectsPolygon(int nodeIndexA, int nodeIndexB)
+		private void OptomizePathPoints(Polygon pathThatIsInside)
 		{
-			return BoundaryPolygons.FindIntersection(Waypoints.Nodes[nodeIndexA].Position, Waypoints.Nodes[nodeIndexB].Position, BoundaryEdgeQuadTrees) == Intersection.Intersect;
-		}
-
-		private bool LinkIsInside(int nodeIndexA, int nodeIndexB)
-		{
-			IntPoint pointA = Waypoints.Nodes[nodeIndexA].Position;
-			IntPoint pointB = Waypoints.Nodes[nodeIndexB].Position;
-
-			Tuple<int, int> index = BoundaryPolygons.FindPoint(pointA, BoundaryPointQuadTrees);
-			if (index != null)
+			var endCount = -1;
+			var startCount = pathThatIsInside.Count;
+			while (startCount > 0 && startCount != endCount)
 			{
-				var polygon = BoundaryPolygons[index.Item1];
-
-				IntPoint next = polygon[(index.Item2 + 1) % polygon.Count];
-				if (pointB == next)
+				startCount = pathThatIsInside.Count;
+				for (int indexA = 0; indexA < pathThatIsInside.Count; indexA++)
 				{
-					return true;
+					var positionA = pathThatIsInside[indexA];
+					var indexB = indexA + 2;
+					if (indexB < pathThatIsInside.Count)
+					{
+						var positionB = pathThatIsInside[indexB];
+
+						var crossings = new List<Tuple<int, int, IntPoint>>(BoundaryPolygons.FindCrossingPoints(positionA, positionB, BoundaryEdgeQuadTrees));
+						bool hasOtherThanAB = false;
+						foreach (var cross in crossings)
+						{
+							if (cross.Item3 != positionA
+								&& cross.Item3 != positionB)
+							{
+								hasOtherThanAB = true;
+								break;
+							}
+						}
+						
+						if (!hasOtherThanAB
+							&& BoundaryPolygons.PointIsInside((positionA + positionB) / 2, BoundaryEdgeQuadTrees))
+						{
+							// remove A+1
+							pathThatIsInside.RemoveAt(indexA + 1);
+							indexA--;
+						}
+					}
 				}
-
-				next = polygon[(index.Item2 + polygon.Count - 1) % polygon.Count];
-				if (pointB == next)
-				{
-					return true;
-				}
+				endCount = pathThatIsInside.Count;
 			}
-
-			if (!BoundaryPolygons.PointIsInside((pointA + pointB) / 2, BoundaryEdgeQuadTrees))
-			{
-				return false;
-			}
-
-			var crossings = new List<Tuple<int, int, IntPoint>>(BoundaryPolygons.FindCrossingPoints(pointA, pointB, BoundaryEdgeQuadTrees));
-			crossings.Sort(new PolygonAndPointDirectionSorter(pointA, pointB));
-			IntPoint start = pointA;
-			foreach (var crossing in crossings)
-			{
-				if (start != crossing.Item3
-					&& !BoundaryPolygons.PointIsInside((start + crossing.Item3) / 2, BoundaryEdgeQuadTrees))
-				{
-					return false;
-				}
-				start = crossing.Item3;
-			}
-
-			return true;
 		}
 	}
 }
