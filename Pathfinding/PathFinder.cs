@@ -260,26 +260,31 @@ namespace MatterHackers.Pathfinding
 				OptomizePathPoints(pathThatIsInside);
 			}
 
-			if (true)// check that the path we are going to use does not exit the outline
-			{
-				for (int i = 0; i < pathThatIsInside.Count - 1; i++)
-				{
-					var start = pathThatIsInside[i];
-					var end = pathThatIsInside[i + 1];
+			//AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint);
 
-					if (!OutlinePolygons.PointIsInside(start + (end - start) / 4, OutlinePointQuadTrees)
-						|| !OutlinePolygons.PointIsInside(start + (end - start) / 2, OutlinePointQuadTrees)
-						|| !OutlinePolygons.PointIsInside(start + (end - start) * 3 / 4, OutlinePointQuadTrees)
-						|| !OutlinePolygons.PointIsInside(start + (end - start) / 10, OutlinePointQuadTrees)
-						|| !OutlinePolygons.PointIsInside(start + (end - start) * 9 / 10, OutlinePointQuadTrees)
-						)
-					{
-						// an easy way to get the path
-						string startEndString = $"start:({startPoint.X}, {startPoint.Y}), end:({endPoint.X}, {endPoint.Y})";
-						string outlineString = OutlinePolygons.WriteToString();
-						// just some code to set a break point on
-						int a = 0;
-					}
+			return true;
+		}
+
+		public bool AllPathSegmentsAreInsideOutlines(Polygon pathThatIsInside, IntPoint startPoint, IntPoint endPoint)
+		{
+			// check that this path does not exit the outline
+			for (int i = 0; i < pathThatIsInside.Count - 1; i++)
+			{
+				var start = pathThatIsInside[i];
+				var end = pathThatIsInside[i + 1];
+
+				if (!OutlinePolygons.PointIsInside(start + (end - start) / 4, OutlinePointQuadTrees)
+					|| !OutlinePolygons.PointIsInside(start + (end - start) / 2, OutlinePointQuadTrees)
+					|| !OutlinePolygons.PointIsInside(start + (end - start) * 3 / 4, OutlinePointQuadTrees)
+					|| !OutlinePolygons.PointIsInside(start + (end - start) / 10, OutlinePointQuadTrees)
+					|| !OutlinePolygons.PointIsInside(start + (end - start) * 9 / 10, OutlinePointQuadTrees)
+					)
+				{
+					// an easy way to get the path
+					string startEndString = $"start:({startPoint.X}, {startPoint.Y}), end:({endPoint.X}, {endPoint.Y})";
+					string outlineString = OutlinePolygons.WriteToString();
+					// just some code to set a break point on
+					return false;
 				}
 			}
 
