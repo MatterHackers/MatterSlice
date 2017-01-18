@@ -462,7 +462,9 @@ namespace MatterHackers.QuadTree
 					leaf.Branch = this;
 
 					//Once I have reached capacity, split the node
-					if (Leaves.Count >= Tree.splitCount)
+					if (Leaves.Count >= Tree.splitCount
+						&& Quads[0].MinX + 2 < Quads[0].MaxX
+						&& Quads[0].MinY + 2 < Quads[0].MaxY)
 					{
 						var temp = tempPool.Count > 0 ? tempPool.Pop() : new List<Leaf>();
 						temp.AddRange(Leaves);
@@ -476,6 +478,19 @@ namespace MatterHackers.QuadTree
 						tempPool.Push(temp);
 					}
 				}
+			}
+
+			int CountParents()
+			{
+				int count = 0;
+				var parent = Parent;
+				while(parent != null)
+				{
+					count++;
+					parent = parent.Parent;
+				}
+
+				return count;
 			}
 
 			internal IEnumerable<T> SearchPoint(long x, long y)
