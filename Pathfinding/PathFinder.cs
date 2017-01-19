@@ -82,20 +82,37 @@ namespace MatterHackers.Pathfinding
 				if (OutlinePolygons.FindThinLines(avoidInset * -2, 0, out thinLines))
 				{
 					ThinLinePolygons = thinLines;
-					foreach (var polygon in ThinLinePolygons)
+					for (int thinIndex = 0; thinIndex < thinLines.Count; thinIndex++)
 					{
-						if (polygon.Count > 1
-							&& polygon.PolygonLength() > avoidInset / -4)
+						var thinPolygon = thinLines[thinIndex];
+						if (thinPolygon.Count > 1)
 						{
-							Waypoints.AddPolygon(polygon, false);
+							Waypoints.AddPolygon(thinPolygon, false);
+						}
+					}
+
+					Polygons allPolygons = new Polygons(thinLines);
+					allPolygons.AddRange(BoundaryPolygons);
+					for (int thinIndex = 0; thinIndex < thinLines.Count; thinIndex++)
+					{
+						var thinPolygon = thinLines[thinIndex];
+						if (thinPolygon.Count > 1)
+						{
 							// now hook up the start and end of this polygon to the existing way points
-							var closestStart = BoundaryPolygons.FindClosestPoint(polygon[0]);
-							var closestEnd = BoundaryPolygons.FindClosestPoint(polygon[polygon.Count - 1]); // last point
+							var closestStart = allPolygons.FindClosestPoint(thinPolygon[0], thinIndex);
+							var closestEnd = allPolygons.FindClosestPoint(thinPolygon[thinPolygon.Count - 1], thinIndex); // last point
 							if (OutlinePolygons.PointIsInside((closestStart.Item3 + closestEnd.Item3) / 2, OutlineEdgeQuadTrees))
 							{
 								IntPointNode nodeA = Waypoints.FindNode(closestStart.Item3);
 								IntPointNode nodeB = Waypoints.FindNode(closestEnd.Item3);
-								Waypoints.AddPathLink(nodeA, nodeB);
+								if (nodeA == null || nodeB == null)
+								{
+									int stop = 0; // debug this. It should not happen
+								}
+								else
+								{
+									Waypoints.AddPathLink(nodeA, nodeB);
+								}
 							}
 						}
 					}

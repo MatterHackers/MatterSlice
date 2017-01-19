@@ -105,10 +105,10 @@ namespace MatterHackers.QuadTree
 		/// Create the list of polygon segments (not closed) that represent the parts of the source polygons that are close (almost touching).
 		/// </summary>
 		/// <param name="polygons"></param>
-		/// <param name="overlapMergeAmount">If edges are this distance or less (but greater than minimumRequiredWidth) they will generate edges</param>
-		/// <param name="minimumRequiredWidth">If the distance is less this they will not be generated</param>
-		/// <param name="onlyMergeLines"></param>
-		/// <param name="pathIsClosed"></param>
+		/// <param name="overlapMergeAmount">If edges under consideration, are this distance or less appart (but greater than minimumRequiredWidth) they will generate edges</param>
+		/// <param name="minimumRequiredWidth">If the distance between edges is less this they will not be generated. This lets us avoid considering very very thin lines.</param>
+		/// <param name="onlyMergeLines">The output segments that are calculated</param>
+		/// <param name="pathIsClosed">Is the source path closed (does not contain the last edge but assumes it).</param>
 		/// <returns></returns>
 		public static bool FindThinLines(this Polygons polygons, long overlapMergeAmount, long minimumRequiredWidth, out Polygons onlyMergeLines, bool pathIsClosed = true)
 		{
