@@ -43,7 +43,7 @@ namespace MatterHackers.Pathfinding
 				return;
 			}
 
-			OutlinePolygons = outlinePolygons;
+			OutlinePolygons = Clipper.CleanPolygons(outlinePolygons, avoidInset / 60);
 			if (!stayInside)
 			{
 				var boundary = outlinePolygons.GetBounds();
