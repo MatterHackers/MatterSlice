@@ -36,18 +36,49 @@ namespace MatterHackers.Pathfinding
 		private static bool storeBoundary = false;
 		private WayPointsToRemove removePointList;
 
-		public PathFinder(Polygons outlinePolygons, long avoidInset)
+		public PathFinder(Polygons outlinePolygons, long avoidInset, bool stayInside = true)
 		{
+			if(outlinePolygons.Count == 0)
+			{
+				return;
+			}
+
 			OutlinePolygons = outlinePolygons;
+			if (!stayInside)
+			{
+				var boundary = outlinePolygons.GetBounds();
+				boundary.Inflate(avoidInset * 4000);
+				OutlinePolygons = new Polygons(outlinePolygons.Count+1);
+				OutlinePolygons.Add(new Polygon()
+				{
+					new IntPoint(boundary.minX, boundary.minY),
+					new IntPoint(boundary.maxX, boundary.minY),
+					new IntPoint(boundary.maxX, boundary.maxY),
+					new IntPoint(boundary.minX, boundary.maxY),
+				});
+
+				foreach(var polygon in outlinePolygons)
+				{
+					var reversedPolygon = new Polygon();
+					for (int i = 0; i < polygon.Count; i++)
+					{
+						reversedPolygon.Add(polygon[(polygon.Count - 1) - i]);
+					}
+					
+					OutlinePolygons.Add(reversedPolygon);
+				}
+			}
+
+			BoundaryPolygons = OutlinePolygons.Offset(-avoidInset);
+
 			OutlineEdgeQuadTrees = OutlinePolygons.GetEdgeQuadTrees();
 			OutlinePointQuadTrees = OutlinePolygons.GetPointQuadTrees();
-			BoundaryPolygons = outlinePolygons.Offset(avoidInset);
 			BoundaryEdgeQuadTrees = BoundaryPolygons.GetEdgeQuadTrees();
 			BoundaryPointQuadTrees = BoundaryPolygons.GetPointQuadTrees();
 
 			if (storeBoundary)
 			{
-				string pointsString = outlinePolygons.WriteToString();
+				string pointsString = OutlinePolygons.WriteToString();
 			}
 
 			foreach (var polygon in BoundaryPolygons)
@@ -79,7 +110,7 @@ namespace MatterHackers.Pathfinding
 				// this is done with merge close edges and finding candidates
 				// then joining the ends of the merged segments with the closest points
 				Polygons thinLines;
-				if (OutlinePolygons.FindThinLines(avoidInset * -2, 0, out thinLines))
+				if (OutlinePolygons.FindThinLines(avoidInset * 2, 0, out thinLines))
 				{
 					ThinLinePolygons = thinLines;
 					for (int thinIndex = 0; thinIndex < thinLines.Count; thinIndex++)
@@ -136,7 +167,7 @@ namespace MatterHackers.Pathfinding
 			double z = startPoint.Z;
 			startPoint.Z = 0;
 			endPoint.Z = 0;
-			if (BoundaryPolygons.Count == 0)
+			if (BoundaryPolygons == null || BoundaryPolygons.Count == 0)
 			{
 				return false;
 			}
@@ -253,6 +284,10 @@ namespace MatterHackers.Pathfinding
 			{
 				pathThatIsInside.Add(new IntPoint(startNode.Position, z));
 			}
+			else // the original start is inside so lets make sure we clip from it
+			{
+				pathThatIsInside.Add(startPoint);
+			}
 
 			var lastAdd = startNode.Position;
 			foreach (var node in path.Nodes.SkipSamePosition(startNode.Position))
@@ -275,6 +310,13 @@ namespace MatterHackers.Pathfinding
 			if (optomizePath)
 			{
 				OptomizePathPoints(pathThatIsInside);
+			}
+
+			if (startPolyPointPosition == null
+				&& pathThatIsInside.Count > 0
+				&& pathThatIsInside[0] == startPoint)
+			{
+				pathThatIsInside.RemoveAt(0);
 			}
 
 			//AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint);

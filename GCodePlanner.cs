@@ -94,7 +94,7 @@ namespace MatterHackers.MatterSlice
 
 		private GCodeExport gcodeExport = new GCodeExport();
 
-		public PathFinder PathFinder { get; private set; }
+		public PathFinder PathFinder { get; set; }
 		private List<GCodePath> paths = new List<GCodePath>();
 		private double perimeterStartEndOverlapRatio;
 		private int retractionMinimumDistance_um;
@@ -109,7 +109,6 @@ namespace MatterHackers.MatterSlice
 			travelConfig.SetData(travelSpeed, 0, "travel");
 
 			LastPosition = gcode.GetPositionXY();
-			PathFinder = null;
 			extrudeSpeedFactor = 100;
 			travelSpeedFactor = 100;
 			extraTime = 0.0;
@@ -351,11 +350,11 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void QueuePolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
+		public bool QueuePolygonsByOptimizer(Polygons polygons, GCodePathConfig config)
 		{
 			if (polygons.Count == 0)
 			{
-				return;
+				return false;
 			}
 
 			PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(LastPosition);
@@ -368,6 +367,8 @@ namespace MatterHackers.MatterSlice
 				int polygonIndex = orderOptimizer.bestIslandOrderIndex[i];
 				QueuePolygon(polygons[polygonIndex], orderOptimizer.startIndexInPolygon[polygonIndex], config);
 			}
+
+			return true;
 		}
 
 		public void QueueTravel(IntPoint positionToMoveTo)
@@ -459,18 +460,6 @@ namespace MatterHackers.MatterSlice
 		{
 			if (speedFactor < 1) speedFactor = 1;
 			this.extrudeSpeedFactor = speedFactor;
-		}
-
-		public void SetPathFinder(PathFinder pathFinder)
-		{
-			if (pathFinder != null)
-			{
-				this.PathFinder = pathFinder;
-			}
-			else
-			{
-				this.PathFinder = null;
-			}
 		}
 
 		public void SetTravelSpeedFactor(int speedFactor)

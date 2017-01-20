@@ -26,6 +26,7 @@ using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+	using Pathfinding;
 	using QuadTree;
 	using Polygon = List<IntPoint>;
 
@@ -469,11 +470,11 @@ namespace MatterHackers.MatterSlice
 					gcode.SetExtrusion(config.LayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 				}
 
-				GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+				GCodePlanner layerGcodePlanner = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 				if (layerIndex == 0
 					&& config.RetractionZHop > 0)
 				{
-					gcodeLayer.ForceRetract();
+					layerGcodePlanner.ForceRetract();
 				}
 
 				// get the correct height for this layer
@@ -499,30 +500,39 @@ namespace MatterHackers.MatterSlice
 				// We only create the skirt if we are on layer 0.
 				if (layerIndex == 0 && !config.ShouldGenerateRaft())
 				{
-					QueueSkirtToGCode(slicingData, gcodeLayer, layerIndex);
+					QueueSkirtToGCode(slicingData, layerGcodePlanner, layerIndex);
 				}
 
-				int fanSpeedPercent = GetFanSpeed(layerIndex, gcodeLayer);
+				int fanSpeedPercent = GetFanSpeed(layerIndex, layerGcodePlanner);
 
 				for (int extruderIndex = 0; extruderIndex < config.MaxExtruderCount(); extruderIndex++)
 				{
-					int prevExtruder = gcodeLayer.GetExtruder();
-					bool extruderChanged = gcodeLayer.SetExtruder(extruderIndex);
+					int prevExtruder = layerGcodePlanner.GetExtruder();
+					bool extruderChanged = layerGcodePlanner.SetExtruder(extruderIndex);
 
 					if (extruderChanged && slicingData.HaveWipeTower(config))
 					{
-						slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, gcodeLayer, fillConfig, config);
+						slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config);
 						//Make sure we wipe the old extruder on the wipe tower.
-						gcodeLayer.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[gcodeLayer.GetExtruder()]);
+						layerGcodePlanner.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
 					}
 
 					if (layerIndex == 0)
 					{
-						QueueExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.FirstLayerExtrusionWidth_um, z);
+						QueueExtruderLayerToGCode(slicingData, layerGcodePlanner, extruderIndex, layerIndex, config.FirstLayerExtrusionWidth_um, z);
 					}
 					else
 					{
-						QueueExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
+						QueueExtruderLayerToGCode(slicingData, layerGcodePlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
+					}
+
+					if (config.AvoidCrossingPerimeters
+						&& slicingData.Extruders != null
+						&& slicingData.Extruders.Count > extruderIndex)
+					{
+						// set the path planner to avoid islands
+						SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
+						layerGcodePlanner.PathFinder = layer.PathFinder;
 					}
 
 					if (slicingData.support != null)
@@ -530,34 +540,42 @@ namespace MatterHackers.MatterSlice
 						if ((config.SupportExtruder <= 0 && extruderIndex == 0)
 							|| config.SupportExtruder == extruderIndex)
 						{
-							slicingData.support.QueueNormalSupportLayer(config, gcodeLayer, layerIndex, supportNormalConfig);
+							if (slicingData.support.QueueNormalSupportLayer(config, layerGcodePlanner, layerIndex, supportNormalConfig))
+							{
+								// we move out of the island so we aren't in it.
+								islandCurrentlyInside = null;
+							}
 						}
 						if ((config.SupportInterfaceExtruder <= 0 && extruderIndex == 0)
 							|| config.SupportInterfaceExtruder == extruderIndex)
 						{
-							slicingData.support.QueueInterfaceSupportLayer(config, gcodeLayer, layerIndex, supportInterfaceConfig);
+							if(slicingData.support.QueueInterfaceSupportLayer(config, layerGcodePlanner, layerIndex, supportInterfaceConfig))
+							{
+								// we move out of the island so we aren't in it.
+								islandCurrentlyInside = null;
+							}
 						}
 					}
 				}
 
-				slicingData.EnsureWipeTowerIsSolid(layerIndex, gcodeLayer, fillConfig, config);
+				slicingData.EnsureWipeTowerIsSolid(layerIndex, layerGcodePlanner, fillConfig, config);
 
 				if (slicingData.support != null)
 				{
 					z += config.SupportAirGap_um;
 					gcode.SetZ(z);
-					gcodeLayer.QueueTravel(gcodeLayer.LastPosition);
+					layerGcodePlanner.QueueTravel(layerGcodePlanner.LastPosition);
 
 					for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
 					{
-						QueueAirGappedExtruderLayerToGCode(slicingData, gcodeLayer, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
+						QueueAirGappedExtruderLayerToGCode(slicingData, layerGcodePlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
 					}
 
-					slicingData.support.QueueAirGappedBottomLayer(config, gcodeLayer, layerIndex, airGappedBottomConfig);
+					slicingData.support.QueueAirGappedBottomLayer(config, layerGcodePlanner, layerIndex, airGappedBottomConfig);
 				}
 
 				//Finish the layer by applying speed corrections for minimum layer times.
-				gcodeLayer.ForceMinimumLayerTime(config.MinimumLayerTimeSeconds, config.MinimumPrintingSpeed);
+				layerGcodePlanner.ForceMinimumLayerTime(config.MinimumLayerTimeSeconds, config.MinimumPrintingSpeed);
 
 				gcode.WriteFanCommand(fanSpeedPercent);
 
@@ -567,7 +585,7 @@ namespace MatterHackers.MatterSlice
 					currentLayerThickness_um = config.FirstLayerThickness_um;
 				}
 
-				gcodeLayer.WriteQueuedGCode(currentLayerThickness_um, fanSpeedPercent, config.BridgeFanSpeedPercent);
+				layerGcodePlanner.WriteQueuedGCode(currentLayerThickness_um, fanSpeedPercent, config.BridgeFanSpeedPercent);
 			}
 
 			LogOutput.Log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
@@ -652,6 +670,8 @@ namespace MatterHackers.MatterSlice
 
 		private int lastPartIndex = 0;
 
+		LayerIsland islandCurrentlyInside = null;
+
 		//Add a single layer from a single extruder to the GCode
 		private void QueueExtruderLayerToGCode(LayerDataStorage slicingData, GCodePlanner layerGcodePlanner, int extruderIndex, int layerIndex, int extrusionWidth_um, long currentZ_um)
 		{
@@ -692,9 +712,11 @@ namespace MatterHackers.MatterSlice
 						int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
 						if (config.AvoidCrossingPerimeters)
 						{
-							layerGcodePlanner.SetPathFinder(island.PathFinder);
+							layerGcodePlanner.PathFinder = island.PathFinder;
 						}
+
 						layerGcodePlanner.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
+						islandCurrentlyInside = island;
 					}
 				}
 			}
@@ -731,7 +753,7 @@ namespace MatterHackers.MatterSlice
 
 				if (config.AvoidCrossingPerimeters)
 				{
-					layerGcodePlanner.SetPathFinder(island.PathFinder);
+					MoveToIsland(layerGcodePlanner, layer, island);
 				}
 				else
 				{
@@ -844,7 +866,7 @@ namespace MatterHackers.MatterSlice
 										layerIndex,
 										layerGcodePlanner);
 
-									// Figue out if there is another inset
+									// Figure out if there is another inset
 								}
 							}
 
@@ -910,8 +932,37 @@ namespace MatterHackers.MatterSlice
 					layerGcodePlanner.MoveInsideTravelPerimeter();
 				}
 			}
+		}
 
-			layerGcodePlanner.SetPathFinder(null);
+		private void MoveToIsland(GCodePlanner layerGcodePlanner, SliceLayer layer, LayerIsland island)
+		{
+			if (island.IslandOutline.Count > 0
+				&& !config.ContinuousSpiralOuterPerimeter)
+			{
+				var closestPointOnNextIsland = island.IslandOutline.FindClosestPoint(layerGcodePlanner.LastPosition);
+				IntPoint closestNextIslandPoint = island.IslandOutline[closestPointOnNextIsland.Item1][closestPointOnNextIsland.Item2];
+
+				if (islandCurrentlyInside?.PathFinder?.OutlinePolygons?[0]?.Count > 3)
+				{
+					// start by moving within the last island to the closet point to the next island
+					var polygons = islandCurrentlyInside.PathFinder.OutlinePolygons;
+					var closestPointOnLastIsland = polygons.FindClosestPoint(closestNextIslandPoint);
+					IntPoint closestLastIslandPoint = polygons[closestPointOnLastIsland.Item1][closestPointOnLastIsland.Item2];
+					// make sure we are planning within the last island we were using
+					layerGcodePlanner.PathFinder = islandCurrentlyInside.PathFinder;
+					layerGcodePlanner.QueueTravel(closestLastIslandPoint);
+				}
+
+				// let's move to this island avoiding running into any other islands
+				layerGcodePlanner.PathFinder = layer.PathFinder;
+				// find the closest point to where we are now
+				// and do a move to there
+				layerGcodePlanner.QueueTravel(closestNextIslandPoint);
+				// and remember that we are now in the new island
+				islandCurrentlyInside = island;
+				// set the path planner to the current island
+				layerGcodePlanner.PathFinder = island.PathFinder;
+			}
 		}
 
 		private bool FindMatchingInset0(bool limitDistance, int layerIndex, GCodePlanner layerGcodePlanner, out int matching0Index)
@@ -977,57 +1028,82 @@ namespace MatterHackers.MatterSlice
 		}
 
 		//Add a single layer from a single extruder to the GCode
-		private void QueueAirGappedExtruderLayerToGCode(LayerDataStorage slicingData, GCodePlanner gcodeLayer, int extruderIndex, int layerIndex, int extrusionWidth_um, long currentZ_um)
+		private void QueueAirGappedExtruderLayerToGCode(LayerDataStorage slicingData, GCodePlanner layerGcodePlanner, int extruderIndex, int layerIndex, int extrusionWidth_um, long currentZ_um)
 		{
 			if (config.GenerateSupport
 				&& !config.ContinuousSpiralOuterPerimeter
 				&& layerIndex > 0)
 			{
-				int prevExtruder = gcodeLayer.GetExtruder();
-				bool extruderChanged = gcodeLayer.SetExtruder(extruderIndex);
+				int prevExtruder = layerGcodePlanner.GetExtruder();
+				bool extruderChanged = layerGcodePlanner.SetExtruder(extruderIndex);
 
 				if (extruderChanged && slicingData.HaveWipeTower(config))
 				{
-					slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, gcodeLayer, fillConfig, config);
+					slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config);
 					//Make sure we wipe the old extruder on the wipe tower.
-					gcodeLayer.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[gcodeLayer.GetExtruder()]);
+					layerGcodePlanner.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
 				}
 
 				SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 
-				PathOrderOptimizer partOrderOptimizer = new PathOrderOptimizer(new IntPoint());
-				for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
+				// Move to the best start point for this layer
+				if (!config.ContinuousSpiralOuterPerimeter
+					&& layerIndex > 0
+					&& layerIndex < slicingData.Extruders[extruderIndex].Layers.Count - 2)
 				{
-					if (config.ContinuousSpiralOuterPerimeter && partIndex > 0)
+					// Figure out where the seam hiding start point is for inset 0 and move to that spot so
+					// we have the minimum travel while starting inset 0 after printing the rest of the insets
+					if (layer.Islands.Count == 1)
+					{
+						LayerIsland island = layer?.Islands?[0];
+						if (island?.InsetToolPaths?.Count > 0
+							&& island?.InsetToolPaths?[0]?[0]?.Count > 0)
+						{
+							int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
+							if (config.AvoidCrossingPerimeters)
+							{
+								layerGcodePlanner.PathFinder = island.PathFinder;
+							}
+
+							layerGcodePlanner.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
+							islandCurrentlyInside = island;
+						}
+					}
+				}
+
+				PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(new IntPoint());
+				for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
+				{
+					if (config.ContinuousSpiralOuterPerimeter && islandIndex > 0)
 					{
 						continue;
 					}
 
-					if (layer.Islands[partIndex].InsetToolPaths.Count > 0)
+					if (layer.Islands[islandIndex].InsetToolPaths.Count > 0)
 					{
-						partOrderOptimizer.AddPolygon(layer.Islands[partIndex].InsetToolPaths[0][0]);
+						islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].InsetToolPaths[0][0]);
 					}
 				}
-				partOrderOptimizer.Optimize();
+				islandOrderOptimizer.Optimize();
 
 				List<Polygons> bottomFillIslandPolygons = new List<Polygons>();
 
-				for (int inlandIndex = 0; inlandIndex < partOrderOptimizer.bestIslandOrderIndex.Count; inlandIndex++)
+				for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.bestIslandOrderIndex.Count; islandOrderIndex++)
 				{
-					if (config.ContinuousSpiralOuterPerimeter && inlandIndex > 0)
+					if (config.ContinuousSpiralOuterPerimeter && islandOrderIndex > 0)
 					{
 						continue;
 					}
 
-					LayerIsland part = layer.Islands[partOrderOptimizer.bestIslandOrderIndex[inlandIndex]];
+					LayerIsland island = layer.Islands[islandOrderOptimizer.bestIslandOrderIndex[islandOrderIndex]];
 
 					if (config.AvoidCrossingPerimeters)
 					{
-						gcodeLayer.SetPathFinder(part.PathFinder);
+						MoveToIsland(layerGcodePlanner, layer, island);
 					}
 					else
 					{
-						gcodeLayer.SetAlwaysRetract(true);
+						layerGcodePlanner.SetAlwaysRetract(true);
 					}
 
 					Polygons fillPolygons = new Polygons();
@@ -1036,7 +1112,7 @@ namespace MatterHackers.MatterSlice
 
 					Polygons bottomFillPolygons = new Polygons();
 
-					CalculateInfillData(slicingData, extruderIndex, layerIndex, part, bottomFillPolygons, fillPolygons, topFillPolygons, bridgePolygons);
+					CalculateInfillData(slicingData, extruderIndex, layerIndex, island, bottomFillPolygons, fillPolygons, topFillPolygons, bridgePolygons);
 					bottomFillIslandPolygons.Add(bottomFillPolygons);
 
 #if DEBUG
@@ -1048,15 +1124,15 @@ namespace MatterHackers.MatterSlice
 
 					if (config.NumberOfPerimeters > 0)
 					{
-						if (inlandIndex != lastPartIndex)
+						if (islandOrderIndex != lastPartIndex)
 						{
 							// force a retract if changing islands
 							if (config.RetractWhenChangingIslands)
 							{
-								gcodeLayer.ForceRetract();
+								layerGcodePlanner.ForceRetract();
 							}
 
-							lastPartIndex = inlandIndex;
+							lastPartIndex = islandOrderIndex;
 						}
 
 						if (config.ContinuousSpiralOuterPerimeter)
@@ -1071,25 +1147,25 @@ namespace MatterHackers.MatterSlice
 					//After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
 					if (!config.ContinuousSpiralOuterPerimeter || layerIndex < config.NumberOfBottomLayers)
 					{
-						gcodeLayer.MoveInsideTravelPerimeter();
+						layerGcodePlanner.MoveInsideTravelPerimeter();
 					}
 
 					// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
-					for (int insetIndex = 1; insetIndex < part.InsetToolPaths.Count; insetIndex++)
+					for (int insetIndex = 1; insetIndex < island.InsetToolPaths.Count; insetIndex++)
 					{
-						QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[insetIndex], airGappedBottomConfig, SupportWriteType.SupportedAreas);
+						QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, island.InsetToolPaths[insetIndex], airGappedBottomConfig, SupportWriteType.SupportedAreas);
 					}
 					// then 0
-					if (part.InsetToolPaths.Count > 0)
+					if (island.InsetToolPaths.Count > 0)
 					{
-						QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, part.InsetToolPaths[0], airGappedBottomConfig, SupportWriteType.SupportedAreas);
+						QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, island.InsetToolPaths[0], airGappedBottomConfig, SupportWriteType.SupportedAreas);
 					}
 
-					QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, bottomFillIslandPolygons[inlandIndex], airGappedBottomConfig, SupportWriteType.SupportedAreas);
+					QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bottomFillIslandPolygons[islandOrderIndex], airGappedBottomConfig, SupportWriteType.SupportedAreas);
 				}
 			}
 
-			gcodeLayer.SetPathFinder(null);
+			// gcodeLayer.SetPathFinder(null);
 		}
 
 		private enum SupportWriteType
