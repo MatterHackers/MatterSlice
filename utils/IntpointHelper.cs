@@ -89,22 +89,6 @@ namespace MatterHackers.MatterSlice
 			return left.X * right.Y - left.Y * right.X;
 		}
 
-		public static IntPoint GetRotated(this IntPoint thisPoint, double radians)
-		{
-			double CosVal, SinVal;
-
-			CosVal = (double)Cos(radians);
-			SinVal = (double)Sin(radians);
-
-			IntPoint output;
-			output.X = (long)(Round(thisPoint.X * CosVal - thisPoint.Y * SinVal));
-			output.Y = (long)(Round(thisPoint.Y * CosVal + thisPoint.X * SinVal));
-			output.Z = thisPoint.Z;
-			output.Width = thisPoint.Width;
-
-			return output;
-		}
-
 		public static bool IsShorterThen(this IntPoint thisPoint, long len)
 		{
 			if (thisPoint.X > len || thisPoint.X < -len)

@@ -45,7 +45,7 @@ namespace MatterHackers.MatterSlice.Tests
 				IntPoint p1 = new IntPoint(10, 0);
 				IntPoint p2 = new IntPoint(0, 0);
 				IntPoint p3 = new IntPoint(0, 0);
-				Assert.IsTrue(PathOrderOptimizer.GetTurnAmount(p1, p2, p3) == 0);
+				Assert.IsTrue(p2.GetTurnAmount(p1, p3) == 0);
 			}
 
 			// no turn returns a 0 angle
@@ -53,7 +53,7 @@ namespace MatterHackers.MatterSlice.Tests
 				IntPoint p1 = new IntPoint(10, 0);
 				IntPoint p2 = new IntPoint(0, 0);
 				IntPoint p3 = new IntPoint(-10, 0);
-				Assert.IsTrue(PathOrderOptimizer.GetTurnAmount(p1, p2, p3) == 0);
+				Assert.IsTrue(p2.GetTurnAmount(p1, p3) == 0);
 			}
 
 			// 90 turn works
@@ -61,12 +61,12 @@ namespace MatterHackers.MatterSlice.Tests
 				IntPoint p1 = new IntPoint(0, 0);
 				IntPoint p2 = new IntPoint(10, 0);
 				IntPoint p3 = new IntPoint(10, 10);
-				Assert.AreEqual(PathOrderOptimizer.GetTurnAmount(p1, p2, p3), Math.PI / 2, .001);
+				Assert.AreEqual(p2.GetTurnAmount(p1, p3), Math.PI / 2, .001);
 
 				IntPoint p4 = new IntPoint(0, 10);
 				IntPoint p5 = new IntPoint(0, 0);
 				IntPoint p6 = new IntPoint(10, 0);
-				Assert.AreEqual(PathOrderOptimizer.GetTurnAmount(p4, p5, p6), Math.PI / 2, .001);
+				Assert.AreEqual(p2.GetTurnAmount(p4, p6), Math.PI / 2, .001);
 			}
 
 			// -90 turn works
@@ -74,7 +74,7 @@ namespace MatterHackers.MatterSlice.Tests
 				IntPoint p1 = new IntPoint(0, 0);
 				IntPoint p2 = new IntPoint(10, 0);
 				IntPoint p3 = new IntPoint(10, -10);
-				Assert.AreEqual(PathOrderOptimizer.GetTurnAmount(p1, p2, p3), -Math.PI / 2, .001);
+				Assert.AreEqual(p2.GetTurnAmount(p1, p3), -Math.PI / 2, .001);
 			}
 
 			// 45 turn works
@@ -82,12 +82,12 @@ namespace MatterHackers.MatterSlice.Tests
 				IntPoint p1 = new IntPoint(0, 0);
 				IntPoint p2 = new IntPoint(10, 0);
 				IntPoint p3 = new IntPoint(15, 5);
-				Assert.AreEqual(Math.PI / 4, PathOrderOptimizer.GetTurnAmount(p1, p2, p3), .001);
+				Assert.AreEqual(Math.PI / 4, p2.GetTurnAmount(p1, p3), .001);
 
 				IntPoint p4 = new IntPoint(0, 0);
 				IntPoint p5 = new IntPoint(-10, 0);
 				IntPoint p6 = new IntPoint(-15, -5);
-				Assert.AreEqual(Math.PI / 4, PathOrderOptimizer.GetTurnAmount(p4, p5, p6), .001);
+				Assert.AreEqual(Math.PI / 4, p2.GetTurnAmount(p4, p6), .001);
 			}
 
 			// -45 turn works
@@ -95,7 +95,7 @@ namespace MatterHackers.MatterSlice.Tests
 				IntPoint p1 = new IntPoint(0, 0);
 				IntPoint p2 = new IntPoint(10, 0);
 				IntPoint p3 = new IntPoint(15, -5);
-				Assert.AreEqual(-Math.PI / 4, PathOrderOptimizer.GetTurnAmount(p1, p2, p3), .001);
+				Assert.AreEqual(-Math.PI / 4, p2.GetTurnAmount(p1, p3), .001);
 			}
 
 			// find the right point wound ccw

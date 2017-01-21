@@ -109,11 +109,10 @@ namespace MatterHackers.Pathfinding
 			if (link == null)
 			{
 				link = new PathLink(nodeA, nodeB);
+				link.Distance = (nodeA.Position - nodeB.Position).Length();
+				nodeA.Links.Add(link);
+				nodeB.Links.Add(link);
 			}
-
-			link.Distance = (nodeA.Position - nodeB.Position).Length();
-			nodeA.Links.Add(link);
-			nodeB.Links.Add(link);
 
 			return link;
 		}

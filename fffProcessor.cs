@@ -116,7 +116,7 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			writeGCode(slicingData);
+			WriteGCode(slicingData);
 			if (MatterSlice.Canceled)
 			{
 				return;
@@ -353,7 +353,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private void writeGCode(LayerDataStorage slicingData)
+		private void WriteGCode(LayerDataStorage slicingData)
 		{
 			gcode.WriteComment("filamentDiameter = {0}".FormatWith(config.FilamentDiameter));
 			gcode.WriteComment("extrusionWidth = {0}".FormatWith(config.ExtrusionWidth));
@@ -925,12 +925,6 @@ namespace MatterHackers.MatterSlice
 				layerGcodePlanner.QueuePolygonsByOptimizer(fillPolygons, fillConfig);
 				QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bottomFillPolygons, bottomFillConfig, SupportWriteType.UnsupportedAreas);
 				layerGcodePlanner.QueuePolygonsByOptimizer(topFillPolygons, topFillConfig);
-
-				//After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
-				if (!config.ContinuousSpiralOuterPerimeter || layerIndex < config.NumberOfBottomLayers)
-				{
-					layerGcodePlanner.MoveInsideTravelPerimeter();
-				}
 			}
 		}
 
@@ -1146,12 +1140,6 @@ namespace MatterHackers.MatterSlice
 								inset0Config.spiralize = true;
 							}
 						}
-					}
-
-					//After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
-					if (!config.ContinuousSpiralOuterPerimeter || layerIndex < config.NumberOfBottomLayers)
-					{
-						layerGcodePlanner.MoveInsideTravelPerimeter();
 					}
 
 					// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
