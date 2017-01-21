@@ -25,12 +25,14 @@ using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+	using Pathfinding;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
 	public class SliceLayer
 	{
-		public Polygons AllOutlines = new Polygons();
+		public Polygons AllOutlines { get; set; }
+		public PathFinder PathFinder { get; set; }
 		public List<LayerIsland> Islands = null;
 		public long LayerZ;
 		private static bool OUTPUT_DEBUG_DATA = false;

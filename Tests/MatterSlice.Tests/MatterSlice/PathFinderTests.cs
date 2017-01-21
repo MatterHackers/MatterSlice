@@ -317,7 +317,7 @@ namespace MatterHackers.MatterSlice.Tests
 		private void TestSinglePathIsInside(string partOutlineString, IntPoint startPoint, IntPoint endPoint)
 		{
 			Polygons boundaryPolygons = CLPolygonsExtensions.CreateFromString(partOutlineString);
-			PathFinder testHarness = new PathFinder(boundaryPolygons, -600);
+			PathFinder testHarness = new PathFinder(boundaryPolygons, 600);
 
 			Polygon insidePath = new Polygon();
 			// not optimized

@@ -166,9 +166,10 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void QueueInterfaceSupportLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportInterfaceConfig)
+		public bool QueueInterfaceSupportLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportInterfaceConfig)
 		{
 			// interface
+			bool outputPaths = false;
 			Polygons currentInterfaceOutlines2 = interfaceLayers[layerIndex].Offset(-config.ExtrusionWidth_um / 2);
 			if (currentInterfaceOutlines2.Count > 0)
 			{
@@ -184,18 +185,24 @@ namespace MatterHackers.MatterSlice
 
 					Polygons supportLines = new Polygons();
 					Infill.GenerateLineInfill(config, interfaceOutline, supportLines, config.InfillStartingAngle + 90, config.ExtrusionWidth_um);
-					gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportInterfaceConfig);
+					if(gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportInterfaceConfig))
+					{
+						outputPaths = true;
+					}
 				}
 			}
+
+			return outputPaths;
 		}
 
-		public void QueueNormalSupportLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig)
+		public bool QueueNormalSupportLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig)
 		{
 			// normal support
 			Polygons currentSupportOutlines = supportOutlines[layerIndex];
 			currentSupportOutlines = currentSupportOutlines.Offset(-supportNormalConfig.lineWidth_um / 2);
 			List<Polygons> supportIslands = currentSupportOutlines.ProcessIntoSeparatIslands();
 
+			bool outputPaths = false;
 			foreach (Polygons islandOutline in supportIslands)
 			{
 				// force a retract if changing islands
@@ -233,8 +240,13 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, supportNormalConfig);
+				if (gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, supportNormalConfig))
+				{
+					outputPaths = true;
+				}
 			}
+
+			return outputPaths;
 		}
 
 		private static List<Polygons> AccumulateDownPolygons(ConfigSettings config, List<Polygons> inputPolys, List<Polygons> allPartOutlines)

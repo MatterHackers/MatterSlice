@@ -170,6 +170,7 @@ namespace MatterHackers.MatterSlice
 				Layers[layerIndex].AllOutlines = slicer.layers[layerIndex].PolygonList;
 
 				Layers[layerIndex].AllOutlines = Layers[layerIndex].AllOutlines.GetCorrectedWinding();
+				Layers[layerIndex].PathFinder = new Pathfinding.PathFinder(Layers[layerIndex].AllOutlines, config.ExtrusionWidth_um * 3 / 2, false);
 			}
 		}
 
