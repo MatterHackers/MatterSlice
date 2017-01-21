@@ -29,6 +29,7 @@ either expressed or implied, of the FreeBSD Project.
 
 namespace MSClipperLib
 {
+	using System;
 	using static System.Math;
 
 	public static class IntPointExtensions
@@ -70,6 +71,42 @@ namespace MSClipperLib
 			else if (distanceToLine < 0)
 			{
 				return -1;
+			}
+
+			return 0;
+		}
+
+		public static IntPoint GetRotated(this IntPoint thisPoint, double radians)
+		{
+			double cos = (double)Cos(radians);
+			double sin = (double)Sin(radians);
+
+			IntPoint output;
+			output.X = (long)(Round(thisPoint.X * cos - thisPoint.Y * sin));
+			output.Y = (long)(Round(thisPoint.Y * cos + thisPoint.X * sin));
+			output.Z = thisPoint.Z;
+			output.Width = thisPoint.Width;
+
+			return output;
+		}
+
+		public static double GetTurnAmount(this IntPoint currentPoint,  IntPoint prevPoint, IntPoint nextPoint)
+		{
+			if (prevPoint != currentPoint
+				&& currentPoint != nextPoint
+				&& nextPoint != prevPoint)
+			{
+				prevPoint = currentPoint - prevPoint;
+				nextPoint -= currentPoint;
+
+				double prevAngle = Math.Atan2(prevPoint.Y, prevPoint.X);
+				IntPoint rotatedPrev = prevPoint.GetRotated(-prevAngle);
+
+				// undo the rotation
+				nextPoint = nextPoint.GetRotated(-prevAngle);
+				double angle = Math.Atan2(nextPoint.Y, nextPoint.X);
+
+				return angle;
 			}
 
 			return 0;

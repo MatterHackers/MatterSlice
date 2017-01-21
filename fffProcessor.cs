@@ -115,7 +115,7 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			writeGCode(slicingData);
+			WriteGCode(slicingData);
 			if (MatterSlice.Canceled)
 			{
 				return;
@@ -352,7 +352,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private void writeGCode(LayerDataStorage slicingData)
+		private void WriteGCode(LayerDataStorage slicingData)
 		{
 			gcode.WriteComment("filamentDiameter = {0}".FormatWith(config.FilamentDiameter));
 			gcode.WriteComment("extrusionWidth = {0}".FormatWith(config.ExtrusionWidth));
@@ -692,7 +692,7 @@ namespace MatterHackers.MatterSlice
 						int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
 						if (config.AvoidCrossingPerimeters)
 						{
-							layerGcodePlanner.SetPathFinder(island.PathFinder);
+							layerGcodePlanner.PathFinder = island.PathFinder;
 						}
 						layerGcodePlanner.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
 					}
@@ -731,7 +731,7 @@ namespace MatterHackers.MatterSlice
 
 				if (config.AvoidCrossingPerimeters)
 				{
-					layerGcodePlanner.SetPathFinder(island.PathFinder);
+					layerGcodePlanner.PathFinder = island.PathFinder;
 				}
 				else
 				{
@@ -903,15 +903,9 @@ namespace MatterHackers.MatterSlice
 				layerGcodePlanner.QueuePolygonsByOptimizer(fillPolygons, fillConfig);
 				QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bottomFillPolygons, bottomFillConfig, SupportWriteType.UnsupportedAreas);
 				layerGcodePlanner.QueuePolygonsByOptimizer(topFillPolygons, topFillConfig);
-
-				//After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
-				if (!config.ContinuousSpiralOuterPerimeter || layerIndex < config.NumberOfBottomLayers)
-				{
-					layerGcodePlanner.MoveInsideTravelPerimeter();
-				}
 			}
 
-			layerGcodePlanner.SetPathFinder(null);
+			layerGcodePlanner.PathFinder = null;
 		}
 
 		private bool FindMatchingInset0(bool limitDistance, int layerIndex, GCodePlanner layerGcodePlanner, out int matching0Index)
@@ -1023,7 +1017,7 @@ namespace MatterHackers.MatterSlice
 
 					if (config.AvoidCrossingPerimeters)
 					{
-						gcodeLayer.SetPathFinder(part.PathFinder);
+						gcodeLayer.PathFinder = part.PathFinder;
 					}
 					else
 					{
@@ -1068,12 +1062,6 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 
-					//After a layer part, make sure the nozzle is inside the comb boundary, so we do not retract on the perimeter.
-					if (!config.ContinuousSpiralOuterPerimeter || layerIndex < config.NumberOfBottomLayers)
-					{
-						gcodeLayer.MoveInsideTravelPerimeter();
-					}
-
 					// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
 					for (int insetIndex = 1; insetIndex < part.InsetToolPaths.Count; insetIndex++)
 					{
@@ -1089,7 +1077,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			gcodeLayer.SetPathFinder(null);
+			gcodeLayer.PathFinder = null;
 		}
 
 		private enum SupportWriteType

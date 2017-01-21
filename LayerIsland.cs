@@ -66,7 +66,7 @@ namespace MatterHackers.MatterSlice
 			LayerIsland part = this;
 			part.BoundingBox.Calculate(part.IslandOutline);
 
-			part.PathFinder = new PathFinder(part.IslandOutline, -extrusionWidth_um * 3 / 2);
+			part.PathFinder = new PathFinder(part.IslandOutline, extrusionWidth_um * 3 / 2);
 			if (insetCount == 0)
 			{
 				// if we have no insets defined still create one
