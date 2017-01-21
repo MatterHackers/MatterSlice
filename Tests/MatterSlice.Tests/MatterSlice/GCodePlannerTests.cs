@@ -49,10 +49,10 @@ namespace MatterHackers.MatterSlice.Tests
 
 			GCodePath testPath = GCodePlanner.TrimPerimeter(inPath, 0);
 
-			Assert.IsTrue(controlPath.points.Count == testPath.points.Count);
-			for (int i = 0; i < controlPath.points.Count; i++)
+			Assert.IsTrue(controlPath.polygon.Count == testPath.polygon.Count);
+			for (int i = 0; i < controlPath.polygon.Count; i++)
 			{
-				Assert.IsTrue(controlPath.points[i] == testPath.points[i]);
+				Assert.IsTrue(controlPath.polygon[i] == testPath.polygon[i]);
 			}
 		}
 
@@ -444,7 +444,7 @@ namespace MatterHackers.MatterSlice.Tests
 			Polygons pathsWithOverlapsRemoved;
 			bool pathIsClosed = false;
 
-			bool pathHadOverlaps = path.points.MergePerimeterOverlaps(path.config.lineWidth_um, out pathsWithOverlapsRemoved, pathIsClosed)
+			bool pathHadOverlaps = path.polygon.MergePerimeterOverlaps(path.config.lineWidth_um, out pathsWithOverlapsRemoved, pathIsClosed)
 				&& pathsWithOverlapsRemoved.Count > 0;
 
 			Assert.IsFalse(pathHadOverlaps);

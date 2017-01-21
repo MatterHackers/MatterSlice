@@ -502,5 +502,30 @@ namespace MatterHackers.QuadTree
 
 			return false;
 		}
+
+		/// <summary>
+		/// Return 1 if ccw -1 if cw
+		/// </summary>
+		/// <param name="polygon"></param>
+		/// <returns></returns>
+		public static int GetWindingDirection(this Polygon polygon)
+		{
+			int pointCount = polygon.Count;
+			double totalTurns = 0;
+			for (int pointIndex = 0; pointIndex < pointCount; pointIndex++)
+			{
+				int prevIndex = ((pointIndex + pointCount - 1) % pointCount);
+				int nextIndex = ((pointIndex + 1) % pointCount);
+				IntPoint prevPoint = polygon[prevIndex];
+				IntPoint currentPoint = polygon[pointIndex];
+				IntPoint nextPoint = polygon[nextIndex];
+
+				double turnAmount = currentPoint.GetTurnAmount(prevPoint, nextPoint);
+
+				totalTurns += turnAmount;
+			}
+
+			return totalTurns > 0 ? 1 : -1;
+		}
 	}
 }

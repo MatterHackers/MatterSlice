@@ -122,7 +122,7 @@ namespace MatterHackers.MatterSlice
 				long lengthCurToNextSquared = (nextPoint - currentPoint).LengthSquared();
 				bool distanceLongeEnough = lengthCurToNextSquared > minSegmentLengthToConsiderSquared && lengthPrevToCurSquared > minSegmentLengthToConsiderSquared;
 
-				double turnAmount = GetTurnAmount(prevPoint, currentPoint, nextPoint);
+				double turnAmount = currentPoint.GetTurnAmount(prevPoint, nextPoint);
 
 				totalTurns += turnAmount;
 
@@ -203,28 +203,6 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return bestPointIndex;
-		}
-
-		public static double GetTurnAmount(IntPoint prevPoint, IntPoint currentPoint, IntPoint nextPoint)
-		{
-			if (prevPoint != currentPoint
-				&& currentPoint != nextPoint
-				&& nextPoint != prevPoint)
-			{
-				prevPoint = currentPoint - prevPoint;
-				nextPoint -= currentPoint;
-
-				double prevAngle = Math.Atan2(prevPoint.Y, prevPoint.X);
-				IntPoint rotatedPrev = prevPoint.GetRotated(-prevAngle);
-
-				// undo the rotation
-				nextPoint = nextPoint.GetRotated(-prevAngle);
-				double angle = Math.Atan2(nextPoint.Y, nextPoint.X);
-
-				return angle;
-			}
-
-			return 0;
 		}
 
 		public void AddPolygon(Polygon polygon)

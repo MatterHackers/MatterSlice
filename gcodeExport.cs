@@ -23,6 +23,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using MatterHackers.Pathfinding;
+using MatterHackers.QuadTree;
 using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
@@ -313,6 +315,16 @@ namespace MatterHackers.MatterSlice
 		public void WriteMove(IntPoint movePosition_um, double speed, long lineWidth_um)
 		{
 			StringBuilder lineToWrite = new StringBuilder();
+
+			if(movePosition_um.Width != lineWidth_um)
+			{
+				int a = 0;
+			}
+
+			if(currentPosition_um == movePosition_um)
+			{
+				return;
+			}
 
 			//Normal E handling.
 			if (lineWidth_um != 0)
