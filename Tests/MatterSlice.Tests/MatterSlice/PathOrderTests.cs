@@ -66,7 +66,7 @@ namespace MatterHackers.MatterSlice.Tests
 				IntPoint p4 = new IntPoint(0, 10);
 				IntPoint p5 = new IntPoint(0, 0);
 				IntPoint p6 = new IntPoint(10, 0);
-				Assert.AreEqual(p2.GetTurnAmount(p4, p6), Math.PI / 2, .001);
+				Assert.AreEqual(p5.GetTurnAmount(p4, p6), Math.PI / 2, .001);
 			}
 
 			// -90 turn works
@@ -87,7 +87,7 @@ namespace MatterHackers.MatterSlice.Tests
 				IntPoint p4 = new IntPoint(0, 0);
 				IntPoint p5 = new IntPoint(-10, 0);
 				IntPoint p6 = new IntPoint(-15, -5);
-				Assert.AreEqual(Math.PI / 4, p2.GetTurnAmount(p4, p6), .001);
+				Assert.AreEqual(Math.PI / 4, p5.GetTurnAmount(p4, p6), .001);
 			}
 
 			// -45 turn works
