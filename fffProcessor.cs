@@ -946,11 +946,15 @@ namespace MatterHackers.MatterSlice
 				{
 					// start by moving within the last island to the closet point to the next island
 					var polygons = islandCurrentlyInside.PathFinder.OutlinePolygons;
-					var closestPointOnLastIsland = polygons.FindClosestPoint(closestNextIslandPoint);
-					IntPoint closestLastIslandPoint = polygons[closestPointOnLastIsland.Item1][closestPointOnLastIsland.Item2];
-					// make sure we are planning within the last island we were using
-					layerGcodePlanner.PathFinder = islandCurrentlyInside.PathFinder;
-					layerGcodePlanner.QueueTravel(closestLastIslandPoint);
+					if (polygons.Count > 0)
+					{
+						var closestPointOnLastIsland = polygons.FindClosestPoint(closestNextIslandPoint);
+
+						IntPoint closestLastIslandPoint = polygons[closestPointOnLastIsland.Item1][closestPointOnLastIsland.Item2];
+						// make sure we are planning within the last island we were using
+						layerGcodePlanner.PathFinder = islandCurrentlyInside.PathFinder;
+						layerGcodePlanner.QueueTravel(closestLastIslandPoint);
+					}
 				}
 
 				// let's move to this island avoiding running into any other islands
