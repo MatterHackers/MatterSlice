@@ -263,11 +263,14 @@ namespace MatterHackers.QuadTree
 				if (polygonIndex != indexToSkip)
 				{
 					Tuple<int, IntPoint> closestToPoly = boundaryPolygons[polygonIndex].FindClosestPoint(position);
-					long length = (closestToPoly.Item2 - position).Length();
-					if (length < bestDist)
+					if (closestToPoly.Item1 != -1)
 					{
-						bestDist = length;
-						polyPointPosition = new Tuple<int, int, IntPoint>(polygonIndex, closestToPoly.Item1, closestToPoly.Item2);
+						long length = (closestToPoly.Item2 - position).Length();
+						if (length < bestDist)
+						{
+							bestDist = length;
+							polyPointPosition = new Tuple<int, int, IntPoint>(polygonIndex, closestToPoly.Item1, closestToPoly.Item2);
+						}
 					}
 				}
 			}
