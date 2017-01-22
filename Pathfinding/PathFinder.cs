@@ -71,7 +71,7 @@ namespace MatterHackers.Pathfinding
 				}
 			}
 
-			BoundaryPolygons = OutlinePolygons.Offset(-avoidInset);
+			BoundaryPolygons = OutlinePolygons.Offset(stayInside ? -avoidInset : -2 * avoidInset);
 
 			OutlineEdgeQuadTrees = OutlinePolygons.GetEdgeQuadTrees();
 			OutlinePointQuadTrees = OutlinePolygons.GetPointQuadTrees();
@@ -371,6 +371,8 @@ namespace MatterHackers.Pathfinding
 					|| !ValidPoint(start + (end - start) * 9 / 10)
 					)
 				{
+					var bounds = OutlinePolygons.GetBounds();
+					long length = (start - end).Length();
 					// an easy way to get the path
 					string startEndString = $"start:({startPoint.X}, {startPoint.Y}), end:({endPoint.X}, {endPoint.Y})";
 					string outlineString = OutlinePolygons.WriteToString();
