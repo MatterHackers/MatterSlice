@@ -347,7 +347,7 @@ namespace MatterHackers.Pathfinding
 				pathThatIsInside.Add(new IntPoint(endNode.Position, z));
 			}
 
-			AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint);
+			//AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint);
 
 			if (path.Nodes.Length == 0)
 			{
@@ -366,7 +366,7 @@ namespace MatterHackers.Pathfinding
 				pathThatIsInside.RemoveAt(0);
 			}
 
-			AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint);
+			//AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint);
 
 			return true;
 		}
