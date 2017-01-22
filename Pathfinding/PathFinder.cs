@@ -25,6 +25,7 @@ using MSClipperLib;
 namespace MatterHackers.Pathfinding
 {
 	using System;
+	using System.IO;
 	using QuadTree;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
@@ -201,7 +202,7 @@ namespace MatterHackers.Pathfinding
 		public Polygons ThinLinePolygons { get; private set; }
 		public IntPointPathNetwork Waypoints { get; private set; } = new IntPointPathNetwork();
 
-		public bool AllPathSegmentsAreInsideOutlines(Polygon pathThatIsInside, IntPoint startPoint, IntPoint endPoint)
+		public bool AllPathSegmentsAreInsideOutlines(Polygon pathThatIsInside, IntPoint startPoint, IntPoint endPoint, bool writeErrors = false)
 		{
 			// check that this path does not exit the outline
 			for (int i = 0; i < pathThatIsInside.Count - 1; i++)
@@ -216,17 +217,36 @@ namespace MatterHackers.Pathfinding
 					|| !ValidPoint(start + (end - start) * 9 / 10)
 					)
 				{
-					var bounds = OutlinePolygons.GetBounds();
-					long length = (start - end).Length();
 					// an easy way to get the path
-					string startEndString = $"start:({startPoint.X}, {startPoint.Y}), end:({endPoint.X}, {endPoint.Y})";
-					string outlineString = OutlinePolygons.WriteToString();
-					// just some code to set a break point on
+					if (writeErrors)
+					{
+						WriteErrorForTesting(startPoint, endPoint);
+					}
+
 					return false;
 				}
 			}
 
 			return true;
+		}
+
+		private void WriteErrorForTesting(IntPoint startPoint, IntPoint endPoint)
+		{
+			var bounds = OutlinePolygons.GetBounds();
+			long length = (startPoint - endPoint).Length();
+			string startEndString = $"start:({startPoint.X}, {startPoint.Y}), end:({endPoint.X}, {endPoint.Y})";
+			string outlineString = OutlinePolygons.WriteToString();
+			// just some code to set a break point on
+			string fullPath = Path.GetFullPath("DebugPathFinder.txt");
+			if (fullPath.Contains("MatterControl"))
+			{
+				using (StreamWriter sw = File.AppendText(fullPath))
+				{
+					sw.WriteLine($"polyPath = \"{outlineString}\";");
+					sw.WriteLine($"TestSinglePathIsInside(polyPath, new IntPoint({startPoint.X}, {startPoint.Y}), new IntPoint({endPoint.X}, {endPoint.Y}));");
+					sw.WriteLine("");
+				}
+			}
 		}
 
 		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside, bool optomizePath = true)
@@ -352,10 +372,9 @@ namespace MatterHackers.Pathfinding
 				pathThatIsInside.Add(new IntPoint(endNode.Position, z));
 			}
 
-			//AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint);
-
 			if (path.Nodes.Length == 0)
 			{
+				WriteErrorForTesting(startPoint, endPoint);
 				return false;
 			}
 
@@ -371,7 +390,7 @@ namespace MatterHackers.Pathfinding
 				pathThatIsInside.RemoveAt(0);
 			}
 
-			//AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint);
+			AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint, true);
 
 			return true;
 		}
