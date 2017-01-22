@@ -99,16 +99,19 @@ namespace MatterHackers.Pathfinding
 					{
 						// find the closest two point between A and any other polygon
 						IntPoint bestAPos = polyA.Center();
-						var bestBPoly = BoundaryPolygons.FindClosestPoint(bestAPos, indexA);
-						bestAPos = polyA.FindClosestPoint(bestBPoly.Item3).Item2;
-						var bestBPos = BoundaryPolygons[bestBPoly.Item1].FindClosestPoint(bestAPos).Item2;
-						bestAPos = polyA.FindClosestPoint(bestBPos).Item2;
-						bestBPos = BoundaryPolygons[bestBPoly.Item1].FindClosestPoint(bestAPos).Item2;
+						var bestBPoly = BoundaryPolygons.FindClosestPoint(bestAPos, (polyIndex, poly) => { return polyIndex != indexA && poly.GetWindingDirection() > 0; });
+						if (bestBPoly.Item1 != -1)
+						{
+							bestAPos = polyA.FindClosestPoint(bestBPoly.Item3).Item2;
+							var bestBPos = BoundaryPolygons[bestBPoly.Item1].FindClosestPoint(bestAPos).Item2;
+							bestAPos = polyA.FindClosestPoint(bestBPos).Item2;
+							bestBPos = BoundaryPolygons[bestBPoly.Item1].FindClosestPoint(bestAPos).Item2;
 
-						// hook the polygons up along this connection
-						IntPointNode nodeA = Waypoints.FindNode(bestAPos);
-						IntPointNode nodeB = Waypoints.FindNode(bestBPos);
-						Waypoints.AddPathLink(nodeA, nodeB);
+							// hook the polygons up along this connection
+							IntPointNode nodeA = Waypoints.FindNode(bestAPos);
+							IntPointNode nodeB = Waypoints.FindNode(bestBPos);
+							Waypoints.AddPathLink(nodeA, nodeB);
+						}
 					}
 				}
 			}
@@ -137,8 +140,8 @@ namespace MatterHackers.Pathfinding
 						if (thinPolygon.Count > 1)
 						{
 							// now hook up the start and end of this polygon to the existing way points
-							var closestStart = allPolygons.FindClosestPoint(thinPolygon[0], thinIndex);
-							var closestEnd = allPolygons.FindClosestPoint(thinPolygon[thinPolygon.Count - 1], thinIndex); // last point
+							var closestStart = allPolygons.FindClosestPoint(thinPolygon[0], (polyIndex, poly) => { return polyIndex == thinIndex; });
+							var closestEnd = allPolygons.FindClosestPoint(thinPolygon[thinPolygon.Count - 1], (polyIndex, poly) => { return polyIndex == thinIndex; }); // last point
 							if (OutlinePolygons.PointIsInside((closestStart.Item3 + closestEnd.Item3) / 2, OutlineEdgeQuadTrees))
 							{
 								IntPointNode nodeA = Waypoints.FindNode(closestStart.Item3);
@@ -329,7 +332,7 @@ namespace MatterHackers.Pathfinding
 				pathThatIsInside.Add(new IntPoint(endNode.Position, z));
 			}
 
-			//AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint);
+			AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint);
 
 			if (path.Nodes.Length == 0)
 			{
@@ -348,7 +351,7 @@ namespace MatterHackers.Pathfinding
 				pathThatIsInside.RemoveAt(0);
 			}
 
-			//AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint);
+			AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint);
 
 			return true;
 		}
