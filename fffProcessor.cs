@@ -930,9 +930,21 @@ namespace MatterHackers.MatterSlice
 
 		private void MoveToIsland(GCodePlanner layerGcodePlanner, SliceLayer layer, LayerIsland island)
 		{
-			if (island.IslandOutline.Count > 0
-				&& !config.ContinuousSpiralOuterPerimeter)
+			if(config.ContinuousSpiralOuterPerimeter)
 			{
+				return;
+			}
+
+			if (island.IslandOutline.Count > 0)
+			{
+				// If we are already in the island we are going to, don't go there.
+				if (island.PathFinder.OutlinePolygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineEdgeQuadTrees))
+				{
+					islandCurrentlyInside = island;
+					layerGcodePlanner.PathFinder = island.PathFinder;
+					return;
+				}
+
 				var closestPointOnNextIsland = island.IslandOutline.FindClosestPoint(layerGcodePlanner.LastPosition);
 				IntPoint closestNextIslandPoint = island.IslandOutline[closestPointOnNextIsland.Item1][closestPointOnNextIsland.Item2];
 

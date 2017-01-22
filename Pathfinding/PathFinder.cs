@@ -121,9 +121,14 @@ namespace MatterHackers.Pathfinding
 						if (bestBPoly != null)
 						{
 							bestAPos = polyA.FindClosestPoint(bestBPoly.Item3).Item2;
-							var bestBPos = BoundaryPolygons[bestBPoly.Item1].FindClosestPoint(bestAPos, ConsiderPoint).Item2;
-							if (bestBPos == null)
+							var bestBResult = BoundaryPolygons[bestBPoly.Item1].FindClosestPoint(bestAPos, ConsiderPoint);
+							IntPoint bestBPos = new IntPoint();
+							if (bestBResult != null)
 							{
+								bestBPos = bestBResult.Item2;
+							}
+							else
+							{ 
 								// find one that intersects
 								bestBPos = BoundaryPolygons[bestBPoly.Item1].FindClosestPoint(bestAPos).Item2;
 							}
