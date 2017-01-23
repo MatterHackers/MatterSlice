@@ -36,6 +36,34 @@ namespace MatterHackers.Pathfinding
 		private static bool storeBoundary = false;
 		private WayPointsToRemove removePointList;
 
+		private Polygons FixWinding(Polygons polygonsToPathAround)
+		{
+			polygonsToPathAround = Clipper.CleanPolygons(polygonsToPathAround);
+			Polygon boundsPolygon = new Polygon();
+			IntRect bounds = Clipper.GetBounds(polygonsToPathAround);
+			bounds.minX -= 10;
+			bounds.maxY += 10;
+			bounds.maxX += 10;
+			bounds.minY -= 10;
+
+			boundsPolygon.Add(new IntPoint(bounds.minX, bounds.minY));
+			boundsPolygon.Add(new IntPoint(bounds.maxX, bounds.minY));
+			boundsPolygon.Add(new IntPoint(bounds.maxX, bounds.maxY));
+			boundsPolygon.Add(new IntPoint(bounds.minX, bounds.maxY));
+
+			Clipper clipper = new Clipper();
+
+			clipper.AddPaths(polygonsToPathAround, PolyType.ptSubject, true);
+			clipper.AddPath(boundsPolygon, PolyType.ptClip, true);
+
+			PolyTree intersectionResult = new PolyTree();
+			clipper.Execute(ClipType.ctIntersection, intersectionResult);
+
+			Polygons outputPolygons = Clipper.ClosedPathsFromPolyTree(intersectionResult);
+
+			return outputPolygons;
+		}
+
 		public PathFinder(Polygons outlinePolygons, long avoidInset, bool stayInside = true)
 		{
 			if (outlinePolygons.Count == 0)
@@ -71,6 +99,7 @@ namespace MatterHackers.Pathfinding
 			}
 
 			BoundaryPolygons = OutlinePolygons.Offset(stayInside ? -avoidInset : -2 * avoidInset);
+			BoundaryPolygons = FixWinding(BoundaryPolygons);
 
 			OutlineEdgeQuadTrees = OutlinePolygons.GetEdgeQuadTrees();
 			OutlinePointQuadTrees = OutlinePolygons.GetPointQuadTrees();
@@ -94,7 +123,7 @@ namespace MatterHackers.Pathfinding
 				for (int indexA = 0; indexA < BoundaryPolygons.Count - 1; indexA++)
 				{
 					var polyA = BoundaryPolygons[indexA];
-					if (polyA.GetWindingDirection() > 0)
+					if (polyA.GetWindingDirection() >  0)
 					{
 						Func<int, Polygon, bool> ConsiderPolygon = (polyIndex, poly) =>
 						{
@@ -215,7 +244,7 @@ namespace MatterHackers.Pathfinding
 					|| !ValidPoint(start + (end - start) * 3 / 4)
 					|| !ValidPoint(start + (end - start) / 10)
 					|| !ValidPoint(start + (end - start) * 9 / 10)
-					)
+					|| (start - end).Length() > 1000000)
 				{
 					// an easy way to get the path
 					if (writeErrors)
@@ -428,6 +457,20 @@ namespace MatterHackers.Pathfinding
 			if (foundPolyPointPosition == null)
 			{
 				waypointNode = AddTempWayPoint(removePointList, position);
+				/*
+				var closestPolyPoint = BoundaryPolygons.FindClosestPoint(position, (polyIndex, poly) =>
+				{
+					return poly.PointIsInside(position) != 0;
+				});
+				if(closestPolyPoint != null)
+				{
+					IntPointNode edgeNode = Waypoints.FindNode(closestPolyPoint.Item3);
+					if (edgeNode != null)
+					{
+						Waypoints.AddPathLink(waypointNode, edgeNode);
+					}
+				}
+				*/
 			}
 			else
 			{

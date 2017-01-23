@@ -186,11 +186,11 @@ namespace MatterHackers.MatterSlice
 #endif
 
 			LogOutput.Log("Slicing model...\n");
-			List<Slicer> slicerList = new List<Slicer>();
+			List<ExtruderData> extruderList = new List<ExtruderData>();
 			for (int optimizedMeshIndex = 0; optimizedMeshIndex < optomizedMeshCollection.OptimizedMeshes.Count; optimizedMeshIndex++)
 			{
-				Slicer slicer = new Slicer(optomizedMeshCollection.OptimizedMeshes[optimizedMeshIndex], config);
-				slicerList.Add(slicer);
+				ExtruderData extruderData = new ExtruderData(optomizedMeshCollection.OptimizedMeshes[optimizedMeshIndex], config);
+				extruderList.Add(extruderData);
 			}
 
 #if false
@@ -206,11 +206,10 @@ namespace MatterHackers.MatterSlice
 			slicingData.modelMin = optomizedMeshCollection.minXYZ_um;
 			slicingData.modelMax = optomizedMeshCollection.maxXYZ_um;
 
-			LogOutput.Log("Generating layer parts...\n");
-			for (int extruderIndex = 0; extruderIndex < slicerList.Count; extruderIndex++)
+			for (int extruderIndex = 0; extruderIndex < extruderList.Count; extruderIndex++)
 			{
 				slicingData.Extruders.Add(new ExtruderLayers());
-				slicingData.Extruders[extruderIndex].InitializeLayerData(slicerList[extruderIndex], config);
+				slicingData.Extruders[extruderIndex].InitializeLayerData(extruderList[extruderIndex], config, extruderIndex, extruderList.Count);
 
 				if (config.EnableRaft)
 				{
@@ -822,12 +821,15 @@ namespace MatterHackers.MatterSlice
 								// Print the insets from inside to out (count - 1 to 0).
 								for (int insetIndex = island.InsetToolPaths.Count - 1; insetIndex >= 0; insetIndex--)
 								{
-
+									if(layerGcodePlanner.PathFinder != island.PathFinder)
+									{
+										int a = 0;
+									}
 									if (!config.ContinuousSpiralOuterPerimeter
 										&& insetIndex == island.InsetToolPaths.Count - 1)
 									{
 										var closestInsetStart = FindBestPoint(insetsForThisIsland[0], layerGcodePlanner.LastPosition);
-										if(closestInsetStart != null)
+										if(closestInsetStart.X != long.MinValue)
 										{
 											layerGcodePlanner.QueueTravel(closestInsetStart);
 										}
@@ -912,7 +914,8 @@ namespace MatterHackers.MatterSlice
 			if (island.IslandOutline.Count > 0)
 			{
 				// If we are already in the island we are going to, don't go there.
-				if (island.PathFinder.OutlinePolygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineEdgeQuadTrees))
+				if (island.PathFinder.OutlinePolygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineEdgeQuadTrees)
+					|| layer.Islands.Count == 1 && island.PathFinder.OutlinePolygons.Count < 2)
 				{
 					islandCurrentlyInside = island;
 					layerGcodePlanner.PathFinder = island.PathFinder;
