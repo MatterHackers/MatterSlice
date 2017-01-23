@@ -696,31 +696,6 @@ namespace MatterHackers.MatterSlice
 				layerGcodePlanner.SetAlwaysRetract(!config.AvoidCrossingPerimeters);
 			}
 
-			// Move to the best start point for this layer
-			if (!config.ContinuousSpiralOuterPerimeter
-				&& layerIndex > 0
-				&& layerIndex < slicingData.Extruders[extruderIndex].Layers.Count - 2)
-			{
-				// Figure out where the seam hiding start point is for inset 0 and move to that spot so
-				// we have the minimum travel while starting inset 0 after printing the rest of the insets
-				if (layer.Islands.Count == 1)
-				{
-					LayerIsland island = layer?.Islands?[0];
-					if (island?.InsetToolPaths?.Count > 0
-						&& island?.InsetToolPaths?[0]?[0]?.Count > 0)
-					{
-						int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
-						if (config.AvoidCrossingPerimeters)
-						{
-							layerGcodePlanner.PathFinder = island.PathFinder;
-						}
-
-						layerGcodePlanner.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
-						islandCurrentlyInside = island;
-					}
-				}
-			}
-
 			PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(new IntPoint());
 			for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
 			{
@@ -851,11 +826,10 @@ namespace MatterHackers.MatterSlice
 									if (!config.ContinuousSpiralOuterPerimeter
 										&& insetIndex == island.InsetToolPaths.Count - 1)
 									{
-										int matching0Index = 0;
-										if (FindMatchingInset0(limitDistance, layerIndex, layerGcodePlanner, out matching0Index))
+										var closestInsetStart = FindBestPoint(insetsForThisIsland[0], layerGcodePlanner.LastPosition);
+										if(closestInsetStart != null)
 										{
-											int bestPoint = PathOrderOptimizer.GetBestIndex(insetsForThisIsland[0][matching0Index], config.ExtrusionWidth_um);
-											layerGcodePlanner.QueueTravel(island.InsetToolPaths[0][matching0Index][bestPoint]);
+											layerGcodePlanner.QueueTravel(closestInsetStart);
 										}
 									}
 
@@ -975,10 +949,26 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private bool FindMatchingInset0(bool limitDistance, int layerIndex, GCodePlanner layerGcodePlanner, out int matching0Index)
+		public IntPoint FindBestPoint(Polygons boundaryPolygons, IntPoint position)
 		{
-			matching0Index = 0;
-			return false;
+			IntPoint polyPointPosition = new IntPoint(long.MinValue, long.MinValue);
+
+			long bestDist = long.MaxValue;
+			for (int polygonIndex = 0; polygonIndex < boundaryPolygons.Count; polygonIndex++)
+			{
+				IntPoint closestToPoly = PathOrderOptimizer.GetBestPosition(boundaryPolygons[polygonIndex], config.ExtrusionWidth_um);
+				if (closestToPoly != null)
+				{
+					long length = (closestToPoly - position).Length();
+					if (length < bestDist)
+					{
+						bestDist = length;
+						polyPointPosition = closestToPoly;
+					}
+				}
+			}
+
+			return polyPointPosition;
 		}
 
 		private bool QueueClosetsInset(Polygons insetsToConsider, bool limitDistance, GCodePathConfig pathConfig, int layerIndex, GCodePlanner gcodeLayer)
@@ -1055,31 +1045,6 @@ namespace MatterHackers.MatterSlice
 				}
 
 				SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
-
-				// Move to the best start point for this layer
-				if (!config.ContinuousSpiralOuterPerimeter
-					&& layerIndex > 0
-					&& layerIndex < slicingData.Extruders[extruderIndex].Layers.Count - 2)
-				{
-					// Figure out where the seam hiding start point is for inset 0 and move to that spot so
-					// we have the minimum travel while starting inset 0 after printing the rest of the insets
-					if (layer.Islands.Count == 1)
-					{
-						LayerIsland island = layer?.Islands?[0];
-						if (island?.InsetToolPaths?.Count > 0
-							&& island?.InsetToolPaths?[0]?[0]?.Count > 0)
-						{
-							int bestPoint = PathOrderOptimizer.GetBestIndex(island.InsetToolPaths[0][0], config.ExtrusionWidth_um);
-							if (config.AvoidCrossingPerimeters)
-							{
-								layerGcodePlanner.PathFinder = island.PathFinder;
-							}
-
-							layerGcodePlanner.QueueTravel(island.InsetToolPaths[0][0][bestPoint]);
-							islandCurrentlyInside = island;
-						}
-					}
-				}
 
 				PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(new IntPoint());
 				for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
