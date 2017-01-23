@@ -374,7 +374,7 @@ namespace MatterHackers.Pathfinding
 
 			if (path.Nodes.Length == 0)
 			{
-				WriteErrorForTesting(startPoint, endPoint);
+				//WriteErrorForTesting(startPoint, endPoint);
 				return false;
 			}
 
@@ -390,7 +390,7 @@ namespace MatterHackers.Pathfinding
 				pathThatIsInside.RemoveAt(0);
 			}
 
-			AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint, true);
+			//AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint, true);
 
 			return true;
 		}
