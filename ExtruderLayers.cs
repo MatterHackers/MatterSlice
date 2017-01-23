@@ -155,10 +155,12 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void InitializeLayerData(Slicer slicer, ConfigSettings config)
+		public void InitializeLayerData(ExtruderData slicer, ConfigSettings config, int extruderIndex, int extruderCount)
 		{
 			for (int layerIndex = 0; layerIndex < slicer.layers.Count; layerIndex++)
 			{
+				int start = slicer.layers.Count * extruderIndex;
+				LogOutput.Log("Generating Layer Outlines {0}/{1}\n".FormatWith(start + layerIndex + 1, extruderCount * slicer.layers.Count));
 				if (config.outputOnlyFirstLayer && layerIndex > 0)
 				{
 					break;

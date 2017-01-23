@@ -45,13 +45,13 @@ namespace MatterHackers.MatterSlice
 		}
 	}
 
-	public class Slicer
+	public class ExtruderData
 	{
 		public List<MeshProcessingLayer> layers = new List<MeshProcessingLayer>();
 		public IntPoint modelMin;
 		public IntPoint modelSize;
 
-		public Slicer(OptimizedMesh ov, ConfigSettings config)
+		public ExtruderData(OptimizedMesh ov, ConfigSettings config)
 		{
 			int initialLayerThickness_um = config.FirstLayerThickness_um;
 			int layerThickness_um = config.LayerThickness_um;
