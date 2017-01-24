@@ -1230,7 +1230,14 @@ namespace MatterHackers.MatterSlice
 				{
 					if (config.GenerateSupport)
 					{
-						Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+						if (config.SupportInterfaceLayers > 0)
+						{
+							Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+						}
+						else
+						{
+							Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle + 90);
+						}
 					}
 					else
 					{
