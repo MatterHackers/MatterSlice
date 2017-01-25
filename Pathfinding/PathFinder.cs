@@ -71,7 +71,7 @@ namespace MatterHackers.Pathfinding
 			}
 
 			BoundaryPolygons = OutlinePolygons.Offset(stayInsideBounds == null ? -avoidInset : -2 * avoidInset);
-			//BoundaryPolygons = FixWinding(BoundaryPolygons);
+			BoundaryPolygons = FixWinding(BoundaryPolygons);
 
 			OutlineEdgeQuadTrees = OutlinePolygons.GetEdgeQuadTrees();
 			OutlinePointQuadTrees = OutlinePolygons.GetPointQuadTrees();
