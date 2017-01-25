@@ -32,39 +32,13 @@ namespace MatterHackers.Pathfinding
 
 	public class PathFinder
 	{
+		private static string lastOutlineString = "";
+		private static bool saveBadPathToDisk = false;
 		private static bool simpleHookup = true;
 		private static bool storeBoundary = false;
 		private WayPointsToRemove removePointList;
 
-		private Polygons FixWinding(Polygons polygonsToPathAround)
-		{
-			polygonsToPathAround = Clipper.CleanPolygons(polygonsToPathAround);
-			Polygon boundsPolygon = new Polygon();
-			IntRect bounds = Clipper.GetBounds(polygonsToPathAround);
-			bounds.minX -= 10;
-			bounds.maxY += 10;
-			bounds.maxX += 10;
-			bounds.minY -= 10;
-
-			boundsPolygon.Add(new IntPoint(bounds.minX, bounds.minY));
-			boundsPolygon.Add(new IntPoint(bounds.maxX, bounds.minY));
-			boundsPolygon.Add(new IntPoint(bounds.maxX, bounds.maxY));
-			boundsPolygon.Add(new IntPoint(bounds.minX, bounds.maxY));
-
-			Clipper clipper = new Clipper();
-
-			clipper.AddPaths(polygonsToPathAround, PolyType.ptSubject, true);
-			clipper.AddPath(boundsPolygon, PolyType.ptClip, true);
-
-			PolyTree intersectionResult = new PolyTree();
-			clipper.Execute(ClipType.ctIntersection, intersectionResult);
-
-			Polygons outputPolygons = Clipper.ClosedPathsFromPolyTree(intersectionResult);
-
-			return outputPolygons;
-		}
-
-		public PathFinder(Polygons outlinePolygons, long avoidInset, bool stayInside = true)
+		public PathFinder(Polygons outlinePolygons, long avoidInset, IntRect? stayInsideBounds = null)
 		{
 			if (outlinePolygons.Count == 0)
 			{
@@ -73,11 +47,9 @@ namespace MatterHackers.Pathfinding
 
 			OutlinePolygons = Clipper.CleanPolygons(outlinePolygons, avoidInset / 60);
 			InsetAmount = avoidInset;
-			if (!stayInside)
+			if (stayInsideBounds != null)
 			{
-				var boundary = outlinePolygons.GetBounds();
-				boundary.Inflate(avoidInset * 4000);
-				OutlinePolygons = new Polygons(outlinePolygons.Count + 1);
+				var boundary = stayInsideBounds.Value;
 				OutlinePolygons.Add(new Polygon()
 				{
 					new IntPoint(boundary.minX, boundary.minY),
@@ -98,8 +70,8 @@ namespace MatterHackers.Pathfinding
 				}
 			}
 
-			BoundaryPolygons = OutlinePolygons.Offset(stayInside ? -avoidInset : -2 * avoidInset);
-			BoundaryPolygons = FixWinding(BoundaryPolygons);
+			BoundaryPolygons = OutlinePolygons.Offset(stayInsideBounds == null ? -avoidInset : -2 * avoidInset);
+			//BoundaryPolygons = FixWinding(BoundaryPolygons);
 
 			OutlineEdgeQuadTrees = OutlinePolygons.GetEdgeQuadTrees();
 			OutlinePointQuadTrees = OutlinePolygons.GetPointQuadTrees();
@@ -123,7 +95,7 @@ namespace MatterHackers.Pathfinding
 				for (int indexA = 0; indexA < BoundaryPolygons.Count - 1; indexA++)
 				{
 					var polyA = BoundaryPolygons[indexA];
-					if (polyA.GetWindingDirection() >  0)
+					if (polyA.GetWindingDirection() > 0)
 					{
 						Func<int, Polygon, bool> ConsiderPolygon = (polyIndex, poly) =>
 						{
@@ -135,7 +107,7 @@ namespace MatterHackers.Pathfinding
 						IntPoint bestAPos = polyA.Center();
 						Func<int, IntPoint, bool> ConsiderPoint = (polyIndex, edgeEnd) =>
 						{
-							if(OutlinePolygons.PointIsInside((bestAPos + edgeEnd) / 2, OutlineEdgeQuadTrees))
+							if (OutlinePolygons.PointIsInside((bestAPos + edgeEnd) / 2, OutlineEdgeQuadTrees))
 							{
 								return true;
 							}
@@ -158,7 +130,7 @@ namespace MatterHackers.Pathfinding
 								bestBPos = bestBResult.Item2;
 							}
 							else
-							{ 
+							{
 								// find one that intersects
 								bestBPos = BoundaryPolygons[bestBPoly.Item1].FindClosestPoint(bestAPos).Item2;
 							}
@@ -222,13 +194,21 @@ namespace MatterHackers.Pathfinding
 		}
 
 		public List<QuadTree<int>> BoundaryEdgeQuadTrees { get; private set; }
+
 		public List<QuadTree<int>> BoundaryPointQuadTrees { get; private set; }
+
 		public Polygons BoundaryPolygons { get; private set; }
+
 		public long InsetAmount { get; private set; }
+
 		public List<QuadTree<int>> OutlineEdgeQuadTrees { get; private set; }
+
 		public List<QuadTree<int>> OutlinePointQuadTrees { get; private set; }
+
 		public Polygons OutlinePolygons { get; private set; }
+
 		public Polygons ThinLinePolygons { get; private set; }
+
 		public IntPointPathNetwork Waypoints { get; private set; } = new IntPointPathNetwork();
 
 		public bool AllPathSegmentsAreInsideOutlines(Polygon pathThatIsInside, IntPoint startPoint, IntPoint endPoint, bool writeErrors = false)
@@ -257,25 +237,6 @@ namespace MatterHackers.Pathfinding
 			}
 
 			return true;
-		}
-
-		private void WriteErrorForTesting(IntPoint startPoint, IntPoint endPoint)
-		{
-			var bounds = OutlinePolygons.GetBounds();
-			long length = (startPoint - endPoint).Length();
-			string startEndString = $"start:({startPoint.X}, {startPoint.Y}), end:({endPoint.X}, {endPoint.Y})";
-			string outlineString = OutlinePolygons.WriteToString();
-			// just some code to set a break point on
-			string fullPath = Path.GetFullPath("DebugPathFinder.txt");
-			if (fullPath.Contains("MatterControl"))
-			{
-				using (StreamWriter sw = File.AppendText(fullPath))
-				{
-					sw.WriteLine($"polyPath = \"{outlineString}\";");
-					sw.WriteLine($"TestSinglePathIsInside(polyPath, new IntPoint({startPoint.X}, {startPoint.Y}), new IntPoint({endPoint.X}, {endPoint.Y}));");
-					sw.WriteLine("");
-				}
-			}
 		}
 
 		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside, bool optomizePath = true)
@@ -403,7 +364,10 @@ namespace MatterHackers.Pathfinding
 
 			if (path.Nodes.Length == 0)
 			{
-				//WriteErrorForTesting(startPoint, endPoint);
+				if (saveBadPathToDisk)
+				{
+					WriteErrorForTesting(startPoint, endPoint);
+				}
 				return false;
 			}
 
@@ -419,7 +383,10 @@ namespace MatterHackers.Pathfinding
 				pathThatIsInside.RemoveAt(0);
 			}
 
-			//AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint, true);
+			if (saveBadPathToDisk)
+			{
+				AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint, true);
+			}
 
 			return true;
 		}
@@ -490,6 +457,34 @@ namespace MatterHackers.Pathfinding
 			}
 		}
 
+		private Polygons FixWinding(Polygons polygonsToPathAround)
+		{
+			polygonsToPathAround = Clipper.CleanPolygons(polygonsToPathAround);
+			Polygon boundsPolygon = new Polygon();
+			IntRect bounds = Clipper.GetBounds(polygonsToPathAround);
+			bounds.minX -= 10;
+			bounds.maxY += 10;
+			bounds.maxX += 10;
+			bounds.minY -= 10;
+
+			boundsPolygon.Add(new IntPoint(bounds.minX, bounds.minY));
+			boundsPolygon.Add(new IntPoint(bounds.maxX, bounds.minY));
+			boundsPolygon.Add(new IntPoint(bounds.maxX, bounds.maxY));
+			boundsPolygon.Add(new IntPoint(bounds.minX, bounds.maxY));
+
+			Clipper clipper = new Clipper();
+
+			clipper.AddPaths(polygonsToPathAround, PolyType.ptSubject, true);
+			clipper.AddPath(boundsPolygon, PolyType.ptClip, true);
+
+			PolyTree intersectionResult = new PolyTree();
+			clipper.Execute(ClipType.ctIntersection, intersectionResult);
+
+			Polygons outputPolygons = Clipper.ClosedPathsFromPolyTree(intersectionResult);
+
+			return outputPolygons;
+		}
+
 		private void HookUpToEdge(IntPointNode crossingNode, int polyIndex, int pointIndex)
 		{
 			int count = BoundaryPolygons[polyIndex].Count;
@@ -558,6 +553,31 @@ namespace MatterHackers.Pathfinding
 			}
 
 			return false;
+		}
+
+		private void WriteErrorForTesting(IntPoint startPoint, IntPoint endPoint)
+		{
+			var bounds = OutlinePolygons.GetBounds();
+			long length = (startPoint - endPoint).Length();
+			string startEndString = $"start:({startPoint.X}, {startPoint.Y}), end:({endPoint.X}, {endPoint.Y})";
+			string outlineString = OutlinePolygons.WriteToString();
+			// just some code to set a break point on
+			string fullPath = Path.GetFullPath("DebugPathFinder.txt");
+			if (fullPath.Contains("MatterControl"))
+			{
+				using (StreamWriter sw = File.AppendText(fullPath))
+				{
+					if (lastOutlineString != outlineString)
+					{
+						sw.WriteLine($"polyPath = \"{outlineString}\";");
+						lastOutlineString = outlineString;
+					}
+					sw.WriteLine($"// Length of this segment (start->end) {length}.");
+					sw.WriteLine($"// startOverride = new MSIntPoint({startPoint.X}, {startPoint.Y}); endOverride = new MSIntPoint({endPoint.X}, {endPoint.Y});");
+					sw.WriteLine($"TestSinglePathIsInside(polyPath, new IntPoint({startPoint.X}, {startPoint.Y}), new IntPoint({endPoint.X}, {endPoint.Y}));");
+					sw.WriteLine("");
+				}
+			}
 		}
 	}
 }

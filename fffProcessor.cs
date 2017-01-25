@@ -563,7 +563,6 @@ namespace MatterHackers.MatterSlice
 				{
 					z += config.SupportAirGap_um;
 					gcode.SetZ(z);
-					layerGcodePlanner.QueueTravel(layerGcodePlanner.LastPosition);
 
 					for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
 					{
@@ -1083,6 +1082,8 @@ namespace MatterHackers.MatterSlice
 					{
 						layerGcodePlanner.SetAlwaysRetract(true);
 					}
+					MoveToIsland(layerGcodePlanner, layer, island);
+					layerGcodePlanner.QueueTravel(layerGcodePlanner.LastPosition);
 
 					Polygons fillPolygons = new Polygons();
 					Polygons topFillPolygons = new Polygons();
