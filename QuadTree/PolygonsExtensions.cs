@@ -237,6 +237,23 @@ namespace MatterHackers.QuadTree
 			return quadTrees;
 		}
 
+		public static IntPoint Center(this Polygons polygons)
+		{
+			IntPoint center = new IntPoint();
+			int count = 0;
+			foreach (var polygon in polygons)
+			{
+				for (int positionIndex = 0; positionIndex < polygon.Count; positionIndex++)
+				{
+					center += polygon[positionIndex];
+					count++;
+				}
+			}
+
+			center /= count;
+			return center;
+		}
+
 		public static Polygons MakeCloseSegmentsMergable(this Polygons polygonsToSplit, long distanceNeedingAdd, bool pathsAreClosed = true)
 		{
 			Polygons splitPolygons = new Polygons();

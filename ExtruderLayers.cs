@@ -80,19 +80,6 @@ namespace MatterHackers.MatterSlice
 					topOutlines = topOutlines.CreateDifference(island.SolidBottomToolPaths);
 					topOutlines = Clipper.CleanPolygons(topOutlines, cleanDistance_um);
 
-					for (int insetIndex = 0; insetIndex < island.InsetToolPaths.Count - 1; insetIndex++)
-					{
-						// Add thin wall filling by taking the area between the insets.
-						Polygons largerInset = island.InsetToolPaths[insetIndex].Offset(-extrusionWidth_um / 2);
-						Polygons smallerInset = island.InsetToolPaths[insetIndex + 1].Offset(extrusionWidth_um / 2);
-
-						Polygons thinWalls = largerInset.CreateDifference(smallerInset).Offset(-extrusionWidth_um / 4);
-						if (thinWalls.Count > 0)
-						{
-							topOutlines.AddAll(thinWalls);
-						}
-					}
-
 					if (layerIndex + 1 < extruder.Layers.Count)
 					{
 						// Remove the top layer that is above this one to get only the data that is a top layer on this layer.
