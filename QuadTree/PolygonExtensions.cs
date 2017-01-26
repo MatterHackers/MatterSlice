@@ -87,10 +87,10 @@ namespace MatterHackers.QuadTree
 			for (int pointIndex = 0; pointIndex < polygon.Count; pointIndex++)
 			{
 				var point = polygon[pointIndex];
-				if (considerPoint == null || considerPoint(pointIndex, point))
+				long length = (point - position).Length();
+				if (length < bestDist)
 				{
-					long length = (point - position).Length();
-					if (length < bestDist)
+					if (considerPoint == null || considerPoint(pointIndex, point))
 					{
 						bestDist = length;
 						polyPointPosition = new Tuple<int, IntPoint>(pointIndex, point);
