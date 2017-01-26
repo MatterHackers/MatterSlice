@@ -114,8 +114,6 @@ namespace MatterHackers.Pathfinding
 							return false;
 						};
 
-						ConsiderPoint = null;
-
 						var bestBPoly = BoundaryPolygons.FindClosestPoint(bestAPos, ConsiderPolygon, ConsiderPoint);
 						if (bestBPoly == null)
 						{
