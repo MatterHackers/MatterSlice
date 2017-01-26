@@ -114,6 +114,8 @@ namespace MatterHackers.Pathfinding
 							return false;
 						};
 
+						ConsiderPoint = null;
+
 						var bestBPoly = BoundaryPolygons.FindClosestPoint(bestAPos, ConsiderPolygon, ConsiderPoint);
 						if (bestBPoly == null)
 						{
@@ -518,29 +520,34 @@ namespace MatterHackers.Pathfinding
 				for (int indexA = 0; indexA < pathThatIsInside.Count; indexA++)
 				{
 					var positionA = pathThatIsInside[indexA];
-					var indexB = indexA + 2;
-					if (indexB < pathThatIsInside.Count)
+					for (int indexB = indexA + 2; indexB < pathThatIsInside.Count; indexB++)
 					{
-						var positionB = pathThatIsInside[indexB];
-
-						var crossings = new List<Tuple<int, int, IntPoint>>(BoundaryPolygons.FindCrossingPoints(positionA, positionB, BoundaryEdgeQuadTrees));
-						bool hasOtherThanAB = false;
-						foreach (var cross in crossings)
+						if (indexB < pathThatIsInside.Count)
 						{
-							if (cross.Item3 != positionA
-								&& cross.Item3 != positionB)
+							var positionB = pathThatIsInside[indexB];
+
+							var crossings = new List<Tuple<int, int, IntPoint>>(BoundaryPolygons.FindCrossingPoints(positionA, positionB, BoundaryEdgeQuadTrees));
+							bool hasOtherThanAB = false;
+							foreach (var cross in crossings)
 							{
-								hasOtherThanAB = true;
-								break;
+								if (cross.Item3 != positionA
+									&& cross.Item3 != positionB)
+								{
+									hasOtherThanAB = true;
+									break;
+								}
 							}
-						}
 
-						if (!hasOtherThanAB
-							&& BoundaryPolygons.PointIsInside((positionA + positionB) / 2, BoundaryEdgeQuadTrees))
-						{
-							// remove A+1
-							pathThatIsInside.RemoveAt(indexA + 1);
-							indexA--;
+							if (!hasOtherThanAB
+								&& BoundaryPolygons.PointIsInside((positionA + positionB) / 2, BoundaryEdgeQuadTrees))
+							{
+								// remove A+1 - B-1
+								for (int removeIndex = indexB - 1; removeIndex > indexA; removeIndex--)
+								{
+									pathThatIsInside.RemoveAt(removeIndex);
+								}
+								indexB = indexA + 2;
+							}
 						}
 					}
 				}
