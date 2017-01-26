@@ -33,7 +33,7 @@ namespace MatterHackers.Pathfinding
 	public class PathFinder
 	{
 		private static string lastOutlineString = "";
-		private static bool saveBadPathToDisk = false;
+		private static bool saveBadPathToDisk = true;
 		private static bool simpleHookup = true;
 		private static bool storeBoundary = false;
 		private WayPointsToRemove removePointList;
@@ -423,38 +423,34 @@ namespace MatterHackers.Pathfinding
 			BoundaryPolygons.MovePointInsideBoundary(position, out foundPolyPointPosition, BoundaryEdgeQuadTrees);
 			if (foundPolyPointPosition == null)
 			{
-				waypointNode = AddTempWayPoint(removePointList, position);
-				/*
-				var closestPolyPoint = BoundaryPolygons.FindClosestPoint(position, (polyIndex, poly) =>
-				{
-					return poly.PointIsInside(position) != 0;
-				});
-				if(closestPolyPoint != null)
-				{
-					IntPointNode edgeNode = Waypoints.FindNode(closestPolyPoint.Item3);
-					if (edgeNode != null)
-					{
-						Waypoints.AddPathLink(waypointNode, edgeNode);
-					}
-				}
-				*/
+				// The point is already inside
+				waypointNode = AddAndCreatePoint(position);
 			}
-			else
+			else // The point had to be move inside the polygon
 			{
 				if (position == foundPolyPointPosition.Item3)
 				{
-					// it is very close to the edge we did not actually succeed in moving it
-					// add it the normal way
-					waypointNode = AddTempWayPoint(removePointList, position);
-					HookUpToEdge(waypointNode, foundPolyPointPosition.Item1, foundPolyPointPosition.Item2);
-					foundPolyPointPosition = null;
+					// We tried to move it in but the point we found was really already valid
+					waypointNode = AddAndCreatePoint(position);
 				}
-				else
+				else // the point was outside and hook it up to the nearest edge
 				{
 					waypointNode = AddTempWayPoint(removePointList, foundPolyPointPosition.Item3);
 					HookUpToEdge(waypointNode, foundPolyPointPosition.Item1, foundPolyPointPosition.Item2);
 				}
 			}
+		}
+
+		private IntPointNode AddAndCreatePoint(IntPoint position)
+		{
+			// Create a temp way point at the current inside position
+			IntPointNode waypointNode = AddTempWayPoint(removePointList, position);
+			// find the closest point to our position
+			var closestPolyPoint = BoundaryPolygons.FindClosestPoint(position);
+			// and connect to it
+			IntPointNode closestNode = Waypoints.FindNode(closestPolyPoint.Item3);
+			Waypoints.AddPathLink(waypointNode, closestNode);
+			return waypointNode;
 		}
 
 		private Polygons FixWinding(Polygons polygonsToPathAround)
@@ -569,13 +565,13 @@ namespace MatterHackers.Pathfinding
 				{
 					if (lastOutlineString != outlineString)
 					{
+						sw.WriteLine("");
 						sw.WriteLine($"polyPath = \"{outlineString}\";");
 						lastOutlineString = outlineString;
 					}
 					sw.WriteLine($"// Length of this segment (start->end) {length}.");
 					sw.WriteLine($"// startOverride = new MSIntPoint({startPoint.X}, {startPoint.Y}); endOverride = new MSIntPoint({endPoint.X}, {endPoint.Y});");
 					sw.WriteLine($"TestSinglePathIsInside(polyPath, new IntPoint({startPoint.X}, {startPoint.Y}), new IntPoint({endPoint.X}, {endPoint.Y}));");
-					sw.WriteLine("");
 				}
 			}
 		}
