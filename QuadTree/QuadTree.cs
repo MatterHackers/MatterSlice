@@ -31,10 +31,10 @@ namespace MatterHackers.QuadTree
 	/// </summary>
 	public struct Quad
 	{
-		public long MaxX;
-		public long MaxY;
-		public long MinX;
-		public long MinY;
+		public long MaxX { get; private set; }
+		public long MaxY { get; private set; }
+		public long MinX { get; private set; }
+		public long MinY { get; private set; }
 
 		public Quad(IntPoint testPosition, int expandDist = 1) : this()
 		{
@@ -61,6 +61,10 @@ namespace MatterHackers.QuadTree
 		/// <param name="maxY">Max y.</param>
 		public Quad(long minX, long minY, long maxX, long maxY)
 		{
+			if(minX >= maxX || minY >= maxY)
+			{
+				int a = 0;
+			}
 			MinX = minX;
 			MinY = minY;
 			MaxX = maxX;
@@ -124,6 +128,10 @@ namespace MatterHackers.QuadTree
 		/// <param name="maxY">Max y.</param>
 		public void Set(long minX, long minY, long maxX, long maxY)
 		{
+			if (minX >= maxX || minY >= maxY)
+			{
+				int a = 0;
+			}
 			MinX = minX;
 			MinY = minY;
 			MaxX = maxX;
@@ -143,7 +151,7 @@ namespace MatterHackers.QuadTree
 
 		internal Dictionary<T, Leaf> leafLookup = new Dictionary<T, Leaf>();
 		internal int splitCount;
-		private Branch root;
+		public Branch Root { get; private set; }
 
 		/// <summary>
 		/// Creates a new QuadTree.
@@ -153,7 +161,7 @@ namespace MatterHackers.QuadTree
 		public QuadTree(int splitCount, ref Quad region)
 		{
 			this.splitCount = splitCount;
-			root = CreateBranch(this, null, ref region);
+			Root = CreateBranch(this, null, ref region);
 		}
 
 		/// <summary>
@@ -196,8 +204,8 @@ namespace MatterHackers.QuadTree
 		/// </summary>
 		public void Clear()
 		{
-			root.Clear();
-			root.Tree = this;
+			Root.Clear();
+			Root.Tree = this;
 			leafLookup.Clear();
 		}
 
@@ -207,7 +215,7 @@ namespace MatterHackers.QuadTree
 		public int CountBranches()
 		{
 			int count = 0;
-			CountBranches(root, ref count);
+			CountBranches(Root, ref count);
 			return count;
 		}
 
@@ -222,7 +230,7 @@ namespace MatterHackers.QuadTree
 			Leaf leaf;
 			if (leafLookup.TryGetValue(value, out leaf))
 			{
-				var branch = leaf.Branch;
+				var branch = leaf.ContainingBranch;
 
 				//Add the leaf's siblings (prevent it from colliding with itself)
 				if (branch.Leaves.Count > 0)
@@ -283,7 +291,7 @@ namespace MatterHackers.QuadTree
 				leaf = CreateLeaf(value, ref quad);
 				leafLookup.Add(value, leaf);
 			}
-			root.Insert(leaf);
+			Root.Insert(leaf);
 		}
 
 		/// <summary>
@@ -304,9 +312,9 @@ namespace MatterHackers.QuadTree
 		/// <param name="y">Y position of the leaf.</param>
 		/// <param name="width">Width of the leaf.</param>
 		/// <param name="height">Height of the leaf.</param>
-		public void Insert(T value, long x, long y, long width, long height)
+		public void Insert(T value, long minX, long minY, long maxX, long maxY)
 		{
-			var quad = new Quad(x, y, x + width, y + height);
+			var quad = new Quad(minX, minY, maxX, maxY);
 			Insert(value, ref quad);
 		}
 
@@ -318,7 +326,7 @@ namespace MatterHackers.QuadTree
 		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
 		public IEnumerable<T> SearchArea(ref Quad quad)
 		{
-			return root.SearchQuad(quad);
+			return Root.SearchQuad(quad);
 		}
 
 		/// <summary>
@@ -356,7 +364,7 @@ namespace MatterHackers.QuadTree
 		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
 		public IEnumerable<T> SearchPoint(long x, long y)
 		{
-			return root.SearchPoint(x, y);
+			return Root.SearchPoint(x, y);
 		}
 
 		private static Branch CreateBranch(QuadTree<T> tree, Branch parent, ref Quad quad)
@@ -397,14 +405,14 @@ namespace MatterHackers.QuadTree
 			}
 		}
 
-		internal class Branch
+		public class Branch
 		{
 			internal static Stack<List<Leaf>> tempPool = new Stack<List<Leaf>>();
 
-			internal Branch[] Branches = new Branch[4];
-			internal List<Leaf> Leaves = new List<Leaf>();
+			public Branch[] Branches { get; private set; } = new Branch[4];
+			public List<Leaf> Leaves = new List<Leaf>();
 			internal Branch Parent;
-			internal Quad[] Quads = new Quad[4];
+			public Quad[] Quads { get; private set; } = new Quad[4];
 			internal bool Split;
 			internal QuadTree<T> Tree;
 
@@ -427,7 +435,7 @@ namespace MatterHackers.QuadTree
 				for (int i = 0; i < Leaves.Count; ++i)
 				{
 					leafPool.Push(Leaves[i]);
-					Leaves[i].Branch = null;
+					Leaves[i].ContainingBranch = null;
 					Leaves[i].Value = default(T);
 				}
 
@@ -453,29 +461,35 @@ namespace MatterHackers.QuadTree
 					}
 
 					Leaves.Add(leaf);
-					leaf.Branch = this;
+					leaf.ContainingBranch = this;
 				}
 				else
 				{
 					//Add the leaf to this node
 					Leaves.Add(leaf);
-					leaf.Branch = this;
+					leaf.ContainingBranch = this;
 
 					//Once I have reached capacity, split the node
-					if (Leaves.Count >= Tree.splitCount
-						&& Quads[0].MinX + 2 < Quads[0].MaxX
-						&& Quads[0].MinY + 2 < Quads[0].MaxY)
+					if (Leaves.Count >= Tree.splitCount)
 					{
-						var temp = tempPool.Count > 0 ? tempPool.Pop() : new List<Leaf>();
-						temp.AddRange(Leaves);
-						Leaves.Clear();
-						Split = true;
-						for (int i = 0; i < temp.Count; ++i)
+						if (Quads[0].MinX + 2 < Quads[0].MaxX
+							&& Quads[0].MinY + 2 < Quads[0].MaxY)
 						{
-							Insert(temp[i]);
+							var temp = tempPool.Count > 0 ? tempPool.Pop() : new List<Leaf>();
+							temp.AddRange(Leaves);
+							Leaves.Clear();
+							Split = true;
+							for (int i = 0; i < temp.Count; ++i)
+							{
+								Insert(temp[i]);
+							}
+							temp.Clear();
+							tempPool.Push(temp);
 						}
-						temp.Clear();
-						tempPool.Push(temp);
+						else
+						{
+							int a = 0;
+						}
 					}
 				}
 			}
@@ -535,16 +549,19 @@ namespace MatterHackers.QuadTree
 				{
 					if (Branches[i] != null)
 					{
-						Branches[i].SearchQuad(quad);
+						foreach(var element in Branches[i].SearchQuad(quad))
+						{
+							yield return element;
+						}
 					}
 				}
 			}
 		}
 
-		internal class Leaf
+		public class Leaf
 		{
-			internal Branch Branch;
-			internal Quad Quad;
+			internal Branch ContainingBranch;
+			public Quad Quad;
 			internal T Value;
 		}
 	}

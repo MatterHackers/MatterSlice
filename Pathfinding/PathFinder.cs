@@ -107,7 +107,7 @@ namespace MatterHackers.Pathfinding
 						IntPoint bestAPos = polyA.Center();
 						Func<int, IntPoint, bool> ConsiderPoint = (polyIndex, edgeEnd) =>
 						{
-							if (OutlinePolygons.PointIsInside((bestAPos + edgeEnd) / 2, OutlineEdgeQuadTrees))
+							if (OutlinePolygons.PointIsInside((bestAPos + edgeEnd) / 2, OutlineEdgeQuadTrees, OutlinePointQuadTrees))
 							{
 								return true;
 							}
@@ -258,7 +258,7 @@ namespace MatterHackers.Pathfinding
 
 			// neither needed to be moved
 			if (BoundaryPolygons.FindIntersection(startPoint, endPoint, BoundaryEdgeQuadTrees) == Intersection.None
-				&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2, BoundaryEdgeQuadTrees))
+				&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees))
 			{
 				return true;
 			}
@@ -278,7 +278,7 @@ namespace MatterHackers.Pathfinding
 
 			// Check if we already have the solution between start and end
 			if (BoundaryPolygons.FindIntersection(startPoint, endPoint, BoundaryEdgeQuadTrees) != Intersection.Intersect
-				&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2, BoundaryEdgeQuadTrees))
+				&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees))
 			{
 				pathThatIsInside.Add(new IntPoint(startPoint, z));
 				pathThatIsInside.Add(new IntPoint(endPoint, z));
@@ -311,7 +311,7 @@ namespace MatterHackers.Pathfinding
 					HookUpToEdge(crossingNode, crossing.Item1, crossing.Item2);
 				}
 
-				if (BoundaryPolygons.PointIsInside((previousNode.Position + crossingNode.Position) / 2, BoundaryEdgeQuadTrees))
+				if (BoundaryPolygons.PointIsInside((previousNode.Position + crossingNode.Position) / 2, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees))
 				{
 					Waypoints.AddPathLink(previousNode, crossingNode);
 				}
@@ -336,7 +336,7 @@ namespace MatterHackers.Pathfinding
 				}
 			}
 
-			if (BoundaryPolygons.PointIsInside((previousNode.Position + planEndNode.Position) / 2, BoundaryEdgeQuadTrees))
+			if (BoundaryPolygons.PointIsInside((previousNode.Position + planEndNode.Position) / 2, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees))
 			{
 				Waypoints.AddPathLink(previousNode, planEndNode);
 			}
@@ -396,7 +396,7 @@ namespace MatterHackers.Pathfinding
 
 		public bool PointIsInsideBoundary(IntPoint intPoint)
 		{
-			return BoundaryPolygons.PointIsInside(intPoint);
+			return BoundaryPolygons.PointIsInside(intPoint, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees);
 		}
 
 		private IntPointNode AddTempWayPoint(WayPointsToRemove removePointList, IntPoint position)
@@ -409,7 +409,7 @@ namespace MatterHackers.Pathfinding
 		private IntPointNode AddWaypointNodeForPosition(IntPoint position, out IntPointNode waypointNode, out Tuple<int, int, IntPoint> foundPolyPointPosition)
 		{
 			waypointNode = null;
-			BoundaryPolygons.MovePointInsideBoundary(position, out foundPolyPointPosition, BoundaryEdgeQuadTrees);
+			BoundaryPolygons.MovePointInsideBoundary(position, out foundPolyPointPosition, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees);
 			if (foundPolyPointPosition == null)
 			{
 				// The point is already inside
@@ -537,7 +537,7 @@ namespace MatterHackers.Pathfinding
 							}
 
 							if (!hasOtherThanAB
-								&& BoundaryPolygons.PointIsInside((positionA + positionB) / 2, BoundaryEdgeQuadTrees))
+								&& BoundaryPolygons.PointIsInside((positionA + positionB) / 2, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees))
 							{
 								// remove A+1 - B-1
 								for (int removeIndex = indexB - 1; removeIndex > indexA; removeIndex--)
@@ -557,14 +557,14 @@ namespace MatterHackers.Pathfinding
 		{
 			Tuple<int, int, IntPoint> movedPosition;
 			long movedDist = 0;
-			BoundaryPolygons.MovePointInsideBoundary(position, out movedPosition, BoundaryEdgeQuadTrees);
+			BoundaryPolygons.MovePointInsideBoundary(position, out movedPosition, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees);
 			if (movedPosition != null)
 			{
 				movedDist = (position - movedPosition.Item3).Length();
 			}
 
 			if (OutlinePolygons.TouchingEdge(position, OutlineEdgeQuadTrees)
-			|| OutlinePolygons.PointIsInside(position, OutlineEdgeQuadTrees)
+			|| OutlinePolygons.PointIsInside(position, OutlineEdgeQuadTrees, OutlinePointQuadTrees)
 			|| movedDist <= 1)
 			{
 				return true;

@@ -33,6 +33,7 @@ using MSClipperLib;
 
 namespace MatterHackers.QuadTree
 {
+	using System.Linq;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
@@ -295,11 +296,13 @@ namespace MatterHackers.QuadTree
 			return polyPointPosition;
 		}
 
-		public static void MovePointInsideBoundary(this Polygons boundaryPolygons, IntPoint startPosition, out Tuple<int, int, IntPoint> polyPointPosition, List<QuadTree<int>> edgeQuadTrees = null)
+		public static void MovePointInsideBoundary(this Polygons boundaryPolygons, IntPoint startPosition, out Tuple<int, int, IntPoint> polyPointPosition, 
+			List<QuadTree<int>> edgeQuadTrees = null,
+			List<QuadTree<int>> pointQuadTrees = null)
 		{
 			Tuple<int, int, IntPoint> bestPolyPointPosition = new Tuple<int, int, IntPoint>(0, 0, startPosition);
 
-			if (boundaryPolygons.PointIsInside(startPosition, edgeQuadTrees))
+			if (boundaryPolygons.PointIsInside(startPosition, edgeQuadTrees, pointQuadTrees))
 			{
 				// already inside
 				polyPointPosition = null;
@@ -362,21 +365,27 @@ namespace MatterHackers.QuadTree
 			polyPointPosition = bestPolyPointPosition;
 		}
 
-		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint, List<QuadTree<int>> edgeQuadTrees = null)
+		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint, List<QuadTree<int>> edgeQuadTrees = null, List<QuadTree<int>> pointQuadTrees = null)
 		{
-			int insideCount = 0;
-			foreach (var polygon in polygons)
+			if (polygons.TouchingEdge(testPoint, edgeQuadTrees))
 			{
-				if (polygons.TouchingEdge(testPoint, edgeQuadTrees))
+				return true;
+			}
+
+			int insideCount = 0;
+			if (true)
+			{
+				insideCount = polygons.FindCrossingPoints(testPoint, testPoint + new IntPoint(1000000, 0), edgeQuadTrees).SkipSame().Count();
+			}
+			else
+			{
+				for (int i = 0; i < polygons.Count; i++)
 				{
-					insideCount++;
-				}
-				else
-				{
-					if (polygon.PointIsInside(testPoint) != 0)
+					var polygon = polygons[i];
+					if (polygon.PointIsInside(testPoint, pointQuadTrees == null ? null : pointQuadTrees[i]) != 0)
 					{
 						insideCount++;
-					} 
+					}
 				}
 			}
 
@@ -388,11 +397,14 @@ namespace MatterHackers.QuadTree
 			Tuple<int, int, IntPoint> lastItem = new Tuple<int, int, IntPoint>(-1, -1, new IntPoint(long.MaxValue, long.MaxValue));
 			foreach (var item in source)
 			{
-				if (item.Item3 != lastItem.Item3)
+				if (item.Item1 != -1)
 				{
-					yield return item;
+					if (item.Item3 != lastItem.Item3)
+					{
+						yield return item;
+					}
+					lastItem = item;
 				}
-				lastItem = item;
 			}
 		}
 
