@@ -92,7 +92,7 @@ namespace MatterHackers.Pathfinding
 			// hook up path segments between the separate islands
 			if (simpleHookup) // do a simple hookup
 			{
-				for (int indexA = 0; indexA < BoundaryPolygons.Count - 1; indexA++)
+				for (int indexA = 0; indexA < BoundaryPolygons.Count; indexA++)
 				{
 					var polyA = BoundaryPolygons[indexA];
 					if (polyA.GetWindingDirection() > 0)

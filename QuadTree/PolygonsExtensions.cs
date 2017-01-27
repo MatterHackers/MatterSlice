@@ -376,7 +376,7 @@ namespace MatterHackers.QuadTree
 					if (polygon.PointIsInside(testPoint) != 0)
 					{
 						insideCount++;
-					}
+					} 
 				}
 			}
 
