@@ -247,19 +247,19 @@ namespace MatterHackers.Pathfinding
 			return true;
 		}
 
-		public bool CreatePathInsideBoundary(IntPoint startPoint, IntPoint endPoint, Polygon pathThatIsInside, bool optomizePath = true)
+		public bool CreatePathInsideBoundary(IntPoint startPointIn, IntPoint endPointIn, Polygon pathThatIsInside, bool optomizePath = true)
 		{
-			double z = startPoint.Z;
-			startPoint.Z = 0;
-			endPoint.Z = 0;
+			double z = startPointIn.Z;
+			startPointIn.Z = 0;
+			endPointIn.Z = 0;
 			if (BoundaryPolygons == null || BoundaryPolygons.Count == 0)
 			{
 				return false;
 			}
 
 			// neither needed to be moved
-			if (BoundaryPolygons.FindIntersection(startPoint, endPoint, BoundaryEdgeQuadTrees) == Intersection.None
-				&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees))
+			if (BoundaryPolygons.FindIntersection(startPointIn, endPointIn, BoundaryEdgeQuadTrees) == Intersection.None
+				&& BoundaryPolygons.PointIsInside((startPointIn + endPointIn) / 2, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees))
 			{
 				return true;
 			}
@@ -269,37 +269,14 @@ namespace MatterHackers.Pathfinding
 			pathThatIsInside.Clear();
 
 			//Check if we are inside the boundaries
-			IntPointNode afterStartNode = null;
-			Tuple<int, int, IntPoint> startPolyPointPosition = null;
-			var startNode = AddWaypointNodeForPosition(startPoint, out afterStartNode, out startPolyPointPosition);
+			IntPointNode startPlanNode = null;
+			var lastAddedNode = GetWayPointInside(startPointIn, out startPlanNode);
 
-			IntPointNode afterEndNode = null;
-			Tuple<int, int, IntPoint> endPolyPointPosition = null;
-			var endNode = AddWaypointNodeForPosition(endPoint, out afterEndNode, out endPolyPointPosition);
+			IntPointNode endPlanNode = null;
+			var lastToAddNode = GetWayPointInside(endPointIn, out endPlanNode);
 
-			// Check if we already have the solution between start and end
-			if (BoundaryPolygons.FindIntersection(startPoint, endPoint, BoundaryEdgeQuadTrees) != Intersection.Intersect
-				&& BoundaryPolygons.PointIsInside((startPoint + endPoint) / 2, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees))
-			{
-				pathThatIsInside.Add(new IntPoint(startPoint, z));
-				pathThatIsInside.Add(new IntPoint(endPoint, z));
-				return true;
-			}
-
-			if (startPolyPointPosition != null
-				&& endPolyPointPosition != null
-				&& startPolyPointPosition.Item1 == endPolyPointPosition.Item1
-				&& startPolyPointPosition.Item2 == endPolyPointPosition.Item2)
-			{
-				// they are on the same edge hook them up
-				Waypoints.AddPathLink(afterStartNode, afterEndNode);
-			}
-
-			var planStartNode = afterStartNode == null ? startNode : afterStartNode;
-			var planEndNode = afterEndNode == null ? endNode : afterEndNode;
-			var crossings = new List<Tuple<int, int, IntPoint>>(BoundaryPolygons.FindCrossingPoints(planStartNode.Position, planEndNode.Position, BoundaryEdgeQuadTrees));
-			crossings.Sort(new PolygonAndPointDirectionSorter(planStartNode.Position, planEndNode.Position));
-			IntPointNode previousNode = planStartNode;
+			var crossings = new List<Tuple<int, int, IntPoint>>(BoundaryPolygons.FindCrossingPoints(lastAddedNode.Position, lastToAddNode.Position, BoundaryEdgeQuadTrees));
+			crossings.Sort(new PolygonAndPointDirectionSorter(lastAddedNode.Position, lastToAddNode.Position));
 			foreach (var crossing in crossings.SkipSame())
 			{
 				IntPointNode crossingNode = Waypoints.FindNode(crossing.Item3, findNodeDist);
@@ -311,50 +288,31 @@ namespace MatterHackers.Pathfinding
 					HookUpToEdge(crossingNode, crossing.Item1, crossing.Item2);
 				}
 
-				if (BoundaryPolygons.PointIsInside((previousNode.Position + crossingNode.Position) / 2, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees))
+				if (BoundaryPolygons.PointIsInside((lastAddedNode.Position + crossingNode.Position) / 2, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees))
 				{
-					Waypoints.AddPathLink(previousNode, crossingNode);
+					Waypoints.AddPathLink(lastAddedNode, crossingNode);
 				}
-				previousNode = crossingNode;
+				lastAddedNode = crossingNode;
 			}
 
-			if (previousNode != planEndNode
-				&& planEndNode.Links.Count == 0)
+			if (BoundaryPolygons.PointIsInside((lastAddedNode.Position + lastToAddNode.Position) / 2, BoundaryEdgeQuadTrees))
 			{
-				if (BoundaryPolygons.PointIsInside((previousNode.Position + planEndNode.Position) / 2, BoundaryEdgeQuadTrees))
-				{
-					// connect the last crossing to the end node
-					Waypoints.AddPathLink(previousNode, planEndNode);
-				}
-				else // hook the end node up to the closest line
-				{
-					var closestEdgeToEnd = BoundaryPolygons.FindClosestPoint(planEndNode.Position).Item3;
-
-					// hook the polygons up along this connection
-					IntPointNode nodeA = Waypoints.FindNode(closestEdgeToEnd, findNodeDist);
-					Waypoints.AddPathLink(planEndNode, nodeA);
-				}
+				// connect the last crossing to the end node
+				Waypoints.AddPathLink(lastAddedNode, lastToAddNode);
 			}
 
-			if (BoundaryPolygons.PointIsInside((previousNode.Position + planEndNode.Position) / 2, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees))
-			{
-				Waypoints.AddPathLink(previousNode, planEndNode);
-			}
+			Path<IntPointNode> path = Waypoints.FindPath(startPlanNode, endPlanNode, true);
 
-			Path<IntPointNode> path = Waypoints.FindPath(startNode, endNode, true);
-
-			var lastAdd = startNode.Position;
 			foreach (var node in path.Nodes.SkipSamePosition())
 			{
 				pathThatIsInside.Add(new IntPoint(node.Position, z));
-				lastAdd = node.Position;
 			}
 
 			if (path.Nodes.Length == 0)
 			{
 				if (saveBadPathToDisk)
 				{
-					WriteErrorForTesting(startPoint, endPoint);
+					WriteErrorForTesting(startPointIn, endPointIn);
 				}
 				return false;
 			}
@@ -364,16 +322,9 @@ namespace MatterHackers.Pathfinding
 				OptomizePathPoints(pathThatIsInside);
 			}
 
-			if (startPolyPointPosition == null
-				&& pathThatIsInside.Count > 0
-				&& pathThatIsInside[0] == startPoint)
-			{
-				pathThatIsInside.RemoveAt(0);
-			}
-
 			if (saveBadPathToDisk)
 			{
-				AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint, true);
+				AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPointIn, endPointIn, true);
 			}
 
 			return true;
@@ -399,18 +350,6 @@ namespace MatterHackers.Pathfinding
 			return BoundaryPolygons.PointIsInside(intPoint, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees);
 		}
 
-		private IntPointNode AddAndCreatePoint(IntPoint position)
-		{
-			// Create a temp way point at the current position
-			IntPointNode waypointNode = AddTempWayPoint(removePointList, position);
-			// find the closest point to our position
-			var closestPolyPoint = BoundaryPolygons.FindClosestPoint(position);
-			// and connect to it
-			IntPointNode closestNode = Waypoints.FindNode(closestPolyPoint.Item3);
-			Waypoints.AddPathLink(waypointNode, closestNode);
-			return waypointNode;
-		}
-
 		private IntPointNode AddTempWayPoint(WayPointsToRemove removePointList, IntPoint position)
 		{
 			var node = Waypoints.AddNode(position);
@@ -418,15 +357,16 @@ namespace MatterHackers.Pathfinding
 			return node;
 		}
 
-		private IntPointNode AddWaypointNodeForPosition(IntPoint position, out IntPointNode waypointNode, out Tuple<int, int, IntPoint> foundPolyPointPosition)
+		private IntPointNode GetWayPointInside(IntPoint position, out IntPointNode waypointAtPosition)
 		{
-			waypointNode = null;
+			Tuple<int, int, IntPoint> foundPolyPointPosition;
+			waypointAtPosition = null;
 			BoundaryPolygons.MovePointInsideBoundary(position, out foundPolyPointPosition, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees);
 			if (foundPolyPointPosition == null)
 			{
 				// The point is already inside
-				//return AddTempWayPoint(removePointList, position);
-				return AddAndCreatePoint(position);
+				waypointAtPosition = AddTempWayPoint(removePointList, position);
+				return waypointAtPosition;
 			}
 			else // The point had to be moved inside the polygon
 			{
@@ -442,29 +382,29 @@ namespace MatterHackers.Pathfinding
 					else
 					{
 						// get the way point that we need to insert
-						waypointNode = AddTempWayPoint(removePointList, position);
+						waypointAtPosition = AddTempWayPoint(removePointList, position);
 						IntPointNode startNode = AddTempWayPoint(removePointList, foundPolyPointPosition.Item3);
-						HookUpToEdge(waypointNode, foundPolyPointPosition.Item1, foundPolyPointPosition.Item2);
-						Waypoints.AddPathLink(startNode, waypointNode);
+						HookUpToEdge(waypointAtPosition, foundPolyPointPosition.Item1, foundPolyPointPosition.Item2);
+						Waypoints.AddPathLink(startNode, waypointAtPosition);
 						return startNode;
 					}
 				}
 				else // the point was outside and hook it up to the nearest edge
 				{
 					// Create a temp way point at the current position
-					IntPointNode startNode = AddTempWayPoint(removePointList, position);
+					waypointAtPosition = AddTempWayPoint(removePointList, position);
 
-					waypointNode = Waypoints.FindNode(foundPolyPointPosition.Item3, findNodeDist);
-					if (waypointNode != null)
+					IntPointNode startNode = Waypoints.FindNode(foundPolyPointPosition.Item3, findNodeDist);
+					if (startNode != null)
 					{
-						Waypoints.AddPathLink(startNode, waypointNode);
+						Waypoints.AddPathLink(startNode, waypointAtPosition);
 					}
 					else
 					{
 						// get the way point that we need to insert
-						waypointNode = AddTempWayPoint(removePointList, foundPolyPointPosition.Item3);
-						HookUpToEdge(waypointNode, foundPolyPointPosition.Item1, foundPolyPointPosition.Item2);
-						Waypoints.AddPathLink(startNode, waypointNode);
+						startNode = AddTempWayPoint(removePointList, foundPolyPointPosition.Item3);
+						HookUpToEdge(startNode, foundPolyPointPosition.Item1, foundPolyPointPosition.Item2);
+						Waypoints.AddPathLink(startNode, waypointAtPosition);
 					}
 					return startNode;
 				}
