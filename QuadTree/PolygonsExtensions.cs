@@ -251,7 +251,10 @@ namespace MatterHackers.QuadTree
 				}
 			}
 
-			center /= count;
+			if (count > 0)
+			{
+				center /= count;
+			}
 			return center;
 		}
 
@@ -373,19 +376,12 @@ namespace MatterHackers.QuadTree
 			}
 
 			int insideCount = 0;
-			if (true)
+			for (int i = 0; i < polygons.Count; i++)
 			{
-				insideCount = polygons.FindCrossingPoints(testPoint, testPoint + new IntPoint(1000000, 0), edgeQuadTrees).SkipSame().Count();
-			}
-			else
-			{
-				for (int i = 0; i < polygons.Count; i++)
+				var polygon = polygons[i];
+				if (polygon.PointIsInside(testPoint, pointQuadTrees == null ? null : pointQuadTrees[i]) != 0)
 				{
-					var polygon = polygons[i];
-					if (polygon.PointIsInside(testPoint, pointQuadTrees == null ? null : pointQuadTrees[i]) != 0)
-					{
-						insideCount++;
-					}
+					insideCount++;
 				}
 			}
 
