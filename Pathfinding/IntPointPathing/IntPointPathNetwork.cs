@@ -117,11 +117,11 @@ namespace MatterHackers.Pathfinding
 			return link;
 		}
 
-		public IntPointNode FindNode(IntPoint position)
+		public IntPointNode FindNode(IntPoint position, long minDist = 0)
 		{
 			foreach (var node in Nodes)
 			{
-				if (node.Position == position)
+				if ((node.Position - position).LengthSquared() <= minDist * minDist)
 				{
 					return node;
 				}

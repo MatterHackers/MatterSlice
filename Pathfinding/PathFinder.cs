@@ -210,6 +210,8 @@ namespace MatterHackers.Pathfinding
 		public Polygons ThinLinePolygons { get; private set; }
 
 		public IntPointPathNetwork Waypoints { get; private set; } = new IntPointPathNetwork();
+		private long findNodeDist
+		{ get { return InsetAmount / 100; } }
 
 		public bool AllPathSegmentsAreInsideOutlines(Polygon pathThatIsInside, IntPoint startPoint, IntPoint endPoint, bool writeErrors = false)
 		{
@@ -224,7 +226,6 @@ namespace MatterHackers.Pathfinding
 					&& end != endPoint
 					&& end != startPoint)
 				{
-
 					if (!ValidPoint(start + (end - start) / 4)
 						|| !ValidPoint(start + (end - start) / 2)
 						|| !ValidPoint(start + (end - start) * 3 / 4)
@@ -298,11 +299,10 @@ namespace MatterHackers.Pathfinding
 			var planEndNode = afterEndNode == null ? endNode : afterEndNode;
 			var crossings = new List<Tuple<int, int, IntPoint>>(BoundaryPolygons.FindCrossingPoints(planStartNode.Position, planEndNode.Position, BoundaryEdgeQuadTrees));
 			crossings.Sort(new PolygonAndPointDirectionSorter(planStartNode.Position, planEndNode.Position));
-
 			IntPointNode previousNode = planStartNode;
 			foreach (var crossing in crossings.SkipSame())
 			{
-				IntPointNode crossingNode = Waypoints.FindNode(crossing.Item3);
+				IntPointNode crossingNode = Waypoints.FindNode(crossing.Item3, findNodeDist);
 				// for every crossing try to connect it up in the waypoint data
 				if (crossingNode == null)
 				{
@@ -331,7 +331,7 @@ namespace MatterHackers.Pathfinding
 					var closestEdgeToEnd = BoundaryPolygons.FindClosestPoint(planEndNode.Position).Item3;
 
 					// hook the polygons up along this connection
-					IntPointNode nodeA = Waypoints.FindNode(closestEdgeToEnd);
+					IntPointNode nodeA = Waypoints.FindNode(closestEdgeToEnd, findNodeDist);
 					Waypoints.AddPathLink(planEndNode, nodeA);
 				}
 			}
@@ -399,6 +399,18 @@ namespace MatterHackers.Pathfinding
 			return BoundaryPolygons.PointIsInside(intPoint, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees);
 		}
 
+		private IntPointNode AddAndCreatePoint(IntPoint position)
+		{
+			// Create a temp way point at the current position
+			IntPointNode waypointNode = AddTempWayPoint(removePointList, position);
+			// find the closest point to our position
+			var closestPolyPoint = BoundaryPolygons.FindClosestPoint(position);
+			// and connect to it
+			IntPointNode closestNode = Waypoints.FindNode(closestPolyPoint.Item3);
+			Waypoints.AddPathLink(waypointNode, closestNode);
+			return waypointNode;
+		}
+
 		private IntPointNode AddTempWayPoint(WayPointsToRemove removePointList, IntPoint position)
 		{
 			var node = Waypoints.AddNode(position);
@@ -413,13 +425,14 @@ namespace MatterHackers.Pathfinding
 			if (foundPolyPointPosition == null)
 			{
 				// The point is already inside
+				//return AddTempWayPoint(removePointList, position);
 				return AddAndCreatePoint(position);
 			}
 			else // The point had to be moved inside the polygon
 			{
 				if (position == foundPolyPointPosition.Item3)
 				{
-					var existingNode = Waypoints.FindNode(position);
+					var existingNode = Waypoints.FindNode(position, findNodeDist);
 					if (existingNode != null)
 					{
 						foundPolyPointPosition = null;
@@ -441,7 +454,7 @@ namespace MatterHackers.Pathfinding
 					// Create a temp way point at the current position
 					IntPointNode startNode = AddTempWayPoint(removePointList, position);
 
-					waypointNode = Waypoints.FindNode(foundPolyPointPosition.Item3);
+					waypointNode = Waypoints.FindNode(foundPolyPointPosition.Item3, findNodeDist);
 					if (waypointNode != null)
 					{
 						Waypoints.AddPathLink(startNode, waypointNode);
@@ -456,18 +469,6 @@ namespace MatterHackers.Pathfinding
 					return startNode;
 				}
 			}
-		}
-
-		private IntPointNode AddAndCreatePoint(IntPoint position)
-		{
-			// Create a temp way point at the current position
-			IntPointNode waypointNode = AddTempWayPoint(removePointList, position);
-			// find the closest point to our position
-			var closestPolyPoint = BoundaryPolygons.FindClosestPoint(position);
-			// and connect to it
-			IntPointNode closestNode = Waypoints.FindNode(closestPolyPoint.Item3);
-			Waypoints.AddPathLink(waypointNode, closestNode);
-			return waypointNode;
 		}
 
 		private Polygons FixWinding(Polygons polygonsToPathAround)
