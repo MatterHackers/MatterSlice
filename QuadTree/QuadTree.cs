@@ -27,123 +27,19 @@ using MSClipperLib;
 namespace MatterHackers.QuadTree
 {
 	/// <summary>
-	/// Used by the QuadTree to represent a rectangular area.
-	/// </summary>
-	public struct Quad
-	{
-		public long MaxX;
-		public long MaxY;
-		public long MinX;
-		public long MinY;
-
-		public Quad(IntPoint testPosition, int expandDist = 1) : this()
-		{
-			MinX = testPosition.X - expandDist;
-			MinY = testPosition.Y - expandDist;
-			MaxX = testPosition.X + expandDist;
-			MaxY = testPosition.Y + expandDist;
-		}
-
-		public Quad(IntPoint start, IntPoint end) : this()
-		{
-			MinX = Math.Min(start.X, end.X) - 1;
-			MinY = Math.Min(start.Y, end.Y) - 1;
-			MaxX = Math.Max(start.X, end.X) + 1;
-			MaxY = Math.Max(start.Y, end.Y) + 1;
-		}
-
-		/// <summary>
-		/// Construct a new Quad.
-		/// </summary>
-		/// <param name="minX">Minimum x.</param>
-		/// <param name="minY">Minimum y.</param>
-		/// <param name="maxX">Max x.</param>
-		/// <param name="maxY">Max y.</param>
-		public Quad(long minX, long minY, long maxX, long maxY)
-		{
-			MinX = minX;
-			MinY = minY;
-			MaxX = maxX;
-			MaxY = maxY;
-		}
-
-		/// <summary>
-		/// Check if this Quad can completely contain another.
-		/// </summary>
-		public bool Contains(ref Quad other)
-		{
-			if (MinX < other.MinX
-				&& MinY < other.MinY
-				&& MaxX > other.MaxX
-				&& MaxY > other.MaxY)
-			{
-				return true;
-			}
-
-			return false;
-		}
-
-		/// <summary>
-		/// Check if this Quad contains the point.
-		/// </summary>
-		public bool Contains(long x, long y)
-		{
-			if (x > MinX
-				&& y > MinY
-				&& x < MaxX
-				&& y < MaxY)
-			{
-				return true;
-			}
-
-			return false;
-		}
-
-		/// <summary>
-		/// Check if this Quad intersects with another.
-		/// </summary>
-		public bool Intersects(ref Quad other)
-		{
-			if (MinX < other.MaxX
-				&& MinY < other.MaxY
-				&& MaxX > other.MinX
-				&& MaxY > other.MinY)
-			{
-				return true;
-			}
-
-			return false;
-		}
-
-		/// <summary>
-		/// Set the Quad's position.
-		/// </summary>
-		/// <param name="minX">Minimum x.</param>
-		/// <param name="minY">Minimum y.</param>
-		/// <param name="maxX">Max x.</param>
-		/// <param name="maxY">Max y.</param>
-		public void Set(long minX, long minY, long maxX, long maxY)
-		{
-			MinX = minX;
-			MinY = minY;
-			MaxX = maxX;
-			MaxY = maxY;
-		}
-	}
-
-	/// <summary>
 	/// A quad tree where leaf nodes contain a quad and a unique instance of T.
 	/// For example, if you are developing a game, you might use QuadTree<GameObject>
 	/// for collisions, or QuadTree<int> if you just want to populate it with IDs.
 	/// </summary>
 	public class QuadTree<T>
 	{
-		internal static Stack<Branch> branchPool = new Stack<Branch>();
-		internal static Stack<Leaf> leafPool = new Stack<Leaf>();
+		internal static Stack<Branch<T>> branchPool = new Stack<Branch<T>>();
+		internal static Stack<Leaf<T>> leafPool = new Stack<Leaf<T>>();
 
-		internal Dictionary<T, Leaf> leafLookup = new Dictionary<T, Leaf>();
+		private Dictionary<T, Leaf<T>> leafLookup = new Dictionary<T, Leaf<T>>();
 		internal int splitCount;
-		private Branch root;
+
+		public List<T> QueryResults { get; private set; } = new List<T>();
 
 		/// <summary>
 		/// Creates a new QuadTree.
@@ -153,7 +49,7 @@ namespace MatterHackers.QuadTree
 		public QuadTree(int splitCount, ref Quad region)
 		{
 			this.splitCount = splitCount;
-			root = CreateBranch(this, null, ref region);
+			Root = CreateBranch(this, null, ref region);
 		}
 
 		/// <summary>
@@ -179,15 +75,17 @@ namespace MatterHackers.QuadTree
 		{
 		}
 
+		public Branch<T> Root { get; private set; }
+
 		/// <summary>
 		/// QuadTree internally keeps pools of Branches and Leaves. If you want to clear these to clean up memory,
 		/// you can call this function. Most of the time you'll want to leave this alone, though.
 		/// </summary>
 		public static void ClearPools()
 		{
-			branchPool = new Stack<Branch>();
-			leafPool = new Stack<Leaf>();
-			Branch.tempPool = new Stack<List<Leaf>>();
+			branchPool = new Stack<Branch<T>>();
+			leafPool = new Stack<Leaf<T>>();
+			Branch<T>.tempPool = new Stack<List<Leaf<T>>>();
 		}
 
 		/// <summary>
@@ -196,8 +94,8 @@ namespace MatterHackers.QuadTree
 		/// </summary>
 		public void Clear()
 		{
-			root.Clear();
-			root.Tree = this;
+			Root.Clear();
+			Root.Tree = this;
 			leafLookup.Clear();
 		}
 
@@ -207,7 +105,7 @@ namespace MatterHackers.QuadTree
 		public int CountBranches()
 		{
 			int count = 0;
-			CountBranches(root, ref count);
+			CountBranches(Root, ref count);
 			return count;
 		}
 
@@ -217,12 +115,13 @@ namespace MatterHackers.QuadTree
 		/// <returns>True if any collisions were found.</returns>
 		/// <param name="value">The value to check collisions against.</param>
 		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
-		public IEnumerable<T> FindCollisions(T value)
+		public void FindCollisions(T value)
 		{
-			Leaf leaf;
+			QueryResults.Clear();
+			Leaf<T> leaf;
 			if (leafLookup.TryGetValue(value, out leaf))
 			{
-				var branch = leaf.Branch;
+				var branch = leaf.ContainingBranch;
 
 				//Add the leaf's siblings (prevent it from colliding with itself)
 				if (branch.Leaves.Count > 0)
@@ -231,7 +130,7 @@ namespace MatterHackers.QuadTree
 					{
 						if (leaf != branch.Leaves[i] && leaf.Quad.Intersects(ref branch.Leaves[i].Quad))
 						{
-							yield return branch.Leaves[i].Value;
+							QueryResults.Add(branch.Leaves[i].Value);
 						}
 					}
 				}
@@ -243,10 +142,7 @@ namespace MatterHackers.QuadTree
 					{
 						if (branch.Branches[i] != null)
 						{
-							foreach (var index in branch.Branches[i].SearchQuad(leaf.Quad))
-							{
-								yield return index;
-							}
+							branch.Branches[i].SearchQuad(leaf.Quad, QueryResults);
 						}
 					}
 				}
@@ -261,7 +157,7 @@ namespace MatterHackers.QuadTree
 						{
 							if (leaf.Quad.Intersects(ref branch.Leaves[i].Quad))
 							{
-								yield return branch.Leaves[i].Value;
+								QueryResults.Add(branch.Leaves[i].Value);
 							}
 						}
 					}
@@ -277,13 +173,13 @@ namespace MatterHackers.QuadTree
 		/// <param name="quad">The leaf size.</param>
 		public void Insert(T value, ref Quad quad)
 		{
-			Leaf leaf;
+			Leaf<T> leaf;
 			if (!leafLookup.TryGetValue(value, out leaf))
 			{
 				leaf = CreateLeaf(value, ref quad);
 				leafLookup.Add(value, leaf);
 			}
-			root.Insert(leaf);
+			Root.Insert(leaf);
 		}
 
 		/// <summary>
@@ -304,9 +200,9 @@ namespace MatterHackers.QuadTree
 		/// <param name="y">Y position of the leaf.</param>
 		/// <param name="width">Width of the leaf.</param>
 		/// <param name="height">Height of the leaf.</param>
-		public void Insert(T value, long x, long y, long width, long height)
+		public void Insert(T value, long minX, long minY, long maxX, long maxY)
 		{
-			var quad = new Quad(x, y, x + width, y + height);
+			var quad = new Quad(minX, minY, maxX, maxY);
 			Insert(value, ref quad);
 		}
 
@@ -316,9 +212,10 @@ namespace MatterHackers.QuadTree
 		/// <returns>True if any values were found.</returns>
 		/// <param name="quad">The area to search.</param>
 		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
-		public IEnumerable<T> SearchArea(ref Quad quad)
+		public void SearchArea(Quad quad)
 		{
-			return root.SearchQuad(quad);
+			QueryResults.Clear();
+			Root.SearchQuad(quad, QueryResults);
 		}
 
 		/// <summary>
@@ -327,9 +224,9 @@ namespace MatterHackers.QuadTree
 		/// <returns>True if any values were found.</returns>
 		/// <param name="quad">The area to search.</param>
 		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
-		public IEnumerable<T> SearchArea(Quad quad)
+		public void SearchArea(Quad quad, List<T> output)
 		{
-			return SearchArea(ref quad);
+			SearchArea(quad, output);
 		}
 
 		/// <summary>
@@ -341,10 +238,10 @@ namespace MatterHackers.QuadTree
 		/// <param name="width">Width of the search area.</param>
 		/// <param name="height">Height of the search area.</param>
 		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
-		public IEnumerable<T> SearchArea(long x, long y, long width, long height)
+		public void SearchArea(long x, long y, long width, long height, List<T> output)
 		{
 			var quad = new Quad(x, y, x + width, y + height);
-			return SearchArea(ref quad);
+			SearchArea(quad, output);
 		}
 
 		/// <summary>
@@ -354,14 +251,15 @@ namespace MatterHackers.QuadTree
 		/// <param name="x">The x coordinate.</param>
 		/// <param name="y">The y coordinate.</param>
 		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
-		public IEnumerable<T> SearchPoint(long x, long y)
+		public void SearchPoint(long x, long y)
 		{
-			return root.SearchPoint(x, y);
+			QueryResults.Clear();
+			Root.SearchPoint(x, y, QueryResults);
 		}
 
-		private static Branch CreateBranch(QuadTree<T> tree, Branch parent, ref Quad quad)
+		internal static Branch<T> CreateBranch(QuadTree<T> tree, Branch<T> parent, ref Quad quad)
 		{
-			var branch = branchPool.Count > 0 ? branchPool.Pop() : new Branch();
+			var branch = branchPool.Count > 0 ? branchPool.Pop() : new Branch<T>();
 			branch.Tree = tree;
 			branch.Parent = parent;
 			branch.Split = false;
@@ -374,15 +272,15 @@ namespace MatterHackers.QuadTree
 			return branch;
 		}
 
-		private static Leaf CreateLeaf(T value, ref Quad quad)
+		private static Leaf<T> CreateLeaf(T value, ref Quad quad)
 		{
-			var leaf = leafPool.Count > 0 ? leafPool.Pop() : new Leaf();
+			var leaf = leafPool.Count > 0 ? leafPool.Pop() : new Leaf<T>();
 			leaf.Value = value;
 			leaf.Quad = quad;
 			return leaf;
 		}
 
-		private void CountBranches(Branch branch, ref int count)
+		private void CountBranches(Branch<T> branch, ref int count)
 		{
 			++count;
 			if (branch.Split)
@@ -395,157 +293,6 @@ namespace MatterHackers.QuadTree
 					}
 				}
 			}
-		}
-
-		internal class Branch
-		{
-			internal static Stack<List<Leaf>> tempPool = new Stack<List<Leaf>>();
-
-			internal Branch[] Branches = new Branch[4];
-			internal List<Leaf> Leaves = new List<Leaf>();
-			internal Branch Parent;
-			internal Quad[] Quads = new Quad[4];
-			internal bool Split;
-			internal QuadTree<T> Tree;
-
-			internal void Clear()
-			{
-				Tree = null;
-				Parent = null;
-				Split = false;
-
-				for (int i = 0; i < 4; ++i)
-				{
-					if (Branches[i] != null)
-					{
-						branchPool.Push(Branches[i]);
-						Branches[i].Clear();
-						Branches[i] = null;
-					}
-				}
-
-				for (int i = 0; i < Leaves.Count; ++i)
-				{
-					leafPool.Push(Leaves[i]);
-					Leaves[i].Branch = null;
-					Leaves[i].Value = default(T);
-				}
-
-				Leaves.Clear();
-			}
-
-			internal void Insert(Leaf leaf)
-			{
-				//If this branch is already split
-				if (Split)
-				{
-					for (int i = 0; i < 4; ++i)
-					{
-						if (Quads[i].Contains(ref leaf.Quad))
-						{
-							if (Branches[i] == null)
-							{
-								Branches[i] = CreateBranch(Tree, this, ref Quads[i]);
-							}
-							Branches[i].Insert(leaf);
-							return;
-						}
-					}
-
-					Leaves.Add(leaf);
-					leaf.Branch = this;
-				}
-				else
-				{
-					//Add the leaf to this node
-					Leaves.Add(leaf);
-					leaf.Branch = this;
-
-					//Once I have reached capacity, split the node
-					if (Leaves.Count >= Tree.splitCount
-						&& Quads[0].MinX + 2 < Quads[0].MaxX
-						&& Quads[0].MinY + 2 < Quads[0].MaxY)
-					{
-						var temp = tempPool.Count > 0 ? tempPool.Pop() : new List<Leaf>();
-						temp.AddRange(Leaves);
-						Leaves.Clear();
-						Split = true;
-						for (int i = 0; i < temp.Count; ++i)
-						{
-							Insert(temp[i]);
-						}
-						temp.Clear();
-						tempPool.Push(temp);
-					}
-				}
-			}
-
-			int CountParents()
-			{
-				int count = 0;
-				var parent = Parent;
-				while(parent != null)
-				{
-					count++;
-					parent = parent.Parent;
-				}
-
-				return count;
-			}
-
-			internal IEnumerable<T> SearchPoint(long x, long y)
-			{
-				if (Leaves.Count > 0)
-				{
-					for (int i = 0; i < Leaves.Count; ++i)
-					{
-						if (Leaves[i].Quad.Contains(x, y))
-						{
-							yield return Leaves[i].Value;
-						}
-					}
-				}
-
-				for (int i = 0; i < 4; ++i)
-				{
-					if (Branches[i] != null)
-					{
-						foreach (var index in Branches[i].SearchPoint(x, y))
-						{
-							yield return index;
-						}
-					}
-				}
-			}
-
-			internal IEnumerable<T> SearchQuad(Quad quad)
-			{
-				if (Leaves.Count > 0)
-				{
-					for (int i = 0; i < Leaves.Count; ++i)
-					{
-						if (quad.Intersects(ref Leaves[i].Quad))
-						{
-							yield return Leaves[i].Value;
-						}
-					}
-				}
-
-				for (int i = 0; i < 4; ++i)
-				{
-					if (Branches[i] != null)
-					{
-						Branches[i].SearchQuad(quad);
-					}
-				}
-			}
-		}
-
-		internal class Leaf
-		{
-			internal Branch Branch;
-			internal Quad Quad;
-			internal T Value;
 		}
 	}
 }

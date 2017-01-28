@@ -149,6 +149,30 @@ namespace MatterHackers.QuadTree
 			return p0.Start == p1.Start && p0.End == p1.End;
 		}
 
+		public override bool Equals(System.Object obj)
+		{
+			// If parameter is null return false.
+			if (obj == null)
+			{
+				return false;
+			}
+
+			// If parameter cannot be cast to Point return false.
+			Segment p = (Segment)obj;
+			if ((System.Object)p == null)
+			{
+				return false;
+			}
+
+			// Return true if the fields match:
+			return (End == p.End) && (Start == p.Start);
+		}
+
+		public override int GetHashCode()
+		{
+			return new IntPoint[] { End, Start }.GetHashCode();
+		}
+
 		public List<Segment> GetSplitSegmentForVertecies(PolygonEdgeIterator touchingEnumerator)
 		{
 			IntPoint start2D = new IntPoint(Start)

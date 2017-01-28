@@ -104,6 +104,10 @@ namespace MatterHackers.Pathfinding
 
 		public PathLink AddPathLink(IntPointNode nodeA, IntPointNode nodeB)
 		{
+			if(nodeA == nodeB || nodeB.Position == nodeA.Position)
+			{
+				throw new ArgumentException();
+			}
 			PathLink link = nodeB.GetLinkTo(nodeA);
 
 			if (link == null)
@@ -117,11 +121,11 @@ namespace MatterHackers.Pathfinding
 			return link;
 		}
 
-		public IntPointNode FindNode(IntPoint position)
+		public IntPointNode FindNode(IntPoint position, long minDist = 0)
 		{
 			foreach (var node in Nodes)
 			{
-				if (node.Position == position)
+				if ((node.Position - position).LengthSquared() <= minDist * minDist)
 				{
 					return node;
 				}

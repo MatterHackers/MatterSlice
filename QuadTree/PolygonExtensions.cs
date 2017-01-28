@@ -173,7 +173,8 @@ namespace MatterHackers.QuadTree
 		{
 			if (pointQuadTree != null)
 			{
-				foreach (var index in pointQuadTree.SearchPoint(position.X, position.Y))
+				pointQuadTree.SearchPoint(position.X, position.Y);
+				foreach (var index in pointQuadTree.QueryResults)
 				{
 					if (position == polygon[index])
 					{
@@ -204,7 +205,7 @@ namespace MatterHackers.QuadTree
 		{
 			var bounds = polygon.GetBounds();
 			bounds.Inflate(expandDist);
-			var quadTree = new QuadTree<int>(splitCount, bounds.minX, bounds.maxY, bounds.maxX, bounds.minY);
+			var quadTree = new QuadTree<int>(splitCount, bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
 			for (int i = 0; i < polygon.Count; i++)
 			{
 				var currentPoint = polygon[i];
@@ -253,7 +254,7 @@ namespace MatterHackers.QuadTree
 		{
 			var bounds = polygon.GetBounds();
 			bounds.Inflate(expandDist);
-			var quadTree = new QuadTree<int>(splitCount, bounds.minX, bounds.maxY, bounds.maxX, bounds.minY);
+			var quadTree = new QuadTree<int>(splitCount, bounds.minX, bounds.minY, bounds.maxX, bounds.maxY);
 			for (int i = 0; i < polygon.Count; i++)
 			{
 				quadTree.Insert(i, polygon[i].X - expandDist, polygon[i].Y - expandDist, polygon[i].X + expandDist, polygon[i].Y + expandDist);
@@ -464,9 +465,9 @@ namespace MatterHackers.QuadTree
 		}
 
 		//returns 0 if false, +1 if true, -1 if pt ON polygon boundary
-		public static int PointIsInside(this Polygon polygon, IntPoint testPoint)
+		public static int PointIsInside(this Polygon polygon, IntPoint testPoint, QuadTree<int> pointQuadTree = null)
 		{
-			if (polygon.FindPoint(testPoint) != -1)
+			if (polygon.FindPoint(testPoint, pointQuadTree) != -1)
 			{
 				return -1;
 			}
