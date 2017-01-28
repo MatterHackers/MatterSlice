@@ -45,11 +45,6 @@ namespace MatterHackers.Pathfinding
 			get { return distance; }
 			set
 			{
-				if (value == 0)
-				{
-					int a = 0;
-				}
-
 				distance = value;
 			}
 		}

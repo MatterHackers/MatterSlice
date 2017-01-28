@@ -104,6 +104,10 @@ namespace MatterHackers.Pathfinding
 
 		public PathLink AddPathLink(IntPointNode nodeA, IntPointNode nodeB)
 		{
+			if(nodeA == nodeB || nodeB.Position == nodeA.Position)
+			{
+				throw new ArgumentException();
+			}
 			PathLink link = nodeB.GetLinkTo(nodeA);
 
 			if (link == null)

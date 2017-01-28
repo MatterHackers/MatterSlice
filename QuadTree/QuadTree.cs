@@ -31,11 +31,6 @@ namespace MatterHackers.QuadTree
 	/// </summary>
 	public struct Quad
 	{
-		public long MaxX { get; private set; }
-		public long MaxY { get; private set; }
-		public long MinX { get; private set; }
-		public long MinY { get; private set; }
-
 		public Quad(IntPoint testPosition, int expandDist = 1) : this()
 		{
 			MinX = testPosition.X - expandDist;
@@ -61,15 +56,16 @@ namespace MatterHackers.QuadTree
 		/// <param name="maxY">Max y.</param>
 		public Quad(long minX, long minY, long maxX, long maxY)
 		{
-			if(minX >= maxX || minY >= maxY)
-			{
-				int a = 0;
-			}
 			MinX = minX;
 			MinY = minY;
 			MaxX = maxX;
 			MaxY = maxY;
 		}
+
+		public long MaxX { get; private set; }
+		public long MaxY { get; private set; }
+		public long MinX { get; private set; }
+		public long MinY { get; private set; }
 
 		/// <summary>
 		/// Check if this Quad can completely contain another.
@@ -128,10 +124,6 @@ namespace MatterHackers.QuadTree
 		/// <param name="maxY">Max y.</param>
 		public void Set(long minX, long minY, long maxX, long maxY)
 		{
-			if (minX >= maxX || minY >= maxY)
-			{
-				int a = 0;
-			}
 			MinX = minX;
 			MinY = minY;
 			MaxX = maxX;
@@ -151,7 +143,6 @@ namespace MatterHackers.QuadTree
 
 		internal Dictionary<T, Leaf> leafLookup = new Dictionary<T, Leaf>();
 		internal int splitCount;
-		public Branch Root { get; private set; }
 
 		/// <summary>
 		/// Creates a new QuadTree.
@@ -186,6 +177,8 @@ namespace MatterHackers.QuadTree
 			: this(splitCount, new Quad(minX, minY, maxX, maxY))
 		{
 		}
+
+		public Branch Root { get; private set; }
 
 		/// <summary>
 		/// QuadTree internally keeps pools of Branches and Leaves. If you want to clear these to clean up memory,
@@ -407,14 +400,14 @@ namespace MatterHackers.QuadTree
 
 		public class Branch
 		{
+			public List<Leaf> Leaves = new List<Leaf>();
 			internal static Stack<List<Leaf>> tempPool = new Stack<List<Leaf>>();
 
-			public Branch[] Branches { get; private set; } = new Branch[4];
-			public List<Leaf> Leaves = new List<Leaf>();
 			internal Branch Parent;
-			public Quad[] Quads { get; private set; } = new Quad[4];
 			internal bool Split;
 			internal QuadTree<T> Tree;
+			public Branch[] Branches { get; private set; } = new Branch[4];
+			public Quad[] Quads { get; private set; } = new Quad[4];
 
 			internal void Clear()
 			{
@@ -486,25 +479,8 @@ namespace MatterHackers.QuadTree
 							temp.Clear();
 							tempPool.Push(temp);
 						}
-						else
-						{
-							int a = 0;
-						}
 					}
 				}
-			}
-
-			int CountParents()
-			{
-				int count = 0;
-				var parent = Parent;
-				while(parent != null)
-				{
-					count++;
-					parent = parent.Parent;
-				}
-
-				return count;
 			}
 
 			internal IEnumerable<T> SearchPoint(long x, long y)
@@ -549,19 +525,32 @@ namespace MatterHackers.QuadTree
 				{
 					if (Branches[i] != null)
 					{
-						foreach(var element in Branches[i].SearchQuad(quad))
+						foreach (var element in Branches[i].SearchQuad(quad))
 						{
 							yield return element;
 						}
 					}
 				}
 			}
+
+			private int CountParents()
+			{
+				int count = 0;
+				var parent = Parent;
+				while (parent != null)
+				{
+					count++;
+					parent = parent.Parent;
+				}
+
+				return count;
+			}
 		}
 
 		public class Leaf
 		{
-			internal Branch ContainingBranch;
 			public Quad Quad;
+			internal Branch ContainingBranch;
 			internal T Value;
 		}
 	}

@@ -35,7 +35,6 @@ namespace MatterHackers.Pathfinding
 		private static string lastOutlineString = "";
 		private static bool saveBadPathToDisk = false;
 		private static bool simpleHookup = true;
-		private static bool storeBoundary = false;
 		private WayPointsToRemove removePointList;
 
 		public PathFinder(Polygons outlinePolygons, long avoidInset, IntRect? stayInsideBounds = null)
@@ -78,11 +77,6 @@ namespace MatterHackers.Pathfinding
 
 			BoundaryEdgeQuadTrees = BoundaryPolygons.GetEdgeQuadTrees();
 			BoundaryPointQuadTrees = BoundaryPolygons.GetPointQuadTrees();
-
-			if (storeBoundary)
-			{
-				string pointsString = OutlinePolygons.WriteToString();
-			}
 
 			foreach (var polygon in BoundaryPolygons)
 			{
@@ -176,11 +170,7 @@ namespace MatterHackers.Pathfinding
 							{
 								IntPointNode nodeA = Waypoints.FindNode(closestStart.Item3);
 								IntPointNode nodeB = Waypoints.FindNode(closestEnd.Item3);
-								if (nodeA == null || nodeB == null)
-								{
-									int stop = 0; // debug this. It should not happen
-								}
-								else
+								if (nodeA != null && nodeB != null)
 								{
 									Waypoints.AddPathLink(nodeA, nodeB);
 								}
@@ -288,14 +278,21 @@ namespace MatterHackers.Pathfinding
 					HookUpToEdge(crossingNode, crossing.Item1, crossing.Item2);
 				}
 
-				if (BoundaryPolygons.PointIsInside((lastAddedNode.Position + crossingNode.Position) / 2, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees))
+				if (lastAddedNode != crossingNode
+					&& BoundaryPolygons.PointIsInside((lastAddedNode.Position + crossingNode.Position) / 2, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees))
 				{
 					Waypoints.AddPathLink(lastAddedNode, crossingNode);
+				}
+				else if(crossingNode.Links.Count == 0)
+				{
+					// link it to the edge it is on
+					HookUpToEdge(crossingNode, crossing.Item1, crossing.Item2);
 				}
 				lastAddedNode = crossingNode;
 			}
 
-			if (BoundaryPolygons.PointIsInside((lastAddedNode.Position + lastToAddNode.Position) / 2, BoundaryEdgeQuadTrees))
+			if (lastAddedNode != lastToAddNode 
+				&& BoundaryPolygons.PointIsInside((lastAddedNode.Position + lastToAddNode.Position) / 2, BoundaryEdgeQuadTrees))
 			{
 				// connect the last crossing to the end node
 				Waypoints.AddPathLink(lastAddedNode, lastToAddNode);
@@ -365,7 +362,13 @@ namespace MatterHackers.Pathfinding
 			if (foundPolyPointPosition == null)
 			{
 				// The point is already inside
-				waypointAtPosition = AddTempWayPoint(removePointList, position);
+				var existingNode = Waypoints.FindNode(position, findNodeDist);
+				if (existingNode == null)
+				{
+					waypointAtPosition = AddTempWayPoint(removePointList, position);
+					return waypointAtPosition;
+				}
+				waypointAtPosition = existingNode;
 				return waypointAtPosition;
 			}
 			else // The point had to be moved inside the polygon
@@ -375,26 +378,24 @@ namespace MatterHackers.Pathfinding
 					var existingNode = Waypoints.FindNode(position, findNodeDist);
 					if (existingNode != null)
 					{
-						foundPolyPointPosition = null;
-						// We tried to move it in but the point we found was already valid
-						return existingNode;
+						waypointAtPosition = existingNode;
+						return waypointAtPosition;
 					}
 					else
 					{
 						// get the way point that we need to insert
 						waypointAtPosition = AddTempWayPoint(removePointList, position);
-						IntPointNode startNode = AddTempWayPoint(removePointList, foundPolyPointPosition.Item3);
 						HookUpToEdge(waypointAtPosition, foundPolyPointPosition.Item1, foundPolyPointPosition.Item2);
-						Waypoints.AddPathLink(startNode, waypointAtPosition);
-						return startNode;
+						return waypointAtPosition;
 					}
 				}
 				else // the point was outside and hook it up to the nearest edge
 				{
-					// Create a temp way point at the current position
-					waypointAtPosition = AddTempWayPoint(removePointList, position);
-
+					// fand the start node if we can
 					IntPointNode startNode = Waypoints.FindNode(foundPolyPointPosition.Item3, findNodeDist);
+					
+					// After that create a temp way point at the current position
+					waypointAtPosition = AddTempWayPoint(removePointList, position);
 					if (startNode != null)
 					{
 						Waypoints.AddPathLink(startNode, waypointAtPosition);
@@ -459,7 +460,8 @@ namespace MatterHackers.Pathfinding
 				for (int indexA = 0; indexA < pathThatIsInside.Count; indexA++)
 				{
 					var positionA = pathThatIsInside[indexA];
-					for (int indexB = indexA + 2; indexB < pathThatIsInside.Count; indexB++)
+					//for (int indexB = indexA + 2; indexB < pathThatIsInside.Count; indexB++)
+					int indexB = indexA + 2;
 					{
 						if (indexB < pathThatIsInside.Count)
 						{
@@ -485,7 +487,8 @@ namespace MatterHackers.Pathfinding
 								{
 									pathThatIsInside.RemoveAt(removeIndex);
 								}
-								indexB = indexA + 2;
+								//indexB = indexA + 2;
+								indexA--;
 							}
 						}
 					}
