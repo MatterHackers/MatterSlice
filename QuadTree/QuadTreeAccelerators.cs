@@ -74,7 +74,8 @@ namespace MatterHackers.QuadTree
 		{
 			if (useQuadTree)
 			{
-				foreach (var segmentIndex in tree.FindCollisions(firstSegmentIndex))
+				tree.FindCollisions(firstSegmentIndex);
+				foreach (var segmentIndex in tree.QueryResults)
 				{
 					if (segmentIndex >= firstSegmentIndex)
 					{
@@ -118,9 +119,10 @@ namespace MatterHackers.QuadTree
 		{
 			if (tree != null)
 			{
-				foreach (var index in tree.SearchArea(touchingBounds))
+				tree.SearchArea(touchingBounds);
+				foreach(var i in tree.QueryResults)
 				{
-					yield return index;
+					yield return i;
 				}
 			}
 			else

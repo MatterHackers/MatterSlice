@@ -129,6 +129,8 @@
     <Compile Include="PolygonExtensions.cs" />
     <Compile Include="PolygonsExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Quad.cs" />
+    <Compile Include="Branch.cs" />
     <Compile Include="QuadTree.cs" />
     <Compile Include="QuadTreeAccelerators.cs" />
     <Compile Include="Segment.cs" />

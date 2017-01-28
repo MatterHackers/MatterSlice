@@ -461,7 +461,8 @@ namespace MatterHackers.MatterSlice.Tests
 			//tree.Insert(0, new Quad(150, 50, 160, 60));
 
 			int count = 0;
-			foreach (var index in tree.FindCollisions(0))
+			tree.FindCollisions(0);
+			foreach (var index in tree.QueryResults)
 			{
 				count++;
 			}

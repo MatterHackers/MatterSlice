@@ -173,7 +173,8 @@ namespace MatterHackers.QuadTree
 		{
 			if (pointQuadTree != null)
 			{
-				foreach (var index in pointQuadTree.SearchPoint(position.X, position.Y))
+				pointQuadTree.SearchPoint(position.X, position.Y);
+				foreach (var index in pointQuadTree.QueryResults)
 				{
 					if (position == polygon[index])
 					{
