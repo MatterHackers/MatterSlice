@@ -44,7 +44,8 @@ namespace MatterHackers.Pathfinding
 				return;
 			}
 
-			OutlinePolygons = Clipper.CleanPolygons(outlinePolygons, avoidInset / 60);
+			OutlinePolygons = FixWinding(outlinePolygons);
+			OutlinePolygons = Clipper.CleanPolygons(OutlinePolygons, avoidInset / 60);
 			InsetAmount = avoidInset;
 			if (stayInsideBounds != null)
 			{
@@ -57,20 +58,10 @@ namespace MatterHackers.Pathfinding
 					new IntPoint(boundary.minX, boundary.maxY),
 				});
 
-				foreach (var polygon in outlinePolygons)
-				{
-					var reversedPolygon = new Polygon();
-					for (int i = 0; i < polygon.Count; i++)
-					{
-						reversedPolygon.Add(polygon[(polygon.Count - 1) - i]);
-					}
-
-					OutlinePolygons.Add(reversedPolygon);
-				}
+				OutlinePolygons = FixWinding(OutlinePolygons);
 			}
 
 			BoundaryPolygons = OutlinePolygons.Offset(stayInsideBounds == null ? -avoidInset : -2 * avoidInset);
-			BoundaryPolygons = FixWinding(BoundaryPolygons);
 
 			OutlineEdgeQuadTrees = OutlinePolygons.GetEdgeQuadTrees();
 			OutlinePointQuadTrees = OutlinePolygons.GetPointQuadTrees();
