@@ -236,9 +236,10 @@ namespace MatterHackers.MatterSlice.Tests
 
 		public static string GetTempGCodePath(string file)
 		{
+			string fullPath = Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "Tests", "TestData", "Temp", file), "gcode");
 			// Make sure the output directory exists
-			Directory.CreateDirectory(Path.GetDirectoryName(file));
-			return Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "Tests", "TestData", "Temp", file), "gcode");
+			Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+			return fullPath;
 		}
 
 		public static string[] LoadGCodeFile(string gcodeFile)
