@@ -342,7 +342,7 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
-		public void CoinHasCrossingsWhenPathingTurendOff()
+		public void CoinHasCrossingsWhenPathingTurnedOff()
 		{
 			// By default we need to do the inner perimeters first
 			string coinStlFile = TestUtlities.GetStlPath("MatterControl - Coin");
@@ -369,7 +369,7 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
-		public void CoinHasNoCrossingsWhenPathingTurendOn()
+		public void CoinHasNoCrossingsWhenPathingTurnedOn()
 		{
 			// By default we need to do the inner perimeters first
 			string coinStlFile = TestUtlities.GetStlPath("MatterControl - Coin");
