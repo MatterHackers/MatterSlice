@@ -229,7 +229,7 @@ namespace MatterHackers.MatterSlice
 		public void GenerateFillConsideringBridging(Polygons bottomFillIsland, Polygons bottomFillLines, ConfigSettings config, Polygons bridgePolygons, string debugName = "")
 		{
 			double bridgeAngle = 0;
-			if (this.BridgeAngle(bottomFillIsland, out bridgeAngle))
+			if (bridgePolygons != null && this.BridgeAngle(bottomFillIsland, out bridgeAngle))
 			{
 				// TODO: Make this code handle very complex pathing between different sizes or layouts of support under the island to fill.
 				Infill.GenerateLinePaths(bottomFillIsland, bridgePolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, bridgeAngle);

@@ -820,10 +820,6 @@ namespace MatterHackers.MatterSlice
 								// Print the insets from inside to out (count - 1 to 0).
 								for (int insetIndex = island.InsetToolPaths.Count - 1; insetIndex >= 0; insetIndex--)
 								{
-									if(layerGcodePlanner.PathFinder != island.PathFinder)
-									{
-										int a = 0;
-									}
 									if (!config.ContinuousSpiralOuterPerimeter
 										&& insetIndex == island.InsetToolPaths.Count - 1)
 									{
@@ -1063,8 +1059,6 @@ namespace MatterHackers.MatterSlice
 				}
 				islandOrderOptimizer.Optimize();
 
-				List<Polygons> bottomFillIslandPolygons = new List<Polygons>();
-
 				for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.bestIslandOrderIndex.Count; islandOrderIndex++)
 				{
 					if (config.ContinuousSpiralOuterPerimeter && islandOrderIndex > 0)
@@ -1074,67 +1068,59 @@ namespace MatterHackers.MatterSlice
 
 					LayerIsland island = layer.Islands[islandOrderOptimizer.bestIslandOrderIndex[islandOrderIndex]];
 
-					if (config.AvoidCrossingPerimeters)
-					{
-						MoveToIsland(layerGcodePlanner, layer, island);
-					}
-					else
-					{
-						layerGcodePlanner.SetAlwaysRetract(true);
-					}
-					MoveToIsland(layerGcodePlanner, layer, island);
-					layerGcodePlanner.QueueTravel(layerGcodePlanner.LastPosition);
-
-					Polygons fillPolygons = new Polygons();
-					Polygons topFillPolygons = new Polygons();
-					Polygons bridgePolygons = new Polygons();
-
 					Polygons bottomFillPolygons = new Polygons();
+					CalculateInfillData(slicingData, extruderIndex, layerIndex, island, bottomFillPolygons);
+					// TODO: check if we are going to output anything
+					bool outputDataForIsland = true;
 
-					CalculateInfillData(slicingData, extruderIndex, layerIndex, island, bottomFillPolygons, fillPolygons, topFillPolygons, bridgePolygons);
-					bottomFillIslandPolygons.Add(bottomFillPolygons);
-
-#if DEBUG
-					if (bridgePolygons.Count > 0)
+					if (outputDataForIsland)
 					{
-						new Exception("Unexpected bridge polygons in air gapped region");
-					}
-#endif
-
-					if (config.NumberOfPerimeters > 0)
-					{
-						if (islandOrderIndex != lastPartIndex)
+						if (config.AvoidCrossingPerimeters)
 						{
-							// force a retract if changing islands
-							if (config.RetractWhenChangingIslands)
+							MoveToIsland(layerGcodePlanner, layer, island);
+						}
+						else
+						{
+							layerGcodePlanner.SetAlwaysRetract(true);
+						}
+						MoveToIsland(layerGcodePlanner, layer, island);
+						layerGcodePlanner.QueueTravel(layerGcodePlanner.LastPosition);
+
+						if (config.NumberOfPerimeters > 0)
+						{
+							if (islandOrderIndex != lastPartIndex)
 							{
-								layerGcodePlanner.ForceRetract();
+								// force a retract if changing islands
+								if (config.RetractWhenChangingIslands)
+								{
+									layerGcodePlanner.ForceRetract();
+								}
+
+								lastPartIndex = islandOrderIndex;
 							}
 
-							lastPartIndex = islandOrderIndex;
-						}
-
-						if (config.ContinuousSpiralOuterPerimeter)
-						{
-							if (layerIndex >= config.NumberOfBottomLayers)
+							if (config.ContinuousSpiralOuterPerimeter)
 							{
-								inset0Config.spiralize = true;
+								if (layerIndex >= config.NumberOfBottomLayers)
+								{
+									inset0Config.spiralize = true;
+								}
 							}
 						}
-					}
 
-					// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
-					for (int insetIndex = 1; insetIndex < island.InsetToolPaths.Count; insetIndex++)
-					{
-						QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, island.InsetToolPaths[insetIndex], airGappedBottomConfig, SupportWriteType.SupportedAreas);
-					}
-					// then 0
-					if (island.InsetToolPaths.Count > 0)
-					{
-						QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, island.InsetToolPaths[0], airGappedBottomConfig, SupportWriteType.SupportedAreas);
-					}
+						// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
+						for (int insetIndex = 1; insetIndex < island.InsetToolPaths.Count; insetIndex++)
+						{
+							QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, island.InsetToolPaths[insetIndex], airGappedBottomConfig, SupportWriteType.SupportedAreas);
+						}
+						// then 0
+						if (island.InsetToolPaths.Count > 0)
+						{
+							QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, island.InsetToolPaths[0], airGappedBottomConfig, SupportWriteType.SupportedAreas);
+						}
 
-					QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bottomFillIslandPolygons[islandOrderIndex], airGappedBottomConfig, SupportWriteType.SupportedAreas);
+						QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bottomFillPolygons, airGappedBottomConfig, SupportWriteType.SupportedAreas);
+					}
 				}
 			}
 
@@ -1222,7 +1208,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private void CalculateInfillData(LayerDataStorage slicingData, int extruderIndex, int layerIndex, LayerIsland part, Polygons bottomFillLines, Polygons fillPolygons, Polygons topFillPolygons, Polygons bridgePolygons)
+		private void CalculateInfillData(LayerDataStorage slicingData, int extruderIndex, int layerIndex, LayerIsland part, Polygons bottomFillLines, Polygons fillPolygons = null, Polygons topFillPolygons = null, Polygons bridgePolygons = null)
 		{
 			// generate infill for the bottom layer including bridging
 			foreach (Polygons bottomFillIsland in part.SolidBottomToolPaths.ProcessIntoSeparatIslands())
@@ -1253,60 +1239,66 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// generate infill for the top layer
-			foreach (Polygons outline in part.SolidTopToolPaths.ProcessIntoSeparatIslands())
+			if (topFillPolygons != null)
 			{
-				Infill.GenerateLinePaths(outline, topFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+				foreach (Polygons outline in part.SolidTopToolPaths.ProcessIntoSeparatIslands())
+				{
+					Infill.GenerateLinePaths(outline, topFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+				}
 			}
 
 			// generate infill intermediate layers
-			foreach (Polygons outline in part.SolidInfillToolPaths.ProcessIntoSeparatIslands())
+			if (fillPolygons != null)
 			{
-				if (true) // use the old infill method
+				foreach (Polygons outline in part.SolidInfillToolPaths.ProcessIntoSeparatIslands())
 				{
-					Infill.GenerateLinePaths(outline, fillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle + 90 * (layerIndex % 2));
+					if (true) // use the old infill method
+					{
+						Infill.GenerateLinePaths(outline, fillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle + 90 * (layerIndex % 2));
+					}
+					else // use the new concentric infill (not tested enough yet) have to handle some bad cases better
+					{
+						double oldInfillPercent = config.InfillPercent;
+						config.InfillPercent = 100;
+						Infill.GenerateConcentricInfill(config, outline, fillPolygons);
+						config.InfillPercent = oldInfillPercent;
+					}
 				}
-				else // use the new concentric infill (not tested enough yet) have to handle some bad cases better
+
+				double fillAngle = config.InfillStartingAngle;
+
+				// generate the sparse infill for this part on this layer
+				if (config.InfillPercent > 0)
 				{
-					double oldInfillPercent = config.InfillPercent;
-					config.InfillPercent = 100;
-					Infill.GenerateConcentricInfill(config, outline, fillPolygons);
-					config.InfillPercent = oldInfillPercent;
-				}
-			}
+					switch (config.InfillType)
+					{
+						case ConfigConstants.INFILL_TYPE.LINES:
+							if ((layerIndex & 1) == 1)
+							{
+								fillAngle += 90;
+							}
+							Infill.GenerateLineInfill(config, part.InfillToolPaths, fillPolygons, fillAngle);
+							break;
 
-			double fillAngle = config.InfillStartingAngle;
+						case ConfigConstants.INFILL_TYPE.GRID:
+							Infill.GenerateGridInfill(config, part.InfillToolPaths, fillPolygons, fillAngle);
+							break;
 
-			// generate the sparse infill for this part on this layer
-			if (config.InfillPercent > 0)
-			{
-				switch (config.InfillType)
-				{
-					case ConfigConstants.INFILL_TYPE.LINES:
-						if ((layerIndex & 1) == 1)
-						{
-							fillAngle += 90;
-						}
-						Infill.GenerateLineInfill(config, part.InfillToolPaths, fillPolygons, fillAngle);
-						break;
+						case ConfigConstants.INFILL_TYPE.TRIANGLES:
+							Infill.GenerateTriangleInfill(config, part.InfillToolPaths, fillPolygons, fillAngle);
+							break;
 
-					case ConfigConstants.INFILL_TYPE.GRID:
-						Infill.GenerateGridInfill(config, part.InfillToolPaths, fillPolygons, fillAngle);
-						break;
+						case ConfigConstants.INFILL_TYPE.HEXAGON:
+							Infill.GenerateHexagonInfill(config, part.InfillToolPaths, fillPolygons, fillAngle, layerIndex);
+							break;
 
-					case ConfigConstants.INFILL_TYPE.TRIANGLES:
-						Infill.GenerateTriangleInfill(config, part.InfillToolPaths, fillPolygons, fillAngle);
-						break;
+						case ConfigConstants.INFILL_TYPE.CONCENTRIC:
+							Infill.GenerateConcentricInfill(config, part.InfillToolPaths, fillPolygons);
+							break;
 
-					case ConfigConstants.INFILL_TYPE.HEXAGON:
-						Infill.GenerateHexagonInfill(config, part.InfillToolPaths, fillPolygons, fillAngle, layerIndex);
-						break;
-
-					case ConfigConstants.INFILL_TYPE.CONCENTRIC:
-						Infill.GenerateConcentricInfill(config, part.InfillToolPaths, fillPolygons);
-						break;
-
-					default:
-						throw new NotImplementedException();
+						default:
+							throw new NotImplementedException();
+					}
 				}
 			}
 		}

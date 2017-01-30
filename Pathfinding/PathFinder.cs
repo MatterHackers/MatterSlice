@@ -36,6 +36,7 @@ namespace MatterHackers.Pathfinding
 		private static bool saveBadPathToDisk = false;
 		private static bool simpleHookup = true;
 		private WayPointsToRemove removePointList;
+		public static Action<PathFinder, Polygon, IntPoint, IntPoint> CalculatedPath = null;
 
 		public PathFinder(Polygons outlinePolygons, long avoidInset, IntRect? stayInsideBounds = null)
 		{
@@ -44,7 +45,8 @@ namespace MatterHackers.Pathfinding
 				return;
 			}
 
-			OutlinePolygons = Clipper.CleanPolygons(outlinePolygons, avoidInset / 60);
+			OutlinePolygons = FixWinding(outlinePolygons);
+			OutlinePolygons = Clipper.CleanPolygons(OutlinePolygons, avoidInset / 60);
 			InsetAmount = avoidInset;
 			if (stayInsideBounds != null)
 			{
@@ -57,16 +59,7 @@ namespace MatterHackers.Pathfinding
 					new IntPoint(boundary.minX, boundary.maxY),
 				});
 
-				foreach (var polygon in outlinePolygons)
-				{
-					var reversedPolygon = new Polygon();
-					for (int i = 0; i < polygon.Count; i++)
-					{
-						reversedPolygon.Add(polygon[(polygon.Count - 1) - i]);
-					}
-
-					OutlinePolygons.Add(reversedPolygon);
-				}
+				OutlinePolygons = FixWinding(OutlinePolygons);
 			}
 
 			BoundaryPolygons = OutlinePolygons.Offset(stayInsideBounds == null ? -avoidInset : -2 * avoidInset);
@@ -226,7 +219,7 @@ namespace MatterHackers.Pathfinding
 						// an easy way to get the path
 						if (writeErrors)
 						{
-							WriteErrorForTesting(startPoint, endPoint);
+							WriteErrorForTesting(startPoint, endPoint, (end - start).Length());
 						}
 
 						return false;
@@ -309,8 +302,9 @@ namespace MatterHackers.Pathfinding
 			{
 				if (saveBadPathToDisk)
 				{
-					WriteErrorForTesting(startPointIn, endPointIn);
+					WriteErrorForTesting(startPointIn, endPointIn, 0);
 				}
+				CalculatedPath?.Invoke(this, pathThatIsInside, startPointIn, endPointIn);
 				return false;
 			}
 
@@ -324,6 +318,7 @@ namespace MatterHackers.Pathfinding
 				AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPointIn, endPointIn, true);
 			}
 
+			CalculatedPath?.Invoke(this, pathThatIsInside, startPointIn, endPointIn);
 			return true;
 		}
 
@@ -517,7 +512,7 @@ namespace MatterHackers.Pathfinding
 			return false;
 		}
 
-		private void WriteErrorForTesting(IntPoint startPoint, IntPoint endPoint)
+		private void WriteErrorForTesting(IntPoint startPoint, IntPoint endPoint, long edgeLength)
 		{
 			var bounds = OutlinePolygons.GetBounds();
 			long length = (startPoint - endPoint).Length();
@@ -535,8 +530,8 @@ namespace MatterHackers.Pathfinding
 						sw.WriteLine($"polyPath = \"{outlineString}\";");
 						lastOutlineString = outlineString;
 					}
-					sw.WriteLine($"// Length of this segment (start->end) {length}.");
-					sw.WriteLine($"// startOverride = new MSIntPoint({startPoint.X}, {startPoint.Y}); endOverride = new MSIntPoint({endPoint.X}, {endPoint.Y});");
+					sw.WriteLine($"// Length of this segment (start->end) {length}. Length of bad edge {edgeLength}");
+                    sw.WriteLine($"// startOverride = new MSIntPoint({startPoint.X}, {startPoint.Y}); endOverride = new MSIntPoint({endPoint.X}, {endPoint.Y});");
 					sw.WriteLine($"TestSinglePathIsInside(polyPath, new IntPoint({startPoint.X}, {startPoint.Y}), new IntPoint({endPoint.X}, {endPoint.Y}));");
 				}
 			}
