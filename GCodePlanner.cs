@@ -385,11 +385,8 @@ namespace MatterHackers.MatterSlice
 				Polygon pathPolygon = new Polygon();
 				if (PathFinder.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pathPolygon))
 				{
-					long lineLength_um = 0;
-					if (pathPolygon.Count > 0)
-					{
-						lineLength_um += (LastPosition - pathPolygon[0]).Length();
-					}
+					IntPoint lastPathPosition = LastPosition;
+					 long lineLength_um = 0;
 
 					// we can stay inside so move within the boundary
 					for (int positionIndex = 0; positionIndex < pathPolygon.Count; positionIndex++)
@@ -398,17 +395,8 @@ namespace MatterHackers.MatterSlice
 						{
 							Width = 0
 						});
-						//ValidatePaths();
-						if (positionIndex > 0)
-						{
-							lineLength_um += (pathPolygon[positionIndex] - pathPolygon[positionIndex - 1]).Length();
-						}
-					}
-
-					// and add in the last bit
-					if (pathPolygon.Count > 1)
-					{
-						lineLength_um += (LastPosition - pathPolygon[pathPolygon.Count - 1]).Length();
+						lineLength_um += (pathPolygon[positionIndex] - lastPathPosition).Length();
+						lastPathPosition = pathPolygon[positionIndex];
 					}
 
 					// If the internal move is very long (> retractionMinimumDistance_um), do a retraction
