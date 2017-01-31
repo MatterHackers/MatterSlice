@@ -258,6 +258,15 @@ namespace MatterHackers.Pathfinding
 			IntPointNode endPlanNode = null;
 			var lastToAddNode = GetWayPointInside(endPointIn, out endPlanNode);
 
+			long startToEndDistanceSqrd = (endPointIn - startPointIn).LengthSquared();
+			long moveStartInDistanceSqrd = (startPlanNode.Position - lastAddedNode.Position).LengthSquared();
+			long moveEndInDistanceSqrd = (endPlanNode.Position - lastToAddNode.Position).LengthSquared();
+			if (startToEndDistanceSqrd < moveStartInDistanceSqrd
+				|| startToEndDistanceSqrd < moveEndInDistanceSqrd)
+			{
+				return true;
+			}
+
 			var crossings = new List<Tuple<int, int, IntPoint>>(BoundaryPolygons.FindCrossingPoints(lastAddedNode.Position, lastToAddNode.Position, BoundaryEdgeQuadTrees));
 			crossings.Sort(new PolygonAndPointDirectionSorter(lastAddedNode.Position, lastToAddNode.Position));
 			foreach (var crossing in crossings.SkipSame())
