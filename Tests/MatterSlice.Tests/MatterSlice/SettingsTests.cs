@@ -233,7 +233,7 @@ namespace MatterHackers.MatterSlice.Tests
 								if (xyLength > config.MinimumTravelToCauseRetraction
 									&& lastMoveIsExtrusion)
 								{
-									 Assert.Greater(movement.position.z, lastExtrusion.position.z);
+									Assert.GreaterOrEqual(movement.position.z, lastExtrusion.position.z);
 								}
 
 								lastMoveIsExtrusion = false;
