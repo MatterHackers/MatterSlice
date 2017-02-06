@@ -689,9 +689,9 @@ namespace MatterHackers.MatterSlice
 
 			if (slicingData.wipeShield.Count > 0 && slicingData.Extruders.Count > 1)
 			{
-				layerGcodePlanner.SetAlwaysRetract(true);
+				layerGcodePlanner.ForceRetract();
 				layerGcodePlanner.QueuePolygonsByOptimizer(slicingData.wipeShield[layerIndex], skirtConfig);
-				layerGcodePlanner.SetAlwaysRetract(!config.AvoidCrossingPerimeters);
+				layerGcodePlanner.ForceRetract();
 			}
 
 			PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(new IntPoint());
@@ -730,7 +730,7 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					layerGcodePlanner.SetAlwaysRetract(true);
+					if(config.RetractWhenChangingIslands)  layerGcodePlanner.ForceRetract();
 				}
 
 				Polygons fillPolygons = new Polygons();
@@ -939,6 +939,7 @@ namespace MatterHackers.MatterSlice
 				layerGcodePlanner.PathFinder = layer.PathFinder;
 				// find the closest point to where we are now
 				// and do a move to there
+				if (config.RetractWhenChangingIslands) layerGcodePlanner.ForceRetract();
 				layerGcodePlanner.QueueTravel(closestNextIslandPoint);
 				// and remember that we are now in the new island
 				islandCurrentlyInside = island;
@@ -1081,7 +1082,7 @@ namespace MatterHackers.MatterSlice
 						}
 						else
 						{
-							layerGcodePlanner.SetAlwaysRetract(true);
+							if (config.RetractWhenChangingIslands) layerGcodePlanner.ForceRetract();
 						}
 						MoveToIsland(layerGcodePlanner, layer, island);
 						layerGcodePlanner.QueueTravel(layerGcodePlanner.LastPosition);

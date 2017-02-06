@@ -82,8 +82,6 @@ namespace MatterHackers.MatterSlice
 	// It also keeps track of the print time estimate for this planning so speed adjustments can be made for the minimum-layer-time.
 	public class GCodePlanner
 	{
-		private bool alwaysRetract;
-
 		private int currentExtruderIndex;
 
 		private double extraTime;
@@ -132,7 +130,6 @@ namespace MatterHackers.MatterSlice
 			extraTime = 0.0;
 			totalPrintTime = 0.0;
 			forceRetraction = false;
-			alwaysRetract = false;
 			currentExtruderIndex = gcode.GetExtruderIndex();
 			this.retractionMinimumDistance_um = retractionMinimumDistance_um;
 
@@ -462,11 +459,6 @@ namespace MatterHackers.MatterSlice
 					lastPosition = position;
 				}
 			}
-		}
-
-		public void SetAlwaysRetract(bool alwaysRetract)
-		{
-			this.alwaysRetract = alwaysRetract;
 		}
 
 		public bool SetExtruder(int extruder)
