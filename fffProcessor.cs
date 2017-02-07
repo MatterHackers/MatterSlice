@@ -1146,11 +1146,11 @@ namespace MatterHackers.MatterSlice
 					if (supportOutlines.Count > 0)
 					{
 						// write segments at normal height (don't write segments needing air gap)
-						fillConfig.closedLoop = false;
 						Polygons polysToWriteAtNormalHeight = new Polygons();
 						Polygons polysToWriteAtAirGapHeight = new Polygons();
 
-						GetSegmentsConsideringSupport(polygonsToWrite, supportOutlines, polysToWriteAtNormalHeight, polysToWriteAtAirGapHeight, false);
+						GetSegmentsConsideringSupport(polygonsToWrite, supportOutlines, polysToWriteAtNormalHeight, polysToWriteAtAirGapHeight, false, fillConfig.closedLoop);
+						fillConfig.closedLoop = false;
 						gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtNormalHeight, fillConfig);
 					}
 					else
@@ -1161,11 +1161,11 @@ namespace MatterHackers.MatterSlice
 				else if (supportOutlines.Count > 0) // we are checking the supported areas
 				{
 					// detect and write segments at air gap height
-					fillConfig.closedLoop = false;
 					Polygons polysToWriteAtNormalHeight = new Polygons();
 					Polygons polysToWriteAtAirGapHeight = new Polygons();
 
-					GetSegmentsConsideringSupport(polygonsToWrite, supportOutlines, polysToWriteAtNormalHeight, polysToWriteAtAirGapHeight, true);
+					GetSegmentsConsideringSupport(polygonsToWrite, supportOutlines, polysToWriteAtNormalHeight, polysToWriteAtAirGapHeight, true, fillConfig.closedLoop);
+					fillConfig.closedLoop = false;
 					gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtAirGapHeight, fillConfig);
 				}
 			}
@@ -1177,12 +1177,13 @@ namespace MatterHackers.MatterSlice
 			fillConfig.closedLoop = oldLoopValue;
 		}
 
-		private void GetSegmentsConsideringSupport(Polygons polygonsToWrite, Polygons supportOutlines, Polygons polysToWriteAtNormalHeight, Polygons polysToWriteAtAirGapHeight, bool forAirGap)
+		private void GetSegmentsConsideringSupport(Polygons polygonsToWrite, Polygons supportOutlines, Polygons polysToWriteAtNormalHeight, Polygons polysToWriteAtAirGapHeight, bool forAirGap, bool closedLoop)
 		{
 			// make an expanded area to constrain our segments to
 			Polygons maxSupportOutlines = supportOutlines.Offset(fillConfig.lineWidth_um * 2 + config.SupportXYDistance_um);
 
-			Polygons polygonsToWriteAsLines = PolygonsHelper.ConvertToLines(polygonsToWrite);
+			Polygons polygonsToWriteAsLines = PolygonsHelper.ConvertToLines(polygonsToWrite, closedLoop);
+
 			foreach (Polygon poly in polygonsToWriteAsLines)
 			{
 				Polygons polygonsIntersectSupport = supportOutlines.CreateLineIntersections(new Polygons() { poly });

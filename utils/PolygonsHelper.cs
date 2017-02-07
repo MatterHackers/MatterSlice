@@ -66,14 +66,15 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static Polygons ConvertToLines(Polygons polygons)
+		public static Polygons ConvertToLines(Polygons polygons, bool closedLoop)
 		{
 			Polygons linePolygons = new Polygons();
 			foreach (Polygon polygon in polygons)
 			{
 				if (polygon.Count > 2)
 				{
-					for (int vertexIndex = 0; vertexIndex < polygon.Count; vertexIndex++)
+					int endIndex = closedLoop ? polygon.Count : polygon.Count - 1;
+					for (int vertexIndex = 0; vertexIndex < endIndex; vertexIndex++)
 					{
 						linePolygons.Add(new Polygon() { polygon[vertexIndex], polygon[(vertexIndex + 1) % polygon.Count] });
 					}
