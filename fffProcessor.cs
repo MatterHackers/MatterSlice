@@ -666,8 +666,6 @@ namespace MatterHackers.MatterSlice
 			gcodeLayer.QueuePolygonsByOptimizer(slicingData.skirt, skirtConfig);
 		}
 
-		private int lastPartIndex = 0;
-
 		LayerIsland islandCurrentlyInside = null;
 
 		//Add a single layer from a single extruder to the GCode
@@ -744,22 +742,10 @@ namespace MatterHackers.MatterSlice
 
 				if (config.NumberOfPerimeters > 0)
 				{
-					if (islandOrderIndex != lastPartIndex)
+					if (config.ContinuousSpiralOuterPerimeter
+						&& layerIndex >= config.NumberOfBottomLayers)
 					{
-						// force a retract if changing islands
-						if (config.RetractWhenChangingIslands)
-						{
-							layerGcodePlanner.ForceRetract();
-						}
-						lastPartIndex = islandOrderIndex;
-					}
-
-					if (config.ContinuousSpiralOuterPerimeter)
-					{
-						if (layerIndex >= config.NumberOfBottomLayers)
-						{
-							inset0Config.spiralize = true;
-						}
+						inset0Config.spiralize = true;
 					}
 
 					// Put all the insets into a new list so we can keep track of what has been printed.
@@ -1084,29 +1070,14 @@ namespace MatterHackers.MatterSlice
 						{
 							if (config.RetractWhenChangingIslands) layerGcodePlanner.ForceRetract();
 						}
+						
 						MoveToIsland(layerGcodePlanner, layer, island);
-						layerGcodePlanner.QueueTravel(layerGcodePlanner.LastPosition);
 
-						if (config.NumberOfPerimeters > 0)
+						if (config.NumberOfPerimeters > 0
+							&& config.ContinuousSpiralOuterPerimeter
+							&& layerIndex >= config.NumberOfBottomLayers)
 						{
-							if (islandOrderIndex != lastPartIndex)
-							{
-								// force a retract if changing islands
-								if (config.RetractWhenChangingIslands)
-								{
-									layerGcodePlanner.ForceRetract();
-								}
-
-								lastPartIndex = islandOrderIndex;
-							}
-
-							if (config.ContinuousSpiralOuterPerimeter)
-							{
-								if (layerIndex >= config.NumberOfBottomLayers)
-								{
-									inset0Config.spiralize = true;
-								}
-							}
+							inset0Config.spiralize = true;
 						}
 
 						// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
