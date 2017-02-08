@@ -391,7 +391,7 @@ namespace MatterHackers.MatterSlice
 		{
 			bool hasWipeTower = storage.wipeTower.PolygonLength() > 0;
 
-			Polygons skirtPolygons = hasWipeTower ? new Polygons(storage.wipeTower) : new Polygons();
+			Polygons skirtPolygons = new Polygons();
 
 			if (config.EnableRaft)
 			{
@@ -399,7 +399,7 @@ namespace MatterHackers.MatterSlice
 			}
 			else
 			{
-				Polygons allOutlines = new Polygons();
+				Polygons allOutlines = hasWipeTower ? new Polygons(storage.wipeTower) : new Polygons();
 
 				// Loop over every extruder
 				for (int extrudeIndex = 0; extrudeIndex < storage.Extruders.Count; extrudeIndex++)
