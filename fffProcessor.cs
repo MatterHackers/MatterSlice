@@ -941,7 +941,7 @@ namespace MatterHackers.MatterSlice
 			long bestDist = long.MaxValue;
 			for (int polygonIndex = 0; polygonIndex < boundaryPolygons.Count; polygonIndex++)
 			{
-				IntPoint closestToPoly = PathOrderOptimizer.GetBestPosition(boundaryPolygons[polygonIndex], config.ExtrusionWidth_um);
+				IntPoint closestToPoly = boundaryPolygons[polygonIndex].FindGreatestTurnPosition(config.ExtrusionWidth_um);
 				if (closestToPoly != null)
 				{
 					long length = (closestToPoly - position).Length();
@@ -971,7 +971,7 @@ namespace MatterHackers.MatterSlice
 			for (int polygonIndex = 0; polygonIndex < insetsToConsider.Count; polygonIndex++)
 			{
 				Polygon currentPolygon = insetsToConsider[polygonIndex];
-				int bestPoint = PathOrderOptimizer.GetClosestIndex(currentPolygon, gcodeLayer.LastPosition);
+				int bestPoint = currentPolygon.FindClosestPositionIndex(gcodeLayer.LastPosition);
 				if (bestPoint > -1)
 				{
 					long distance = (currentPolygon[bestPoint] - gcodeLayer.LastPosition).Length();
