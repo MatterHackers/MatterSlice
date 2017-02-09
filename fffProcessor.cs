@@ -895,8 +895,7 @@ namespace MatterHackers.MatterSlice
 			if (island.IslandOutline.Count > 0)
 			{
 				// If we are already in the island we are going to, don't go there.
-				if (island.PathFinder.OutlinePolygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineEdgeQuadTrees)
-					|| layer.Islands.Count == 1 && island.PathFinder.OutlinePolygons.Count < 2)
+				if (island.PathFinder.OutlinePolygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineEdgeQuadTrees))
 				{
 					islandCurrentlyInside = island;
 					layerGcodePlanner.PathFinder = island.PathFinder;
