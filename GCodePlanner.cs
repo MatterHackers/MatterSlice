@@ -377,7 +377,8 @@ namespace MatterHackers.MatterSlice
 				path.Retract = true;
 				forceRetraction = false;
 			}
-			else if (PathFinder != null)
+			
+			if (PathFinder != null)
 			{
 				Polygon pathPolygon = new Polygon();
 				if (PathFinder.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pathPolygon))
