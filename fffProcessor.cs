@@ -511,7 +511,7 @@ namespace MatterHackers.MatterSlice
 
 					if (extruderChanged 
 						&& slicingData.HaveWipeTower(config)
-						&& layerIndex >= slicingData.LastLayerWithChange(config))
+						&& layerIndex < slicingData.LastLayerWithChange(config))
 					{
 						slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config);
 						//Make sure we wipe the old extruder on the wipe tower.
@@ -1025,7 +1025,7 @@ namespace MatterHackers.MatterSlice
 
 				if (extruderChanged
 					&& slicingData.HaveWipeTower(config)
-					&& layerIndex >= slicingData.LastLayerWithChange(config))
+					&& layerIndex < slicingData.LastLayerWithChange(config))
 				{
 					slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config);
 					//Make sure we wipe the old extruder on the wipe tower.
