@@ -509,7 +509,9 @@ namespace MatterHackers.MatterSlice
 					int prevExtruder = layerGcodePlanner.GetExtruder();
 					bool extruderChanged = layerGcodePlanner.SetExtruder(extruderIndex);
 
-					if (extruderChanged && slicingData.HaveWipeTower(config))
+					if (extruderChanged 
+						&& slicingData.HaveWipeTower(config)
+						&& layerIndex >= slicingData.LastLayerWithChange(config))
 					{
 						slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config);
 						//Make sure we wipe the old extruder on the wipe tower.
@@ -1021,7 +1023,9 @@ namespace MatterHackers.MatterSlice
 				int prevExtruder = layerGcodePlanner.GetExtruder();
 				bool extruderChanged = layerGcodePlanner.SetExtruder(extruderIndex);
 
-				if (extruderChanged && slicingData.HaveWipeTower(config))
+				if (extruderChanged
+					&& slicingData.HaveWipeTower(config)
+					&& layerIndex >= slicingData.LastLayerWithChange(config))
 				{
 					slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config);
 					//Make sure we wipe the old extruder on the wipe tower.
