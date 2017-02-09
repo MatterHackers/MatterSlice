@@ -462,7 +462,7 @@ namespace MatterHackers.MatterSlice
 			return skirtPolygons;
 		}
 
-		private int LastLayerWithChange(ConfigSettings config)
+		public int LastLayerWithChange(ConfigSettings config)
 		{
 			int numLayers = Extruders[0].Layers.Count;
 			int firstExtruderWithData = -1;
