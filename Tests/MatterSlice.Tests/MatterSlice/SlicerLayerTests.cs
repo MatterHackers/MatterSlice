@@ -29,6 +29,7 @@ either expressed or implied, of the FreeBSD Project.
 
 using System.Collections.Generic;
 using System.IO;
+using MatterHackers.QuadTree;
 using MSClipperLib;
 using NUnit.Framework;
 
@@ -62,6 +63,37 @@ namespace MatterHackers.MatterSlice.Tests
 					string[] layer = TestUtlities.GetGCodeForLayer(gcodeContents, i);
 					int totalRetractions = TestUtlities.CountRetractions(layer);
 					Assert.IsTrue(totalRetractions == 6);
+				}
+			}
+		}
+
+		[Test]
+		public void AllPerimetersGoInPolgonDirection()
+		{
+			string thinWallsSTL = TestUtlities.GetStlPath("ThinWallsRect.stl");
+			string thinWallsGCode = TestUtlities.GetTempGCodePath("ThinWallsRect.stl");
+
+			{
+				// load a model that is correctly manifold
+				ConfigSettings config = new ConfigSettings();
+				config.ExpandThinWalls = true;
+				fffProcessor processor = new fffProcessor(config);
+				processor.SetTargetFile(thinWallsGCode);
+				processor.LoadStlFile(thinWallsSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.finalize();
+
+				string[] thinWallsGCodeContent = TestUtlities.LoadGCodeFile(thinWallsGCode);
+				int layerCount = TestUtlities.CountLayers(thinWallsGCodeContent);
+				for(int i= 2; i< layerCount-2; i++)
+				{
+					var layerGCode = TestUtlities.GetGCodeForLayer(thinWallsGCodeContent, i);
+					var polygons = TestUtlities.GetExtrusionPolygons(layerGCode, 1000);
+					foreach(var polygon in polygons)
+					{
+						Assert.AreEqual(1, polygon.GetWindingDirection());
+					}
 				}
 			}
 		}
@@ -257,7 +289,7 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 
 			{
-				// load a model that has some faces pointing the wroing way
+				// load a model that has some faces pointing the wrong way
 				ConfigSettings config = new ConfigSettings();
 				fffProcessor processor = new fffProcessor(config);
 				processor.SetTargetFile(nonManifoldGCode);
