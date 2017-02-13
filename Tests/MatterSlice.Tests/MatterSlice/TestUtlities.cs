@@ -136,16 +136,24 @@ namespace MatterHackers.MatterSlice.Tests
 			return fileAndPath;
 		}
 
-		public static Polygons GetExtrusionPolygons(string[] gcode, ref MovementInfo movementInfo)
+		public static Polygons GetExtrusionPolygons(string[] gcode, long movementToIgnore = 0)
+		{
+			MovementInfo movementInfo = new MovementInfo();
+			return GetExtrusionPolygons(gcode, ref movementInfo, movementToIgnore);
+		}
+
+		public static Polygons GetExtrusionPolygons(string[] gcode, ref MovementInfo movementInfo, long movementToIgnore = 0)
 		{
 			Polygons foundPolygons = new Polygons();
 
 			bool extruding = false;
 			// check that all moves are on the outside of the cylinder (not crossing to a new point)
 			int movementCount = 0;
-			foreach (MovementInfo movement in TestUtlities.Movements(gcode, movementInfo))
+			double movementAmount = double.MaxValue/2; // always add a new extrusion the first time
+			MovementInfo lastMovement = movementInfo;
+			foreach (MovementInfo currentMovement in TestUtlities.Movements(gcode, lastMovement))
 			{
-				bool isExtrude = movement.extrusion != movementInfo.extrusion;
+				bool isExtrude = currentMovement.extrusion != lastMovement.extrusion;
 
 				if (extruding)
 				{
@@ -153,34 +161,38 @@ namespace MatterHackers.MatterSlice.Tests
 					{
 						// add to the extrusion
 						foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
-							(long)(movement.position.x * 1000),
-							(long)(movement.position.y * 1000),
-							(long)(movement.position.z * 1000)));
+							(long)(currentMovement.position.x * 1000),
+							(long)(currentMovement.position.y * 1000),
+							(long)(currentMovement.position.z * 1000)));
 					}
 					else
 					{
 						extruding = false;
+						movementAmount = 0;
 					}
 				}
 				else // not extruding
 				{
 					if (isExtrude)
 					{
-						// starting a new extrusion
-						foundPolygons.Add(new Polygon());
+						if (movementAmount >= movementToIgnore)
+						{
+							// starting a new extrusion
+							foundPolygons.Add(new Polygon());
+						}
 						foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
-							(long)(movement.position.x * 1000),
-							(long)(movement.position.y * 1000),
-							(long)(movement.position.z * 1000)));
+							(long)(currentMovement.position.x * 1000),
+							(long)(currentMovement.position.y * 1000),
+							(long)(currentMovement.position.z * 1000)));
 						extruding = true;
 					}
 					else // do nothing waiting for extrude
 					{
-						int stop = 0;
+						movementAmount += (currentMovement.position - lastMovement.position).Length;
 					}
 				}
 
-				movementInfo = movement;
+				lastMovement = currentMovement;
 				movementCount++;
 			}
 
@@ -192,6 +204,7 @@ namespace MatterHackers.MatterSlice.Tests
 				}
 			}
 
+			movementInfo = lastMovement;
 			return foundPolygons;
 		}
 
@@ -218,6 +231,10 @@ namespace MatterHackers.MatterSlice.Tests
 				if (line.Contains("LAYER:"))
 				{
 					currentLayer++;
+					if(currentLayer > layerIndex)
+					{
+						break;
+					}
 				}
 
 				if (currentLayer == layerIndex)

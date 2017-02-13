@@ -459,7 +459,6 @@ namespace MatterHackers.MatterSlice
 					supportInterfaceConfig.SetData(config.FirstLayerSpeed - 1, config.ExtrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 
-				//gcode.WriteComment("LAYER:{0}".FormatWith(layerIndex));
 				if (layerIndex == 0)
 				{
 					gcode.SetExtrusion(config.FirstLayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
@@ -511,7 +510,7 @@ namespace MatterHackers.MatterSlice
 
 					if (extruderChanged 
 						&& slicingData.HaveWipeTower(config)
-						&& layerIndex >= slicingData.LastLayerWithChange(config))
+						&& layerIndex < slicingData.LastLayerWithChange(config))
 					{
 						slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config);
 						//Make sure we wipe the old extruder on the wipe tower.
@@ -800,6 +799,14 @@ namespace MatterHackers.MatterSlice
 					else // This is so we can do overhangs better (the outside can stick a bit to the inside).
 					{
 						int insetCount = CountInsetsToPrint(insetsForThisIsland);
+						if(insetCount == 0 
+							&& config.ExpandThinWalls
+							&& island.IslandOutline.Count > 0
+							&& island.IslandOutline[0].Count > 0)
+						{
+							// There are no insets but we should still try to go to the start position of the first perimeter if we are expanding thin walls
+							layerGcodePlanner.QueueTravel(island.IslandOutline[0][0]);
+						}
 						while (insetCount > 0)
 						{
 							bool limitDistance = false;
@@ -1025,7 +1032,7 @@ namespace MatterHackers.MatterSlice
 
 				if (extruderChanged
 					&& slicingData.HaveWipeTower(config)
-					&& layerIndex >= slicingData.LastLayerWithChange(config))
+					&& layerIndex < slicingData.LastLayerWithChange(config))
 				{
 					slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config);
 					//Make sure we wipe the old extruder on the wipe tower.
