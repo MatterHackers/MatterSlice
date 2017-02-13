@@ -799,6 +799,14 @@ namespace MatterHackers.MatterSlice
 					else // This is so we can do overhangs better (the outside can stick a bit to the inside).
 					{
 						int insetCount = CountInsetsToPrint(insetsForThisIsland);
+						if(insetCount == 0 
+							&& config.ExpandThinWalls
+							&& island.IslandOutline.Count > 0
+							&& island.IslandOutline[0].Count > 0)
+						{
+							// There are no insets but we should still try to go to the start position of the first perimeter if we are expanding thin walls
+							layerGcodePlanner.QueueTravel(island.IslandOutline[0][0]);
+						}
 						while (insetCount > 0)
 						{
 							bool limitDistance = false;
