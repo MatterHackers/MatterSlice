@@ -860,16 +860,26 @@ namespace MatterHackers.MatterSlice
 						//string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(island.IslandOutline);
 						if (island.IslandOutline.FindThinLines(extrusionWidth_um + 2, extrusionWidth_um / 3, out thinLines, true))
 						{
-							foreach (var polygon in thinLines)
+							for(int polyIndex=thinLines.Count-1; polyIndex>=0; polyIndex--)
 							{
-								for (int i = 0; i < polygon.Count; i++)
+								var polygon = thinLines[polyIndex];
+
+								if (polygon.Count == 2
+									&& (polygon[0] - polygon[1]).Length() < config.ExtrusionWidth_um / 4)
 								{
-									if (polygon[i].Width > 0)
+									thinLines.RemoveAt(polyIndex);
+								}
+								else
+								{
+									for (int i = 0; i < polygon.Count; i++)
 									{
-										polygon[i] = new IntPoint(polygon[i])
+										if (polygon[i].Width > 0)
 										{
-											Width = extrusionWidth_um,
-										};
+											polygon[i] = new IntPoint(polygon[i])
+											{
+												Width = extrusionWidth_um,
+											};
+										}
 									}
 								}
 							}
@@ -966,7 +976,7 @@ namespace MatterHackers.MatterSlice
 
 		private bool QueueClosetsInset(Polygons insetsToConsider, bool limitDistance, GCodePathConfig pathConfig, int layerIndex, GCodePlanner gcodeLayer)
 		{
-			// This is the furthest away we will accept a new statring point
+			// This is the furthest away we will accept a new starting point
 			long maxDist_um = long.MaxValue;
 			if (limitDistance)
 			{
