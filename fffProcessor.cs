@@ -206,10 +206,17 @@ namespace MatterHackers.MatterSlice
 			slicingData.modelMin = optomizedMeshCollection.minXYZ_um;
 			slicingData.modelMax = optomizedMeshCollection.maxXYZ_um;
 
+			var extraPathingConsideration = new Polygons();
+			foreach (var polygons in slicingData.wipeShield)
+			{
+				extraPathingConsideration.AddRange(polygons);
+			}
+			extraPathingConsideration.AddRange(slicingData.wipeTower);
+
 			for (int extruderIndex = 0; extruderIndex < extruderList.Count; extruderIndex++)
 			{
 				slicingData.Extruders.Add(new ExtruderLayers());
-				slicingData.Extruders[extruderIndex].InitializeLayerData(extruderList[extruderIndex], config, extruderIndex, extruderList.Count);
+				slicingData.Extruders[extruderIndex].InitializeLayerData(extruderList[extruderIndex], config, extruderIndex, extruderList.Count, extraPathingConsideration);
 
 				if (config.EnableRaft)
 				{

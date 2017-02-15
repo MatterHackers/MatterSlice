@@ -456,48 +456,42 @@ namespace MatterHackers.Pathfinding
 
 		private void OptomizePathPoints(Polygon pathThatIsInside)
 		{
-			var endCount = -1;
-			var startCount = pathThatIsInside.Count;
-			while (startCount > 0 && startCount != endCount)
+			for (int startIndex = 0; startIndex < pathThatIsInside.Count - 2; startIndex++)
 			{
-				startCount = pathThatIsInside.Count;
-				for (int indexA = 0; indexA < pathThatIsInside.Count; indexA++)
+				var startPosition = pathThatIsInside[startIndex];
+				if(startPosition.X < -10000)
 				{
-					var positionA = pathThatIsInside[indexA];
-					//for (int indexB = indexA + 2; indexB < pathThatIsInside.Count; indexB++)
-					int indexB = indexA + 2;
+					int a = 0;
+				}
+				for (int endIndex = pathThatIsInside.Count - 1; endIndex > startIndex + 1; endIndex--)
+				{
+					var endPosition = pathThatIsInside[endIndex];
+
+					var crossings = new List<Tuple<int, int, IntPoint>>(BoundaryPolygons.FindCrossingPoints(startPosition, endPosition, BoundaryEdgeQuadTrees));
+
+					bool isCrossingEdge = false;
+					foreach (var cross in crossings)
 					{
-						if (indexB < pathThatIsInside.Count)
+						if (cross.Item3 != startPosition
+							&& cross.Item3 != endPosition)
 						{
-							var positionB = pathThatIsInside[indexB];
-
-							var crossings = new List<Tuple<int, int, IntPoint>>(BoundaryPolygons.FindCrossingPoints(positionA, positionB, BoundaryEdgeQuadTrees));
-							bool hasOtherThanAB = false;
-							foreach (var cross in crossings)
-							{
-								if (cross.Item3 != positionA
-									&& cross.Item3 != positionB)
-								{
-									hasOtherThanAB = true;
-									break;
-								}
-							}
-
-							if (!hasOtherThanAB
-								&& BoundaryPolygons.PointIsInside((positionA + positionB) / 2, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees))
-							{
-								// remove A+1 - B-1
-								for (int removeIndex = indexB - 1; removeIndex > indexA; removeIndex--)
-								{
-									pathThatIsInside.RemoveAt(removeIndex);
-								}
-								//indexB = indexA + 2;
-								indexA--;
-							}
+							isCrossingEdge = true;
+							break;
 						}
 					}
+
+					if (!isCrossingEdge 
+						&& BoundaryPolygons.PointIsInside((startPosition + endPosition) / 2, BoundaryEdgeQuadTrees, BoundaryPointQuadTrees))
+					{
+						// remove A+1 - B-1
+						for (int removeIndex = endIndex - 1; removeIndex > startIndex; removeIndex--)
+						{
+							pathThatIsInside.RemoveAt(removeIndex);
+						}
+
+						endIndex = pathThatIsInside.Count - 1;
+					}
 				}
-				endCount = pathThatIsInside.Count;
 			}
 		}
 

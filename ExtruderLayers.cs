@@ -142,7 +142,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void InitializeLayerData(ExtruderData slicer, ConfigSettings config, int extruderIndex, int extruderCount)
+		public void InitializeLayerData(ExtruderData slicer, ConfigSettings config, int extruderIndex, int extruderCount, Polygons extraPathingConsideration)
 		{
 			for (int layerIndex = 0; layerIndex < slicer.layers.Count; layerIndex++)
 			{
@@ -162,7 +162,9 @@ namespace MatterHackers.MatterSlice
 
 				long avoidInset = config.ExtrusionWidth_um * 3 / 2;
 				var boundary = Layers[layerIndex].AllOutlines.GetBounds();
-				boundary.Inflate(avoidInset * 1000);
+				var extraBoundary = extraPathingConsideration.GetBounds();
+				boundary.ExpandToInclude(extraBoundary);
+				boundary.Inflate(config.ExtrusionWidth_um * 10);
 				Layers[layerIndex].PathFinder = new Pathfinding.PathFinder(Layers[layerIndex].AllOutlines, avoidInset, boundary);
 			}
 		}
