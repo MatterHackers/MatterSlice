@@ -410,13 +410,19 @@ namespace MatterHackers.MatterSlice
 					{
 						SliceLayer layer0 = storage.Extruders[extrudeIndex].Layers[0];
 						allOutlines.AddAll(layer0.Islands[0]?.IslandOutline);
-
-						break;
 					}
-
-					// Add the layers outline to allOutlines
-					SliceLayer layer = storage.Extruders[extrudeIndex].Layers[0];
-					allOutlines.AddAll(layer.AllOutlines);
+					else
+					{
+						// Add the layers outline to allOutlines
+						SliceLayer layer = storage.Extruders[extrudeIndex].Layers[0];
+						foreach(var island in layer.Islands)
+						{
+							if (island.IslandOutline?.Count > 0)
+							{
+								allOutlines.Add(island.IslandOutline[0]);
+							}
+						}
+					}
 				}
 
 				if (brimCount > 0)
