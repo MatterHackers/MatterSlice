@@ -183,9 +183,20 @@ namespace MatterHackers.MatterSlice
 						gcodeLayer.ForceRetract();
 					}
 
+					// make a border if layer 0
+					if (layerIndex == 0)
+					{
+						Polygons infillOutline = interfaceOutline.Offset(-supportInterfaceConfig.lineWidth_um / 2);
+						Polygons outlines = Clipper.CleanPolygons(infillOutline, config.ExtrusionWidth_um / 4);
+						if (gcodeLayer.QueuePolygonsByOptimizer(outlines, supportInterfaceConfig))
+						{
+							outputPaths = true;
+						}
+					}
+
 					Polygons supportLines = new Polygons();
 					Infill.GenerateLineInfill(config, interfaceOutline, supportLines, config.InfillStartingAngle + 90, config.ExtrusionWidth_um);
-					if(gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportInterfaceConfig))
+					if (gcodeLayer.QueuePolygonsByOptimizer(supportLines, supportInterfaceConfig))
 					{
 						outputPaths = true;
 					}
@@ -213,10 +224,13 @@ namespace MatterHackers.MatterSlice
 
 				Polygons islandInfillLines = new Polygons();
 				// render a grid of support
-				if (config.GenerateSupportPerimeter)
+				if (config.GenerateSupportPerimeter || layerIndex == 0)
 				{
 					Polygons outlines = Clipper.CleanPolygons(islandOutline, config.ExtrusionWidth_um / 4);
-					gcodeLayer.QueuePolygonsByOptimizer(outlines, supportNormalConfig);
+					if(gcodeLayer.QueuePolygonsByOptimizer(outlines, supportNormalConfig))
+					{
+						outputPaths = true;
+					}
 				}
 
 				Polygons infillOutline = islandOutline.Offset(-supportNormalConfig.lineWidth_um / 2);
@@ -242,7 +256,7 @@ namespace MatterHackers.MatterSlice
 
 				if (gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, supportNormalConfig))
 				{
-					outputPaths = true;
+					outputPaths |= true;
 				}
 			}
 
