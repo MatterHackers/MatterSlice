@@ -1,6 +1,6 @@
-﻿using MSClipperLib;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using MSClipperLib;
 
 /*
  * Copyright (c) 2015, John Lewin
@@ -27,6 +27,7 @@ using System.Collections.Generic;
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
+
 namespace MatterHackers.MatterSlice
 {
 	public static class GrahamScan
@@ -42,35 +43,6 @@ namespace MatterHackers.MatterSlice
 		}
 
 		/// <summary>
-		/// Returns true if all points in <code>points</code> are collinear.
-		/// </summary>
-		/// <param name="points"> the list of points. </param>
-		/// <returns>       true if all points in <code>points</code> are collinear. </returns>
-		private static bool AreAllCollinear(IList<IntPoint> points)
-		{
-			if (points.Count < 2)
-			{
-				return true;
-			}
-
-			IntPoint a = points[0];
-			IntPoint b = points[1];
-
-			for (int i = 2; i < points.Count; i++)
-			{
-
-				IntPoint c = points[i];
-
-				if (GetTurn(a, b, c) != Turn.Collinear)
-				{
-					return false;
-				}
-			}
-
-			return true;
-		}
-
-		/// <summary>
 		/// Returns the convex hull of the points created from the list
 		/// <code>points</code>. Note that the first and last point in the
 		/// returned <code>List&lt;java.awt.Point&gt;</code> are the same
@@ -80,7 +52,7 @@ namespace MatterHackers.MatterSlice
 		/// <returns>The convex hull of the points created from the list <code>points</code>. </returns>
 		public static IList<IntPoint> GetConvexHull(List<IntPoint> points)
 		{
-			 IntPoint lowestPoint = GetLowestPoint(points);
+			IntPoint lowestPoint = GetLowestPoint(points);
 
 			// Sort points based on angle to lowestPoint
 			IntPointSorter sorter = new IntPointSorter(lowestPoint);
@@ -116,9 +88,11 @@ namespace MatterHackers.MatterSlice
 						stack.Push(middle);
 						stack.Push(head);
 						break;
+
 					case Turn.Clockwise:
 						i--;
 						break;
+
 					case Turn.Collinear:
 						stack.Push(head);
 						break;
@@ -129,6 +103,34 @@ namespace MatterHackers.MatterSlice
 			stack.Push(sorted[0]);
 
 			return new List<IntPoint>(stack);
+		}
+
+		/// <summary>
+		/// Returns true if all points in <code>points</code> are collinear.
+		/// </summary>
+		/// <param name="points"> the list of points. </param>
+		/// <returns>       true if all points in <code>points</code> are collinear. </returns>
+		private static bool AreAllCollinear(IList<IntPoint> points)
+		{
+			if (points.Count < 2)
+			{
+				return true;
+			}
+
+			IntPoint a = points[0];
+			IntPoint b = points[1];
+
+			for (int i = 2; i < points.Count; i++)
+			{
+				IntPoint c = points[i];
+
+				if (GetTurn(a, b, c) != Turn.Collinear)
+				{
+					return false;
+				}
+			}
+
+			return true;
 		}
 
 		/// <summary>
@@ -161,9 +163,9 @@ namespace MatterHackers.MatterSlice
 		/// ordered points <code>a</code>, <code>b</code> and <code>c</code>.
 		/// More specifically, the cross product <tt>C</tt> between the
 		/// 3 points (vectors) is calculated:
-		/// 
+		///
 		/// <tt>(b.x-a.x * c.y-a.y) - (b.y-a.y * c.x-a.x)</tt>
-		/// 
+		///
 		/// and if <tt>C</tt> is less than 0, the turn is CLOCKWISE, if
 		/// <tt>C</tt> is more than 0, the turn is COUNTER_CLOCKWISE, else
 		/// the three points are COLLINEAR.
@@ -176,7 +178,6 @@ namespace MatterHackers.MatterSlice
 		///         <code>c</code>. </returns>
 		private static Turn GetTurn(IntPoint a, IntPoint b, IntPoint c)
 		{
-
 			// use longs to guard against int-over/underflow
 			long crossProduct = (((long)b.X - a.X) * ((long)c.Y - a.Y)) - (((long)b.Y - a.Y) * ((long)c.X - a.X));
 
@@ -243,7 +244,6 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 			}
-
 		}
 	}
 }

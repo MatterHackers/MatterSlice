@@ -19,18 +19,19 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using MatterHackers.Pathfinding;
+using MatterHackers.QuadTree;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
-	using Polygon = List<IntPoint>;
-
 	public class GCodeExport
 	{
+		private string beforeToolchangeCode;
 		private int currentFanSpeed;
 		private IntPoint currentPosition_um;
 		private double currentSpeed;
@@ -43,22 +44,19 @@ namespace MatterHackers.MatterSlice
 		private double extrusionPerMm;
 		private StreamWriter gcodeFileStream;
 		private bool isRetracted;
+		private string layerChangeCode;
 		private double minimumExtrusionBeforeRetraction_mm;
 		private double retractionAmount_mm;
 		private int retractionSpeed;
 		private List<IntPoint> retractionWipePath = new List<IntPoint>();
 		private double retractionZHop_mm;
 		private string toolChangeCode;
-		private string beforeToolchangeCode;
 		private double[] totalFilament_mm = new double[ConfigConstants.MAX_EXTRUDERS];
 		private double totalPrintTime;
-		private double unretractExtrusionExtra_mm;
 		private double unretractExtraOnExtruderSwitch_mm;
+		private double unretractExtrusionExtra_mm;
 		private bool wipeAfterRetraction;
 		private long zPos_um;
-		private string layerChangeCode;
-
-		public long CurrentZ { get { return zPos_um; } }
 
 		public GCodeExport()
 		{
@@ -82,6 +80,8 @@ namespace MatterHackers.MatterSlice
 			isRetracted = true;
 			gcodeFileStream = new StreamWriter(Console.OpenStandardOutput());
 		}
+
+		public long CurrentZ { get { return zPos_um; } }
 
 		public void Close()
 		{
@@ -147,6 +147,15 @@ namespace MatterHackers.MatterSlice
 			return gcodeFileStream != null;
 		}
 
+		public void LayerChanged(int layerIndex)
+		{
+			if (!string.IsNullOrEmpty(layerChangeCode))
+			{
+				WriteCode("; Layer Change GCode");
+				WriteCode(layerChangeCode.Replace("[layer_num]", layerIndex.ToString()));
+			}
+		}
+
 		public void ResetExtrusionValue(double extraExtrudeAmount_mm = 0)
 		{
 			if (extrusionAmount_mm != 0.0)
@@ -177,6 +186,11 @@ namespace MatterHackers.MatterSlice
 			gcodeFileStream = new StreamWriter(filename);
 		}
 
+		public void SetLayerChangeCode(string layerChangeCode)
+		{
+			this.layerChangeCode = layerChangeCode;
+		}
+
 		public void SetRetractionSettings(double retractionAmount, int retractionSpeed, double extruderSwitchRetraction, double minimumExtrusionBeforeRetraction_mm, double retractionZHop_mm, bool wipeAfterRetraction, double unretractExtrusionExtra_mm, double unretractExtraOnExtruderSwitch_mm)
 		{
 			this.unretractExtrusionExtra_mm = unretractExtrusionExtra_mm;
@@ -193,15 +207,6 @@ namespace MatterHackers.MatterSlice
 		{
 			this.toolChangeCode = toolChangeCode;
 			this.beforeToolchangeCode = beforeToolchangeCode;
-		}
-
-		public void LayerChanged(int layerIndex)
-		{
-			if (!string.IsNullOrEmpty(layerChangeCode))
-			{
-				WriteCode("; Layer Change GCode");
-				WriteCode(layerChangeCode.Replace("[layer_num]", layerIndex.ToString()));
-			}
 		}
 
 		public void SetZ(long z)
@@ -242,11 +247,6 @@ namespace MatterHackers.MatterSlice
 				WriteCode("; After Tool Change GCode");
 				WriteCode(toolChangeCode);
 			}
-		}
-
-		public void SetLayerChangeCode(string layerChangeCode)
-		{
-			this.layerChangeCode = layerChangeCode;
 		}
 
 		public void TellFileSize()
@@ -315,6 +315,16 @@ namespace MatterHackers.MatterSlice
 		public void WriteMove(IntPoint movePosition_um, double speed, long lineWidth_um)
 		{
 			StringBuilder lineToWrite = new StringBuilder();
+
+			if(movePosition_um.Width != lineWidth_um)
+			{
+				int a = 0;
+			}
+
+			if(currentPosition_um == movePosition_um)
+			{
+				return;
+			}
 
 			//Normal E handling.
 			if (lineWidth_um != 0)

@@ -18,8 +18,8 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System.Collections.Generic;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -79,19 +79,6 @@ namespace MatterHackers.MatterSlice
 					Polygons topOutlines = new Polygons(insetWithOffset);
 					topOutlines = topOutlines.CreateDifference(island.SolidBottomToolPaths);
 					topOutlines = Clipper.CleanPolygons(topOutlines, cleanDistance_um);
-
-					for (int insetIndex = 0; insetIndex < island.InsetToolPaths.Count - 1; insetIndex++)
-					{
-						// Add thin wall filling by taking the area between the insets.
-						Polygons largerInset = island.InsetToolPaths[insetIndex].Offset(-extrusionWidth_um / 2);
-						Polygons smallerInset = island.InsetToolPaths[insetIndex + 1].Offset(extrusionWidth_um / 2);
-
-						Polygons thinWalls = largerInset.CreateDifference(smallerInset).Offset(-extrusionWidth_um/4);
-						if (thinWalls.Count > 0)
-						{
-							topOutlines.AddAll(thinWalls);
-						}
-					}
 
 					if (layerIndex + 1 < extruder.Layers.Count)
 					{
@@ -155,10 +142,12 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void InitializeLayerData(Slicer slicer, ConfigSettings config)
+		public void InitializeLayerData(ExtruderData slicer, ConfigSettings config, int extruderIndex, int extruderCount, Polygons extraPathingConsideration)
 		{
 			for (int layerIndex = 0; layerIndex < slicer.layers.Count; layerIndex++)
 			{
+				int start = slicer.layers.Count * extruderIndex;
+				LogOutput.Log("Generating Layer Outlines {0}/{1}\n".FormatWith(start + layerIndex + 1, extruderCount * slicer.layers.Count));
 				if (config.outputOnlyFirstLayer && layerIndex > 0)
 				{
 					break;
@@ -170,6 +159,13 @@ namespace MatterHackers.MatterSlice
 				Layers[layerIndex].AllOutlines = slicer.layers[layerIndex].PolygonList;
 
 				Layers[layerIndex].AllOutlines = Layers[layerIndex].AllOutlines.GetCorrectedWinding();
+
+				long avoidInset = config.ExtrusionWidth_um * 3 / 2;
+				var boundary = Layers[layerIndex].AllOutlines.GetBounds();
+				var extraBoundary = extraPathingConsideration.GetBounds();
+				boundary.ExpandToInclude(extraBoundary);
+				boundary.Inflate(config.ExtrusionWidth_um * 10);
+				Layers[layerIndex].PathFinder = new Pathfinding.PathFinder(Layers[layerIndex].AllOutlines, avoidInset, boundary);
 			}
 		}
 

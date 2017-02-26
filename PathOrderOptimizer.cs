@@ -19,9 +19,9 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System;
 using System.Collections.Generic;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -31,10 +31,10 @@ namespace MatterHackers.MatterSlice
 
 	public class PathOrderOptimizer
 	{
-		private IntPoint startPosition;
-		private List<Polygon> polygons = new List<Polygon>();
-		public List<int> startIndexInPolygon = new List<int>();
 		public List<int> bestIslandOrderIndex = new List<int>();
+		public List<int> startIndexInPolygon = new List<int>();
+		private List<Polygon> polygons = new List<Polygon>();
+		private IntPoint startPosition;
 
 		public PathOrderOptimizer(IntPoint startPoint)
 		{
@@ -52,280 +52,6 @@ namespace MatterHackers.MatterSlice
 			{
 				this.polygons.Add(polygons[i]);
 			}
-		}
-
-		public static int GetClosestIndex(Polygon currentPolygon, IntPoint startPosition)
-		{
-			int bestPointIndex = -1;
-			double closestDist = double.MaxValue;
-			for (int pointIndex = 0; pointIndex < currentPolygon.Count; pointIndex++)
-			{
-				double dist = (currentPolygon[pointIndex] - startPosition).LengthSquared();
-				if (dist < closestDist)
-				{
-					bestPointIndex = pointIndex;
-					closestDist = dist;
-				}
-			}
-
-			return bestPointIndex;
-		}
-
-		public static double GetTurnAmount(IntPoint prevPoint, IntPoint currentPoint, IntPoint nextPoint)
-		{
-			if (prevPoint != currentPoint
-				&& currentPoint != nextPoint
-				&& nextPoint != prevPoint)
-			{
-				prevPoint = currentPoint - prevPoint;
-				nextPoint -= currentPoint;
-
-				double prevAngle = Math.Atan2(prevPoint.Y, prevPoint.X);
-				IntPoint rotatedPrev = prevPoint.GetRotated(-prevAngle);
-
-				// undo the rotation
-				nextPoint = nextPoint.GetRotated(-prevAngle);
-				double angle = Math.Atan2(nextPoint.Y, nextPoint.X);
-
-				return angle;
-			}
-
-			return 0;
-		}
-
-		public struct CandidatePoint
-		{
-			internal double turnAmount;
-			internal int turnIndex;
-			internal IntPoint position;
-
-			internal CandidatePoint(double turnAmount, int turnIndex, IntPoint position)
-			{
-				this.turnIndex = turnIndex;
-				this.turnAmount = turnAmount;
-				this.position = position;
-			}
-		}
-
-		public static double DegreesToRadians(double degrees)
-		{
-			const double degToRad = System.Math.PI / 180.0f;
-			return degrees * degToRad;
-		}
-
-		public class CandidateGroup : List<CandidatePoint>
-		{
-			double sameTurn;
-
-			public CandidateGroup(double sameTurn)
-			{
-				this.sameTurn = sameTurn;
-			}
-
-			public int BestIndex
-			{
-				get
-				{
-					IntPoint currentFurthestBack = new IntPoint(long.MaxValue, long.MinValue);
-					int furthestBackIndex = 0;
-
-					for (int i = 0; i < Count; i++)
-					{
-						IntPoint currentPoint = this[i].position;
-						if (currentPoint.Y >= currentFurthestBack.Y)
-						{
-							if (currentPoint.Y > currentFurthestBack.Y
-								|| currentPoint.X < currentFurthestBack.X)
-							{
-								furthestBackIndex = this[i].turnIndex;
-								currentFurthestBack = currentPoint;
-							}
-						}
-					}
-
-					return furthestBackIndex;
-				}
-			}
-
-			internal void ConditionalAdd(CandidatePoint point)
-			{
-				// If this is better than our worst point
-				// or it is within sameTurn of our best point
-				if (Count == 0
-					|| Math.Abs(point.turnAmount) >= Math.Abs(this[Count - 1].turnAmount)
-					|| Math.Abs(point.turnAmount) >= Math.Abs(this[0].turnAmount) - sameTurn)
-				{
-					// remove all points that are worse than the new one
-					for (int i = Count - 1; i >= 0; i--)
-					{
-						if (Math.Abs(this[i].turnAmount) + sameTurn < Math.Abs(point.turnAmount))
-						{
-							RemoveAt(i);
-						}
-					}
-
-					if (Count > 0)
-					{
-						for (int i = 0; i < Count; i++)
-						{
-							if (Math.Abs(point.turnAmount) >= Math.Abs(this[i].turnAmount))
-							{
-								// insert it sorted
-								Insert(i, point);
-								return;
-							}
-						}
-
-						// still insert it at the end
-						Add(point);
-					}
-					else
-					{
-						Add(point);
-					}
-				}
-			}
-		}
-
-		public static int GetBestIndex(Polygon inputPolygon, long lineWidth = 3)
-		{
-			// code to make the seam go to the back most position
-			//return GetClosestIndex(inputPolygon, new IntPoint(0, 50000000));
-
-			// code to go to a specific position (would have to have it come from setting)
-			//return GetClosestIndex(inputPolygon, config.SeamPosition);
-
-			IntPoint bestPosition = GetBestPosition(inputPolygon, lineWidth);
-			return GetClosestIndex(inputPolygon, bestPosition);
-		}
-
-		public static IntPoint GetBestPosition(Polygon inputPolygon, long lineWidth)
-		{
-			IntPoint currentFurthestBackActual = new IntPoint(long.MaxValue, long.MinValue);
-			{
-				int actualFurthestBack = 0;
-				for (int pointIndex = 0; pointIndex < inputPolygon.Count; pointIndex++)
-				{
-					IntPoint currentPoint = inputPolygon[pointIndex];
-
-					if (currentPoint.Y >= currentFurthestBackActual.Y)
-					{
-						if (currentPoint.Y > currentFurthestBackActual.Y
-							|| currentPoint.X < currentFurthestBackActual.X)
-						{
-							actualFurthestBack = pointIndex;
-							currentFurthestBackActual = currentPoint;
-						}
-					}
-				}
-			}
-
-			Polygon currentPolygon = Clipper.CleanPolygon(inputPolygon, lineWidth/4);
-			// TODO: other considerations
-			// collect & bucket options and then choose the closest
-
-			if(currentPolygon.Count == 0)
-			{
-				return inputPolygon[0];
-			}
-
-			double totalTurns = 0;
-            CandidateGroup positiveGroup = new CandidateGroup(DegreesToRadians(35));
-            CandidateGroup negativeGroup = new CandidateGroup(DegreesToRadians(10));
-
-            IntPoint currentFurthestBack = new IntPoint(long.MaxValue, long.MinValue);
-			int furthestBackIndex = 0;
-
-			double minTurnToChoose = DegreesToRadians(1);
-			long minSegmentLengthToConsiderSquared = 50 * 50;
-
-			int pointCount = currentPolygon.Count;
-			for (int pointIndex = 0; pointIndex < pointCount; pointIndex++)
-			{
-				int prevIndex = ((pointIndex + pointCount - 1) % pointCount);
-				int nextIndex = ((pointIndex + 1) % pointCount);
-				IntPoint prevPoint = currentPolygon[prevIndex];
-				IntPoint currentPoint = currentPolygon[pointIndex];
-				IntPoint nextPoint = currentPolygon[nextIndex];
-
-				if(currentPoint.Y >= currentFurthestBack.Y)
-				{
-					if(currentPoint.Y > currentFurthestBack.Y
-						|| currentPoint.X < currentFurthestBack.X)
-					{
-						furthestBackIndex = pointIndex;
-						currentFurthestBack = currentPoint;
-					}
-				}
-
-				long lengthPrevToCurSquared = (prevPoint - currentPoint).LengthSquared();
-				long lengthCurToNextSquared = (nextPoint - currentPoint).LengthSquared();
-				bool distanceLongeEnough = lengthCurToNextSquared > minSegmentLengthToConsiderSquared && lengthPrevToCurSquared > minSegmentLengthToConsiderSquared;
-
-				double turnAmount = GetTurnAmount(prevPoint, currentPoint, nextPoint);
-
-				totalTurns += turnAmount;
-
-				if (turnAmount < 0)
-				{
-					// threshold angles, don't pick angles that are too shallow
-					// threshold line lengths, don't pick big angles hiding in TINY lines
-					if (Math.Abs(turnAmount ) > minTurnToChoose
-						&& distanceLongeEnough)
-					{
-                        negativeGroup.ConditionalAdd(new CandidatePoint(turnAmount, pointIndex, currentPoint));
-					}
-				}
-				else
-				{
-					if (Math.Abs(turnAmount ) > minTurnToChoose
-						&& distanceLongeEnough)
-					{
-                        positiveGroup.ConditionalAdd(new CandidatePoint(turnAmount, pointIndex, currentPoint));
-					}
-				}
-			}
-
-			IntPoint positionToReturn = new IntPoint();
-			if (totalTurns > 0) // ccw
-			{
-				if (negativeGroup.Count > 0)
-				{
-					positionToReturn = currentPolygon[negativeGroup.BestIndex];
-				}
-				else if (positiveGroup.Count > 0)
-				{
-					positionToReturn = currentPolygon[positiveGroup.BestIndex];
-				}
-				else
-				{
-					// If can't find good candidate go with vertex most in a single direction
-					positionToReturn = currentPolygon[furthestBackIndex];
-				}
-			}
-			else // cw
-			{
-				if (negativeGroup.Count > 0)
-				{
-					positionToReturn = currentPolygon[negativeGroup.BestIndex];
-				}
-				else if (positiveGroup.Count > 0)
-				{
-					positionToReturn = currentPolygon[positiveGroup.BestIndex];
-				}
-				else
-				{
-					// If can't find good candidate go with vertex most in a single direction
-					positionToReturn = currentPolygon[furthestBackIndex];
-				}
-			}
-
-			if(Math.Abs(currentFurthestBackActual.Y - positionToReturn.Y) < lineWidth)
-			{
-				return currentFurthestBackActual;
-			}
-
-			return positionToReturn;
 		}
 
 		public void Optimize(GCodePathConfig config = null)
@@ -348,15 +74,15 @@ namespace MatterHackers.MatterSlice
 
 					// this is our new seam hiding code
 					int bestPointIndex;
-                    if (config != null 
-						&& config.doSeamHiding
-                        && !config.spiralize)
+					if (config != null
+						&& config.DoSeamHiding
+						&& !config.spiralize)
 					{
-						bestPointIndex = GetBestIndex(currentPolygon, config.lineWidth_um);
+						bestPointIndex = currentPolygon.FindGreatestTurnIndex(config.lineWidth_um);
 					}
 					else
 					{
-						bestPointIndex = GetClosestIndex(currentPolygon, startPosition);
+						bestPointIndex = currentPolygon.FindClosestPositionIndex(startPosition);
 					}
 
 					startIndexInPolygon.Add(bestPointIndex);

@@ -27,9 +27,9 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
+using System.Collections.Generic;
 using MSClipperLib;
 using NUnit.Framework;
-using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice.Tests
 {
@@ -161,12 +161,12 @@ namespace MatterHackers.MatterSlice.Tests
 
 		private static double GetAngleForData(string islandToFillString, string layerSupportingIslandString, string debugName)
 		{
-			Polygons islandToFill = PolygonsHelper.CreateFromString(islandToFillString);
+			Polygons islandToFill = CLPolygonsExtensions.CreateFromString(islandToFillString);
 
 			SliceLayer prevLayer = new SliceLayer();
 			prevLayer.Islands = new List<LayerIsland>();
 			LayerIsland part = new LayerIsland();
-			part.IslandOutline = PolygonsHelper.CreateFromString(layerSupportingIslandString);
+			part.IslandOutline = CLPolygonsExtensions.CreateFromString(layerSupportingIslandString);
 			prevLayer.Islands.Add(part);
 			prevLayer.Islands[0].BoundingBox.Calculate(prevLayer.Islands[0].IslandOutline);
 

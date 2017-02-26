@@ -19,11 +19,11 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -43,33 +43,32 @@ namespace MatterHackers.MatterSlice
 	{
 		public List<SimpleFace> faceTriangles = new List<SimpleFace>();
 
-		private void SET_MIN(ref int n, int m)
-		{
-			if ((m) < (n))
-				n = m;
-		}
-
-		private void SET_MIN(ref long n, long m)
-		{
-			if ((m) < (n))
-				n = m;
-		}
-
-		private void SET_MAX(ref int n, int m)
-		{
-			if ((m) > (n))
-				n = m;
-		}
-
-		private void SET_MAX(ref long n, long m)
-		{
-			if ((m) > (n))
-				n = m;
-		}
-
 		public void addFaceTriangle(IntPoint v0, IntPoint v1, IntPoint v2)
 		{
 			faceTriangles.Add(new SimpleFace(v0, v1, v2));
+		}
+
+		public IntPoint maxXYZ_um()
+		{
+			if (faceTriangles.Count < 1)
+			{
+				return new IntPoint(0, 0, 0);
+			}
+
+			IntPoint ret = faceTriangles[0].vertices[0];
+			for (int i = 0; i < faceTriangles.Count; i++)
+			{
+				SET_MAX(ref ret.X, faceTriangles[i].vertices[0].X);
+				SET_MAX(ref ret.Y, faceTriangles[i].vertices[0].Y);
+				SET_MAX(ref ret.Z, faceTriangles[i].vertices[0].Z);
+				SET_MAX(ref ret.X, faceTriangles[i].vertices[1].X);
+				SET_MAX(ref ret.Y, faceTriangles[i].vertices[1].Y);
+				SET_MAX(ref ret.Z, faceTriangles[i].vertices[1].Z);
+				SET_MAX(ref ret.X, faceTriangles[i].vertices[2].X);
+				SET_MAX(ref ret.Y, faceTriangles[i].vertices[2].Y);
+				SET_MAX(ref ret.Z, faceTriangles[i].vertices[2].Z);
+			}
+			return ret;
 		}
 
 		public IntPoint minXYZ_um()
@@ -95,27 +94,28 @@ namespace MatterHackers.MatterSlice
 			return ret;
 		}
 
-		public IntPoint maxXYZ_um()
+		private void SET_MAX(ref int n, int m)
 		{
-			if (faceTriangles.Count < 1)
-			{
-				return new IntPoint(0, 0, 0);
-			}
+			if ((m) > (n))
+				n = m;
+		}
 
-			IntPoint ret = faceTriangles[0].vertices[0];
-			for (int i = 0; i < faceTriangles.Count; i++)
-			{
-				SET_MAX(ref ret.X, faceTriangles[i].vertices[0].X);
-				SET_MAX(ref ret.Y, faceTriangles[i].vertices[0].Y);
-				SET_MAX(ref ret.Z, faceTriangles[i].vertices[0].Z);
-				SET_MAX(ref ret.X, faceTriangles[i].vertices[1].X);
-				SET_MAX(ref ret.Y, faceTriangles[i].vertices[1].Y);
-				SET_MAX(ref ret.Z, faceTriangles[i].vertices[1].Z);
-				SET_MAX(ref ret.X, faceTriangles[i].vertices[2].X);
-				SET_MAX(ref ret.Y, faceTriangles[i].vertices[2].Y);
-				SET_MAX(ref ret.Z, faceTriangles[i].vertices[2].Z);
-			}
-			return ret;
+		private void SET_MAX(ref long n, long m)
+		{
+			if ((m) > (n))
+				n = m;
+		}
+
+		private void SET_MIN(ref int n, int m)
+		{
+			if ((m) < (n))
+				n = m;
+		}
+
+		private void SET_MIN(ref long n, long m)
+		{
+			if ((m) < (n))
+				n = m;
 		}
 	}
 
@@ -124,40 +124,14 @@ namespace MatterHackers.MatterSlice
 	{
 		public List<SimpleMesh> SimpleMeshes = new List<SimpleMesh>();
 
-		public IntPoint minXYZ_um()
+		public static bool LoadModelFromFile(SimpleMeshCollection simpleModel, string filename, FMatrix3x3 matrix)
 		{
-			if (SimpleMeshes.Count < 1)
+			if (!loadModelSTL_ascii(simpleModel, filename, matrix))
 			{
-				return new IntPoint(0, 0, 0);
+				return loadModelSTL_binary(simpleModel, filename, matrix);
 			}
 
-			IntPoint minXYZ = SimpleMeshes[0].minXYZ_um();
-			for (int meshIndex = 1; meshIndex < SimpleMeshes.Count; meshIndex++)
-			{
-				IntPoint meshMinXYZ = SimpleMeshes[meshIndex].minXYZ_um();
-				minXYZ.X = Math.Min(minXYZ.X, meshMinXYZ.X);
-				minXYZ.Y = Math.Min(minXYZ.Y, meshMinXYZ.Y);
-				minXYZ.Z = Math.Min(minXYZ.Z, meshMinXYZ.Z);
-			}
-			return minXYZ;
-		}
-
-		public IntPoint maxXYZ_um()
-		{
-			if (SimpleMeshes.Count < 1)
-			{
-				return new IntPoint(0, 0, 0);
-			}
-
-			IntPoint maxXYZ = SimpleMeshes[0].maxXYZ_um();
-			for (int meshIndex = 1; meshIndex < SimpleMeshes.Count; meshIndex++)
-			{
-				IntPoint meshMaxXYZ = SimpleMeshes[meshIndex].maxXYZ_um();
-				maxXYZ.X = Math.Max(maxXYZ.X, meshMaxXYZ.X);
-				maxXYZ.Y = Math.Max(maxXYZ.Y, meshMaxXYZ.Y);
-				maxXYZ.Z = Math.Max(maxXYZ.Z, meshMaxXYZ.Z);
-			}
-			return maxXYZ;
+			return true;
 		}
 
 		public static bool loadModelSTL_ascii(SimpleMeshCollection simpleModel, string filename, FMatrix3x3 matrix)
@@ -177,7 +151,7 @@ namespace MatterHackers.MatterSlice
 				int lineCount = 0;
 				while (line != null)
 				{
-					if(lineCount++ > 100 && vol.faceTriangles.Count == 0)
+					if (lineCount++ > 100 && vol.faceTriangles.Count == 0)
 					{
 						return false;
 					}
@@ -223,6 +197,42 @@ namespace MatterHackers.MatterSlice
 			return false;
 		}
 
+		public IntPoint maxXYZ_um()
+		{
+			if (SimpleMeshes.Count < 1)
+			{
+				return new IntPoint(0, 0, 0);
+			}
+
+			IntPoint maxXYZ = SimpleMeshes[0].maxXYZ_um();
+			for (int meshIndex = 1; meshIndex < SimpleMeshes.Count; meshIndex++)
+			{
+				IntPoint meshMaxXYZ = SimpleMeshes[meshIndex].maxXYZ_um();
+				maxXYZ.X = Math.Max(maxXYZ.X, meshMaxXYZ.X);
+				maxXYZ.Y = Math.Max(maxXYZ.Y, meshMaxXYZ.Y);
+				maxXYZ.Z = Math.Max(maxXYZ.Z, meshMaxXYZ.Z);
+			}
+			return maxXYZ;
+		}
+
+		public IntPoint minXYZ_um()
+		{
+			if (SimpleMeshes.Count < 1)
+			{
+				return new IntPoint(0, 0, 0);
+			}
+
+			IntPoint minXYZ = SimpleMeshes[0].minXYZ_um();
+			for (int meshIndex = 1; meshIndex < SimpleMeshes.Count; meshIndex++)
+			{
+				IntPoint meshMinXYZ = SimpleMeshes[meshIndex].minXYZ_um();
+				minXYZ.X = Math.Min(minXYZ.X, meshMinXYZ.X);
+				minXYZ.Y = Math.Min(minXYZ.Y, meshMinXYZ.Y);
+				minXYZ.Z = Math.Min(minXYZ.Z, meshMinXYZ.Z);
+			}
+			return minXYZ;
+		}
+
 		private static bool loadModelSTL_binary(SimpleMeshCollection simpleModel, string filename, FMatrix3x3 matrix)
 		{
 			SimpleMesh vol = new SimpleMesh();
@@ -235,7 +245,7 @@ namespace MatterHackers.MatterSlice
 				BinaryReader br = new BinaryReader(stlStream);
 				byte[] fileContents = br.ReadBytes((int)stlStream.Length);
 				int currentPosition = 80;
-				if(fileContents.Length < currentPosition)
+				if (fileContents.Length < currentPosition)
 				{
 					return false;
 				}
@@ -277,16 +287,6 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return false;
-		}
-
-		public static bool LoadModelFromFile(SimpleMeshCollection simpleModel, string filename, FMatrix3x3 matrix)
-		{
-			if (!loadModelSTL_ascii(simpleModel, filename, matrix))
-			{
-				return loadModelSTL_binary(simpleModel, filename, matrix);
-			}
-
-			return true;
 		}
 	}
 }

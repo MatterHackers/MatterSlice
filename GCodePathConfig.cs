@@ -19,9 +19,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
-using System.Collections.Generic;
-
 namespace MatterHackers.MatterSlice
 {
 	/// <summary>
@@ -30,17 +27,18 @@ namespace MatterHackers.MatterSlice
 	public class GCodePathConfig
 	{
 		public bool closedLoop = true;
-		public int lineWidth_um;
+		public bool DoSeamHiding { get; set; }
 		public string gcodeComment;
+		public int lineWidth_um;
 		public double speed;
-		public string Name { get; set; }
 		public bool spiralize;
-		public bool doSeamHiding;
 
 		public GCodePathConfig(string configName)
 		{
 			this.Name = configName;
 		}
+
+		public string Name { get; set; }
 
 		/// <summary>
 		/// Set the data for a path config. This is used to define how different parts (infill, perimeters) are written to gcode.

@@ -19,22 +19,20 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System.Collections.Generic;
 using System.IO;
+using MSClipperLib;
 using static System.Math;
 
 namespace MatterHackers.MatterSlice
 {
 	using System;
 	using System.Linq;
-	using Paths = List<List<IntPoint>>;
-
+	using QuadTree;
 	using Polygon = List<IntPoint>;
-
 	using Polygons = List<List<IntPoint>>;
 
-	internal static class PolygonsHelper
+	public static class PolygonsHelper
 	{
 		public enum LayerOpperation { EvenOdd, UnionAll };
 
@@ -68,37 +66,51 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		public static Polygons ConvertToLines(Polygons polygons, bool closedLoop)
+		{
+			Polygons linePolygons = new Polygons();
+			foreach (Polygon polygon in polygons)
+			{
+				if (polygon.Count > 2)
+				{
+					int endIndex = closedLoop ? polygon.Count : polygon.Count - 1;
+					for (int vertexIndex = 0; vertexIndex < endIndex; vertexIndex++)
+					{
+						linePolygons.Add(new Polygon() { polygon[vertexIndex], polygon[(vertexIndex + 1) % polygon.Count] });
+					}
+				}
+				else
+				{
+					linePolygons.Add(polygon);
+				}
+			}
+
+			return linePolygons;
+		}
+
 		public static Polygon CreateConvexHull(this Polygons polygons)
 		{
 			return polygons.SelectMany(s => s).ToList().CreateConvexHull();
 		}
 
-		public static Polygons GetCorrectedWinding(this Polygons polygonsToFix)
+		public static Polygons CreateDifference(this Polygons polygons, Polygons other)
 		{
-			polygonsToFix = Clipper.CleanPolygons(polygonsToFix);
-			Polygon boundsPolygon = new Polygon();
-			IntRect bounds = Clipper.GetBounds(polygonsToFix);
-			bounds.left -= 10;
-			bounds.bottom += 10;
-			bounds.right += 10;
-			bounds.top -= 10;
-
-			boundsPolygon.Add(new IntPoint(bounds.left, bounds.top));
-			boundsPolygon.Add(new IntPoint(bounds.right, bounds.top));
-			boundsPolygon.Add(new IntPoint(bounds.right, bounds.bottom));
-			boundsPolygon.Add(new IntPoint(bounds.left, bounds.bottom));
-
+			Polygons ret = new Polygons();
 			Clipper clipper = new Clipper();
+			clipper.AddPaths(polygons, PolyType.ptSubject, true);
+			clipper.AddPaths(other, PolyType.ptClip, true);
+			clipper.Execute(ClipType.ctDifference, ret);
+			return ret;
+		}
 
-			clipper.AddPaths(polygonsToFix, PolyType.ptSubject, true);
-			clipper.AddPath(boundsPolygon, PolyType.ptClip, true);
-
-			PolyTree intersectionResult = new PolyTree();
-			clipper.Execute(ClipType.ctIntersection, intersectionResult);
-
-			Polygons outputPolygons = Clipper.ClosedPathsFromPolyTree(intersectionResult);
-
-			return outputPolygons;
+		public static Polygons CreateIntersection(this Polygons polygons, Polygons other)
+		{
+			Polygons ret = new Polygons();
+			Clipper clipper = new Clipper();
+			clipper.AddPaths(polygons, PolyType.ptSubject, true);
+			clipper.AddPaths(other, PolyType.ptClip, true);
+			clipper.Execute(ClipType.ctIntersection, ret);
+			return ret;
 		}
 
 		public static Polygons CreateLineDifference(this Polygons areaToRemove, Polygons linePolygons)
@@ -115,57 +127,6 @@ namespace MatterHackers.MatterSlice
 			return Clipper.OpenPathsFromPolyTree(clippedLines);
 		}
 
-		public static Polygons CreateDifference(this Polygons polygons, Polygons other)
-		{
-			Polygons ret = new Polygons();
-			Clipper clipper = new Clipper();
-			clipper.AddPaths(polygons, PolyType.ptSubject, true);
-			clipper.AddPaths(other, PolyType.ptClip, true);
-			clipper.Execute(ClipType.ctDifference, ret);
-			return ret;
-		}
-
-		public static Polygons CreateFromString(string polygonsPackedString)
-		{
-			Polygons output = new Polygons();
-			string[] polygons = polygonsPackedString.Split('|');
-			foreach (string polygonString in polygons)
-			{
-				Polygon nextPoly = PolygonHelper.CreateFromString(polygonString);
-				if (nextPoly.Count > 0)
-				{
-					output.Add(nextPoly);
-				}
-			}
-			return output;
-		}
-
-		public static Polygons CreateIntersection(this Polygons polygons, Polygons other)
-		{
-			Polygons ret = new Polygons();
-			Clipper clipper = new Clipper();
-			clipper.AddPaths(polygons, PolyType.ptSubject, true);
-			clipper.AddPaths(other, PolyType.ptClip, true);
-			clipper.Execute(ClipType.ctIntersection, ret);
-			return ret;
-		}
-
-		public static void RemoveSmallAreas(this Polygons polygons, long extrusionWidth)
-		{
-			double areaOfExtrusion = (extrusionWidth / 1000.0) * (extrusionWidth / 1000.0); // convert from microns to mm's.
-			double minAreaSize = areaOfExtrusion / 2;
-			for (int outlineIndex = polygons.Count - 1; outlineIndex >= 0; outlineIndex--)
-			{
-				double area = Math.Abs(polygons[outlineIndex].Area()) / 1000.0 / 1000.0; // convert from microns to mm's.
-
-				// Only create an up/down Outline if the area is large enough. So you do not create tiny blobs of "trying to fill"
-				if (area < minAreaSize)
-				{
-					polygons.RemoveAt(outlineIndex);
-				}
-			}
-		}
-
 		public static Polygons CreateLineIntersections(this Polygons areaToIntersect, Polygons lines)
 		{
 			Clipper clipper = new Clipper();
@@ -178,18 +139,6 @@ namespace MatterHackers.MatterSlice
 			clipper.Execute(ClipType.ctIntersection, clippedLines);
 
 			return Clipper.OpenPathsFromPolyTree(clippedLines);
-		}
-
-		public static List<Polygons> ProcessIntoSeparatIslands(this Polygons polygons)
-		{
-			List<Polygons> ret = new List<Polygons>();
-			Clipper clipper = new Clipper();
-			PolyTree resultPolyTree = new PolyTree();
-			clipper.AddPaths(polygons, PolyType.ptSubject, true);
-			clipper.Execute(ClipType.ctUnion, resultPolyTree);
-
-			polygons.ProcessPolyTreeNodeIntoSeparatIslands(resultPolyTree, ret);
-			return ret;
 		}
 
 		public static Polygons CreateUnion(this Polygons polygons, Polygons other)
@@ -214,41 +163,32 @@ namespace MatterHackers.MatterSlice
 			return deepCopy;
 		}
 
-		public static bool Inside(this Polygons polygons, IntPoint testPoint)
+		public static Polygons GetCorrectedWinding(this Polygons polygonsToFix)
 		{
-			if (polygons.Count < 1)
-			{
-				return false;
-			}
+			polygonsToFix = Clipper.CleanPolygons(polygonsToFix);
+			Polygon boundsPolygon = new Polygon();
+			IntRect bounds = Clipper.GetBounds(polygonsToFix);
+			bounds.minX -= 10;
+			bounds.minY -= 10;
+			bounds.maxY += 10;
+			bounds.maxX += 10;
 
-			// we can just test the first one first as we know that there is a special case in
-			// the slicer that all the other polygons are inside this one.
-			int positionOnOuterPerimeter = Clipper.PointInPolygon(testPoint, polygons[0]);
-			if (positionOnOuterPerimeter == 0) // not inside or on boundary
-			{
-				// If we are not inside the outer perimeter we are not inside.
-				return false;
-			}
+			boundsPolygon.Add(new IntPoint(bounds.minX, bounds.minY));
+			boundsPolygon.Add(new IntPoint(bounds.maxX, bounds.minY));
+			boundsPolygon.Add(new IntPoint(bounds.maxX, bounds.maxY));
+			boundsPolygon.Add(new IntPoint(bounds.minX, bounds.maxY));
 
-			for (int polygonIndex = 1; polygonIndex < polygons.Count; polygonIndex++)
-			{
-				int positionOnHole = Clipper.PointInPolygon(testPoint, polygons[polygonIndex]);
-				if (positionOnHole == 1) // inside the hole
-				{
-					return false;
-				}
-			}
+			Clipper clipper = new Clipper();
 
-			return true;
-		}
+			clipper.AddPaths(polygonsToFix, PolyType.ptSubject, true);
+			clipper.AddPath(boundsPolygon, PolyType.ptClip, true);
 
-		public static Polygons Offset(this Polygons polygons, long distance)
-		{
-			ClipperOffset offseter = new ClipperOffset();
-			offseter.AddPaths(polygons, JoinType.jtMiter, EndType.etClosedPolygon);
-			Paths solution = new Polygons();
-			offseter.Execute(ref solution, distance);
-			return solution;
+			PolyTree intersectionResult = new PolyTree();
+			clipper.Execute(ClipType.ctIntersection, intersectionResult);
+
+			Polygons outputPolygons = Clipper.ClosedPathsFromPolyTree(intersectionResult);
+
+			return outputPolygons;
 		}
 
 		public static void OptimizePolygons(this Polygons polygons)
@@ -264,47 +204,6 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static bool polygonCollidesWithlineSegment(Polygons polys, IntPoint transformed_startPoint, IntPoint transformed_endPoint, PointMatrix transformation_matrix)
-		{
-			foreach (Polygon poly in polys)
-			{
-				if (poly.size() == 0) { continue; }
-				if (PolygonHelper.polygonCollidesWithlineSegment(poly, transformed_startPoint, transformed_endPoint, transformation_matrix))
-				{
-					return true;
-				}
-			}
-
-			return false;
-		}
-
-		public static bool polygonCollidesWithlineSegment(Polygons polys, IntPoint startPoint, IntPoint endPoint)
-		{
-			IntPoint diff = endPoint - startPoint;
-
-			PointMatrix transformation_matrix = new PointMatrix(diff);
-			IntPoint transformed_startPoint = transformation_matrix.apply(startPoint);
-			IntPoint transformed_endPoint = transformation_matrix.apply(endPoint);
-
-			return polygonCollidesWithlineSegment(polys, transformed_startPoint, transformed_endPoint, transformation_matrix);
-		}
-
-		public static long PolygonLength(this Polygons polygons)
-		{
-			long length = 0;
-			for (int i = 0; i < polygons.Count; i++)
-			{
-				IntPoint previousPoint = polygons[i][polygons[i].Count - 1];
-				for (int n = 0; n < polygons[i].Count; n++)
-				{
-					IntPoint currentPoint = polygons[i][n];
-					length += (previousPoint - currentPoint).Length();
-					previousPoint = currentPoint;
-				}
-			}
-			return length;
-		}
-
 		public static Polygons ProcessEvenOdd(this Polygons polygons)
 		{
 			Polygons ret = new Polygons();
@@ -312,6 +211,34 @@ namespace MatterHackers.MatterSlice
 			clipper.AddPaths(polygons, PolyType.ptSubject, true);
 			clipper.Execute(ClipType.ctUnion, ret);
 			return ret;
+		}
+
+		public static List<Polygons> ProcessIntoSeparatIslands(this Polygons polygons)
+		{
+			List<Polygons> ret = new List<Polygons>();
+			Clipper clipper = new Clipper();
+			PolyTree resultPolyTree = new PolyTree();
+			clipper.AddPaths(polygons, PolyType.ptSubject, true);
+			clipper.Execute(ClipType.ctUnion, resultPolyTree);
+
+			polygons.ProcessPolyTreeNodeIntoSeparatIslands(resultPolyTree, ret);
+			return ret;
+		}
+
+		public static void RemoveSmallAreas(this Polygons polygons, long extrusionWidth)
+		{
+			double areaOfExtrusion = (extrusionWidth / 1000.0) * (extrusionWidth / 1000.0); // convert from microns to mm's.
+			double minAreaSize = areaOfExtrusion / 2;
+			for (int outlineIndex = polygons.Count - 1; outlineIndex >= 0; outlineIndex--)
+			{
+				double area = Math.Abs(polygons[outlineIndex].Area()) / 1000.0 / 1000.0; // convert from microns to mm's.
+
+				// Only create an up/down Outline if the area is large enough. So you do not create tiny blobs of "trying to fill"
+				if (area < minAreaSize)
+				{
+					polygons.RemoveAt(outlineIndex);
+				}
+			}
 		}
 
 		public static void SaveToGCode(this Polygons polygons, string filename)
@@ -350,10 +277,10 @@ namespace MatterHackers.MatterSlice
 		{
 			double scaleDenominator = 150;
 			IntRect bounds = Clipper.GetBounds(polygons);
-			long temp = bounds.bottom;
-			bounds.bottom = bounds.top;
-			bounds.top = temp;
-			IntPoint size = new IntPoint(bounds.right - bounds.left, bounds.top - bounds.bottom);
+			long temp = bounds.maxY;
+			bounds.maxY = bounds.minY;
+			bounds.minY = temp;
+			IntPoint size = new IntPoint(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY);
 			double scale = Max(size.X, size.Y) / scaleDenominator;
 			StreamWriter stream = new StreamWriter(filename);
 			stream.Write("<!DOCTYPE html><html><body>\n");
@@ -376,7 +303,7 @@ namespace MatterHackers.MatterSlice
 					{
 						stream.Write("L");
 					}
-					stream.Write("{0},{1} ", (double)(polygon[intPointIndex].X - bounds.left) / scale, (double)(polygon[intPointIndex].Y - bounds.bottom) / scale);
+					stream.Write("{0},{1} ", (double)(polygon[intPointIndex].X - bounds.minX) / scale, (double)(polygon[intPointIndex].Y - bounds.maxY) / scale);
 				}
 				stream.Write("Z\n");
 			}
@@ -389,7 +316,7 @@ namespace MatterHackers.MatterSlice
 				stream.Write("<polyline marker-mid='url(#MidMarker)' points=\"");
 				for (int n = 0; n < openPolygon.Count; n++)
 				{
-					stream.Write("{0},{1} ", (double)(openPolygon[n].X - bounds.left) / scale, (double)(openPolygon[n].Y - bounds.bottom) / scale);
+					stream.Write("{0},{1} ", (double)(openPolygon[n].X - bounds.minX) / scale, (double)(openPolygon[n].Y - bounds.maxY) / scale);
 				}
 				stream.Write("\" style=\"fill: none; stroke:red;stroke-width:1\" />\n");
 			}
@@ -399,19 +326,33 @@ namespace MatterHackers.MatterSlice
 			stream.Close();
 		}
 
+		public static bool SegmentTouching(this Polygons polygons, IntPoint start, IntPoint end)
+		{
+			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
+			{
+				List<Tuple<int, IntPoint>> polyCrossings = new List<Tuple<int, IntPoint>>();
+				if (polygons[polyIndex].SegmentTouching(start, end))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
 		public static int size(this Polygons polygons)
 		{
 			return polygons.Count;
 		}
 
-		public static string WriteToString(this Polygons polygons)
+		/// <summary>
+		/// Return a list of polygons of this polygon split into triangles
+		/// </summary>
+		/// <param name="polygons"></param>
+		/// <returns></returns>
+		public static Polygons Triangulate(this Polygons polygons)
 		{
-			string total = "";
-			foreach (Polygon polygon in polygons)
-			{
-				total += polygon.WriteToString() + "|";
-			}
-			return total;
+			throw new NotImplementedException();
 		}
 
 		private static void ProcessPolyTreeNodeIntoSeparatIslands(this Polygons polygonsIn, PolyNode node, List<Polygons> ret)
@@ -430,25 +371,17 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static Polygons ConvertToLines(Polygons polygons)
+		private class MyComparer<T> : IEqualityComparer<T> where T : Tuple<int, int, IntPoint>
 		{
-			Polygons linePolygons = new Polygons();
-			foreach(Polygon polygon in polygons)
+			public bool Equals(T a, T b)
 			{
-				if (polygon.Count > 2)
-				{
-					for (int vertexIndex = 0; vertexIndex < polygon.Count; vertexIndex++)
-					{
-						linePolygons.Add(new Polygon() { polygon[vertexIndex], polygon[(vertexIndex + 1) % polygon.Count] });
-					}
-				}
-				else
-				{
-					linePolygons.Add(polygon);
-				}
+				return a.Item3.Equals(b.Item3);
 			}
 
-			return linePolygons;
+			public int GetHashCode(T obj)
+			{
+				return obj.Item3.GetHashCode();
+			}
 		}
 	}
 }

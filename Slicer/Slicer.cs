@@ -19,10 +19,10 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -30,9 +30,9 @@ namespace MatterHackers.MatterSlice
 
 	public class SlicePerimeterSegment
 	{
-		public IntPoint start;
 		public IntPoint end;
 		public bool hasBeenAddedToPolygon;
+		public IntPoint start;
 
 		public SlicePerimeterSegment()
 		{
@@ -45,13 +45,13 @@ namespace MatterHackers.MatterSlice
 		}
 	}
 
-	public class Slicer
+	public class ExtruderData
 	{
 		public List<MeshProcessingLayer> layers = new List<MeshProcessingLayer>();
-		public IntPoint modelSize;
 		public IntPoint modelMin;
+		public IntPoint modelSize;
 
-		public Slicer(OptimizedMesh ov, ConfigSettings config)
+		public ExtruderData(OptimizedMesh ov, ConfigSettings config)
 		{
 			int initialLayerThickness_um = config.FirstLayerThickness_um;
 			int layerThickness_um = config.LayerThickness_um;
@@ -170,40 +170,6 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public SlicePerimeterSegment GetCrossingAtZ(IntPoint singlePointOnSide, IntPoint otherSide1, IntPoint otherSide2, long z)
-		{
-			SlicePerimeterSegment seg = new SlicePerimeterSegment();
-			seg.start.X = (long)(singlePointOnSide.X + (double)(otherSide1.X - singlePointOnSide.X) * (double)(z - singlePointOnSide.Z) / (double)(otherSide1.Z - singlePointOnSide.Z) + .5);
-			seg.start.Y = (long)(singlePointOnSide.Y + (double)(otherSide1.Y - singlePointOnSide.Y) * (double)(z - singlePointOnSide.Z) / (double)(otherSide1.Z - singlePointOnSide.Z) + .5);
-			seg.start.Z = z;
-			seg.end.X = (long)(singlePointOnSide.X + (double)(otherSide2.X - singlePointOnSide.X) * (double)(z - singlePointOnSide.Z) / (double)(otherSide2.Z - singlePointOnSide.Z) + .5);
-			seg.end.Y = (long)(singlePointOnSide.Y + (double)(otherSide2.Y - singlePointOnSide.Y) * (double)(z - singlePointOnSide.Z) / (double)(otherSide2.Z - singlePointOnSide.Z) + .5);
-			seg.end.Z = z;
-			return seg;
-		}
-
-		public void DumpSegmentsToGcode(string filename)
-		{
-			double scale = 1000;
-			StreamWriter stream = new StreamWriter(filename);
-			stream.Write("; some gcode to look at the layer segments");
-			int extrudeAmount = 0;
-			for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
-			{
-				stream.Write("; LAYER:{0}\n".FormatWith(layerIndex));
-				List<SlicePerimeterSegment> segmentList = layers[layerIndex].SegmentList;
-				for (int segmentIndex = 0; segmentIndex < segmentList.Count; segmentIndex++)
-				{
-					stream.Write("G1 X{0}Y{1}\n", (double)(segmentList[segmentIndex].start.X) / scale,
-						(double)(segmentList[segmentIndex].start.Y) / scale);
-					stream.Write("G1 X{0}Y{1}E{2}\n", (double)(segmentList[segmentIndex].end.X) / scale,
-						(double)(segmentList[segmentIndex].end.Y) / scale,
-						extrudeAmount++);
-				}
-			}
-			stream.Close();
-		}
-
 		public void DumpPolygonsToGcode(string filename)
 		{
 			double scale = 1000;
@@ -236,6 +202,40 @@ namespace MatterHackers.MatterSlice
 				layers[layerIndex].DumpPolygonsToGcode(stream, scale, extrudeAmount);
 			}
 			stream.Close();
+		}
+
+		public void DumpSegmentsToGcode(string filename)
+		{
+			double scale = 1000;
+			StreamWriter stream = new StreamWriter(filename);
+			stream.Write("; some gcode to look at the layer segments");
+			int extrudeAmount = 0;
+			for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
+			{
+				stream.Write("; LAYER:{0}\n".FormatWith(layerIndex));
+				List<SlicePerimeterSegment> segmentList = layers[layerIndex].SegmentList;
+				for (int segmentIndex = 0; segmentIndex < segmentList.Count; segmentIndex++)
+				{
+					stream.Write("G1 X{0}Y{1}\n", (double)(segmentList[segmentIndex].start.X) / scale,
+						(double)(segmentList[segmentIndex].start.Y) / scale);
+					stream.Write("G1 X{0}Y{1}E{2}\n", (double)(segmentList[segmentIndex].end.X) / scale,
+						(double)(segmentList[segmentIndex].end.Y) / scale,
+						extrudeAmount++);
+				}
+			}
+			stream.Close();
+		}
+
+		public SlicePerimeterSegment GetCrossingAtZ(IntPoint singlePointOnSide, IntPoint otherSide1, IntPoint otherSide2, long z)
+		{
+			SlicePerimeterSegment seg = new SlicePerimeterSegment();
+			seg.start.X = (long)(singlePointOnSide.X + (double)(otherSide1.X - singlePointOnSide.X) * (double)(z - singlePointOnSide.Z) / (double)(otherSide1.Z - singlePointOnSide.Z) + .5);
+			seg.start.Y = (long)(singlePointOnSide.Y + (double)(otherSide1.Y - singlePointOnSide.Y) * (double)(z - singlePointOnSide.Z) / (double)(otherSide1.Z - singlePointOnSide.Z) + .5);
+			seg.start.Z = z;
+			seg.end.X = (long)(singlePointOnSide.X + (double)(otherSide2.X - singlePointOnSide.X) * (double)(z - singlePointOnSide.Z) / (double)(otherSide2.Z - singlePointOnSide.Z) + .5);
+			seg.end.Y = (long)(singlePointOnSide.Y + (double)(otherSide2.Y - singlePointOnSide.Y) * (double)(z - singlePointOnSide.Z) / (double)(otherSide2.Z - singlePointOnSide.Z) + .5);
+			seg.end.Z = z;
+			return seg;
 		}
 	}
 }

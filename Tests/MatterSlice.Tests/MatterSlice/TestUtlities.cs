@@ -27,13 +27,13 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
-using MSClipperLib;
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
+using MSClipperLib;
+using NUnit.Framework;
 
 namespace MatterHackers.MatterSlice.Tests
 {
@@ -44,120 +44,17 @@ namespace MatterHackers.MatterSlice.Tests
 
 	public struct MovementInfo
 	{
-		public Vector3 position;
+		public string line;
 		public double extrusion;
 		public double feedRate;
+		public Vector3 position;
 	}
 
 	public static class TestUtlities
 	{
 		private static string matterSliceBaseDirectory = TestContext.CurrentContext.ResolveProjectPath(4);
+		private static Regex numberRegex = new Regex(@"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?");
 		private static string tempGCodePath = Path.Combine(matterSliceBaseDirectory, "GCode_Test");
-
-		public static string GetStlPath(string file)
-		{
-			return Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "SampleSTLs", file), "stl");
-		}
-
-		public static string GetTempGCodePath(string file)
-		{
-			return Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "Tests", "TestData", "Temp", file), "gcode");
-		}
-
-		public static Polygons GetExtrusionPolygons(string[] gcode, ref MovementInfo movementInfo)
-		{
-			Polygons foundPolygons = new Polygons();
-
-			bool extruding = false;
-			// check that all moves are on the outside of the cylinder (not crossing to a new point)
-			int movementCount = 0;
-			foreach (MovementInfo movement in TestUtlities.Movements(gcode, movementInfo))
-			{
-				bool isExtrude = movement.extrusion != movementInfo.extrusion;
-
-				if (extruding)
-				{
-					if (isExtrude)
-					{
-						// add to the extrusion
-						foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
-							(long)(movement.position.x * 1000),
-							(long)(movement.position.y * 1000),
-							(long)(movement.position.z * 1000)));
-					}
-					else
-					{
-						extruding = false;
-					}
-				}
-				else // not extruding
-				{
-					if (isExtrude)
-					{
-						// starting a new extrusion
-						foundPolygons.Add(new Polygon());
-						foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
-							(long)(movement.position.x * 1000),
-							(long)(movement.position.y * 1000),
-							(long)(movement.position.z * 1000)));
-						extruding = true;
-					}
-					else // do nothing waiting for extrude
-					{
-						int stop = 0;
-					}
-				}
-
-				movementInfo = movement;
-				movementCount++;
-			}
-
-			for (int i = foundPolygons.Count - 1; i >= 0; i--)
-			{
-				if (foundPolygons[i].Count == 1)
-				{
-					foundPolygons.RemoveAt(i);
-				}
-			}
-
-			return foundPolygons;
-		}
-
-		public static string GetControlGCodePath(string file)
-		{
-			string fileAndPath = Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "GCode_Control", file), "gcode");
-			return fileAndPath;
-		}
-
-		public static string[] LoadGCodeFile(string gcodeFile)
-		{
-			return File.ReadAllLines(gcodeFile);
-		}
-
-		public static int CountLayers(string[] gcodeContents)
-		{
-			int layers = 0;
-			int layerCount = 0;
-			foreach (string line in gcodeContents)
-			{
-				if (line.Contains("Layer count"))
-				{
-					layerCount = int.Parse(line.Split(':')[1]);
-				}
-
-				if (line.Contains("LAYER:"))
-				{
-					layers++;
-				}
-			}
-
-			if (layerCount != layers)
-			{
-				throw new Exception("The reported layers and counted layers should be the same.");
-			}
-
-			return layers;
-		}
 
 		public static bool CheckForRaft(string[] gcodefile)
 		{
@@ -188,80 +85,29 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		private static Regex numberRegex = new Regex(@"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?");
-
-		private static double GetNextNumber(String source, ref int startIndex)
+		public static int CountLayers(string[] gcodeContents)
 		{
-			Match numberMatch = numberRegex.Match(source, startIndex);
-			String returnString = numberMatch.Value;
-			startIndex = numberMatch.Index + numberMatch.Length;
-			double returnVal;
-			double.TryParse(returnString, NumberStyles.Number, CultureInfo.InvariantCulture, out returnVal);
-			return returnVal;
-		}
-
-		public static bool GetFirstNumberAfter(string stringToCheckAfter, string stringWithNumber, ref double readValue, int startIndex = 0)
-		{
-			int stringPos = stringWithNumber.IndexOf(stringToCheckAfter, startIndex);
-			if (stringPos != -1)
-			{
-				stringPos += stringToCheckAfter.Length;
-				readValue = GetNextNumber(stringWithNumber, ref stringPos);
-
-				return true;
-			}
-
-			return false;
-		}
-
-		public static IEnumerable<MovementInfo> Movements(string[] gcodeContents, Nullable<MovementInfo> startingMovement = null, bool onlyG1s = false)
-		{
-			MovementInfo currentPosition = new MovementInfo();
-			if (startingMovement != null)
-			{
-				currentPosition = startingMovement.Value;
-			}
-			foreach (string inLine in gcodeContents)
-			{
-				string line = inLine;
-				// make sure we don't parse comments
-				if (line.Contains(";"))
-				{
-					line = line.Split(';')[0];
-				}
-
-				if ((!onlyG1s && line.StartsWith("G0 "))
-					|| line.StartsWith("G1 "))
-				{
-					GetFirstNumberAfter("X", line, ref currentPosition.position.x);
-					GetFirstNumberAfter("Y", line, ref currentPosition.position.y);
-					GetFirstNumberAfter("Z", line, ref currentPosition.position.z);
-					GetFirstNumberAfter("E", line, ref currentPosition.extrusion);
-					GetFirstNumberAfter("F", line, ref currentPosition.feedRate);
-
-					yield return currentPosition;
-				}
-			}
-		}
-
-		public static string[] GetGCodeForLayer(string[] gcodeContents, int layerIndex)
-		{
-			List<string> layerLines = new List<string>();
-			int currentLayer = -1;
+			int layers = 0;
+			int layerCount = 0;
 			foreach (string line in gcodeContents)
 			{
-				if (line.Contains("LAYER:"))
+				if (line.Contains("Layer count"))
 				{
-					currentLayer++;
+					layerCount = int.Parse(line.Split(':')[1]);
 				}
 
-				if (currentLayer == layerIndex)
+				if (line.Contains("LAYER:"))
 				{
-					layerLines.Add(line);
+					layers++;
 				}
 			}
 
-			return layerLines.ToArray();
+			if (layerCount != layers)
+			{
+				throw new Exception("The reported layers and counted layers should be the same.");
+			}
+
+			return layers;
 		}
 
 		public static int CountRetractions(string[] layer)
@@ -284,18 +130,169 @@ namespace MatterHackers.MatterSlice.Tests
 			return retractions;
 		}
 
-		internal static bool UsesExtruder(string[] gcodeContent, int extruderIndex)
+		public static string GetControlGCodePath(string file)
 		{
-			string startToCheckFor = "T{0}".FormatWith(extruderIndex);
-			foreach (string line in gcodeContent)
+			string fileAndPath = Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "GCode_Control", file), "gcode");
+			return fileAndPath;
+		}
+
+		public static Polygons GetExtrusionPolygons(string[] gcode, long movementToIgnore = 0)
+		{
+			MovementInfo movementInfo = new MovementInfo();
+			return GetExtrusionPolygons(gcode, ref movementInfo, movementToIgnore);
+		}
+
+		public static Polygons GetExtrusionPolygons(string[] gcode, ref MovementInfo movementInfo, long movementToIgnore = 0)
+		{
+			Polygons foundPolygons = new Polygons();
+
+			bool extruding = false;
+			// check that all moves are on the outside of the cylinder (not crossing to a new point)
+			int movementCount = 0;
+			double movementAmount = double.MaxValue/2; // always add a new extrusion the first time
+			MovementInfo lastMovement = movementInfo;
+			foreach (MovementInfo currentMovement in TestUtlities.Movements(gcode, lastMovement))
 			{
-				if (line.StartsWith(startToCheckFor))
+				bool isExtrude = currentMovement.extrusion != lastMovement.extrusion;
+
+				if (extruding)
 				{
-					return true;
+					if (isExtrude)
+					{
+						// add to the extrusion
+						foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
+							(long)(currentMovement.position.x * 1000),
+							(long)(currentMovement.position.y * 1000),
+							(long)(currentMovement.position.z * 1000)));
+					}
+					else
+					{
+						extruding = false;
+						movementAmount = 0;
+					}
+				}
+				else // not extruding
+				{
+					if (isExtrude)
+					{
+						if (movementAmount >= movementToIgnore)
+						{
+							// starting a new extrusion
+							foundPolygons.Add(new Polygon());
+						}
+						foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
+							(long)(currentMovement.position.x * 1000),
+							(long)(currentMovement.position.y * 1000),
+							(long)(currentMovement.position.z * 1000)));
+						extruding = true;
+					}
+					else // do nothing waiting for extrude
+					{
+						movementAmount += (currentMovement.position - lastMovement.position).Length;
+					}
+				}
+
+				lastMovement = currentMovement;
+				movementCount++;
+			}
+
+			for (int i = foundPolygons.Count - 1; i >= 0; i--)
+			{
+				if (foundPolygons[i].Count == 1)
+				{
+					foundPolygons.RemoveAt(i);
 				}
 			}
 
+			movementInfo = lastMovement;
+			return foundPolygons;
+		}
+
+		public static bool GetFirstNumberAfter(string stringToCheckAfter, string stringWithNumber, ref double readValue, int startIndex = 0)
+		{
+			int stringPos = stringWithNumber.IndexOf(stringToCheckAfter, startIndex);
+			if (stringPos != -1)
+			{
+				stringPos += stringToCheckAfter.Length;
+				readValue = GetNextNumber(stringWithNumber, ref stringPos);
+
+				return true;
+			}
+
 			return false;
+		}
+
+		public static string[] GetGCodeForLayer(string[] gcodeContents, int layerIndex)
+		{
+			List<string> layerLines = new List<string>();
+			int currentLayer = -1;
+			foreach (string line in gcodeContents)
+			{
+				if (line.Contains("LAYER:"))
+				{
+					currentLayer++;
+					if(currentLayer > layerIndex)
+					{
+						break;
+					}
+				}
+
+				if (currentLayer == layerIndex)
+				{
+					layerLines.Add(line);
+				}
+			}
+
+			return layerLines.ToArray();
+		}
+
+		public static string GetStlPath(string file)
+		{
+			return Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "SampleSTLs", file), "stl");
+		}
+
+		public static string GetTempGCodePath(string file)
+		{
+			string fullPath = Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "Tests", "TestData", "Temp", file), "gcode");
+			// Make sure the output directory exists
+			Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+			return fullPath;
+		}
+
+		public static string[] LoadGCodeFile(string gcodeFile)
+		{
+			return File.ReadAllLines(gcodeFile);
+		}
+
+		public static IEnumerable<MovementInfo> Movements(string[] gcodeContents, Nullable<MovementInfo> startingMovement = null, bool onlyG1s = false)
+		{
+			MovementInfo currentPosition = new MovementInfo();
+			if (startingMovement != null)
+			{
+				currentPosition = startingMovement.Value;
+			}
+			foreach (string inLine in gcodeContents)
+			{
+				string line = inLine;
+				currentPosition.line = line;
+				// make sure we don't parse comments
+				if (line.Contains(";"))
+				{
+					line = line.Split(';')[0];
+				}
+
+				if ((!onlyG1s && line.StartsWith("G0 "))
+					|| line.StartsWith("G1 "))
+				{
+					GetFirstNumberAfter("X", line, ref currentPosition.position.x);
+					GetFirstNumberAfter("Y", line, ref currentPosition.position.y);
+					GetFirstNumberAfter("Z", line, ref currentPosition.position.z);
+					GetFirstNumberAfter("E", line, ref currentPosition.extrusion);
+					GetFirstNumberAfter("F", line, ref currentPosition.feedRate);
+
+					yield return currentPosition;
+				}
+			}
 		}
 
 		public static string ResolveProjectPath(this TestContext context, int stepsToProjectRoot, params string[] relativePathSteps)
@@ -311,6 +308,30 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 
 			return Path.GetFullPath(Path.Combine(allPathSteps.ToArray()));
+		}
+
+		internal static bool UsesExtruder(string[] gcodeContent, int extruderIndex)
+		{
+			string startToCheckFor = "T{0}".FormatWith(extruderIndex);
+			foreach (string line in gcodeContent)
+			{
+				if (line.StartsWith(startToCheckFor))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		private static double GetNextNumber(String source, ref int startIndex)
+		{
+			Match numberMatch = numberRegex.Match(source, startIndex);
+			String returnString = numberMatch.Value;
+			startIndex = numberMatch.Index + numberMatch.Length;
+			double returnVal;
+			double.TryParse(returnString, NumberStyles.Number, CultureInfo.InvariantCulture, out returnVal);
+			return returnVal;
 		}
 	}
 }

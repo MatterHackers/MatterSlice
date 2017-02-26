@@ -19,19 +19,19 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
-using System;
 using System.Collections.Generic;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+	using Pathfinding;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
 	public class InsetPaths
 	{
-		public Polygon InsetPath { get; set; }
 		public InsetPaths Children { get; set; }
+		public Polygon InsetPath { get; set; }
 	}
 
 	/// <summary>
@@ -41,28 +41,32 @@ namespace MatterHackers.MatterSlice
 	public class LayerIsland
 	{
 		public Aabb BoundingBox = new Aabb();
-		/// <summary>
-		/// The outline of the island as defined by the original mesh polygons (not inset at all).
-		/// </summary>
-		public Polygons IslandOutline { get; set; } = new Polygons();
-		public Polygons AvoidCrossingBoundary { get; set; } = new Polygons();
+
+		private static readonly double minimumDistanceToCreateNewPosition = 10;
+
+		public Polygons InfillToolPaths { get; set; } = new Polygons();
+
 		/// <summary>
 		/// The IslandOutline inset as many times as there are perimeters for the part.
 		/// </summary>
 		public List<Polygons> InsetToolPaths { get; set; } = new List<Polygons>();
-		public Polygons SolidTopToolPaths { get; set; } = new Polygons();
+
+		/// <summary>
+		/// The outline of the island as defined by the original mesh polygons (not inset at all).
+		/// </summary>
+		public Polygons IslandOutline { get; set; } = new Polygons();
+
+		public PathFinder PathFinder { get; private set; }
 		public Polygons SolidBottomToolPaths { get; set; } = new Polygons();
 		public Polygons SolidInfillToolPaths { get; set; } = new Polygons();
-		public Polygons InfillToolPaths { get; set; } = new Polygons();
-
-		private static readonly double minimumDistanceToCreateNewPosition = 10;
+		public Polygons SolidTopToolPaths { get; set; } = new Polygons();
 
 		public void GenerateInsets(int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
 		{
 			LayerIsland part = this;
 			part.BoundingBox.Calculate(part.IslandOutline);
 
-			part.AvoidCrossingBoundary = part.IslandOutline.Offset(-extrusionWidth_um);
+			part.PathFinder = new PathFinder(part.IslandOutline, extrusionWidth_um * 3 / 2);
 			if (insetCount == 0)
 			{
 				// if we have no insets defined still create one

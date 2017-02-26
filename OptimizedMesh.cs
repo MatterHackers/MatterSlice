@@ -19,11 +19,11 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
