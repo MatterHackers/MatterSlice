@@ -204,7 +204,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void GenerateSkirt(int distance, int extrusionWidth_um, int numberOfLoops, int brimCount, int minLength, int initialLayerHeight, ConfigSettings config)
+		public void GenerateSkirt(int distance, int extrusionWidth_um, int numberOfLoops, int brimCount, int minLength, ConfigSettings config)
 		{
 			LayerDataStorage storage = this;
 			bool externalOnly = (distance > 0);
