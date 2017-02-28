@@ -345,7 +345,7 @@ namespace MatterHackers.MatterSlice
 					config.NumberOfSkirtLoops,
 					config.NumberOfBrimLoops,
 					config.SkirtMinLength_um,
-					config.RaftBaseThickness_um, config);
+					config);
 			}
 			else
 			{
@@ -355,7 +355,7 @@ namespace MatterHackers.MatterSlice
 					config.NumberOfSkirtLoops,
 					config.NumberOfBrimLoops,
 					config.SkirtMinLength_um,
-					config.FirstLayerThickness_um, config);
+					config);
 			}
 		}
 
