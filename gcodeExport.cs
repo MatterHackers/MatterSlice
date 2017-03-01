@@ -280,12 +280,6 @@ namespace MatterHackers.MatterSlice
 			gcodeFileStream.Write("; {0}\n".FormatWith(comment));
 		}
 
-		public void WriteDelay(double timeAmount)
-		{
-			gcodeFileStream.Write("G4 P{0}\n".FormatWith((int)(timeAmount * 1000)));
-			totalPrintTime += timeAmount;
-		}
-
 		public void WriteFanCommand(int speed)
 		{
 			if (currentFanSpeed == speed)
@@ -294,7 +288,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// Exhaust the buffer before changing the fan speed
-			gcodeFileStream.Write("G4 P0\n");
+			gcodeFileStream.Write("M400\n");
 
 			if (speed > 0)
 			{
