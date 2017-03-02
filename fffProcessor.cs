@@ -365,7 +365,15 @@ namespace MatterHackers.MatterSlice
 			gcode.WriteComment("extrusionWidth = {0}".FormatWith(config.ExtrusionWidth));
 			gcode.WriteComment("firstLayerExtrusionWidth = {0}".FormatWith(config.FirstLayerExtrusionWidth));
 			gcode.WriteComment("layerThickness = {0}".FormatWith(config.LayerThickness));
-			gcode.WriteComment("firstLayerThickness = {0}".FormatWith(config.FirstLayerThickness));
+
+			if (config.EnableRaft)
+			{
+				gcode.WriteComment("firstLayerThickness = {0}".FormatWith(config.RaftBaseThickness_um / 1000.0));
+			}
+			else
+			{
+				gcode.WriteComment("firstLayerThickness = {0}".FormatWith(config.FirstLayerThickness));
+			}
 
 			if (fileNumber == 1)
 			{
