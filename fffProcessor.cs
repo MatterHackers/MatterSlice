@@ -940,7 +940,7 @@ namespace MatterHackers.MatterSlice
 				IntPoint closestNextIslandPoint = island.IslandOutline[closestPointOnNextIsland.Item1][closestPointOnNextIsland.Item2];
 
 				if (islandCurrentlyInside?.PathFinder?.OutlinePolygons.Count > 0
-					islandCurrentlyInside?.PathFinder?.OutlinePolygons?[0]?.Count > 3)
+					&& islandCurrentlyInside?.PathFinder?.OutlinePolygons?[0]?.Count > 3)
 				{
 					// start by moving within the last island to the closet point to the next island
 					var polygons = islandCurrentlyInside.PathFinder.OutlinePolygons;
