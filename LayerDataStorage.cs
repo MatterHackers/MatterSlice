@@ -204,7 +204,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void GenerateSkirt(int distance, int extrusionWidth_um, int numberOfLoops, int brimCount, int minLength, int initialLayerHeight, ConfigSettings config)
+		public void GenerateSkirt(int distance, int extrusionWidth_um, int numberOfLoops, int brimCount, int minLength, ConfigSettings config)
 		{
 			LayerDataStorage storage = this;
 			bool externalOnly = (distance > 0);
@@ -328,7 +328,7 @@ namespace MatterHackers.MatterSlice
 						gcodeLayer.QueuePolygonsByOptimizer(raftIsland, raftBaseConfig);
 
 						Polygons raftLines = new Polygons();
-						Infill.GenerateLinePaths(raftIsland, raftLines, config.RaftBaseLineSpacing_um, config.InfillExtendIntoPerimeter_um, 0);
+						Infill.GenerateLinePaths(raftIsland.Offset(-config.RaftBaseExtrusionWidth_um) , raftLines, config.RaftBaseLineSpacing_um, config.InfillExtendIntoPerimeter_um, 0);
 
 						// write the inside of the raft base
 						gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftBaseConfig);

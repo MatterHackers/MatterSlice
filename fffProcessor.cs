@@ -340,12 +340,12 @@ namespace MatterHackers.MatterSlice
 				slicingData.GenerateRaftOutlines(config.RaftExtraDistanceAroundPart_um, config);
 
 				slicingData.GenerateSkirt(
-					config.SkirtDistance_um + config.RaftBaseLineSpacing_um,
-					config.RaftBaseLineSpacing_um,
+					config.SkirtDistance_um + config.RaftBaseExtrusionWidth_um,
+					config.RaftBaseExtrusionWidth_um,
 					config.NumberOfSkirtLoops,
 					config.NumberOfBrimLoops,
 					config.SkirtMinLength_um,
-					config.RaftBaseThickness_um, config);
+					config);
 			}
 			else
 			{
@@ -355,7 +355,7 @@ namespace MatterHackers.MatterSlice
 					config.NumberOfSkirtLoops,
 					config.NumberOfBrimLoops,
 					config.SkirtMinLength_um,
-					config.FirstLayerThickness_um, config);
+					config);
 			}
 		}
 
@@ -365,7 +365,15 @@ namespace MatterHackers.MatterSlice
 			gcode.WriteComment("extrusionWidth = {0}".FormatWith(config.ExtrusionWidth));
 			gcode.WriteComment("firstLayerExtrusionWidth = {0}".FormatWith(config.FirstLayerExtrusionWidth));
 			gcode.WriteComment("layerThickness = {0}".FormatWith(config.LayerThickness));
-			gcode.WriteComment("firstLayerThickness = {0}".FormatWith(config.FirstLayerThickness));
+
+			if (config.EnableRaft)
+			{
+				gcode.WriteComment("firstLayerThickness = {0}".FormatWith(config.RaftBaseThickness_um / 1000.0));
+			}
+			else
+			{
+				gcode.WriteComment("firstLayerThickness = {0}".FormatWith(config.FirstLayerThickness));
+			}
 
 			if (fileNumber == 1)
 			{
@@ -931,7 +939,8 @@ namespace MatterHackers.MatterSlice
 				var closestPointOnNextIsland = island.IslandOutline.FindClosestPoint(layerGcodePlanner.LastPosition);
 				IntPoint closestNextIslandPoint = island.IslandOutline[closestPointOnNextIsland.Item1][closestPointOnNextIsland.Item2];
 
-				if (islandCurrentlyInside?.PathFinder?.OutlinePolygons?[0]?.Count > 3)
+				if (islandCurrentlyInside?.PathFinder?.OutlinePolygons.Count > 0
+					&& islandCurrentlyInside?.PathFinder?.OutlinePolygons?[0]?.Count > 3)
 				{
 					// start by moving within the last island to the closet point to the next island
 					var polygons = islandCurrentlyInside.PathFinder.OutlinePolygons;
