@@ -79,9 +79,9 @@ namespace MatterHackers.QuadTree
 			return GetIntersection(startA, endA, startB, endB) != Intersection.None;
 		}
 
-		public static Tuple<int, IntPoint> FindClosestPoint(this Polygon polygon, IntPoint position, Func<int, IntPoint, bool> considerPoint = null)
+		public static (int index, IntPoint position) FindClosestPoint(this Polygon polygon, IntPoint position, Func<int, IntPoint, bool> considerPoint = null)
 		{
-			Tuple<int, IntPoint> polyPointPosition = null;
+			var polyPointPosition = (-1, new IntPoint());
 
 			long bestDist = long.MaxValue;
 			for (int pointIndex = 0; pointIndex < polygon.Count; pointIndex++)
@@ -93,7 +93,7 @@ namespace MatterHackers.QuadTree
 					if (considerPoint == null || considerPoint(pointIndex, point))
 					{
 						bestDist = length;
-						polyPointPosition = new Tuple<int, IntPoint>(pointIndex, point);
+						polyPointPosition = (pointIndex, point);
 					}
 				}
 			}
