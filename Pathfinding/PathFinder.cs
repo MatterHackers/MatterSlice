@@ -102,17 +102,17 @@ namespace MatterHackers.Pathfinding
 						};
 
 						var bestBPoly = BoundaryPolygons.FindClosestPoint(bestAPos, ConsiderPolygon, ConsiderPoint);
-						if (bestBPoly == null)
+						if (bestBPoly.polyIndex == -1)
 						{
 							// find one that intersects
 							bestBPoly = BoundaryPolygons.FindClosestPoint(bestAPos, ConsiderPolygon);
 						}
-						if (bestBPoly != null)
+						if (bestBPoly.polyIndex != -1)
 						{
 							bestAPos = polyA.FindClosestPoint(bestBPoly.Item3).Item2;
 							var bestBResult = BoundaryPolygons[bestBPoly.Item1].FindClosestPoint(bestAPos, ConsiderPoint);
 							IntPoint bestBPos = new IntPoint();
-							if (bestBResult != null)
+							if (bestBResult.index != -1)
 							{
 								bestBPos = bestBResult.Item2;
 							}
