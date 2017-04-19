@@ -19,9 +19,9 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using MSClipperLib;
 using System;
 using System.Collections.Generic;
-using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
@@ -29,53 +29,6 @@ namespace MatterHackers.MatterSlice
 	using QuadTree;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
-
-	public class GCodePath
-	{
-		public GCodePathConfig config;
-
-		public Polygon polygon = new Polygon();
-
-		/// <summary>
-		/// Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
-		/// </summary>
-		internal bool done;
-
-		internal int extruderIndex;
-
-		public GCodePath()
-		{
-		}
-
-		public GCodePath(GCodePath copyPath)
-		{
-			this.config = copyPath.config;
-			this.done = copyPath.done;
-			this.extruderIndex = copyPath.extruderIndex;
-			this.Retract = copyPath.Retract;
-			this.polygon = new Polygon(copyPath.polygon);
-		}
-
-		internal bool Retract { get; set; }
-
-		public long Length(bool pathIsClosed)
-		{
-			long totalLength = 0;
-			for (int pointIndex = 0; pointIndex < polygon.Count - 1; pointIndex++)
-			{
-				// Calculate distance between 2 points
-				totalLength += (polygon[pointIndex] - polygon[pointIndex + 1]).Length();
-			}
-
-			if (pathIsClosed)
-			{
-				// add in the move back to the start
-				totalLength += (polygon[polygon.Count - 1] - polygon[0]).Length();
-			}
-
-			return totalLength;
-		}
-	}
 
 	//The GCodePlanner class stores multiple moves that are planned.
 	// It facilitates the avoidCrossingPerimeters to keep the head inside the print.
@@ -92,30 +45,18 @@ namespace MatterHackers.MatterSlice
 
 		private GCodeExport gcodeExport = new GCodeExport();
 
-		PathFinder pathFinder;
-		PathFinder lastValidPathFinder;
-		public PathFinder PathFinder
-		{
-			get
-			{
-				return pathFinder;
-			}
-			set
-			{
-				if (value != null
-					&& lastValidPathFinder != value)
-				{
-					lastValidPathFinder = value;
-				}
-				pathFinder = value;
-			}
-		}
-
+		private PathFinder lastValidPathFinder;
+		private PathFinder pathFinder;
 		private List<GCodePath> paths = new List<GCodePath>();
+
 		private double perimeterStartEndOverlapRatio;
+
 		private int retractionMinimumDistance_um;
+
 		private double totalPrintTime;
+
 		private GCodePathConfig travelConfig;
+
 		private int travelSpeedFactor;
 
 		public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um, double perimeterStartEndOverlap = 0)
@@ -141,6 +82,23 @@ namespace MatterHackers.MatterSlice
 		public IntPoint LastPosition
 		{
 			get; private set;
+		}
+
+		public PathFinder PathFinder
+		{
+			get
+			{
+				return pathFinder;
+			}
+			set
+			{
+				if (value != null
+					&& lastValidPathFinder != value)
+				{
+					lastValidPathFinder = value;
+				}
+				pathFinder = value;
+			}
 		}
 
 		public static GCodePath TrimPerimeter(GCodePath inPath, double perimeterStartEndOverlapRatio)
@@ -377,14 +335,14 @@ namespace MatterHackers.MatterSlice
 				path.Retract = true;
 				forceRetraction = false;
 			}
-			
+
 			if (PathFinder != null)
 			{
 				Polygon pathPolygon = new Polygon();
 				if (PathFinder.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pathPolygon))
 				{
 					IntPoint lastPathPosition = LastPosition;
-					 long lineLength_um = 0;
+					long lineLength_um = 0;
 
 					// we can stay inside so move within the boundary
 					for (int positionIndex = 0; positionIndex < pathPolygon.Count; positionIndex++)
@@ -427,39 +385,6 @@ namespace MatterHackers.MatterSlice
 			LastPosition = positionToMoveTo;
 
 			//ValidatePaths();
-		}
-
-		private void ValidatePaths()
-		{
-			bool first = true;
-			IntPoint lastPosition = new IntPoint();
-			for (int pathIndex = 0; pathIndex < paths.Count; pathIndex++)
-			{
-				var path = paths[pathIndex];
-				for (int polyIndex = 0; polyIndex < path.polygon.Count; polyIndex++)
-				{
-					var position = path.polygon[polyIndex];
-					if (first)
-					{
-						first = false;
-					}
-					else
-					{
-						if(pathIndex == paths.Count-1
-							&& polyIndex == path.polygon.Count-1
-							&& lastValidPathFinder != null
-							&& !lastValidPathFinder.OutlinePolygons.PointIsInside((position + lastPosition) / 2))
-						{
-							// an easy way to get the path
-							string startEndString = $"start:({position.X}, {position.Y}), end:({lastPosition.X}, {lastPosition.Y})";
-							string outlineString = lastValidPathFinder.OutlinePolygons.WriteToString();
-							long length = (position - lastPosition).Length();
-							int a = 0;
-						}
-					}
-					lastPosition = position;
-				}
-			}
 		}
 
 		public bool SetExtruder(int extruder)
@@ -668,6 +593,39 @@ namespace MatterHackers.MatterSlice
 			ret.extruderIndex = currentExtruderIndex;
 			ret.done = false;
 			return ret;
+		}
+
+		private void ValidatePaths()
+		{
+			bool first = true;
+			IntPoint lastPosition = new IntPoint();
+			for (int pathIndex = 0; pathIndex < paths.Count; pathIndex++)
+			{
+				var path = paths[pathIndex];
+				for (int polyIndex = 0; polyIndex < path.polygon.Count; polyIndex++)
+				{
+					var position = path.polygon[polyIndex];
+					if (first)
+					{
+						first = false;
+					}
+					else
+					{
+						if (pathIndex == paths.Count - 1
+							&& polyIndex == path.polygon.Count - 1
+							&& lastValidPathFinder != null
+							&& !lastValidPathFinder.OutlinePolygons.PointIsInside((position + lastPosition) / 2))
+						{
+							// an easy way to get the path
+							string startEndString = $"start:({position.X}, {position.Y}), end:({lastPosition.X}, {lastPosition.Y})";
+							string outlineString = lastValidPathFinder.OutlinePolygons.WriteToString();
+							long length = (position - lastPosition).Length();
+							int a = 0;
+						}
+					}
+					lastPosition = position;
+				}
+			}
 		}
 	}
 }
