@@ -1197,7 +1197,7 @@ namespace MatterHackers.MatterSlice
 					GetSegmentsConsideringSupport(polygonsToWrite, supportOutlines, polysToWriteAtNormalHeight, polysToWriteAtAirGapHeight, true, fillConfig.closedLoop);
 					fillConfig.closedLoop = false;
 
-					if (supportWriteType != SupportWriteType.SupportedAreasCheckOnly)
+					if (supportWriteType == SupportWriteType.SupportedAreasCheckOnly)
 					{
 						polygonsWereOutput = polysToWriteAtAirGapHeight.Count > 0;
 					}
