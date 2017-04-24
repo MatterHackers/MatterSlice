@@ -527,7 +527,7 @@ namespace MatterHackers.MatterSlice
 						&& slicingData.HaveWipeTower(config)
 						&& layerIndex < slicingData.LastLayerWithChange(config))
 					{
-						slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config);
+						slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config, false);
 						//Make sure we wipe the old extruder on the wipe tower.
 						layerGcodePlanner.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
 					}
@@ -573,9 +573,11 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				slicingData.EnsureWipeTowerIsSolid(layerIndex, layerGcodePlanner, fillConfig, config);
-
-				if (slicingData.support != null)
+				if (slicingData.support == null)
+				{
+					slicingData.EnsureWipeTowerIsSolid(layerIndex, layerGcodePlanner, fillConfig, config);
+				}
+				else
 				{
 					z += config.SupportAirGap_um;
 					gcode.SetZ(z);
@@ -586,6 +588,8 @@ namespace MatterHackers.MatterSlice
 					}
 
 					slicingData.support.QueueAirGappedBottomLayer(config, layerGcodePlanner, layerIndex, airGappedBottomConfig);
+
+					slicingData.EnsureWipeTowerIsSolid(layerIndex, layerGcodePlanner, fillConfig, config);
 				}
 
 				//Finish the layer by applying speed corrections for minimum layer times.
@@ -1060,7 +1064,7 @@ namespace MatterHackers.MatterSlice
 					&& slicingData.HaveWipeTower(config)
 					&& layerIndex < slicingData.LastLayerWithChange(config))
 				{
-					slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config);
+					slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config, true);
 					//Make sure we wipe the old extruder on the wipe tower.
 					layerGcodePlanner.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
 				}
