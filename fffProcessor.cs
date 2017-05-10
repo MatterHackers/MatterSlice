@@ -1269,7 +1269,23 @@ namespace MatterHackers.MatterSlice
 					else
 					{
 						SliceLayer previousLayer = slicingData.Extruders[extruderIndex].Layers[layerIndex - 1];
-						previousLayer.GenerateFillConsideringBridging(bottomFillIsland, bottomFillLines, config, bridgePolygons);
+						
+						double bridgeAngle = 0;
+						if (bridgePolygons != null && previousLayer.BridgeAngle(bottomFillIsland, out bridgeAngle))
+						{
+							// TODO: Make this code handle very complex pathing between different sizes or layouts of support under the island to fill.
+							Infill.GenerateLinePaths(bottomFillIsland, bridgePolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, bridgeAngle);
+						}
+						else
+						{
+							/*
+							foreach(var line in bottomFillIsland)
+							{
+								bottomFillLines.Add(line);
+							} */
+
+							Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+						}
 					}
 				}
 				else

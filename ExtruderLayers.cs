@@ -65,7 +65,9 @@ namespace MatterHackers.MatterSlice
 
 					if (layerIndex - 1 >= 0)
 					{
-						bottomOutlines = RemoveIslandsFromPolygons(extruder.Layers[layerIndex - 1].Islands, island.BoundingBox, bottomOutlines);
+						var previousLayer = extruder.Layers[layerIndex - 1];
+
+						bottomOutlines = RemoveIslandsFromPolygons(previousLayer.Islands, island.BoundingBox, bottomOutlines);
 						bottomOutlines.RemoveSmallAreas(extrusionWidth_um);
 					}
 
@@ -235,7 +237,7 @@ namespace MatterHackers.MatterSlice
 				{
 					if (islands[islandIndex].InsetToolPaths.Count > 0)
 					{
-						polygonsToSubtractFrom = polygonsToSubtractFrom.CreateDifference(islands[islandIndex].InsetToolPaths[islands[islandIndex].InsetToolPaths.Count - 1]);
+						polygonsToSubtractFrom = polygonsToSubtractFrom.CreateDifference(islands[islandIndex].InsetToolPaths[0]);
 						polygonsToSubtractFrom = Clipper.CleanPolygons(polygonsToSubtractFrom, cleanDistance_um);
 					}
 				}
