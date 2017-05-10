@@ -134,7 +134,7 @@ namespace MatterHackers.MatterSlice
 			// normal support
 			Polygons currentAirGappedBottoms = airGappedBottomOutlines[layerIndex];
 			currentAirGappedBottoms = currentAirGappedBottoms.Offset(-config.ExtrusionWidth_um / 2);
-			List<Polygons> supportIslands = currentAirGappedBottoms.ProcessIntoSeparatIslands();
+			List<Polygons> supportIslands = currentAirGappedBottoms.ProcessIntoSeparateIslands();
 
 			foreach (Polygons islandOutline in supportIslands)
 			{
@@ -173,7 +173,7 @@ namespace MatterHackers.MatterSlice
 			Polygons currentInterfaceOutlines2 = interfaceLayers[layerIndex].Offset(-config.ExtrusionWidth_um / 2);
 			if (currentInterfaceOutlines2.Count > 0)
 			{
-				List<Polygons> interfaceIslands = currentInterfaceOutlines2.ProcessIntoSeparatIslands();
+				List<Polygons> interfaceIslands = currentInterfaceOutlines2.ProcessIntoSeparateIslands();
 
 				foreach (Polygons interfaceOutline in interfaceIslands)
 				{
@@ -211,7 +211,7 @@ namespace MatterHackers.MatterSlice
 			// normal support
 			Polygons currentSupportOutlines = supportOutlines[layerIndex];
 			currentSupportOutlines = currentSupportOutlines.Offset(-supportNormalConfig.lineWidth_um / 2);
-			List<Polygons> supportIslands = currentSupportOutlines.ProcessIntoSeparatIslands();
+			List<Polygons> supportIslands = currentSupportOutlines.ProcessIntoSeparateIslands();
 
 			bool outputPaths = false;
 			foreach (Polygons islandOutline in supportIslands)
@@ -409,7 +409,7 @@ namespace MatterHackers.MatterSlice
 			for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
 			{
 				Polygons insetPolygons = Clipper.CleanPolygons(inputPolys[layerIndex].Offset(-insetAmount_um), cleanDistance_um);
-				List<Polygons> insetIslands = insetPolygons.ProcessIntoSeparatIslands();
+				List<Polygons> insetIslands = insetPolygons.ProcessIntoSeparateIslands();
 
 				foreach (Polygons insetOutline in insetIslands)
 				{

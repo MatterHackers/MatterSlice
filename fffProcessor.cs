@@ -1257,7 +1257,7 @@ namespace MatterHackers.MatterSlice
 		private void CalculateInfillData(LayerDataStorage slicingData, int extruderIndex, int layerIndex, LayerIsland part, Polygons bottomFillLines, Polygons fillPolygons = null, Polygons topFillPolygons = null, Polygons bridgePolygons = null)
 		{
 			// generate infill for the bottom layer including bridging
-			foreach (Polygons bottomFillIsland in part.SolidBottomToolPaths.ProcessIntoSeparatIslands())
+			foreach (Polygons bottomFillIsland in part.SolidBottomToolPaths.ProcessIntoSeparateIslands())
 			{
 				if (layerIndex > 0)
 				{
@@ -1287,7 +1287,7 @@ namespace MatterHackers.MatterSlice
 			// generate infill for the top layer
 			if (topFillPolygons != null)
 			{
-				foreach (Polygons outline in part.SolidTopToolPaths.ProcessIntoSeparatIslands())
+				foreach (Polygons outline in part.SolidTopToolPaths.ProcessIntoSeparateIslands())
 				{
 					Infill.GenerateLinePaths(outline, topFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
 				}
@@ -1296,7 +1296,7 @@ namespace MatterHackers.MatterSlice
 			// generate infill intermediate layers
 			if (fillPolygons != null)
 			{
-				foreach (Polygons outline in part.SolidInfillToolPaths.ProcessIntoSeparatIslands())
+				foreach (Polygons outline in part.SolidInfillToolPaths.ProcessIntoSeparateIslands())
 				{
 					if (true) // use the old infill method
 					{

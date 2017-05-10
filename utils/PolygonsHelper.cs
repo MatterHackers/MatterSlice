@@ -213,7 +213,7 @@ namespace MatterHackers.MatterSlice
 			return ret;
 		}
 
-		public static List<Polygons> ProcessIntoSeparatIslands(this Polygons polygons)
+		public static List<Polygons> ProcessIntoSeparateIslands(this Polygons polygons)
 		{
 			List<Polygons> ret = new List<Polygons>();
 			Clipper clipper = new Clipper();
@@ -221,7 +221,7 @@ namespace MatterHackers.MatterSlice
 			clipper.AddPaths(polygons, PolyType.ptSubject, true);
 			clipper.Execute(ClipType.ctUnion, resultPolyTree);
 
-			polygons.ProcessPolyTreeNodeIntoSeparatIslands(resultPolyTree, ret);
+			polygons.ProcessPolyTreeNodeIntoSeparateIslands(resultPolyTree, ret);
 			return ret;
 		}
 
@@ -355,7 +355,7 @@ namespace MatterHackers.MatterSlice
 			throw new NotImplementedException();
 		}
 
-		private static void ProcessPolyTreeNodeIntoSeparatIslands(this Polygons polygonsIn, PolyNode node, List<Polygons> ret)
+		private static void ProcessPolyTreeNodeIntoSeparateIslands(this Polygons polygonsIn, PolyNode node, List<Polygons> ret)
 		{
 			for (int n = 0; n < node.ChildCount; n++)
 			{
@@ -365,7 +365,7 @@ namespace MatterHackers.MatterSlice
 				for (int i = 0; i < child.ChildCount; i++)
 				{
 					polygons.Add(child.Childs[i].Contour);
-					polygonsIn.ProcessPolyTreeNodeIntoSeparatIslands(child.Childs[i], ret);
+					polygonsIn.ProcessPolyTreeNodeIntoSeparateIslands(child.Childs[i], ret);
 				}
 				ret.Add(polygons);
 			}

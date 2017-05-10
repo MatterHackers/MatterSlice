@@ -327,7 +327,7 @@ namespace MatterHackers.MatterSlice
 					// write the skirt around the raft
 					gcodeLayer.QueuePolygonsByOptimizer(storage.skirt, raftBaseConfig);
 
-					List<Polygons> raftIslands = storage.raftOutline.ProcessIntoSeparatIslands();
+					List<Polygons> raftIslands = storage.raftOutline.ProcessIntoSeparateIslands();
 					foreach (var raftIsland in raftIslands)
 					{
 						// write the outline of the raft

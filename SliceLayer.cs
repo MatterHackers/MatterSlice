@@ -214,7 +214,7 @@ namespace MatterHackers.MatterSlice
 
 		public void CreateIslandData()
 		{
-			List<Polygons> separtedIntoIslands = AllOutlines.ProcessIntoSeparatIslands();
+			List<Polygons> separtedIntoIslands = AllOutlines.ProcessIntoSeparateIslands();
 
 			Islands = new List<LayerIsland>();
 			for (int islandIndex = 0; islandIndex < separtedIntoIslands.Count; islandIndex++)
