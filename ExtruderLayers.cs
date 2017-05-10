@@ -39,8 +39,10 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void GenerateTopAndBottoms(int layerIndex, int extrusionWidth_um, int outerPerimeterWidth_um, int downLayerCount, int upLayerCount)
+		public void GenerateTopAndBottoms(int layerIndex, int extrusionWidth_um, int outerPerimeterWidth_um, int downLayerCount, int upLayerCount, long infillExtendIntoPerimeter_um)
 		{
+			var clippingOffset = infillExtendIntoPerimeter_um * 2;
+
 			ExtruderLayers extruder = this;
 			SliceLayer layer = extruder.Layers[layerIndex];
 
@@ -77,7 +79,7 @@ namespace MatterHackers.MatterSlice
 				if (upLayerCount > 0)
 				{
 					Polygons topOutlines = new Polygons(insetWithOffset);
-					topOutlines = topOutlines.CreateDifference(island.SolidBottomToolPaths);
+					topOutlines = topOutlines.CreateDifference(island.SolidBottomToolPaths.Offset(clippingOffset));
 					topOutlines = Clipper.CleanPolygons(topOutlines, cleanDistance_um);
 
 					if (layerIndex + 1 < extruder.Layers.Count)
@@ -88,7 +90,7 @@ namespace MatterHackers.MatterSlice
 
 					topOutlines.RemoveSmallAreas(extrusionWidth_um);
 
-					infillOutlines = infillOutlines.CreateDifference(topOutlines);
+					infillOutlines = infillOutlines.CreateDifference(topOutlines.Offset(clippingOffset));
 					infillOutlines = Clipper.CleanPolygons(infillOutlines, cleanDistance_um);
 
 					island.SolidTopToolPaths = topOutlines;
@@ -98,9 +100,9 @@ namespace MatterHackers.MatterSlice
 				if (upLayerCount > 1 || downLayerCount > 1)
 				{
 					Polygons solidInfillOutlines = new Polygons(insetWithOffset);
-					solidInfillOutlines = solidInfillOutlines.CreateDifference(island.SolidBottomToolPaths);
+					solidInfillOutlines = solidInfillOutlines.CreateDifference(island.SolidBottomToolPaths.Offset(clippingOffset));
 					solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
-					solidInfillOutlines = solidInfillOutlines.CreateDifference(island.SolidTopToolPaths);
+					solidInfillOutlines = solidInfillOutlines.CreateDifference(island.SolidTopToolPaths.Offset(clippingOffset));
 
 					solidInfillOutlines = Clipper.CleanPolygons(solidInfillOutlines, cleanDistance_um);
 
@@ -133,7 +135,7 @@ namespace MatterHackers.MatterSlice
 					}
 
 					island.SolidInfillToolPaths = solidInfillOutlines;
-					infillOutlines = infillOutlines.CreateDifference(solidInfillOutlines);
+					infillOutlines = infillOutlines.CreateDifference(solidInfillOutlines.Offset(clippingOffset));
 				}
 
 				infillOutlines.RemoveSmallAreas(extrusionWidth_um);

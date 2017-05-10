@@ -370,18 +370,5 @@ namespace MatterHackers.MatterSlice
 				ret.Add(polygons);
 			}
 		}
-
-		private class MyComparer<T> : IEqualityComparer<T> where T : Tuple<int, int, IntPoint>
-		{
-			public bool Equals(T a, T b)
-			{
-				return a.Item3.Equals(b.Item3);
-			}
-
-			public int GetHashCode(T obj)
-			{
-				return obj.Item3.GetHashCode();
-			}
-		}
 	}
 }
