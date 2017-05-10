@@ -320,11 +320,11 @@ namespace MatterHackers.MatterSlice
 					{
 						if (layerIndex == 0)
 						{
-							slicingData.Extruders[extruderIndex].GenerateTopAndBottoms(layerIndex, config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, config.NumberOfBottomLayers, config.NumberOfTopLayers);
+							slicingData.Extruders[extruderIndex].GenerateTopAndBottoms(layerIndex, config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, config.NumberOfBottomLayers, config.NumberOfTopLayers, config.InfillExtendIntoPerimeter_um);
 						}
 						else
 						{
-							slicingData.Extruders[extruderIndex].GenerateTopAndBottoms(layerIndex, config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, config.NumberOfBottomLayers, config.NumberOfTopLayers);
+							slicingData.Extruders[extruderIndex].GenerateTopAndBottoms(layerIndex, config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, config.NumberOfBottomLayers, config.NumberOfTopLayers, config.InfillExtendIntoPerimeter_um);
 						}
 					}
 				}
@@ -1257,25 +1257,35 @@ namespace MatterHackers.MatterSlice
 		private void CalculateInfillData(LayerDataStorage slicingData, int extruderIndex, int layerIndex, LayerIsland part, Polygons bottomFillLines, Polygons fillPolygons = null, Polygons topFillPolygons = null, Polygons bridgePolygons = null)
 		{
 			// generate infill for the bottom layer including bridging
-			foreach (Polygons bottomFillIsland in part.SolidBottomToolPaths.ProcessIntoSeparatIslands())
+			foreach (Polygons bottomFillIsland in part.SolidBottomToolPaths.ProcessIntoSeparateIslands())
 			{
 				if (layerIndex > 0)
 				{
 					if (config.GenerateSupport)
 					{
-						if (config.SupportInterfaceLayers > 0)
-						{
-							Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
-						}
-						else
-						{
-							Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle + 90);
-						}
+						double infillAngle = config.SupportInterfaceLayers > 0 ? config.InfillStartingAngle : config.InfillStartingAngle + 90;
+						Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, infillAngle);
 					}
 					else
 					{
 						SliceLayer previousLayer = slicingData.Extruders[extruderIndex].Layers[layerIndex - 1];
-						previousLayer.GenerateFillConsideringBridging(bottomFillIsland, bottomFillLines, config, bridgePolygons);
+						
+						double bridgeAngle = 0;
+						if (bridgePolygons != null && previousLayer.BridgeAngle(bottomFillIsland, out bridgeAngle))
+						{
+							// TODO: Make this code handle very complex pathing between different sizes or layouts of support under the island to fill.
+							Infill.GenerateLinePaths(bottomFillIsland, bridgePolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, bridgeAngle);
+						}
+						else
+						{
+							/*
+							foreach(var line in bottomFillIsland)
+							{
+								bottomFillLines.Add(line);
+							} */
+
+							Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+						}
 					}
 				}
 				else
@@ -1287,7 +1297,7 @@ namespace MatterHackers.MatterSlice
 			// generate infill for the top layer
 			if (topFillPolygons != null)
 			{
-				foreach (Polygons outline in part.SolidTopToolPaths.ProcessIntoSeparatIslands())
+				foreach (Polygons outline in part.SolidTopToolPaths.ProcessIntoSeparateIslands())
 				{
 					Infill.GenerateLinePaths(outline, topFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
 				}
@@ -1296,7 +1306,7 @@ namespace MatterHackers.MatterSlice
 			// generate infill intermediate layers
 			if (fillPolygons != null)
 			{
-				foreach (Polygons outline in part.SolidInfillToolPaths.ProcessIntoSeparatIslands())
+				foreach (Polygons outline in part.SolidInfillToolPaths.ProcessIntoSeparateIslands())
 				{
 					if (true) // use the old infill method
 					{
