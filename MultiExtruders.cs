@@ -91,6 +91,7 @@ namespace MatterHackers.MatterSlice
 		{
 			int parseIndex = 0;
 			int totalLayers = extruders[0].Layers.Count;
+			int operands = 0;
 			while (parseIndex < booleanOpperations.Length)
 			{
 				BooleanType typeToDo = BooleanType.None;
@@ -128,33 +129,41 @@ namespace MatterHackers.MatterSlice
 						int skipCount = 0;
 						extruderIndexStack.Push(GetNextNumber(booleanOpperations, parseIndex, out skipCount));
 						parseIndex += skipCount;
+						operands++;
 						break;
 				}
 
 				if (typeToDo != BooleanType.None)
 				{
 					numberOfOpens--;
-					int extruderBIndex = extruderIndexStack.Pop();
-					int extruderAIndex = extruderIndexStack.Pop();
-					if (extruders[extruderBIndex].Layers.Count != extruders[extruderAIndex].Layers.Count ||
-						extruders[extruderAIndex].Layers.Count != totalLayers)
+
+					if (operands > 1)
 					{
-						throw new Exception("These should be the same.");
+						int extruderBIndex = extruderIndexStack.Pop();
+						int extruderAIndex = extruderIndexStack.Pop();
+						if (extruders[extruderBIndex].Layers.Count != extruders[extruderAIndex].Layers.Count ||
+							extruders[extruderAIndex].Layers.Count != totalLayers)
+						{
+							throw new Exception("These should be the same.");
+						}
+
+						for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
+						{
+							SliceLayer layerA = extruders[extruderAIndex].Layers[layerIndex];
+							SliceLayer layerB = extruders[extruderBIndex].Layers[layerIndex];
+							DoLayerBooleans(layerA, layerB, typeToDo);
+						}
+						layersToRemove.Add(extruderBIndex);
+
+						extruderIndexStack.Push(extruderAIndex);
+						operands--;
 					}
 
-					for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
-					{
-						SliceLayer layerA = extruders[extruderAIndex].Layers[layerIndex];
-						SliceLayer layerB = extruders[extruderBIndex].Layers[layerIndex];
-						DoLayerBooleans(layerA, layerB, typeToDo);
-					}
-					layersToRemove.Add(extruderBIndex);
-
-					extruderIndexStack.Push(extruderAIndex);
-
-					if (numberOfOpens == 0)
+					if(numberOfOpens == 0)  // only one element assing to extruder and move to next
 					{
 						currentExtruder++;
+						// next extruder has no operands yet
+						operands = 0;
 					}
 				}
 			}
