@@ -393,9 +393,9 @@ namespace MatterHackers.Pathfinding
 						return waypointAtPosition;
 					}
 				}
-				else // the point was outside and hook it up to the nearest edge
+				else // the point was outside, hook it up to the nearest edge
 				{
-					// fand the start node if we can
+					// find the start node if we can
 					IntPointNode startNode = Waypoints.FindNode(foundPolyPointPosition.Item3, findNodeDist);
 					
 					// After that create a temp way point at the current position
