@@ -42,6 +42,27 @@ namespace MatterHackers.MatterSlice.Tests
 	public class PolygonHelperTests
 	{
 		[Test]
+		public void GetPositionAllongPathTests()
+		{
+			// ______________2__ (20, 10) .5
+			// |               |
+			// 3               |
+			// |               1
+			// |__0____________|
+			// (0, 0)
+			Polygon closedPoly = new Polygon() { new IntPoint(0,0), new IntPoint(20,0), new IntPoint(20,10), new IntPoint(0,10) };
+			Assert.AreEqual(new IntPoint(20, 10), closedPoly.GetPositionAllongPath(.5));
+			Assert.AreEqual(new IntPoint(20, 0), closedPoly.GetPositionAllongPath(.333333));
+			Assert.AreEqual(new IntPoint(5, 0), closedPoly.GetPositionAllongPath(.0833333));
+			Assert.AreEqual(new IntPoint(0, 5), closedPoly.GetPositionAllongPath(.91666666));
+
+			Assert.AreEqual(new IntPoint(20, 5), closedPoly.GetPositionAllongPath(.5, false));
+			Assert.AreEqual(new IntPoint(10, 0), closedPoly.GetPositionAllongPath(.2, false));
+			Assert.AreEqual(new IntPoint(20, 0), closedPoly.GetPositionAllongPath(.4, false));
+			Assert.AreEqual(new IntPoint(10, 10), closedPoly.GetPositionAllongPath(.8, false));
+		}
+
+		[Test]
 		public void CorrectDirectionMeasure()
 		{
 			{
