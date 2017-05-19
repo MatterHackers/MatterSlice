@@ -48,7 +48,7 @@ namespace MatterHackers.MatterSlice.Tests
 				Polygons partOutline = CLPolygonsExtensions.CreateFromString(inset0OutlineString);
 				int numLayers = 10;
 				ExtruderLayers extruder = CreateLayerData(partOutline, numLayers);
-				GenerateLayers(extruder, 400, 3, 0);
+				GenerateLayers(extruder, 400, 3, 0, 0);
 				Assert.IsTrue(extruder.OnlyHasBottom(0));
 				Assert.IsTrue(extruder.OnlyHasSolidInfill(1));
 				Assert.IsTrue(extruder.OnlyHasSolidInfill(2));
@@ -61,7 +61,7 @@ namespace MatterHackers.MatterSlice.Tests
 				Polygons inset0Outline = CLPolygonsExtensions.CreateFromString(inset0OutlineString);
 				int numLayers = 10;
 				ExtruderLayers extruder = CreateLayerData(inset0Outline, numLayers);
-				GenerateLayers(extruder, 400, 3, 1);
+				GenerateLayers(extruder, 400, 3, 1, 0);
 				Assert.IsTrue(extruder.OnlyHasBottom(0));
 				Assert.IsTrue(extruder.OnlyHasSolidInfill(1));
 				Assert.IsTrue(extruder.OnlyHasSolidInfill(2));
@@ -74,7 +74,7 @@ namespace MatterHackers.MatterSlice.Tests
 				Polygons inset0Outline = CLPolygonsExtensions.CreateFromString(inset0OutlineString);
 				int numLayers = 10;
 				ExtruderLayers extruder = CreateLayerData(inset0Outline, numLayers);
-				GenerateLayers(extruder, 400, 3, 3);
+				GenerateLayers(extruder, 400, 3, 3, 0);
 				Assert.IsTrue(extruder.OnlyHasBottom(0));
 				Assert.IsTrue(extruder.OnlyHasSolidInfill(1));
 				Assert.IsTrue(extruder.OnlyHasSolidInfill(2));
@@ -92,7 +92,7 @@ namespace MatterHackers.MatterSlice.Tests
 				Polygons inset0Outline = CLPolygonsExtensions.CreateFromString(inset0OutlineString);
 				int numLayers = 10;
 				ExtruderLayers extruder = CreateLayerData(inset0Outline, numLayers);
-				GenerateLayers(extruder, 400, 0, 3);
+				GenerateLayers(extruder, 400, 0, 3, 0);
 				Assert.IsTrue(extruder.OnlyHasTop(9));
 				Assert.IsTrue(extruder.OnlyHasSolidInfill(8));
 				Assert.IsTrue(extruder.OnlyHasSolidInfill(7));
@@ -105,7 +105,7 @@ namespace MatterHackers.MatterSlice.Tests
 				Polygons inset0Outline = CLPolygonsExtensions.CreateFromString(inset0OutlineString);
 				int numLayers = 10;
 				ExtruderLayers extruder = CreateLayerData(inset0Outline, numLayers);
-				GenerateLayers(extruder, 400, 3, 1);
+				GenerateLayers(extruder, 400, 3, 1, 0);
 				Assert.IsTrue(extruder.OnlyHasBottom(0));
 				Assert.IsTrue(extruder.OnlyHasSolidInfill(1));
 				Assert.IsTrue(extruder.OnlyHasSolidInfill(2));
@@ -118,7 +118,7 @@ namespace MatterHackers.MatterSlice.Tests
 				Polygons inset0Outline = CLPolygonsExtensions.CreateFromString(inset0OutlineString);
 				int numLayers = 10;
 				ExtruderLayers extruder = CreateLayerData(inset0Outline, numLayers);
-				GenerateLayers(extruder, 400, 3, 3);
+				GenerateLayers(extruder, 400, 3, 3, 0);
 				Assert.IsTrue(extruder.OnlyHasBottom(0));
 				Assert.IsTrue(extruder.OnlyHasSolidInfill(1));
 				Assert.IsTrue(extruder.OnlyHasSolidInfill(2));
@@ -145,12 +145,12 @@ namespace MatterHackers.MatterSlice.Tests
 			return layerData;
 		}
 
-		private static void GenerateLayers(ExtruderLayers extruder, int extrusionWidthUm, int bottomLayers, int topLayers)
+		private static void GenerateLayers(ExtruderLayers extruder, int extrusionWidthUm, int bottomLayers, int topLayers, long infillExtendIntoPerimeter_um)
 		{
 			int numLayers = extruder.Layers.Count;
 			for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
 			{
-				extruder.GenerateTopAndBottoms(layerIndex, extrusionWidthUm, extrusionWidthUm, bottomLayers, topLayers);
+				extruder.GenerateTopAndBottoms(layerIndex, extrusionWidthUm, extrusionWidthUm, bottomLayers, topLayers, infillExtendIntoPerimeter_um);
 			}
 		}
 	}
