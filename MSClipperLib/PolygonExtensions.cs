@@ -268,17 +268,48 @@ namespace MSClipperLib
 			return result;
 		}
 
-		public static long PolygonLength(this Polygon polygon, bool areClosed = true)
+		public static IntPoint GetPositionAllongPath(this Polygon polygon, double ratioAlongPath, bool isClosed = true)
+		{
+			IntPoint position = new IntPoint();
+			var totalLength = polygon.PolygonLength(isClosed);
+			var distanceToGoal = (long)(totalLength * ratioAlongPath + .5);
+			long length = 0;
+			if (polygon.Count > 1)
+			{
+				position = polygon[0];
+				IntPoint currentPoint = polygon[0];
+
+				int polygonCount = polygon.Count;
+				for (int i = 1; i < (isClosed ? polygonCount + 1 : polygonCount); i++)
+				{
+					IntPoint nextPoint = polygon[i % polygonCount];
+					var segmentLength = (nextPoint - currentPoint).Length();
+					if(length + segmentLength > distanceToGoal)
+					{
+						// return the distance along this segment
+						var distanceAlongThisSegment = distanceToGoal - length;
+						var delteFromCurrent = (nextPoint - currentPoint) * distanceAlongThisSegment / segmentLength;
+						return currentPoint + delteFromCurrent;
+					}
+					length += segmentLength;
+					currentPoint = nextPoint;
+				}
+			}
+
+			return position;
+		}
+
+		public static long PolygonLength(this Polygon polygon, bool isClosed = true)
 		{
 			long length = 0;
 			if (polygon.Count > 1)
 			{
 				IntPoint previousPoint = polygon[0];
-				if (areClosed)
+				if (isClosed)
 				{
 					previousPoint = polygon[polygon.Count - 1];
 				}
-				for (int i = areClosed ? 0 : 1; i < polygon.Count; i++)
+				for (int i = isClosed ? 0 : 1; i < polygon.Count; i++)
 				{
 					IntPoint currentPoint = polygon[i];
 					length += (previousPoint - currentPoint).Length();
