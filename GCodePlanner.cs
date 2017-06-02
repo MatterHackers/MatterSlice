@@ -344,21 +344,28 @@ namespace MatterHackers.MatterSlice
 					IntPoint lastPathPosition = LastPosition;
 					long lineLength_um = 0;
 
-					// we can stay inside so move within the boundary
-					for (int positionIndex = 0; positionIndex < pathPolygon.Count; positionIndex++)
+					if (pathPolygon.Count > 0)
 					{
-						path.polygon.Add(new IntPoint(pathPolygon[positionIndex], CurrentZ)
+						// we can stay inside so move within the boundary
+						for (int positionIndex = 0; positionIndex < pathPolygon.Count; positionIndex++)
 						{
-							Width = 0
-						});
-						lineLength_um += (pathPolygon[positionIndex] - lastPathPosition).Length();
-						lastPathPosition = pathPolygon[positionIndex];
-					}
+							path.polygon.Add(new IntPoint(pathPolygon[positionIndex], CurrentZ)
+							{
+								Width = 0
+							});
+							lineLength_um += (pathPolygon[positionIndex] - lastPathPosition).Length();
+							lastPathPosition = pathPolygon[positionIndex];
+						}
 
-					// If the internal move is very long (> retractionMinimumDistance_um), do a retraction
-					if (lineLength_um > retractionMinimumDistance_um)
+						// If the internal move is very long (> retractionMinimumDistance_um), do a retraction
+						if (lineLength_um > retractionMinimumDistance_um)
+						{
+							path.Retract = true;
+						}
+					}
+					else // didn't find path check the distance
 					{
-						path.Retract = true;
+
 					}
 				}
 				else
