@@ -188,73 +188,78 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void AllMovesRequiringRetractionDoRetraction()
 		{
-			string baseFileName = "ab retraction test";
+			AllMovesRequiringRetractionDoRetraction("ab retraction test");
+			AllMovesRequiringRetractionDoRetraction("MH Coin In Shadow");
+		}
+
+		public void AllMovesRequiringRetractionDoRetraction(string baseFileName)
+		{
 			string stlToLoad = TestUtlities.GetStlPath(baseFileName + ".stl");
 
 			// check that default is support printed with extruder 0
+			string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_retract_.gcode");
+
+			ConfigSettings config = new ConfigSettings();
+			config.RetractionZHop = 5;
+			config.MinimumTravelToCauseRetraction = 2;
+			config.MinimumExtrusionBeforeRetraction = 0;
+			config.MergeOverlappingLines = false;
+			config.FirstLayerExtrusionWidth = .5;
+			fffProcessor processor = new fffProcessor(config);
+			processor.SetTargetFile(gcodeToCreate);
+			processor.LoadStlFile(stlToLoad);
+			// slice and save it
+			processor.DoProcessing();
+			processor.finalize();
+
+			string[] gcodeContents = TestUtlities.LoadGCodeFile(gcodeToCreate);
+			int layerCount = TestUtlities.CountLayers(gcodeContents);
+			bool firstPosition = true;
+			MovementInfo lastMovement = new MovementInfo();
+			MovementInfo lastExtrusion = new MovementInfo();
+			bool lastMoveIsExtrusion = true;
+			for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_retract_.gcode");
-
-				ConfigSettings config = new ConfigSettings();
-				config.RetractionZHop = 5;
-				config.MinimumTravelToCauseRetraction = 2;
-				config.MinimumExtrusionBeforeRetraction = 0;
-				config.MergeOverlappingLines = false;
-				config.FirstLayerExtrusionWidth = .5;
-				fffProcessor processor = new fffProcessor(config);
-				processor.SetTargetFile(gcodeToCreate);
-				processor.LoadStlFile(stlToLoad);
-				// slice and save it
-				processor.DoProcessing();
-				processor.finalize();
-
-				string[] gcodeContents = TestUtlities.LoadGCodeFile(gcodeToCreate);
-				int layerCount = TestUtlities.CountLayers(gcodeContents);
-				bool firstPosition = true;
-				MovementInfo lastMovement = new MovementInfo();
-				MovementInfo lastExtrusion = new MovementInfo();
-				bool lastMoveIsExtrusion = true;
-				for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
+				string[] layerGCode = TestUtlities.GetGCodeForLayer(gcodeContents, layerIndex);
+				int movementIndex = 0;
+				foreach (MovementInfo movement in TestUtlities.Movements(layerGCode, lastMovement))
 				{
-					string[] layerGCode = TestUtlities.GetGCodeForLayer(gcodeContents, layerIndex);
-					int movementIndex = 0;
-					foreach (MovementInfo movement in TestUtlities.Movements(layerGCode, lastMovement))
+					if (!firstPosition)
 					{
-						if (!firstPosition)
+						bool isTravel = lastMovement.extrusion == movement.extrusion;
+						if (isTravel)
 						{
-							bool isTravel = lastMovement.extrusion == movement.extrusion;
-							if (isTravel)
+							Vector3 lastPosition = lastMovement.position;
+							lastPosition.z = 0;
+							Vector3 currenPosition = movement.position;
+							currenPosition.z = 0;
+							double xyLength = (lastPosition - currenPosition).Length;
+							if (xyLength > config.MinimumTravelToCauseRetraction
+								&& lastMoveIsExtrusion)
 							{
-								Vector3 lastPosition = lastMovement.position;
-								lastPosition.z = 0;
-								Vector3 currenPosition = movement.position;
-								currenPosition.z = 0;
-								double xyLength = (lastPosition - currenPosition).Length;
-								if (xyLength > config.MinimumTravelToCauseRetraction
-									&& lastMoveIsExtrusion)
-								{
-									Assert.GreaterOrEqual(movement.position.z, lastExtrusion.position.z);
-								}
-
-								lastMoveIsExtrusion = false;
-							}
-							else
-							{
-								lastMoveIsExtrusion = true;
-								lastExtrusion = movement;
+								Assert.GreaterOrEqual(movement.position.z, lastExtrusion.position.z);
 							}
 
-							lastMoveIsExtrusion = !isTravel;
+							lastMoveIsExtrusion = false;
+						}
+						else
+						{
+							lastMoveIsExtrusion = true;
+							lastExtrusion = movement;
 						}
 
-						lastMovement = movement;
-						firstPosition = false;
-						movementIndex++;
+						lastMoveIsExtrusion = !isTravel;
 					}
+
+					lastMovement = movement;
+					firstPosition = false;
+					movementIndex++;
 				}
-				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 1));
-				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 2));
 			}
+
+			// make sure we don't switch extruders
+			Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 1));
+			Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 2));
 		}
 
 		[Test]
