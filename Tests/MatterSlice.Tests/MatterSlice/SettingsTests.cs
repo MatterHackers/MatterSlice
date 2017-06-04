@@ -190,9 +190,12 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			AllMovesRequiringRetractionDoRetraction("ab retraction test");
 			AllMovesRequiringRetractionDoRetraction("MH Coin In Shadow");
+
+			string settingsIniFile = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "MH Coin Settings.ini");
+			AllMovesRequiringRetractionDoRetraction("MH Coin In Shadow", settingsIniFile);
 		}
 
-		public void AllMovesRequiringRetractionDoRetraction(string baseFileName)
+		public void AllMovesRequiringRetractionDoRetraction(string baseFileName, string settingsIniFile = "")
 		{
 			string stlToLoad = TestUtlities.GetStlPath(baseFileName + ".stl");
 
@@ -200,11 +203,21 @@ namespace MatterHackers.MatterSlice.Tests
 			string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_retract_.gcode");
 
 			ConfigSettings config = new ConfigSettings();
+			if (settingsIniFile == "")
+			{
+				config.MinimumTravelToCauseRetraction = 2;
+				config.MinimumExtrusionBeforeRetraction = 0;
+				config.MergeOverlappingLines = false;
+				config.FirstLayerExtrusionWidth = .5;
+			}
+			else
+			{
+				config.ReadSettings(settingsIniFile);
+			}
+
+			// this is what we detect
 			config.RetractionZHop = 5;
-			config.MinimumTravelToCauseRetraction = 2;
-			config.MinimumExtrusionBeforeRetraction = 0;
-			config.MergeOverlappingLines = false;
-			config.FirstLayerExtrusionWidth = .5;
+
 			fffProcessor processor = new fffProcessor(config);
 			processor.SetTargetFile(gcodeToCreate);
 			processor.LoadStlFile(stlToLoad);
