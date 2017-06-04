@@ -363,32 +363,20 @@ namespace MatterHackers.MatterSlice
 							path.Retract = true;
 						}
 					}
-					else // didn't find path check the distance
-					{
-
-					}
-				}
-				else
-				{
-					if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um))
-					{
-						// We are moving relatively far and are going to cross a boundary so do a retraction.
-						path.Retract = true;
-					}
 				}
 			}
-			else
+
+			// Always check if the distance is greated than the amount need to retract.
+			if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um))
 			{
-				if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um))
-				{
-					path.Retract = true;
-				}
+				path.Retract = true;
 			}
 
 			path.polygon.Add(new IntPoint(positionToMoveTo, CurrentZ)
 			{
 				Width = 0,
 			});
+
 			LastPosition = positionToMoveTo;
 
 			//ValidatePaths();
