@@ -363,6 +363,11 @@ namespace MatterHackers.MatterSlice
 							path.Retract = true;
 						}
 					}
+					// else the path is good it just goes directly to the positionToMoveTo
+				}
+				else // can't find a good path
+				{
+					path.Retract = true;
 				}
 			}
 
@@ -379,7 +384,7 @@ namespace MatterHackers.MatterSlice
 
 			LastPosition = positionToMoveTo;
 
-			//ValidatePaths();
+			ValidatePaths();
 		}
 
 		public bool SetExtruder(int extruder)
