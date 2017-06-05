@@ -384,7 +384,7 @@ namespace MatterHackers.MatterSlice
 
 			LastPosition = positionToMoveTo;
 
-			ValidatePaths();
+			//ValidatePaths();
 		}
 
 		public bool SetExtruder(int extruder)
