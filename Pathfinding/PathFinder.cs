@@ -261,9 +261,11 @@ namespace MatterHackers.Pathfinding
 			long startToEndDistanceSqrd = (endPointIn - startPointIn).LengthSquared();
 			long moveStartInDistanceSqrd = (startPlanNode.Position - lastAddedNode.Position).LengthSquared();
 			long moveEndInDistanceSqrd = (endPlanNode.Position - lastToAddNode.Position).LengthSquared();
+			// if we move both points less than the distance of this segment
 			if (startToEndDistanceSqrd < moveStartInDistanceSqrd
-				|| startToEndDistanceSqrd < moveEndInDistanceSqrd)
+				&& startToEndDistanceSqrd < moveEndInDistanceSqrd)
 			{
+				// then go ahead and say it is a good path
 				return true;
 			}
 
