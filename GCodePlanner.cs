@@ -344,44 +344,44 @@ namespace MatterHackers.MatterSlice
 					IntPoint lastPathPosition = LastPosition;
 					long lineLength_um = 0;
 
-					// we can stay inside so move within the boundary
-					for (int positionIndex = 0; positionIndex < pathPolygon.Count; positionIndex++)
+					if (pathPolygon.Count > 0)
 					{
-						path.polygon.Add(new IntPoint(pathPolygon[positionIndex], CurrentZ)
+						// we can stay inside so move within the boundary
+						for (int positionIndex = 0; positionIndex < pathPolygon.Count; positionIndex++)
 						{
-							Width = 0
-						});
-						lineLength_um += (pathPolygon[positionIndex] - lastPathPosition).Length();
-						lastPathPosition = pathPolygon[positionIndex];
-					}
+							path.polygon.Add(new IntPoint(pathPolygon[positionIndex], CurrentZ)
+							{
+								Width = 0
+							});
+							lineLength_um += (pathPolygon[positionIndex] - lastPathPosition).Length();
+							lastPathPosition = pathPolygon[positionIndex];
+						}
 
-					// If the internal move is very long (> retractionMinimumDistance_um), do a retraction
-					if (lineLength_um > retractionMinimumDistance_um)
-					{
-						path.Retract = true;
+						// If the internal move is very long (> retractionMinimumDistance_um), do a retraction
+						if (lineLength_um > retractionMinimumDistance_um)
+						{
+							path.Retract = true;
+						}
 					}
+					// else the path is good it just goes directly to the positionToMoveTo
 				}
-				else
-				{
-					if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um))
-					{
-						// We are moving relatively far and are going to cross a boundary so do a retraction.
-						path.Retract = true;
-					}
-				}
-			}
-			else
-			{
-				if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um))
+				else // can't find a good path
 				{
 					path.Retract = true;
 				}
+			}
+
+			// Always check if the distance is greated than the amount need to retract.
+			if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um))
+			{
+				path.Retract = true;
 			}
 
 			path.polygon.Add(new IntPoint(positionToMoveTo, CurrentZ)
 			{
 				Width = 0,
 			});
+
 			LastPosition = positionToMoveTo;
 
 			//ValidatePaths();
