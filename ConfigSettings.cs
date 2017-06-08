@@ -89,9 +89,6 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("mm/s.")]
 		public int BridgeSpeed { get; set; }
 
-		[SettingDescription("Describes if 'positionToPlaceObjectCenter' should be used.")]
-		public bool CenterObjectInXy { get; set; }
-
 		// other
 		[SettingDescription("This will cause the z height to raise continuously while on the outer perimeter.")]
 		public bool ContinuousSpiralOuterPerimeter { get; set; }
@@ -619,7 +616,6 @@ namespace MatterHackers.MatterSlice
 			InfillExtendIntoPerimeter = .06;
 			InfillStartingAngle = 45;
 			InfillType = ConfigConstants.INFILL_TYPE.GRID;
-			CenterObjectInXy = true;
 			PositionToPlaceObjectCenter = new DoublePoint(102.5, 102.5);
 			BottomClipAmount = 0;
 
