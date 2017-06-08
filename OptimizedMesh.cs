@@ -202,41 +202,24 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void SetPositionAndSize(SimpleMeshCollection simpleMeshCollection, long xCenter_um, long yCenter_um, long zClip_um, bool centerObjectInXy)
+		public void SetPositionAndSize(SimpleMeshCollection simpleMeshCollection, long xCenter_um, long yCenter_um, long zClip_um)
 		{
 			minXYZ_um = simpleMeshCollection.minXYZ_um();
 			maxXYZ_um = simpleMeshCollection.maxXYZ_um();
 
-			if (centerObjectInXy)
+			// we still need to put in the bottom clip
+			// Offset by bed center and correctly position in z
+			IntPoint modelZBottom_um = new IntPoint(0, 0, minXYZ_um.Z - zClip_um);
+			for (int optimizedMeshIndex = 0; optimizedMeshIndex < OptimizedMeshes.Count; optimizedMeshIndex++)
 			{
-				IntPoint modelXYCenterZBottom_um = new IntPoint((minXYZ_um.X + maxXYZ_um.X) / 2, (minXYZ_um.Y + maxXYZ_um.Y) / 2, minXYZ_um.Z);
-				modelXYCenterZBottom_um -= new IntPoint(xCenter_um, yCenter_um, zClip_um);
-				for (int optimizedMeshIndex = 0; optimizedMeshIndex < OptimizedMeshes.Count; optimizedMeshIndex++)
+				for (int vertexIndex = 0; vertexIndex < OptimizedMeshes[optimizedMeshIndex].vertices.Count; vertexIndex++)
 				{
-					for (int n = 0; n < OptimizedMeshes[optimizedMeshIndex].vertices.Count; n++)
-					{
-						OptimizedMeshes[optimizedMeshIndex].vertices[n].position -= modelXYCenterZBottom_um;
-					}
+					OptimizedMeshes[optimizedMeshIndex].vertices[vertexIndex].position -= modelZBottom_um;
 				}
-
-				minXYZ_um -= modelXYCenterZBottom_um;
-				maxXYZ_um -= modelXYCenterZBottom_um;
 			}
-			else // we still need to put in the bottom clip
-			{
-				// Offset by bed center and correctly position in z
-				IntPoint modelZBottom_um = new IntPoint(0, 0, minXYZ_um.Z - zClip_um);
-				for (int optimizedMeshIndex = 0; optimizedMeshIndex < OptimizedMeshes.Count; optimizedMeshIndex++)
-				{
-					for (int vertexIndex = 0; vertexIndex < OptimizedMeshes[optimizedMeshIndex].vertices.Count; vertexIndex++)
-					{
-						OptimizedMeshes[optimizedMeshIndex].vertices[vertexIndex].position -= modelZBottom_um;
-					}
-				}
 
-				minXYZ_um -= modelZBottom_um;
-				maxXYZ_um -= modelZBottom_um;
-			}
+			minXYZ_um -= modelZBottom_um;
+			maxXYZ_um -= modelZBottom_um;
 
 			size_um = maxXYZ_um - minXYZ_um;
 		}

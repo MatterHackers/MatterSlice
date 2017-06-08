@@ -454,7 +454,6 @@ namespace MatterHackers.MatterSlice.Tests
 
 			ConfigSettings config = new ConfigSettings();
 			config.FirstLayerThickness = .2;
-			config.CenterObjectInXy = false;
 			config.LayerThickness = .2;
 			config.NumberOfBottomLayers = 0;
 			if (createWipeTower)
@@ -560,7 +559,6 @@ namespace MatterHackers.MatterSlice.Tests
 
 			ConfigSettings config = new ConfigSettings();
 			config.FirstLayerThickness = .2;
-			config.CenterObjectInXy = false;
 			config.LayerThickness = .2;
 			fffProcessor processor = new fffProcessor(config);
 			processor.SetTargetFile(risingLayersGCodeFileName);
@@ -608,7 +606,6 @@ namespace MatterHackers.MatterSlice.Tests
 
 			ConfigSettings config = new ConfigSettings();
 			config.FirstLayerThickness = .2;
-			config.CenterObjectInXy = false;
 			config.LayerThickness = .2;
 			if (enableThinWalls)
 			{
@@ -671,7 +668,6 @@ namespace MatterHackers.MatterSlice.Tests
 
 			ConfigSettings config = new ConfigSettings();
 			config.FirstLayerThickness = .2;
-			config.CenterObjectInXy = false;
 			config.LayerThickness = .2;
 			if (enableThinWalls)
 			{
