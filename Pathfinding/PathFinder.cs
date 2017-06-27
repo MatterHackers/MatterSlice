@@ -127,7 +127,10 @@ namespace MatterHackers.Pathfinding
 							// hook the polygons up along this connection
 							IntPointNode nodeA = Waypoints.FindNode(bestAPos);
 							IntPointNode nodeB = Waypoints.FindNode(bestBPos);
-							Waypoints.AddPathLink(nodeA, nodeB);
+							if (nodeA.Position != nodeB.Position)
+							{
+								Waypoints.AddPathLink(nodeA, nodeB);
+							}
 						}
 					}
 				}
