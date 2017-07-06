@@ -417,7 +417,7 @@ namespace MatterHackers.MatterSlice
 
 			for (int pathIndex = 0; pathIndex < paths.Count; pathIndex++)
 			{
-				GCodePath path = paths[pathIndex];
+				var path = paths[pathIndex];
 				if (extruderIndex != path.extruderIndex)
 				{
 					extruderIndex = path.extruderIndex;
@@ -425,7 +425,16 @@ namespace MatterHackers.MatterSlice
 				}
 				else if (path.Retract)
 				{
-					gcodeExport.WriteRetraction();
+					double timeOfMove = 0;
+
+					if (path.config.lineWidth_um == 0)
+					{
+						var lengthToStart = (gcodeExport.GetPosition() - path.polygon[0]).Length();
+						var lengthOfMove = lengthToStart + path.polygon.PolygonLength();
+						timeOfMove = lengthOfMove / 1000.0 / path.config.speed;
+					}
+
+					gcodeExport.WriteRetraction(timeOfMove);
 				}
 				if (path.config != travelConfig && lastConfig != path.config)
 				{
