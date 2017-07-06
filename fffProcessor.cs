@@ -172,7 +172,7 @@ namespace MatterHackers.MatterSlice
 				gcode.SetExtruderOffset(extruderIndex, config.ExtruderOffsets[extruderIndex], -config.ZOffset_um);
 			}
 
-			gcode.SetRetractionSettings(config.RetractionOnTravel, config.RetractionSpeed, config.RetractionOnExtruderSwitch, config.MinimumExtrusionBeforeRetraction, config.RetractionZHop, config.WipeAfterRetraction, config.UnretractExtraExtrusion, config.UnretractExtraOnExtruderSwitch);
+			gcode.SetRetractionSettings(config.RetractionOnTravel, config.RetractionSpeed, config.RetractionOnExtruderSwitch, config.MinimumExtrusionBeforeRetraction, config.RetractionZHop, config.WipeAfterRetraction, config.UnretractExtraExtrusion, config.RetractRestartExtraTimeToApply, config.UnretractExtraOnExtruderSwitch);
 			gcode.SetToolChangeCode(config.ToolChangeCode, config.BeforeToolchangeCode);
 
 			gcode.SetLayerChangeCode(config.LayerChangeCode);
@@ -383,7 +383,7 @@ namespace MatterHackers.MatterSlice
 			{
 				gcode.WriteFanCommand(0);
 				gcode.ResetExtrusionValue();
-				gcode.WriteRetraction();
+				gcode.WriteRetraction(0);
 				gcode.SetZ(maxObjectHeight + 5000);
 				gcode.WriteMove(gcode.GetPosition(), config.TravelSpeed, 0);
 				gcode.WriteMove(new IntPoint(slicingData.modelMin.X, slicingData.modelMin.Y, gcode.CurrentZ), config.TravelSpeed, 0);

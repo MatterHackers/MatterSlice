@@ -55,6 +55,7 @@ namespace MatterHackers.MatterSlice
 		private double totalPrintTime;
 		private double unretractExtraOnExtruderSwitch_mm;
 		private double unretractExtrusionExtra_mm;
+		private double unretractExtrusionExtraSeconds;
 		private bool wipeAfterRetraction;
 		private long zPos_um;
 
@@ -191,10 +192,11 @@ namespace MatterHackers.MatterSlice
 			this.layerChangeCode = layerChangeCode;
 		}
 
-		public void SetRetractionSettings(double retractionAmount, int retractionSpeed, double extruderSwitchRetraction, double minimumExtrusionBeforeRetraction_mm, double retractionZHop_mm, bool wipeAfterRetraction, double unretractExtrusionExtra_mm, double unretractExtraOnExtruderSwitch_mm)
+		public void SetRetractionSettings(double retractionAmount, int retractionSpeed, double extruderSwitchRetraction, double minimumExtrusionBeforeRetraction_mm, double retractionZHop_mm, bool wipeAfterRetraction, double unretractExtrusionExtra_mm, double unretractExtrusionExtraSeconds, double unretractExtraOnExtruderSwitch)
 		{
 			this.unretractExtrusionExtra_mm = unretractExtrusionExtra_mm;
-			this.unretractExtraOnExtruderSwitch_mm = unretractExtraOnExtruderSwitch_mm;
+			this.unretractExtrusionExtraSeconds = unretractExtrusionExtraSeconds;
+			this.unretractExtraOnExtruderSwitch_mm = unretractExtraOnExtruderSwitch;
 			this.wipeAfterRetraction = wipeAfterRetraction;
 			this.retractionAmount_mm = retractionAmount;
 			this.retractionSpeed = retractionSpeed;
@@ -407,7 +409,7 @@ namespace MatterHackers.MatterSlice
 			estimateCalculator.plan(new TimeEstimateCalculator.Position(currentPosition_um.X / 1000.0, currentPosition_um.Y / 1000.0, currentPosition_um.Z / 1000.0, extrusionAmount_mm), speed);
 		}
 
-		public void WriteRetraction()
+		public void WriteRetraction(double timeForNextMove)
 		{
 			double initialSpeed = currentSpeed;
 
@@ -427,8 +429,17 @@ namespace MatterHackers.MatterSlice
 					gcodeFileStream.Write("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
 				}
 
+				// calculate how much time since retract and figure out how much extra extrusion to apply
+				double amountOfExtraExtrusionToApply = 1;
+
+				if(unretractExtrusionExtraSeconds > 0)
+				{
+					timeForNextMove = Math.Min(timeForNextMove, unretractExtrusionExtraSeconds);
+					amountOfExtraExtrusionToApply =  timeForNextMove / unretractExtrusionExtraSeconds;
+				}
+
 				// Make sure after a retraction that we will extrude the extra amount on unretraction that the settings want.
-				extrusionAmount_mm += unretractExtrusionExtra_mm;
+				extrusionAmount_mm += unretractExtrusionExtra_mm * amountOfExtraExtrusionToApply;
 
 				extrusionAmountAtPreviousRetraction_mm = extrusionAmount_mm;
 				isRetracted = true;
