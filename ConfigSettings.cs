@@ -327,6 +327,8 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The amount of extra extrusion to do when unretracting (resume printing after retraction).")]
 		public double UnretractExtraExtrusion { get; set; } = 0;
 
+		public double RetractRestartExtraTimeToApply { get; set; } = 0;
+
 		public double UnretractExtraOnExtruderSwitch { get; set; }
 
 		[SettingDescription("If set will cause the head to try to wipe itself off after retracting.")]

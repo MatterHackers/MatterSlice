@@ -25,6 +25,8 @@ using System.Collections.Generic;
 namespace MatterHackers.MatterSlice
 {
 	using Polygon = List<IntPoint>;
+	public enum RetractType { None, Requested, Force };
+
 	public class GCodePath
 	{
 		public GCodePathConfig config;
@@ -51,7 +53,7 @@ namespace MatterHackers.MatterSlice
 			this.polygon = new Polygon(copyPath.polygon);
 		}
 
-		internal bool Retract { get; set; }
+		internal RetractType Retract { get; set; } = RetractType.None;
 
 		public long Length(bool pathIsClosed)
 		{
