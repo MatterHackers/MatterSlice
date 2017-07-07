@@ -409,13 +409,13 @@ namespace MatterHackers.MatterSlice
 			estimateCalculator.plan(new TimeEstimateCalculator.Position(currentPosition_um.X / 1000.0, currentPosition_um.Y / 1000.0, currentPosition_um.Z / 1000.0, extrusionAmount_mm), speed);
 		}
 
-		public void WriteRetraction(double timeForNextMove)
+		public void WriteRetraction(double timeForNextMove, bool forceRetraction)
 		{
 			double initialSpeed = currentSpeed;
 
 			if (retractionAmount_mm > 0
 				&& !isRetracted
-				&& extrusionAmountAtPreviousRetraction_mm + minimumExtrusionBeforeRetraction_mm < extrusionAmount_mm)
+				&& (forceRetraction || extrusionAmountAtPreviousRetraction_mm + minimumExtrusionBeforeRetraction_mm < extrusionAmount_mm))
 			{
 				gcodeFileStream.Write("G1 F{0} E{1:0.#####}\n".FormatWith(retractionSpeed * 60, extrusionAmount_mm - retractionAmount_mm));
 				currentSpeed = retractionSpeed;

@@ -383,7 +383,7 @@ namespace MatterHackers.MatterSlice
 			{
 				gcode.WriteFanCommand(0);
 				gcode.ResetExtrusionValue();
-				gcode.WriteRetraction(0);
+				gcode.WriteRetraction(0, false);
 				gcode.SetZ(maxObjectHeight + 5000);
 				gcode.WriteMove(gcode.GetPosition(), config.TravelSpeed, 0);
 				gcode.WriteMove(new IntPoint(slicingData.modelMin.X, slicingData.modelMin.Y, gcode.CurrentZ), config.TravelSpeed, 0);

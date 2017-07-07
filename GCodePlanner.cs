@@ -332,7 +332,7 @@ namespace MatterHackers.MatterSlice
 
 			if (forceRetraction)
 			{
-				path.Retract = true;
+				path.Retract = RetractType.Force;
 				forceRetraction = false;
 			}
 
@@ -360,21 +360,21 @@ namespace MatterHackers.MatterSlice
 						// If the internal move is very long (> retractionMinimumDistance_um), do a retraction
 						if (lineLength_um > retractionMinimumDistance_um)
 						{
-							path.Retract = true;
+							path.Retract = RetractType.Requested;
 						}
 					}
 					// else the path is good it just goes directly to the positionToMoveTo
 				}
 				else // can't find a good path
 				{
-					path.Retract = true;
+					path.Retract = RetractType.Requested;
 				}
 			}
 
 			// Always check if the distance is greated than the amount need to retract.
 			if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um))
 			{
-				path.Retract = true;
+				path.Retract = RetractType.Requested;
 			}
 
 			path.polygon.Add(new IntPoint(positionToMoveTo, CurrentZ)
@@ -423,7 +423,7 @@ namespace MatterHackers.MatterSlice
 					extruderIndex = path.extruderIndex;
 					gcodeExport.SwitchExtruder(extruderIndex);
 				}
-				else if (path.Retract)
+				else if (path.Retract != RetractType.None)
 				{
 					double timeOfMove = 0;
 
@@ -434,7 +434,7 @@ namespace MatterHackers.MatterSlice
 						timeOfMove = lengthOfMove / 1000.0 / path.config.speed;
 					}
 
-					gcodeExport.WriteRetraction(timeOfMove);
+					gcodeExport.WriteRetraction(timeOfMove, path.Retract == RetractType.Force);
 				}
 				if (path.config != travelConfig && lastConfig != path.config)
 				{
@@ -597,7 +597,7 @@ namespace MatterHackers.MatterSlice
 
 			paths.Add(new GCodePath());
 			GCodePath ret = paths[paths.Count - 1];
-			ret.Retract = false;
+			ret.Retract = RetractType.None;
 			ret.config = config;
 			ret.extruderIndex = currentExtruderIndex;
 			ret.done = false;
