@@ -365,8 +365,9 @@ namespace MatterHackers.MatterSlice
 					}
 					// else the path is good it just goes directly to the positionToMoveTo
 				}
-				else // can't find a good path
+				else if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um / 10))
 				{
+					// can't find a good path and moving more than a very little bit
 					path.Retract = RetractType.Requested;
 				}
 			}
