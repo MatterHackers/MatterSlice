@@ -61,14 +61,14 @@ namespace MatterHackers.MatterSlice
 			{
 				_AllPotentialSupportOutlines = FindAllPotentialSupportOutlines(_InsetPartOutlines, supportWidth_um);
 
-				List<Polygons> allRequiredSupportOutlines = RemoveSelfSupportedSections(_AllPotentialSupportOutlines, supportWidth_um);
+				_AllRequiredSupportOutlines = RemoveSelfSupportedSections(_AllPotentialSupportOutlines, supportWidth_um);
 
 				if (!config.GenerateInternalSupport)
 				{
-					allRequiredSupportOutlines = RemoveSupportFromInternalSpaces(allRequiredSupportOutlines, _InsetPartOutlines);
+					_AllRequiredSupportOutlines = RemoveSupportFromInternalSpaces(_AllRequiredSupportOutlines, _InsetPartOutlines);
 				}
 
-				easyGrabDistanceOutlines = ExpandToEasyGrabDistance(allRequiredSupportOutlines, (int)(grabDistanceMm * 1000));
+				easyGrabDistanceOutlines = ExpandToEasyGrabDistance(_AllRequiredSupportOutlines, (int)(grabDistanceMm * 1000));
 
 				SupportOutlines = AccumulateDownPolygons(config, easyGrabDistanceOutlines, _InsetPartOutlines);
 			}
