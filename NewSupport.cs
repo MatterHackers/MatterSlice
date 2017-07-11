@@ -46,73 +46,91 @@ namespace MatterHackers.MatterSlice
 
 	public class NewSupport
 	{
-		//List<Polygons> pushedUpTopOutlines = new List<Polygons>();
-		internal List<Polygons> airGappedBottomOutlines = new List<Polygons>();
-
-		internal List<Polygons> allPartOutlines = new List<Polygons>();
-		internal List<Polygons> allPotentialSupportOutlines = new List<Polygons>();
-		internal List<Polygons> allRequiredSupportOutlines = new List<Polygons>();
-		internal List<Polygons> easyGrabDistanceOutlines = new List<Polygons>();
-		internal List<Polygons> insetPartOutlines = new List<Polygons>();
-		internal List<Polygons> interfaceLayers = new List<Polygons>();
-		internal List<Polygons> supportOutlines = new List<Polygons>();
 		private static double cleanDistance_um = 10;
-		private double grabDistanceMm;
 
-		public NewSupport(ConfigSettings config, List<ExtruderLayers> Extruders, double grabDistanceMm)
+		public NewSupport(ConfigSettings config, List<ExtruderLayers> Extruders, double grabDistanceMm, ExtruderLayers userGeneratedSupport = null)
 		{
 			cleanDistance_um = config.ExtrusionWidth_um / 10;
 			long supportWidth_um = (long)(config.ExtrusionWidth_um * (100 - config.SupportPercent) / 100);
-			this.grabDistanceMm = grabDistanceMm;
 			// create starting support outlines
-			allPartOutlines = CalculateAllPartOutlines(config, Extruders);
+			List<Polygons> allPartOutlines = CalculateAllPartOutlines(config, Extruders);
+			_InsetPartOutlines = CreateInsetPartOutlines(allPartOutlines, config.ExtrusionWidth_um / 2);
 
-			insetPartOutlines = CreateInsetPartOutlines(allPartOutlines, config.ExtrusionWidth_um / 2);
-
-			allPotentialSupportOutlines = FindAllPotentialSupportOutlines(insetPartOutlines, supportWidth_um);
-
-			allRequiredSupportOutlines = RemoveSelfSupportedSections(allPotentialSupportOutlines, supportWidth_um);
-
-			if (!config.GenerateInternalSupport)
+			List<Polygons> easyGrabDistanceOutlines;
+			if (userGeneratedSupport == null)
 			{
-				allRequiredSupportOutlines = RemoveSupportFromInternalSpaces(allRequiredSupportOutlines, insetPartOutlines);
+				_AllPotentialSupportOutlines = FindAllPotentialSupportOutlines(_InsetPartOutlines, supportWidth_um);
+
+				List<Polygons> allRequiredSupportOutlines = RemoveSelfSupportedSections(_AllPotentialSupportOutlines, supportWidth_um);
+
+				if (!config.GenerateInternalSupport)
+				{
+					allRequiredSupportOutlines = RemoveSupportFromInternalSpaces(allRequiredSupportOutlines, _InsetPartOutlines);
+				}
+
+				easyGrabDistanceOutlines = ExpandToEasyGrabDistance(allRequiredSupportOutlines, (int)(grabDistanceMm * 1000));
+
+				SupportOutlines = AccumulateDownPolygons(config, easyGrabDistanceOutlines, _InsetPartOutlines);
+			}
+			else
+			{
+				int numSupportLayers = userGeneratedSupport.Layers.Count;
+				easyGrabDistanceOutlines = CreateEmptyPolygons(numSupportLayers);
+
+				// calculate the combined outlines for everything
+				for (int layerIndex = 0; layerIndex < numSupportLayers; layerIndex++)
+				{
+					easyGrabDistanceOutlines[layerIndex] = allPartOutlines[layerIndex].CreateUnion(userGeneratedSupport.Layers[layerIndex].AllOutlines);
+					easyGrabDistanceOutlines[layerIndex].ProcessIntoSeparateIslands();
+				}
 			}
 
-			easyGrabDistanceOutlines = ExpandToEasyGrabDistance(allRequiredSupportOutlines, (int)(grabDistanceMm * 1000));
+			// remove the actual parts from the interface data
+			InterfaceLayers = ClipToXyDistance(easyGrabDistanceOutlines, _InsetPartOutlines, config);
+			InterfaceLayers = CreateInterfaceLayers(InterfaceLayers, config.SupportInterfaceLayers);
 
-			//pushedUpTopOutlines = PushUpTops(easyGrabDistanceOutlines, numLayers, config);
-
-			interfaceLayers = CreateInterfaceLayers(easyGrabDistanceOutlines, config.SupportInterfaceLayers);
-			interfaceLayers = ClipToXyDistance(interfaceLayers, insetPartOutlines, config);
-
-			supportOutlines = AccumulateDownPolygons(config, easyGrabDistanceOutlines, insetPartOutlines);
-			supportOutlines = ClipToXyDistance(supportOutlines, insetPartOutlines, config);
+			// remove the actual parts from the support data
+			SupportOutlines = ClipToXyDistance(SupportOutlines, _InsetPartOutlines, config);
 
 			// remove the interface layers from the normal support layers
-			supportOutlines = CalculateDifferencePerLayer(supportOutlines, interfaceLayers);
+			SupportOutlines = CalculateDifferencePerLayer(SupportOutlines, InterfaceLayers);
 
-			airGappedBottomOutlines = CreateAirGappedBottomLayers(supportOutlines, insetPartOutlines);
+			AirGappedBottomOutlines = CreateAirGappedBottomLayers(SupportOutlines, _InsetPartOutlines);
 			// remove the airGappedBottomOutlines layers from the normal support layers
-			supportOutlines = CalculateDifferencePerLayer(supportOutlines, airGappedBottomOutlines);
+			SupportOutlines = CalculateDifferencePerLayer(SupportOutlines, AirGappedBottomOutlines);
 		}
+
+		//List<Polygons> pushedUpTopOutlines = new List<Polygons>();
+		public List<Polygons> AirGappedBottomOutlines { get; }
+
+		public List<Polygons> InterfaceLayers { get; }
+		public List<Polygons> SupportOutlines { get; }
+
+		#region // unit testing data
+
+		public List<Polygons> _AllPotentialSupportOutlines { get; }
+		public List<Polygons> _AllRequiredSupportOutlines { get; }
+		public List<Polygons> _InsetPartOutlines { get; }
+
+		#endregion // unit testing data
 
 		public Polygons GetBedOutlines()
 		{
-			return supportOutlines[0].CreateUnion(interfaceLayers[0]);
+			return SupportOutlines[0].CreateUnion(InterfaceLayers[0]);
 		}
 
 		public Polygons GetRequiredSupportAreas(int layerIndex)
 		{
 			layerIndex--;
-			if (layerIndex < interfaceLayers.Count && layerIndex >= 0)
+			if (layerIndex < InterfaceLayers.Count && layerIndex >= 0)
 			{
-				if (interfaceLayers[layerIndex].Count > 0)
+				if (InterfaceLayers[layerIndex].Count > 0)
 				{
-					return interfaceLayers[layerIndex];
+					return InterfaceLayers[layerIndex];
 				}
-				else if (layerIndex < supportOutlines.Count)
+				else if (layerIndex < SupportOutlines.Count)
 				{
-					return supportOutlines[layerIndex];
+					return SupportOutlines[layerIndex];
 				}
 			}
 
@@ -121,18 +139,18 @@ namespace MatterHackers.MatterSlice
 
 		public bool HasInterfaceSupport(int layerIndex)
 		{
-			return interfaceLayers[layerIndex].Count > 0;
+			return InterfaceLayers[layerIndex].Count > 0;
 		}
 
 		public bool HasNormalSupport(int layerIndex)
 		{
-			return supportOutlines[layerIndex].Count > 0;
+			return SupportOutlines[layerIndex].Count > 0;
 		}
 
 		public void QueueAirGappedBottomLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig)
 		{
 			// normal support
-			Polygons currentAirGappedBottoms = airGappedBottomOutlines[layerIndex];
+			Polygons currentAirGappedBottoms = AirGappedBottomOutlines[layerIndex];
 			currentAirGappedBottoms = currentAirGappedBottoms.Offset(-config.ExtrusionWidth_um / 2);
 			List<Polygons> supportIslands = currentAirGappedBottoms.ProcessIntoSeparateIslands();
 
@@ -170,7 +188,7 @@ namespace MatterHackers.MatterSlice
 		{
 			// interface
 			bool outputPaths = false;
-			Polygons currentInterfaceOutlines2 = interfaceLayers[layerIndex].Offset(-config.ExtrusionWidth_um / 2);
+			Polygons currentInterfaceOutlines2 = InterfaceLayers[layerIndex].Offset(-config.ExtrusionWidth_um / 2);
 			if (currentInterfaceOutlines2.Count > 0)
 			{
 				List<Polygons> interfaceIslands = currentInterfaceOutlines2.ProcessIntoSeparateIslands();
@@ -209,7 +227,7 @@ namespace MatterHackers.MatterSlice
 		public bool QueueNormalSupportLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig)
 		{
 			// normal support
-			Polygons currentSupportOutlines = supportOutlines[layerIndex];
+			Polygons currentSupportOutlines = SupportOutlines[layerIndex];
 			currentSupportOutlines = currentSupportOutlines.Offset(-supportNormalConfig.lineWidth_um / 2);
 			List<Polygons> supportIslands = currentSupportOutlines.ProcessIntoSeparateIslands();
 
@@ -227,7 +245,7 @@ namespace MatterHackers.MatterSlice
 				if (config.GenerateSupportPerimeter || layerIndex == 0)
 				{
 					Polygons outlines = Clipper.CleanPolygons(islandOutline, config.ExtrusionWidth_um / 4);
-					if(gcodeLayer.QueuePolygonsByOptimizer(outlines, supportNormalConfig))
+					if (gcodeLayer.QueuePolygonsByOptimizer(outlines, supportNormalConfig))
 					{
 						outputPaths = true;
 					}
@@ -476,26 +494,6 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return allPotentialSupportOutlines;
-		}
-
-		private static List<Polygons> PushUpTops(List<Polygons> inputPolys, ConfigSettings config)
-		{
-			int numLayers = inputPolys.Count;
-
-			return inputPolys;
-			int layersFor2Mm = 2000 / config.LayerThickness_um;
-			List<Polygons> pushedUpPolys = CreateEmptyPolygons(numLayers);
-			for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
-			{
-				for (int layerToAddToIndex = Math.Min(layerIndex + layersFor2Mm, numLayers - 1); layerToAddToIndex >= 0; layerToAddToIndex--)
-				{
-				}
-
-				Polygons curLayerPolys = inputPolys[layerIndex];
-				pushedUpPolys[layerIndex] = Clipper.CleanPolygons(curLayerPolys.Offset(config.ExtrusionWidth_um + config.SupportXYDistance_um), cleanDistance_um);
-			}
-
-			return pushedUpPolys;
 		}
 
 		private static List<Polygons> RemoveSelfSupportedSections(List<Polygons> inputPolys, long supportWidth_um)

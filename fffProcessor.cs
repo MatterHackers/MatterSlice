@@ -241,6 +241,16 @@ namespace MatterHackers.MatterSlice
 
 			MultiExtruders.ProcessBooleans(slicingData.Extruders, config.BooleanOpperations);
 
+			// Is the last extruder data actually support definitions?
+			bool userGeneratedSupport = slicingData.Extruders.Count > 1;
+			ExtruderLayers supportOutlines = null;
+			if (userGeneratedSupport)
+			{
+				supportOutlines = slicingData.Extruders[slicingData.Extruders.Count - 1];
+				// Last extruder was support material, remove it from the list.
+				slicingData.Extruders.RemoveAt(slicingData.Extruders.Count - 1);
+			}
+
 			config.SetExtruderCount(slicingData.Extruders.Count);
 
 			MultiExtruders.RemoveExtruderIntersections(slicingData.Extruders);
@@ -249,10 +259,11 @@ namespace MatterHackers.MatterSlice
             LayerPart.dumpLayerparts(slicingData, "output.html");
 #endif
 
-			if (config.GenerateSupport && !config.ContinuousSpiralOuterPerimeter)
+			if (config.GenerateSupport
+				&& !config.ContinuousSpiralOuterPerimeter)
 			{
 				LogOutput.Log("Generating support map...\n");
-				slicingData.support = new NewSupport(config, slicingData.Extruders, 1);
+				slicingData.support = new NewSupport(config, slicingData.Extruders, 1, supportOutlines);
 			}
 
 			slicingData.CreateIslandData();
