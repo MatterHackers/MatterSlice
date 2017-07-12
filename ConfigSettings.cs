@@ -170,7 +170,6 @@ namespace MatterHackers.MatterSlice
 
 		public int LayerThickness_um => (int)(LayerThickness * 1000);
 		public bool MergeOverlappingLines { get; set; } = true;
-		public bool MinimizeSupportColumns { get; set; }
 
 		[SettingDescription("mm.")]
 		public double MinimumExtrusionBeforeRetraction { get; set; }
@@ -629,7 +628,6 @@ namespace MatterHackers.MatterSlice
 			SupportXYDistanceFromObject = .7;
 			SupportNumberOfLayersToSkipInZ = 1;
 			SupportInterfaceLayers = 3;
-			MinimizeSupportColumns = false; // experimental and not working well enough yet
 			SupportInterfaceExtruder = -1;
 			RetractionOnTravel = 4.5;
 			RetractionSpeed = 45;
