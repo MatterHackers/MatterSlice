@@ -202,24 +202,10 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void SetPositionAndSize(SimpleMeshCollection simpleMeshCollection, long xCenter_um, long yCenter_um, long zClip_um)
+		public void SetSize(SimpleMeshCollection simpleMeshCollection)
 		{
 			minXYZ_um = simpleMeshCollection.minXYZ_um();
 			maxXYZ_um = simpleMeshCollection.maxXYZ_um();
-
-			// we still need to put in the bottom clip
-			// Offset by bed center and correctly position in z
-			IntPoint modelZBottom_um = new IntPoint(0, 0, minXYZ_um.Z - zClip_um);
-			for (int optimizedMeshIndex = 0; optimizedMeshIndex < OptimizedMeshes.Count; optimizedMeshIndex++)
-			{
-				for (int vertexIndex = 0; vertexIndex < OptimizedMeshes[optimizedMeshIndex].vertices.Count; vertexIndex++)
-				{
-					OptimizedMeshes[optimizedMeshIndex].vertices[vertexIndex].position -= modelZBottom_um;
-				}
-			}
-
-			minXYZ_um -= modelZBottom_um;
-			maxXYZ_um -= modelZBottom_um;
 
 			size_um = maxXYZ_um - minXYZ_um;
 		}

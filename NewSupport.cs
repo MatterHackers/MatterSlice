@@ -76,12 +76,15 @@ namespace MatterHackers.MatterSlice
 			{
 				int numSupportLayers = userGeneratedSupport.Layers.Count;
 				easyGrabDistanceOutlines = CreateEmptyPolygons(numSupportLayers);
+				SupportOutlines = CreateEmptyPolygons(numSupportLayers);
 
 				// calculate the combined outlines for everything
 				for (int layerIndex = 0; layerIndex < numSupportLayers; layerIndex++)
 				{
 					easyGrabDistanceOutlines[layerIndex] = allPartOutlines[layerIndex].CreateUnion(userGeneratedSupport.Layers[layerIndex].AllOutlines);
 					easyGrabDistanceOutlines[layerIndex].ProcessIntoSeparateIslands();
+
+					SupportOutlines[layerIndex] = userGeneratedSupport.Layers[layerIndex].AllOutlines.DeepCopy();
 				}
 			}
 
@@ -286,7 +289,6 @@ namespace MatterHackers.MatterSlice
 			int numLayers = inputPolys.Count;
 
 			long nozzleSize = config.ExtrusionWidth_um;
-			long areaToTryAndBe = 20 * 20 * nozzleSize * nozzleSize; // 10 x 10 mm approximately (assuming .5 nozzle)
 
 			List<Polygons> allDownOutlines = CreateEmptyPolygons(numLayers);
 			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
@@ -295,35 +297,6 @@ namespace MatterHackers.MatterSlice
 
 				// get all the polygons above us
 				Polygons accumulatedAbove = allDownOutlines[layerIndex + 1].CreateUnion(aboveRequiredSupport);
-
-				// experimental and not working well enough yet
-				if (config.MinimizeSupportColumns)
-				{
-					// reduce the amount of support material used
-					for (int i = accumulatedAbove.Count - 1; i >= 0; i--)
-					{
-						Polygon polygon = accumulatedAbove[i];
-						double polyArea = polygon.Area();
-						if (polyArea > areaToTryAndBe)
-						{
-							Polygons offsetPolygons = new Polygons() { polygon }.Offset(-config.ExtrusionWidth_um / 2);
-							accumulatedAbove.RemoveAt(i);
-							foreach (Polygon polyToAdd in offsetPolygons)
-							{
-								accumulatedAbove.Insert(i, polyToAdd);
-							}
-						}
-						else if (polyArea < areaToTryAndBe * .9)
-						{
-							Polygons offsetPolygons = new Polygons() { polygon }.Offset(config.ExtrusionWidth_um / 2);
-							accumulatedAbove.RemoveAt(i);
-							foreach (Polygon polyToAdd in offsetPolygons)
-							{
-								accumulatedAbove.Insert(i, polyToAdd);
-							}
-						}
-					}
-				}
 
 				// add in the support on this level
 				Polygons curRequiredSupport = inputPolys[layerIndex];
