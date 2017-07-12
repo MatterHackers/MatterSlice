@@ -276,15 +276,6 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
-		public void BottomClipCorrectNumberOfLayers()
-		{
-			// test .1 layer height
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2, .2))) == 49);
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2, .31))) == 48);
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2, .4))) == 48);
-		}
-
-		[Test]
 		public void CanSetExtruderForSupportMaterial()
 		{
 			string baseFileName = "Support Material 2 Bars";
@@ -721,15 +712,14 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		private string CreateGCodeForLayerHeights(double firstLayerHeight, double otherLayerHeight, double bottomClip = 0)
+		private string CreateGCodeForLayerHeights(double firstLayerHeight, double otherLayerHeight)
 		{
 			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
-			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}_o{1}_c{2}.gcode".FormatWith(firstLayerHeight, otherLayerHeight, bottomClip));
+			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}_o{1}_c{2}.gcode".FormatWith(firstLayerHeight, otherLayerHeight));
 
 			ConfigSettings config = new ConfigSettings();
 			config.FirstLayerThickness = firstLayerHeight;
 			config.LayerThickness = otherLayerHeight;
-			config.BottomClipAmount = bottomClip;
 			fffProcessor processor = new fffProcessor(config);
 			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);
