@@ -361,10 +361,10 @@ namespace MatterHackers.MatterSlice.Tests
 		public void CorrectNumberOfLayersForLayerHeights()
 		{
 			// test .1 layer height
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.1, .1))) == 100);
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .1))) == 99);
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2))) == 50);
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.05, .2))) == 51);
+			Assert.AreEqual(100, TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.1, .1))));
+			Assert.AreEqual(99, TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .1))));
+			Assert.AreEqual(50, TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2))));
+			Assert.AreEqual(51, TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.05, .2))));
 		}
 
 		public void DoHas2WallRingsAllTheWayUp(string fileName, int expectedLayerCount, bool checkRadius = false)
@@ -715,7 +715,7 @@ namespace MatterHackers.MatterSlice.Tests
 		private string CreateGCodeForLayerHeights(double firstLayerHeight, double otherLayerHeight)
 		{
 			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
-			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}_o{1}_c{2}.gcode".FormatWith(firstLayerHeight, otherLayerHeight));
+			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}_o{1}.gcode".FormatWith(firstLayerHeight, otherLayerHeight));
 
 			ConfigSettings config = new ConfigSettings();
 			config.FirstLayerThickness = firstLayerHeight;
