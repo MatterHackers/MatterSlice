@@ -242,10 +242,11 @@ namespace MatterHackers.MatterSlice
 			MultiExtruders.ProcessBooleans(slicingData.Extruders, config.BooleanOpperations);
 
 			// Is the last extruder data actually support definitions?
-			bool userGeneratedSupport = false;// slicingData.Extruders.Count > 1;
+			bool userGeneratedSupport = config.BooleanOpperations.Contains("S");
 			ExtruderLayers supportOutlines = null;
 			if (userGeneratedSupport)
 			{
+				config.GenerateSupport = true;
 				supportOutlines = slicingData.Extruders[slicingData.Extruders.Count - 1];
 				// Last extruder was support material, remove it from the list.
 				slicingData.Extruders.RemoveAt(slicingData.Extruders.Count - 1);

@@ -124,6 +124,10 @@ namespace MatterHackers.MatterSlice
 						parseIndex++;
 						break;
 
+					case 'S':
+						parseIndex++;
+						break;
+
 					default:
 						// get the number for the operand index
 						int skipCount = 0;
