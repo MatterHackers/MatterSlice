@@ -132,7 +132,7 @@ namespace MatterHackers.Pathfinding
 					}
 				}
 			}
-
+			     
 			return true;
 		}
 
@@ -149,26 +149,27 @@ namespace MatterHackers.Pathfinding
 				if (goodPath)
 				{
 					// move every segment that can be inside the boundry to be within the boundry
-					if (false && pathThatIsInside.Count > 1)
+					if (pathThatIsInside.Count > 1)
 					{
-						IntPoint startPoint = pathThatIsInside[0];
-						for (int i = 1; i < pathThatIsInside.Count; i++)
+						IntPoint startPoint = startPointIn;
+						for (int i = 0; i < pathThatIsInside.Count-1; i++)
 						{
-							IntPoint endPoint = pathThatIsInside[i];
+							IntPoint testPoint = pathThatIsInside[i];
+							IntPoint endPoint = i < pathThatIsInside.Count-2 ? pathThatIsInside[i+1] : endPointIn;
 
-							Polygon segmentInside = new Polygon();
-							if (CreatePathInsideBoundary2(startPoint, endPoint, segmentInside))
+							IntPoint inPolyPosition;
+							if (MovePointInsideBoundary(testPoint, out inPolyPosition))
 							{
-								 if (segmentInside.Count == 3
-									&& startPoint == segmentInside[0]
-									&& endPoint == segmentInside[2])
+								// It moved so test if it is a good point
+								if(PathingData.Polygons.FindIntersection(startPoint, inPolyPosition, PathingData.EdgeQuadTrees) == Intersection.None
+									&& PathingData.Polygons.FindIntersection(inPolyPosition, endPoint, PathingData.EdgeQuadTrees) == Intersection.None)
 								{
-									pathThatIsInside.RemoveAt(i);
-									pathThatIsInside.Insert(i, segmentInside[1]);
+									testPoint = inPolyPosition;
+									pathThatIsInside[i] = testPoint;
 								}
 							}
 
-							startPoint = endPoint;
+							startPoint = testPoint;
 						}
 					}
 				}
