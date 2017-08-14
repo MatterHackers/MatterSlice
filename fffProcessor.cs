@@ -933,7 +933,7 @@ namespace MatterHackers.MatterSlice
 			if (island.IslandOutline.Count > 0)
 			{
 				// If we are already in the island we are going to, don't go there.
-				if (island.PathFinder.OutlinePolygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineEdgeQuadTrees))
+				if (island.PathFinder.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineData.EdgeQuadTrees))
 				{
 					islandCurrentlyInside = island;
 					layerGcodePlanner.PathFinder = island.PathFinder;
@@ -943,11 +943,11 @@ namespace MatterHackers.MatterSlice
 				var closestPointOnNextIsland = island.IslandOutline.FindClosestPoint(layerGcodePlanner.LastPosition);
 				IntPoint closestNextIslandPoint = island.IslandOutline[closestPointOnNextIsland.Item1][closestPointOnNextIsland.Item2];
 
-				if (islandCurrentlyInside?.PathFinder?.OutlinePolygons.Count > 0
-					&& islandCurrentlyInside?.PathFinder?.OutlinePolygons?[0]?.Count > 3)
+				if (islandCurrentlyInside?.PathFinder?.OutlineData.Polygons.Count > 0
+					&& islandCurrentlyInside?.PathFinder?.OutlineData.Polygons?[0]?.Count > 3)
 				{
 					// start by moving within the last island to the closet point to the next island
-					var polygons = islandCurrentlyInside.PathFinder.OutlinePolygons;
+					var polygons = islandCurrentlyInside.PathFinder.OutlineData.Polygons;
 					if (polygons.Count > 0)
 					{
 						var closestPointOnLastIsland = polygons.FindClosestPoint(closestNextIslandPoint);

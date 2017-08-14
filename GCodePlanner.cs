@@ -624,11 +624,11 @@ namespace MatterHackers.MatterSlice
 						if (pathIndex == paths.Count - 1
 							&& polyIndex == path.polygon.Count - 1
 							&& lastValidPathFinder != null
-							&& !lastValidPathFinder.OutlinePolygons.PointIsInside((position + lastPosition) / 2))
+							&& !lastValidPathFinder.OutlineData.Polygons.PointIsInside((position + lastPosition) / 2))
 						{
 							// an easy way to get the path
 							string startEndString = $"start:({position.X}, {position.Y}), end:({lastPosition.X}, {lastPosition.Y})";
-							string outlineString = lastValidPathFinder.OutlinePolygons.WriteToString();
+							string outlineString = lastValidPathFinder.OutlineData.Polygons.WriteToString();
 							long length = (position - lastPosition).Length();
 							int a = 0;
 						}
