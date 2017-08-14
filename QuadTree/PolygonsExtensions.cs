@@ -341,23 +341,26 @@ namespace MatterHackers.QuadTree
 					IntPoint segmentLeft = segmentDelta.GetPerpendicularLeft();
 					long segmentLeftLength = segmentLeft.Length();
 
-					long distanceFromStart = segmentDelta.Dot(pointRelStart) / segmentLength;
-
-					if (distanceFromStart >= 0 && distanceFromStart <= segmentDelta.Length())
+					if (segmentLength != 0)
 					{
-						long distToBoundarySegment = segmentLeft.Dot(pointRelStart) / segmentLeftLength;
+						long distanceFromStart = segmentDelta.Dot(pointRelStart) / segmentLength;
 
-						if (Math.Abs(distToBoundarySegment) < bestDist)
+						if (distanceFromStart >= 0 && distanceFromStart <= segmentDelta.Length())
 						{
-							IntPoint pointAlongCurrentSegment = startPosition;
-							if (distToBoundarySegment != 0)
-							{
-								pointAlongCurrentSegment = startPosition - segmentLeft * distToBoundarySegment / segmentLeftLength;
-							}
+							long distToBoundarySegment = segmentLeft.Dot(pointRelStart) / segmentLeftLength;
 
-							bestDist = Math.Abs(distToBoundarySegment);
-							bestPolyPointPosition = new Tuple<int, int, IntPoint>(polygonIndex, pointIndex, pointAlongCurrentSegment);
-							bestMoveDelta = segmentLeft;
+							if (Math.Abs(distToBoundarySegment) < bestDist)
+							{
+								IntPoint pointAlongCurrentSegment = startPosition;
+								if (distToBoundarySegment != 0)
+								{
+									pointAlongCurrentSegment = startPosition - segmentLeft * distToBoundarySegment / segmentLeftLength;
+								}
+
+								bestDist = Math.Abs(distToBoundarySegment);
+								bestPolyPointPosition = new Tuple<int, int, IntPoint>(polygonIndex, pointIndex, pointAlongCurrentSegment);
+								bestMoveDelta = segmentLeft;
+							}
 						}
 					}
 
