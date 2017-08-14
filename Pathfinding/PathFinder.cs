@@ -138,12 +138,14 @@ namespace MatterHackers.Pathfinding
 
 		public bool CreatePathInsideBoundary(IntPoint startPointIn, IntPoint endPointIn, Polygon pathThatIsInside, bool optomizePath = true)
 		{
-			var goodPath = CreatePathInsideBoundary2(startPointIn, endPointIn, pathThatIsInside);
-			if (!goodPath)
+			var goodPath = CreatePathInsideBoundaryInternal(startPointIn, endPointIn, pathThatIsInside);
+
+			bool agressivePathSolution = true;
+			if (agressivePathSolution && !goodPath)
 			{
 				// could not find a path in the Boundry find one in the outline
 				useOutlineAsBoundry = true;
-				goodPath = CreatePathInsideBoundary2(startPointIn, endPointIn, pathThatIsInside);
+				goodPath = CreatePathInsideBoundaryInternal(startPointIn, endPointIn, pathThatIsInside);
 				useOutlineAsBoundry = false;
 
 				if (goodPath)
@@ -160,18 +162,40 @@ namespace MatterHackers.Pathfinding
 							IntPoint inPolyPosition;
 							if (MovePointInsideBoundary(testPoint, out inPolyPosition))
 							{
+								useOutlineAsBoundry = true;
 								// It moved so test if it is a good point
-								if(PathingData.Polygons.FindIntersection(startPoint, inPolyPosition, PathingData.EdgeQuadTrees) == Intersection.None
-									&& PathingData.Polygons.FindIntersection(inPolyPosition, endPoint, PathingData.EdgeQuadTrees) == Intersection.None)
+								if (PathingData.Polygons.FindIntersection(startPoint, inPolyPosition, PathingData.EdgeQuadTrees) != Intersection.Intersect
+									&& PathingData.Polygons.FindIntersection(inPolyPosition, endPoint, PathingData.EdgeQuadTrees) != Intersection.Intersect)
 								{
 									testPoint = inPolyPosition;
 									pathThatIsInside[i] = testPoint;
 								}
+
+								useOutlineAsBoundry = false;
 							}
 
 							startPoint = testPoint;
 						}
 					}
+				}
+			}
+
+			// remove any segment that goes to one point and then back to same point (a -> b -> a)
+			if (pathThatIsInside.Count > 1)
+			{
+				IntPoint startPoint = startPointIn;
+				for (int i = 0; i < pathThatIsInside.Count - 1; i++)
+				{
+					IntPoint testPoint = pathThatIsInside[i];
+					IntPoint endPoint = i < pathThatIsInside.Count - 2 ? pathThatIsInside[i + 1] : endPointIn;
+
+					if(endPoint == startPoint)
+					{
+						pathThatIsInside.RemoveAt(i);
+						i--;
+					}
+
+					startPoint = testPoint;
 				}
 			}
 
@@ -190,12 +214,13 @@ namespace MatterHackers.Pathfinding
 			return goodPath;
 		}
 
-		public bool CreatePathInsideBoundary2(IntPoint startPointIn, IntPoint endPointIn, Polygon pathThatIsInside)
+		private bool CreatePathInsideBoundaryInternal(IntPoint startPointIn, IntPoint endPointIn, Polygon pathThatIsInside)
 		{
 			double z = startPointIn.Z;
 			startPointIn.Z = 0;
 			endPointIn.Z = 0;
-			if (PathingData.Polygons == null || PathingData.Polygons.Count == 0)
+			if (PathingData?.Polygons == null 
+				|| PathingData?.Polygons.Count == 0)
 			{
 				return false;
 			}
