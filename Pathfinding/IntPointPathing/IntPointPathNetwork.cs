@@ -20,6 +20,7 @@ using MSClipperLib;
 
 namespace MatterHackers.Pathfinding
 {
+	using System.Diagnostics;
 	using Datastructures;
 	using Polygon = List<IntPoint>;
 
@@ -106,7 +107,8 @@ namespace MatterHackers.Pathfinding
 		{
 			if(nodeA == nodeB || nodeB.Position == nodeA.Position)
 			{
-				throw new ArgumentException();
+				Debug.Assert(false, "nodeA and node B should not be the same position");
+				return null;
 			}
 			PathLink link = nodeB.GetLinkTo(nodeA);
 
