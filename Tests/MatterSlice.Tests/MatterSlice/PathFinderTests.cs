@@ -162,19 +162,19 @@ namespace MatterHackers.MatterSlice.Tests
 					IntPoint endPoint = new IntPoint(50, 5);
 					PathFinder testHarness = new PathFinder(boundaryPolygons, 0);
 
-					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(new IntPoint(-1, 5)));
-					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(new IntPoint(-1, 5), testHarness.OutlineEdgeQuadTrees));
-					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(1, 5)));
-					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(1, 5), testHarness.OutlineEdgeQuadTrees));
-					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(0, 5)));
-					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(0, 5), testHarness.OutlineEdgeQuadTrees));
-					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(40, 5)));
-					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(40, 5), testHarness.OutlineEdgeQuadTrees));
+					Assert.IsFalse(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(-1, 5)));
+					Assert.IsFalse(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(-1, 5), testHarness.OutlineData.EdgeQuadTrees));
+					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(1, 5)));
+					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(1, 5), testHarness.OutlineData.EdgeQuadTrees));
+					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(0, 5)));
+					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(0, 5), testHarness.OutlineData.EdgeQuadTrees));
+					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(40, 5)));
+					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(40, 5), testHarness.OutlineData.EdgeQuadTrees));
 
 					Polygon insidePath = new Polygon();
 					Tuple<int, int, IntPoint> outPoint;
-					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(startPoint));
-					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(startPoint, testHarness.OutlineEdgeQuadTrees));
+					Assert.IsFalse(testHarness.OutlineData.Polygons.PointIsInside(startPoint));
+					Assert.IsFalse(testHarness.OutlineData.Polygons.PointIsInside(startPoint, testHarness.OutlineData.EdgeQuadTrees));
 
 					// validate some dependant functions
 					Assert.IsTrue(QTPolygonExtensions.OnSegment(test[0], new IntPoint(20, 0), test[1]));
@@ -187,26 +187,26 @@ namespace MatterHackers.MatterSlice.Tests
 					Assert.AreEqual(3, outPoint.Item2);
 					Assert.AreEqual(new IntPoint(0, 5), outPoint.Item3);
 
-					testHarness.OutlinePolygons.MovePointInsideBoundary(startPoint, out outPoint);
+					testHarness.OutlineData.Polygons.MovePointInsideBoundary(startPoint, out outPoint);
 					Assert.AreEqual(new IntPoint(0, 5), outPoint.Item3);
 
-					testHarness.OutlinePolygons.MovePointInsideBoundary(startPoint, out outPoint, testHarness.OutlineEdgeQuadTrees);
+					testHarness.OutlineData.Polygons.MovePointInsideBoundary(startPoint, out outPoint, testHarness.OutlineData.EdgeQuadTrees);
 					Assert.AreEqual(new IntPoint(0, 5), outPoint.Item3);
-					testHarness.BoundaryPolygons.MovePointInsideBoundary(startPoint, out outPoint);
+					testHarness.PathingData.Polygons.MovePointInsideBoundary(startPoint, out outPoint);
 					Assert.AreEqual(new IntPoint(0, 5), outPoint.Item3);
-					testHarness.BoundaryPolygons.MovePointInsideBoundary(startPoint, out outPoint, testHarness.BoundaryEdgeQuadTrees);
+					testHarness.PathingData.Polygons.MovePointInsideBoundary(startPoint, out outPoint, testHarness.PathingData.EdgeQuadTrees);
 					Assert.AreEqual(new IntPoint(0, 5), outPoint.Item3);
 					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
 					Assert.IsTrue(testHarness.AllPathSegmentsAreInsideOutlines(insidePath, startPoint, endPoint));
 
 					// move endpoint inside
-					testHarness.OutlinePolygons.MovePointInsideBoundary(endPoint, out outPoint);
+					testHarness.OutlineData.Polygons.MovePointInsideBoundary(endPoint, out outPoint);
 					Assert.AreEqual(new IntPoint(40, 5), outPoint.Item3);
-					testHarness.OutlinePolygons.MovePointInsideBoundary(endPoint, out outPoint, testHarness.OutlineEdgeQuadTrees);
+					testHarness.OutlineData.Polygons.MovePointInsideBoundary(endPoint, out outPoint, testHarness.OutlineData.EdgeQuadTrees);
 					Assert.AreEqual(new IntPoint(40, 5), outPoint.Item3);
-					testHarness.BoundaryPolygons.MovePointInsideBoundary(endPoint, out outPoint);
+					testHarness.PathingData.Polygons.MovePointInsideBoundary(endPoint, out outPoint);
 					Assert.AreEqual(new IntPoint(40, 5), outPoint.Item3);
-					testHarness.BoundaryPolygons.MovePointInsideBoundary(endPoint, out outPoint, testHarness.BoundaryEdgeQuadTrees);
+					testHarness.PathingData.Polygons.MovePointInsideBoundary(endPoint, out outPoint, testHarness.PathingData.EdgeQuadTrees);
 					Assert.AreEqual(new IntPoint(40, 5), outPoint.Item3);
 
 					Assert.AreEqual(4, insidePath.Count);
