@@ -455,7 +455,7 @@ namespace MatterHackers.MatterSlice
 
 				LogOutput.logProgress("export", layerIndex + 1, totalLayers);
 
-				if (layerIndex == 0)
+				if (layerIndex < config.NumberOfFirstLayers)
 				{
 					skirtConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "SKIRT");
 					inset0Config.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "WALL-OUTER");

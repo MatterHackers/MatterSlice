@@ -126,6 +126,8 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("This is the speed to print everything on the first layer, mm/s.")]
 		public double FirstLayerSpeed { get; set; }
 
+		public int NumberOfFirstLayers { get; set; }
+
 		[SettingDescription("The height of the first layer to print, in millimeters.")]
 		public double FirstLayerThickness { get; set; }
 
