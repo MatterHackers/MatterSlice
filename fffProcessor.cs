@@ -191,6 +191,7 @@ namespace MatterHackers.MatterSlice
 			{
 				ExtruderData extruderData = new ExtruderData(optomizedMeshCollection.OptimizedMeshes[optimizedMeshIndex], config);
 				extruderList.Add(extruderData);
+				extruderData.ReleaseMemory();
 			}
 
 #if false
