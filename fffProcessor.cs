@@ -285,65 +285,8 @@ namespace MatterHackers.MatterSlice
 			}
 #endif
 
-			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
-			{
-				for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
-				{
-					if (MatterSlice.Canceled)
-					{
-						return;
-					}
-					int insetCount = config.NumberOfPerimeters;
-					if (config.ContinuousSpiralOuterPerimeter && (int)(layerIndex) < config.NumberOfBottomLayers && layerIndex % 2 == 1)
-					{
-						//Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
-						insetCount += 1;
-					}
-
-					SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
-
-					if (layerIndex == 0)
-					{
-						layer.GenerateInsets(config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, insetCount, config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter);
-					}
-					else
-					{
-						layer.GenerateInsets(config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, insetCount, config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter);
-					}
-				}
-				LogOutput.Log("Creating Insets {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
-			}
-
 			slicingData.CreateWipeShield(totalLayers, config);
 
-			LogOutput.Log("Generated inset in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
-			timeKeeper.Restart();
-
-			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
-			{
-				if (MatterSlice.Canceled)
-				{
-					return;
-				}
-
-				//Only generate bottom and top layers and infill for the first X layers when spiralize is chosen.
-				if (!config.ContinuousSpiralOuterPerimeter || (int)(layerIndex) < config.NumberOfBottomLayers)
-				{
-					for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
-					{
-						if (layerIndex == 0)
-						{
-							slicingData.Extruders[extruderIndex].GenerateTopAndBottoms(layerIndex, config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, config.NumberOfBottomLayers, config.NumberOfTopLayers, config.InfillExtendIntoPerimeter_um);
-						}
-						else
-						{
-							slicingData.Extruders[extruderIndex].GenerateTopAndBottoms(layerIndex, config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, config.NumberOfBottomLayers, config.NumberOfTopLayers, config.InfillExtendIntoPerimeter_um);
-						}
-					}
-				}
-				LogOutput.Log("Creating Top & Bottom Layers {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
-			}
-			LogOutput.Log("Generated top bottom layers in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Restart();
 
 			slicingData.CreateWipeTower(totalLayers, config);
@@ -536,7 +479,7 @@ namespace MatterHackers.MatterSlice
 					int prevExtruder = layerGcodePlanner.GetExtruder();
 					bool extruderChanged = layerGcodePlanner.SetExtruder(extruderIndex);
 
-					if (extruderChanged 
+					if (extruderChanged
 						&& slicingData.HaveWipeTower(config)
 						&& layerIndex < slicingData.LastLayerWithChange(config))
 					{
@@ -544,6 +487,9 @@ namespace MatterHackers.MatterSlice
 						//Make sure we wipe the old extruder on the wipe tower.
 						layerGcodePlanner.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
 					}
+
+					// create the insets required by this extruder layer
+					CreateRequiredInsets(config, slicingData, layerIndex, extruderIndex);
 
 					if (layerIndex == 0)
 					{
@@ -577,7 +523,7 @@ namespace MatterHackers.MatterSlice
 						if ((config.SupportInterfaceExtruder <= 0 && extruderIndex == 0)
 							|| config.SupportInterfaceExtruder == extruderIndex)
 						{
-							if(slicingData.support.QueueInterfaceSupportLayer(config, layerGcodePlanner, layerIndex, supportInterfaceConfig))
+							if (slicingData.support.QueueInterfaceSupportLayer(config, layerGcodePlanner, layerIndex, supportInterfaceConfig))
 							{
 								// we move out of the island so we aren't in it.
 								islandCurrentlyInside = null;
@@ -626,6 +572,59 @@ namespace MatterHackers.MatterSlice
 
 			//Store the object height for when we are printing multiple objects, as we need to clear every one of them when moving to the next position.
 			maxObjectHeight = Math.Max(maxObjectHeight, slicingData.modelSize.Z);
+		}
+
+		private void CreateRequiredInsets(ConfigSettings config, LayerDataStorage slicingData, int outputLayerIndex, int extruderIndex)
+		{
+			if (extruderIndex < slicingData.Extruders.Count)
+			{
+				var startIndex = Math.Max(0, outputLayerIndex - config.NumberOfBottomLayers - 1);
+				var endIndex = Math.Min(slicingData.Extruders[extruderIndex].Layers.Count - 1, outputLayerIndex + config.NumberOfTopLayers + 1);
+
+				// free up the insets from the previous layer
+				if (startIndex > config.NumberOfBottomLayers + 1)
+				{
+					SliceLayer previousLayer = slicingData.Extruders[extruderIndex].Layers[startIndex - 2];
+					previousLayer.FreeIslandMemory();
+				}
+
+				for (int layerIndex = startIndex; layerIndex < endIndex; layerIndex++)
+				{
+					SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
+
+					if (layer.Islands[0].InsetToolPaths.Count == 0)
+					{
+						int insetCount = config.NumberOfPerimeters;
+						if (config.ContinuousSpiralOuterPerimeter && (int)(layerIndex) < config.NumberOfBottomLayers && layerIndex % 2 == 1)
+						{
+							//Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
+							insetCount += 1;
+						}
+
+						if (layerIndex == 0)
+						{
+							layer.GenerateInsets(config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, insetCount, config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter);
+						}
+						else
+						{
+							layer.GenerateInsets(config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, insetCount, config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter);
+						}
+					}
+				}
+
+				//Only generate bottom and top layers and infill for the first X layers when spiralize is chosen.
+				if (!config.ContinuousSpiralOuterPerimeter || (int)(outputLayerIndex) < config.NumberOfBottomLayers)
+				{
+					if (outputLayerIndex == 0)
+					{
+						slicingData.Extruders[extruderIndex].GenerateTopAndBottoms(outputLayerIndex, config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, config.NumberOfBottomLayers, config.NumberOfTopLayers, config.InfillExtendIntoPerimeter_um);
+					}
+					else
+					{
+						slicingData.Extruders[extruderIndex].GenerateTopAndBottoms(outputLayerIndex, config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, config.NumberOfBottomLayers, config.NumberOfTopLayers, config.InfillExtendIntoPerimeter_um);
+					}
+				}
+			}
 		}
 
 		void QueuePerimeterWithMergOverlaps(Polygon perimeterToCheckForMerge, int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig config)
@@ -946,7 +945,7 @@ namespace MatterHackers.MatterSlice
 			if (island.IslandOutline.Count > 0)
 			{
 				// If we are already in the island we are going to, don't go there.
-				if (island.PathFinder.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineData.EdgeQuadTrees))
+				if (island.PathFinder?.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineData.EdgeQuadTrees) == true)
 				{
 					islandCurrentlyInside = island;
 					layerGcodePlanner.PathFinder = island.PathFinder;
