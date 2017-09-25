@@ -324,6 +324,14 @@ namespace MatterHackers.MatterSlice
 			PolygonList = Clipper.CleanPolygons(PolygonList, minimumDistanceToCreateNewPosition);
 		}
 
+		public void ReleaseMemory()
+		{
+			SegmentList = null;
+
+			openPolygonList = null;
+			startIndexes = null;
+		}
+
 		private void CreateFastIndexLookup()
 		{
 			for (int startingSegmentIndex = 0; startingSegmentIndex < SegmentList.Count; startingSegmentIndex++)

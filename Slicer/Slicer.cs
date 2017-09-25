@@ -237,5 +237,13 @@ namespace MatterHackers.MatterSlice
 			seg.end.Z = z;
 			return seg;
 		}
+
+		public void ReleaseMemory()
+		{
+			foreach (var layer in layers)
+			{
+				layer.ReleaseMemory();
+			}
+		}
 	}
 }
