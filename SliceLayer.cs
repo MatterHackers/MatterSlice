@@ -264,6 +264,7 @@ namespace MatterHackers.MatterSlice
 		public void FreeIslandMemory()
 		{
 			Islands.Clear();
+			Islands = null;
 		}
 	}
 }

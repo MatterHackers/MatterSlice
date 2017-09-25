@@ -392,7 +392,7 @@ namespace MatterHackers.MatterSlice.Tests
 			Assert.IsTrue(layerCount == expectedLayerCount);
 
 			MovementInfo movement = new MovementInfo();
-			for (int i = 0; i < layerCount - 3; i++)
+			for (int i = 0; i < layerCount - 5; i++)
 			{
 				string[] layerInfo = TestUtlities.GetGCodeForLayer(gcodeLines, i);
 
@@ -523,7 +523,7 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			DoHas2WallRingsAllTheWayUp("SimpleHole", 25);
 			DoHas2WallRingsAllTheWayUp("CylinderWithHole", 50);
-			DoHas2WallRingsAllTheWayUp("Thinning Walls Ring", 45, true);
+			DoHas2WallRingsAllTheWayUp("Thinning Walls Ring", 49, true);
 		}
 
 		[Test]
@@ -533,14 +533,14 @@ namespace MatterHackers.MatterSlice.Tests
 
 			CheckSpiralCylinder("Cylinder50Sides", "Cylinder50Sides.gcode", 100);
 			CheckSpiralCylinder("Cylinder2Wall50Sides", "Cylinder2Wall50Sides.gcode", 100);
-			CheckSpiralCylinder("Thinning Walls Ring", "Thinning Walls Ring.gcode", 45);
+			CheckSpiralCylinder("Thinning Walls Ring", "Thinning Walls Ring.gcode", 50);
 
 			// now do it again with thin walls enabled
 			CheckSpiralCone("cone", "spiralCone.gcode", true);
 
 			CheckSpiralCylinder("Cylinder50Sides", "Cylinder50Sides.gcode", 100, true);
 			CheckSpiralCylinder("Cylinder2Wall50Sides", "Cylinder2Wall50Sides.gcode", 100, true);
-			CheckSpiralCylinder("Thinning Walls Ring", "Thinning Walls Ring.gcode", 45, true);
+			CheckSpiralCylinder("Thinning Walls Ring", "Thinning Walls Ring.gcode", 50, true);
 		}
 
 		private static void CheckLayersIncrement(string stlFile, string gcodeFile)

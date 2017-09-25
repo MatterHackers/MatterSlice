@@ -588,11 +588,12 @@ namespace MatterHackers.MatterSlice
 					previousLayer.FreeIslandMemory();
 				}
 
-				for (int layerIndex = startIndex; layerIndex < endIndex; layerIndex++)
+				for (int layerIndex = startIndex; layerIndex <= endIndex; layerIndex++)
 				{
 					SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 
-					if (layer.Islands[0].InsetToolPaths.Count == 0)
+					if (layer.Islands.Count > 0
+						&& layer.Islands[0].InsetToolPaths.Count == 0)
 					{
 						int insetCount = config.NumberOfPerimeters;
 						if (config.ContinuousSpiralOuterPerimeter && (int)(layerIndex) < config.NumberOfBottomLayers && layerIndex % 2 == 1)
