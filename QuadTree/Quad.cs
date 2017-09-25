@@ -102,7 +102,7 @@ namespace MatterHackers.QuadTree
 		/// <summary>
 		/// Check if this Quad intersects with another.
 		/// </summary>
-		public bool Intersects(ref Quad other)
+		public bool Intersects(Quad other)
 		{
 			if (MinX < other.MaxX
 				&& MinY < other.MaxY
