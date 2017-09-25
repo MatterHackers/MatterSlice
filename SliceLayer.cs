@@ -260,5 +260,11 @@ namespace MatterHackers.MatterSlice
 				angle -= 360;
 			}
 		}
+
+		public void FreeIslandMemory()
+		{
+			Islands.Clear();
+			Islands = null;
+		}
 	}
 }
