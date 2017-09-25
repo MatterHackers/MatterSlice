@@ -22,6 +22,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using MSClipperLib;
 
 namespace MatterHackers.QuadTree
@@ -36,6 +37,12 @@ namespace MatterHackers.QuadTree
 		internal QuadTree<T> Tree;
 		public Branch<T>[] Branches { get; private set; } = new Branch<T>[4];
 		public Quad[] Quads { get; private set; } = new Quad[4];
+		public Quad Bounds { get; private set; }
+
+		public Branch(Quad bounds)
+		{
+			Bounds = bounds;
+		}
 
 		internal void Clear()
 		{
@@ -113,44 +120,58 @@ namespace MatterHackers.QuadTree
 
 		internal void SearchPoint(long x, long y, List<T> output)
 		{
-			if (Leaves.Count > 0)
+			var nodes = new Stack<Branch<T>>(new[] { this });
+			while (nodes.Any())
 			{
-				for (int i = 0; i < Leaves.Count; ++i)
+				Branch<T> node = nodes.Pop();
+
+				if (node.Leaves.Count > 0)
 				{
-					if (Leaves[i].Quad.Contains(x, y))
+					for (int i = 0; i < node.Leaves.Count; ++i)
 					{
-						output.Add(Leaves[i].Value);
+						if (node.Leaves[i].Quad.Contains(x, y))
+						{
+							output.Add(node.Leaves[i].Value);
+						}
 					}
 				}
-			}
 
-			for (int i = 0; i < 4; ++i)
-			{
-				if (Branches[i] != null)
+				for (int i = 0; i < 4; ++i)
 				{
-					Branches[i].SearchPoint(x, y, output);
+					if (node.Branches[i] != null
+						&& node.Branches[i].Bounds.Contains(x, y))
+					{
+						nodes.Push(node.Branches[i]);
+					}
 				}
 			}
 		}
 
 		internal void SearchQuad(Quad quad, List<T> output)
 		{
-			if (Leaves.Count > 0)
+			var nodes = new Stack<Branch<T>>(new[] { this });
+			while(nodes.Any())
 			{
-				for (int i = 0; i < Leaves.Count; ++i)
+				Branch<T> node = nodes.Pop();
+
+				if (node.Leaves.Count > 0)
 				{
-					if (quad.Intersects(ref Leaves[i].Quad))
+					for (int i = 0; i < node.Leaves.Count; ++i)
 					{
-						output.Add(Leaves[i].Value);
+						if (quad.Intersects(node.Leaves[i].Quad))
+						{
+							output.Add(node.Leaves[i].Value);
+						}
 					}
 				}
-			}
 
-			for (int i = 0; i < 4; ++i)
-			{
-				if (Branches[i] != null)
+				for (int i = 0; i < 4; ++i)
 				{
-					Branches[i].SearchQuad(quad, output);
+					if (node.Branches[i] != null
+						&& quad.Intersects(node.Branches[i].Bounds))
+					{
+						nodes.Push(node.Branches[i]);
+					}
 				}
 			}
 		}
