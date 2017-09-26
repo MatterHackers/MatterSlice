@@ -388,6 +388,16 @@ namespace MatterHackers.MatterSlice
 			//ValidatePaths();
 		}
 
+		public bool ExtruderWillChange(int extruder)
+		{
+			if (extruder == currentExtruderIndex)
+			{
+				return false;
+			}
+
+			return true;
+		}
+
 		public bool SetExtruder(int extruder)
 		{
 			if (extruder == currentExtruderIndex)

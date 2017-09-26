@@ -217,7 +217,7 @@ namespace MatterHackers.MatterSlice
 			for (int extruderIndex = 0; extruderIndex < extruderList.Count; extruderIndex++)
 			{
 				slicingData.Extruders.Add(new ExtruderLayers());
-				slicingData.Extruders[extruderIndex].InitializeLayerData(extruderList[extruderIndex], config, extruderIndex, extruderList.Count, extraPathingConsideration);
+				slicingData.Extruders[extruderIndex].InitializeLayerData(extruderList[extruderIndex], config, extruderIndex);
 
 				if (config.EnableRaft)
 				{
@@ -228,6 +228,11 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 			}
+
+			ExtruderLayers.InitializeLayerPathing(config, extraPathingConsideration, slicingData.Extruders);
+
+			// make the path finding data include all the layer info
+
 			LogOutput.Log("Generated layer parts in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Restart();
 		}
@@ -477,9 +482,15 @@ namespace MatterHackers.MatterSlice
 				for (int extruderIndex = 0; extruderIndex < config.MaxExtruderCount(); extruderIndex++)
 				{
 					int prevExtruder = layerGcodePlanner.GetExtruder();
-					bool extruderChanged = layerGcodePlanner.SetExtruder(extruderIndex);
+					bool changingExtruder = layerGcodePlanner.ExtruderWillChange(extruderIndex);
+					if (changingExtruder)
+					{
+						layerGcodePlanner.SetExtruder(extruderIndex);
+						// move to the wipe tower before we change extruders
+						layerGcodePlanner.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
+					}
 
-					if (extruderChanged
+					if (changingExtruder
 						&& slicingData.HaveWipeTower(config)
 						&& layerIndex < slicingData.LastLayerWithChange(config))
 					{
@@ -1071,13 +1082,20 @@ namespace MatterHackers.MatterSlice
 				&& layerIndex > 0)
 			{
 				int prevExtruder = layerGcodePlanner.GetExtruder();
-				bool extruderChanged = layerGcodePlanner.SetExtruder(extruderIndex);
+				bool changingExtruder = layerGcodePlanner.ExtruderWillChange(extruderIndex);
+				if(changingExtruder)
+				{
+					layerGcodePlanner.SetExtruder(extruderIndex);
+					// move to the wipe tower before we change extruders
+					layerGcodePlanner.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
+				}
 
-				if (extruderChanged
+				if (changingExtruder
 					&& slicingData.HaveWipeTower(config)
 					&& layerIndex < slicingData.LastLayerWithChange(config))
 				{
 					slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config, true);
+
 					//Make sure we wipe the old extruder on the wipe tower.
 					layerGcodePlanner.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
 				}

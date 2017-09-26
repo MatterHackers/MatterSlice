@@ -146,30 +146,51 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void InitializeLayerData(ExtruderData slicer, ConfigSettings config, int extruderIndex, int extruderCount, Polygons extraPathingConsideration)
+		public void InitializeLayerData(ExtruderData extruderData, ConfigSettings config, int extruderIndex)
 		{
-			for (int layerIndex = 0; layerIndex < slicer.layers.Count; layerIndex++)
+			for (int layerIndex = 0; layerIndex < extruderData.layers.Count; layerIndex++)
 			{
-				int start = slicer.layers.Count * extruderIndex;
-				LogOutput.Log("Generating Layer Outlines {0}/{1}\n".FormatWith(start + layerIndex + 1, extruderCount * slicer.layers.Count));
 				if (config.outputOnlyFirstLayer && layerIndex > 0)
 				{
 					break;
 				}
 
 				Layers.Add(new SliceLayer());
-				Layers[layerIndex].LayerZ = slicer.layers[layerIndex].Z;
+				Layers[layerIndex].LayerZ = extruderData.layers[layerIndex].Z;
 
-				Layers[layerIndex].AllOutlines = slicer.layers[layerIndex].PolygonList;
+				Layers[layerIndex].AllOutlines = extruderData.layers[layerIndex].PolygonList;
 
 				Layers[layerIndex].AllOutlines = Layers[layerIndex].AllOutlines.GetCorrectedWinding();
+			}
+		}
+
+		public static void InitializeLayerPathing(ConfigSettings config, Polygons extraPathingConsideration, List<ExtruderLayers> extruders)
+		{
+			for (int layerIndex = 0; layerIndex < extruders[0].Layers.Count; layerIndex++)
+			{
+				LogOutput.Log("Generating Layer Outlines {0}/{1}\n".FormatWith(layerIndex + 1, extruders[0].Layers.Count));
 
 				long avoidInset = config.ExtrusionWidth_um * 3 / 2;
-				var boundary = Layers[layerIndex].AllOutlines.GetBounds();
+
+				var allOutlines = new Polygons();
+				for (int extruderIndex =0; extruderIndex < extruders.Count; extruderIndex++)
+				{
+					allOutlines.AddRange(extruders[extruderIndex].Layers[layerIndex].AllOutlines);
+				}
+
+				var boundary = allOutlines.GetBounds();
 				var extraBoundary = extraPathingConsideration.GetBounds();
+
 				boundary.ExpandToInclude(extraBoundary);
 				boundary.Inflate(config.ExtrusionWidth_um * 10);
-				Layers[layerIndex].PathFinder = new Pathfinding.PathFinder(Layers[layerIndex].AllOutlines, avoidInset, boundary);
+
+				var pathFinder = new Pathfinding.PathFinder(allOutlines, avoidInset, boundary);
+
+				// assign the same pathing to all extruders for this layer
+				for (int extruderIndex = 0; extruderIndex < extruders.Count; extruderIndex++)
+				{
+					extruders[extruderIndex].Layers[layerIndex].PathFinder = pathFinder;
+				}
 			}
 		}
 
