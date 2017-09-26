@@ -398,15 +398,9 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public bool SetExtruder(int extruder)
+		public void SetExtruder(int extruder)
 		{
-			if (extruder == currentExtruderIndex)
-			{
-				return false;
-			}
-
 			currentExtruderIndex = extruder;
-			return true;
 		}
 
 		public void SetExtrudeSpeedFactor(int speedFactor)
