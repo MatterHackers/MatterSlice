@@ -223,7 +223,12 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
+
+#if __ANDROID__
 		[TestFixtureSetUp]
+#else
+		[OneTimeSetUp]
+#endif
 		public void TestSetup()
 		{
 			// Ensure the temp directory exists
