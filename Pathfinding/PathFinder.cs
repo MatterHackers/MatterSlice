@@ -57,7 +57,7 @@ namespace MatterHackers.Pathfinding
 
 		private bool useOutlineAsBoundry = false;
 
-		public PathFinder(Polygons inOutlinePolygons, long avoidInset, IntRect? stayInsideBounds = null)
+		public PathFinder(Polygons inOutlinePolygons, long avoidInset, IntRect? stayInsideBounds = null, bool usingPathingCache = true)
 		{
 			if (inOutlinePolygons.Count == 0)
 			{
@@ -87,8 +87,8 @@ namespace MatterHackers.Pathfinding
 
 			// set it to 1/4 the inset amount
 			int devisor = 4;
-			boundryData = new PathingData(boundaryPolygons, avoidInset / devisor);
-			OutlineData = new PathingData(outlinePolygons, avoidInset / devisor);
+			boundryData = new PathingData(boundaryPolygons, avoidInset / devisor, usingPathingCache && UseIsInsideCache);
+			OutlineData = new PathingData(outlinePolygons, avoidInset / devisor, usingPathingCache && UseIsInsideCache);
 		}
 
 		public long InsetAmount { get; private set; }
@@ -107,6 +107,8 @@ namespace MatterHackers.Pathfinding
 				return boundryData.RemovePointList;
 			}
 		}
+
+		public static bool UseIsInsideCache { get; set; } = true;
 
 		public bool AllPathSegmentsAreInsideOutlines(Polygon pathThatIsInside, IntPoint startPoint, IntPoint endPoint, bool writeErrors = false)
 		{
@@ -483,7 +485,7 @@ namespace MatterHackers.Pathfinding
 		{
 			Tuple<int, int, IntPoint> movedPosition;
 			long movedDist = 0;
-			PathingData.Polygons.MovePointInsideBoundary(position, out movedPosition, PathingData.EdgeQuadTrees, PathingData.PointQuadTrees);
+			PathingData.Polygons.MovePointInsideBoundary(position, out movedPosition, PathingData.EdgeQuadTrees, PathingData.PointQuadTrees, PathingData.PointIsInside);
 			if (movedPosition != null)
 			{
 				movedDist = (position - movedPosition.Item3).Length();
@@ -531,6 +533,7 @@ namespace MatterHackers.Pathfinding
 	public class PathingData
 	{
 		double unitsPerPixel;
+		bool usingPathingCache;
 
 		public WayPointsToRemove RemovePointList { get; }
 		public IntPointPathNetwork Waypoints { get; } = new IntPointPathNetwork();
@@ -539,9 +542,10 @@ namespace MatterHackers.Pathfinding
 		public List<QuadTree<int>> PointQuadTrees { get; }
 		public ImageBuffer InsideCache { get; private set; }
 
-		internal PathingData(Polygons polygons, double unitsPerPixel)
+		internal PathingData(Polygons polygons, double unitsPerPixel, bool usingPathingCache)
 		{
-			this.unitsPerPixel = unitsPerPixel;
+			this.usingPathingCache = usingPathingCache;
+			this.unitsPerPixel = Math.Max(1, unitsPerPixel);
 
 			Polygons = polygons;
 			EdgeQuadTrees = Polygons.GetEdgeQuadTrees();
@@ -559,6 +563,11 @@ namespace MatterHackers.Pathfinding
 
 		public bool PointIsInside(IntPoint testPoint)
 		{
+			if(!usingPathingCache)
+			{
+				return Polygons.PointIsInside(testPoint, EdgeQuadTrees, PointQuadTrees);
+			}
+
 			bool insideCacheResult = false;
 			// translate the test point to the image coordinates
 			double x = testPoint.X;
@@ -572,11 +581,6 @@ namespace MatterHackers.Pathfinding
 				insideCacheResult = valueAtPoint.red > 0;
 			}
 
-			//if(Polygons.PointIsInside(testPoint, EdgeQuadTrees, PointQuadTrees) != insideCacheResult)
-			{
-				int a = 0;
-			}
-
 			return insideCacheResult;
 		}
 
@@ -584,8 +588,8 @@ namespace MatterHackers.Pathfinding
 		private void GenerateIsideCache()
 		{
 			var bounds = Polygons.GetBounds();
-			var width = (int)(bounds.Width() / unitsPerPixel + .5);
-			var height = (int)(bounds.Height() / unitsPerPixel + .5);
+			var width = Math.Min(32, Math.Max(1024, (int)(bounds.Width() / unitsPerPixel + .5)));
+			var height = Math.Min(32, Math.Max(1024, (int)(bounds.Height() / unitsPerPixel + .5)));
 
 			InsideCache = new ImageBuffer(width + 4, height + 4, 8, new blender_gray(1));
 			//InsideCache.NewGraphics2D().DrawString("Test", 0, 20, color: RGBA_Bytes.White);
