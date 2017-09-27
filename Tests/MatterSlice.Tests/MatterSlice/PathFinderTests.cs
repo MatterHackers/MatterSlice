@@ -387,6 +387,7 @@ namespace MatterHackers.MatterSlice.Tests
 			// It would be nice if we made good paths without setting this
 			config.FirstLayerExtrusionWidth = config.ExtrusionWidth;
 			config.AvoidCrossingPerimeters = true;
+			PathFinder.UseIsInsideCache = false;
 			PathFinder.CalculatedPath += (pathFinder, pathThatIsInside, startPoint, endPoint) =>
 			{
 				if (!pathFinder.AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint))
@@ -408,7 +409,7 @@ namespace MatterHackers.MatterSlice.Tests
 		private void TestSinglePathIsInside(string partOutlineString, IntPoint startPoint, IntPoint endPoint)
 		{
 			Polygons boundaryPolygons = CLPolygonsExtensions.CreateFromString(partOutlineString);
-			PathFinder testHarness = new PathFinder(boundaryPolygons, 600);
+			PathFinder testHarness = new PathFinder(boundaryPolygons, 600, null, false);
 
 			Polygon insidePath = new Polygon();
 			// not optimized
