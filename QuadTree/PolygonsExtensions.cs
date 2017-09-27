@@ -301,11 +301,12 @@ namespace MatterHackers.QuadTree
 
 		public static void MovePointInsideBoundary(this Polygons boundaryPolygons, IntPoint startPosition, out Tuple<int, int, IntPoint> polyPointPosition, 
 			List<QuadTree<int>> edgeQuadTrees = null,
-			List<QuadTree<int>> pointQuadTrees = null)
+			List<QuadTree<int>> pointQuadTrees = null,
+			Func<IntPoint, bool> fastInsideCheck = null)
 		{
 			Tuple<int, int, IntPoint> bestPolyPointPosition = new Tuple<int, int, IntPoint>(0, 0, startPosition);
 
-			if (boundaryPolygons.PointIsInside(startPosition, edgeQuadTrees, pointQuadTrees))
+			if (boundaryPolygons.PointIsInside(startPosition, edgeQuadTrees, pointQuadTrees, fastInsideCheck))
 			{
 				// already inside
 				polyPointPosition = null;
@@ -371,8 +372,16 @@ namespace MatterHackers.QuadTree
 			polyPointPosition = bestPolyPointPosition;
 		}
 
-		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint, List<QuadTree<int>> edgeQuadTrees = null, List<QuadTree<int>> pointQuadTrees = null)
+		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint, 
+			List<QuadTree<int>> edgeQuadTrees = null, 
+			List<QuadTree<int>> pointQuadTrees = null,
+			Func<IntPoint, bool> fastInsideCheck = null)
 		{
+			if(fastInsideCheck != null)
+			{
+				return fastInsideCheck(testPoint);
+			}
+
 			if (polygons.TouchingEdge(testPoint, edgeQuadTrees))
 			{
 				return true;
