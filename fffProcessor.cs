@@ -42,7 +42,7 @@ namespace MatterHackers.MatterSlice
 		private Stopwatch timeKeeper = new Stopwatch();
 
 		private SimpleMeshCollection simpleMeshCollection = new SimpleMeshCollection();
-		private OptimizedMeshCollection optomizedMeshCollection;
+		private OptimizedMeshCollection optimizedMeshCollection;
 		private LayerDataStorage slicingData = new LayerDataStorage();
 
 		private GCodePathConfig skirtConfig = new GCodePathConfig("skirtConfig");
@@ -88,17 +88,17 @@ namespace MatterHackers.MatterSlice
 
 			timeKeeper.Restart();
 			LogOutput.Log("Analyzing and optimizing model...\n");
-			optomizedMeshCollection = new OptimizedMeshCollection(simpleMeshCollection);
+			optimizedMeshCollection = new OptimizedMeshCollection(simpleMeshCollection);
 			if (MatterSlice.Canceled)
 			{
 				return;
 			}
 
-			optomizedMeshCollection.SetSize(simpleMeshCollection);
+			optimizedMeshCollection.SetSize(simpleMeshCollection);
 			for (int meshIndex = 0; meshIndex < simpleMeshCollection.SimpleMeshes.Count; meshIndex++)
 			{
-				LogOutput.Log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleMeshCollection.SimpleMeshes[meshIndex].faceTriangles.Count, (int)optomizedMeshCollection.OptimizedMeshes[meshIndex].facesTriangle.Count, (double)(optomizedMeshCollection.OptimizedMeshes[meshIndex].facesTriangle.Count) / (double)(simpleMeshCollection.SimpleMeshes[meshIndex].faceTriangles.Count) * 100));
-				LogOutput.Log("  Vertex counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleMeshCollection.SimpleMeshes[meshIndex].faceTriangles.Count * 3, (int)optomizedMeshCollection.OptimizedMeshes[meshIndex].vertices.Count, (double)(optomizedMeshCollection.OptimizedMeshes[meshIndex].vertices.Count) / (double)(simpleMeshCollection.SimpleMeshes[meshIndex].faceTriangles.Count * 3) * 100));
+				LogOutput.Log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleMeshCollection.SimpleMeshes[meshIndex].faceTriangles.Count, (int)optimizedMeshCollection.OptimizedMeshes[meshIndex].facesTriangle.Count, (double)(optimizedMeshCollection.OptimizedMeshes[meshIndex].facesTriangle.Count) / (double)(simpleMeshCollection.SimpleMeshes[meshIndex].faceTriangles.Count) * 100));
+				LogOutput.Log("  Vertex counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleMeshCollection.SimpleMeshes[meshIndex].faceTriangles.Count * 3, (int)optimizedMeshCollection.OptimizedMeshes[meshIndex].vertices.Count, (double)(optimizedMeshCollection.OptimizedMeshes[meshIndex].vertices.Count) / (double)(simpleMeshCollection.SimpleMeshes[meshIndex].faceTriangles.Count * 3) * 100));
 			}
 
 			LogOutput.Log("Optimize model {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
@@ -182,14 +182,14 @@ namespace MatterHackers.MatterSlice
 		{
 			timeKeeper.Restart();
 #if false
-            optomizedModel.saveDebugSTL("debug_output.stl");
+            optimizedModel.saveDebugSTL("debug_output.stl");
 #endif
 
 			LogOutput.Log("Slicing model...\n");
 			List<ExtruderData> extruderList = new List<ExtruderData>();
-			for (int optimizedMeshIndex = 0; optimizedMeshIndex < optomizedMeshCollection.OptimizedMeshes.Count; optimizedMeshIndex++)
+			for (int optimizedMeshIndex = 0; optimizedMeshIndex < optimizedMeshCollection.OptimizedMeshes.Count; optimizedMeshIndex++)
 			{
-				ExtruderData extruderData = new ExtruderData(optomizedMeshCollection.OptimizedMeshes[optimizedMeshIndex], config);
+				ExtruderData extruderData = new ExtruderData(optimizedMeshCollection.OptimizedMeshes[optimizedMeshIndex], config);
 				extruderList.Add(extruderData);
 				extruderData.ReleaseMemory();
 			}
@@ -203,9 +203,9 @@ namespace MatterHackers.MatterSlice
 			LogOutput.Log("Sliced model in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Restart();
 
-			slicingData.modelSize = optomizedMeshCollection.size_um;
-			slicingData.modelMin = optomizedMeshCollection.minXYZ_um;
-			slicingData.modelMax = optomizedMeshCollection.maxXYZ_um;
+			slicingData.modelSize = optimizedMeshCollection.size_um;
+			slicingData.modelMin = optimizedMeshCollection.minXYZ_um;
+			slicingData.modelMax = optimizedMeshCollection.maxXYZ_um;
 
 			var extraPathingConsideration = new Polygons();
 			foreach (var polygons in slicingData.wipeShield)
@@ -958,7 +958,7 @@ namespace MatterHackers.MatterSlice
 			if (island.IslandOutline.Count > 0)
 			{
 				// If we are already in the island we are going to, don't go there.
-				if (island.PathFinder?.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineData.EdgeQuadTrees, island.PathFinder.OutlineData.PointQuadTrees, island.PathFinder.OutlineData.PointIsInside) == true)
+				if (island.PathFinder?.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineData.EdgeQuadTrees, island.PathFinder.OutlineData.PointQuadTrees) == true)
 				{
 					islandCurrentlyInside = island;
 					layerGcodePlanner.PathFinder = island.PathFinder;
