@@ -302,7 +302,7 @@ namespace MatterHackers.QuadTree
 		public static void MovePointInsideBoundary(this Polygons boundaryPolygons, IntPoint startPosition, out Tuple<int, int, IntPoint> polyPointPosition, 
 			List<QuadTree<int>> edgeQuadTrees = null,
 			List<QuadTree<int>> pointQuadTrees = null,
-			Func<IntPoint, bool> fastInsideCheck = null)
+			Func<IntPoint, InsideState> fastInsideCheck = null)
 		{
 			Tuple<int, int, IntPoint> bestPolyPointPosition = new Tuple<int, int, IntPoint>(0, 0, startPosition);
 
@@ -372,30 +372,44 @@ namespace MatterHackers.QuadTree
 			polyPointPosition = bestPolyPointPosition;
 		}
 
+		public enum InsideState { Inside, Outside, Unknown }
 		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint, 
 			List<QuadTree<int>> edgeQuadTrees = null, 
 			List<QuadTree<int>> pointQuadTrees = null,
-			Func<IntPoint, bool> fastInsideCheck = null)
+			Func<IntPoint, InsideState> fastInsideCheck = null)
 		{
-			if(fastInsideCheck != null)
-			{
-				return fastInsideCheck(testPoint);
-			}
-
 			if (polygons.TouchingEdge(testPoint, edgeQuadTrees))
 			{
 				return true;
 			}
 
+
 			int insideCount = 0;
 			for (int i = 0; i < polygons.Count; i++)
 			{
 				var polygon = polygons[i];
-				if (polygon.PointIsInside(testPoint, pointQuadTrees == null ? null : pointQuadTrees[i]) != 0)
+				if (fastInsideCheck != null)
+				{
+					switch (fastInsideCheck(testPoint))
+					{
+						case InsideState.Inside:
+							insideCount++;
+							break;
+						case InsideState.Outside:
+							break;
+						case InsideState.Unknown:
+							if(polygon.PointIsInside(testPoint, pointQuadTrees == null ? null : pointQuadTrees[i]) != 0)
+							{
+								insideCount++;
+							}
+							break;
+					}
+				}
+				else if (polygon.PointIsInside(testPoint, pointQuadTrees == null ? null : pointQuadTrees[i]) != 0)
 				{
 					insideCount++;
 				}
-			}
+}
 
 			return (insideCount % 2 == 1);
 		}

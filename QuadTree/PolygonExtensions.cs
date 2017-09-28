@@ -316,7 +316,7 @@ namespace MatterHackers.QuadTree
 			{
 				return false;
 			}
-			bool pathWasOptomized = false;
+			bool pathWasOptimized = false;
 
 			for (int i = 0; i < perimeter.Count; i++)
 			{
@@ -356,7 +356,7 @@ namespace MatterHackers.QuadTree
 							{
 								continue;
 							}
-							pathWasOptomized = true;
+							pathWasOptimized = true;
 							// move the first segments points to the average of the merge positions
 							long startEndWidth = Math.Abs((polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length());
 							long endStartWidth = Math.Abs((polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length());
@@ -410,7 +410,7 @@ namespace MatterHackers.QuadTree
 			// add the end point
 			currentPolygon.Add(polySegments[polySegments.Count - 1].End);
 
-			return pathWasOptomized;
+			return pathWasOptimized;
 		}
 
 		public static bool OnSegment(IntPoint start, IntPoint testPosition, IntPoint end)

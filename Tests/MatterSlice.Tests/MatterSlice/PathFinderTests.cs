@@ -322,7 +322,7 @@ namespace MatterHackers.MatterSlice.Tests
 				TestSinglePathIsInside(polyPath, new IntPoint(119160, 104727), new IntPoint(111711, 91412));
 			}
 
-			// optomized small shapes
+			// optimized small shapes
 			{
 				string polyPath = "x:85032, y:92906,x:83438, y:87666,x:88142, y:90718,|x:85436, y:90297,x:85244, y:90445,x:85925, y:91424,|";
 				// Length of this segment (start->end) 1847.
@@ -387,7 +387,6 @@ namespace MatterHackers.MatterSlice.Tests
 			// It would be nice if we made good paths without setting this
 			config.FirstLayerExtrusionWidth = config.ExtrusionWidth;
 			config.AvoidCrossingPerimeters = true;
-			PathFinder.UseIsInsideCache = false;
 			PathFinder.CalculatedPath += (pathFinder, pathThatIsInside, startPoint, endPoint) =>
 			{
 				if (!pathFinder.AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPoint, endPoint))

@@ -40,24 +40,9 @@ namespace MatterHackers.Pathfinding
 		private static string lastOutlineString = "";
 		private static bool saveBadPathToDisk = false;
 		private PathingData boundryData;
-		public PathingData OutlineData { get; }
-
-		public PathingData PathingData
-		{
-			get
-			{
-				if (useOutlineAsBoundry)
-				{
-					return OutlineData;
-				}
-
-				return boundryData;
-			}
-		}
-
 		private bool useOutlineAsBoundry = false;
 
-		public PathFinder(Polygons inOutlinePolygons, long avoidInset, IntRect? stayInsideBounds = null, bool usingPathingCache = true)
+		public PathFinder(Polygons inOutlinePolygons, long avoidInset, IntRect? stayInsideBounds = null, bool useIsInsideCache = true)
 		{
 			if (inOutlinePolygons.Count == 0)
 			{
@@ -87,11 +72,25 @@ namespace MatterHackers.Pathfinding
 
 			// set it to 1/4 the inset amount
 			int devisor = 4;
-			boundryData = new PathingData(boundaryPolygons, avoidInset / devisor, usingPathingCache && UseIsInsideCache);
-			OutlineData = new PathingData(outlinePolygons, avoidInset / devisor, usingPathingCache && UseIsInsideCache);
+			boundryData = new PathingData(boundaryPolygons, avoidInset / devisor, useIsInsideCache);
+			OutlineData = new PathingData(outlinePolygons, avoidInset / devisor, useIsInsideCache);
 		}
 
 		public long InsetAmount { get; private set; }
+		public PathingData OutlineData { get; }
+
+		public PathingData PathingData
+		{
+			get
+			{
+				if (useOutlineAsBoundry)
+				{
+					return OutlineData;
+				}
+
+				return boundryData;
+			}
+		}
 
 		private long findNodeDist { get { return InsetAmount / 100; } }
 
@@ -107,8 +106,6 @@ namespace MatterHackers.Pathfinding
 				return boundryData.RemovePointList;
 			}
 		}
-
-		public static bool UseIsInsideCache { get; set; } = true;
 
 		public bool AllPathSegmentsAreInsideOutlines(Polygon pathThatIsInside, IntPoint startPoint, IntPoint endPoint, bool writeErrors = false)
 		{
@@ -140,11 +137,11 @@ namespace MatterHackers.Pathfinding
 					}
 				}
 			}
-			     
+
 			return true;
 		}
 
-		public bool CreatePathInsideBoundary(IntPoint startPointIn, IntPoint endPointIn, Polygon pathThatIsInside, bool optomizePath = true)
+		public bool CreatePathInsideBoundary(IntPoint startPointIn, IntPoint endPointIn, Polygon pathThatIsInside, bool optimizePath = true)
 		{
 			var goodPath = CreatePathInsideBoundaryInternal(startPointIn, endPointIn, pathThatIsInside);
 
@@ -162,10 +159,10 @@ namespace MatterHackers.Pathfinding
 					if (pathThatIsInside.Count > 1)
 					{
 						IntPoint startPoint = startPointIn;
-						for (int i = 0; i < pathThatIsInside.Count-1; i++)
+						for (int i = 0; i < pathThatIsInside.Count - 1; i++)
 						{
 							IntPoint testPoint = pathThatIsInside[i];
-							IntPoint endPoint = i < pathThatIsInside.Count-2 ? pathThatIsInside[i+1] : endPointIn;
+							IntPoint endPoint = i < pathThatIsInside.Count - 2 ? pathThatIsInside[i + 1] : endPointIn;
 
 							IntPoint inPolyPosition;
 							if (MovePointInsideBoundary(testPoint, out inPolyPosition))
@@ -197,7 +194,7 @@ namespace MatterHackers.Pathfinding
 					IntPoint testPoint = pathThatIsInside[i];
 					IntPoint endPoint = i < pathThatIsInside.Count - 2 ? pathThatIsInside[i + 1] : endPointIn;
 
-					if(endPoint == startPoint)
+					if (endPoint == startPoint)
 					{
 						pathThatIsInside.RemoveAt(i);
 						i--;
@@ -207,9 +204,9 @@ namespace MatterHackers.Pathfinding
 				}
 			}
 
-			if (optomizePath)
+			if (optimizePath)
 			{
-				OptomizePathPoints(pathThatIsInside);
+				OptimizePathPoints(pathThatIsInside);
 			}
 
 			if (saveBadPathToDisk)
@@ -222,12 +219,45 @@ namespace MatterHackers.Pathfinding
 			return goodPath;
 		}
 
+		public bool MovePointInsideBoundary(IntPoint testPosition, out IntPoint inPolyPosition)
+		{
+			inPolyPosition = testPosition;
+			if (PathingData.PointIsInside(testPosition) == QTPolygonsExtensions.InsideState.Outside)
+			{
+				Tuple<int, int, IntPoint> endPolyPointPosition = null;
+				PathingData.Polygons.MovePointInsideBoundary(testPosition, out endPolyPointPosition,
+					PathingData.EdgeQuadTrees,
+					PathingData.PointQuadTrees,
+					PathingData.PointIsInside);
+
+				if (endPolyPointPosition != null)
+				{
+					inPolyPosition = endPolyPointPosition.Item3;
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		public bool PointIsInsideBoundary(IntPoint intPoint)
+		{
+			return PathingData.PointIsInside(intPoint) == QTPolygonsExtensions.InsideState.Inside;
+		}
+
+		private IntPointNode AddTempWayPoint(WayPointsToRemove removePointList, IntPoint position)
+		{
+			var node = PathingData.Waypoints.AddNode(position);
+			removePointList.Add(node);
+			return node;
+		}
+
 		private bool CreatePathInsideBoundaryInternal(IntPoint startPointIn, IntPoint endPointIn, Polygon pathThatIsInside)
 		{
 			double z = startPointIn.Z;
 			startPointIn.Z = 0;
 			endPointIn.Z = 0;
-			if (PathingData?.Polygons == null 
+			if (PathingData?.Polygons == null
 				|| PathingData?.Polygons.Count == 0)
 			{
 				return false;
@@ -235,7 +265,7 @@ namespace MatterHackers.Pathfinding
 
 			// neither needed to be moved
 			if (PathingData.Polygons.FindIntersection(startPointIn, endPointIn, PathingData.EdgeQuadTrees) == Intersection.None
-				&& PathingData.PointIsInside((startPointIn + endPointIn) / 2))
+				&& PathingData.PointIsInside((startPointIn + endPointIn) / 2) == QTPolygonsExtensions.InsideState.Inside)
 			{
 				return true;
 			}
@@ -276,7 +306,7 @@ namespace MatterHackers.Pathfinding
 				}
 
 				if (lastAddedNode != crossingNode
-					&& PathingData.PointIsInside((lastAddedNode.Position + crossingNode.Position) / 2))
+					&& PathingData.PointIsInside((lastAddedNode.Position + crossingNode.Position) / 2) == QTPolygonsExtensions.InsideState.Inside)
 				{
 					PathingData.Waypoints.AddPathLink(lastAddedNode, crossingNode);
 				}
@@ -289,7 +319,7 @@ namespace MatterHackers.Pathfinding
 			}
 
 			if (lastAddedNode != lastToAddNode
-				&& PathingData.PointIsInside((lastAddedNode.Position + lastToAddNode.Position) / 2))
+				&& PathingData.PointIsInside((lastAddedNode.Position + lastToAddNode.Position) / 2) == QTPolygonsExtensions.InsideState.Inside)
 			{
 				// connect the last crossing to the end node
 				PathingData.Waypoints.AddPathLink(lastAddedNode, lastToAddNode);
@@ -312,36 +342,6 @@ namespace MatterHackers.Pathfinding
 			}
 
 			return true;
-		}
-
-		public bool MovePointInsideBoundary(IntPoint testPosition, out IntPoint inPolyPosition)
-		{
-			inPolyPosition = testPosition;
-			if (!PathingData.PointIsInside(testPosition))
-			{
-				Tuple<int, int, IntPoint> endPolyPointPosition = null;
-				PathingData.Polygons.MovePointInsideBoundary(testPosition, out endPolyPointPosition, 
-					PathingData.EdgeQuadTrees, 
-					PathingData.PointQuadTrees,
-					PathingData.PointIsInside);
-
-				inPolyPosition = endPolyPointPosition.Item3;
-				return true;
-			}
-
-			return false;
-		}
-
-		public bool PointIsInsideBoundary(IntPoint intPoint)
-		{
-			return PathingData.PointIsInside(intPoint);
-		}
-
-		private IntPointNode AddTempWayPoint(WayPointsToRemove removePointList, IntPoint position)
-		{
-			var node = PathingData.Waypoints.AddNode(position);
-			removePointList.Add(node);
-			return node;
 		}
 
 		private Polygons FixWinding(Polygons polygonsToPathAround)
@@ -440,7 +440,7 @@ namespace MatterHackers.Pathfinding
 			PathingData.Waypoints.AddPathLink(crossingNode, nextPolyPointNode);
 		}
 
-		private void OptomizePathPoints(Polygon pathThatIsInside)
+		private void OptimizePathPoints(Polygon pathThatIsInside)
 		{
 			for (int startIndex = 0; startIndex < pathThatIsInside.Count - 2; startIndex++)
 			{
@@ -467,7 +467,7 @@ namespace MatterHackers.Pathfinding
 					}
 
 					if (!isCrossingEdge
-						&& PathingData.PointIsInside((startPosition + endPosition) / 2))
+						&& PathingData.PointIsInside((startPosition + endPosition) / 2) == QTPolygonsExtensions.InsideState.Inside)
 					{
 						// remove A+1 - B-1
 						for (int removeIndex = endIndex - 1; removeIndex > startIndex; removeIndex--)
@@ -492,7 +492,7 @@ namespace MatterHackers.Pathfinding
 			}
 
 			if (OutlineData.Polygons.TouchingEdge(position, OutlineData.EdgeQuadTrees)
-			|| OutlineData.PointIsInside(position)
+			|| OutlineData.PointIsInside(position) == QTPolygonsExtensions.InsideState.Inside
 			|| movedDist <= 1)
 			{
 				return true;
@@ -532,15 +532,9 @@ namespace MatterHackers.Pathfinding
 	/// </summary>
 	public class PathingData
 	{
-		double unitsPerPixel;
-		bool usingPathingCache;
-
-		public WayPointsToRemove RemovePointList { get; }
-		public IntPointPathNetwork Waypoints { get; } = new IntPointPathNetwork();
-		public List<QuadTree<int>> EdgeQuadTrees { get; }
-		public Polygons Polygons { get; }
-		public List<QuadTree<int>> PointQuadTrees { get; }
-		public ImageBuffer InsideCache { get; private set; }
+		private Affine polygonsToImageTransform;
+		private double unitsPerPixel;
+		private bool usingPathingCache;
 
 		internal PathingData(Polygons polygons, double unitsPerPixel, bool usingPathingCache)
 		{
@@ -561,49 +555,12 @@ namespace MatterHackers.Pathfinding
 			GenerateIsideCache();
 		}
 
-		public bool PointIsInside(IntPoint testPoint)
-		{
-			if(!usingPathingCache)
-			{
-				return Polygons.PointIsInside(testPoint, EdgeQuadTrees, PointQuadTrees);
-			}
-
-			bool insideCacheResult = false;
-			// translate the test point to the image coordinates
-			double x = testPoint.X;
-			double y = testPoint.Y;
-			polygonsToImageTransform.transform(ref x, ref y);
-
-			if(x >= 0 && x < InsideCache.Width
-				&& y >= 0 && y < InsideCache.Height)
-			{
-				var valueAtPoint = InsideCache.GetPixel((int)x, (int)y);
-				insideCacheResult = valueAtPoint.red > 0;
-			}
-
-			return insideCacheResult;
-		}
-
-		Affine polygonsToImageTransform;
-		private void GenerateIsideCache()
-		{
-			var bounds = Polygons.GetBounds();
-			var width = Math.Min(32, Math.Max(1024, (int)(bounds.Width() / unitsPerPixel + .5)));
-			var height = Math.Min(32, Math.Max(1024, (int)(bounds.Height() / unitsPerPixel + .5)));
-
-			InsideCache = new ImageBuffer(width + 4, height + 4, 8, new blender_gray(1));
-			//InsideCache.NewGraphics2D().DrawString("Test", 0, 20, color: RGBA_Bytes.White);
-
-			polygonsToImageTransform = Affine.NewIdentity();
-			// move it to 0, 0
-			polygonsToImageTransform *= Affine.NewTranslation(-bounds.minX, -bounds.minY);
-			// scale to fit cache
-			polygonsToImageTransform *= Affine.NewScaling(width / (double)bounds.Width(), height / (double)bounds.Height());
-			// and move it in 2 pixels
-			polygonsToImageTransform *= Affine.NewTranslation(2, 2);
-
-			InsideCache.NewGraphics2D().Render(new VertexSourceApplyTransform(CreatePathStorage(Polygons), polygonsToImageTransform), RGBA_Bytes.White);
-		}
+		public List<QuadTree<int>> EdgeQuadTrees { get; }
+		public ImageBuffer InsideCache { get; private set; }
+		public List<QuadTree<int>> PointQuadTrees { get; }
+		public Polygons Polygons { get; }
+		public WayPointsToRemove RemovePointList { get; }
+		public IntPointPathNetwork Waypoints { get; } = new IntPointPathNetwork();
 
 		public static PathStorage CreatePathStorage(List<List<IntPoint>> polygons)
 		{
@@ -628,6 +585,63 @@ namespace MatterHackers.Pathfinding
 				output.ClosePolygon();
 			}
 			return output;
+		}
+
+		public QTPolygonsExtensions.InsideState PointIsInside(IntPoint testPoint)
+		{
+			//if (!usingPathingCache)
+			{
+				if (Polygons.PointIsInside(testPoint, EdgeQuadTrees, PointQuadTrees))
+				{
+					return QTPolygonsExtensions.InsideState.Inside;
+				}
+
+				return QTPolygonsExtensions.InsideState.Outside;
+			}
+
+			// translate the test point to the image coordinates
+			double x = testPoint.X;
+			double y = testPoint.Y;
+			polygonsToImageTransform.transform(ref x, ref y);
+			int xi = (int)(x + .5);
+			int yi = (int)(y + .5);
+
+			if (xi >= 0 && xi < InsideCache.Width
+				&& yi >= 0 && yi < InsideCache.Height)
+			{
+				var valueAtPoint = InsideCache.GetPixel(xi, yi);
+				if (valueAtPoint.red == 255)
+				{
+					return QTPolygonsExtensions.InsideState.Inside;
+				}
+				if (valueAtPoint.red == 0)
+				{
+					return QTPolygonsExtensions.InsideState.Outside;
+				}
+
+				return QTPolygonsExtensions.InsideState.Unknown;
+			}
+
+			return QTPolygonsExtensions.InsideState.Outside;
+		}
+
+		private void GenerateIsideCache()
+		{
+			var bounds = Polygons.GetBounds();
+			var width = Math.Max(32, Math.Min(1024, (int)(bounds.Width() / unitsPerPixel + .5)));
+			var height = Math.Max(32, Math.Min(1024, (int)(bounds.Height() / unitsPerPixel + .5)));
+
+			InsideCache = new ImageBuffer(width + 4, height + 4, 8, new blender_gray(1));
+
+			polygonsToImageTransform = Affine.NewIdentity();
+			// move it to 0, 0
+			polygonsToImageTransform *= Affine.NewTranslation(-bounds.minX, -bounds.minY);
+			// scale to fit cache
+			polygonsToImageTransform *= Affine.NewScaling(width / (double)bounds.Width(), height / (double)bounds.Height());
+			// and move it in 2 pixels
+			polygonsToImageTransform *= Affine.NewTranslation(2, 2);
+
+			InsideCache.NewGraphics2D().Render(new VertexSourceApplyTransform(CreatePathStorage(Polygons), polygonsToImageTransform), RGBA_Bytes.White);
 		}
 	}
 }
