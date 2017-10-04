@@ -42,37 +42,6 @@ namespace MatterHackers.Pathfinding
 
 		public List<IntPointNode> Nodes { get; private set; } = new List<IntPointNode>();
 
-		public void AddPolygon(Polygon polygon, bool closed = true, float costMultiplier = 1)
-		{
-			// remember what node we started with
-			int startNode = Nodes.Count;
-			// add all the points of the polygon
-			for (int i = 0; i < polygon.Count; i++)
-			{
-				IntPointNode node = new IntPointNode(polygon[i]);
-				node.CostMultiplier = costMultiplier;
-				Nodes.Add(node);
-			}
-
-			// add all the links to the new nodes we added
-			if (closed)
-			{
-				int lastLinkIndex = polygon.Count - 1 + startNode;
-				for (int i = startNode; i < polygon.Count + startNode; i++)
-				{
-					AddPathLink(Nodes[lastLinkIndex], Nodes[i]);
-					lastLinkIndex = i;
-				}
-			}
-			else
-			{
-				for (int i = startNode + 1; i < polygon.Count + startNode; i++)
-				{
-					AddPathLink(Nodes[i-1], Nodes[i]);
-				}
-			}
-		}
-
 		public IntPointNode AddNode(IntPoint newPosition, IntPoint linkToA, IntPoint linkToB, float costMultiplier = 1)
 		{
 			IntPointNode nodeA = FindNode(linkToA);
@@ -105,7 +74,7 @@ namespace MatterHackers.Pathfinding
 
 		public PathLink AddPathLink(IntPointNode nodeA, IntPointNode nodeB)
 		{
-			if(nodeA == nodeB || nodeB.Position == nodeA.Position)
+			if (nodeA == nodeB || nodeB.Position == nodeA.Position)
 			{
 				Debug.Assert(false, "nodeA and node B should not be the same position");
 				return null;
@@ -121,6 +90,37 @@ namespace MatterHackers.Pathfinding
 			}
 
 			return link;
+		}
+
+		public void AddPolygon(Polygon polygon, bool closed = true, float costMultiplier = 1)
+		{
+			// remember what node we started with
+			int startNode = Nodes.Count;
+			// add all the points of the polygon
+			for (int i = 0; i < polygon.Count; i++)
+			{
+				IntPointNode node = new IntPointNode(polygon[i]);
+				node.CostMultiplier = costMultiplier;
+				Nodes.Add(node);
+			}
+
+			// add all the links to the new nodes we added
+			if (closed)
+			{
+				int lastLinkIndex = polygon.Count - 1 + startNode;
+				for (int i = startNode; i < polygon.Count + startNode; i++)
+				{
+					AddPathLink(Nodes[lastLinkIndex], Nodes[i]);
+					lastLinkIndex = i;
+				}
+			}
+			else
+			{
+				for (int i = startNode + 1; i < polygon.Count + startNode; i++)
+				{
+					AddPathLink(Nodes[i - 1], Nodes[i]);
+				}
+			}
 		}
 
 		public IntPointNode FindNode(IntPoint position, long minDist = 0)

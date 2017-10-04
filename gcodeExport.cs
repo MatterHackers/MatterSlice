@@ -23,8 +23,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using MatterHackers.Pathfinding;
-using MatterHackers.QuadTree;
 using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
@@ -83,6 +81,8 @@ namespace MatterHackers.MatterSlice
 		}
 
 		public long CurrentZ { get { return zPos_um; } }
+
+		public int LayerIndex { get; set; } = 0;
 
 		public void Close()
 		{
@@ -150,6 +150,7 @@ namespace MatterHackers.MatterSlice
 
 		public void LayerChanged(int layerIndex)
 		{
+			LayerIndex = layerIndex;
 			if (!string.IsNullOrEmpty(layerChangeCode))
 			{
 				WriteCode("; Layer Change GCode");
@@ -312,12 +313,12 @@ namespace MatterHackers.MatterSlice
 		{
 			StringBuilder lineToWrite = new StringBuilder();
 
-			if(movePosition_um.Width != lineWidth_um)
+			if (movePosition_um.Width != lineWidth_um)
 			{
 				int a = 0;
 			}
 
-			if(currentPosition_um == movePosition_um)
+			if (currentPosition_um == movePosition_um)
 			{
 				return;
 			}
