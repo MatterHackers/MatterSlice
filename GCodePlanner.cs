@@ -339,7 +339,7 @@ namespace MatterHackers.MatterSlice
 			if (PathFinder != null)
 			{
 				Polygon pathPolygon = new Polygon();
-				if (PathFinder.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pathPolygon))
+				if (PathFinder.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pathPolygon, true, gcodeExport.LayerIndex))
 				{
 					IntPoint lastPathPosition = LastPosition;
 					long lineLength_um = 0;
