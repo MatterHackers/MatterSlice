@@ -117,6 +117,12 @@ namespace MatterHackers.Pathfinding
 
 		public bool AllPathSegmentsAreInsideOutlines(Polygon pathThatIsInside, IntPoint startPoint, IntPoint endPoint, bool writeErrors = false, int layerIndex = -1)
 		{
+			PathingData outlineData = PathingData;
+			if(outlineData.Polygons.Count > 1)
+			{
+				outlineData = this.OutlineData;
+			}
+			//if (outlineData.Polygons.Count > 1) throw new Exception();
 			// check that this path does not exit the outline
 			for (int i = 0; i < pathThatIsInside.Count - 1; i++)
 			{
@@ -128,11 +134,11 @@ namespace MatterHackers.Pathfinding
 					&& end != endPoint
 					&& end != startPoint)
 				{
-					if (!ValidPoint(start + (end - start) / 4)
-						|| !ValidPoint(start + (end - start) / 2)
-						|| !ValidPoint(start + (end - start) * 3 / 4)
-						|| !ValidPoint(start + (end - start) / 10)
-						|| !ValidPoint(start + (end - start) * 9 / 10)
+					if (!ValidPoint(outlineData, start + (end - start) / 4)
+						|| !ValidPoint(outlineData, start + (end - start) / 2)
+						|| !ValidPoint(outlineData, start + (end - start) * 3 / 4)
+						|| !ValidPoint(outlineData, start + (end - start) / 10)
+						|| !ValidPoint(outlineData, start + (end - start) * 9 / 10)
 						|| (start - end).Length() > 1000000)
 					{
 						// an easy way to get the path
@@ -153,6 +159,7 @@ namespace MatterHackers.Pathfinding
 		{
 			var goodPath = CreatePathInsideBoundaryInternal(startPointIn, endPointIn, pathThatIsInside, layerIndex);
 
+			// This is good to disable when improving pathing
 			bool agressivePathSolution = true;
 			if (agressivePathSolution && !goodPath)
 			{
@@ -301,6 +308,10 @@ namespace MatterHackers.Pathfinding
 			}
 
 			var crossings = new List<Tuple<int, int, IntPoint>>(PathingData.Polygons.FindCrossingPoints(lastAddedNode.Position, lastToAddNode.Position, PathingData.EdgeQuadTrees));
+			if(crossings.Count == 0)
+			{
+				return true;
+			}
 			crossings.Sort(new PolygonAndPointDirectionSorter(lastAddedNode.Position, lastToAddNode.Position));
 			foreach (var crossing in crossings.SkipSame())
 			{
@@ -314,7 +325,8 @@ namespace MatterHackers.Pathfinding
 				}
 
 				if (lastAddedNode != crossingNode
-					&& PathingData.PointIsInside((lastAddedNode.Position + crossingNode.Position) / 2) != QTPolygonsExtensions.InsideState.Outside)
+					&& (PathingData.PointIsInside((lastAddedNode.Position + crossingNode.Position) / 2) == QTPolygonsExtensions.InsideState.Inside
+						|| lastAddedNode.Links.Count == 0))
 				{
 					PathingData.Waypoints.AddPathLink(lastAddedNode, crossingNode);
 				}
@@ -327,7 +339,8 @@ namespace MatterHackers.Pathfinding
 			}
 
 			if (lastAddedNode != lastToAddNode
-				&& PathingData.PointIsInside((lastAddedNode.Position + lastToAddNode.Position) / 2) == QTPolygonsExtensions.InsideState.Inside)
+				&& (PathingData.PointIsInside((lastAddedNode.Position + lastToAddNode.Position) / 2) == QTPolygonsExtensions.InsideState.Inside
+					|| lastToAddNode.Links.Count == 0))
 			{
 				// connect the last crossing to the end node
 				PathingData.Waypoints.AddPathLink(lastAddedNode, lastToAddNode);
@@ -441,11 +454,14 @@ namespace MatterHackers.Pathfinding
 		private void HookUpToEdge(IntPointNode crossingNode, int polyIndex, int pointIndex)
 		{
 			int count = PathingData.Polygons[polyIndex].Count;
-			pointIndex = (pointIndex + count) % count;
-			IntPointNode prevPolyPointNode = PathingData.Waypoints.FindNode(PathingData.Polygons[polyIndex][pointIndex]);
-			PathingData.Waypoints.AddPathLink(crossingNode, prevPolyPointNode);
-			IntPointNode nextPolyPointNode = PathingData.Waypoints.FindNode(PathingData.Polygons[polyIndex][(pointIndex + 1) % count]);
-			PathingData.Waypoints.AddPathLink(crossingNode, nextPolyPointNode);
+			if (count > 0)
+			{
+				pointIndex = (pointIndex + count) % count;
+				IntPointNode prevPolyPointNode = PathingData.Waypoints.FindNode(PathingData.Polygons[polyIndex][pointIndex]);
+				PathingData.Waypoints.AddPathLink(crossingNode, prevPolyPointNode);
+				IntPointNode nextPolyPointNode = PathingData.Waypoints.FindNode(PathingData.Polygons[polyIndex][(pointIndex + 1) % count]);
+				PathingData.Waypoints.AddPathLink(crossingNode, nextPolyPointNode);
+			}
 		}
 
 		private void OptimizePathPoints(Polygon pathThatIsInside)
@@ -489,7 +505,7 @@ namespace MatterHackers.Pathfinding
 			}
 		}
 
-		private bool ValidPoint(IntPoint position)
+		private bool ValidPoint(PathingData outlineData, IntPoint position)
 		{
 			Tuple<int, int, IntPoint> movedPosition;
 			long movedDist = 0;
@@ -499,8 +515,8 @@ namespace MatterHackers.Pathfinding
 				movedDist = (position - movedPosition.Item3).Length();
 			}
 
-			if (OutlineData.Polygons.TouchingEdge(position, OutlineData.EdgeQuadTrees)
-			|| OutlineData.PointIsInside(position) == QTPolygonsExtensions.InsideState.Inside
+			if (outlineData.Polygons.TouchingEdge(position, outlineData.EdgeQuadTrees)
+			|| outlineData.PointIsInside(position) != QTPolygonsExtensions.InsideState.Outside
 			|| movedDist <= 1)
 			{
 				return true;
