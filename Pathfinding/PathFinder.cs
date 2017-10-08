@@ -170,37 +170,30 @@ namespace MatterHackers.Pathfinding
 
 				if (goodPath)
 				{
-					// move every segment that can be inside the boundry to be within the boundry
-					if (pathThatIsInside.Count > 1)
-					{
-						IntPoint startPoint = startPointIn;
-						for (int i = 0; i < pathThatIsInside.Count - 1; i++)
-						{
-							IntPoint testPoint = pathThatIsInside[i];
-							IntPoint endPoint = i < pathThatIsInside.Count - 2 ? pathThatIsInside[i + 1] : endPointIn;
-
-							IntPoint inPolyPosition;
-							if (MovePointInsideBoundary(testPoint, out inPolyPosition))
-							{
-								useOutlineAsBoundry = true;
-								// It moved so test if it is a good point
-								if (PathingData.Polygons.FindIntersection(startPoint, inPolyPosition, PathingData.EdgeQuadTrees) != Intersection.Intersect
-									&& PathingData.Polygons.FindIntersection(inPolyPosition, endPoint, PathingData.EdgeQuadTrees) != Intersection.Intersect)
-								{
-									testPoint = inPolyPosition;
-									pathThatIsInside[i] = testPoint;
-								}
-
-								useOutlineAsBoundry = false;
-							}
-
-							startPoint = testPoint;
-						}
-					}
+					MovePointsInsideIfPossible(startPointIn, endPointIn, pathThatIsInside);
 				}
 			}
 
 			// remove any segment that goes to one point and then back to same point (a -> b -> a)
+			RemoveUTurnSegments(startPointIn, endPointIn, pathThatIsInside);
+
+			if (optimizePath)
+			{
+				OptimizePathPoints(pathThatIsInside);
+			}
+
+			if (saveBadPathToDisk)
+			{
+				AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPointIn, endPointIn, true, layerIndex);
+			}
+
+			CalculatedPath?.Invoke(this, pathThatIsInside, startPointIn, endPointIn);
+
+			return goodPath;
+		}
+
+		private static void RemoveUTurnSegments(IntPoint startPointIn, IntPoint endPointIn, Polygon pathThatIsInside)
+		{
 			if (pathThatIsInside.Count > 1)
 			{
 				IntPoint startPoint = startPointIn;
@@ -218,20 +211,37 @@ namespace MatterHackers.Pathfinding
 					startPoint = testPoint;
 				}
 			}
+		}
 
-			if (optimizePath)
+		private void MovePointsInsideIfPossible(IntPoint startPointIn, IntPoint endPointIn, Polygon pathThatIsInside)
+		{
+			// move every segment that can be inside the boundry to be within the boundry
+			if (pathThatIsInside.Count > 1)
 			{
-				OptimizePathPoints(pathThatIsInside);
+				IntPoint startPoint = startPointIn;
+				for (int i = 0; i < pathThatIsInside.Count - 1; i++)
+				{
+					IntPoint testPoint = pathThatIsInside[i];
+					IntPoint endPoint = i < pathThatIsInside.Count - 2 ? pathThatIsInside[i + 1] : endPointIn;
+
+					IntPoint inPolyPosition;
+					if (MovePointInsideBoundary(testPoint, out inPolyPosition))
+					{
+						useOutlineAsBoundry = true;
+						// It moved so test if it is a good point
+						if (PathingData.Polygons.FindIntersection(startPoint, inPolyPosition, PathingData.EdgeQuadTrees) != Intersection.Intersect
+							&& PathingData.Polygons.FindIntersection(inPolyPosition, endPoint, PathingData.EdgeQuadTrees) != Intersection.Intersect)
+						{
+							testPoint = inPolyPosition;
+							pathThatIsInside[i] = testPoint;
+						}
+
+						useOutlineAsBoundry = false;
+					}
+
+					startPoint = testPoint;
+				}
 			}
-
-			if (saveBadPathToDisk)
-			{
-				AllPathSegmentsAreInsideOutlines(pathThatIsInside, startPointIn, endPointIn, true, layerIndex);
-			}
-
-			CalculatedPath?.Invoke(this, pathThatIsInside, startPointIn, endPointIn);
-
-			return goodPath;
 		}
 
 		public bool MovePointInsideBoundary(IntPoint testPosition, out IntPoint inPolyPosition)
