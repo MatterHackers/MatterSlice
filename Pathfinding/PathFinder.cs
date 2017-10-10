@@ -51,6 +51,8 @@ namespace MatterHackers.Pathfinding
 
 		public PathFinder(Polygons outlinePolygons, long avoidInset, IntRect? stayInsideBounds = null, bool useInsideCache = true)
 		{
+			useInsideCache = false;
+
 			if (outlinePolygons.Count == 0)
 			{
 				return;
@@ -341,8 +343,7 @@ namespace MatterHackers.Pathfinding
 				}
 
 				if (lastAddedNode != crossingNode
-					&& (PathingData.PointIsInside((lastAddedNode.Position + crossingNode.Position) / 2) == QTPolygonsExtensions.InsideState.Inside
-						|| lastAddedNode.Links.Count == 0))
+					&& (SegmentIsAllInside(lastAddedNode, crossingNode) || lastAddedNode.Links.Count == 0))
 				{
 					PathingData.Waypoints.AddPathLink(lastAddedNode, crossingNode);
 				}
@@ -379,6 +380,22 @@ namespace MatterHackers.Pathfinding
 			}
 
 			return true;
+		}
+
+		private bool SegmentIsAllInside(IntPointNode lastAddedNode, IntPointNode crossingNode)
+		{
+			if (PathingData.InsideCache == null)
+			{
+				// check just the center point
+				return PathingData.PointIsInside((lastAddedNode.Position + crossingNode.Position) / 2) == QTPolygonsExtensions.InsideState.Inside;
+			}
+			else
+			{
+				// check many points along the line
+				return PathingData.PointIsInside((lastAddedNode.Position + crossingNode.Position) / 2) == QTPolygonsExtensions.InsideState.Inside
+					&& PathingData.PointIsInside(lastAddedNode.Position + (crossingNode.Position - lastAddedNode.Position) / 4) == QTPolygonsExtensions.InsideState.Inside
+					&& PathingData.PointIsInside(lastAddedNode.Position + (crossingNode.Position - lastAddedNode.Position) * 3 / 4) == QTPolygonsExtensions.InsideState.Inside;
+			}
 		}
 
 		private Polygons FixWinding(Polygons polygonsToPathAround)
