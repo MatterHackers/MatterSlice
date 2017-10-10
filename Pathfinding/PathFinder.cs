@@ -117,6 +117,10 @@ namespace MatterHackers.Pathfinding
 
 		public bool AllPathSegmentsAreInsideOutlines(Polygon pathThatIsInside, IntPoint startPoint, IntPoint endPoint, bool writeErrors = false, int layerIndex = -1)
 		{
+			if(PathingData == null)
+			{
+				return true;
+			}
 			PathingData outlineData = PathingData;
 			if (outlineData.Polygons.Count > 1)
 			{
