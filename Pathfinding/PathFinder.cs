@@ -652,9 +652,9 @@ namespace MatterHackers.Pathfinding
 		public WayPointsToRemove RemovePointList { get; }
 		public IntPointPathNetwork Waypoints { get; } = new IntPointPathNetwork();
 
-		public static PathStorage CreatePathStorage(List<List<IntPoint>> polygons)
+		public static VertexStorage CreatePathStorage(List<List<IntPoint>> polygons)
 		{
-			PathStorage output = new PathStorage();
+			VertexStorage output = new VertexStorage();
 
 			foreach (List<IntPoint> polygon in polygons)
 			{
