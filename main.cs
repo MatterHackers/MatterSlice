@@ -124,7 +124,7 @@ namespace MatterHackers.MatterSlice
 
 							case 'b':
 								argn++;
-								config.BooleanOpperations = args[argn];
+								config.BooleanOperations = args[argn];
 								break;
 
 							case 'd':

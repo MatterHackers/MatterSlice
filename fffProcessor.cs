@@ -245,10 +245,10 @@ namespace MatterHackers.MatterSlice
 				config.InfillPercent = 0;
 			}
 
-			MultiExtruders.ProcessBooleans(slicingData.Extruders, config.BooleanOpperations);
+			MultiExtruders.ProcessBooleans(slicingData.Extruders, config.BooleanOperations);
 
 			// Is the last extruder data actually support definitions?
-			bool userGeneratedSupport = config.BooleanOpperations.Contains("S");
+			bool userGeneratedSupport = config.BooleanOperations.Contains("S");
 			ExtruderLayers supportOutlines = null;
 			if (userGeneratedSupport)
 			{
