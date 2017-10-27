@@ -57,9 +57,9 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static void ProcessBooleans(List<ExtruderLayers> allPartsLayers, string booleanOpperations)
+		public static void ProcessBooleans(List<ExtruderLayers> allPartsLayers, string booleanOperations)
 		{
-			BooleanProcessing processor = new BooleanProcessing(allPartsLayers, booleanOpperations);
+			BooleanProcessing processor = new BooleanProcessing(allPartsLayers, booleanOperations);
 		}
 
 		public static void RemoveExtruderIntersections(List<ExtruderLayers> extruders)
@@ -87,16 +87,16 @@ namespace MatterHackers.MatterSlice
 		private List<int> layersToRemove = new List<int>();
 		private int numberOfOpens = 0;
 
-		public BooleanProcessing(List<ExtruderLayers> extruders, string booleanOpperations)
+		public BooleanProcessing(List<ExtruderLayers> extruders, string booleanOperations)
 		{
 			int parseIndex = 0;
 			int totalLayers = extruders[0].Layers.Count;
 			int operands = 0;
-			while (parseIndex < booleanOpperations.Length)
+			while (parseIndex < booleanOperations.Length)
 			{
 				BooleanType typeToDo = BooleanType.None;
 
-				switch (booleanOpperations[parseIndex])
+				switch (booleanOperations[parseIndex])
 				{
 					case '(': // start union
 					case '[': // start intersection
@@ -131,7 +131,7 @@ namespace MatterHackers.MatterSlice
 					default:
 						// get the number for the operand index
 						int skipCount = 0;
-						extruderIndexStack.Push(GetNextNumber(booleanOpperations, parseIndex, out skipCount));
+						extruderIndexStack.Push(GetNextNumber(booleanOperations, parseIndex, out skipCount));
 						parseIndex += skipCount;
 						operands++;
 						break;
