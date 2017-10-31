@@ -731,7 +731,7 @@ namespace MatterHackers.Pathfinding
 			// and move it in 2 pixels
 			polygonsToImageTransform *= Affine.NewTranslation(2, 2);
 
-			InsideCache.NewGraphics2D().Render(new VertexSourceApplyTransform(CreatePathStorage(Polygons), polygonsToImageTransform), RGBA_Bytes.White);
+			InsideCache.NewGraphics2D().Render(new VertexSourceApplyTransform(CreatePathStorage(Polygons), polygonsToImageTransform), Color.White);
 		}
 	}
 }
