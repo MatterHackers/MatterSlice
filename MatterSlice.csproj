@@ -208,4 +208,8 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>call "$(DevEnvDir)..\..\VC\Auxiliary\Build\vcvarsall.bat"  x86_amd64
+EditBin "$(TargetPath)"  /LARGEADDRESSAWARE</PostBuildEvent>
+  </PropertyGroup>
 </Project>
