@@ -131,7 +131,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 		#endregion Inset order tests
 
-		[Test, Category("WorkInProgress")]
+		[Test, Ignore("WorkInProgress")]
 		public void AllInsidesBeforeAnyOutsides()
 		{
 			string thinAttachStlFile = TestUtlities.GetStlPath("Thin Attach");
