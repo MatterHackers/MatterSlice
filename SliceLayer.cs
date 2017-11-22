@@ -34,6 +34,7 @@ namespace MatterHackers.MatterSlice
 		public Polygons AllOutlines { get; set; }
 		public PathFinder PathFinder { get; set; }
 		public List<LayerIsland> Islands = null;
+		public bool CreatedInsets { get; set; } = false;
 		public long LayerZ;
 		private static bool OUTPUT_DEBUG_DATA = false;
 
