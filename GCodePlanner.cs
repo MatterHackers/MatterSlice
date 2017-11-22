@@ -39,8 +39,6 @@ namespace MatterHackers.MatterSlice
 
 		private double extraTime;
 
-		private int extrudeSpeedFactor;
-
 		private bool forceRetraction;
 
 		private GCodeExport gcodeExport = new GCodeExport();
@@ -57,8 +55,6 @@ namespace MatterHackers.MatterSlice
 
 		private GCodePathConfig travelConfig;
 
-		private int travelSpeedFactor;
-
 		public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um, double perimeterStartEndOverlap = 0)
 		{
 			this.gcodeExport = gcode;
@@ -66,8 +62,6 @@ namespace MatterHackers.MatterSlice
 			travelConfig.SetData(travelSpeed, 0, "travel");
 
 			LastPosition = gcode.GetPositionXY();
-			extrudeSpeedFactor = 100;
-			travelSpeedFactor = 100;
 			extraTime = 0.0;
 			totalPrintTime = 0.0;
 			forceRetraction = false;
@@ -181,43 +175,40 @@ namespace MatterHackers.MatterSlice
 					minExtrudeTime = 1;
 				}
 
-				double factor = extrudeTime / minExtrudeTime;
-				for (int n = 0; n < paths.Count; n++)
-				{
-					GCodePath path = paths[n];
-					if (path.config.lineWidth_um == 0)
-					{
-						continue;
-					}
+				gcodeExport.LayerSpeedRatio = GetNewLayerSpeedRatio(minimumPrintingSpeed, extrudeTime, minExtrudeTime);
 
-					int speed = (int)(path.config.speed * factor);
-					if (speed < minimumPrintingSpeed)
-					{
-						factor = (double)(minimumPrintingSpeed) / (double)(path.config.speed);
-					}
-				}
-
-				//Only slow down with the minimum time if that will be slower then a factor already set. First layer slowdown also sets the speed factor.
-				if (factor * 100 < getExtrudeSpeedFactor())
-				{
-					SetExtrudeSpeedFactor((int)(factor * 100));
-				}
-				else
-				{
-					factor = getExtrudeSpeedFactor() / 100.0;
-				}
-
-				if (minTime - (extrudeTime / factor) - travelTime > 0.1)
+				if (minTime - (extrudeTime / gcodeExport.LayerSpeedRatio) - travelTime > 0.1)
 				{
 					//TODO: Use up this extra time (circle around the print?)
-					this.extraTime = minTime - (extrudeTime / factor) - travelTime;
+					this.extraTime = minTime - (extrudeTime / gcodeExport.LayerSpeedRatio) - travelTime;
 				}
-				this.totalPrintTime = (extrudeTime / factor) + travelTime;
+				this.totalPrintTime = (extrudeTime / gcodeExport.LayerSpeedRatio) + travelTime;
 			}
 			else
 			{
 				this.totalPrintTime = totalTime;
 			}
+		}
+
+		private double GetNewLayerSpeedRatio(int minimumPrintingSpeed, double extrudeTime, double minExtrudeTime)
+		{
+			double newLayerSpeedRatio = extrudeTime / minExtrudeTime;
+			foreach (var path in paths)
+			{
+				if (path.config.lineWidth_um == 0)
+				{
+					continue;
+				}
+
+				int speed = (int)(path.config.speed * newLayerSpeedRatio);
+				if (speed < minimumPrintingSpeed)
+				{
+					newLayerSpeedRatio = (double)(minimumPrintingSpeed) / (double)(path.config.speed);
+				}
+			}
+
+			//Only slow down with the minimum time if that will be slower then a factor already set. First layer slowdown also sets the speed factor.
+			return newLayerSpeedRatio;
 		}
 
 		public void ForceRetract()
@@ -228,16 +219,6 @@ namespace MatterHackers.MatterSlice
 		public int GetExtruder()
 		{
 			return currentExtruderIndex;
-		}
-
-		public int getExtrudeSpeedFactor()
-		{
-			return this.extrudeSpeedFactor;
-		}
-
-		public int getTravelSpeedFactor()
-		{
-			return this.travelSpeedFactor;
 		}
 
 		public void QueueExtrusionMove(IntPoint destination, GCodePathConfig config)
@@ -403,18 +384,6 @@ namespace MatterHackers.MatterSlice
 			currentExtruderIndex = extruder;
 		}
 
-		public void SetExtrudeSpeedFactor(int speedFactor)
-		{
-			if (speedFactor < 1) speedFactor = 1;
-			this.extrudeSpeedFactor = speedFactor;
-		}
-
-		public void SetTravelSpeedFactor(int speedFactor)
-		{
-			if (speedFactor < 1) speedFactor = 1;
-			this.travelSpeedFactor = speedFactor;
-		}
-
 		public void WriteQueuedGCode(int layerThickness, int fanSpeedPercent = -1, int bridgeFanSpeedPercent = -1)
 		{
 			GCodePathConfig lastConfig = null;
@@ -463,12 +432,8 @@ namespace MatterHackers.MatterSlice
 					// Prevent cooling overrides from affecting bridge moves
 					if (path.config.gcodeComment != "BRIDGE")
 					{
-						speed = speed * extrudeSpeedFactor / 100;
+						speed = speed * gcodeExport.LayerSpeedRatio;
 					}
-				}
-				else
-				{
-					speed = speed * travelSpeedFactor / 100;
 				}
 
 				if (path.polygon.Count == 1

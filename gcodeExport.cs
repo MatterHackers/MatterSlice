@@ -57,6 +57,24 @@ namespace MatterHackers.MatterSlice
 		private bool wipeAfterRetraction;
 		private long zPos_um;
 
+		double _layerSpeedRatio = 1;
+		public double LayerSpeedRatio
+		{
+			get { return _layerSpeedRatio; }
+			set
+			{
+				var maxChange = .1;
+				if (Math.Abs(_layerSpeedRatio - value) > maxChange)
+				{
+					_layerSpeedRatio = value > _layerSpeedRatio ? _layerSpeedRatio += maxChange : _layerSpeedRatio -= maxChange;
+				}
+				else
+				{
+					_layerSpeedRatio = value;
+				}
+			}
+		}
+
 		public GCodeExport()
 		{
 			extrusionAmount_mm = 0;

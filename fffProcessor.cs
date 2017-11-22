@@ -37,7 +37,7 @@ namespace MatterHackers.MatterSlice
 	{
 		private long maxObjectHeight;
 		private int fileNumber;
-		private GCodeExport gcode = new GCodeExport();
+		private GCodeExport gcodeExport = new GCodeExport();
 		private ConfigSettings config;
 		private Stopwatch timeKeeper = new Stopwatch();
 
@@ -70,17 +70,17 @@ namespace MatterHackers.MatterSlice
 
 		public bool SetTargetFile(string filename)
 		{
-			gcode.SetFilename(filename);
+			gcodeExport.SetFilename(filename);
 			{
-				gcode.WriteComment("Generated with MatterSlice {0}".FormatWith(ConfigConstants.VERSION));
+				gcodeExport.WriteComment("Generated with MatterSlice {0}".FormatWith(ConfigConstants.VERSION));
 			}
 
-			return gcode.IsOpened();
+			return gcodeExport.IsOpened();
 		}
 
 		public void DoProcessing()
 		{
-			if (!gcode.IsOpened()
+			if (!gcodeExport.IsOpened()
 				|| simpleMeshCollection.SimpleMeshes.Count == 0)
 			{
 				return;
@@ -142,14 +142,14 @@ namespace MatterHackers.MatterSlice
 
 		public void finalize()
 		{
-			if (!gcode.IsOpened())
+			if (!gcodeExport.IsOpened())
 			{
 				return;
 			}
 
-			gcode.Finalize(maxObjectHeight, config.TravelSpeed, config.EndCode);
+			gcodeExport.Finalize(maxObjectHeight, config.TravelSpeed, config.EndCode);
 
-			gcode.Close();
+			gcodeExport.Close();
 		}
 
 		private void preSetup(int extrusionWidth)
@@ -169,13 +169,13 @@ namespace MatterHackers.MatterSlice
 
 			for (int extruderIndex = 0; extruderIndex < ConfigConstants.MAX_EXTRUDERS; extruderIndex++)
 			{
-				gcode.SetExtruderOffset(extruderIndex, config.ExtruderOffsets[extruderIndex], -config.ZOffset_um);
+				gcodeExport.SetExtruderOffset(extruderIndex, config.ExtruderOffsets[extruderIndex], -config.ZOffset_um);
 			}
 
-			gcode.SetRetractionSettings(config.RetractionOnTravel, config.RetractionSpeed, config.RetractionOnExtruderSwitch, config.MinimumExtrusionBeforeRetraction, config.RetractionZHop, config.WipeAfterRetraction, config.UnretractExtraExtrusion, config.RetractRestartExtraTimeToApply, config.UnretractExtraOnExtruderSwitch);
-			gcode.SetToolChangeCode(config.ToolChangeCode, config.BeforeToolchangeCode);
+			gcodeExport.SetRetractionSettings(config.RetractionOnTravel, config.RetractionSpeed, config.RetractionOnExtruderSwitch, config.MinimumExtrusionBeforeRetraction, config.RetractionZHop, config.WipeAfterRetraction, config.UnretractExtraExtrusion, config.RetractRestartExtraTimeToApply, config.UnretractExtraOnExtruderSwitch);
+			gcodeExport.SetToolChangeCode(config.ToolChangeCode, config.BeforeToolchangeCode);
 
-			gcode.SetLayerChangeCode(config.LayerChangeCode);
+			gcodeExport.SetLayerChangeCode(config.LayerChangeCode);
 		}
 
 		private void SliceModels(LayerDataStorage slicingData)
@@ -322,32 +322,32 @@ namespace MatterHackers.MatterSlice
 
 		private void WriteGCode(LayerDataStorage slicingData)
 		{
-			gcode.WriteComment("filamentDiameter = {0}".FormatWith(config.FilamentDiameter));
-			gcode.WriteComment("extrusionWidth = {0}".FormatWith(config.ExtrusionWidth));
-			gcode.WriteComment("firstLayerExtrusionWidth = {0}".FormatWith(config.FirstLayerExtrusionWidth));
-			gcode.WriteComment("layerThickness = {0}".FormatWith(config.LayerThickness));
+			gcodeExport.WriteComment("filamentDiameter = {0}".FormatWith(config.FilamentDiameter));
+			gcodeExport.WriteComment("extrusionWidth = {0}".FormatWith(config.ExtrusionWidth));
+			gcodeExport.WriteComment("firstLayerExtrusionWidth = {0}".FormatWith(config.FirstLayerExtrusionWidth));
+			gcodeExport.WriteComment("layerThickness = {0}".FormatWith(config.LayerThickness));
 
 			if (config.EnableRaft)
 			{
-				gcode.WriteComment("firstLayerThickness = {0}".FormatWith(config.RaftBaseThickness_um / 1000.0));
+				gcodeExport.WriteComment("firstLayerThickness = {0}".FormatWith(config.RaftBaseThickness_um / 1000.0));
 			}
 			else
 			{
-				gcode.WriteComment("firstLayerThickness = {0}".FormatWith(config.FirstLayerThickness));
+				gcodeExport.WriteComment("firstLayerThickness = {0}".FormatWith(config.FirstLayerThickness));
 			}
 
 			if (fileNumber == 1)
 			{
-				gcode.WriteCode(config.StartCode);
+				gcodeExport.WriteCode(config.StartCode);
 			}
 			else
 			{
-				gcode.WriteFanCommand(0);
-				gcode.ResetExtrusionValue();
-				gcode.WriteRetraction(0, false);
-				gcode.SetZ(maxObjectHeight + 5000);
-				gcode.WriteMove(gcode.GetPosition(), config.TravelSpeed, 0);
-				gcode.WriteMove(new IntPoint(slicingData.modelMin.X, slicingData.modelMin.Y, gcode.CurrentZ), config.TravelSpeed, 0);
+				gcodeExport.WriteFanCommand(0);
+				gcodeExport.ResetExtrusionValue();
+				gcodeExport.WriteRetraction(0, false);
+				gcodeExport.SetZ(maxObjectHeight + 5000);
+				gcodeExport.WriteMove(gcodeExport.GetPosition(), config.TravelSpeed, 0);
+				gcodeExport.WriteMove(new IntPoint(slicingData.modelMin.X, slicingData.modelMin.Y, gcodeExport.CurrentZ), config.TravelSpeed, 0);
 			}
 			fileNumber++;
 
@@ -383,10 +383,10 @@ namespace MatterHackers.MatterSlice
 					totalLayers--;
 				}
 			}
-			gcode.WriteComment("Layer count: {0}".FormatWith(totalLayers));
+			gcodeExport.WriteComment("Layer count: {0}".FormatWith(totalLayers));
 
 			// keep the raft generation code inside of raft
-			slicingData.WriteRaftGCodeIfRequired(gcode, config);
+			slicingData.WriteRaftGCodeIfRequired(gcodeExport, config);
 
 			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 			{
@@ -437,14 +437,14 @@ namespace MatterHackers.MatterSlice
 
 				if (layerIndex == 0)
 				{
-					gcode.SetExtrusion(config.FirstLayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
+					gcodeExport.SetExtrusion(config.FirstLayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 				}
 				else
 				{
-					gcode.SetExtrusion(config.LayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
+					gcodeExport.SetExtrusion(config.LayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 				}
 
-				GCodePlanner layerGcodePlanner = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+				GCodePlanner layerGcodePlanner = new GCodePlanner(gcodeExport, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 				if (layerIndex == 0
 					&& config.RetractionZHop > 0)
 				{
@@ -467,9 +467,9 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				gcode.SetZ(z);
+				gcodeExport.SetZ(z);
 
-				gcode.LayerChanged(layerIndex);
+				gcodeExport.LayerChanged(layerIndex);
 
 				// We only create the skirt if we are on layer 0.
 				if (layerIndex == 0 && !config.ShouldGenerateRaft())
@@ -477,7 +477,7 @@ namespace MatterHackers.MatterSlice
 					QueueSkirtToGCode(slicingData, layerGcodePlanner, layerIndex);
 				}
 
-				int fanSpeedPercent = GetFanSpeed(layerIndex, layerGcodePlanner);
+				int fanSpeedPercent = GetFanSpeed(layerIndex, gcodeExport);
 
 				for (int extruderIndex = 0; extruderIndex < config.MaxExtruderCount(); extruderIndex++)
 				{
@@ -551,7 +551,7 @@ namespace MatterHackers.MatterSlice
 				else
 				{
 					z += config.SupportAirGap_um;
-					gcode.SetZ(z);
+					gcodeExport.SetZ(z);
 
 					for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
 					{
@@ -566,7 +566,7 @@ namespace MatterHackers.MatterSlice
 				//Finish the layer by applying speed corrections for minimum layer times.
 				layerGcodePlanner.ForceMinimumLayerTime(config.MinimumLayerTimeSeconds, config.MinimumPrintingSpeed);
 
-				gcode.WriteFanCommand(fanSpeedPercent);
+				gcodeExport.WriteFanCommand(fanSpeedPercent);
 
 				int currentLayerThickness_um = config.LayerThickness_um;
 				if (layerIndex <= 0)
@@ -579,8 +579,8 @@ namespace MatterHackers.MatterSlice
 
 			LogOutput.Log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Restart();
-			gcode.TellFileSize();
-			gcode.WriteFanCommand(0);
+			gcodeExport.TellFileSize();
+			gcodeExport.WriteFanCommand(0);
 
 			//Store the object height for when we are printing multiple objects, as we need to clear every one of them when moving to the next position.
 			maxObjectHeight = Math.Max(maxObjectHeight, slicingData.modelSize.Z);
@@ -666,16 +666,16 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private int GetFanSpeed(int layerIndex, GCodePlanner gcodeLayer)
+		private int GetFanSpeed(int layerIndex, GCodeExport gcodeExport)
 		{
 			int fanSpeedPercent = config.FanSpeedMinPercent;
-			if (gcodeLayer.getExtrudeSpeedFactor() <= 50)
+			if (gcodeExport.LayerSpeedRatio <= .5)
 			{
 				fanSpeedPercent = config.FanSpeedMaxPercent;
 			}
 			else
 			{
-				int n = gcodeLayer.getExtrudeSpeedFactor() - 50;
+				int n = (int)(100 * (gcodeExport.LayerSpeedRatio - .5));
 				fanSpeedPercent = config.FanSpeedMinPercent * n / 50 + config.FanSpeedMaxPercent * (50 - n) / 50;
 			}
 
@@ -1395,9 +1395,9 @@ namespace MatterHackers.MatterSlice
 
 		public void Cancel()
 		{
-			if (gcode.IsOpened())
+			if (gcodeExport.IsOpened())
 			{
-				gcode.Close();
+				gcodeExport.Close();
 			}
 		}
 	}
