@@ -605,8 +605,9 @@ namespace MatterHackers.MatterSlice
 					SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 
 					if (layer.Islands.Count > 0
-						&& layer.Islands[0].InsetToolPaths.Count == 0)
+						&& !layer.CreatedInsets)
 					{
+						layer.CreatedInsets = true;
 						int insetCount = config.NumberOfPerimeters;
 						if (config.ContinuousSpiralOuterPerimeter && (int)(layerIndex) < config.NumberOfBottomLayers && layerIndex % 2 == 1)
 						{
