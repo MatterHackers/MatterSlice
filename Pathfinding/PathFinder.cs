@@ -600,13 +600,14 @@ namespace MatterHackers.Pathfinding
 
 		private void SetGoodUnitsPerPixel(double unitsPerPixel)
 		{
+			unitsPerPixel = Max(unitsPerPixel, 1);
 			if (polygonBounds.Width() / unitsPerPixel > 1024)
 			{
-				unitsPerPixel = polygonBounds.Width() / 1024;
+				unitsPerPixel = Max(1, polygonBounds.Width() / 1024);
 			}
 			if (polygonBounds.Height() / unitsPerPixel > 1024)
 			{
-				unitsPerPixel = polygonBounds.Height() / 1024;
+				unitsPerPixel = Max(1, polygonBounds.Height() / 1024);
 			}
 			if (polygonBounds.Width() / unitsPerPixel < 32)
 			{
