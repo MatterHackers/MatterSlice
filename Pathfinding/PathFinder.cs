@@ -453,7 +453,8 @@ namespace MatterHackers.Pathfinding
 		private void MovePointsInsideIfPossible(IntPoint startPointIn, IntPoint endPointIn, Polygon pathThatIsInside)
 		{
 			// move every segment that can be inside the boundry to be within the boundry
-			if (pathThatIsInside.Count > 1)
+			if (pathThatIsInside.Count > 1
+				&& InsetAmount > 0)
 			{
 				IntPoint startPoint = startPointIn;
 				for (int i = 0; i < pathThatIsInside.Count - 1; i++)
@@ -657,7 +658,7 @@ namespace MatterHackers.Pathfinding
 
 		public bool MovePointAwayFromEdge(IntPoint testPoint, long distance, out IntPoint result)
 		{
-			int distanceInPixels = Max(1, (int)Round(distance / unitsPerPixel));
+			int distanceInPixels = (int)Round(distance / unitsPerPixel);
 			result = testPoint;
 			bool movedPoint = false;
 
@@ -746,7 +747,7 @@ namespace MatterHackers.Pathfinding
 			int yi = (int)Round(yd);
 
 			int pixelSum = 0;
-			for(int offsetX = -1; offsetX <= 1; offsetX++)
+			for (int offsetX = -1; offsetX <= 1; offsetX++)
 			{
 				for (int offsetY = -1; offsetY <= 1; offsetY++)
 				{
@@ -769,7 +770,13 @@ namespace MatterHackers.Pathfinding
 				return QTPolygonsExtensions.InsideState.Inside;
 			}
 
-			return QTPolygonsExtensions.InsideState.Unknown;
+			// The cache could not definitively tell us, so check the polygons
+			if (Polygons.PointIsInside(testPoint, EdgeQuadTrees, PointQuadTrees))
+			{
+				return QTPolygonsExtensions.InsideState.Inside;
+			}
+
+			return QTPolygonsExtensions.InsideState.Outside;
 		}
 
 		private void GenerateIsideCache()
