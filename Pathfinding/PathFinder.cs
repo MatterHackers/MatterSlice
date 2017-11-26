@@ -661,7 +661,7 @@ namespace MatterHackers.Pathfinding
 			result = testPoint;
 			bool movedPoint = false;
 
-			for (int i = 0; i < distanceInPixels; i++)
+			for (int i = 0; i < distanceInPixels + distanceInPixels/2; i++)
 			{
 				// check each direction to see if we can increase our InsetMap value
 				double x = result.X;
@@ -671,29 +671,42 @@ namespace MatterHackers.Pathfinding
 				int yi = (int)Round(y);
 
 				int current = GetInsetMapValue(xi, yi);
+				if(current == 255)
+				{
+					// we've made it all the way inside
+				}
 
-				movedPoint |= CheckInsetPixel(current, xi - 1, yi + 0, ref result);
-				movedPoint |= CheckInsetPixel(current, xi - 1, yi - 1, ref result);
-				movedPoint |= CheckInsetPixel(current, xi + 0, yi - 1, ref result);
-				movedPoint |= CheckInsetPixel(current, xi + 1, yi - 1, ref result);
-				movedPoint |= CheckInsetPixel(current, xi + 1, yi + 0, ref result);
-				movedPoint |= CheckInsetPixel(current, xi + 1, yi + 1, ref result);
-				movedPoint |= CheckInsetPixel(current, xi + 0, yi + 1, ref result);
-				movedPoint |= CheckInsetPixel(current, xi - 1, yi + 1, ref result);
+				var offset = new IntPoint();
+				movedPoint |= CheckInsetPixel(current, xi, - 1, yi, + 0, ref offset);
+				movedPoint |= CheckInsetPixel(current, xi, - 1, yi, - 1, ref offset);
+				movedPoint |= CheckInsetPixel(current, xi, + 0, yi, - 1, ref offset);
+				movedPoint |= CheckInsetPixel(current, xi, + 1, yi, - 1, ref offset);
+				movedPoint |= CheckInsetPixel(current, xi, + 1, yi, + 0, ref offset);
+				movedPoint |= CheckInsetPixel(current, xi, + 1, yi, + 1, ref offset);
+				movedPoint |= CheckInsetPixel(current, xi, + 0, yi, + 1, ref offset);
+				movedPoint |= CheckInsetPixel(current, xi, - 1, yi, + 1, ref offset);
+
+				if (offset.X < 0) x -= 1; else if (offset.X > 0) x += 1;
+				if (offset.Y < 0) y -= 1; else if (offset.Y > 0) y += 1;
+
+				// if we did not succeed at moving either point
+				if(x == testPoint.X && y == testPoint.Y)
+				{
+					x += 1;
+				}
+				polygonsToImageTransform.inverse_transform(ref x, ref y);
+				result = new IntPoint(Round(x), Round(y));
 			}
 
 			return movedPoint;
 		}
 
-		private bool CheckInsetPixel(int current, int xi, int yi, ref IntPoint result)
+		private bool CheckInsetPixel(int current, int xi, int ox, int yi, int oy, ref IntPoint result)
 		{
-			int value = GetInsetMapValue(xi, yi);
+			int value = GetInsetMapValue(xi + ox, yi + oy);
 			if (value > current)
 			{
-				double x = xi;
-				double y = yi;
-				polygonsToImageTransform.inverse_transform(ref x, ref y);
-				result = new IntPoint(Round(x), Round(y));
+				result += new IntPoint(ox, oy);
 				return true;
 			}
 
