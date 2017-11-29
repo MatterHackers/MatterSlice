@@ -301,11 +301,12 @@ namespace MatterHackers.QuadTree
 
 		public static void MovePointInsideBoundary(this Polygons boundaryPolygons, IntPoint startPosition, out Tuple<int, int, IntPoint> polyPointPosition, 
 			List<QuadTree<int>> edgeQuadTrees = null,
-			List<QuadTree<int>> pointQuadTrees = null)
+			List<QuadTree<int>> pointQuadTrees = null,
+			Func<IntPoint, InsideState> fastInsideCheck = null)
 		{
 			Tuple<int, int, IntPoint> bestPolyPointPosition = new Tuple<int, int, IntPoint>(0, 0, startPosition);
 
-			if (boundaryPolygons.PointIsInside(startPosition, edgeQuadTrees, pointQuadTrees))
+			if (boundaryPolygons.PointIsInside(startPosition, edgeQuadTrees, pointQuadTrees, fastInsideCheck))
 			{
 				// already inside
 				polyPointPosition = null;
@@ -341,23 +342,26 @@ namespace MatterHackers.QuadTree
 					IntPoint segmentLeft = segmentDelta.GetPerpendicularLeft();
 					long segmentLeftLength = segmentLeft.Length();
 
-					long distanceFromStart = segmentDelta.Dot(pointRelStart) / segmentLength;
-
-					if (distanceFromStart >= 0 && distanceFromStart <= segmentDelta.Length())
+					if (segmentLength != 0)
 					{
-						long distToBoundarySegment = segmentLeft.Dot(pointRelStart) / segmentLeftLength;
+						long distanceFromStart = segmentDelta.Dot(pointRelStart) / segmentLength;
 
-						if (Math.Abs(distToBoundarySegment) < bestDist)
+						if (distanceFromStart >= 0 && distanceFromStart <= segmentDelta.Length())
 						{
-							IntPoint pointAlongCurrentSegment = startPosition;
-							if (distToBoundarySegment != 0)
-							{
-								pointAlongCurrentSegment = startPosition - segmentLeft * distToBoundarySegment / segmentLeftLength;
-							}
+							long distToBoundarySegment = segmentLeft.Dot(pointRelStart) / segmentLeftLength;
 
-							bestDist = Math.Abs(distToBoundarySegment);
-							bestPolyPointPosition = new Tuple<int, int, IntPoint>(polygonIndex, pointIndex, pointAlongCurrentSegment);
-							bestMoveDelta = segmentLeft;
+							if (Math.Abs(distToBoundarySegment) < bestDist)
+							{
+								IntPoint pointAlongCurrentSegment = startPosition;
+								if (distToBoundarySegment != 0)
+								{
+									pointAlongCurrentSegment = startPosition - segmentLeft * distToBoundarySegment / segmentLeftLength;
+								}
+
+								bestDist = Math.Abs(distToBoundarySegment);
+								bestPolyPointPosition = new Tuple<int, int, IntPoint>(polygonIndex, pointIndex, pointAlongCurrentSegment);
+								bestMoveDelta = segmentLeft;
+							}
 						}
 					}
 
@@ -368,18 +372,39 @@ namespace MatterHackers.QuadTree
 			polyPointPosition = bestPolyPointPosition;
 		}
 
-		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint, List<QuadTree<int>> edgeQuadTrees = null, List<QuadTree<int>> pointQuadTrees = null)
+		public enum InsideState { Inside, Outside, Unknown }
+		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint, 
+			List<QuadTree<int>> edgeQuadTrees = null, 
+			List<QuadTree<int>> pointQuadTrees = null,
+			Func<IntPoint, InsideState> fastInsideCheck = null)
 		{
 			if (polygons.TouchingEdge(testPoint, edgeQuadTrees))
 			{
 				return true;
 			}
 
+
 			int insideCount = 0;
 			for (int i = 0; i < polygons.Count; i++)
 			{
 				var polygon = polygons[i];
-				if (polygon.PointIsInside(testPoint, pointQuadTrees == null ? null : pointQuadTrees[i]) != 0)
+				if (fastInsideCheck != null)
+				{
+					switch (fastInsideCheck(testPoint))
+					{
+						case InsideState.Inside:
+							return true;
+						case InsideState.Outside:
+							return false;
+						case InsideState.Unknown:
+							if(polygon.PointIsInside(testPoint, pointQuadTrees == null ? null : pointQuadTrees[i]) != 0)
+							{
+								insideCount++;
+							}
+							break;
+					}
+				}
+				else if (polygon.PointIsInside(testPoint, pointQuadTrees == null ? null : pointQuadTrees[i]) != 0)
 				{
 					insideCount++;
 				}

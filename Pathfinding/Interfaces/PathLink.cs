@@ -122,7 +122,8 @@ namespace MatterHackers.Pathfinding
 			{
 				return nodeA;
 			}
-			else {
+			else
+			{
 				throw new Exception("Function must be used with a parameter that's contained by the link");
 			}
 		}

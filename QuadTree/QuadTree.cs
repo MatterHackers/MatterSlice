@@ -128,7 +128,7 @@ namespace MatterHackers.QuadTree
 				{
 					for (int i = 0; i < branch.Leaves.Count; ++i)
 					{
-						if (leaf != branch.Leaves[i] && leaf.Quad.Intersects(ref branch.Leaves[i].Quad))
+						if (leaf != branch.Leaves[i] && leaf.Quad.Intersects(branch.Leaves[i].Quad))
 						{
 							QueryResults.Add(branch.Leaves[i].Value);
 						}
@@ -155,7 +155,7 @@ namespace MatterHackers.QuadTree
 					{
 						for (int i = 0; i < branch.Leaves.Count; ++i)
 						{
-							if (leaf.Quad.Intersects(ref branch.Leaves[i].Quad))
+							if (leaf.Quad.Intersects(branch.Leaves[i].Quad))
 							{
 								QueryResults.Add(branch.Leaves[i].Value);
 							}
@@ -219,32 +219,6 @@ namespace MatterHackers.QuadTree
 		}
 
 		/// <summary>
-		/// Find all values contained in the specified area.
-		/// </summary>
-		/// <returns>True if any values were found.</returns>
-		/// <param name="quad">The area to search.</param>
-		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
-		public void SearchArea(Quad quad, List<T> output)
-		{
-			SearchArea(quad, output);
-		}
-
-		/// <summary>
-		/// Find all values contained in the specified area.
-		/// </summary>
-		/// <returns>True if any values were found.</returns>
-		/// <param name="x">X position to search.</param>
-		/// <param name="y">Y position to search.</param>
-		/// <param name="width">Width of the search area.</param>
-		/// <param name="height">Height of the search area.</param>
-		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
-		public void SearchArea(long x, long y, long width, long height, List<T> output)
-		{
-			var quad = new Quad(x, y, x + width, y + height);
-			SearchArea(quad, output);
-		}
-
-		/// <summary>
 		/// Find all values overlapping the specified point.
 		/// </summary>
 		/// <returns>True if any values were found.</returns>
@@ -259,7 +233,7 @@ namespace MatterHackers.QuadTree
 
 		internal static Branch<T> CreateBranch(QuadTree<T> tree, Branch<T> parent, ref Quad quad)
 		{
-			var branch = branchPool.Count > 0 ? branchPool.Pop() : new Branch<T>();
+			var branch = branchPool.Count > 0 ? branchPool.Pop() : new Branch<T>(quad);
 			branch.Tree = tree;
 			branch.Parent = parent;
 			branch.Split = false;

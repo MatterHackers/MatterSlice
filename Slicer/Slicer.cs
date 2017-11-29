@@ -59,7 +59,7 @@ namespace MatterHackers.MatterSlice
 			modelSize = ov.containingCollection.size_um;
 			modelMin = ov.containingCollection.minXYZ_um;
 
-			long heightWithoutFirstLayer = modelSize.Z - initialLayerThickness_um - config.BottomClipAmount_um;
+			long heightWithoutFirstLayer = modelSize.Z - initialLayerThickness_um;
 			int countOfNormalThicknessLayers = Math.Max(0, (int)((heightWithoutFirstLayer / (double)layerThickness_um) + .5));
 
 			int layerCount = countOfNormalThicknessLayers;
@@ -236,6 +236,14 @@ namespace MatterHackers.MatterSlice
 			seg.end.Y = (long)(singlePointOnSide.Y + (double)(otherSide2.Y - singlePointOnSide.Y) * (double)(z - singlePointOnSide.Z) / (double)(otherSide2.Z - singlePointOnSide.Z) + .5);
 			seg.end.Z = z;
 			return seg;
+		}
+
+		public void ReleaseMemory()
+		{
+			foreach (var layer in layers)
+			{
+				layer.ReleaseMemory();
+			}
 		}
 	}
 }

@@ -73,12 +73,7 @@ namespace MatterHackers.MatterSlice
 
 		public string BeforeToolchangeCode { get; set; }
 
-		public string BooleanOpperations { get; set; } = "";
-
-		[SettingDescription("The amount to clip off the bottom of the part, in millimeters.")]
-		public double BottomClipAmount { get; set; }
-
-		public int BottomClipAmount_um => (int)(BottomClipAmount * 1000);
+		public string BooleanOperations { get; set; } = "";
 
 		[SettingDescription("This is the speed to print the bottom layers infill, mm/s.")]
 		public double BottomInfillSpeed { get; set; }
@@ -88,9 +83,6 @@ namespace MatterHackers.MatterSlice
 
 		[SettingDescription("mm/s.")]
 		public int BridgeSpeed { get; set; }
-
-		[SettingDescription("Describes if 'positionToPlaceObjectCenter' should be used.")]
-		public bool CenterObjectInXy { get; set; }
 
 		// other
 		[SettingDescription("This will cause the z height to raise continuously while on the outer perimeter.")]
@@ -133,6 +125,8 @@ namespace MatterHackers.MatterSlice
 		// speed settings
 		[SettingDescription("This is the speed to print everything on the first layer, mm/s.")]
 		public double FirstLayerSpeed { get; set; }
+
+		public int NumberOfFirstLayers { get; set; }
 
 		[SettingDescription("The height of the first layer to print, in millimeters.")]
 		public double FirstLayerThickness { get; set; }
@@ -178,7 +172,6 @@ namespace MatterHackers.MatterSlice
 
 		public int LayerThickness_um => (int)(LayerThickness * 1000);
 		public bool MergeOverlappingLines { get; set; } = true;
-		public bool MinimizeSupportColumns { get; set; }
 
 		[SettingDescription("mm.")]
 		public double MinimumExtrusionBeforeRetraction { get; set; }
@@ -227,8 +220,6 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The ratio that the end of a perimeter will overlap the start in nozzle diameters.")]
 		public double PerimeterStartEndOverlapRatio { get; set; } = 1;
 
-		public DoublePoint PositionToPlaceObjectCenter { get; set; } = new DoublePoint(0, 0);
-		public IntPoint PositionToPlaceObjectCenter_um => new IntPoint(PositionToPlaceObjectCenter.X * 1000, PositionToPlaceObjectCenter.Y * 1000);
 		public double RaftAirGap { get; set; }
 		public int RaftAirGap_um => (int)(RaftAirGap * 1000);
 		public int RaftBaseExtrusionWidth_um => ExtrusionWidth_um * 3;
@@ -329,6 +320,8 @@ namespace MatterHackers.MatterSlice
 
 		[SettingDescription("The amount of extra extrusion to do when unretracting (resume printing after retraction).")]
 		public double UnretractExtraExtrusion { get; set; } = 0;
+
+		public double RetractRestartExtraTimeToApply { get; set; } = 0;
 
 		public double UnretractExtraOnExtruderSwitch { get; set; }
 
@@ -619,9 +612,6 @@ namespace MatterHackers.MatterSlice
 			InfillExtendIntoPerimeter = .06;
 			InfillStartingAngle = 45;
 			InfillType = ConfigConstants.INFILL_TYPE.GRID;
-			CenterObjectInXy = true;
-			PositionToPlaceObjectCenter = new DoublePoint(102.5, 102.5);
-			BottomClipAmount = 0;
 
 			// raft settings
 			EnableRaft = false;
@@ -640,7 +630,6 @@ namespace MatterHackers.MatterSlice
 			SupportXYDistanceFromObject = .7;
 			SupportNumberOfLayersToSkipInZ = 1;
 			SupportInterfaceLayers = 3;
-			MinimizeSupportColumns = false; // experimental and not working well enough yet
 			SupportInterfaceExtruder = -1;
 			RetractionOnTravel = 4.5;
 			RetractionSpeed = 45;

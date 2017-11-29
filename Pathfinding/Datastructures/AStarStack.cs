@@ -46,7 +46,8 @@ namespace MatterHackers.Pathfinding.Datastructures
 			{
 				return null;
 			}
-			else {
+			else
+			{
 				_nodes.Remove(result.GetUniqueID());
 				return result;
 			}

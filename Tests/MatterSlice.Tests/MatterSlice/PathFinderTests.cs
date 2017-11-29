@@ -162,19 +162,19 @@ namespace MatterHackers.MatterSlice.Tests
 					IntPoint endPoint = new IntPoint(50, 5);
 					PathFinder testHarness = new PathFinder(boundaryPolygons, 0);
 
-					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(new IntPoint(-1, 5)));
-					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(new IntPoint(-1, 5), testHarness.OutlineEdgeQuadTrees));
-					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(1, 5)));
-					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(1, 5), testHarness.OutlineEdgeQuadTrees));
-					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(0, 5)));
-					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(0, 5), testHarness.OutlineEdgeQuadTrees));
-					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(40, 5)));
-					Assert.IsTrue(testHarness.OutlinePolygons.PointIsInside(new IntPoint(40, 5), testHarness.OutlineEdgeQuadTrees));
+					Assert.IsFalse(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(-1, 5)));
+					Assert.IsFalse(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(-1, 5), testHarness.OutlineData.EdgeQuadTrees));
+					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(1, 5)));
+					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(1, 5), testHarness.OutlineData.EdgeQuadTrees));
+					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(0, 5)));
+					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(0, 5), testHarness.OutlineData.EdgeQuadTrees));
+					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(40, 5)));
+					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(40, 5), testHarness.OutlineData.EdgeQuadTrees));
 
 					Polygon insidePath = new Polygon();
 					Tuple<int, int, IntPoint> outPoint;
-					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(startPoint));
-					Assert.IsFalse(testHarness.OutlinePolygons.PointIsInside(startPoint, testHarness.OutlineEdgeQuadTrees));
+					Assert.IsFalse(testHarness.OutlineData.Polygons.PointIsInside(startPoint));
+					Assert.IsFalse(testHarness.OutlineData.Polygons.PointIsInside(startPoint, testHarness.OutlineData.EdgeQuadTrees));
 
 					// validate some dependant functions
 					Assert.IsTrue(QTPolygonExtensions.OnSegment(test[0], new IntPoint(20, 0), test[1]));
@@ -187,26 +187,26 @@ namespace MatterHackers.MatterSlice.Tests
 					Assert.AreEqual(3, outPoint.Item2);
 					Assert.AreEqual(new IntPoint(0, 5), outPoint.Item3);
 
-					testHarness.OutlinePolygons.MovePointInsideBoundary(startPoint, out outPoint);
+					testHarness.OutlineData.Polygons.MovePointInsideBoundary(startPoint, out outPoint);
 					Assert.AreEqual(new IntPoint(0, 5), outPoint.Item3);
 
-					testHarness.OutlinePolygons.MovePointInsideBoundary(startPoint, out outPoint, testHarness.OutlineEdgeQuadTrees);
+					testHarness.OutlineData.Polygons.MovePointInsideBoundary(startPoint, out outPoint, testHarness.OutlineData.EdgeQuadTrees);
 					Assert.AreEqual(new IntPoint(0, 5), outPoint.Item3);
-					testHarness.BoundaryPolygons.MovePointInsideBoundary(startPoint, out outPoint);
+					testHarness.OutlineData.Polygons.MovePointInsideBoundary(startPoint, out outPoint);
 					Assert.AreEqual(new IntPoint(0, 5), outPoint.Item3);
-					testHarness.BoundaryPolygons.MovePointInsideBoundary(startPoint, out outPoint, testHarness.BoundaryEdgeQuadTrees);
+					testHarness.OutlineData.Polygons.MovePointInsideBoundary(startPoint, out outPoint, testHarness.OutlineData.EdgeQuadTrees);
 					Assert.AreEqual(new IntPoint(0, 5), outPoint.Item3);
 					testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath);
 					Assert.IsTrue(testHarness.AllPathSegmentsAreInsideOutlines(insidePath, startPoint, endPoint));
 
 					// move endpoint inside
-					testHarness.OutlinePolygons.MovePointInsideBoundary(endPoint, out outPoint);
+					testHarness.OutlineData.Polygons.MovePointInsideBoundary(endPoint, out outPoint);
 					Assert.AreEqual(new IntPoint(40, 5), outPoint.Item3);
-					testHarness.OutlinePolygons.MovePointInsideBoundary(endPoint, out outPoint, testHarness.OutlineEdgeQuadTrees);
+					testHarness.OutlineData.Polygons.MovePointInsideBoundary(endPoint, out outPoint, testHarness.OutlineData.EdgeQuadTrees);
 					Assert.AreEqual(new IntPoint(40, 5), outPoint.Item3);
-					testHarness.BoundaryPolygons.MovePointInsideBoundary(endPoint, out outPoint);
+					testHarness.OutlineData.Polygons.MovePointInsideBoundary(endPoint, out outPoint);
 					Assert.AreEqual(new IntPoint(40, 5), outPoint.Item3);
-					testHarness.BoundaryPolygons.MovePointInsideBoundary(endPoint, out outPoint, testHarness.BoundaryEdgeQuadTrees);
+					testHarness.OutlineData.Polygons.MovePointInsideBoundary(endPoint, out outPoint, testHarness.OutlineData.EdgeQuadTrees);
 					Assert.AreEqual(new IntPoint(40, 5), outPoint.Item3);
 
 					Assert.AreEqual(4, insidePath.Count);
@@ -322,7 +322,7 @@ namespace MatterHackers.MatterSlice.Tests
 				TestSinglePathIsInside(polyPath, new IntPoint(119160, 104727), new IntPoint(111711, 91412));
 			}
 
-			// optomized small shapes
+			// optimized small shapes
 			{
 				string polyPath = "x:85032, y:92906,x:83438, y:87666,x:88142, y:90718,|x:85436, y:90297,x:85244, y:90445,x:85925, y:91424,|";
 				// Length of this segment (start->end) 1847.
@@ -338,6 +338,12 @@ namespace MatterHackers.MatterSlice.Tests
 				// Length of this segment (start->end) 32286.
 				// startOverride = new MSIntPoint(205084, 78424); endOverride = new MSIntPoint(213725, 47315);
 				TestSinglePathIsInside(polyPath, new IntPoint(205084, 78424), new IntPoint(213725, 47315));
+			}
+
+			// Karl coin head
+			{
+				string polyPath = "x: 102226, y: 104876, z: 3150, width: 0,x: 102474, y: 105047, z: 3150, width: 0,x: 102693, y: 105316, z: 3150, width: 0,x: 102876, y: 105670, z: 3150, width: 0,x: 103016, y: 106093, z: 3150, width: 0,x: 103105, y: 106573, z: 3150, width: 0,x: 103136, y: 107096, z: 3150, width: 0,x: 103105, y: 107619, z: 3150, width: 0,x: 103016, y: 108099, z: 3150, width: 0,x: 102876, y: 108522, z: 3150, width: 0,x: 102693, y: 108875, z: 3150, width: 0,x: 102474, y: 109145, z: 3150, width: 0,x: 102226, y: 109316, z: 3150, width: 0,x: 101955, y: 109377, z: 3150, width: 0,x: 100182, y: 109377, z: 3150, width: 0,x: 100182, y: 113543, z: 3150, width: 0,x: 100254, y: 113590, z: 3150, width: 0,x: 100361, y: 113719, z: 3150, width: 0,x: 100405, y: 113863, z: 3150, width: 0,x: 100387, y: 114033, z: 3150, width: 0,x: 100318, y: 114166, z: 3150, width: 0,x: 100178, y: 114279, z: 3150, width: 0,x: 100030, y: 114316, z: 3150, width: 0,x: 99873, y: 114298, z: 3150, width: 0,x: 99740, y: 114230, z: 3150, width: 0,x: 99628, y: 114090, z: 3150, width: 0,x: 99589, y: 113938, z: 3150, width: 0,x: 99610, y: 113771, z: 3150, width: 0,x: 99691, y: 113636, z: 3150, width: 0,x: 99834, y: 113531, z: 3150, width: 0,x: 99834, y: 109377, z: 3150, width: 0,x: 98045, y: 109377, z: 3150, width: 0,x: 97774, y: 109316, z: 3150, width: 0,x: 97526, y: 109145, z: 3150, width: 0,x: 97307, y: 108875, z: 3150, width: 0,x: 97124, y: 108522, z: 3150, width: 0,x: 96984, y: 108099, z: 3150, width: 0,x: 96895, y: 107619, z: 3150, width: 0,x: 96864, y: 107096, z: 3150, width: 0,x: 96895, y: 106573, z: 3150, width: 0,x: 96984, y: 106093, z: 3150, width: 0,x: 97124, y: 105670, z: 3150, width: 0,x: 97307, y: 105316, z: 3150, width: 0,x: 97526, y: 105047, z: 3150, width: 0,x: 97774, y: 104876, z: 3150, width: 0,x: 98045, y: 104815, z: 3150, width: 0,x: 101955, y: 104815, z: 3150, width: 0,| x:98115, y: 107483, z: 3150, width: 0,x: 98002, y: 107603, z: 3150, width: 0,x: 97956, y: 107734, z: 3150, width: 0,x: 97959, y: 107880, z: 3150, width: 0,x: 98003, y: 107984, z: 3150, width: 0,x: 98115, y: 108105, z: 3150, width: 0,x: 98270, y: 108165, z: 3150, width: 0,x: 101760, y: 108162, z: 3150, width: 0,x: 101910, y: 108089, z: 3150, width: 0,x: 102013, y: 107960, z: 3150, width: 0,x: 102051, y: 107794, z: 3150, width: 0,x: 102013, y: 107627, z: 3150, width: 0,x: 101910, y: 107498, z: 3150, width: 0,x: 101760, y: 107425, z: 3150, width: 0,x: 98270, y: 107421, z: 3150, width: 0,|";
+				TestSinglePathIsInside(polyPath, new IntPoint(100017, 114113), new IntPoint(98067, 109177));
 			}
 		}
 
@@ -402,7 +408,7 @@ namespace MatterHackers.MatterSlice.Tests
 		private void TestSinglePathIsInside(string partOutlineString, IntPoint startPoint, IntPoint endPoint)
 		{
 			Polygons boundaryPolygons = CLPolygonsExtensions.CreateFromString(partOutlineString);
-			PathFinder testHarness = new PathFinder(boundaryPolygons, 600);
+			PathFinder testHarness = new PathFinder(boundaryPolygons, 600, null, false);
 
 			Polygon insidePath = new Polygon();
 			// not optimized

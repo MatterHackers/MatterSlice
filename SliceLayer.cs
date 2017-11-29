@@ -34,6 +34,7 @@ namespace MatterHackers.MatterSlice
 		public Polygons AllOutlines { get; set; }
 		public PathFinder PathFinder { get; set; }
 		public List<LayerIsland> Islands = null;
+		public bool CreatedInsets { get; set; } = false;
 		public long LayerZ;
 		private static bool OUTPUT_DEBUG_DATA = false;
 
@@ -214,7 +215,7 @@ namespace MatterHackers.MatterSlice
 
 		public void CreateIslandData()
 		{
-			List<Polygons> separtedIntoIslands = AllOutlines.ProcessIntoSeparatIslands();
+			List<Polygons> separtedIntoIslands = AllOutlines.ProcessIntoSeparateIslands();
 
 			Islands = new List<LayerIsland>();
 			for (int islandIndex = 0; islandIndex < separtedIntoIslands.Count; islandIndex++)
@@ -223,20 +224,6 @@ namespace MatterHackers.MatterSlice
 				Islands[islandIndex].IslandOutline = separtedIntoIslands[islandIndex];
 
 				Islands[islandIndex].BoundingBox.Calculate(Islands[islandIndex].IslandOutline);
-			}
-		}
-
-		public void GenerateFillConsideringBridging(Polygons bottomFillIsland, Polygons bottomFillLines, ConfigSettings config, Polygons bridgePolygons, string debugName = "")
-		{
-			double bridgeAngle = 0;
-			if (bridgePolygons != null && this.BridgeAngle(bottomFillIsland, out bridgeAngle))
-			{
-				// TODO: Make this code handle very complex pathing between different sizes or layouts of support under the island to fill.
-				Infill.GenerateLinePaths(bottomFillIsland, bridgePolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, bridgeAngle);
-			}
-			else
-			{
-				Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
 			}
 		}
 
@@ -273,6 +260,12 @@ namespace MatterHackers.MatterSlice
 			{
 				angle -= 360;
 			}
+		}
+
+		public void FreeIslandMemory()
+		{
+			Islands.Clear();
+			Islands = null;
 		}
 	}
 }
