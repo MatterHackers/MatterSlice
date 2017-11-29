@@ -532,7 +532,7 @@ namespace MatterHackers.Pathfinding
 
 			if (outlineData.Polygons.TouchingEdge(position, outlineData.EdgeQuadTrees)
 			|| outlineData.PointIsInside(position) != QTPolygonsExtensions.InsideState.Outside
-			|| movedDist <= 1)
+			|| movedDist <= 200)
 			{
 				return true;
 			}
