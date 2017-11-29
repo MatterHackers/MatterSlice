@@ -393,10 +393,9 @@ namespace MatterHackers.QuadTree
 					switch (fastInsideCheck(testPoint))
 					{
 						case InsideState.Inside:
-							insideCount++;
-							break;
+							return true;
 						case InsideState.Outside:
-							break;
+							return false;
 						case InsideState.Unknown:
 							if(polygon.PointIsInside(testPoint, pointQuadTrees == null ? null : pointQuadTrees[i]) != 0)
 							{
@@ -409,7 +408,7 @@ namespace MatterHackers.QuadTree
 				{
 					insideCount++;
 				}
-}
+			}
 
 			return (insideCount % 2 == 1);
 		}
