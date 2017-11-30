@@ -325,6 +325,8 @@ namespace MatterHackers.MatterSlice
 
 		public double UnretractExtraOnExtruderSwitch { get; set; }
 
+		public bool ResetLongExtrusion { get; set; }
+
 		[SettingDescription("If set will cause the head to try to wipe itself off after retracting.")]
 		public bool WipeAfterRetraction { get; set; }
 
