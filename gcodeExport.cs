@@ -67,7 +67,7 @@ namespace MatterHackers.MatterSlice
 				var maxChange = .1;
 				if (Math.Abs(_layerSpeedRatio - value) > maxChange)
 				{
-					_layerSpeedRatio = value > _layerSpeedRatio ? _layerSpeedRatio += maxChange : _layerSpeedRatio -= maxChange;
+					_layerSpeedRatio = value > _layerSpeedRatio ? _layerSpeedRatio + maxChange : _layerSpeedRatio - maxChange;
 				}
 				else
 				{
