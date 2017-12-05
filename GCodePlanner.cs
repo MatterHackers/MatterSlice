@@ -599,7 +599,6 @@ namespace MatterHackers.MatterSlice
 							string startEndString = $"start:({position.X}, {position.Y}), end:({lastPosition.X}, {lastPosition.Y})";
 							string outlineString = lastValidPathFinder.OutlineData.Polygons.WriteToString();
 							long length = (position - lastPosition).Length();
-							int a = 0;
 						}
 					}
 					lastPosition = position;

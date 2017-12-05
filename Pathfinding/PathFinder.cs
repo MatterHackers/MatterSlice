@@ -484,10 +484,6 @@ namespace MatterHackers.Pathfinding
 			for (int startIndex = 0; startIndex < pathThatIsInside.Count - 2; startIndex++)
 			{
 				var startPosition = pathThatIsInside[startIndex];
-				if (startPosition.X < -10000)
-				{
-					int a = 0;
-				}
 				for (int endIndex = pathThatIsInside.Count - 1; endIndex > startIndex + 1; endIndex--)
 				{
 					var endPosition = pathThatIsInside[endIndex];

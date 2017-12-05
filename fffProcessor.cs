@@ -1342,17 +1342,7 @@ namespace MatterHackers.MatterSlice
 			{
 				foreach (Polygons outline in part.SolidInfillToolPaths.ProcessIntoSeparateIslands())
 				{
-					if (true) // use the old infill method
-					{
-						Infill.GenerateLinePaths(outline, fillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle + 90 * (layerIndex % 2));
-					}
-					else // use the new concentric infill (not tested enough yet) have to handle some bad cases better
-					{
-						double oldInfillPercent = config.InfillPercent;
-						config.InfillPercent = 100;
-						Infill.GenerateConcentricInfill(config, outline, fillPolygons);
-						config.InfillPercent = oldInfillPercent;
-					}
+					Infill.GenerateLinePaths(outline, fillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle + 90 * (layerIndex % 2));
 				}
 
 				double fillAngle = config.InfillStartingAngle;

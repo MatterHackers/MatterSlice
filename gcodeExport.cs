@@ -342,11 +342,6 @@ namespace MatterHackers.MatterSlice
 		{
 			StringBuilder lineToWrite = new StringBuilder();
 
-			if (movePosition_um.Width != lineWidth_um)
-			{
-				int a = 0;
-			}
-
 			if (currentPosition_um == movePosition_um)
 			{
 				return;
