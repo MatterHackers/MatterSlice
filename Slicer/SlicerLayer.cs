@@ -134,13 +134,12 @@ namespace MatterHackers.MatterSlice
 
 		public void MakePolygons()
 		{
-			if (false) // you can use this output segments for debugging
+#if false // you can use this output segments for debugging
+			using (StreamWriter stream = File.AppendText("segments.txt"))
 			{
-				using (StreamWriter stream = File.AppendText("segments.txt"))
-				{
-					stream.WriteLine(DumpSegmentListToString(SegmentList));
-				}
+				stream.WriteLine(DumpSegmentListToString(SegmentList));
 			}
+#endif
 
 			CreateFastIndexLookup();
 
@@ -473,14 +472,6 @@ namespace MatterHackers.MatterSlice
 							lookupSegmentIndex = index;
 						}
 					}
-				}
-			}
-
-			if (runLookupTest)
-			{
-				if (lookupSegmentIndex != searchSegmentIndex)
-				{
-					int a = 0;
 				}
 			}
 
