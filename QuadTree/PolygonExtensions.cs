@@ -101,7 +101,7 @@ namespace MatterHackers.QuadTree
 			return polyPointPosition;
 		}
 
-		public static IEnumerable<Tuple<int, IntPoint>> FindCrossingPoints(this Polygon polygon, IntPoint start, IntPoint end, QuadTree<int> edgeQuadTree = null)
+		public static IEnumerable<(int pointIndex, IntPoint position)> FindCrossingPoints(this Polygon polygon, IntPoint start, IntPoint end, QuadTree<int> edgeQuadTree = null)
 		{
 			IntPoint segmentDelta = end - start;
 			long segmentLength = segmentDelta.Length();
@@ -114,17 +114,17 @@ namespace MatterHackers.QuadTree
 
 				if (OnSegment(edgeStart, start, edgeEnd))
 				{
-					yield return new Tuple<int, IntPoint>(i, start);
+					yield return (i, start);
 				}
 				else if (OnSegment(edgeStart, end, edgeEnd))
 				{
-					yield return new Tuple<int, IntPoint>(i, end);
+					yield return (i, end);
 				}
 				else if (DoIntersect(start, end, edgeStart, edgeEnd)
 					&& CalcIntersection(start, end, edgeStart, edgeEnd, out intersection))
 				{
 					IntPoint pointRelStart = intersection - start;
-					yield return new Tuple<int, IntPoint>(i, intersection);
+					yield return (i, intersection);
 				}
 			}
 		}

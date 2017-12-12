@@ -33,7 +33,7 @@ using MSClipperLib;
 
 namespace MatterHackers.Pathfinding
 {
-	public class IntPointDirectionSorter : IComparer<Tuple<int, IntPoint>>
+	public class IntPointDirectionSorter : IComparer<(int pointIndex, IntPoint position)>
 	{
 		private IntPoint direction;
 		private long length;
@@ -46,7 +46,7 @@ namespace MatterHackers.Pathfinding
 			length = direction.Length();
 		}
 
-		public int Compare(Tuple<int, IntPoint> a, Tuple<int, IntPoint> b)
+		public int Compare((int pointIndex, IntPoint position) a, (int pointIndex, IntPoint position) b)
 		{
 			if (length > 0)
 			{
@@ -60,7 +60,7 @@ namespace MatterHackers.Pathfinding
 		}
 	}
 
-	public class PolygonAndPointDirectionSorter : IComparer<Tuple<int, int, IntPoint>>
+	public class PolygonAndPointDirectionSorter : IComparer<(int polyIndex, int pointIndex, IntPoint position)>
 	{
 		private IntPoint direction;
 		private long length;
@@ -73,7 +73,8 @@ namespace MatterHackers.Pathfinding
 			length = direction.Length();
 		}
 
-		public int Compare(Tuple<int, int, IntPoint> a, Tuple<int, int, IntPoint> b)
+		public int Compare((int polyIndex, int pointIndex, IntPoint position) a, 
+			(int polyIndex, int pointIndex, IntPoint position) b)
 		{
 			if (length > 0)
 			{

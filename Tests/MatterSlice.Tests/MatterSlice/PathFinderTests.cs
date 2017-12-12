@@ -64,7 +64,7 @@ namespace MatterHackers.MatterSlice.Tests
 					Polygons insideBoundaryPolygons = CLPolygonsExtensions.CreateFromString(insidePartOutlineString);
 					IntPoint startPoint = new IntPoint(-10, 10);
 					IntPoint endPoint = new IntPoint(1010, 10);
-					var crossings = new List<Tuple<int, int, IntPoint>>(insideBoundaryPolygons.FindCrossingPoints(startPoint, endPoint));
+					var crossings = new List<(int polyIndex, int pointIndex, IntPoint position)>(insideBoundaryPolygons.FindCrossingPoints(startPoint, endPoint));
 					crossings.Sort(new PolygonAndPointDirectionSorter(startPoint, endPoint));
 				}
 
@@ -172,7 +172,7 @@ namespace MatterHackers.MatterSlice.Tests
 					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(40, 5), testHarness.OutlineData.EdgeQuadTrees));
 
 					Polygon insidePath = new Polygon();
-					Tuple<int, int, IntPoint> outPoint;
+					(int polyIndex, int pointIndex, IntPoint position) outPoint;
 					Assert.IsFalse(testHarness.OutlineData.Polygons.PointIsInside(startPoint));
 					Assert.IsFalse(testHarness.OutlineData.Polygons.PointIsInside(startPoint, testHarness.OutlineData.EdgeQuadTrees));
 

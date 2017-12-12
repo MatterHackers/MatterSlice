@@ -131,18 +131,37 @@ namespace MatterHackers.Pathfinding
 
 		public bool CreatePathInsideBoundary(IntPoint startPointIn, IntPoint endPointIn, Polygon pathThatIsInside, bool optimizePath = true, int layerIndex = -1)
 		{
-			var goodPath = CreatePathInsideBoundaryInternal(startPointIn, endPointIn, pathThatIsInside, layerIndex);
+			var goodPath = CalculatePath(startPointIn, endPointIn, pathThatIsInside, layerIndex);
 			if (goodPath)
 			{
+				if (optimizePath)
+				{
+					OptimizePathPoints(pathThatIsInside);
+				}
+
+				if (pathThatIsInside.Count == 0)
+				{
+					if ((startPointIn - endPointIn).Length() > InsetAmount * 3)
+					{
+						pathThatIsInside.Add(startPointIn);
+						pathThatIsInside.Add(endPointIn);
+					}
+					else
+					{
+						return true;
+					}
+				}
+
+				CutIntoSmallSegments(pathThatIsInside);
+
 				MovePointsInsideIfPossible(startPointIn, endPointIn, pathThatIsInside);
-			}
 
-			// remove any segment that goes to one point and then back to same point (a -> b -> a)
-			RemoveUTurnSegments(startPointIn, endPointIn, pathThatIsInside);
+				var cleanPath = pathThatIsInside.CleanClosedPolygon(InsetAmount/2);
+				pathThatIsInside.Clear();
+				pathThatIsInside.AddRange(cleanPath);
 
-			if (optimizePath)
-			{
-				OptimizePathPoints(pathThatIsInside);
+				// remove any segment that goes to one point and then back to same point (a -> b -> a)
+				RemoveUTurnSegments(startPointIn, endPointIn, pathThatIsInside);
 			}
 
 			//Remove0LengthSegments(startPointIn, endPointIn, pathThatIsInside);
@@ -162,15 +181,15 @@ namespace MatterHackers.Pathfinding
 			inPolyPosition = testPosition;
 			if (!PointIsInsideBoundary(testPosition))
 			{
-				Tuple<int, int, IntPoint> endPolyPointPosition = null;
+				(int polyIndex, int pointIndex, IntPoint position) endPolyPointPosition = (-1, -1, new IntPoint());
 				OutlineData.Polygons.MovePointInsideBoundary(testPosition, out endPolyPointPosition,
 					OutlineData.EdgeQuadTrees,
 					OutlineData.PointQuadTrees,
 					OutlineData.PointIsInside);
 
-				if (endPolyPointPosition != null)
+				if (endPolyPointPosition.pointIndex != -1)
 				{
-					inPolyPosition = endPolyPointPosition.Item3;
+					inPolyPosition = endPolyPointPosition.position;
 					return true;
 				}
 			}
@@ -241,7 +260,7 @@ namespace MatterHackers.Pathfinding
 			return node;
 		}
 
-		private bool CreatePathInsideBoundaryInternal(IntPoint startPointIn, IntPoint endPointIn, Polygon pathThatIsInside, int layerIndex)
+		private bool CalculatePath(IntPoint startPointIn, IntPoint endPointIn, Polygon pathThatIsInside, int layerIndex)
 		{
 			double z = startPointIn.Z;
 			startPointIn.Z = 0;
@@ -281,7 +300,7 @@ namespace MatterHackers.Pathfinding
 				return true;
 			}
 
-			var crossings = new List<Tuple<int, int, IntPoint>>(OutlineData.Polygons.FindCrossingPoints(lastAddedNode.Position, lastToAddNode.Position, OutlineData.EdgeQuadTrees));
+			var crossings = new List<(int polyIndex, int pointIndex, IntPoint position)>(OutlineData.Polygons.FindCrossingPoints(lastAddedNode.Position, lastToAddNode.Position, OutlineData.EdgeQuadTrees));
 			if (crossings.Count == 0)
 			{
 				return true;
@@ -381,10 +400,10 @@ namespace MatterHackers.Pathfinding
 
 		private IntPointNode GetWayPointInside(IntPoint position, out IntPointNode waypointAtPosition)
 		{
-			Tuple<int, int, IntPoint> foundPolyPointPosition;
+			(int polyIndex, int pointIndex, IntPoint position) foundPolyPointPosition;
 			waypointAtPosition = null;
 			OutlineData.Polygons.MovePointInsideBoundary(position, out foundPolyPointPosition, OutlineData.EdgeQuadTrees, OutlineData.PointQuadTrees, OutlineData.PointIsInside);
-			if (foundPolyPointPosition == null)
+			if(foundPolyPointPosition.polyIndex == -1)
 			{
 				// The point is already inside
 				var existingNode = OutlineData.Waypoints.FindNode(position, findNodeDist);
@@ -450,11 +469,41 @@ namespace MatterHackers.Pathfinding
 			}
 		}
 
+		private void CutIntoSmallSegments(Polygon pathThatIsInside)
+		{
+			var cutLength = InsetAmount;
+			// Make every segment be a maximum of cutLength long
+			if (pathThatIsInside.Count >= 2
+				&& InsetAmount > 0)
+			{
+				var startIndex = PointIsInsideBoundary(pathThatIsInside[0]) ? 0 : 1;
+				IntPoint startPoint = pathThatIsInside[startIndex];
+
+				var endIndex = PointIsInsideBoundary(pathThatIsInside[pathThatIsInside.Count-1]) ? pathThatIsInside.Count - 1 : pathThatIsInside.Count - 2;
+				var cutLengthSquared = cutLength * cutLength;
+				for (int i = startIndex; i <= pathThatIsInside.Count - 2; i++)
+				{
+					startPoint = pathThatIsInside[i];
+					IntPoint endPoint = pathThatIsInside[i+1];
+
+					if ((endPoint - startPoint).LengthSquared() > cutLengthSquared)
+					{
+						int steps = (int)((endPoint - startPoint).Length() / cutLength);
+						for (int cut = 1; cut < steps; cut++)
+						{
+							IntPoint newPosition = startPoint + (endPoint - startPoint) * cut / steps;
+							pathThatIsInside.Insert(i+1, newPosition);
+							i++;
+						}
+					}
+				}
+			}
+		}
+
 		private void MovePointsInsideIfPossible(IntPoint startPointIn, IntPoint endPointIn, Polygon pathThatIsInside)
 		{
 			// move every segment that can be inside the boundry to be within the boundry
-			if (pathThatIsInside.Count > 1
-				&& InsetAmount > 0)
+			if (pathThatIsInside.Count > 1 && InsetAmount > 0)
 			{
 				IntPoint startPoint = startPointIn;
 				for (int i = 0; i < pathThatIsInside.Count - 1; i++)
@@ -488,7 +537,7 @@ namespace MatterHackers.Pathfinding
 				{
 					var endPosition = pathThatIsInside[endIndex];
 
-					var crossings = new List<Tuple<int, int, IntPoint>>(OutlineData.Polygons.FindCrossingPoints(startPosition, endPosition, OutlineData.EdgeQuadTrees));
+					var crossings = new List<(int polyIndex, int pointIndex, IntPoint position)>(OutlineData.Polygons.FindCrossingPoints(startPosition, endPosition, OutlineData.EdgeQuadTrees));
 
 					bool isCrossingEdge = false;
 					foreach (var cross in crossings)
@@ -518,10 +567,10 @@ namespace MatterHackers.Pathfinding
 
 		private bool ValidPoint(PathingData outlineData, IntPoint position)
 		{
-			Tuple<int, int, IntPoint> movedPosition;
+			(int polyIndex, int pointIndex, IntPoint position) movedPosition;
 			long movedDist = 0;
 			OutlineData.Polygons.MovePointInsideBoundary(position, out movedPosition, OutlineData.EdgeQuadTrees, OutlineData.PointQuadTrees, OutlineData.PointIsInside);
-			if (movedPosition != null)
+			if (movedPosition.polyIndex != -1)
 			{
 				movedDist = (position - movedPosition.Item3).Length();
 			}
@@ -595,22 +644,23 @@ namespace MatterHackers.Pathfinding
 			GenerateIsideCache();
 		}
 
+		const int maxImageSize = 4096;
 		private void SetGoodUnitsPerPixel(double unitsPerPixel)
 		{
 			unitsPerPixel = Max(unitsPerPixel, 1);
-			if (polygonBounds.Width() / unitsPerPixel > 1024)
+			if (polygonBounds.Width() / unitsPerPixel > maxImageSize)
 			{
-				unitsPerPixel = Max(1, polygonBounds.Width() / 1024);
+				unitsPerPixel = Max(1, polygonBounds.Width() / maxImageSize);
 			}
-			if (polygonBounds.Height() / unitsPerPixel > 1024)
+			if (polygonBounds.Height() / unitsPerPixel > maxImageSize)
 			{
-				unitsPerPixel = Max(1, polygonBounds.Height() / 1024);
+				unitsPerPixel = Max(1, polygonBounds.Height() / maxImageSize);
 			}
 			if (polygonBounds.Width() / unitsPerPixel < 32)
 			{
 				unitsPerPixel = polygonBounds.Width() / 32;
 			}
-			if (polygonBounds.Height() / unitsPerPixel > 1024)
+			if (polygonBounds.Height() / unitsPerPixel > maxImageSize)
 			{
 				unitsPerPixel = polygonBounds.Height() / 32;
 			}
