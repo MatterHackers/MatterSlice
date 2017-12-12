@@ -115,6 +115,11 @@ namespace MatterHackers.QuadTree
 		public long OverlapAmount { get; private set; }
 		public List<IntPoint> SourcePoints { get; private set; }
 
+		/// <summary>
+		/// Get all the point indexes that are within the give bounds.
+		/// </summary>
+		/// <param name="touchingBounds">The bounds to search</param>
+		/// <returns>The touching point index</returns>
 		public IEnumerable<int> GetTouching(Quad touchingBounds)
 		{
 			if (tree != null)
@@ -127,9 +132,9 @@ namespace MatterHackers.QuadTree
 			}
 			else
 			{
-				for (int i = 0; i < SourcePoints.Count; i++)
+				for (int pointIndex = 0; pointIndex < SourcePoints.Count; pointIndex++)
 				{
-					yield return i;
+					yield return pointIndex;
 				}
 			}
 		}

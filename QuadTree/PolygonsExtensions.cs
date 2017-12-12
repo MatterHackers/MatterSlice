@@ -43,14 +43,14 @@ namespace MatterHackers.QuadTree
 
 	public static class QTPolygonsExtensions
 	{
-		public static IEnumerable<Tuple<int, int, IntPoint>> FindCrossingPoints(this Polygons polygons, IntPoint start, IntPoint end, List<QuadTree<int>> edgeQuadTrees = null)
+		public static IEnumerable<(int polyIndex, int pointIndex, IntPoint position)> FindCrossingPoints(this Polygons polygons, IntPoint start, IntPoint end, List<QuadTree<int>> edgeQuadTrees = null)
 		{
 			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
 			{
 				List<Tuple<int, IntPoint>> polyCrossings = new List<Tuple<int, IntPoint>>();
 				foreach (var crossing in polygons[polyIndex].FindCrossingPoints(start, end, edgeQuadTrees == null ? null : edgeQuadTrees[polyIndex]))
 				{
-					yield return new Tuple<int, int, IntPoint>(polyIndex, crossing.Item1, crossing.Item2);
+					yield return (polyIndex, crossing.pointIndex, crossing.position);
 				}
 			}
 		}
@@ -299,17 +299,17 @@ namespace MatterHackers.QuadTree
 			return polyPointPosition;
 		}
 
-		public static void MovePointInsideBoundary(this Polygons boundaryPolygons, IntPoint startPosition, out Tuple<int, int, IntPoint> polyPointPosition, 
+		public static void MovePointInsideBoundary(this Polygons boundaryPolygons, IntPoint startPosition, out (int polyIndex, int pointIndex, IntPoint position) polyPointPosition, 
 			List<QuadTree<int>> edgeQuadTrees = null,
 			List<QuadTree<int>> pointQuadTrees = null,
 			Func<IntPoint, InsideState> fastInsideCheck = null)
 		{
-			Tuple<int, int, IntPoint> bestPolyPointPosition = new Tuple<int, int, IntPoint>(0, 0, startPosition);
+			var bestPolyPointPosition = (0, 0, startPosition);
 
 			if (boundaryPolygons.PointIsInside(startPosition, edgeQuadTrees, pointQuadTrees, fastInsideCheck))
 			{
 				// already inside
-				polyPointPosition = null;
+				polyPointPosition = (-1, -1, new IntPoint());
 				return;
 			}
 
@@ -332,7 +332,7 @@ namespace MatterHackers.QuadTree
 					if (distFromStart < bestDist)
 					{
 						bestDist = distFromStart;
-						bestPolyPointPosition = new Tuple<int, int, IntPoint>(polygonIndex, pointIndex, segmentStart);
+						bestPolyPointPosition = (polygonIndex, pointIndex, segmentStart);
 					}
 
 					IntPoint segmentEnd = boundaryPolygon[(pointIndex + 1) % boundaryPolygon.Count];
@@ -359,7 +359,7 @@ namespace MatterHackers.QuadTree
 								}
 
 								bestDist = Math.Abs(distToBoundarySegment);
-								bestPolyPointPosition = new Tuple<int, int, IntPoint>(polygonIndex, pointIndex, pointAlongCurrentSegment);
+								bestPolyPointPosition = (polygonIndex, pointIndex, pointAlongCurrentSegment);
 								bestMoveDelta = segmentLeft;
 							}
 						}
@@ -413,9 +413,9 @@ namespace MatterHackers.QuadTree
 			return (insideCount % 2 == 1);
 		}
 
-		public static IEnumerable<Tuple<int, int, IntPoint>> SkipSame(this IEnumerable<Tuple<int, int, IntPoint>> source)
+		public static IEnumerable<(int polyIndex, int pointIndex, IntPoint position)> SkipSame(this IEnumerable<(int polyIndex, int pointIndex, IntPoint position)> source)
 		{
-			Tuple<int, int, IntPoint> lastItem = new Tuple<int, int, IntPoint>(-1, -1, new IntPoint(long.MaxValue, long.MaxValue));
+			var lastItem = (-1, -1, new IntPoint(long.MaxValue, long.MaxValue));
 			foreach (var item in source)
 			{
 				if (item.Item1 != -1)

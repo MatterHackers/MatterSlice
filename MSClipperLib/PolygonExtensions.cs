@@ -32,6 +32,7 @@ using System.Collections.Generic;
 namespace MSClipperLib
 {
 	using System;
+	using System.Linq;
 	using Polygon = List<IntPoint>;
 
 	public static class CLPolygonExtensions
@@ -263,6 +264,68 @@ namespace MSClipperLib
 				{
 					result.minY = inPolygon[pointIndex].Y;
 				}
+			}
+
+			return result;
+		}
+
+		public static Polygon CleanClosedPolygon(this Polygon polygon, double distance = 1.415)
+		{
+			if (polygon.Count == 0)
+			{
+				return new Polygon();
+			}
+
+			var result = new Polygon(polygon);
+
+			var distSqrd = distance * distance;
+
+			var removeIndices = new HashSet<int>();
+
+			// loop over all points starting at the front
+			for (int startIndex = 0; startIndex < result.Count - 2; startIndex++)
+			{
+				var startPosition = result[startIndex];
+
+				// accumulate all the collinear points from this point
+				for (int endIndex = startIndex+2; endIndex < result.Count; endIndex++)
+				{
+					var endPosition = result[endIndex];
+
+					bool allInbetweenIsCollinear = true;
+
+					// check that every point between start and end is collinear
+					for (int testIndex = startIndex+1; testIndex < endIndex; testIndex++)
+					{
+						var testPosition = result[testIndex];
+						if (!Clipper.SlopesNearCollinear(startPosition, testPosition, endPosition, distSqrd))
+						{
+							allInbetweenIsCollinear = false;
+							break;
+						}
+					}
+
+					if (allInbetweenIsCollinear)
+					{
+						for (int testIndex = startIndex + 1; testIndex < endIndex; testIndex++)
+						{
+							removeIndices.Add(testIndex);
+						}
+					}
+					else
+					{
+						startIndex = endIndex - 2;
+						// move on to next start
+						break;
+					}
+				}
+			}
+
+			var removeList = removeIndices.ToList();
+			removeList.Sort();
+			for(int i= removeList.Count-1; i>=0; i--)
+			{
+				result.RemoveAt(removeList[i]);
 			}
 
 			return result;
