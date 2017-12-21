@@ -59,6 +59,7 @@
     <Compile Include="IntPointPathing\IntPointNode.cs" />
     <Compile Include="IntPointPathing\IntPointPathNetwork.cs" />
     <Compile Include="Path.cs" />
+    <Compile Include="PathingData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

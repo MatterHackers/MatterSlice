@@ -184,7 +184,7 @@ namespace MatterHackers.MatterSlice
 				boundary.ExpandToInclude(extraBoundary);
 				boundary.Inflate(config.ExtrusionWidth_um * 10);
 
-				var pathFinder = new Pathfinding.PathFinder(allOutlines, avoidInset, boundary);
+				var pathFinder = new Pathfinding.PathFinder(allOutlines, avoidInset, boundary, config.AvoidCrossingPerimeters);
 
 				// assign the same pathing to all extruders for this layer
 				for (int extruderIndex = 0; extruderIndex < extruders.Count; extruderIndex++)
