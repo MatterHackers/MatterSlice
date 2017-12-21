@@ -408,16 +408,25 @@ namespace MatterHackers.MatterSlice.Tests
 		private void TestSinglePathIsInside(string partOutlineString, IntPoint startPoint, IntPoint endPoint)
 		{
 			Polygons boundaryPolygons = CLPolygonsExtensions.CreateFromString(partOutlineString);
-			PathFinder testHarness = new PathFinder(boundaryPolygons, 600, null, false);
 
-			Polygon insidePath = new Polygon();
 			// not optimized
-			Assert.IsTrue(testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath, false));
-			Assert.IsTrue(testHarness.AllPathSegmentsAreInsideOutlines(insidePath, startPoint, endPoint));
+			{
+				PathFinder testHarness = new PathFinder(boundaryPolygons, 0, null, false);
+
+				Polygon insidePath = new Polygon();
+				Assert.IsTrue(testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath, false));
+				Assert.IsTrue(testHarness.AllPathSegmentsAreInsideOutlines(insidePath, startPoint, endPoint));
+			}
+
 
 			// and optimized
-			Assert.IsTrue(testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath, true));
-			Assert.IsTrue(testHarness.AllPathSegmentsAreInsideOutlines(insidePath, startPoint, endPoint));
+			{
+				PathFinder testHarness = new PathFinder(boundaryPolygons, 600, null, true);
+
+				Polygon insidePath = new Polygon();
+				Assert.IsTrue(testHarness.CreatePathInsideBoundary(startPoint, endPoint, insidePath, true));
+				Assert.IsTrue(testHarness.AllPathSegmentsAreInsideOutlines(insidePath, startPoint, endPoint));
+			}
 		}
 	}
 }

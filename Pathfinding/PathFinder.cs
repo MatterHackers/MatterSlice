@@ -70,9 +70,6 @@ namespace MatterHackers.Pathfinding
 				outsidePolygons = FixWinding(outsidePolygons);
 			}
 
-			var insidePolygons = outsidePolygons.Offset(stayInsideBounds == null ? -InsetAmount : -2 * InsetAmount);
-			insidePolygons = FixWinding(insidePolygons);
-
 			// set it to 1/4 the inset amount
 			int devisor = 4;
 			OutlineData = new PathingData(outsidePolygons, avoidInset / devisor, useInsideCache);
@@ -353,7 +350,8 @@ namespace MatterHackers.Pathfinding
 		{
 			var cutLength = InsetAmount;
 			// Make every segment be a maximum of cutLength long
-			if (pathThatIsInside.Count >= 2
+			if (OutlineData.InsetMap != null
+				&& pathThatIsInside.Count >= 2
 				&& InsetAmount > 0)
 			{
 				var startIndex = PointIsInsideBoundary(pathThatIsInside[0]) ? 0 : 1;
@@ -481,28 +479,32 @@ namespace MatterHackers.Pathfinding
 
 		private void MovePointsInsideIfPossible(IntPoint startPointIn, IntPoint endPointIn, Polygon pathThatIsInside)
 		{
-			// move every segment that can be inside the boundry to be within the boundry
-			if (pathThatIsInside.Count > 1 && InsetAmount > 0)
+			if (OutlineData.InsetMap != null)
 			{
-				IntPoint startPoint = startPointIn;
-				for (int i = 0; i < pathThatIsInside.Count - 1; i++)
+				// move every segment that can be inside the boundry to be within the boundry
+				if (pathThatIsInside.Count > 1 && InsetAmount > 0)
 				{
-					IntPoint testPoint = pathThatIsInside[i];
-					IntPoint endPoint = i < pathThatIsInside.Count - 2 ? pathThatIsInside[i + 1] : endPointIn;
-
-					IntPoint inPolyPosition;
-					if (OutlineData.MovePointAwayFromEdge(testPoint, InsetAmount, out inPolyPosition))
+					IntPoint startPoint = startPointIn;
+					for (int i = 0; i < pathThatIsInside.Count - 1; i++)
 					{
-						// It moved so test if it is a good point
-						//if (OutlineData.Polygons.FindIntersection(startPoint, inPolyPosition, OutlineData.EdgeQuadTrees) != Intersection.Intersect
-						//&& OutlineData.Polygons.FindIntersection(inPolyPosition, endPoint, OutlineData.EdgeQuadTrees) != Intersection.Intersect)
-						{
-							testPoint = inPolyPosition;
-							pathThatIsInside[i] = testPoint;
-						}
-					}
+						IntPoint testPoint = pathThatIsInside[i];
+						IntPoint endPoint = i < pathThatIsInside.Count - 2 ? pathThatIsInside[i + 1] : endPointIn;
 
-					startPoint = testPoint;
+						IntPoint inPolyPosition;
+						if (OutlineData.MovePointAwayFromEdge(testPoint, InsetAmount, out inPolyPosition))
+						{
+							// It moved so test if it is a good point
+							//if (OutlineData.Polygons.FindIntersection(startPoint, inPolyPosition, OutlineData.EdgeQuadTrees) != Intersection.Intersect
+							//&& OutlineData.Polygons.FindIntersection(inPolyPosition, endPoint, OutlineData.EdgeQuadTrees) != Intersection.Intersect)
+							{
+								testPoint = inPolyPosition;
+								pathThatIsInside[i] = testPoint;
+							}
+						}
+
+						startPoint = testPoint;
+
+					}
 				}
 			}
 		}
