@@ -87,7 +87,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			timeKeeper.Restart();
-			LogOutput.Log("Analyzing and optimizing model...\n");
+			LogOutput.Log("Analyzing and optimizing model\n");
 			optimizedMeshCollection = new OptimizedMeshCollection(simpleMeshCollection);
 			if (MatterSlice.Canceled)
 			{
@@ -130,7 +130,7 @@ namespace MatterHackers.MatterSlice
 		{
 			preSetup(config.ExtrusionWidth_um);
 			timeKeeper.Restart();
-			LogOutput.Log("Loading {0} from disk...\n".FormatWith(input_filename));
+			LogOutput.Log("Loading {0} from disk\n".FormatWith(input_filename));
 			if (!SimpleMeshCollection.LoadModelFromFile(simpleMeshCollection, input_filename, config.ModelRotationMatrix))
 			{
 				LogOutput.LogError("Failed to load model: {0}\n".FormatWith(input_filename));
@@ -185,7 +185,7 @@ namespace MatterHackers.MatterSlice
             optimizedModel.saveDebugSTL("debug_output.stl");
 #endif
 
-			LogOutput.Log("Slicing model...\n");
+			LogOutput.Log("Slicing model\n");
 			List<ExtruderData> extruderList = new List<ExtruderData>();
 			for (int optimizedMeshIndex = 0; optimizedMeshIndex < optimizedMeshCollection.OptimizedMeshes.Count; optimizedMeshIndex++)
 			{
@@ -269,7 +269,7 @@ namespace MatterHackers.MatterSlice
 			if (config.GenerateSupport
 				&& !config.ContinuousSpiralOuterPerimeter)
 			{
-				LogOutput.Log("Generating support map...\n");
+				LogOutput.Log("Generating support map\n");
 				slicingData.support = new NewSupport(config, slicingData.Extruders, 1, supportOutlines);
 			}
 
