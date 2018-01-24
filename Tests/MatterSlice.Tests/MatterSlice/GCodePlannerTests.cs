@@ -81,13 +81,24 @@ namespace MatterHackers.MatterSlice.Tests
 				//  ____________
 				// s|__________|	  very simple  -> ----------
 
-				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50) };
+				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 60), new IntPoint(0, 60) };
 				Polygons thinLines;
 				bool foundThinLines = perimeter.FindThinLines(400, 0, out thinLines);
 				Assert.IsTrue(foundThinLines);
 				Assert.IsTrue(thinLines.Count == 1);
 				Assert.IsTrue(thinLines[0].Count == 2);
-				Assert.IsTrue(thinLines[0][0].Width == 50);
+				Assert.IsTrue(thinLines[0][0].Width == 60);
+			}
+
+			// Make sure we don't see thin lines that are too thin
+			{
+				//  ____________
+				// s|__________|	  very simple  -> (It is too thin to get a results. Goes to nothing.)
+
+				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 40), new IntPoint(0, 40) };
+				Polygons thinLines;
+				bool foundThinLines = perimeter.FindThinLines(400, 0, out thinLines);
+				Assert.IsFalse(foundThinLines);
 			}
 
 			// A path that needs to have points inserted to do the correct thing
