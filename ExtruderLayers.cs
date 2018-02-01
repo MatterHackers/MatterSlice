@@ -168,6 +168,11 @@ namespace MatterHackers.MatterSlice
 		{
 			for (int layerIndex = 0; layerIndex < extruders[0].Layers.Count; layerIndex++)
 			{
+				if (MatterSlice.Canceled)
+				{
+					return;
+				}
+
 				LogOutput.Log("Generating Layer Outlines {0}/{1}\n".FormatWith(layerIndex + 1, extruders[0].Layers.Count));
 
 				long avoidInset = config.ExtrusionWidth_um * 3 / 2;
