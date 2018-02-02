@@ -582,6 +582,13 @@ namespace MatterHackers.MatterSlice
 			gcodeExport.TellFileSize();
 			gcodeExport.WriteFanCommand(0);
 
+			if (MatterSlice.Canceled)
+			{
+				return;
+			}
+
+			gcodeExport.WriteLine("; MatterSlice Completed Successfully");
+
 			//Store the object height for when we are printing multiple objects, as we need to clear every one of them when moving to the next position.
 			maxObjectHeight = Math.Max(maxObjectHeight, slicingData.modelSize.Z);
 		}

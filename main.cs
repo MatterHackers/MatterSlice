@@ -22,7 +22,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace MatterHackers.MatterSlice
 {
@@ -57,6 +59,26 @@ namespace MatterHackers.MatterSlice
 			return ProcessArgs(args);
 		}
 
+		static Stream _stdInput = null;
+
+		static bool RunningAsProcessAndParentRunning()
+		{
+			if(_stdInput == null)
+			{
+				_stdInput = Console.OpenStandardInput();
+			}
+
+			var buffer = new byte[128];
+
+			int amountRead = 0;
+			_stdInput.BeginRead(buffer, 0, buffer.Length, (asyncResult) =>
+			{
+				amountRead = _stdInput.EndRead(asyncResult);
+			}, null);
+
+			return amountRead > 0;
+		}
+
 		private static bool stop = false;
 
 		public static bool Canceled { get { return stop; } }
@@ -85,6 +107,23 @@ namespace MatterHackers.MatterSlice
 				print_usage();
 				return 0;
 			}
+
+			bool fonudAnyResult = false;
+			// Check if we were launched from a running application
+			// start up a task to track if the launching application closses
+			Task.Run(() =>
+			{
+				bool result = RunningAsProcessAndParentRunning();
+				fonudAnyResult |= result;
+				if (fonudAnyResult // if we ever got a read
+					&& !result) // and we are not getting more
+				{
+					Stop();
+				}
+
+				// don't eat up lots of CPU time
+				Thread.Sleep(1000);
+			});
 
 			ConfigSettings config = new ConfigSettings();
 			fffProcessor processor = new fffProcessor(config);

@@ -91,6 +91,11 @@ namespace MatterHackers.MatterSlice
 
 			for (int faceIndex = 0; faceIndex < ov.facesTriangle.Count; faceIndex++)
 			{
+				if (MatterSlice.Canceled)
+				{
+					return;
+				}
+
 				IntPoint p0 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[0]].position;
 				IntPoint p1 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[1]].position;
 				IntPoint p2 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[2]].position;
