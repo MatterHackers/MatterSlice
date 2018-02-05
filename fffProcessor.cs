@@ -579,7 +579,6 @@ namespace MatterHackers.MatterSlice
 
 			LogOutput.Log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Restart();
-			gcodeExport.TellFileSize();
 			gcodeExport.WriteFanCommand(0);
 
 			if (MatterSlice.Canceled)

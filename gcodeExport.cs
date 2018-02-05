@@ -281,21 +281,6 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void TellFileSize()
-		{
-			double fsize = gcodeFileStream.BaseStream.Length;
-			if (fsize > 1024 * 1024)
-			{
-				fsize /= 1024.0 * 1024.0;
-				LogOutput.Log("Wrote {0:0.0} MB.\n".FormatWith(fsize));
-			}
-			if (fsize > 1024)
-			{
-				fsize /= 1024.0;
-				LogOutput.Log("Wrote {0:0.0} kilobytes.\n".FormatWith(fsize));
-			}
-		}
-
 		public void UpdateTotalPrintTime()
 		{
 			totalPrintTime += estimateCalculator.calculate();
