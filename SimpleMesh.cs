@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using MatterHackers.VectorMath;
 using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
@@ -124,7 +125,7 @@ namespace MatterHackers.MatterSlice
 	{
 		public List<SimpleMesh> SimpleMeshes = new List<SimpleMesh>();
 
-		public static bool LoadModelFromFile(SimpleMeshCollection simpleModel, string filename, FMatrix3x3 matrix)
+		public static bool LoadModelFromFile(SimpleMeshCollection simpleModel, string filename, Matrix4X4 matrix)
 		{
 			if (!loadModelSTL_ascii(simpleModel, filename, matrix))
 			{
@@ -134,14 +135,14 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public static bool loadModelSTL_ascii(SimpleMeshCollection simpleModel, string filename, FMatrix3x3 matrix)
+		public static bool loadModelSTL_ascii(SimpleMeshCollection simpleModel, string filename, Matrix4X4 matrix)
 		{
 			SimpleMesh vol = new SimpleMesh();
 			using (StreamReader f = new StreamReader(filename))
 			{
 				// check for "SOLID"
 
-				Vector3 vertex = new Vector3();
+				var vertex = new MatterHackers.VectorMath.Vector3();
 				int n = 0;
 				IntPoint v0 = new IntPoint(0, 0, 0);
 				IntPoint v1 = new IntPoint(0, 0, 0);
@@ -159,9 +160,9 @@ namespace MatterHackers.MatterSlice
 					var parts = line.Trim().Split(' ');
 					if (parts[0].Trim() == "vertex")
 					{
-						vertex.x = Convert.ToDouble(parts[1]);
-						vertex.y = Convert.ToDouble(parts[2]);
-						vertex.z = Convert.ToDouble(parts[3]);
+						vertex.X = Convert.ToDouble(parts[1]);
+						vertex.Y = Convert.ToDouble(parts[2]);
+						vertex.Z = Convert.ToDouble(parts[3]);
 
 						// change the scale from mm to micrometers
 						vertex *= 1000.0;
@@ -170,15 +171,18 @@ namespace MatterHackers.MatterSlice
 						switch (n)
 						{
 							case 1:
-								v0 = matrix.apply(vertex);
+								var new0 = VectorMath.Vector3.Transform(vertex, matrix);
+								v0 = new IntPoint(new0.X, new0.Y, new0.Z);
 								break;
 
 							case 2:
-								v1 = matrix.apply(vertex);
+								var new1 = VectorMath.Vector3.Transform(vertex, matrix);
+								v1 = new IntPoint(new1.X, new1.Y, new1.Z);
 								break;
 
 							case 3:
-								v2 = matrix.apply(vertex);
+								var new2 = VectorMath.Vector3.Transform(vertex, matrix);
+								v2 = new IntPoint(new2.X, new2.Y, new2.Z);
 								vol.addFaceTriangle(v0, v1, v2);
 								n = 0;
 								break;
@@ -233,7 +237,7 @@ namespace MatterHackers.MatterSlice
 			return minXYZ;
 		}
 
-		private static bool loadModelSTL_binary(SimpleMeshCollection simpleModel, string filename, FMatrix3x3 matrix)
+		private static bool loadModelSTL_binary(SimpleMeshCollection simpleModel, string filename, Matrix4X4 matrix)
 		{
 			SimpleMesh vol = new SimpleMesh();
 			using (FileStream stlStream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -268,10 +272,13 @@ namespace MatterHackers.MatterSlice
 					currentPosition += 3 * 4;
 					for (int j = 0; j < 3; j++)
 					{
-						vector[j] = new IntPoint(
-							System.BitConverter.ToSingle(fileContents, currentPosition + 0 * 4) * 1000,
-							System.BitConverter.ToSingle(fileContents, currentPosition + 1 * 4) * 1000,
-							System.BitConverter.ToSingle(fileContents, currentPosition + 2 * 4) * 1000);
+						var vertex = new MatterHackers.VectorMath.Vector3(
+							System.BitConverter.ToSingle(fileContents, currentPosition + 0 * 4),
+							System.BitConverter.ToSingle(fileContents, currentPosition + 1 * 4),
+							System.BitConverter.ToSingle(fileContents, currentPosition + 2 * 4));
+
+						var new0 = VectorMath.Vector3.Transform(vertex, matrix);
+						vector[j] = new IntPoint(new0.X * 1000, new0.Y * 1000, new0.Z * 1000);
 						currentPosition += 3 * 4;
 					}
 					currentPosition += 2; // skip the attribute

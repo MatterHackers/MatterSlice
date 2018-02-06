@@ -131,7 +131,7 @@ namespace MatterHackers.MatterSlice
 			preSetup(config.ExtrusionWidth_um);
 			timeKeeper.Restart();
 			LogOutput.Log("Loading {0} from disk\n".FormatWith(input_filename));
-			if (!SimpleMeshCollection.LoadModelFromFile(simpleMeshCollection, input_filename, config.ModelRotationMatrix))
+			if (!SimpleMeshCollection.LoadModelFromFile(simpleMeshCollection, input_filename, config.ModelMatrix))
 			{
 				LogOutput.LogError("Failed to load model: {0}\n".FormatWith(input_filename));
 				return false;

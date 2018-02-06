@@ -26,6 +26,7 @@ using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using MatterHackers.VectorMath;
 
 namespace MatterHackers.MatterSlice
 {
@@ -64,6 +65,7 @@ namespace MatterHackers.MatterSlice
 
 		public static int ProcessArgs(string argsInString)
 		{
+			Canceled = false;
 			List<string> commands = new List<string>();
 			foreach (string command in SplitCommandLine.DoSplit(argsInString))
 			{
@@ -158,14 +160,22 @@ namespace MatterHackers.MatterSlice
 
 							case 'm':
 								argn++;
-								throw new NotImplementedException("m");
-#if false
-                        sscanf(argv[argn], "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",
-                        &config.matrix.m[0][0], &config.matrix.m[0][1], &config.matrix.m[0][2],
-                        &config.matrix.m[1][0], &config.matrix.m[1][1], &config.matrix.m[1][2],
-                        &config.matrix.m[2][0], &config.matrix.m[2][1], &config.matrix.m[2][2]);
-#endif
-							//break;
+								string[] matrixValues = args[argn].Split(',');
+								var loadedMatrix = Matrix4X4.Identity;
+								for(int i=0; i<4; i++)
+								{
+									for (int j = 0; j < 4; j++)
+									{
+										string valueString = matrixValues[i * 4 + j];
+										double value;
+										if (double.TryParse(valueString, out value))
+										{
+											loadedMatrix[i, j] = value;
+										}
+									}
+								}
+								config.ModelMatrix = loadedMatrix;
+								break;
 
 							default:
 								throw new NotImplementedException("Unknown option: {0}\n".FormatWith(str));
