@@ -189,7 +189,7 @@ namespace MatterHackers.MatterSlice
 		public int MinimumTravelToCauseRetraction_um => (int)(MinimumTravelToCauseRetraction * 1000);
 
 		// object transform
-		public Matrix4X4 ModelMatrix { get; set; } = new Matrix4X4();
+		public Matrix4X4 ModelMatrix { get; set; } = Matrix4X4.Identity;
 
 		public int MultiExtruderOverlapPercent { get; set; }
 		public int NumberOfBottomLayers { get; set; }
