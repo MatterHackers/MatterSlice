@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using MatterHackers.VectorMath;
 using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
@@ -188,7 +189,7 @@ namespace MatterHackers.MatterSlice
 		public int MinimumTravelToCauseRetraction_um => (int)(MinimumTravelToCauseRetraction * 1000);
 
 		// object transform
-		public FMatrix3x3 ModelRotationMatrix { get; set; } = new FMatrix3x3();
+		public Matrix4X4 ModelMatrix { get; set; } = new Matrix4X4();
 
 		public int MultiExtruderOverlapPercent { get; set; }
 		public int NumberOfBottomLayers { get; set; }
@@ -512,7 +513,7 @@ namespace MatterHackers.MatterSlice
 
 						case "FMatrix3x3":
 							{
-								property.SetValue(this, new FMatrix3x3(valueToSetTo));
+								property.SetValue(this, new DMatrix3x3(valueToSetTo));
 							}
 							break;
 
