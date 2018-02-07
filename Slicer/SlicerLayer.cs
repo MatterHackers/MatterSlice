@@ -168,6 +168,11 @@ namespace MatterHackers.MatterSlice
 					segmentIndexBeingAdded = GetTouchingSegmentIndex(addedSegmentEndPoint);
 					if (segmentIndexBeingAdded == -1)
 					{
+						// if we have looped back around to where we started
+						if (addedSegmentEndPoint == polygonStartPosition)
+						{
+							canClose = true;
+						}
 						break;
 					}
 					else
@@ -194,10 +199,28 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
+			// Remove all polygons from the open pollygon list that have 0 points
+
+			SortedIntPoint endSorter = new SortedIntPoint();
+			for (int i = 0; i < openPolygonList.Count; i++)
+			{
+				// add in the position of the last point
+				endSorter.Add(i, openPolygonList[i][openPolygonList[i].Count - 1]);
+			}
+			endSorter.Sort();
+
+			SortedIntPoint startSorter = new SortedIntPoint();
+			for (int i = 0; i < openPolygonList.Count; i++)
+			{
+				// add in the position of the last point
+				startSorter.Add(i, openPolygonList[i][0]);
+			}
+			startSorter.Sort();
+
 			// Link up all the missing ends, closing up the smallest gaps first. This is an inefficient implementation which can run in O(n*n*n) time.
 			while (true)
 			{
-				long bestScore = 10000 * 10000;
+				double bestScore = double.MaxValue;
 				int bestA = -1;
 				int bestB = -1;
 				bool reversed = false;
@@ -208,45 +231,39 @@ namespace MatterHackers.MatterSlice
 						continue;
 					}
 
-					for (int polygonBIndex = 0; polygonBIndex < openPolygonList.Count; polygonBIndex++)
+					// find the closestEndFromStart
+					double distanceToEndSqrd;
+					int bStartIndex = endSorter.FindClosetIndex(openPolygonList[polygonAIndex][0], out distanceToEndSqrd);
+					if (distanceToEndSqrd < bestScore)
 					{
-						if (openPolygonList[polygonBIndex].Count < 1)
-						{
-							continue;
-						}
+						bestScore = distanceToEndSqrd;
+						bestA = polygonAIndex;
+						bestB = bStartIndex;
+						reversed = false;
 
-						IntPoint diff1 = openPolygonList[polygonAIndex][openPolygonList[polygonAIndex].Count - 1] - openPolygonList[polygonBIndex][0];
-						long distSquared1 = (diff1).LengthSquared();
-						if (distSquared1 < bestScore)
+						if (bestScore == 0)
 						{
-							bestScore = distSquared1;
+							// found a perfect match stop looking
+							break;
+						}
+					}
+
+					// find tho closestStartFromEnd
+					double distanceToStartSqrd;
+					int bEndIndex = startSorter.FindClosetIndex(openPolygonList[polygonAIndex][0], out distanceToStartSqrd, polygonAIndex);
+					if (polygonAIndex != bEndIndex)
+					{
+						if (distanceToStartSqrd < bestScore)
+						{
+							bestScore = distanceToStartSqrd;
 							bestA = polygonAIndex;
-							bestB = polygonBIndex;
-							reversed = false;
+							bestB = bEndIndex;
+							reversed = true;
 
 							if (bestScore == 0)
 							{
 								// found a perfect match stop looking
 								break;
-							}
-						}
-
-						if (polygonAIndex != polygonBIndex)
-						{
-							IntPoint diff2 = openPolygonList[polygonAIndex][openPolygonList[polygonAIndex].Count - 1] - openPolygonList[polygonBIndex][openPolygonList[polygonBIndex].Count - 1];
-							long distSquared2 = (diff2).LengthSquared();
-							if (distSquared2 < bestScore)
-							{
-								bestScore = distSquared2;
-								bestA = polygonAIndex;
-								bestB = polygonBIndex;
-								reversed = true;
-
-								if (bestScore == 0)
-								{
-									// found a perfect match stop looking
-									break;
-								}
 							}
 						}
 					}
@@ -258,8 +275,9 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				if (bestScore >= 10000 * 10000)
+				if (bestScore >= double.MaxValue)
 				{
+					// we colud not find any points to connect this to
 					break;
 				}
 
@@ -267,6 +285,8 @@ namespace MatterHackers.MatterSlice
 				{
 					PolygonList.Add(new Polygon(openPolygonList[bestA]));
 					openPolygonList[bestA].Clear(); // B is cleared as it is A
+					endSorter.Remove(bestA);
+					startSorter.Remove(bestA);
 				}
 				else
 				{
@@ -279,6 +299,8 @@ namespace MatterHackers.MatterSlice
 								openPolygonList[bestA].Add(openPolygonList[bestB][indexB]);
 							}
 							openPolygonList[bestB].Clear();
+							endSorter.Remove(bestB);
+							startSorter.Remove(bestB);
 						}
 						else
 						{
@@ -287,12 +309,16 @@ namespace MatterHackers.MatterSlice
 								openPolygonList[bestB].Add(openPolygonList[bestA][indexA]);
 							}
 							openPolygonList[bestA].Clear();
+							endSorter.Remove(bestA);
+							startSorter.Remove(bestA);
 						}
 					}
 					else
 					{
 						openPolygonList[bestA].AddRange(openPolygonList[bestB]);
 						openPolygonList[bestB].Clear();
+						endSorter.Remove(bestB);
+						startSorter.Remove(bestB);
 					}
 				}
 			}
