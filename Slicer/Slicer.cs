@@ -171,6 +171,8 @@ namespace MatterHackers.MatterSlice
 
 			for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
 			{
+				LogOutput.Log($"Slicing model {layerIndex + 1}/{layers.Count}\n");
+
 				layers[layerIndex].MakePolygons();
 			}
 		}

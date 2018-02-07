@@ -67,13 +67,27 @@ namespace MatterHackers.MatterSlice
 			sorted.Add(new IndexAndPosition(index, position));
 		}
 
+		public void Remove(int index)
+		{
+			for(int i=0; i< sorted.Count; i++)
+			{
+				if(sorted[i].Index == index)
+				{
+					sorted.RemoveAt(i);
+					return;
+				}
+			}
+
+			throw new Exception();
+		}
+
 		public void Sort()
 		{
 			sorted.Sort(sorter);
 		}
 
 
-		public int FindClosetIndex(IntPoint position)
+		public int FindClosetIndex(IntPoint position, out double bestDistanceSquared, int indexToSkip = -1)
 		{
 			var testPos = new IndexAndPosition(0, position);
 			int index = Math.Min(sorted.Count-1, sorted.BinarySearch(testPos, sorter));
@@ -82,10 +96,19 @@ namespace MatterHackers.MatterSlice
 				index = Math.Min(sorted.Count -1,~index);
 			}
 			var bestIndex = index;
-			double bestDistanceSquared = (sorted[index].Position - position).LengthSquared();
+			bestDistanceSquared = double.MaxValue;
+			if (sorted[bestIndex].Index != indexToSkip)
+			{
+				bestDistanceSquared = (sorted[index].Position - position).LengthSquared();
+			}
 			// we have the starting index now get all the vertices that are close enough starting from here
 			for (int i = 0; i < sorted.Count; i++)
 			{
+				if (sorted[i].Index == indexToSkip)
+				{
+					continue;
+				}
+
 				bool checkedX = false;
 				var currentIndex = index + i;
 				var prevIndex = index - i - 1;
@@ -120,7 +143,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			return this.sorted[bestIndex].Index;
+			return sorted[bestIndex].Index;
 		}
 	}
 }
