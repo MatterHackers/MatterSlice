@@ -262,7 +262,7 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		[Test, Ignore("WorkInProgress")]
+		[Test]
 		public void TwoRingSegmentsCreatedCorrectly()
 		{
 			// lots from an actual file
