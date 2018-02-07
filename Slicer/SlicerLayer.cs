@@ -255,9 +255,10 @@ namespace MatterHackers.MatterSlice
 						continue;
 					}
 
-					// find the closestEndFromStart
+					var aEndPosition = openPolygonList[polygonAIndex][openPolygonList[polygonAIndex].Count - 1];
+					// find the closestStartFromEnd
 					double distanceToEndSqrd;
-					int bStartIndex = endSorter.FindClosetIndex(openPolygonList[polygonAIndex][0], out distanceToEndSqrd, polygonAIndex);
+					int bStartIndex = startSorter.FindClosetIndex(aEndPosition, out distanceToEndSqrd);
 					if (distanceToEndSqrd < bestScore)
 					{
 						bestScore = distanceToEndSqrd;
@@ -272,23 +273,20 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 
-					// find the closestStartFromEnd
+					// find the closestStartFromStart
 					double distanceToStartSqrd;
-					int bEndIndex = startSorter.FindClosetIndex(openPolygonList[polygonAIndex][0], out distanceToStartSqrd, polygonAIndex);
-					if (polygonAIndex != bEndIndex)
+					int bEndIndex = startSorter.FindClosetIndex(aEndPosition, out distanceToStartSqrd, polygonAIndex);
+					if (distanceToStartSqrd < bestScore)
 					{
-						if (distanceToStartSqrd < bestScore)
-						{
-							bestScore = distanceToStartSqrd;
-							bestA = polygonAIndex;
-							bestB = bEndIndex;
-							reversed = true;
+						bestScore = distanceToStartSqrd;
+						bestA = polygonAIndex;
+						bestB = bEndIndex;
+						reversed = true;
 
-							if (bestScore == 0)
-							{
-								// found a perfect match stop looking
-								break;
-							}
+						if (bestScore == 0)
+						{
+							// found a perfect match stop looking
+							break;
 						}
 					}
 
