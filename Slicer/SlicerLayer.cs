@@ -200,11 +200,36 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// Remove all polygons from the open pollygon list that have 0 points
+			for (int i = openPolygonList.Count - 1; i >= 0; i--)
+			{
+				// add in the position of the last point
+				if (openPolygonList[i].Count == 0)
+				{
+					openPolygonList.RemoveAt(i);
+				}
+				else // check if every point is the same
+				{
+					bool allSame = true;
+					var first = openPolygonList[i][0];
+					for(int j=1; j< openPolygonList[i].Count; j++)
+					{
+						if(openPolygonList[i][j] != first)
+						{
+							allSame = false;
+							break;
+						}
+					}
+
+					if(allSame)
+					{
+						openPolygonList.RemoveAt(i);
+					}
+				}
+			}
 
 			SortedIntPoint endSorter = new SortedIntPoint();
 			for (int i = 0; i < openPolygonList.Count; i++)
 			{
-				// add in the position of the last point
 				endSorter.Add(i, openPolygonList[i][openPolygonList[i].Count - 1]);
 			}
 			endSorter.Sort();
@@ -212,7 +237,6 @@ namespace MatterHackers.MatterSlice
 			SortedIntPoint startSorter = new SortedIntPoint();
 			for (int i = 0; i < openPolygonList.Count; i++)
 			{
-				// add in the position of the last point
 				startSorter.Add(i, openPolygonList[i][0]);
 			}
 			startSorter.Sort();
@@ -233,7 +257,7 @@ namespace MatterHackers.MatterSlice
 
 					// find the closestEndFromStart
 					double distanceToEndSqrd;
-					int bStartIndex = endSorter.FindClosetIndex(openPolygonList[polygonAIndex][0], out distanceToEndSqrd);
+					int bStartIndex = endSorter.FindClosetIndex(openPolygonList[polygonAIndex][0], out distanceToEndSqrd, polygonAIndex);
 					if (distanceToEndSqrd < bestScore)
 					{
 						bestScore = distanceToEndSqrd;
@@ -248,7 +272,7 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 
-					// find tho closestStartFromEnd
+					// find the closestStartFromEnd
 					double distanceToStartSqrd;
 					int bEndIndex = startSorter.FindClosetIndex(openPolygonList[polygonAIndex][0], out distanceToStartSqrd, polygonAIndex);
 					if (polygonAIndex != bEndIndex)
