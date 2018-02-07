@@ -104,11 +104,6 @@ namespace MatterHackers.MatterSlice
 			// we have the starting index now get all the vertices that are close enough starting from here
 			for (int i = 0; i < sorted.Count; i++)
 			{
-				if (sorted[i].Index == indexToSkip)
-				{
-					continue;
-				}
-
 				bool checkedX = false;
 				var currentIndex = index + i;
 				var prevIndex = index - i - 1;
@@ -117,7 +112,8 @@ namespace MatterHackers.MatterSlice
 				{
 					checkedX = true;
 					var distSquared = (sorted[currentIndex].Position - position).LengthSquared();
-					if(distSquared < bestDistanceSquared)
+					if(distSquared < bestDistanceSquared
+						&& sorted[currentIndex].Index != indexToSkip)
 					{
 						bestDistanceSquared = distSquared;
 						bestIndex = currentIndex;
@@ -129,7 +125,8 @@ namespace MatterHackers.MatterSlice
 				{
 					checkedX = true;
 					var distSquared = (sorted[prevIndex].Position - position).LengthSquared();
-					if (distSquared < bestDistanceSquared)
+					if (distSquared < bestDistanceSquared
+						&& sorted[prevIndex].Index != indexToSkip)
 					{
 						bestDistanceSquared = distSquared;
 						bestIndex = prevIndex;

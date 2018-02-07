@@ -227,19 +227,19 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			SortedIntPoint endSorter = new SortedIntPoint();
-			for (int i = 0; i < openPolygonList.Count; i++)
-			{
-				endSorter.Add(i, openPolygonList[i][openPolygonList[i].Count - 1]);
-			}
-			endSorter.Sort();
-
 			SortedIntPoint startSorter = new SortedIntPoint();
 			for (int i = 0; i < openPolygonList.Count; i++)
 			{
 				startSorter.Add(i, openPolygonList[i][0]);
 			}
 			startSorter.Sort();
+
+			SortedIntPoint endSorter = new SortedIntPoint();
+			for (int i = 0; i < openPolygonList.Count; i++)
+			{
+				endSorter.Add(i, openPolygonList[i][openPolygonList[i].Count - 1]);
+			}
+			endSorter.Sort();
 
 			// Link up all the missing ends, closing up the smallest gaps first. This is an inefficient implementation which can run in O(n*n*n) time.
 			while (true)
@@ -257,11 +257,11 @@ namespace MatterHackers.MatterSlice
 
 					var aEndPosition = openPolygonList[polygonAIndex][openPolygonList[polygonAIndex].Count - 1];
 					// find the closestStartFromEnd
-					double distanceToEndSqrd;
-					int bStartIndex = startSorter.FindClosetIndex(aEndPosition, out distanceToEndSqrd);
-					if (distanceToEndSqrd < bestScore)
+					double distanceToStartSqrd;
+					int bStartIndex = startSorter.FindClosetIndex(aEndPosition, out distanceToStartSqrd);
+					if (distanceToStartSqrd < bestScore)
 					{
-						bestScore = distanceToEndSqrd;
+						bestScore = distanceToStartSqrd;
 						bestA = polygonAIndex;
 						bestB = bStartIndex;
 						reversed = false;
@@ -274,11 +274,11 @@ namespace MatterHackers.MatterSlice
 					}
 
 					// find the closestStartFromStart
-					double distanceToStartSqrd;
-					int bEndIndex = startSorter.FindClosetIndex(aEndPosition, out distanceToStartSqrd, polygonAIndex);
-					if (distanceToStartSqrd < bestScore)
+					double distanceToEndSqrd;
+					int bEndIndex = endSorter.FindClosetIndex(aEndPosition, out distanceToEndSqrd, polygonAIndex);
+					if (distanceToEndSqrd < bestScore)
 					{
-						bestScore = distanceToStartSqrd;
+						bestScore = distanceToEndSqrd;
 						bestA = polygonAIndex;
 						bestB = bEndIndex;
 						reversed = true;
