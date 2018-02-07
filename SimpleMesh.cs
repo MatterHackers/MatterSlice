@@ -165,23 +165,21 @@ namespace MatterHackers.MatterSlice
 						vertex.Z = Convert.ToDouble(parts[3]);
 
 						// change the scale from mm to micrometers
-						vertex *= 1000.0;
-
 						n++;
 						switch (n)
 						{
 							case 1:
-								var new0 = VectorMath.Vector3.Transform(vertex, matrix);
+								var new0 = VectorMath.Vector3.Transform(vertex, matrix) * 1000;
 								v0 = new IntPoint(new0.X, new0.Y, new0.Z);
 								break;
 
 							case 2:
-								var new1 = VectorMath.Vector3.Transform(vertex, matrix);
+								var new1 = VectorMath.Vector3.Transform(vertex, matrix) * 1000;
 								v1 = new IntPoint(new1.X, new1.Y, new1.Z);
 								break;
 
 							case 3:
-								var new2 = VectorMath.Vector3.Transform(vertex, matrix);
+								var new2 = VectorMath.Vector3.Transform(vertex, matrix) * 1000;
 								v2 = new IntPoint(new2.X, new2.Y, new2.Z);
 								vol.addFaceTriangle(v0, v1, v2);
 								n = 0;
