@@ -34,7 +34,7 @@ namespace MatterHackers.MatterSlice
 
 	public static class PolygonsHelper
 	{
-		public enum LayerOpperation { EvenOdd, UnionAll };
+		public enum LayerOperation { EvenOdd, UnionAll };
 
 		public static void AddAll(this Polygons polygons, Polygons other)
 		{
