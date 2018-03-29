@@ -521,14 +521,14 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
+					bool isOuterPerimeter = (path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER");
+					bool isTrimmed = isOuterPerimeter && perimeterStartEndOverlapRatio < 1;
+
+					var loopStart = gcodeExport.GetPosition();
 					// This is test code to remove double drawn small perimeter lines.
-					if (path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER")
+					if (isTrimmed)
 					{
-						//string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(path);
-						if (perimeterStartEndOverlapRatio < 1)
-						{
-							path = TrimPerimeter(path, perimeterStartEndOverlapRatio);
-						}
+						path = TrimPerimeter(path, perimeterStartEndOverlapRatio);
 					}
 
 					int outputCount = path.polygon.Count;
@@ -541,6 +541,12 @@ namespace MatterHackers.MatterSlice
 						}
 
 						gcodeExport.WriteMove(path.polygon[i], speed, lineWidth_um);
+					}
+
+					if (isTrimmed)
+					{
+						// go back to the start of the loop
+						gcodeExport.WriteMove(loopStart, speed, 0);
 					}
 				}
 			}
