@@ -325,19 +325,19 @@ namespace MatterHackers.MatterSlice
 					gcode.SetExtrusion(config.RaftBaseThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
 					// write the skirt around the raft
-					gcodeLayer.QueuePolygonsByOptimizer(storage.skirt, raftBaseConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(storage.skirt, null, raftBaseConfig);
 
 					List<Polygons> raftIslands = storage.raftOutline.ProcessIntoSeparateIslands();
 					foreach (var raftIsland in raftIslands)
 					{
 						// write the outline of the raft
-						gcodeLayer.QueuePolygonsByOptimizer(raftIsland, raftBaseConfig);
+						gcodeLayer.QueuePolygonsByOptimizer(raftIsland, null, raftBaseConfig);
 
 						Polygons raftLines = new Polygons();
 						Infill.GenerateLinePaths(raftIsland.Offset(-config.RaftBaseExtrusionWidth_um) , raftLines, config.RaftBaseLineSpacing_um, config.InfillExtendIntoPerimeter_um, 0);
 
 						// write the inside of the raft base
-						gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftBaseConfig);
+						gcodeLayer.QueuePolygonsByOptimizer(raftLines, null, raftBaseConfig);
 
 						if (config.RetractWhenChangingIslands)
 						{
@@ -363,7 +363,7 @@ namespace MatterHackers.MatterSlice
 
 					Polygons raftLines = new Polygons();
 					Infill.GenerateLinePaths(storage.raftOutline, raftLines, config.RaftInterfaceLineSpacing_um, config.InfillExtendIntoPerimeter_um, 45);
-					gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftMiddleConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(raftLines, null, raftMiddleConfig);
 
 					gcodeLayer.WriteQueuedGCode(config.RaftInterfaceThicknes_um);
 				}
@@ -386,7 +386,7 @@ namespace MatterHackers.MatterSlice
 					{
 						Infill.GenerateLinePaths(storage.raftOutline, raftLines, config.RaftSurfaceLineSpacing_um, config.InfillExtendIntoPerimeter_um, 90 * raftSurfaceIndex);
 					}
-					gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftSurfaceConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(raftLines, null, raftSurfaceConfig);
 
 					gcodeLayer.WriteQueuedGCode(config.RaftInterfaceThicknes_um);
 				}
