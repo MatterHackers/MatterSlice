@@ -717,7 +717,7 @@ namespace MatterHackers.MatterSlice
 				gcodeLayer.QueueTravel(lowestPoint);
 			}
 
-			gcodeLayer.QueuePolygonsByOptimizer(slicingData.skirt, skirtConfig);
+			gcodeLayer.QueuePolygonsByOptimizer(slicingData.skirt, null, skirtConfig);
 		}
 
 		LayerIsland islandCurrentlyInside = null;
@@ -742,7 +742,7 @@ namespace MatterHackers.MatterSlice
 			if (slicingData.wipeShield.Count > 0 && slicingData.Extruders.Count > 1)
 			{
 				layerGcodePlanner.ForceRetract();
-				layerGcodePlanner.QueuePolygonsByOptimizer(slicingData.wipeShield[layerIndex], skirtConfig);
+				layerGcodePlanner.QueuePolygonsByOptimizer(slicingData.wipeShield[layerIndex], null, skirtConfig);
 				layerGcodePlanner.ForceRetract();
 			}
 
@@ -763,7 +763,7 @@ namespace MatterHackers.MatterSlice
 					islandOrderOptimizer.AddPolygon(layer.Islands[partIndex].InsetToolPaths[0][0]);
 				}
 			}
-			islandOrderOptimizer.Optimize();
+			islandOrderOptimizer.Optimize(layer.PathFinder);
 
 			List<Polygons> bottomFillIslandPolygons = new List<Polygons>();
 
@@ -825,7 +825,7 @@ namespace MatterHackers.MatterSlice
 							if (island.InsetToolPaths.Count > 0)
 							{
 								Polygon outsideSinglePolygon = island.InsetToolPaths[0][0];
-								layerGcodePlanner.QueuePolygonsByOptimizer(new Polygons() { outsideSinglePolygon }, inset0Config);
+								layerGcodePlanner.QueuePolygonsByOptimizer(new Polygons() { outsideSinglePolygon }, null, inset0Config);
 							}
 						}
 						else
@@ -949,11 +949,11 @@ namespace MatterHackers.MatterSlice
 					QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bridgePolygons, bridgeConfig, SupportWriteType.UnsupportedAreas);
 				}
 
-				// TODO: Put all of these segments into a list that can be queued together and still preserver their individual config settings.
+				// TODO: Put all of these segments into a list that can be queued together and still preserve their individual config settings.
 				// This will make the total amount of travel while printing infill much less.
-				layerGcodePlanner.QueuePolygonsByOptimizer(fillPolygons, fillConfig);
+				layerGcodePlanner.QueuePolygonsByOptimizer(fillPolygons, island.PathFinder, fillConfig);
 				QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bottomFillPolygons, bottomFillConfig, SupportWriteType.UnsupportedAreas);
-				layerGcodePlanner.QueuePolygonsByOptimizer(topFillPolygons, topFillConfig);
+				layerGcodePlanner.QueuePolygonsByOptimizer(topFillPolygons, island.PathFinder, topFillConfig);
 			}
 		}
 
@@ -1126,7 +1126,7 @@ namespace MatterHackers.MatterSlice
 						islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].InsetToolPaths[0][0]);
 					}
 				}
-				islandOrderOptimizer.Optimize();
+				islandOrderOptimizer.Optimize(layer.PathFinder);
 
 				for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.bestIslandOrderIndex.Count; islandOrderIndex++)
 				{
@@ -1227,11 +1227,11 @@ namespace MatterHackers.MatterSlice
 
 						GetSegmentsConsideringSupport(polygonsToWrite, supportOutlines, polysToWriteAtNormalHeight, polysToWriteAtAirGapHeight, false, fillConfig.closedLoop);
 						fillConfig.closedLoop = false;
-						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtNormalHeight, fillConfig);
+						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtNormalHeight, null, fillConfig);
 					}
 					else
 					{
-						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, fillConfig);
+						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, null, fillConfig);
 					}
 				}
 				else if (supportOutlines.Count > 0) // we are checking the supported areas
@@ -1249,13 +1249,13 @@ namespace MatterHackers.MatterSlice
 					}
 					else
 					{
-						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtAirGapHeight, fillConfig);
+						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtAirGapHeight, null, fillConfig);
 					}
 				}
 			}
 			else if (supportWriteType == SupportWriteType.UnsupportedAreas)
 			{
-				polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, fillConfig);
+				polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, null, fillConfig);
 			}
 
 			fillConfig.closedLoop = oldLoopValue;
