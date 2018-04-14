@@ -102,6 +102,7 @@ namespace MatterHackers.MatterSlice
 		public long CurrentZ { get { return zPos_um; } }
 
 		public int LayerIndex { get; set; } = 0;
+		public double LayerTime { get; internal set; }
 
 		public void Close()
 		{

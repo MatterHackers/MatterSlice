@@ -107,8 +107,10 @@ namespace MatterHackers.MatterSlice
 		public double ExtrusionWidth { get; set; }
 
 		public int ExtrusionWidth_um => (int)(ExtrusionWidth * 1000);
-		public int FanSpeedMaxPercent { get; set; }
 		public int FanSpeedMinPercent { get; set; }
+		public int MinFanSpeedLayerTime { get; set; }
+		public int FanSpeedMaxPercent { get; set; }
+		public int MaxFanSpeedLayerTime { get; set; }
 
 		[SettingDescription("The width of the filament being fed into the extruder, in millimeters.")]
 		public double FilamentDiameter { get; set; }
@@ -229,9 +231,6 @@ namespace MatterHackers.MatterSlice
 		public double RaftExtraDistanceAroundPart { get; set; }
 		public int RaftExtraDistanceAroundPart_um => (int)(RaftExtraDistanceAroundPart * 1000);
 		public int RaftExtruder { get; set; }
-
-		[SettingDescription("The speed to run the fan during raft printing.")]
-		public int RaftFanSpeedPercent { get; set; }
 
 		public int RaftInterfaceExtrusionWidth_um => ExtrusionWidth_um * 350 / 400;
 		public int RaftInterfaceLineSpacing_um => ExtrusionWidth_um * 1000 / 400;
@@ -601,7 +600,6 @@ namespace MatterHackers.MatterSlice
 			BridgeSpeed = 20;
 			BridgeFanSpeedPercent = 100;
 			RetractWhenChangingIslands = true;
-			RaftFanSpeedPercent = 100;
 			OutsidePerimeterSpeed = 50;
 			OutsidePerimeterExtrusionWidth = ExtrusionWidth;
 			InsidePerimetersSpeed = 50;
@@ -648,7 +646,9 @@ namespace MatterHackers.MatterSlice
 			MinimumLayerTimeSeconds = 5;
 			MinimumPrintingSpeed = 10;
 			FanSpeedMinPercent = 100;
+			MinFanSpeedLayerTime = 300;
 			FanSpeedMaxPercent = 100;
+			MaxFanSpeedLayerTime = 300;
 
 			ContinuousSpiralOuterPerimeter = false;
 

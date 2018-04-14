@@ -166,8 +166,8 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			double totalTime = extrudeTime + travelTime;
-			if (totalTime < minTime && extrudeTime > 0.0)
+			gcodeExport.LayerTime = extrudeTime + travelTime;
+			if (gcodeExport.LayerTime < minTime && extrudeTime > 0.0)
 			{
 				double minExtrudeTime = minTime - travelTime;
 				if (minExtrudeTime < 1)
@@ -186,7 +186,7 @@ namespace MatterHackers.MatterSlice
 			}
 			else
 			{
-				this.totalPrintTime = totalTime;
+				this.totalPrintTime = gcodeExport.LayerTime;
 			}
 		}
 

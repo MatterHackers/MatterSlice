@@ -676,23 +676,38 @@ namespace MatterHackers.MatterSlice
 
 		private int GetFanSpeed(int layerIndex, GCodeExport gcodeExport)
 		{
-			int fanSpeedPercent = config.FanSpeedMinPercent;
-			if (gcodeExport.LayerSpeedRatio <= .5)
-			{
-				fanSpeedPercent = config.FanSpeedMaxPercent;
-			}
-			else
-			{
-				int n = (int)(100 * (gcodeExport.LayerSpeedRatio - .5));
-				fanSpeedPercent = config.FanSpeedMinPercent * n / 50 + config.FanSpeedMaxPercent * (50 - n) / 50;
-			}
-
 			if (layerIndex < config.FirstLayerToAllowFan)
 			{
 				// Don't allow the fan below this layer
-				fanSpeedPercent = 0;
+				return 0;
 			}
-			return fanSpeedPercent;
+
+			var minFanSpeedLayerTime = Math.Max(config.MinFanSpeedLayerTime, config.MaxFanSpeedLayerTime);
+			// check if the layer time is slow enough that we need to turn the fan on
+			if (gcodeExport.LayerTime < minFanSpeedLayerTime)
+			{
+				if(config.MaxFanSpeedLayerTime >= minFanSpeedLayerTime)
+				{
+					// the max always comes on first so just return the max speed
+					return config.FanSpeedMaxPercent;
+				}
+
+				// fiure out how much to turn it on
+				var amountSmallerThanMin = Math.Max(0, minFanSpeedLayerTime - gcodeExport.LayerTime);
+				var timeToMax = Math.Max(0, minFanSpeedLayerTime - config.MaxFanSpeedLayerTime);
+
+				double ratioToMaxSpeed = 0;
+				if(timeToMax > 0)
+				{
+					ratioToMaxSpeed = Math.Min(1, amountSmallerThanMin / timeToMax);
+				}
+
+				return config.FanSpeedMinPercent + (int)(ratioToMaxSpeed * (config.FanSpeedMaxPercent - config.FanSpeedMinPercent));
+			}
+			else // we are going to slow turn the fan off
+			{
+				return 0;
+			}
 		}
 
 		private void QueueSkirtToGCode(LayerDataStorage slicingData, GCodePlanner gcodeLayer, int layerIndex)
