@@ -348,11 +348,6 @@ namespace MatterHackers.MatterSlice
 					gcodeLayer.WriteQueuedGCode(config.RaftBaseThickness_um);
 				}
 
-				if (config.RaftFanSpeedPercent > 0)
-				{
-					gcode.WriteFanCommand(config.RaftFanSpeedPercent);
-				}
-
 				// raft middle layers
 				{
 					gcode.WriteComment("RAFT MIDDLE");
