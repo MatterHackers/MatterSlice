@@ -320,7 +320,7 @@ namespace MatterHackers.MatterSlice
 
 					gcode.SetZ(config.RaftBaseThickness_um);
 
-					gcode.LayerChanged(-3);
+					gcode.LayerChanged(-3, gcode.GetPositionZ(), config.RaftBaseThickness_um);
 
 					gcode.SetExtrusion(config.RaftBaseThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
@@ -353,7 +353,7 @@ namespace MatterHackers.MatterSlice
 					gcode.WriteComment("RAFT MIDDLE");
 					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 					gcode.SetZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um);
-					gcode.LayerChanged(-2);
+					gcode.LayerChanged(-2, gcode.GetPositionZ(), config.RaftInterfaceThicknes_um);
 					gcode.SetExtrusion(config.RaftInterfaceThicknes_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
 					Polygons raftLines = new Polygons();
@@ -368,7 +368,7 @@ namespace MatterHackers.MatterSlice
 					gcode.WriteComment("RAFT SURFACE");
 					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 					gcode.SetZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um + config.RaftSurfaceThickness_um * raftSurfaceIndex);
-					gcode.LayerChanged(-1);
+					gcode.LayerChanged(-1, gcode.GetPositionZ(), config.RaftSurfaceThickness_um);
 					gcode.SetExtrusion(config.RaftSurfaceThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
 					Polygons raftLines = new Polygons();
