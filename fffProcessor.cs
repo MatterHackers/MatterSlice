@@ -452,7 +452,7 @@ namespace MatterHackers.MatterSlice
 				}
 
 				// get the correct height for this layer
-				int z = config.FirstLayerThickness_um + layerIndex * config.LayerThickness_um;
+				long z = config.FirstLayerThickness_um + layerIndex * config.LayerThickness_um;
 				if (config.EnableRaft)
 				{
 					z += config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um + config.RaftSurfaceLayers * config.RaftSurfaceThickness_um;
@@ -469,7 +469,7 @@ namespace MatterHackers.MatterSlice
 
 				gcodeExport.SetZ(z);
 
-				gcodeExport.LayerChanged(layerIndex);
+				gcodeExport.LayerChanged(layerIndex, z, config.LayerThickness_um);
 
 				// We only create the skirt if we are on layer 0.
 				if (layerIndex == 0 && !config.ShouldGenerateRaft())

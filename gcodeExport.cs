@@ -168,13 +168,15 @@ namespace MatterHackers.MatterSlice
 			return gcodeFileStream != null;
 		}
 
-		public void LayerChanged(int layerIndex)
+		public void LayerChanged(int layerIndex, long layerHeight_um, long layerWidth_um)
 		{
 			LayerIndex = layerIndex;
 			if (!string.IsNullOrEmpty(layerChangeCode))
 			{
 				WriteCode("; Layer Change GCode");
 				WriteCode(layerChangeCode.Replace("[layer_num]", layerIndex.ToString()));
+				WriteCode($"; LAYER_HEIGHT:{layerHeight_um / 1000.0:0.####}");
+				WriteCode($"; LAYER_WIDTH:{layerWidth_um / 1000.0:0.####}");
 			}
 		}
 
