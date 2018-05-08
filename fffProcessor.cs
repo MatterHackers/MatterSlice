@@ -469,7 +469,7 @@ namespace MatterHackers.MatterSlice
 
 				gcodeExport.SetZ(z);
 
-				gcodeExport.LayerChanged(layerIndex, z, config.LayerThickness_um);
+				gcodeExport.LayerChanged(layerIndex, config.LayerThickness_um);
 
 				// We only create the skirt if we are on layer 0.
 				if (layerIndex == 0 && !config.ShouldGenerateRaft())

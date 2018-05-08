@@ -168,16 +168,16 @@ namespace MatterHackers.MatterSlice
 			return gcodeFileStream != null;
 		}
 
-		public void LayerChanged(int layerIndex, long layerHeight_um, long layerWidth_um)
+		public void LayerChanged(int layerIndex, long layerHeight_um)
 		{
 			LayerIndex = layerIndex;
 			if (!string.IsNullOrEmpty(layerChangeCode))
 			{
-				WriteCode("; Layer Change GCode");
+				WriteComment("Layer Change GCode");
 				WriteCode(layerChangeCode.Replace("[layer_num]", layerIndex.ToString()));
-				WriteCode($"; LAYER_HEIGHT:{layerHeight_um / 1000.0:0.####}");
-				WriteCode($"; LAYER_WIDTH:{layerWidth_um / 1000.0:0.####}");
 			}
+
+			WriteComment($"LAYER_HEIGHT:{layerHeight_um / 1000.0:0.####}");
 		}
 
 		public void ResetExtrusionValue(double extraExtrudeAmount_mm = 0)
@@ -297,7 +297,7 @@ namespace MatterHackers.MatterSlice
 
 		public void WriteComment(string comment)
 		{
-			gcodeFileStream.Write("; {0}\n".FormatWith(comment));
+			gcodeFileStream.Write($"; {comment}\n");
 		}
 
 		public void WriteFanCommand(int speed)
