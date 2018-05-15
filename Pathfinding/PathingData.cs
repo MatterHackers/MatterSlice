@@ -117,12 +117,12 @@ namespace MatterHackers.Pathfinding
 				{
 					if (first)
 					{
-						output.Add(point.X, point.Y, ShapePath.FlagsAndCommand.CommandMoveTo);
+						output.Add(point.X, point.Y, ShapePath.FlagsAndCommand.MoveTo);
 						first = false;
 					}
 					else
 					{
-						output.Add(point.X, point.Y, ShapePath.FlagsAndCommand.CommandLineTo);
+						output.Add(point.X, point.Y, ShapePath.FlagsAndCommand.LineTo);
 					}
 				}
 
