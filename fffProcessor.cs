@@ -732,7 +732,7 @@ namespace MatterHackers.MatterSlice
 				gcodeLayer.QueueTravel(lowestPoint);
 			}
 
-			gcodeLayer.QueuePolygonsByOptimizer(slicingData.skirt, null, skirtConfig);
+			gcodeLayer.QueuePolygonsByOptimizer(slicingData.skirt, null, skirtConfig, layerIndex);
 		}
 
 		LayerIsland islandCurrentlyInside = null;
@@ -757,7 +757,7 @@ namespace MatterHackers.MatterSlice
 			if (slicingData.wipeShield.Count > 0 && slicingData.Extruders.Count > 1)
 			{
 				layerGcodePlanner.ForceRetract();
-				layerGcodePlanner.QueuePolygonsByOptimizer(slicingData.wipeShield[layerIndex], null, skirtConfig);
+				layerGcodePlanner.QueuePolygonsByOptimizer(slicingData.wipeShield[layerIndex], null, skirtConfig, layerIndex);
 				layerGcodePlanner.ForceRetract();
 			}
 
@@ -778,7 +778,7 @@ namespace MatterHackers.MatterSlice
 					islandOrderOptimizer.AddPolygon(layer.Islands[partIndex].InsetToolPaths[0][0]);
 				}
 			}
-			islandOrderOptimizer.Optimize(layer.PathFinder);
+			islandOrderOptimizer.Optimize(layer.PathFinder, layerIndex);
 
 			List<Polygons> bottomFillIslandPolygons = new List<Polygons>();
 
@@ -840,7 +840,7 @@ namespace MatterHackers.MatterSlice
 							if (island.InsetToolPaths.Count > 0)
 							{
 								Polygon outsideSinglePolygon = island.InsetToolPaths[0][0];
-								layerGcodePlanner.QueuePolygonsByOptimizer(new Polygons() { outsideSinglePolygon }, null, inset0Config);
+								layerGcodePlanner.QueuePolygonsByOptimizer(new Polygons() { outsideSinglePolygon }, null, inset0Config, layerIndex);
 							}
 						}
 						else
@@ -886,7 +886,7 @@ namespace MatterHackers.MatterSlice
 									if (!config.ContinuousSpiralOuterPerimeter
 										&& insetIndex == island.InsetToolPaths.Count - 1)
 									{
-										var closestInsetStart = FindBestPoint(insetsForThisIsland[0], layerGcodePlanner.LastPosition);
+										var closestInsetStart = FindBestPoint(insetsForThisIsland[0], layerGcodePlanner.LastPosition, layerIndex);
 										if(closestInsetStart.X != long.MinValue)
 										{
 											layerGcodePlanner.QueueTravel(closestInsetStart);
@@ -966,9 +966,9 @@ namespace MatterHackers.MatterSlice
 
 				// TODO: Put all of these segments into a list that can be queued together and still preserve their individual config settings.
 				// This will make the total amount of travel while printing infill much less.
-				layerGcodePlanner.QueuePolygonsByOptimizer(fillPolygons, island.PathFinder, fillConfig);
+				layerGcodePlanner.QueuePolygonsByOptimizer(fillPolygons, island.PathFinder, fillConfig, layerIndex);
 				QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bottomFillPolygons, bottomFillConfig, SupportWriteType.UnsupportedAreas);
-				layerGcodePlanner.QueuePolygonsByOptimizer(topFillPolygons, island.PathFinder, topFillConfig);
+				layerGcodePlanner.QueuePolygonsByOptimizer(topFillPolygons, island.PathFinder, topFillConfig, layerIndex);
 			}
 		}
 
@@ -1021,14 +1021,14 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public IntPoint FindBestPoint(Polygons boundaryPolygons, IntPoint position)
+		public IntPoint FindBestPoint(Polygons boundaryPolygons, IntPoint position, int layerIndex)
 		{
 			IntPoint polyPointPosition = new IntPoint(long.MinValue, long.MinValue);
 
 			long bestDist = long.MaxValue;
 			for (int polygonIndex = 0; polygonIndex < boundaryPolygons.Count; polygonIndex++)
 			{
-				IntPoint closestToPoly = boundaryPolygons[polygonIndex].FindGreatestTurnPosition(config.ExtrusionWidth_um);
+				IntPoint closestToPoly = boundaryPolygons[polygonIndex].FindGreatestTurnPosition(config.ExtrusionWidth_um, layerIndex);
 				if (closestToPoly != null)
 				{
 					long length = (closestToPoly - position).Length();
@@ -1141,7 +1141,7 @@ namespace MatterHackers.MatterSlice
 						islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].InsetToolPaths[0][0]);
 					}
 				}
-				islandOrderOptimizer.Optimize(layer.PathFinder);
+				islandOrderOptimizer.Optimize(layer.PathFinder, layerIndex);
 
 				for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.bestIslandOrderIndex.Count; islandOrderIndex++)
 				{
@@ -1242,11 +1242,11 @@ namespace MatterHackers.MatterSlice
 
 						GetSegmentsConsideringSupport(polygonsToWrite, supportOutlines, polysToWriteAtNormalHeight, polysToWriteAtAirGapHeight, false, fillConfig.closedLoop);
 						fillConfig.closedLoop = false;
-						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtNormalHeight, null, fillConfig);
+						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtNormalHeight, null, fillConfig, layerIndex);
 					}
 					else
 					{
-						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, null, fillConfig);
+						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, null, fillConfig, layerIndex);
 					}
 				}
 				else if (supportOutlines.Count > 0) // we are checking the supported areas
@@ -1264,13 +1264,13 @@ namespace MatterHackers.MatterSlice
 					}
 					else
 					{
-						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtAirGapHeight, null, fillConfig);
+						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtAirGapHeight, null, fillConfig, layerIndex);
 					}
 				}
 			}
 			else if (supportWriteType == SupportWriteType.UnsupportedAreas)
 			{
-				polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, null, fillConfig);
+				polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, null, fillConfig, layerIndex);
 			}
 
 			fillConfig.closedLoop = oldLoopValue;
@@ -1328,7 +1328,8 @@ namespace MatterHackers.MatterSlice
 						SliceLayer previousLayer = slicingData.Extruders[extruderIndex].Layers[layerIndex - 1];
 						
 						double bridgeAngle = 0;
-						if (bridgePolygons != null && previousLayer.BridgeAngle(bottomFillIsland, out bridgeAngle))
+						if (bridgePolygons != null 
+							&& previousLayer.BridgeAngle(bottomFillIsland, out bridgeAngle))
 						{
 							// TODO: Make this code handle very complex pathing between different sizes or layouts of support under the island to fill.
 							Infill.GenerateLinePaths(bottomFillIsland, bridgePolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, bridgeAngle);

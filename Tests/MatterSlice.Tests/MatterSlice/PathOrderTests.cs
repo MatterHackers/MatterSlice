@@ -239,7 +239,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |0______\4
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50), new IntPoint(100, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
-				Assert.IsTrue(bestPoint == 1);
+				Assert.IsTrue(bestPoint == 2);
 			}
 
 			// find the right point wound cw
@@ -251,7 +251,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |1______\0
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(100, 0), new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
-				Assert.IsTrue(bestPoint == 2);
+				Assert.IsTrue(bestPoint == 3);
 			}
 
 			// cw

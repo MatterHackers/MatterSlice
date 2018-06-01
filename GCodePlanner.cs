@@ -286,7 +286,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public bool QueuePolygonsByOptimizer(Polygons polygons, PathFinder pathFinder, GCodePathConfig config)
+		public bool QueuePolygonsByOptimizer(Polygons polygons, PathFinder pathFinder, GCodePathConfig config, int layerIndex)
 		{
 			if (polygons.Count == 0)
 			{
@@ -296,7 +296,7 @@ namespace MatterHackers.MatterSlice
 			PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(LastPosition);
 			orderOptimizer.AddPolygons(polygons);
 
-			orderOptimizer.Optimize(pathFinder, config);
+			orderOptimizer.Optimize(pathFinder, layerIndex, config);
 
 			for (int i = 0; i < orderOptimizer.bestIslandOrderIndex.Count; i++)
 			{

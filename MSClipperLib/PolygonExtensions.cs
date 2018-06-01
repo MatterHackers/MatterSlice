@@ -69,15 +69,11 @@ namespace MSClipperLib
 		/// <param name="inputPolygon"></param>
 		/// <param name="lineWidth"></param>
 		/// <returns></returns>
-		public static int FindGreatestTurnIndex(this Polygon inputPolygon, long lineWidth = 3)
+		public static int FindGreatestTurnIndex(this Polygon inputPolygon, int layerIndex = 0, long lineWidth = 3)
 		{
-			// code to make the seam go to the back most position
-			//return inputPolygon.LargestTurnIndex(new IntPoint(0, 50000000));
-
-			// code to go to a specific position (would have to have it come from setting)
-			//return inputPolygon.LargestTurnIndex(config.SeamPosition);
-
-			IntPoint bestPosition = inputPolygon.FindGreatestTurnPosition(lineWidth);
+			// get the best position on a cleaned polygon
+			IntPoint bestPosition = inputPolygon.FindGreatestTurnPosition(lineWidth, layerIndex);
+			// because FindGreatestTurnPosition cleans the polygon we need to see what the cleaned position is closest to on the actual polygon
 			return inputPolygon.FindClosestPositionIndex(bestPosition);
 		}
 
@@ -105,28 +101,9 @@ namespace MSClipperLib
 		/// <param name="inputPolygon"></param>
 		/// <param name="considerAsSameY">Range to treat y positions as the same value.</param>
 		/// <returns></returns>
-		public static IntPoint FindGreatestTurnPosition(this Polygon inputPolygon, long considerAsSameY)
+		public static IntPoint FindGreatestTurnPosition(this Polygon inputPolygon, long considerAsSameY, int layerIndex)
 		{
-			IntPoint currentFurthestBackActual = new IntPoint(long.MaxValue, long.MinValue);
-			{
-				int actualFurthestBack = 0;
-				for (int pointIndex = 0; pointIndex < inputPolygon.Count; pointIndex++)
-				{
-					IntPoint currentPoint = inputPolygon[pointIndex];
-
-					if (currentPoint.Y >= currentFurthestBackActual.Y)
-					{
-						if (currentPoint.Y > currentFurthestBackActual.Y
-							|| currentPoint.X < currentFurthestBackActual.X)
-						{
-							actualFurthestBack = pointIndex;
-							currentFurthestBackActual = currentPoint;
-						}
-					}
-				}
-			}
-
-			Polygon currentPolygon = Clipper.CleanPolygon(inputPolygon, considerAsSameY / 4);
+			Polygon currentPolygon = Clipper.CleanPolygon(inputPolygon, considerAsSameY / 8);
 
 			// collect & bucket options and then choose the closest
 			if (currentPolygon.Count == 0)
@@ -196,11 +173,11 @@ namespace MSClipperLib
 			{
 				if (negativeGroup.Count > 0)
 				{
-					positionToReturn = currentPolygon[negativeGroup.BestIndex];
+					positionToReturn = currentPolygon[negativeGroup.GetBestIndex(layerIndex)];
 				}
 				else if (positiveGroup.Count > 0)
 				{
-					positionToReturn = currentPolygon[positiveGroup.BestIndex];
+					positionToReturn = currentPolygon[positiveGroup.GetBestIndex(layerIndex)];
 				}
 				else
 				{
@@ -212,22 +189,17 @@ namespace MSClipperLib
 			{
 				if (negativeGroup.Count > 0)
 				{
-					positionToReturn = currentPolygon[negativeGroup.BestIndex];
+					positionToReturn = currentPolygon[negativeGroup.GetBestIndex(layerIndex)];
 				}
 				else if (positiveGroup.Count > 0)
 				{
-					positionToReturn = currentPolygon[positiveGroup.BestIndex];
+					positionToReturn = currentPolygon[positiveGroup.GetBestIndex(layerIndex)];
 				}
 				else
 				{
 					// If can't find good candidate go with vertex most in a single direction
 					positionToReturn = currentPolygon[furthestBackIndex];
 				}
-			}
-
-			if (Math.Abs(currentFurthestBackActual.Y - positionToReturn.Y) < considerAsSameY)
-			{
-				return currentFurthestBackActual;
 			}
 
 			return positionToReturn;
@@ -416,32 +388,54 @@ namespace MSClipperLib
 				this.sameTurn = sameTurn;
 			}
 
-			public int BestIndex
+			/// <summary>
+			/// Get the best turn for this polygon. If there are multiple turns that are all jsut as good choose one with a bias for layer index.
+			/// </summary>
+			/// <param name="layerIndex"></param>
+			/// <returns></returns>
+			public int GetBestIndex(int layerIndex)
 			{
-				get
+				this.Sort((a, b) =>
 				{
-					IntPoint currentFurthestBack = new IntPoint(long.MaxValue, long.MinValue);
-					int furthestBackIndex = 0;
-
-					for (int i = 0; i < Count; i++)
+					if (a.position.Y == b.position.Y)
 					{
-						IntPoint currentPoint = this[i].position;
-						if (currentPoint.Y >= currentFurthestBack.Y)
-						{
-							if (currentPoint.Y > currentFurthestBack.Y
-								|| currentPoint.X < currentFurthestBack.X)
-							{
-								furthestBackIndex = this[i].turnIndex;
-								currentFurthestBack = currentPoint;
-							}
-						}
+						return b.position.X.CompareTo(a.position.X);
 					}
+					else
+					{
+						return a.position.Y.CompareTo(b.position.Y);
+					}
+				});
 
-					return furthestBackIndex;
+				// if we have a very shallow turn (the outer edeg of a circle)
+				if (Math.Abs(this[this.Count - 1].turnAmount) < .3)
+				{
+					switch (layerIndex % 3)
+					{
+						case 0:
+							return this[this.Count - 1].turnIndex;
+
+						case 1:
+							if (this.Count > 1)
+							{
+								// Future: we could look for a point that is a given distance away rather than just the next one over
+								return this[this.Count - 2].turnIndex;
+							}
+							break;
+
+						case 2:
+							if (this.Count > 2)
+							{
+								return this[this.Count - 3].turnIndex;
+							}
+							break;
+					}
 				}
+
+				return this[this.Count - 1].turnIndex;
 			}
 
-			internal void ConditionalAdd(CandidatePoint point)
+			public void ConditionalAdd(CandidatePoint point)
 			{
 				// If this is better than our worst point
 				// or it is within sameTurn of our best point
