@@ -165,7 +165,7 @@ namespace MatterHackers.MatterSlice
 				if (config.GenerateSupportPerimeter)
 				{
 					Polygons outlines = Clipper.CleanPolygons(islandOutline, config.ExtrusionWidth_um / 4);
-					gcodeLayer.QueuePolygonsByOptimizer(outlines, null, supportNormalConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(outlines, null, supportNormalConfig, 0);
 				}
 				Polygons infillOutline = islandOutline.Offset(-config.ExtrusionWidth_um / 2);
 				switch (config.SupportType)
@@ -178,7 +178,7 @@ namespace MatterHackers.MatterSlice
 						Infill.GenerateLineInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
 						break;
 				}
-				gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, null, supportNormalConfig);
+				gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, null, supportNormalConfig, 0);
 			}
 		}
 
@@ -204,7 +204,7 @@ namespace MatterHackers.MatterSlice
 					{
 						Polygons infillOutline = interfaceOutline.Offset(-supportInterfaceConfig.lineWidth_um / 2);
 						Polygons outlines = Clipper.CleanPolygons(infillOutline, config.ExtrusionWidth_um / 4);
-						if (gcodeLayer.QueuePolygonsByOptimizer(outlines, null, supportInterfaceConfig))
+						if (gcodeLayer.QueuePolygonsByOptimizer(outlines, null, supportInterfaceConfig, 0))
 						{
 							outputPaths = true;
 						}
@@ -212,7 +212,7 @@ namespace MatterHackers.MatterSlice
 
 					Polygons supportLines = new Polygons();
 					Infill.GenerateLineInfill(config, interfaceOutline, supportLines, config.InfillStartingAngle + 90, config.ExtrusionWidth_um);
-					if (gcodeLayer.QueuePolygonsByOptimizer(supportLines, null, supportInterfaceConfig))
+					if (gcodeLayer.QueuePolygonsByOptimizer(supportLines, null, supportInterfaceConfig, 0))
 					{
 						outputPaths = true;
 					}
@@ -243,7 +243,7 @@ namespace MatterHackers.MatterSlice
 				if (config.GenerateSupportPerimeter || layerIndex == 0)
 				{
 					Polygons outlines = Clipper.CleanPolygons(islandOutline, config.ExtrusionWidth_um / 4);
-					if (gcodeLayer.QueuePolygonsByOptimizer(outlines, null, supportNormalConfig))
+					if (gcodeLayer.QueuePolygonsByOptimizer(outlines, null, supportNormalConfig, 0))
 					{
 						outputPaths = true;
 					}
@@ -270,7 +270,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				if (gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, null, supportNormalConfig))
+				if (gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, null, supportNormalConfig, 0))
 				{
 					outputPaths |= true;
 				}
