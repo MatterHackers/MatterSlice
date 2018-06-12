@@ -41,6 +41,7 @@ namespace MatterHackers.Pathfinding
 
 	public class PathFinder
 	{
+		public bool IsSimpleConvex { get; set; } = false;
 		public static Action<PathFinder, Polygon, IntPoint, IntPoint> CalculatedPath = null;
 		private static string lastOutlineString = "";
 		private static bool saveBadPathToDisk = false;
@@ -50,6 +51,39 @@ namespace MatterHackers.Pathfinding
 			if (outlinePolygons.Count == 0)
 			{
 				return;
+			}
+
+			// Check if the outline is convex and no holes, if it is, don't create pathing data we can move anywhere in this object
+			if (outlinePolygons.Count == 1)
+			{
+				var currentPolygon = outlinePolygons[0];
+				int pointCount = currentPolygon.Count;
+				double negativeTurns = 0;
+				double positiveTurns = 0;
+				for (int pointIndex = 0; pointIndex < pointCount; pointIndex++)
+				{
+					int prevIndex = ((pointIndex + pointCount - 1) % pointCount);
+					int nextIndex = ((pointIndex + 1) % pointCount);
+					IntPoint prevPoint = currentPolygon[prevIndex];
+					IntPoint currentPoint = currentPolygon[pointIndex];
+					IntPoint nextPoint = currentPolygon[nextIndex];
+
+					double turnAmount = currentPoint.GetTurnAmount(prevPoint, nextPoint);
+
+					if (turnAmount < 0)
+					{
+						negativeTurns += turnAmount;
+					}
+					else
+					{
+						positiveTurns += turnAmount;
+					}
+				}
+				if (positiveTurns == 0 || negativeTurns == 0)
+				{
+					// all the turns are the same way this thing is convex
+					IsSimpleConvex = true;
+				}
 			}
 
 			InsetAmount = avoidInset;
@@ -123,6 +157,11 @@ namespace MatterHackers.Pathfinding
 
 		public bool CreatePathInsideBoundary(IntPoint startPointIn, IntPoint endPointIn, Polygon pathThatIsInside, bool optimizePath = true, int layerIndex = -1)
 		{
+			if(IsSimpleConvex)
+			{
+				return true;
+			}
+
 			var goodPath = CalculatePath(startPointIn, endPointIn, pathThatIsInside, layerIndex);
 			if (goodPath)
 			{

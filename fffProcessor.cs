@@ -982,7 +982,7 @@ namespace MatterHackers.MatterSlice
 			if (island.IslandOutline.Count > 0)
 			{
 				// If we are already in the island we are going to, don't go there.
-				if (island.PathFinder?.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineData.EdgeQuadTrees, island.PathFinder.OutlineData.PointQuadTrees) == true)
+				if (island.PathFinder.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineData.EdgeQuadTrees, island.PathFinder.OutlineData.PointQuadTrees) == true)
 				{
 					islandCurrentlyInside = island;
 					layerGcodePlanner.PathFinder = island.PathFinder;
@@ -990,7 +990,7 @@ namespace MatterHackers.MatterSlice
 				}
 
 				var closestPointOnNextIsland = island.IslandOutline.FindClosestPoint(layerGcodePlanner.LastPosition);
-				IntPoint closestNextIslandPoint = island.IslandOutline[closestPointOnNextIsland.Item1][closestPointOnNextIsland.Item2];
+				IntPoint closestNextIslandPoint = island.IslandOutline[closestPointOnNextIsland.polyIndex][closestPointOnNextIsland.pointIndex];
 
 				if (islandCurrentlyInside?.PathFinder?.OutlineData.Polygons.Count > 0
 					&& islandCurrentlyInside?.PathFinder?.OutlineData.Polygons?[0]?.Count > 3)
@@ -1008,12 +1008,33 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				// let's move to this island avoiding running into any other islands
-				layerGcodePlanner.PathFinder = layer.PathFinder;
-				// find the closest point to where we are now
-				// and do a move to there
-				if (config.RetractWhenChangingIslands) layerGcodePlanner.ForceRetract();
+				// how far are we going to move
+				var delta = closestNextIslandPoint - layerGcodePlanner.LastPosition;
+				var moveDistance = delta.Length();
+				var islandAvoidDistance = layer.PathFinder.InsetAmount;
+				if (moveDistance > islandAvoidDistance)
+				{
+					// make sure we are not planning moves for the move away from the island
+					layerGcodePlanner.PathFinder = null;
+					// move away from our current island as much as the inset amount to avoid planning around where we are
+					var awayFromIslandPosition = layerGcodePlanner.LastPosition + delta.Normal(islandAvoidDistance);
+					layerGcodePlanner.QueueTravel(awayFromIslandPosition);
+
+					// let's move to this island avoiding running into any other islands
+					layerGcodePlanner.PathFinder = layer.PathFinder;
+					// find the closest point to where we are now
+					// and do a move to there
+				}
+
+				// retract if we need to
+				if (config.RetractWhenChangingIslands)
+				{
+					layerGcodePlanner.ForceRetract();
+				}
+
+				// go to the next point
 				layerGcodePlanner.QueueTravel(closestNextIslandPoint);
+
 				// and remember that we are now in the new island
 				islandCurrentlyInside = island;
 				// set the path planner to the current island
