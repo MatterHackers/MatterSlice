@@ -41,6 +41,7 @@ namespace MatterHackers.Pathfinding
 
 	public class PathFinder
 	{
+		public bool IsSimpleConvex { get; set; } = false;
 		public static Action<PathFinder, Polygon, IntPoint, IntPoint> CalculatedPath = null;
 		private static string lastOutlineString = "";
 		private static bool saveBadPathToDisk = false;
@@ -81,7 +82,7 @@ namespace MatterHackers.Pathfinding
 				if (positiveTurns == 0 || negativeTurns == 0)
 				{
 					// all the turns are the same way this thing is convex
-					return;
+					IsSimpleConvex = true;
 				}
 			}
 
@@ -156,6 +157,11 @@ namespace MatterHackers.Pathfinding
 
 		public bool CreatePathInsideBoundary(IntPoint startPointIn, IntPoint endPointIn, Polygon pathThatIsInside, bool optimizePath = true, int layerIndex = -1)
 		{
+			if(IsSimpleConvex)
+			{
+				return true;
+			}
+
 			var goodPath = CalculatePath(startPointIn, endPointIn, pathThatIsInside, layerIndex);
 			if (goodPath)
 			{
