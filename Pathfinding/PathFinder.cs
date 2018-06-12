@@ -52,6 +52,39 @@ namespace MatterHackers.Pathfinding
 				return;
 			}
 
+			// Check if the outline is convex and no holes, if it is, don't create pathing data we can move anywhere in this object
+			if (outlinePolygons.Count == 1)
+			{
+				var currentPolygon = outlinePolygons[0];
+				int pointCount = currentPolygon.Count;
+				double negativeTurns = 0;
+				double positiveTurns = 0;
+				for (int pointIndex = 0; pointIndex < pointCount; pointIndex++)
+				{
+					int prevIndex = ((pointIndex + pointCount - 1) % pointCount);
+					int nextIndex = ((pointIndex + 1) % pointCount);
+					IntPoint prevPoint = currentPolygon[prevIndex];
+					IntPoint currentPoint = currentPolygon[pointIndex];
+					IntPoint nextPoint = currentPolygon[nextIndex];
+
+					double turnAmount = currentPoint.GetTurnAmount(prevPoint, nextPoint);
+
+					if (turnAmount < 0)
+					{
+						negativeTurns += turnAmount;
+					}
+					else
+					{
+						positiveTurns += turnAmount;
+					}
+				}
+				if (positiveTurns == 0 || negativeTurns == 0)
+				{
+					// all the turns are the same way this thing is convex
+					return;
+				}
+			}
+
 			InsetAmount = avoidInset;
 
 			var outsidePolygons = FixWinding(outlinePolygons);

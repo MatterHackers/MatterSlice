@@ -326,7 +326,7 @@ namespace MatterHackers.QuadTree
 				};
 			}
 
-			perimeter = QTPolygonExtensions.MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um, pathIsClosed);
+			perimeter = QTPolygonExtensions.MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um / 2, pathIsClosed);
 
 			// make a copy that has every point duplicated (so that we have them as segments).
 			List<Segment> polySegments = Segment.ConvertToSegments(perimeter, pathIsClosed);

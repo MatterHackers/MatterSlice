@@ -979,10 +979,11 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			if (island.IslandOutline.Count > 0)
+			if (island.IslandOutline.Count > 0
+				&& island.PathFinder.OutlineData != null)
 			{
 				// If we are already in the island we are going to, don't go there.
-				if (island.PathFinder?.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineData.EdgeQuadTrees, island.PathFinder.OutlineData.PointQuadTrees) == true)
+				if (island.PathFinder.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineData.EdgeQuadTrees, island.PathFinder.OutlineData.PointQuadTrees) == true)
 				{
 					islandCurrentlyInside = island;
 					layerGcodePlanner.PathFinder = island.PathFinder;
