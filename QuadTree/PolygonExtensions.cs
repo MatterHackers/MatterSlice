@@ -326,12 +326,15 @@ namespace MatterHackers.QuadTree
 				};
 			}
 
-			perimeter = QTPolygonExtensions.MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um / 2, pathIsClosed);
+			perimeter = QTPolygonExtensions.MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um * 3 / 4, pathIsClosed);
 
 			// make a copy that has every point duplicated (so that we have them as segments).
 			List<Segment> polySegments = Segment.ConvertToSegments(perimeter, pathIsClosed);
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
+
+			var minimumLengthToCreateSquared = overlapMergeAmount_um / 10;
+			minimumLengthToCreateSquared *= minimumLengthToCreateSquared;
 
 			var touchingEnumerator = new CloseSegmentsIterator(polySegments, overlapMergeAmount_um);
 			int segmentCount = polySegments.Count;
@@ -356,14 +359,26 @@ namespace MatterHackers.QuadTree
 							{
 								continue;
 							}
+
+							// get the line width
+							long startEndWidth = (polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length();
+							long endStartWidth = (polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length();
+							long width = Math.Min(startEndWidth, endStartWidth) + overlapMergeAmount_um;
+
+							// check if we extrude enough to consider doing this merge
+							var segmentStart = (polySegments[firstSegmentIndex].Start + polySegments[checkSegmentIndex].End) / 2;
+							var segmentEnd = (polySegments[firstSegmentIndex].End + polySegments[checkSegmentIndex].Start) / 2;
+
+							if((segmentStart - segmentEnd).LengthSquared() < minimumLengthToCreateSquared)
+							{
+								continue;
+							}
+
 							pathWasOptimized = true;
 							// move the first segments points to the average of the merge positions
-							long startEndWidth = Math.Abs((polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length());
-							long endStartWidth = Math.Abs((polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length());
-							long width = Math.Min(startEndWidth, endStartWidth) + overlapMergeAmount_um;
-							polySegments[firstSegmentIndex].Start = (polySegments[firstSegmentIndex].Start + polySegments[checkSegmentIndex].End) / 2; // the start
+							polySegments[firstSegmentIndex].Start = segmentStart;
 							polySegments[firstSegmentIndex].Start.Width = width;
-							polySegments[firstSegmentIndex].End = (polySegments[firstSegmentIndex].End + polySegments[checkSegmentIndex].Start) / 2; // the end
+							polySegments[firstSegmentIndex].End = segmentEnd;
 							polySegments[firstSegmentIndex].End.Width = width;
 
 							markedAltered[firstSegmentIndex] = Altered.merged;
