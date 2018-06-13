@@ -981,8 +981,9 @@ namespace MatterHackers.MatterSlice
 
 			if (island.IslandOutline.Count > 0)
 			{
-				// If we are already in the island we are going to, don't go there.
-				if (island.PathFinder.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineData.EdgeQuadTrees, island.PathFinder.OutlineData.PointQuadTrees) == true)
+				// If we are already in the island we are going to, don't go there, or there is only one island.
+				if (layer.Islands.Count == 1
+					|| island.PathFinder.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineData.EdgeQuadTrees, island.PathFinder.OutlineData.PointQuadTrees) == true)
 				{
 					islandCurrentlyInside = island;
 					layerGcodePlanner.PathFinder = island.PathFinder;
@@ -1049,7 +1050,7 @@ namespace MatterHackers.MatterSlice
 			long bestDist = long.MaxValue;
 			for (int polygonIndex = 0; polygonIndex < boundaryPolygons.Count; polygonIndex++)
 			{
-				IntPoint closestToPoly = boundaryPolygons[polygonIndex].FindGreatestTurnPosition(config.ExtrusionWidth_um, layerIndex);
+				IntPoint closestToPoly = boundaryPolygons[polygonIndex].FindGreatestTurnPosition(config.ExtrusionWidth_um, layerIndex, position);
 				if (closestToPoly != null)
 				{
 					long length = (closestToPoly - position).Length();
