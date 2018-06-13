@@ -832,6 +832,11 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 
+					GCodePathConfig overrideConfig = null;
+					if (bridgePolygons.Count > 0)
+					{
+						overrideConfig = bridgeConfig;
+					}
 					// If we are on the very first layer we always start with the outside so that we can stick to the bed better.
 					if (config.OutsidePerimetersFirst || layerIndex == 0 || inset0Config.spiralize)
 					{
@@ -851,13 +856,13 @@ namespace MatterHackers.MatterSlice
 								bool limitDistance = false;
 								if (island.InsetToolPaths.Count > 0)
 								{
-									QueueClosetsInset(insetsForThisIsland[0], limitDistance, inset0Config, layerIndex, layerGcodePlanner);
+									QueueClosetsInset(insetsForThisIsland[0], limitDistance, overrideConfig == null ? inset0Config : overrideConfig, layerIndex, layerGcodePlanner);
 								}
 
 								// Move to the closest inset 1 and print it
 								for (int insetIndex = 1; insetIndex < island.InsetToolPaths.Count; insetIndex++)
 								{
-									limitDistance = QueueClosetsInset(insetsForThisIsland[insetIndex], limitDistance, insetXConfig, layerIndex, layerGcodePlanner);
+									limitDistance = QueueClosetsInset(insetsForThisIsland[insetIndex], limitDistance, overrideConfig == null ? insetXConfig : overrideConfig, layerIndex, layerGcodePlanner);
 								}
 
 								insetCount = CountInsetsToPrint(insetsForThisIsland);
@@ -896,7 +901,7 @@ namespace MatterHackers.MatterSlice
 									limitDistance = QueueClosetsInset(
 										insetsForThisIsland[insetIndex],
 										limitDistance,
-										insetIndex == 0 ? inset0Config : insetXConfig,
+										overrideConfig == null ? (insetIndex == 0 ? inset0Config : insetXConfig) : overrideConfig,
 										layerIndex,
 										layerGcodePlanner);
 
