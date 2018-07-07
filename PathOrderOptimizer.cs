@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
 using System.Collections.Generic;
+using MatterHackers.Pathfinding;
 using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
@@ -54,7 +55,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void Optimize(GCodePathConfig config = null)
+		public void Optimize(PathFinder pathFinder, int layerIndex, GCodePathConfig config = null)
 		{
 			bool canTravelForwardOrBackward = config != null && !config.closedLoop;
 			// Find the point that is closest to our current position (start position)
@@ -78,7 +79,7 @@ namespace MatterHackers.MatterSlice
 						&& config.DoSeamHiding
 						&& !config.spiralize)
 					{
-						bestPointIndex = currentPolygon.FindGreatestTurnIndex(config.lineWidth_um);
+						bestPointIndex = currentPolygon.FindGreatestTurnIndex(startPosition, layerIndex, config.lineWidth_um);
 					}
 					else
 					{

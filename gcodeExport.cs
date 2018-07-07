@@ -23,8 +23,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using MatterHackers.Pathfinding;
-using MatterHackers.QuadTree;
 using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
@@ -54,9 +52,29 @@ namespace MatterHackers.MatterSlice
 		private double[] totalFilament_mm = new double[ConfigConstants.MAX_EXTRUDERS];
 		private double totalPrintTime;
 		private double unretractExtraOnExtruderSwitch_mm;
+		private bool reletLongExtrusion;
 		private double unretractExtrusionExtra_mm;
+		private double unretractExtrusionExtraSeconds;
 		private bool wipeAfterRetraction;
 		private long zPos_um;
+
+		double _layerSpeedRatio = 1;
+		public double LayerSpeedRatio
+		{
+			get { return _layerSpeedRatio; }
+			set
+			{
+				var maxChange = .1;
+				if (Math.Abs(_layerSpeedRatio - value) > maxChange)
+				{
+					_layerSpeedRatio = value > _layerSpeedRatio ? _layerSpeedRatio + maxChange : _layerSpeedRatio - maxChange;
+				}
+				else
+				{
+					_layerSpeedRatio = value;
+				}
+			}
+		}
 
 		public GCodeExport()
 		{
@@ -82,6 +100,9 @@ namespace MatterHackers.MatterSlice
 		}
 
 		public long CurrentZ { get { return zPos_um; } }
+
+		public int LayerIndex { get; set; } = 0;
+		public double LayerTime { get; internal set; }
 
 		public void Close()
 		{
@@ -147,13 +168,16 @@ namespace MatterHackers.MatterSlice
 			return gcodeFileStream != null;
 		}
 
-		public void LayerChanged(int layerIndex)
+		public void LayerChanged(int layerIndex, long layerHeight_um)
 		{
+			LayerIndex = layerIndex;
 			if (!string.IsNullOrEmpty(layerChangeCode))
 			{
-				WriteCode("; Layer Change GCode");
+				WriteComment("Layer Change GCode");
 				WriteCode(layerChangeCode.Replace("[layer_num]", layerIndex.ToString()));
 			}
+
+			WriteComment($"LAYER_HEIGHT:{layerHeight_um / 1000.0:0.####}");
 		}
 
 		public void ResetExtrusionValue(double extraExtrudeAmount_mm = 0)
@@ -191,9 +215,20 @@ namespace MatterHackers.MatterSlice
 			this.layerChangeCode = layerChangeCode;
 		}
 
-		public void SetRetractionSettings(double retractionAmount, int retractionSpeed, double extruderSwitchRetraction, double minimumExtrusionBeforeRetraction_mm, double retractionZHop_mm, bool wipeAfterRetraction, double unretractExtrusionExtra_mm, double unretractExtraOnExtruderSwitch_mm)
+		public void SetRetractionSettings(double retractionAmount, 
+			int retractionSpeed, 
+			double extruderSwitchRetraction, 
+			double minimumExtrusionBeforeRetraction_mm, 
+			double retractionZHop_mm, 
+			bool wipeAfterRetraction, 
+			double unretractExtrusionExtra_mm, 
+			double unretractExtrusionExtraSeconds, 
+			double unretractExtraOnExtruderSwitch_mm,
+			bool reletLongExtrusion)
 		{
+			this.reletLongExtrusion = reletLongExtrusion;
 			this.unretractExtrusionExtra_mm = unretractExtrusionExtra_mm;
+			this.unretractExtrusionExtraSeconds = unretractExtrusionExtraSeconds;
 			this.unretractExtraOnExtruderSwitch_mm = unretractExtraOnExtruderSwitch_mm;
 			this.wipeAfterRetraction = wipeAfterRetraction;
 			this.retractionAmount_mm = retractionAmount;
@@ -249,21 +284,6 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void TellFileSize()
-		{
-			double fsize = gcodeFileStream.BaseStream.Length;
-			if (fsize > 1024 * 1024)
-			{
-				fsize /= 1024.0 * 1024.0;
-				LogOutput.Log("Wrote {0:0.0} MB.\n".FormatWith(fsize));
-			}
-			if (fsize > 1024)
-			{
-				fsize /= 1024.0;
-				LogOutput.Log("Wrote {0:0.0} kilobytes.\n".FormatWith(fsize));
-			}
-		}
-
 		public void UpdateTotalPrintTime()
 		{
 			totalPrintTime += estimateCalculator.calculate();
@@ -277,7 +297,7 @@ namespace MatterHackers.MatterSlice
 
 		public void WriteComment(string comment)
 		{
-			gcodeFileStream.Write("; {0}\n".FormatWith(comment));
+			gcodeFileStream.Write($"; {comment}\n");
 		}
 
 		public void WriteFanCommand(int speed)
@@ -310,12 +330,7 @@ namespace MatterHackers.MatterSlice
 		{
 			StringBuilder lineToWrite = new StringBuilder();
 
-			if(movePosition_um.Width != lineWidth_um)
-			{
-				int a = 0;
-			}
-
-			if(currentPosition_um == movePosition_um)
+			if (currentPosition_um == movePosition_um)
 			{
 				return;
 			}
@@ -332,7 +347,8 @@ namespace MatterHackers.MatterSlice
 						lineToWrite.Append("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
 					}
 
-					if (extrusionAmount_mm > 10000.0)
+					if (this.reletLongExtrusion 
+						&& extrusionAmount_mm > 10000.0)
 					{
 						//According to https://github.com/Ultimaker/CuraEngine/issues/14 having more then 21m of extrusion causes inaccuracies. So reset it every 10m, just to be sure.
 						ResetExtrusionValue(retractionAmount_mm);
@@ -407,13 +423,13 @@ namespace MatterHackers.MatterSlice
 			estimateCalculator.plan(new TimeEstimateCalculator.Position(currentPosition_um.X / 1000.0, currentPosition_um.Y / 1000.0, currentPosition_um.Z / 1000.0, extrusionAmount_mm), speed);
 		}
 
-		public void WriteRetraction()
+		public void WriteRetraction(double timeForNextMove, bool forceRetraction)
 		{
 			double initialSpeed = currentSpeed;
 
 			if (retractionAmount_mm > 0
 				&& !isRetracted
-				&& extrusionAmountAtPreviousRetraction_mm + minimumExtrusionBeforeRetraction_mm < extrusionAmount_mm)
+				&& (forceRetraction || extrusionAmountAtPreviousRetraction_mm + minimumExtrusionBeforeRetraction_mm < extrusionAmount_mm))
 			{
 				gcodeFileStream.Write("G1 F{0} E{1:0.#####}\n".FormatWith(retractionSpeed * 60, extrusionAmount_mm - retractionAmount_mm));
 				currentSpeed = retractionSpeed;
@@ -427,8 +443,17 @@ namespace MatterHackers.MatterSlice
 					gcodeFileStream.Write("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
 				}
 
+				// calculate how much time since retract and figure out how much extra extrusion to apply
+				double amountOfExtraExtrusionToApply = 1;
+
+				if (unretractExtrusionExtraSeconds > 0)
+				{
+					timeForNextMove = Math.Min(timeForNextMove, unretractExtrusionExtraSeconds);
+					amountOfExtraExtrusionToApply = timeForNextMove / unretractExtrusionExtraSeconds;
+				}
+
 				// Make sure after a retraction that we will extrude the extra amount on unretraction that the settings want.
-				extrusionAmount_mm += unretractExtrusionExtra_mm;
+				extrusionAmount_mm += unretractExtrusionExtra_mm * amountOfExtraExtrusionToApply;
 
 				extrusionAmountAtPreviousRetraction_mm = extrusionAmount_mm;
 				isRetracted = true;

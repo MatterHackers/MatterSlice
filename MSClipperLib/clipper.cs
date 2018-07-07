@@ -4077,7 +4077,7 @@ new ClipperException("Error: PolyTree struct is need for open path clipping.");
 		}
 		//---------------------------------------------------------------------------
 
-		private static bool SlopesNearCollinear(IntPoint pt1,
+		public static bool SlopesNearCollinear(IntPoint pt1,
 			IntPoint pt2, IntPoint pt3, double distSqrd)
 		{
 			//this function is more accurate when the point that's GEOMETRICALLY 
@@ -4251,7 +4251,10 @@ new ClipperException("Error: PolyTree struct is need for open path clipping.");
 		{
 			Paths result = new Paths(polys.Count);
 			for (int i = 0; i < polys.Count; i++)
+			{
 				result.Add(CleanPolygon(polys[i], distance));
+			}
+
 			return result;
 		}
 		//------------------------------------------------------------------------------

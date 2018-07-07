@@ -32,6 +32,7 @@ using System.Collections.Generic;
 namespace MSClipperLib
 {
 	using System;
+	using System.Linq;
 	using Polygon = List<IntPoint>;
 
 	public static class CLPolygonExtensions
@@ -68,15 +69,11 @@ namespace MSClipperLib
 		/// <param name="inputPolygon"></param>
 		/// <param name="lineWidth"></param>
 		/// <returns></returns>
-		public static int FindGreatestTurnIndex(this Polygon inputPolygon, long lineWidth = 3)
+		public static int FindGreatestTurnIndex(this Polygon inputPolygon, IntPoint? startPosition = null, int layerIndex = 0, long lineWidth = 3)
 		{
-			// code to make the seam go to the back most position
-			//return inputPolygon.LargestTurnIndex(new IntPoint(0, 50000000));
-
-			// code to go to a specific position (would have to have it come from setting)
-			//return inputPolygon.LargestTurnIndex(config.SeamPosition);
-
-			IntPoint bestPosition = inputPolygon.FindGreatestTurnPosition(lineWidth);
+			// get the best position on a cleaned polygon
+			IntPoint bestPosition = inputPolygon.FindGreatestTurnPosition(lineWidth, layerIndex, startPosition);
+			// because FindGreatestTurnPosition cleans the polygon we need to see what the cleaned position is closest to on the actual polygon
 			return inputPolygon.FindClosestPositionIndex(bestPosition);
 		}
 
@@ -104,28 +101,9 @@ namespace MSClipperLib
 		/// <param name="inputPolygon"></param>
 		/// <param name="considerAsSameY">Range to treat y positions as the same value.</param>
 		/// <returns></returns>
-		public static IntPoint FindGreatestTurnPosition(this Polygon inputPolygon, long considerAsSameY)
+		public static IntPoint FindGreatestTurnPosition(this Polygon inputPolygon, long considerAsSameY, int layerIndex, IntPoint? startPosition = null)
 		{
-			IntPoint currentFurthestBackActual = new IntPoint(long.MaxValue, long.MinValue);
-			{
-				int actualFurthestBack = 0;
-				for (int pointIndex = 0; pointIndex < inputPolygon.Count; pointIndex++)
-				{
-					IntPoint currentPoint = inputPolygon[pointIndex];
-
-					if (currentPoint.Y >= currentFurthestBackActual.Y)
-					{
-						if (currentPoint.Y > currentFurthestBackActual.Y
-							|| currentPoint.X < currentFurthestBackActual.X)
-						{
-							actualFurthestBack = pointIndex;
-							currentFurthestBackActual = currentPoint;
-						}
-					}
-				}
-			}
-
-			Polygon currentPolygon = Clipper.CleanPolygon(inputPolygon, considerAsSameY / 4);
+			Polygon currentPolygon = Clipper.CleanPolygon(inputPolygon, considerAsSameY / 8);
 
 			// collect & bucket options and then choose the closest
 			if (currentPolygon.Count == 0)
@@ -195,11 +173,11 @@ namespace MSClipperLib
 			{
 				if (negativeGroup.Count > 0)
 				{
-					positionToReturn = currentPolygon[negativeGroup.BestIndex];
+					positionToReturn = currentPolygon[negativeGroup.GetBestIndex(layerIndex, startPosition)];
 				}
 				else if (positiveGroup.Count > 0)
 				{
-					positionToReturn = currentPolygon[positiveGroup.BestIndex];
+					positionToReturn = currentPolygon[positiveGroup.GetBestIndex(layerIndex, startPosition)];
 				}
 				else
 				{
@@ -211,22 +189,17 @@ namespace MSClipperLib
 			{
 				if (negativeGroup.Count > 0)
 				{
-					positionToReturn = currentPolygon[negativeGroup.BestIndex];
+					positionToReturn = currentPolygon[negativeGroup.GetBestIndex(layerIndex, startPosition)];
 				}
 				else if (positiveGroup.Count > 0)
 				{
-					positionToReturn = currentPolygon[positiveGroup.BestIndex];
+					positionToReturn = currentPolygon[positiveGroup.GetBestIndex(layerIndex, startPosition)];
 				}
 				else
 				{
 					// If can't find good candidate go with vertex most in a single direction
 					positionToReturn = currentPolygon[furthestBackIndex];
 				}
-			}
-
-			if (Math.Abs(currentFurthestBackActual.Y - positionToReturn.Y) < considerAsSameY)
-			{
-				return currentFurthestBackActual;
 			}
 
 			return positionToReturn;
@@ -268,17 +241,110 @@ namespace MSClipperLib
 			return result;
 		}
 
-		public static long PolygonLength(this Polygon polygon, bool areClosed = true)
+		public static Polygon CleanClosedPolygon(this Polygon polygon, double distance = 1.415)
+		{
+			if (polygon.Count == 0)
+			{
+				return new Polygon();
+			}
+
+			var result = new Polygon(polygon);
+
+			var distSqrd = distance * distance;
+
+			var removeIndices = new HashSet<int>();
+
+			// loop over all points starting at the front
+			for (int startIndex = 0; startIndex < result.Count - 2; startIndex++)
+			{
+				var startPosition = result[startIndex];
+
+				// accumulate all the collinear points from this point
+				for (int endIndex = startIndex+2; endIndex < result.Count; endIndex++)
+				{
+					var endPosition = result[endIndex];
+
+					bool allInbetweenIsCollinear = true;
+
+					// check that every point between start and end is collinear
+					for (int testIndex = startIndex+1; testIndex < endIndex; testIndex++)
+					{
+						var testPosition = result[testIndex];
+						if (!Clipper.SlopesNearCollinear(startPosition, testPosition, endPosition, distSqrd))
+						{
+							allInbetweenIsCollinear = false;
+							break;
+						}
+					}
+
+					if (allInbetweenIsCollinear)
+					{
+						for (int testIndex = startIndex + 1; testIndex < endIndex; testIndex++)
+						{
+							removeIndices.Add(testIndex);
+						}
+					}
+					else
+					{
+						startIndex = endIndex - 2;
+						// move on to next start
+						break;
+					}
+				}
+			}
+
+			var removeList = removeIndices.ToList();
+			removeList.Sort();
+			for(int i= removeList.Count-1; i>=0; i--)
+			{
+				result.RemoveAt(removeList[i]);
+			}
+
+			return result;
+		}
+
+		public static IntPoint GetPositionAllongPath(this Polygon polygon, double ratioAlongPath, bool isClosed = true)
+		{
+			IntPoint position = new IntPoint();
+			var totalLength = polygon.PolygonLength(isClosed);
+			var distanceToGoal = (long)(totalLength * ratioAlongPath + .5);
+			long length = 0;
+			if (polygon.Count > 1)
+			{
+				position = polygon[0];
+				IntPoint currentPoint = polygon[0];
+
+				int polygonCount = polygon.Count;
+				for (int i = 1; i < (isClosed ? polygonCount + 1 : polygonCount); i++)
+				{
+					IntPoint nextPoint = polygon[i % polygonCount];
+					var segmentLength = (nextPoint - currentPoint).Length();
+					if(length + segmentLength > distanceToGoal)
+					{
+						// return the distance along this segment
+						var distanceAlongThisSegment = distanceToGoal - length;
+						var delteFromCurrent = (nextPoint - currentPoint) * distanceAlongThisSegment / segmentLength;
+						return currentPoint + delteFromCurrent;
+					}
+					length += segmentLength;
+					currentPoint = nextPoint;
+				}
+			}
+
+			return position;
+		}
+
+		public static long PolygonLength(this Polygon polygon, bool isClosed = true)
 		{
 			long length = 0;
 			if (polygon.Count > 1)
 			{
 				IntPoint previousPoint = polygon[0];
-				if (areClosed)
+				if (isClosed)
 				{
 					previousPoint = polygon[polygon.Count - 1];
 				}
-				for (int i = areClosed ? 0 : 1; i < polygon.Count; i++)
+				for (int i = isClosed ? 0 : 1; i < polygon.Count; i++)
 				{
 					IntPoint currentPoint = polygon[i];
 					length += (previousPoint - currentPoint).Length();
@@ -322,33 +388,100 @@ namespace MSClipperLib
 				this.sameTurn = sameTurn;
 			}
 
-			public int BestIndex
+			/// <summary>
+			/// Get the best turn for this polygon. If there are multiple turns that are all jsut as good choose one with a bias for layer index.
+			/// </summary>
+			/// <param name="layerIndex"></param>
+			/// <returns></returns>
+			public int GetBestIndex(int layerIndex, IntPoint? startPosition)
 			{
-				get
-				{
-					IntPoint currentFurthestBack = new IntPoint(long.MaxValue, long.MinValue);
-					int furthestBackIndex = 0;
+				bool shallowTurn = Math.Abs(this[this.Count - 1].turnAmount) < .3;
+				bool outsideEdge = this[this.Count - 1].turnAmount > 0;
 
-					for (int i = 0; i < Count; i++)
+				if (shallowTurn || startPosition == null)
+				{
+					if (outsideEdge) // sort to the back
 					{
-						IntPoint currentPoint = this[i].position;
-						if (currentPoint.Y >= currentFurthestBack.Y)
+						this.Sort((a, b) =>
 						{
-							if (currentPoint.Y > currentFurthestBack.Y
-								|| currentPoint.X < currentFurthestBack.X)
+							if (a.position.Y == b.position.Y)
 							{
-								furthestBackIndex = this[i].turnIndex;
-								currentFurthestBack = currentPoint;
+								return b.position.X.CompareTo(a.position.X);
 							}
+							else
+							{
+								return a.position.Y.CompareTo(b.position.Y);
+							}
+						});
+					}
+					else // sort to the frot
+					{
+						this.Sort((a, b) =>
+						{
+							if (a.position.Y == b.position.Y)
+							{
+								return b.position.X.CompareTo(a.position.X);
+							}
+							else
+							{
+								return b.position.Y.CompareTo(a.position.Y);
+							}
+						});
+					}
+				}
+				else // sort them by distance from start
+				{
+					this.Sort((a, b) =>
+					{
+						var distToA = (a.position - startPosition.Value).LengthSquared();
+						var distToB = (b.position - startPosition.Value).LengthSquared();
+						return distToB.CompareTo(distToA);
+					});
+				}
+
+				// if we have a very shallow turn (the outer edeg of a circle)
+				if (shallowTurn)
+				{
+					// stager 3 places so the seam is more together but not a line
+					int seemShift = layerIndex % 3;
+					if (!outsideEdge) // we are on the inside of a cicular hole (or similar)
+					{
+						// stager up to 5 to make the seam have less surface
+						seemShift = layerIndex % 5;
+					}
+
+					if(this.Count > seemShift)
+					{
+						return this[this.Count - seemShift - 1].turnIndex;
+					}
+				}
+
+				return this[this.Count - 1].turnIndex;
+			}
+
+			public void ConditionalAdd(CandidatePoint point)
+			{
+				if(Math.Abs(point.turnAmount) > Math.PI/2)
+				{
+					// we keep everything bigger than 90 degrees
+					// remove all points that are worse than 90 degree
+					for (int i = Count - 1; i >= 0; i--)
+					{
+						if (Math.Abs(this[i].turnAmount)  < Math.PI / 2)
+						{
+							RemoveAt(i);
+						}
+						else
+						{
+							break;
 						}
 					}
 
-					return furthestBackIndex;
+					// and add this point
+					Add(point);
+					return;
 				}
-			}
 
-			internal void ConditionalAdd(CandidatePoint point)
-			{
 				// If this is better than our worst point
 				// or it is within sameTurn of our best point
 				if (Count == 0
@@ -361,6 +494,10 @@ namespace MSClipperLib
 						if (Math.Abs(this[i].turnAmount) + sameTurn < Math.Abs(point.turnAmount))
 						{
 							RemoveAt(i);
+						}
+						else
+						{
+							break;
 						}
 					}
 

@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using MatterHackers.VectorMath;
 using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
@@ -31,7 +32,7 @@ namespace MatterHackers.MatterSlice
 	public class ConfigConstants
 	{
 		public const int MAX_EXTRUDERS = 4;
-		public const string VERSION = "1.0";
+		public const string VERSION = "2.0";
 
 		public enum INFILL_TYPE
 		{
@@ -73,12 +74,7 @@ namespace MatterHackers.MatterSlice
 
 		public string BeforeToolchangeCode { get; set; }
 
-		public string BooleanOpperations { get; set; } = "";
-
-		[SettingDescription("The amount to clip off the bottom of the part, in millimeters.")]
-		public double BottomClipAmount { get; set; }
-
-		public int BottomClipAmount_um => (int)(BottomClipAmount * 1000);
+		public string BooleanOperations { get; set; } = "";
 
 		[SettingDescription("This is the speed to print the bottom layers infill, mm/s.")]
 		public double BottomInfillSpeed { get; set; }
@@ -88,9 +84,6 @@ namespace MatterHackers.MatterSlice
 
 		[SettingDescription("mm/s.")]
 		public int BridgeSpeed { get; set; }
-
-		[SettingDescription("Describes if 'positionToPlaceObjectCenter' should be used.")]
-		public bool CenterObjectInXy { get; set; }
 
 		// other
 		[SettingDescription("This will cause the z height to raise continuously while on the outer perimeter.")]
@@ -114,8 +107,10 @@ namespace MatterHackers.MatterSlice
 		public double ExtrusionWidth { get; set; }
 
 		public int ExtrusionWidth_um => (int)(ExtrusionWidth * 1000);
-		public int FanSpeedMaxPercent { get; set; }
 		public int FanSpeedMinPercent { get; set; }
+		public int MinFanSpeedLayerTime { get; set; }
+		public int FanSpeedMaxPercent { get; set; }
+		public int MaxFanSpeedLayerTime { get; set; }
 
 		[SettingDescription("The width of the filament being fed into the extruder, in millimeters.")]
 		public double FilamentDiameter { get; set; }
@@ -133,6 +128,8 @@ namespace MatterHackers.MatterSlice
 		// speed settings
 		[SettingDescription("This is the speed to print everything on the first layer, mm/s.")]
 		public double FirstLayerSpeed { get; set; }
+
+		public int NumberOfFirstLayers { get; set; }
 
 		[SettingDescription("The height of the first layer to print, in millimeters.")]
 		public double FirstLayerThickness { get; set; }
@@ -178,7 +175,6 @@ namespace MatterHackers.MatterSlice
 
 		public int LayerThickness_um => (int)(LayerThickness * 1000);
 		public bool MergeOverlappingLines { get; set; } = true;
-		public bool MinimizeSupportColumns { get; set; }
 
 		[SettingDescription("mm.")]
 		public double MinimumExtrusionBeforeRetraction { get; set; }
@@ -195,7 +191,7 @@ namespace MatterHackers.MatterSlice
 		public int MinimumTravelToCauseRetraction_um => (int)(MinimumTravelToCauseRetraction * 1000);
 
 		// object transform
-		public FMatrix3x3 ModelRotationMatrix { get; set; } = new FMatrix3x3();
+		public Matrix4X4 ModelMatrix { get; set; } = Matrix4X4.Identity;
 
 		public int MultiExtruderOverlapPercent { get; set; }
 		public int NumberOfBottomLayers { get; set; }
@@ -227,8 +223,6 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The ratio that the end of a perimeter will overlap the start in nozzle diameters.")]
 		public double PerimeterStartEndOverlapRatio { get; set; } = 1;
 
-		public DoublePoint PositionToPlaceObjectCenter { get; set; } = new DoublePoint(0, 0);
-		public IntPoint PositionToPlaceObjectCenter_um => new IntPoint(PositionToPlaceObjectCenter.X * 1000, PositionToPlaceObjectCenter.Y * 1000);
 		public double RaftAirGap { get; set; }
 		public int RaftAirGap_um => (int)(RaftAirGap * 1000);
 		public int RaftBaseExtrusionWidth_um => ExtrusionWidth_um * 3;
@@ -237,9 +231,6 @@ namespace MatterHackers.MatterSlice
 		public double RaftExtraDistanceAroundPart { get; set; }
 		public int RaftExtraDistanceAroundPart_um => (int)(RaftExtraDistanceAroundPart * 1000);
 		public int RaftExtruder { get; set; }
-
-		[SettingDescription("The speed to run the fan during raft printing.")]
-		public int RaftFanSpeedPercent { get; set; }
 
 		public int RaftInterfaceExtrusionWidth_um => ExtrusionWidth_um * 350 / 400;
 		public int RaftInterfaceLineSpacing_um => ExtrusionWidth_um * 1000 / 400;
@@ -330,7 +321,11 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The amount of extra extrusion to do when unretracting (resume printing after retraction).")]
 		public double UnretractExtraExtrusion { get; set; } = 0;
 
+		public double RetractRestartExtraTimeToApply { get; set; } = 0;
+
 		public double UnretractExtraOnExtruderSwitch { get; set; }
+
+		public bool ResetLongExtrusion { get; set; }
 
 		[SettingDescription("If set will cause the head to try to wipe itself off after retracting.")]
 		public bool WipeAfterRetraction { get; set; }
@@ -517,7 +512,7 @@ namespace MatterHackers.MatterSlice
 
 						case "FMatrix3x3":
 							{
-								property.SetValue(this, new FMatrix3x3(valueToSetTo));
+								property.SetValue(this, new DMatrix3x3(valueToSetTo));
 							}
 							break;
 
@@ -605,7 +600,6 @@ namespace MatterHackers.MatterSlice
 			BridgeSpeed = 20;
 			BridgeFanSpeedPercent = 100;
 			RetractWhenChangingIslands = true;
-			RaftFanSpeedPercent = 100;
 			OutsidePerimeterSpeed = 50;
 			OutsidePerimeterExtrusionWidth = ExtrusionWidth;
 			InsidePerimetersSpeed = 50;
@@ -619,9 +613,6 @@ namespace MatterHackers.MatterSlice
 			InfillExtendIntoPerimeter = .06;
 			InfillStartingAngle = 45;
 			InfillType = ConfigConstants.INFILL_TYPE.GRID;
-			CenterObjectInXy = true;
-			PositionToPlaceObjectCenter = new DoublePoint(102.5, 102.5);
-			BottomClipAmount = 0;
 
 			// raft settings
 			EnableRaft = false;
@@ -640,7 +631,6 @@ namespace MatterHackers.MatterSlice
 			SupportXYDistanceFromObject = .7;
 			SupportNumberOfLayersToSkipInZ = 1;
 			SupportInterfaceLayers = 3;
-			MinimizeSupportColumns = false; // experimental and not working well enough yet
 			SupportInterfaceExtruder = -1;
 			RetractionOnTravel = 4.5;
 			RetractionSpeed = 45;
@@ -656,7 +646,9 @@ namespace MatterHackers.MatterSlice
 			MinimumLayerTimeSeconds = 5;
 			MinimumPrintingSpeed = 10;
 			FanSpeedMinPercent = 100;
+			MinFanSpeedLayerTime = 300;
 			FanSpeedMaxPercent = 100;
+			MaxFanSpeedLayerTime = 300;
 
 			ContinuousSpiralOuterPerimeter = false;
 

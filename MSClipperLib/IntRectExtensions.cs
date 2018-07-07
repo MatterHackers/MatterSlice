@@ -31,6 +31,16 @@ namespace MSClipperLib
 {
 	public static class IntRectExtensions
 	{
+		public static long Width(this IntRect inRect)
+		{
+			return inRect.maxX - inRect.minX;
+		}
+
+		public static long Height(this IntRect inRect)
+		{
+			return inRect.maxY - inRect.minY;
+		}
+
 		public static IntRect ExpandToInclude(this IntRect inRect, IntRect otherRect)
 		{
 			if (otherRect.minX < inRect.minX) inRect.minX = otherRect.minX;

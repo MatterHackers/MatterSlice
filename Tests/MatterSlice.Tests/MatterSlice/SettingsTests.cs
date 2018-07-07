@@ -131,7 +131,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 		#endregion Inset order tests
 
-		[Test, Category("WorkInProgress")]
+		[Test, Ignore("WorkInProgress")]
 		public void AllInsidesBeforeAnyOutsides()
 		{
 			string thinAttachStlFile = TestUtlities.GetStlPath("Thin Attach");
@@ -188,82 +188,91 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void AllMovesRequiringRetractionDoRetraction()
 		{
-			string baseFileName = "ab retraction test";
+			AllMovesRequiringRetractionDoRetraction("ab retraction test");
+			AllMovesRequiringRetractionDoRetraction("MH Coin In Shadow");
+
+			string settingsIniFile = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "MH Coin Settings.ini");
+			AllMovesRequiringRetractionDoRetraction("MH Coin In Shadow", settingsIniFile);
+		}
+
+		public void AllMovesRequiringRetractionDoRetraction(string baseFileName, string settingsIniFile = "")
+		{
 			string stlToLoad = TestUtlities.GetStlPath(baseFileName + ".stl");
 
 			// check that default is support printed with extruder 0
-			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_retract_.gcode");
+			string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_retract_.gcode");
 
-				ConfigSettings config = new ConfigSettings();
-				config.RetractionZHop = 5;
+			ConfigSettings config = new ConfigSettings();
+			if (settingsIniFile == "")
+			{
 				config.MinimumTravelToCauseRetraction = 2;
 				config.MinimumExtrusionBeforeRetraction = 0;
 				config.MergeOverlappingLines = false;
 				config.FirstLayerExtrusionWidth = .5;
-				fffProcessor processor = new fffProcessor(config);
-				processor.SetTargetFile(gcodeToCreate);
-				processor.LoadStlFile(stlToLoad);
-				// slice and save it
-				processor.DoProcessing();
-				processor.finalize();
+			}
+			else
+			{
+				config.ReadSettings(settingsIniFile);
+			}
 
-				string[] gcodeContents = TestUtlities.LoadGCodeFile(gcodeToCreate);
-				int layerCount = TestUtlities.CountLayers(gcodeContents);
-				bool firstPosition = true;
-				MovementInfo lastMovement = new MovementInfo();
-				MovementInfo lastExtrusion = new MovementInfo();
-				bool lastMoveIsExtrusion = true;
-				for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
+			// this is what we detect
+			config.RetractionZHop = 5;
+
+			fffProcessor processor = new fffProcessor(config);
+			processor.SetTargetFile(gcodeToCreate);
+			processor.LoadStlFile(stlToLoad);
+			// slice and save it
+			processor.DoProcessing();
+			processor.finalize();
+
+			string[] gcodeContents = TestUtlities.LoadGCodeFile(gcodeToCreate);
+			int layerCount = TestUtlities.CountLayers(gcodeContents);
+			bool firstPosition = true;
+			MovementInfo lastMovement = new MovementInfo();
+			MovementInfo lastExtrusion = new MovementInfo();
+			bool lastMoveIsExtrusion = true;
+			for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
+			{
+				string[] layerGCode = TestUtlities.GetGCodeForLayer(gcodeContents, layerIndex);
+				int movementIndex = 0;
+				foreach (MovementInfo movement in TestUtlities.Movements(layerGCode, lastMovement))
 				{
-					string[] layerGCode = TestUtlities.GetGCodeForLayer(gcodeContents, layerIndex);
-					int movementIndex = 0;
-					foreach (MovementInfo movement in TestUtlities.Movements(layerGCode, lastMovement))
+					if (!firstPosition)
 					{
-						if (!firstPosition)
+						bool isTravel = lastMovement.extrusion == movement.extrusion;
+						if (isTravel)
 						{
-							bool isTravel = lastMovement.extrusion == movement.extrusion;
-							if (isTravel)
+							Vector3 lastPosition = lastMovement.position;
+							lastPosition.z = 0;
+							Vector3 currenPosition = movement.position;
+							currenPosition.z = 0;
+							double xyLength = (lastPosition - currenPosition).Length;
+							if (xyLength > config.MinimumTravelToCauseRetraction
+								&& lastMoveIsExtrusion)
 							{
-								Vector3 lastPosition = lastMovement.position;
-								lastPosition.z = 0;
-								Vector3 currenPosition = movement.position;
-								currenPosition.z = 0;
-								double xyLength = (lastPosition - currenPosition).Length;
-								if (xyLength > config.MinimumTravelToCauseRetraction
-									&& lastMoveIsExtrusion)
-								{
-									Assert.GreaterOrEqual(movement.position.z, lastExtrusion.position.z);
-								}
-
-								lastMoveIsExtrusion = false;
-							}
-							else
-							{
-								lastMoveIsExtrusion = true;
-								lastExtrusion = movement;
+								Assert.GreaterOrEqual(movement.position.z, lastExtrusion.position.z);
 							}
 
-							lastMoveIsExtrusion = !isTravel;
+							lastMoveIsExtrusion = false;
+						}
+						else
+						{
+							lastMoveIsExtrusion = true;
+							lastExtrusion = movement;
 						}
 
-						lastMovement = movement;
-						firstPosition = false;
-						movementIndex++;
+						lastMoveIsExtrusion = !isTravel;
 					}
-				}
-				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 1));
-				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 2));
-			}
-		}
 
-		[Test]
-		public void BottomClipCorrectNumberOfLayers()
-		{
-			// test .1 layer height
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2, .2))) == 49);
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2, .31))) == 48);
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2, .4))) == 48);
+					lastMovement = movement;
+					firstPosition = false;
+					movementIndex++;
+				}
+			}
+
+			// make sure we don't switch extruders
+			Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 1));
+			Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 2));
 		}
 
 		[Test]
@@ -352,10 +361,10 @@ namespace MatterHackers.MatterSlice.Tests
 		public void CorrectNumberOfLayersForLayerHeights()
 		{
 			// test .1 layer height
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.1, .1))) == 100);
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .1))) == 99);
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2))) == 50);
-			Assert.IsTrue(TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.05, .2))) == 51);
+			Assert.AreEqual(100, TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.1, .1))));
+			Assert.AreEqual(99, TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .1))));
+			Assert.AreEqual(50, TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2))));
+			Assert.AreEqual(51, TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.05, .2))));
 		}
 
 		public void DoHas2WallRingsAllTheWayUp(string fileName, int expectedLayerCount, bool checkRadius = false)
@@ -383,7 +392,7 @@ namespace MatterHackers.MatterSlice.Tests
 			Assert.IsTrue(layerCount == expectedLayerCount);
 
 			MovementInfo movement = new MovementInfo();
-			for (int i = 0; i < layerCount - 3; i++)
+			for (int i = 0; i < layerCount - 5; i++)
 			{
 				string[] layerInfo = TestUtlities.GetGCodeForLayer(gcodeLines, i);
 
@@ -436,7 +445,6 @@ namespace MatterHackers.MatterSlice.Tests
 
 			ConfigSettings config = new ConfigSettings();
 			config.FirstLayerThickness = .2;
-			config.CenterObjectInXy = false;
 			config.LayerThickness = .2;
 			config.NumberOfBottomLayers = 0;
 			if (createWipeTower)
@@ -515,7 +523,7 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			DoHas2WallRingsAllTheWayUp("SimpleHole", 25);
 			DoHas2WallRingsAllTheWayUp("CylinderWithHole", 50);
-			DoHas2WallRingsAllTheWayUp("Thinning Walls Ring", 45, true);
+			DoHas2WallRingsAllTheWayUp("Thinning Walls Ring", 49, true);
 		}
 
 		[Test]
@@ -525,14 +533,14 @@ namespace MatterHackers.MatterSlice.Tests
 
 			CheckSpiralCylinder("Cylinder50Sides", "Cylinder50Sides.gcode", 100);
 			CheckSpiralCylinder("Cylinder2Wall50Sides", "Cylinder2Wall50Sides.gcode", 100);
-			CheckSpiralCylinder("Thinning Walls Ring", "Thinning Walls Ring.gcode", 45);
+			CheckSpiralCylinder("Thinning Walls Ring", "Thinning Walls Ring.gcode", 50);
 
 			// now do it again with thin walls enabled
 			CheckSpiralCone("cone", "spiralCone.gcode", true);
 
 			CheckSpiralCylinder("Cylinder50Sides", "Cylinder50Sides.gcode", 100, true);
 			CheckSpiralCylinder("Cylinder2Wall50Sides", "Cylinder2Wall50Sides.gcode", 100, true);
-			CheckSpiralCylinder("Thinning Walls Ring", "Thinning Walls Ring.gcode", 45, true);
+			CheckSpiralCylinder("Thinning Walls Ring", "Thinning Walls Ring.gcode", 50, true);
 		}
 
 		private static void CheckLayersIncrement(string stlFile, string gcodeFile)
@@ -542,7 +550,6 @@ namespace MatterHackers.MatterSlice.Tests
 
 			ConfigSettings config = new ConfigSettings();
 			config.FirstLayerThickness = .2;
-			config.CenterObjectInXy = false;
 			config.LayerThickness = .2;
 			fffProcessor processor = new fffProcessor(config);
 			processor.SetTargetFile(risingLayersGCodeFileName);
@@ -590,7 +597,6 @@ namespace MatterHackers.MatterSlice.Tests
 
 			ConfigSettings config = new ConfigSettings();
 			config.FirstLayerThickness = .2;
-			config.CenterObjectInXy = false;
 			config.LayerThickness = .2;
 			if (enableThinWalls)
 			{
@@ -653,7 +659,6 @@ namespace MatterHackers.MatterSlice.Tests
 
 			ConfigSettings config = new ConfigSettings();
 			config.FirstLayerThickness = .2;
-			config.CenterObjectInXy = false;
 			config.LayerThickness = .2;
 			if (enableThinWalls)
 			{
@@ -707,15 +712,14 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		private string CreateGCodeForLayerHeights(double firstLayerHeight, double otherLayerHeight, double bottomClip = 0)
+		private string CreateGCodeForLayerHeights(double firstLayerHeight, double otherLayerHeight)
 		{
 			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
-			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}_o{1}_c{2}.gcode".FormatWith(firstLayerHeight, otherLayerHeight, bottomClip));
+			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}_o{1}.gcode".FormatWith(firstLayerHeight, otherLayerHeight));
 
 			ConfigSettings config = new ConfigSettings();
 			config.FirstLayerThickness = firstLayerHeight;
 			config.LayerThickness = otherLayerHeight;
-			config.BottomClipAmount = bottomClip;
 			fffProcessor processor = new fffProcessor(config);
 			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);

@@ -101,7 +101,8 @@ namespace MatterHackers.Pathfinding
 				IntPointNode otherNode = pPoint as IntPointNode;
 				return (Position - otherNode.Position).Length();
 			}
-			else {
+			else
+			{
 				throw new NotImplementedException();
 			}
 		}
@@ -129,7 +130,8 @@ namespace MatterHackers.Pathfinding
 			{
 				return 0;
 			}
-			else {
+			else
+			{
 				return -1;
 			}
 		}

@@ -59,7 +59,7 @@ namespace MatterHackers.MatterSlice
 			modelSize = ov.containingCollection.size_um;
 			modelMin = ov.containingCollection.minXYZ_um;
 
-			long heightWithoutFirstLayer = modelSize.Z - initialLayerThickness_um - config.BottomClipAmount_um;
+			long heightWithoutFirstLayer = modelSize.Z - initialLayerThickness_um;
 			int countOfNormalThicknessLayers = Math.Max(0, (int)((heightWithoutFirstLayer / (double)layerThickness_um) + .5));
 
 			int layerCount = countOfNormalThicknessLayers;
@@ -91,6 +91,11 @@ namespace MatterHackers.MatterSlice
 
 			for (int faceIndex = 0; faceIndex < ov.facesTriangle.Count; faceIndex++)
 			{
+				if (MatterSlice.Canceled)
+				{
+					return;
+				}
+
 				IntPoint p0 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[0]].position;
 				IntPoint p1 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[1]].position;
 				IntPoint p2 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[2]].position;
@@ -166,6 +171,8 @@ namespace MatterHackers.MatterSlice
 
 			for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
 			{
+				LogOutput.Log($"Slicing model {layerIndex + 1}/{layers.Count}\n");
+
 				layers[layerIndex].MakePolygons();
 			}
 		}
@@ -236,6 +243,14 @@ namespace MatterHackers.MatterSlice
 			seg.end.Y = (long)(singlePointOnSide.Y + (double)(otherSide2.Y - singlePointOnSide.Y) * (double)(z - singlePointOnSide.Z) / (double)(otherSide2.Z - singlePointOnSide.Z) + .5);
 			seg.end.Z = z;
 			return seg;
+		}
+
+		public void ReleaseMemory()
+		{
+			foreach (var layer in layers)
+			{
+				layer.ReleaseMemory();
+			}
 		}
 	}
 }

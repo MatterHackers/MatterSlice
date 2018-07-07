@@ -24,6 +24,7 @@ using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+	using System;
 	using Pathfinding;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
@@ -61,12 +62,12 @@ namespace MatterHackers.MatterSlice
 		public Polygons SolidInfillToolPaths { get; set; } = new Polygons();
 		public Polygons SolidTopToolPaths { get; set; } = new Polygons();
 
-		public void GenerateInsets(int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount)
+		public void GenerateInsets(int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount, bool avoidCrossingPerimeters)
 		{
 			LayerIsland part = this;
 			part.BoundingBox.Calculate(part.IslandOutline);
 
-			part.PathFinder = new PathFinder(part.IslandOutline, extrusionWidth_um * 3 / 2);
+			part.PathFinder = new PathFinder(part.IslandOutline, extrusionWidth_um * 3 / 2, useInsideCache: avoidCrossingPerimeters);
 			if (insetCount == 0)
 			{
 				// if we have no insets defined still create one

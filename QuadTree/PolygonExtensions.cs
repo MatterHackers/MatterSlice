@@ -101,7 +101,7 @@ namespace MatterHackers.QuadTree
 			return polyPointPosition;
 		}
 
-		public static IEnumerable<Tuple<int, IntPoint>> FindCrossingPoints(this Polygon polygon, IntPoint start, IntPoint end, QuadTree<int> edgeQuadTree = null)
+		public static IEnumerable<(int pointIndex, IntPoint position)> FindCrossingPoints(this Polygon polygon, IntPoint start, IntPoint end, QuadTree<int> edgeQuadTree = null)
 		{
 			IntPoint segmentDelta = end - start;
 			long segmentLength = segmentDelta.Length();
@@ -114,17 +114,17 @@ namespace MatterHackers.QuadTree
 
 				if (OnSegment(edgeStart, start, edgeEnd))
 				{
-					yield return new Tuple<int, IntPoint>(i, start);
+					yield return (i, start);
 				}
 				else if (OnSegment(edgeStart, end, edgeEnd))
 				{
-					yield return new Tuple<int, IntPoint>(i, end);
+					yield return (i, end);
 				}
 				else if (DoIntersect(start, end, edgeStart, edgeEnd)
 					&& CalcIntersection(start, end, edgeStart, edgeEnd, out intersection))
 				{
 					IntPoint pointRelStart = intersection - start;
-					yield return new Tuple<int, IntPoint>(i, intersection);
+					yield return (i, intersection);
 				}
 			}
 		}
@@ -316,7 +316,7 @@ namespace MatterHackers.QuadTree
 			{
 				return false;
 			}
-			bool pathWasOptomized = false;
+			bool pathWasOptimized = false;
 
 			for (int i = 0; i < perimeter.Count; i++)
 			{
@@ -326,12 +326,15 @@ namespace MatterHackers.QuadTree
 				};
 			}
 
-			perimeter = QTPolygonExtensions.MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um, pathIsClosed);
+			perimeter = QTPolygonExtensions.MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um * 3 / 4, pathIsClosed);
 
 			// make a copy that has every point duplicated (so that we have them as segments).
 			List<Segment> polySegments = Segment.ConvertToSegments(perimeter, pathIsClosed);
 
 			Altered[] markedAltered = new Altered[polySegments.Count];
+
+			var minimumLengthToCreateSquared = overlapMergeAmount_um / 10;
+			minimumLengthToCreateSquared *= minimumLengthToCreateSquared;
 
 			var touchingEnumerator = new CloseSegmentsIterator(polySegments, overlapMergeAmount_um);
 			int segmentCount = polySegments.Count;
@@ -356,14 +359,26 @@ namespace MatterHackers.QuadTree
 							{
 								continue;
 							}
-							pathWasOptomized = true;
-							// move the first segments points to the average of the merge positions
-							long startEndWidth = Math.Abs((polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length());
-							long endStartWidth = Math.Abs((polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length());
+
+							// get the line width
+							long startEndWidth = (polySegments[firstSegmentIndex].Start - polySegments[checkSegmentIndex].End).Length();
+							long endStartWidth = (polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length();
 							long width = Math.Min(startEndWidth, endStartWidth) + overlapMergeAmount_um;
-							polySegments[firstSegmentIndex].Start = (polySegments[firstSegmentIndex].Start + polySegments[checkSegmentIndex].End) / 2; // the start
+
+							// check if we extrude enough to consider doing this merge
+							var segmentStart = (polySegments[firstSegmentIndex].Start + polySegments[checkSegmentIndex].End) / 2;
+							var segmentEnd = (polySegments[firstSegmentIndex].End + polySegments[checkSegmentIndex].Start) / 2;
+
+							if((segmentStart - segmentEnd).LengthSquared() < minimumLengthToCreateSquared)
+							{
+								continue;
+							}
+
+							pathWasOptimized = true;
+							// move the first segments points to the average of the merge positions
+							polySegments[firstSegmentIndex].Start = segmentStart;
 							polySegments[firstSegmentIndex].Start.Width = width;
-							polySegments[firstSegmentIndex].End = (polySegments[firstSegmentIndex].End + polySegments[checkSegmentIndex].Start) / 2; // the end
+							polySegments[firstSegmentIndex].End = segmentEnd;
 							polySegments[firstSegmentIndex].End.Width = width;
 
 							markedAltered[firstSegmentIndex] = Altered.merged;
@@ -410,7 +425,7 @@ namespace MatterHackers.QuadTree
 			// add the end point
 			currentPolygon.Add(polySegments[polySegments.Count - 1].End);
 
-			return pathWasOptomized;
+			return pathWasOptimized;
 		}
 
 		public static bool OnSegment(IntPoint start, IntPoint testPosition, IntPoint end)

@@ -95,7 +95,7 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			extrudersThatHaveBeenPrimed = new bool[config.MaxExtruderCount()];
+			extrudersThatHaveBeenPrimed = new bool[config.GenerateSupport ? config.MaxExtruderCount() * 2 : config.MaxExtruderCount()];
 
 			Polygon wipeTowerShape = new Polygon();
 			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000));
@@ -151,12 +151,13 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// print all of the extruder loops that have not already been printed
-			for (int extruderIndex = 0; extruderIndex < config.MaxExtruderCount(); extruderIndex++)
+			int extruderCount = config.GenerateSupport ? config.MaxExtruderCount() * 2 : config.MaxExtruderCount();
+			for (int extruderIndex = 0; extruderIndex < extruderCount; extruderIndex++)
 			{
 				if (!extrudersThatHaveBeenPrimed[extruderIndex])
 				{
 					// write the loops for this extruder, but don't change to it. We are just filling the prime tower.
-					PrimeOnWipeTower(extruderIndex, 0, gcodeLayer, fillConfig, config);
+					PrimeOnWipeTower(extruderIndex, 0, gcodeLayer, fillConfig, config, false);
 				}
 
 				// clear the history of printer extruders for the next layer
@@ -238,9 +239,11 @@ namespace MatterHackers.MatterSlice
 
 		public void GenerateWipeTowerInfill(int extruderIndex, Polygons partOutline, Polygons outputfillPolygons, long extrusionWidth_um, ConfigSettings config)
 		{
+			int extruderCount = config.GenerateSupport ? config.MaxExtruderCount() * 2 : config.MaxExtruderCount();
+
 			Polygons outlineForExtruder = partOutline.Offset(-extrusionWidth_um * extruderIndex);
 
-			long insetPerLoop = extrusionWidth_um * config.MaxExtruderCount();
+			long insetPerLoop = extrusionWidth_um * extruderCount;
 			while (outlineForExtruder.Count > 0)
 			{
 				for (int polygonIndex = 0; polygonIndex < outlineForExtruder.Count; polygonIndex++)
@@ -267,7 +270,7 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public void PrimeOnWipeTower(int extruderIndex, int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
+		public void PrimeOnWipeTower(int extruderIndexIn, int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config, bool airGapped)
 		{
 			if (!HaveWipeTower(config)
 				|| layerIndex > LastLayerWithChange(config) + 1)
@@ -277,6 +280,9 @@ namespace MatterHackers.MatterSlice
 
 			//If we changed extruder, print the wipe/prime tower for this nozzle;
 			Polygons fillPolygons = new Polygons();
+
+			int extruderIndex = airGapped ? config.MaxExtruderCount() + extruderIndexIn : extruderIndexIn;
+
 			GenerateWipeTowerInfill(extruderIndex, this.wipeTower, fillPolygons, fillConfig.lineWidth_um, config);
 			gcodeLayer.QueuePolygons(fillPolygons, fillConfig);
 
@@ -314,24 +320,24 @@ namespace MatterHackers.MatterSlice
 
 					gcode.SetZ(config.RaftBaseThickness_um);
 
-					gcode.LayerChanged(-3);
+					gcode.LayerChanged(-3, config.RaftBaseThickness_um);
 
 					gcode.SetExtrusion(config.RaftBaseThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
 					// write the skirt around the raft
-					gcodeLayer.QueuePolygonsByOptimizer(storage.skirt, raftBaseConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(storage.skirt, null, raftBaseConfig, 0);
 
-					List<Polygons> raftIslands = storage.raftOutline.ProcessIntoSeparatIslands();
+					List<Polygons> raftIslands = storage.raftOutline.ProcessIntoSeparateIslands();
 					foreach (var raftIsland in raftIslands)
 					{
 						// write the outline of the raft
-						gcodeLayer.QueuePolygonsByOptimizer(raftIsland, raftBaseConfig);
+						gcodeLayer.QueuePolygonsByOptimizer(raftIsland, null, raftBaseConfig, 0);
 
 						Polygons raftLines = new Polygons();
 						Infill.GenerateLinePaths(raftIsland.Offset(-config.RaftBaseExtrusionWidth_um) , raftLines, config.RaftBaseLineSpacing_um, config.InfillExtendIntoPerimeter_um, 0);
 
 						// write the inside of the raft base
-						gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftBaseConfig);
+						gcodeLayer.QueuePolygonsByOptimizer(raftLines, null, raftBaseConfig, 0);
 
 						if (config.RetractWhenChangingIslands)
 						{
@@ -342,22 +348,17 @@ namespace MatterHackers.MatterSlice
 					gcodeLayer.WriteQueuedGCode(config.RaftBaseThickness_um);
 				}
 
-				if (config.RaftFanSpeedPercent > 0)
-				{
-					gcode.WriteFanCommand(config.RaftFanSpeedPercent);
-				}
-
 				// raft middle layers
 				{
 					gcode.WriteComment("RAFT MIDDLE");
 					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 					gcode.SetZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um);
-					gcode.LayerChanged(-2);
+					gcode.LayerChanged(-2, config.RaftInterfaceThicknes_um);
 					gcode.SetExtrusion(config.RaftInterfaceThicknes_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
 					Polygons raftLines = new Polygons();
 					Infill.GenerateLinePaths(storage.raftOutline, raftLines, config.RaftInterfaceLineSpacing_um, config.InfillExtendIntoPerimeter_um, 45);
-					gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftMiddleConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(raftLines, null, raftMiddleConfig, 0);
 
 					gcodeLayer.WriteQueuedGCode(config.RaftInterfaceThicknes_um);
 				}
@@ -367,7 +368,7 @@ namespace MatterHackers.MatterSlice
 					gcode.WriteComment("RAFT SURFACE");
 					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 					gcode.SetZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um + config.RaftSurfaceThickness_um * raftSurfaceIndex);
-					gcode.LayerChanged(-1);
+					gcode.LayerChanged(-1, config.RaftSurfaceThickness_um);
 					gcode.SetExtrusion(config.RaftSurfaceThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
 					Polygons raftLines = new Polygons();
@@ -380,7 +381,7 @@ namespace MatterHackers.MatterSlice
 					{
 						Infill.GenerateLinePaths(storage.raftOutline, raftLines, config.RaftSurfaceLineSpacing_um, config.InfillExtendIntoPerimeter_um, 90 * raftSurfaceIndex);
 					}
-					gcodeLayer.QueuePolygonsByOptimizer(raftLines, raftSurfaceConfig);
+					gcodeLayer.QueuePolygonsByOptimizer(raftLines, null, raftSurfaceConfig, 0);
 
 					gcodeLayer.WriteQueuedGCode(config.RaftInterfaceThicknes_um);
 				}
@@ -496,6 +497,17 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return -1;
+		}
+
+		public bool NeedToPrintWipeTower(int layerIndex, ConfigSettings config)
+		{
+			bool haveWipeTower = HaveWipeTower(config);
+			if (haveWipeTower)
+			{
+				return layerIndex < LastLayerWithChange(config);
+			}
+
+			return false;
 		}
 	}
 }

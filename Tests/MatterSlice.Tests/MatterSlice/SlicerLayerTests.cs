@@ -129,7 +129,7 @@ namespace MatterHackers.MatterSlice.Tests
 				//                         1 >
 
 				string[] segmentsToCheck = { "x: 92501, y: 92501 & x:112500, y: 112500 | x:92501, y:92501 & x:112500, y:92501 | x:112500, y: 94601 & x:112500, y: 112500 | x:112500, y: 92501 & x:112500, y: 94601 |" };
-				CheckLayersAreSinglePolygon(segmentsToCheck);
+				LayersHaveCorrectPolygonCount(segmentsToCheck);
 			}
 
 			// simplified
@@ -160,7 +160,7 @@ namespace MatterHackers.MatterSlice.Tests
 				//                                1 >
 
 				string[] segmentsToCheck = { "x: 92501, y: 92501 & x:92501, y: 112500 | x:112500, y: 92501 & x:92501, y: 92501 | x:92501, y: 112500 & x:112500, y: 112500 | x:112500, y: 94601 & x:112500, y: 112500 | x:112500, y: 92501 & x:112500, y: 94601 |" };
-				CheckLayersAreSinglePolygon(segmentsToCheck);
+				LayersHaveCorrectPolygonCount(segmentsToCheck);
 			}
 
 			// single fail case
@@ -191,7 +191,7 @@ namespace MatterHackers.MatterSlice.Tests
 				//  (112.5, 92.5) -> (112.5, 94.6)
 
 				string[] segmentsToCheck = { "x: 92501, y: 92501 & x:92501, y: 94601 | x:92501, y: 94601 & x:92501, y: 112500 | x:112500, y: 92501 & x:94601, y: 92501 | x:94601, y: 92501 & x:92501, y: 92501 | x:92501, y: 112500 & x:94601, y: 112500 | x:94601, y: 112500 & x:112500, y: 112500 | x:112500, y: 94601 & x:112500, y: 112500 | x:112500, y: 92501 & x:112500, y: 94601 |" };
-				CheckLayersAreSinglePolygon(segmentsToCheck);
+				LayersHaveCorrectPolygonCount(segmentsToCheck);
 			}
 
 			// lots from an actual file
@@ -199,7 +199,7 @@ namespace MatterHackers.MatterSlice.Tests
 				string pathToData = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "CubeSegmentsX2.txt");
 
 				string[] segmentsToCheck = File.ReadAllLines(pathToData);
-				CheckLayersAreSinglePolygon(segmentsToCheck);
+				LayersHaveCorrectPolygonCount(segmentsToCheck);
 			}
 		}
 
@@ -223,7 +223,12 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
+
+#if __ANDROID__
 		[TestFixtureSetUp]
+#else
+		[OneTimeSetUp]
+#endif
 		public void TestSetup()
 		{
 			// Ensure the temp directory exists
@@ -242,7 +247,7 @@ namespace MatterHackers.MatterSlice.Tests
 				//  0/____\ 1
 
 				string[] segmentsToCheck = { "x:0, y:0&x:10000, y:0|x:10000, y:0&x:5000, y:10000|x:5000, y:10000&x:0, y:0|", };
-				CheckLayersAreSinglePolygon(segmentsToCheck);
+				LayersHaveCorrectPolygonCount(segmentsToCheck);
 			}
 
 			// cw
@@ -253,7 +258,7 @@ namespace MatterHackers.MatterSlice.Tests
 				//  0/____\ 2
 
 				string[] segmentsToCheck = { "x:0, y:0&x:10000, y:0|x:5000, y:10000&x:0, y:0|x:10000, y:0&x:5000, y:10000|", };
-				CheckLayersAreSinglePolygon(segmentsToCheck);
+				LayersHaveCorrectPolygonCount(segmentsToCheck);
 			}
 		}
 
@@ -265,7 +270,7 @@ namespace MatterHackers.MatterSlice.Tests
 				string pathToData = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "TwoRingSegmentsTestData.txt");
 
 				string[] segmentsToCheck = File.ReadAllLines(pathToData);
-				CheckLayersAreSinglePolygon(segmentsToCheck, 2);
+				LayersHaveCorrectPolygonCount(segmentsToCheck, 2);
 			}
 		}
 
@@ -305,7 +310,7 @@ namespace MatterHackers.MatterSlice.Tests
 			Assert.AreEqual(manifoldGCodeContent, nonManifoldGCodeContent);
 		}
 
-		private static void CheckLayersAreSinglePolygon(string[] segmentsToCheck, int expectedCount = 1)
+		private static void LayersHaveCorrectPolygonCount(string[] segmentsToCheck, int expectedCount = 1)
 		{
 			foreach (string line in segmentsToCheck)
 			{
@@ -313,7 +318,7 @@ namespace MatterHackers.MatterSlice.Tests
 				MeshProcessingLayer layer = new MeshProcessingLayer(1, line);
 				layer.MakePolygons();
 
-				Assert.IsTrue(layer.PolygonList.Count == expectedCount);
+				Assert.AreEqual(expectedCount, layer.PolygonList.Count, "Did not have the expected perimeter count.");
 			}
 		}
 	}
