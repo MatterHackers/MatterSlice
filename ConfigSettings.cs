@@ -76,6 +76,8 @@ namespace MatterHackers.MatterSlice
 
 		public string BooleanOperations { get; set; } = "";
 
+		public string AdditionalArgsToProcess { get; set; } = "";
+
 		[SettingDescription("This is the speed to print the bottom layers infill, mm/s.")]
 		public double BottomInfillSpeed { get; set; }
 

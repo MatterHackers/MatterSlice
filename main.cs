@@ -41,10 +41,8 @@ namespace MatterHackers.MatterSlice
 			LogOutput.LogError("    -v Increment verbose level.\n");
 			LogOutput.LogError("    -t Run unit tests.\n");
 			LogOutput.LogError("    -m A 3x3 matrix for translating and rotating the layers.\n");
-			LogOutput.LogError("    -b A string describing the boolean math to do on the loaded models.\n       (indexA,indexB) - parentheses = union\n       {indexA,indexBToRemove} - curly brackets = difference\n       [indexA,indexB] - square brackets = intersection\n       Example: b (0,[1,{2,3}]) intersect 2+3, remove from 1, union with 0\n");
 			LogOutput.LogError("    -c A config file to apply to the current settings.\n       Can be applied multiple times.\n       Formated like the default.ini (partial settings are fine).\n");
 			LogOutput.LogError("    -s Specify a setting on the command line.\n       Uses the same names and values as default.ini.\n");
-			LogOutput.LogError("    -o Specify the path and filename to save 'output.gcode'.\n");
 			LogOutput.LogError("    model.stl, the file that will be loaded and sliced.\n");
 		}
 
@@ -93,6 +91,31 @@ namespace MatterHackers.MatterSlice
 
 			LogOutput.Log("\nMatterSlice version {0}\n\n".FormatWith(ConfigConstants.VERSION));
 
+			if(ProcessArgs(args, config, processor) == 0)
+			{
+				return 0;
+			}
+
+			if (!Canceled)
+			{
+				processor.DoProcessing();
+			}
+			if (!Canceled)
+			{
+				processor.finalize();
+			}
+			if (Canceled)
+			{
+				processor.Cancel();
+			}
+
+			Canceled = true;
+
+			return 0;
+		}
+
+		public static int ProcessArgs(string[] args, ConfigSettings config, fffProcessor processor)
+		{
 			for (int argn = 0; argn < args.Length; argn++)
 			{
 				string str = args[argn];
@@ -127,12 +150,16 @@ namespace MatterHackers.MatterSlice
 									{
 										LogOutput.LogError("Failed to read config '{0}'\n".FormatWith(args[argn]));
 									}
-								}
-								break;
 
-							case 'b':
-								argn++;
-								config.BooleanOperations = args[argn];
+									// process any matrix and mesh requested by config file
+									List<string> commands = new List<string>();
+									foreach (string command in SplitCommandLine.DoSplit(config.AdditionalArgsToProcess))
+									{
+										commands.Add(command);
+									}
+									string[] subArgs = commands.ToArray();
+									ProcessArgs(subArgs, config, processor);
+								}
 								break;
 
 							case 'd':
@@ -162,7 +189,7 @@ namespace MatterHackers.MatterSlice
 								argn++;
 								string[] matrixValues = args[argn].Split(',');
 								var loadedMatrix = Matrix4X4.Identity;
-								for(int i=0; i<4; i++)
+								for (int i = 0; i < 4; i++)
 								{
 									for (int j = 0; j < 4; j++)
 									{
@@ -190,22 +217,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			if (!Canceled)
-			{
-				processor.DoProcessing();
-			}
-			if (!Canceled)
-			{
-				processor.finalize();
-			}
-			if (Canceled)
-			{
-				processor.Cancel();
-			}
-
-			Canceled = true;
-
-			return 0;
+			return 1;
 		}
 
 		public static void AssertDebugNotDefined()
