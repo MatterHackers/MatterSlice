@@ -476,7 +476,10 @@ namespace MatterHackers.MatterSlice
 		// .35 mm for .4 mm nozzle
 		public bool SetSetting(string keyToSet, string valueToSetTo)
 		{
-			valueToSetTo = valueToSetTo.Replace("\"", "").Trim();
+			if (keyToSet != nameof(AdditionalArgsToProcess))
+			{
+				valueToSetTo = valueToSetTo.Replace("\"", "").Trim();
+			}
 
 			foreach (PropertyInfo property in allProperties)
 			{
