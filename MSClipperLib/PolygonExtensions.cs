@@ -168,41 +168,30 @@ namespace MSClipperLib
 				}
 			}
 
-			IntPoint positionToReturn = new IntPoint();
-			if (totalTurns > 0) // ccw
+			if (negativeGroup.Count > 0)
 			{
-				if (negativeGroup.Count > 0)
+				if (positiveGroup.Count > 0
+					// the negative group is a small turn and the positive group is a big turn
+					&& ((Math.Abs(negativeGroup[0].turnAmount) < Math.PI / 4
+							&& Math.Abs(positiveGroup[0].turnAmount) > Math.PI / 4)
+						// the negative turn amount is very small
+						|| Math.Abs(negativeGroup[0].turnAmount) < Math.PI / 8))
 				{
-					positionToReturn = currentPolygon[negativeGroup.GetBestIndex(layerIndex, startPosition)];
+					// return the positive rather than the negative turn
+					return currentPolygon[positiveGroup.GetBestIndex(layerIndex, startPosition)];
 				}
-				else if (positiveGroup.Count > 0)
-				{
-					positionToReturn = currentPolygon[positiveGroup.GetBestIndex(layerIndex, startPosition)];
-				}
-				else
-				{
-					// If can't find good candidate go with vertex most in a single direction
-					positionToReturn = currentPolygon[furthestBackIndex];
-				}
-			}
-			else // cw
-			{
-				if (negativeGroup.Count > 0)
-				{
-					positionToReturn = currentPolygon[negativeGroup.GetBestIndex(layerIndex, startPosition)];
-				}
-				else if (positiveGroup.Count > 0)
-				{
-					positionToReturn = currentPolygon[positiveGroup.GetBestIndex(layerIndex, startPosition)];
-				}
-				else
-				{
-					// If can't find good candidate go with vertex most in a single direction
-					positionToReturn = currentPolygon[furthestBackIndex];
-				}
-			}
 
-			return positionToReturn;
+				return currentPolygon[negativeGroup.GetBestIndex(layerIndex, startPosition)];
+			}
+			else if (positiveGroup.Count > 0)
+			{
+				return currentPolygon[positiveGroup.GetBestIndex(layerIndex, startPosition)];
+			}
+			else
+			{
+				// If can't find good candidate go with vertex most in a single direction
+				return currentPolygon[furthestBackIndex];
+			}
 		}
 
 		public static IntRect GetBounds(this Polygon inPolygon)
