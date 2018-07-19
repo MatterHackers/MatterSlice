@@ -106,8 +106,8 @@ namespace MatterHackers.QuadTree
 		/// Create the list of polygon segments (not closed) that represent the parts of the source polygons that are close (almost touching).
 		/// </summary>
 		/// <param name="polygons"></param>
-		/// <param name="overlapMergeAmount">If edges under consideration, are this distance or less appart (but greater than minimumRequiredWidth) they will generate edges</param>
-		/// <param name="minimumRequiredWidth">If the distance between edges is less this they will not be generated. This lets us avoid considering very very thin lines.</param>
+		/// <param name="overlapMergeAmount">If edges under consideration, are this distance or less apart (but greater than minimumRequiredWidth) they will generate edges</param>
+		/// <param name="minimumRequiredWidth">If the distance between edges is less this they will not be generated. This lets us avoid considering very thin lines.</param>
 		/// <param name="onlyMergeLines">The output segments that are calculated</param>
 		/// <param name="pathIsClosed">Is the source path closed (does not contain the last edge but assumes it).</param>
 		/// <returns></returns>
@@ -146,7 +146,7 @@ namespace MatterHackers.QuadTree
 
 							if (width > minimumRequiredWidth)
 							{
-								// We need to check if the new start position is on the inside of the curve. We can only add thin lines on the insides of our exisiting curves.
+								// We need to check if the new start position is on the inside of the curve. We can only add thin lines on the insides of our existing curves.
 								IntPoint newStartPosition = (polySegments[firstSegmentIndex].Start + polySegments[checkSegmentIndex].End) / 2; // the start;
 								IntPoint newStartDirection = newStartPosition - polySegments[firstSegmentIndex].Start;
 								IntPoint normalLeft = (polySegments[firstSegmentIndex].End - polySegments[firstSegmentIndex].Start).GetPerpendicularLeft();

@@ -176,7 +176,7 @@ namespace MatterHackers.MatterSlice.Tests
 					Assert.IsFalse(testHarness.OutlineData.Polygons.PointIsInside(startPoint));
 					Assert.IsFalse(testHarness.OutlineData.Polygons.PointIsInside(startPoint, testHarness.OutlineData.EdgeQuadTrees));
 
-					// validate some dependant functions
+					// validate some dependent functions
 					Assert.IsTrue(QTPolygonExtensions.OnSegment(test[0], new IntPoint(20, 0), test[1]));
 					Assert.IsFalse(QTPolygonExtensions.OnSegment(test[0], new IntPoint(-10, 0), test[1]));
 					Assert.IsFalse(QTPolygonExtensions.OnSegment(test[0], new IntPoint(50, 0), test[1]));

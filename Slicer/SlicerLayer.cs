@@ -199,7 +199,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			// Remove all polygons from the open pollygon list that have 0 points
+			// Remove all polygons from the open polygon list that have 0 points
 			for (int i = openPolygonList.Count - 1; i >= 0; i--)
 			{
 				// add in the position of the last point
@@ -299,7 +299,7 @@ namespace MatterHackers.MatterSlice
 
 				if (bestScore >= double.MaxValue)
 				{
-					// we colud not find any points to connect this to
+					// we could not find any points to connect this to
 					break;
 				}
 

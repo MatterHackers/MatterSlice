@@ -41,7 +41,7 @@ namespace MatterHackers.Pathfinding
 	using static System.Math;
 	using MatterHackers.Agg.ImageProcessing;
 	/// <summary>
-	/// This is to hold all the data that lets us switch between Boundry and Outline pathing.
+	/// This is to hold all the data that lets us switch between Boundary and Outline pathing.
 	/// </summary>
 	public class PathingData
 	{

@@ -352,7 +352,7 @@ namespace MatterHackers.QuadTree
 						long endDelta = (polySegments[firstSegmentIndex].End - polySegments[checkSegmentIndex].Start).Length();
 						if (endDelta < overlapMergeAmount_um)
 						{
-							// only considre the merge if the directions of the lines are towards eachother
+							// only consider the merge if the directions of the lines are towards each other
 							var firstSegmentDirection = polySegments[firstSegmentIndex].End - polySegments[firstSegmentIndex].Start;
 							var checkSegmentDirection = polySegments[checkSegmentIndex].End - polySegments[checkSegmentIndex].Start;
 							if (firstSegmentDirection.Dot(checkSegmentDirection) > 0)

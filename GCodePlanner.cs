@@ -353,7 +353,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			// Always check if the distance is greated than the amount need to retract.
+			// Always check if the distance is greater than the amount need to retract.
 			if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um))
 			{
 				path.Retract = RetractType.Requested;

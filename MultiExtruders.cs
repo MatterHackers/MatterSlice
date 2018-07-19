@@ -163,7 +163,7 @@ namespace MatterHackers.MatterSlice
 						operands--;
 					}
 
-					if(numberOfOpens == 0)  // only one element assing to extruder and move to next
+					if(numberOfOpens == 0)  // only one element assigned to extruder and move to next
 					{
 						currentExtruder++;
 						// next extruder has no operands yet

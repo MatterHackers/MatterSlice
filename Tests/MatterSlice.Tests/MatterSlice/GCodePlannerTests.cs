@@ -124,7 +124,7 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.IsTrue(thinLines[0][0].Width == 50);
 			}
 
-			// Simple overlap (s is the start runing ccw)
+			// Simple overlap (s is the start running ccw)
 			{
 				//     _____    _____ 5000,5000             _____    _____
 				//     |   |    |   |					    |   |    |   |
@@ -152,7 +152,7 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.IsTrue(thinLines[0][0].Width == 52);
 			}
 
-			// Simple overlap that must not be generated (s is the start runing ccw)
+			// Simple overlap that must not be generated (s is the start running ccw)
 			{
 				//     s_____________ 5000,5000             s_____________
 				//     |    ____    |					    |    ____    |
@@ -309,7 +309,7 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.IsTrue(correctedPath[2].Count == 4);
 			}
 
-			// Simple overlap (s is the start runing ccw)
+			// Simple overlap (s is the start running ccw)
 			{
 				//     _____    _____ 5000,5000             _____    _____
 				//     |   |    |   |					    |   |    |   |
