@@ -64,7 +64,7 @@ namespace MSClipperLib
 		}
 
 		/// <summary>
-		/// This will find the largest turn in a given models. It preffers concave turns to convex turns.
+		/// This will find the largest turn in a given models. It prefers concave turns to convex turns.
 		/// </summary>
 		/// <param name="inputPolygon"></param>
 		/// <param name="lineWidth"></param>
@@ -95,7 +95,7 @@ namespace MSClipperLib
 		}
 
 		/// <summary>
-		/// This will find the largest turn in a given models. It preffers concave turns to convex turns.
+		/// This will find the largest turn in a given models. It prefers concave turns to convex turns.
 		/// If turn amount is the same bias towards the smallest y position.
 		/// </summary>
 		/// <param name="inputPolygon"></param>
@@ -378,7 +378,7 @@ namespace MSClipperLib
 			}
 
 			/// <summary>
-			/// Get the best turn for this polygon. If there are multiple turns that are all jsut as good choose one with a bias for layer index.
+			/// Get the best turn for this polygon. If there are multiple turns that are all just as good choose one with a bias for layer index.
 			/// </summary>
 			/// <param name="layerIndex"></param>
 			/// <returns></returns>
@@ -403,7 +403,7 @@ namespace MSClipperLib
 							}
 						});
 					}
-					else // sort to the frot
+					else // sort to the front
 					{
 						this.Sort((a, b) =>
 						{
@@ -428,12 +428,12 @@ namespace MSClipperLib
 					});
 				}
 
-				// if we have a very shallow turn (the outer edeg of a circle)
+				// if we have a very shallow turn (the outer edge of a circle)
 				if (shallowTurn)
 				{
 					// stager 3 places so the seam is more together but not a line
 					int seemShift = layerIndex % 3;
-					if (!outsideEdge) // we are on the inside of a cicular hole (or similar)
+					if (!outsideEdge) // we are on the inside of a circular hole (or similar)
 					{
 						// stager up to 5 to make the seam have less surface
 						seemShift = layerIndex % 5;

@@ -692,7 +692,7 @@ namespace MatterHackers.MatterSlice
 					return config.FanSpeedMaxPercent;
 				}
 
-				// fiure out how much to turn it on
+				// figure out how much to turn it on
 				var amountSmallerThanMin = Math.Max(0, minFanSpeedLayerTime - gcodeExport.LayerTime);
 				var timeToMax = Math.Max(0, minFanSpeedLayerTime - config.MaxFanSpeedLayerTime);
 
@@ -818,7 +818,7 @@ namespace MatterHackers.MatterSlice
 					}
 
 					// Put all the insets into a new list so we can keep track of what has been printed.
-					// The island could be a rectangle with 4 screew holes. So, with 3 perimeters that colud be the outside 3 + the foles 4 * 3, 15 polygons.
+					// The island could be a rectangle with 4 screw holes. So, with 3 perimeters that could be the outside 3 + the holes 4 * 3, 15 polygons.
 					List<Polygons> insetsForThisIsland = new List<Polygons>(island.InsetToolPaths.Count);
 					for (int insetIndex = 0; insetIndex < island.InsetToolPaths.Count; insetIndex++)
 					{
@@ -872,7 +872,7 @@ namespace MatterHackers.MatterSlice
 					else // This is so we can do overhangs better (the outside can stick a bit to the inside).
 					{
 						int insetCount = CountInsetsToPrint(insetsForThisIsland);
-						if(insetCount == 0 
+						if(insetCount == 0
 							&& config.ExpandThinWalls
 							&& island.IslandOutline.Count > 0
 							&& island.IslandOutline[0].Count > 0)
@@ -1207,7 +1207,7 @@ namespace MatterHackers.MatterSlice
 						{
 							if (config.RetractWhenChangingIslands) layerGcodePlanner.ForceRetract();
 						}
-						
+
 						MoveToIsland(layerGcodePlanner, layer, island);
 
 						if (config.NumberOfPerimeters > 0
@@ -1353,9 +1353,9 @@ namespace MatterHackers.MatterSlice
 					else
 					{
 						SliceLayer previousLayer = slicingData.Extruders[extruderIndex].Layers[layerIndex - 1];
-						
+
 						double bridgeAngle = 0;
-						if (bridgePolygons != null 
+						if (bridgePolygons != null
 							&& previousLayer.BridgeAngle(bottomFillIsland, out bridgeAngle))
 						{
 							// TODO: Make this code handle very complex pathing between different sizes or layouts of support under the island to fill.

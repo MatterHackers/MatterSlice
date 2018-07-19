@@ -109,18 +109,15 @@ namespace MatterHackers.MatterSlice
 
 		public void DumpLayerparts(string filename)
 		{
-			LayerDataStorage storage = this;
 			StreamWriter streamToWriteTo = new StreamWriter(filename);
 			streamToWriteTo.Write("<!DOCTYPE html><html><body>");
-			IntPoint modelSize = storage.modelSize;
-			IntPoint modelMin = storage.modelMin;
 
-			for (int extruderIndex = 0; extruderIndex < storage.Extruders.Count; extruderIndex++)
+			for (int extruderIndex = 0; extruderIndex < this.Extruders.Count; extruderIndex++)
 			{
-				for (int layerNr = 0; layerNr < storage.Extruders[extruderIndex].Layers.Count; layerNr++)
+				for (int layerNr = 0; layerNr < this.Extruders[extruderIndex].Layers.Count; layerNr++)
 				{
 					streamToWriteTo.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style=\"width: 500px; height:500px\">\n");
-					SliceLayer layer = storage.Extruders[extruderIndex].Layers[layerNr];
+					SliceLayer layer = this.Extruders[extruderIndex].Layers[layerNr];
 					for (int i = 0; i < layer.Islands.Count; i++)
 					{
 						LayerIsland part = layer.Islands[i];

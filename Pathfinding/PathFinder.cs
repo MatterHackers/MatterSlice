@@ -520,7 +520,7 @@ namespace MatterHackers.Pathfinding
 		{
 			if (OutlineData.InsetMap != null)
 			{
-				// move every segment that can be inside the boundry to be within the boundry
+				// move every segment that can be inside the boundary to be within the boundary
 				if (pathThatIsInside.Count > 1 && InsetAmount > 0)
 				{
 					IntPoint startPoint = startPointIn;
