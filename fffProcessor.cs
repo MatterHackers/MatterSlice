@@ -1347,7 +1347,7 @@ namespace MatterHackers.MatterSlice
 		private void CalculateInfillData(LayerDataStorage slicingData, int extruderIndex, int layerIndex, LayerIsland part, Polygons bottomFillLines, Polygons fillPolygons = null, Polygons firstTopFillPolygons = null, Polygons topFillPolygons = null, Polygons bridgePolygons = null)
 		{
 			// generate infill for the bottom layer including bridging
-			foreach (Polygons bottomFillIsland in part.SolidBottomToolPaths.ProcessIntoSeparateIslands())
+			foreach (Polygons bottomFillIsland in part.BottomPaths.ProcessIntoSeparateIslands())
 			{
 				if (layerIndex > 0)
 				{
@@ -1388,7 +1388,7 @@ namespace MatterHackers.MatterSlice
 			// generate infill for the top layer
 			if (topFillPolygons != null)
 			{
-				foreach (Polygons outline in part.SolidTopToolPaths.ProcessIntoSeparateIslands())
+				foreach (Polygons outline in part.TopPaths.ProcessIntoSeparateIslands())
 				{
 					Infill.GenerateLinePaths(outline, topFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
 				}
@@ -1396,7 +1396,7 @@ namespace MatterHackers.MatterSlice
 			// generate infill for the top layer
 			if (firstTopFillPolygons != null)
 			{
-				foreach (Polygons outline in part.SolidFirstOnSparseToolPaths.ProcessIntoSeparateIslands())
+				foreach (Polygons outline in part.FirstTopPaths.ProcessIntoSeparateIslands())
 				{
 					Infill.GenerateLinePaths(outline, firstTopFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
 				}
@@ -1405,7 +1405,7 @@ namespace MatterHackers.MatterSlice
 			// generate infill intermediate layers
 			if (fillPolygons != null)
 			{
-				foreach (Polygons outline in part.SolidInfillToolPaths.ProcessIntoSeparateIslands())
+				foreach (Polygons outline in part.SolidInfillPaths.ProcessIntoSeparateIslands())
 				{
 					Infill.GenerateLinePaths(outline, fillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle + 90 * (layerIndex % 2));
 				}
@@ -1422,23 +1422,23 @@ namespace MatterHackers.MatterSlice
 							{
 								fillAngle += 90;
 							}
-							Infill.GenerateLineInfill(config, part.InfillToolPaths, fillPolygons, fillAngle);
+							Infill.GenerateLineInfill(config, part.SparseInfillPaths, fillPolygons, fillAngle);
 							break;
 
 						case ConfigConstants.INFILL_TYPE.GRID:
-							Infill.GenerateGridInfill(config, part.InfillToolPaths, fillPolygons, fillAngle);
+							Infill.GenerateGridInfill(config, part.SparseInfillPaths, fillPolygons, fillAngle);
 							break;
 
 						case ConfigConstants.INFILL_TYPE.TRIANGLES:
-							Infill.GenerateTriangleInfill(config, part.InfillToolPaths, fillPolygons, fillAngle);
+							Infill.GenerateTriangleInfill(config, part.SparseInfillPaths, fillPolygons, fillAngle);
 							break;
 
 						case ConfigConstants.INFILL_TYPE.HEXAGON:
-							Infill.GenerateHexagonInfill(config, part.InfillToolPaths, fillPolygons, fillAngle, layerIndex);
+							Infill.GenerateHexagonInfill(config, part.SparseInfillPaths, fillPolygons, fillAngle, layerIndex);
 							break;
 
 						case ConfigConstants.INFILL_TYPE.CONCENTRIC:
-							Infill.GenerateConcentricInfill(config, part.InfillToolPaths, fillPolygons);
+							Infill.GenerateConcentricInfill(config, part.SparseInfillPaths, fillPolygons);
 							break;
 
 						default:

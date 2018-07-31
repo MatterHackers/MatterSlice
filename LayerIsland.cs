@@ -45,24 +45,23 @@ namespace MatterHackers.MatterSlice
 
 		private static readonly double minimumDistanceToCreateNewPosition = 10;
 
-		public Polygons InfillToolPaths { get; set; } = new Polygons();
+		/// <summary>
+		/// The outline of the island as defined by the original mesh polygons (not inset at all).
+		/// </summary>
+		public Polygons IslandOutline { get; set; } = new Polygons();
 
 		/// <summary>
 		/// The IslandOutline inset as many times as there are perimeters for the part.
 		/// </summary>
 		public List<Polygons> InsetToolPaths { get; set; } = new List<Polygons>();
 
-		/// <summary>
-		/// The outline of the island as defined by the original mesh polygons (not inset at all).
-		/// </summary>
-		public Polygons IslandOutline { get; set; } = new Polygons();
-
 		public PathFinder PathFinder { get; private set; }
 		// The outline that the tool head will actually follow (the center of the extrusion)
-		public Polygons SolidBottomToolPaths { get; set; } = new Polygons();
-		public Polygons SolidInfillToolPaths { get; set; } = new Polygons();
-		public Polygons SolidFirstOnSparseToolPaths { get; set; } = new Polygons();
-		public Polygons SolidTopToolPaths { get; set; } = new Polygons();
+		public Polygons BottomPaths { get; set; } = new Polygons();
+		public Polygons SparseInfillPaths { get; set; } = new Polygons();
+		public Polygons SolidInfillPaths { get; set; } = new Polygons();
+		public Polygons FirstTopPaths { get; set; } = new Polygons();
+		public Polygons TopPaths { get; set; } = new Polygons();
 
 		public void GenerateInsets(int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount, bool avoidCrossingPerimeters)
 		{
