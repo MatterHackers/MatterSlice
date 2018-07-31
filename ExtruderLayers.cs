@@ -125,12 +125,6 @@ namespace MatterHackers.MatterSlice
 							regionsThatWillBeSparse = Clipper.CleanPolygons(regionsThatWillBeSparse, cleanDistance_um);
 						}
 
-						solidInfillPaths = solidInfillPaths.CreateDifference(regionsThatWillBeSparse);
-						solidInfillPaths.RemoveSmallAreas(extrusionWidth_um);
-						solidInfillPaths = Clipper.CleanPolygons(solidInfillPaths, cleanDistance_um);
-
-						// now figiure out wich of these are the first time and put those into the firstTopLayers list
-
 						// find all the solid infill bottom layers
 						int downStart = layerIndex - 1;
 						int downEnd = layerIndex - downLayerCount;
@@ -146,13 +140,43 @@ namespace MatterHackers.MatterSlice
 						solidInfillPaths = Clipper.CleanPolygons(solidInfillPaths, cleanDistance_um);
 					}
 
-					island.SolidInfillPaths = solidInfillPaths;
+					// remove the solid infill from the sparse infill
 					sparseInfillPaths = sparseInfillPaths.CreateDifference(solidInfillPaths.Offset(clippingOffset));
-				}
+					sparseInfillPaths.RemoveSmallAreas(extrusionWidth_um);
+					sparseInfillPaths = Clipper.CleanPolygons(sparseInfillPaths, cleanDistance_um);
+					island.SparseInfillPaths = sparseInfillPaths;
 
-				sparseInfillPaths.RemoveSmallAreas(extrusionWidth_um);
-				sparseInfillPaths = Clipper.CleanPolygons(sparseInfillPaths, cleanDistance_um);
-				island.SparseInfillPaths = sparseInfillPaths;
+					// no figure out what partof the solid infill is actuall first top layers and switch it to that
+					// we can only have a first topy layer at the bottom of the top layers
+					if (layerIndex == extruder.Layers.Count - upLayerCount)
+					{
+						// all of it is first top layers
+						island.FirstTopPaths = solidInfillPaths;
+						solidInfillPaths = new Polygons();
+					}
+					else if (layerIndex > 0 
+						&& layerIndex < extruder.Layers.Count - upLayerCount)
+					{
+						// Intersect the current solid layer with the previous spars layer
+						// that will be all of the new solid layers that are currently on sparse layer
+
+						var firstTopPaths = new Polygons(solidInfillPaths);
+						firstTopPaths = IntersectWithSparsePolygons(extruder.Layers[layerIndex - 1].Islands, island.BoundingBox, firstTopPaths);
+						firstTopPaths.RemoveSmallAreas(extrusionWidth_um);
+						firstTopPaths = Clipper.CleanPolygons(firstTopPaths, cleanDistance_um);
+
+						if (firstTopPaths.Count > 0)
+						{
+							solidInfillPaths = solidInfillPaths.CreateDifference(firstTopPaths.Offset(clippingOffset));
+							solidInfillPaths.RemoveSmallAreas(extrusionWidth_um);
+							solidInfillPaths = Clipper.CleanPolygons(solidInfillPaths, cleanDistance_um);
+
+							island.FirstTopPaths = firstTopPaths;
+						}
+					}
+
+					island.SolidInfillPaths = solidInfillPaths;
+				}
 			}
 		}
 
@@ -213,6 +237,7 @@ namespace MatterHackers.MatterSlice
 		{
 			return Layers[layerToCheck].Islands.Count == 1
 				&& Layers[layerToCheck].Islands[0].BottomPaths.Count == 1
+				&& Layers[layerToCheck].Islands[0].FirstTopPaths.Count == 0
 				&& Layers[layerToCheck].Islands[0].TopPaths.Count == 0
 				&& Layers[layerToCheck].Islands[0].SolidInfillPaths.Count == 0
 				&& Layers[layerToCheck].Islands[0].SparseInfillPaths.Count == 0;
@@ -222,6 +247,7 @@ namespace MatterHackers.MatterSlice
 		{
 			return Layers[layerToCheck].Islands.Count == 1
 				&& Layers[layerToCheck].Islands[0].BottomPaths.Count == 0
+				&& Layers[layerToCheck].Islands[0].FirstTopPaths.Count == 0
 				&& Layers[layerToCheck].Islands[0].TopPaths.Count == 0
 				&& Layers[layerToCheck].Islands[0].SolidInfillPaths.Count == 0
 				&& Layers[layerToCheck].Islands[0].SparseInfillPaths.Count == 1;
@@ -231,8 +257,19 @@ namespace MatterHackers.MatterSlice
 		{
 			return Layers[layerToCheck].Islands.Count == 1
 				&& Layers[layerToCheck].Islands[0].BottomPaths.Count == 0
+				&& Layers[layerToCheck].Islands[0].FirstTopPaths.Count == 0
 				&& Layers[layerToCheck].Islands[0].TopPaths.Count == 0
 				&& Layers[layerToCheck].Islands[0].SolidInfillPaths.Count == 1
+				&& Layers[layerToCheck].Islands[0].SparseInfillPaths.Count == 0;
+		}
+
+		public bool OnlyHasFirstTop(int layerToCheck)
+		{
+			return Layers[layerToCheck].Islands.Count == 1
+				&& Layers[layerToCheck].Islands[0].BottomPaths.Count == 0
+				&& Layers[layerToCheck].Islands[0].FirstTopPaths.Count == 1
+				&& Layers[layerToCheck].Islands[0].TopPaths.Count == 0
+				&& Layers[layerToCheck].Islands[0].SolidInfillPaths.Count == 0
 				&& Layers[layerToCheck].Islands[0].SparseInfillPaths.Count == 0;
 		}
 
@@ -240,29 +277,50 @@ namespace MatterHackers.MatterSlice
 		{
 			return Layers[layerToCheck].Islands.Count == 1
 				&& Layers[layerToCheck].Islands[0].BottomPaths.Count == 0
+				&& Layers[layerToCheck].Islands[0].FirstTopPaths.Count == 0
 				&& Layers[layerToCheck].Islands[0].TopPaths.Count == 1
 				&& Layers[layerToCheck].Islands[0].SolidInfillPaths.Count == 0
 				&& Layers[layerToCheck].Islands[0].SparseInfillPaths.Count == 0;
 		}
 
-		private static Polygons IntersectWithPolygons(List<LayerIsland> islands, Aabb boundsToConsider, Polygons polysToAddTo)
+		private static Polygons IntersectWithPolygons(List<LayerIsland> islands, Aabb boundsToConsider, Polygons polysToIntersect)
 		{
-			Polygons polysToIntersect = new Polygons();
+			Polygons polysFromIslands = new Polygons();
 			for (int islandIndex = 0; islandIndex < islands.Count; islandIndex++)
 			{
 				if (boundsToConsider.Hit(islands[islandIndex].BoundingBox))
 				{
 					if (islands[islandIndex].InsetToolPaths.Count > 0)
 					{
-						polysToIntersect = polysToIntersect.CreateUnion(islands[islandIndex].InsetToolPaths[islands[islandIndex].InsetToolPaths.Count - 1]);
-						polysToIntersect = Clipper.CleanPolygons(polysToIntersect, cleanDistance_um);
+						polysFromIslands = polysFromIslands.CreateUnion(islands[islandIndex].InsetToolPaths[islands[islandIndex].InsetToolPaths.Count - 1]);
+						polysFromIslands = Clipper.CleanPolygons(polysFromIslands, cleanDistance_um);
 					}
 				}
 			}
 
-			polysToAddTo = polysToAddTo.CreateIntersection(polysToIntersect);
+			polysToIntersect = polysToIntersect.CreateIntersection(polysFromIslands);
 
-			return polysToAddTo;
+			return polysToIntersect;
+		}
+
+		private static Polygons IntersectWithSparsePolygons(List<LayerIsland> islands, Aabb boundsToConsider, Polygons polysToIntersect)
+		{
+			Polygons polysFromIslands = new Polygons();
+			for (int islandIndex = 0; islandIndex < islands.Count; islandIndex++)
+			{
+				if (boundsToConsider.Hit(islands[islandIndex].BoundingBox))
+				{
+					if (islands[islandIndex].InsetToolPaths.Count > 0)
+					{
+						polysFromIslands = polysFromIslands.CreateUnion(islands[islandIndex].SparseInfillPaths);
+						polysFromIslands = Clipper.CleanPolygons(polysFromIslands, cleanDistance_um);
+					}
+				}
+			}
+
+			polysToIntersect = polysToIntersect.CreateIntersection(polysFromIslands);
+
+			return polysToIntersect;
 		}
 
 		private static Polygons RemoveIslandsFromPolygons(List<LayerIsland> islands, Aabb boundsToConsider, Polygons polygonsToSubtractFrom)

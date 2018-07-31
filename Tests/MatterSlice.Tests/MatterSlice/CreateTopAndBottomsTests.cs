@@ -93,13 +93,16 @@ namespace MatterHackers.MatterSlice.Tests
 				int numLayers = 10;
 				ExtruderLayers extruder = CreateLayerData(inset0Outline, numLayers);
 				GenerateLayers(extruder, 400, 0, 3, 0);
-				Assert.IsTrue(extruder.OnlyHasTop(9));
+				for (int i = 0; i < 7; i++)
+				{
+					Assert.IsTrue(extruder.OnlyHasInfill(i));
+				}
+				Assert.IsTrue(extruder.OnlyHasFirstTop(7));
 				Assert.IsTrue(extruder.OnlyHasSolidInfill(8));
-				Assert.IsTrue(extruder.OnlyHasSolidInfill(7));
-				Assert.IsTrue(extruder.OnlyHasInfill(6));
+				Assert.IsTrue(extruder.OnlyHasTop(9));
 			}
 
-			// 3 top layers and 1 bottom layer
+			// 3 bottom layers and 1 top layer
 			{
 				string inset0OutlineString = "x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|";
 				Polygons inset0Outline = CLPolygonsExtensions.CreateFromString(inset0OutlineString);
@@ -107,9 +110,15 @@ namespace MatterHackers.MatterSlice.Tests
 				ExtruderLayers extruder = CreateLayerData(inset0Outline, numLayers);
 				GenerateLayers(extruder, 400, 3, 1, 0);
 				Assert.IsTrue(extruder.OnlyHasBottom(0));
-				Assert.IsTrue(extruder.OnlyHasSolidInfill(1));
-				Assert.IsTrue(extruder.OnlyHasSolidInfill(2));
-				Assert.IsTrue(extruder.OnlyHasInfill(3));
+				for (int i = 1; i < 3; i++)
+				{
+					Assert.IsTrue(extruder.OnlyHasSolidInfill(i));
+				}
+				for (int i = 3; i < 9; i++)
+				{
+					Assert.IsTrue(extruder.OnlyHasInfill(i));
+				}
+				Assert.IsTrue(extruder.OnlyHasTop(9));
 			}
 
 			// 3 top layers and 3 bottom layers
@@ -120,9 +129,17 @@ namespace MatterHackers.MatterSlice.Tests
 				ExtruderLayers extruder = CreateLayerData(inset0Outline, numLayers);
 				GenerateLayers(extruder, 400, 3, 3, 0);
 				Assert.IsTrue(extruder.OnlyHasBottom(0));
-				Assert.IsTrue(extruder.OnlyHasSolidInfill(1));
-				Assert.IsTrue(extruder.OnlyHasSolidInfill(2));
-				Assert.IsTrue(extruder.OnlyHasInfill(3));
+				for (int i = 1; i < 3; i++)
+				{
+					Assert.IsTrue(extruder.OnlyHasSolidInfill(i));
+				}
+				for (int i = 3; i < 7; i++)
+				{
+					Assert.IsTrue(extruder.OnlyHasInfill(i));
+				}
+				Assert.IsTrue(extruder.OnlyHasFirstTop(7));
+				Assert.IsTrue(extruder.OnlyHasSolidInfill(8));
+				Assert.IsTrue(extruder.OnlyHasTop(9));
 			}
 		}
 
