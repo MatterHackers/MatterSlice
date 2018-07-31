@@ -102,37 +102,47 @@ namespace MatterHackers.MatterSlice
 				if (upLayerCount > 1 || downLayerCount > 1)
 				{
 					Polygons solidInfillPaths = new Polygons(infillRegionPath);
+
+					// remove all the top layers
 					solidInfillPaths = solidInfillPaths.CreateDifference(island.BottomPaths.Offset(clippingOffset));
 					solidInfillPaths = Clipper.CleanPolygons(solidInfillPaths, cleanDistance_um);
+					
+					// remove all the bottom layers
 					solidInfillPaths = solidInfillPaths.CreateDifference(island.TopPaths.Offset(clippingOffset));
-
 					solidInfillPaths = Clipper.CleanPolygons(solidInfillPaths, cleanDistance_um);
 
 					int upEnd = layerIndex + upLayerCount + 1;
 					if (upEnd <= extruder.Layers.Count && layerIndex - downLayerCount >= 0)
 					{
-						Polygons totalPartsToRemove = new Polygons(infillRegionPath);
+						// find all the regions that have more top and bottom layers than should be solid (will remain sparse)
+						Polygons regionsThatWillBeSparse = new Polygons(infillRegionPath);
 
 						int upStart = layerIndex + 2;
 
 						for (int layerToTest = upStart; layerToTest < upEnd; layerToTest++)
 						{
-							totalPartsToRemove = AddIslandsToPolygons(extruder.Layers[layerToTest].Islands, island.BoundingBox, totalPartsToRemove);
-							totalPartsToRemove = Clipper.CleanPolygons(totalPartsToRemove, cleanDistance_um);
+							regionsThatWillBeSparse = IntersectWithPolygons(extruder.Layers[layerToTest].Islands, island.BoundingBox, regionsThatWillBeSparse);
+							regionsThatWillBeSparse = Clipper.CleanPolygons(regionsThatWillBeSparse, cleanDistance_um);
 						}
 
+						solidInfillPaths = solidInfillPaths.CreateDifference(regionsThatWillBeSparse);
+						solidInfillPaths.RemoveSmallAreas(extrusionWidth_um);
+						solidInfillPaths = Clipper.CleanPolygons(solidInfillPaths, cleanDistance_um);
+
+						// now figiure out wich of these are the first time and put those into the firstTopLayers list
+
+						// find all the solid infill bottom layers
 						int downStart = layerIndex - 1;
 						int downEnd = layerIndex - downLayerCount;
 
 						for (int layerToTest = downStart; layerToTest >= downEnd; layerToTest--)
 						{
-							totalPartsToRemove = AddIslandsToPolygons(extruder.Layers[layerToTest].Islands, island.BoundingBox, totalPartsToRemove);
-							totalPartsToRemove = Clipper.CleanPolygons(totalPartsToRemove, cleanDistance_um);
+							regionsThatWillBeSparse = IntersectWithPolygons(extruder.Layers[layerToTest].Islands, island.BoundingBox, regionsThatWillBeSparse);
+							regionsThatWillBeSparse = Clipper.CleanPolygons(regionsThatWillBeSparse, cleanDistance_um);
 						}
 
-						solidInfillPaths = solidInfillPaths.CreateDifference(totalPartsToRemove);
+						solidInfillPaths = solidInfillPaths.CreateDifference(regionsThatWillBeSparse);
 						solidInfillPaths.RemoveSmallAreas(extrusionWidth_um);
-
 						solidInfillPaths = Clipper.CleanPolygons(solidInfillPaths, cleanDistance_um);
 					}
 
@@ -235,7 +245,7 @@ namespace MatterHackers.MatterSlice
 				&& Layers[layerToCheck].Islands[0].SparseInfillPaths.Count == 0;
 		}
 
-		private static Polygons AddIslandsToPolygons(List<LayerIsland> islands, Aabb boundsToConsider, Polygons polysToAddTo)
+		private static Polygons IntersectWithPolygons(List<LayerIsland> islands, Aabb boundsToConsider, Polygons polysToAddTo)
 		{
 			Polygons polysToIntersect = new Polygons();
 			for (int islandIndex = 0; islandIndex < islands.Count; islandIndex++)
