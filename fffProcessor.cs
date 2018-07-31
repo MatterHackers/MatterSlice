@@ -55,6 +55,7 @@ namespace MatterHackers.MatterSlice
 		private GCodePathConfig insetXConfig = new GCodePathConfig("insetXConfig");
 		private GCodePathConfig fillConfig = new GCodePathConfig("fillConfig");
 		private GCodePathConfig topFillConfig = new GCodePathConfig("topFillConfig");
+		private GCodePathConfig firstTopFillConfig = new GCodePathConfig("firstTopFillConfig");
 		private GCodePathConfig bottomFillConfig = new GCodePathConfig("bottomFillConfig");
 		private GCodePathConfig airGappedBottomConfig = new GCodePathConfig("airGappedBottomConfig");
 		private GCodePathConfig bridgeConfig = new GCodePathConfig("bridgeConfig");
@@ -160,7 +161,8 @@ namespace MatterHackers.MatterSlice
 
 			fillConfig.SetData(config.InfillSpeed, extrusionWidth, "FILL", false);
 			topFillConfig.SetData(config.TopInfillSpeed, extrusionWidth, "TOP-FILL", false);
-			bottomFillConfig.SetData(config.InfillSpeed, extrusionWidth, "BOTTOM-FILL", false);
+			firstTopFillConfig.SetData(config.FirstTopLayerSpeed, extrusionWidth, "FIRST-TOP-Fill", false);
+			bottomFillConfig.SetData(config.BottomInfillSpeed, extrusionWidth, "BOTTOM-FILL", false);
 			airGappedBottomConfig.SetData(config.FirstLayerSpeed, extrusionWidth, "AIR-GAP", false);
 			bridgeConfig.SetData(config.BridgeSpeed, extrusionWidth, "BRIDGE");
 
@@ -412,6 +414,7 @@ namespace MatterHackers.MatterSlice
 
 					fillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "FILL", false);
 					topFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "TOP-FILL", false);
+					firstTopFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerThickness_um, "FIRST-TOP-Fill", false);
 					bottomFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "BOTTOM-FILL", false);
 					airGappedBottomConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "AIR-GAP", false);
 					bridgeConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "BRIDGE");
@@ -427,7 +430,8 @@ namespace MatterHackers.MatterSlice
 
 					fillConfig.SetData(config.InfillSpeed, config.ExtrusionWidth_um, "FILL", false);
 					topFillConfig.SetData(config.TopInfillSpeed, config.ExtrusionWidth_um, "TOP-FILL", false);
-					bottomFillConfig.SetData(config.InfillSpeed, config.ExtrusionWidth_um, "BOTTOM-FILL", false);
+					firstTopFillConfig.SetData(config.FirstTopLayerSpeed, config.ExtrusionWidth_um, "FIRST-TOP-Fill", false);
+					bottomFillConfig.SetData(config.BottomInfillSpeed, config.ExtrusionWidth_um, "BOTTOM-FILL", false);
 					airGappedBottomConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um, "AIR-GAP", false);
 					bridgeConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um, "BRIDGE");
 
@@ -800,13 +804,14 @@ namespace MatterHackers.MatterSlice
 					if(config.RetractWhenChangingIslands)  layerGcodePlanner.ForceRetract();
 				}
 
-				Polygons fillPolygons = new Polygons();
-				Polygons topFillPolygons = new Polygons();
-				Polygons bridgePolygons = new Polygons();
+				var fillPolygons = new Polygons();
+				var topFillPolygons = new Polygons();
+				var firstTopFillPolygons = new Polygons();
+				var bridgePolygons = new Polygons();
 
-				Polygons bottomFillPolygons = new Polygons();
+				var bottomFillPolygons = new Polygons();
 
-				CalculateInfillData(slicingData, extruderIndex, layerIndex, island, bottomFillPolygons, fillPolygons, topFillPolygons, bridgePolygons);
+				CalculateInfillData(slicingData, extruderIndex, layerIndex, island, bottomFillPolygons, fillPolygons, firstTopFillPolygons, topFillPolygons, bridgePolygons);
 				bottomFillIslandPolygons.Add(bottomFillPolygons);
 
 				if (config.NumberOfPerimeters > 0)
@@ -973,6 +978,7 @@ namespace MatterHackers.MatterSlice
 				// This will make the total amount of travel while printing infill much less.
 				layerGcodePlanner.QueuePolygonsByOptimizer(fillPolygons, island.PathFinder, fillConfig, layerIndex);
 				QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bottomFillPolygons, bottomFillConfig, SupportWriteType.UnsupportedAreas);
+				layerGcodePlanner.QueuePolygonsByOptimizer(firstTopFillPolygons, island.PathFinder, firstTopFillConfig, layerIndex);
 				layerGcodePlanner.QueuePolygonsByOptimizer(topFillPolygons, island.PathFinder, topFillConfig, layerIndex);
 			}
 		}
@@ -1338,10 +1344,10 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private void CalculateInfillData(LayerDataStorage slicingData, int extruderIndex, int layerIndex, LayerIsland part, Polygons bottomFillLines, Polygons fillPolygons = null, Polygons topFillPolygons = null, Polygons bridgePolygons = null)
+		private void CalculateInfillData(LayerDataStorage slicingData, int extruderIndex, int layerIndex, LayerIsland part, Polygons bottomFillLines, Polygons fillPolygons = null, Polygons firstTopFillPolygons = null, Polygons topFillPolygons = null, Polygons bridgePolygons = null)
 		{
 			// generate infill for the bottom layer including bridging
-			foreach (Polygons bottomFillIsland in part.SolidBottomToolPaths.ProcessIntoSeparateIslands())
+			foreach (Polygons bottomFillIsland in part.BottomPaths.ProcessIntoSeparateIslands())
 			{
 				if (layerIndex > 0)
 				{
@@ -1382,16 +1388,24 @@ namespace MatterHackers.MatterSlice
 			// generate infill for the top layer
 			if (topFillPolygons != null)
 			{
-				foreach (Polygons outline in part.SolidTopToolPaths.ProcessIntoSeparateIslands())
+				foreach (Polygons outline in part.TopPaths.ProcessIntoSeparateIslands())
 				{
 					Infill.GenerateLinePaths(outline, topFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+				}
+			}
+			// generate infill for the top layer
+			if (firstTopFillPolygons != null)
+			{
+				foreach (Polygons outline in part.FirstTopPaths.ProcessIntoSeparateIslands())
+				{
+					Infill.GenerateLinePaths(outline, firstTopFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
 				}
 			}
 
 			// generate infill intermediate layers
 			if (fillPolygons != null)
 			{
-				foreach (Polygons outline in part.SolidInfillToolPaths.ProcessIntoSeparateIslands())
+				foreach (Polygons outline in part.SolidInfillPaths.ProcessIntoSeparateIslands())
 				{
 					Infill.GenerateLinePaths(outline, fillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle + 90 * (layerIndex % 2));
 				}
@@ -1408,23 +1422,23 @@ namespace MatterHackers.MatterSlice
 							{
 								fillAngle += 90;
 							}
-							Infill.GenerateLineInfill(config, part.InfillToolPaths, fillPolygons, fillAngle);
+							Infill.GenerateLineInfill(config, part.SparseInfillPaths, fillPolygons, fillAngle);
 							break;
 
 						case ConfigConstants.INFILL_TYPE.GRID:
-							Infill.GenerateGridInfill(config, part.InfillToolPaths, fillPolygons, fillAngle);
+							Infill.GenerateGridInfill(config, part.SparseInfillPaths, fillPolygons, fillAngle);
 							break;
 
 						case ConfigConstants.INFILL_TYPE.TRIANGLES:
-							Infill.GenerateTriangleInfill(config, part.InfillToolPaths, fillPolygons, fillAngle);
+							Infill.GenerateTriangleInfill(config, part.SparseInfillPaths, fillPolygons, fillAngle);
 							break;
 
 						case ConfigConstants.INFILL_TYPE.HEXAGON:
-							Infill.GenerateHexagonInfill(config, part.InfillToolPaths, fillPolygons, fillAngle, layerIndex);
+							Infill.GenerateHexagonInfill(config, part.SparseInfillPaths, fillPolygons, fillAngle, layerIndex);
 							break;
 
 						case ConfigConstants.INFILL_TYPE.CONCENTRIC:
-							Infill.GenerateConcentricInfill(config, part.InfillToolPaths, fillPolygons);
+							Infill.GenerateConcentricInfill(config, part.SparseInfillPaths, fillPolygons);
 							break;
 
 						default:
