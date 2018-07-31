@@ -58,8 +58,10 @@ namespace MatterHackers.MatterSlice
 		public Polygons IslandOutline { get; set; } = new Polygons();
 
 		public PathFinder PathFinder { get; private set; }
+		// The outline that the tool head will actually follow (the center of the extrusion)
 		public Polygons SolidBottomToolPaths { get; set; } = new Polygons();
 		public Polygons SolidInfillToolPaths { get; set; } = new Polygons();
+		public Polygons SolidFirstOnSparseToolPaths { get; set; } = new Polygons();
 		public Polygons SolidTopToolPaths { get; set; } = new Polygons();
 
 		public void GenerateInsets(int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount, bool avoidCrossingPerimeters)
