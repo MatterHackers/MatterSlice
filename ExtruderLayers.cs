@@ -39,7 +39,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void GenerateTopAndBottoms(int layerIndex, int extrusionWidth_um, int outerPerimeterWidth_um, int downLayerCount, int upLayerCount, long infillExtendIntoPerimeter_um)
+		public void GenerateTopAndBottoms(ConfigSettings config, int layerIndex, int extrusionWidth_um, int outerPerimeterWidth_um, int downLayerCount, int upLayerCount, long infillExtendIntoPerimeter_um)
 		{
 			var clippingOffset = infillExtendIntoPerimeter_um * 2;
 
@@ -146,32 +146,36 @@ namespace MatterHackers.MatterSlice
 					sparseInfillPaths = Clipper.CleanPolygons(sparseInfillPaths, cleanDistance_um);
 					island.SparseInfillPaths = sparseInfillPaths;
 
-					// no figure out what partof the solid infill is actuall first top layers and switch it to that
-					// we can only have a first topy layer at the bottom of the top layers
-					if (layerIndex == extruder.Layers.Count - upLayerCount)
+					if (config == null 
+						|| config.InfillSpeed != config.FirstTopLayerSpeed)
 					{
-						// all of it is first top layers
-						island.FirstTopPaths = solidInfillPaths;
-						solidInfillPaths = new Polygons();
-					}
-					else if (layerIndex > 0 
-						&& layerIndex < extruder.Layers.Count - upLayerCount)
-					{
-						// Intersect the current solid layer with the previous spars layer
-						// that will be all of the new solid layers that are currently on sparse layer
-
-						var firstTopPaths = new Polygons(solidInfillPaths);
-						firstTopPaths = IntersectWithSparsePolygons(extruder.Layers[layerIndex - 1].Islands, island.BoundingBox, firstTopPaths);
-						firstTopPaths.RemoveSmallAreas(extrusionWidth_um);
-						firstTopPaths = Clipper.CleanPolygons(firstTopPaths, cleanDistance_um);
-
-						if (firstTopPaths.Count > 0)
+						// no figure out what partof the solid infill is actuall first top layers and switch it to that
+						// we can only have a first topy layer at the bottom of the top layers
+						if (layerIndex == extruder.Layers.Count - upLayerCount)
 						{
-							solidInfillPaths = solidInfillPaths.CreateDifference(firstTopPaths.Offset(clippingOffset));
-							solidInfillPaths.RemoveSmallAreas(extrusionWidth_um);
-							solidInfillPaths = Clipper.CleanPolygons(solidInfillPaths, cleanDistance_um);
+							// all of it is first top layers
+							island.FirstTopPaths = solidInfillPaths;
+							solidInfillPaths = new Polygons();
+						}
+						else if (layerIndex > 0
+							&& layerIndex < extruder.Layers.Count - upLayerCount)
+						{
+							// Intersect the current solid layer with the previous spars layer
+							// that will be all of the new solid layers that are currently on sparse layer
 
-							island.FirstTopPaths = firstTopPaths;
+							var firstTopPaths = new Polygons(solidInfillPaths);
+							firstTopPaths = IntersectWithSparsePolygons(extruder.Layers[layerIndex - 1].Islands, island.BoundingBox, firstTopPaths);
+							firstTopPaths.RemoveSmallAreas(extrusionWidth_um);
+							firstTopPaths = Clipper.CleanPolygons(firstTopPaths, cleanDistance_um);
+
+							if (firstTopPaths.Count > 0)
+							{
+								solidInfillPaths = solidInfillPaths.CreateDifference(firstTopPaths.Offset(clippingOffset));
+								solidInfillPaths.RemoveSmallAreas(extrusionWidth_um);
+								solidInfillPaths = Clipper.CleanPolygons(solidInfillPaths, cleanDistance_um);
+
+								island.FirstTopPaths = firstTopPaths;
+							}
 						}
 					}
 
