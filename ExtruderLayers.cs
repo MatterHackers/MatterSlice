@@ -146,8 +146,8 @@ namespace MatterHackers.MatterSlice
 					sparseInfillPaths = Clipper.CleanPolygons(sparseInfillPaths, cleanDistance_um);
 					island.SparseInfillPaths = sparseInfillPaths;
 
-					if (config == null 
-						|| config.InfillSpeed != config.FirstTopLayerSpeed)
+					if (config == null  // this is to make our tests test the bridgeOverInfill
+						|| config.BridgeOverInfill)
 					{
 						// no figure out what partof the solid infill is actuall first top layers and switch it to that
 						// we can only have a first topy layer at the bottom of the top layers

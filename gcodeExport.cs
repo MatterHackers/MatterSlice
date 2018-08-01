@@ -30,7 +30,7 @@ namespace MatterHackers.MatterSlice
 	public class GCodeExport
 	{
 		private string beforeToolchangeCode;
-		private int currentFanSpeed;
+		public int CurrentFanSpeed { get; private set; }
 		private IntPoint currentPosition_um;
 		private double currentSpeed;
 		private TimeEstimateCalculator estimateCalculator = new TimeEstimateCalculator();
@@ -85,7 +85,7 @@ namespace MatterHackers.MatterSlice
 			extrusionAmountAtPreviousRetraction_mm = -1;
 			extruderSwitchRetraction_mm = 14.5;
 			extruderIndex = 0;
-			currentFanSpeed = -1;
+			CurrentFanSpeed = -1;
 
 			totalPrintTime = 0.0;
 			for (int e = 0; e < ConfigConstants.MAX_EXTRUDERS; e++)
@@ -302,7 +302,7 @@ namespace MatterHackers.MatterSlice
 
 		public void WriteFanCommand(int speed)
 		{
-			if (currentFanSpeed == speed)
+			if (CurrentFanSpeed == speed)
 			{
 				return;
 			}
@@ -318,7 +318,7 @@ namespace MatterHackers.MatterSlice
 			{
 				gcodeFileStream.Write("M107\n");
 			}
-			currentFanSpeed = speed;
+			CurrentFanSpeed = speed;
 		}
 
 		public void WriteLine(string line)

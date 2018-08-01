@@ -161,7 +161,7 @@ namespace MatterHackers.MatterSlice
 
 			fillConfig.SetData(config.InfillSpeed, extrusionWidth, "FILL", false);
 			topFillConfig.SetData(config.TopInfillSpeed, extrusionWidth, "TOP-FILL", false);
-			firstTopFillConfig.SetData(config.FirstTopLayerSpeed, extrusionWidth, "FIRST-TOP-Fill", false);
+			firstTopFillConfig.SetData(config.BridgeSpeed, extrusionWidth, "FIRST-TOP-Fill", false);
 			bottomFillConfig.SetData(config.BottomInfillSpeed, extrusionWidth, "BOTTOM-FILL", false);
 			airGappedBottomConfig.SetData(config.FirstLayerSpeed, extrusionWidth, "AIR-GAP", false);
 			bridgeConfig.SetData(config.BridgeSpeed, extrusionWidth, "BRIDGE");
@@ -430,7 +430,7 @@ namespace MatterHackers.MatterSlice
 
 					fillConfig.SetData(config.InfillSpeed, config.ExtrusionWidth_um, "FILL", false);
 					topFillConfig.SetData(config.TopInfillSpeed, config.ExtrusionWidth_um, "TOP-FILL", false);
-					firstTopFillConfig.SetData(config.FirstTopLayerSpeed, config.ExtrusionWidth_um, "FIRST-TOP-Fill", false);
+					firstTopFillConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um, "FIRST-TOP-Fill", false);
 					bottomFillConfig.SetData(config.BottomInfillSpeed, config.ExtrusionWidth_um, "BOTTOM-FILL", false);
 					airGappedBottomConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um, "AIR-GAP", false);
 					bridgeConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um, "BRIDGE");
@@ -978,7 +978,15 @@ namespace MatterHackers.MatterSlice
 				// This will make the total amount of travel while printing infill much less.
 				layerGcodePlanner.QueuePolygonsByOptimizer(fillPolygons, island.PathFinder, fillConfig, layerIndex);
 				QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bottomFillPolygons, bottomFillConfig, SupportWriteType.UnsupportedAreas);
-				layerGcodePlanner.QueuePolygonsByOptimizer(firstTopFillPolygons, island.PathFinder, firstTopFillConfig, layerIndex);
+				if (firstTopFillPolygons.Count > 0)
+				{
+					int fanSpeedPercent = gcodeExport.CurrentFanSpeed;
+					// turn it on for bridge (or keep it on)
+					gcodeExport.WriteFanCommand(Math.Max(fanSpeedPercent, config.BridgeFanSpeedPercent));
+					layerGcodePlanner.QueuePolygonsByOptimizer(firstTopFillPolygons, island.PathFinder, firstTopFillConfig, layerIndex);
+					// Set it back to what it was
+					gcodeExport.WriteFanCommand(fanSpeedPercent);
+				}
 				layerGcodePlanner.QueuePolygonsByOptimizer(topFillPolygons, island.PathFinder, topFillConfig, layerIndex);
 			}
 		}
