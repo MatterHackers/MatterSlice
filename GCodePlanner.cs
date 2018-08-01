@@ -95,48 +95,11 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static GCodePath TrimPerimeter(GCodePath inPath, double perimeterStartEndOverlapRatio)
+		public static GCodePath TrimGCodePath(GCodePath inPath, long targetDistance)
 		{
 			GCodePath path = new GCodePath(inPath);
-			long currentDistance = 0;
-			long targetDistance = (long)(path.config.lineWidth_um * (1 - perimeterStartEndOverlapRatio));
-
-			if (path.polygon.Count > 1)
-			{
-				for (int pointIndex = path.polygon.Count - 1; pointIndex > 0; pointIndex--)
-				{
-					// Calculate distance between 2 points
-					currentDistance = (path.polygon[pointIndex] - path.polygon[pointIndex - 1]).Length();
-
-					// If distance exceeds clip distance:
-					//  - Sets the new last path point
-					if (currentDistance > targetDistance)
-					{
-						long newDistance = currentDistance - targetDistance;
-						if (targetDistance > 50) // Don't clip segments less than 50 um. We get too much truncation error.
-						{
-							IntPoint dir = (path.polygon[pointIndex] - path.polygon[pointIndex - 1]) * newDistance / currentDistance;
-
-							IntPoint clippedEndpoint = path.polygon[pointIndex - 1] + dir;
-
-							path.polygon[pointIndex] = clippedEndpoint;
-						}
-						break;
-					}
-					else if (currentDistance == targetDistance)
-					{
-						// Pops off last point because it is at the limit distance
-						path.polygon.RemoveAt(path.polygon.Count - 1);
-						break;
-					}
-					else
-					{
-						// Pops last point and reduces distance remaining to target
-						targetDistance -= currentDistance;
-						path.polygon.RemoveAt(path.polygon.Count - 1);
-					}
-				}
-			}
+			// get a new trimmed polygon
+			path.polygon = path.polygon.Trim(targetDistance);
 
 			return path;
 		}
@@ -531,7 +494,8 @@ namespace MatterHackers.MatterSlice
 					// This is test code to remove double drawn small perimeter lines.
 					if (trimmed)
 					{
-						path = TrimPerimeter(path, perimeterStartEndOverlapRatio);
+						long targetDistance = (long)(path.config.lineWidth_um * (1 - perimeterStartEndOverlapRatio));
+						path = TrimGCodePath(path, targetDistance);
 						// update the point count after trimming
 						pointCount = path.polygon.Count;
 					}
@@ -551,6 +515,12 @@ namespace MatterHackers.MatterSlice
 					{
 						// go back to the start of the loop
 						gcodeExport.WriteMove(loopStart, speed, 0);
+
+						var length = path.polygon.PolygonLength();
+						// retract while moving on down the perimeter
+						//gcodeExport.WriteRetraction
+						// then drive down it just a bit more to make sure we have a clean overlap
+						//var extraMove = TrimGCodePath(path, perimeterStartEndOverlapRatio);
 					}
 				}
 			}

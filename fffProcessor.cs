@@ -174,7 +174,7 @@ namespace MatterHackers.MatterSlice
 				gcodeExport.SetExtruderOffset(extruderIndex, config.ExtruderOffsets[extruderIndex], -config.ZOffset_um);
 			}
 
-			gcodeExport.SetRetractionSettings(config.RetractionOnTravel, config.RetractionSpeed, config.RetractionOnExtruderSwitch, config.MinimumExtrusionBeforeRetraction, config.RetractionZHop, config.WipeAfterRetraction, config.UnretractExtraExtrusion, config.RetractRestartExtraTimeToApply, config.UnretractExtraOnExtruderSwitch, config.ResetLongExtrusion);
+			gcodeExport.SetRetractionSettings(config.RetractionOnTravel, config.RetractionSpeed, config.RetractionOnExtruderSwitch, config.MinimumExtrusionBeforeRetraction, config.RetractionZHop, config.UnretractExtraExtrusion, config.RetractRestartExtraTimeToApply, config.UnretractExtraOnExtruderSwitch, config.ResetLongExtrusion);
 			gcodeExport.SetToolChangeCode(config.ToolChangeCode, config.BeforeToolchangeCode);
 
 			gcodeExport.SetLayerChangeCode(config.LayerChangeCode);
