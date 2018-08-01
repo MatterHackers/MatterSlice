@@ -81,7 +81,7 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("This is the speed to print the bottom layers infill, mm/s.")]
 		public double BottomInfillSpeed { get; set; }
 
-		public double FirstTopLayerSpeed { get; set; }
+		public bool BridgeOverInfill { get; set; }
 
 		[SettingDescription("The speed to run the fan during bridging.")]
 		public int BridgeFanSpeedPercent { get; set; }
@@ -601,7 +601,6 @@ namespace MatterHackers.MatterSlice
 			NumberOfTopLayers = 6;
 			FirstLayerSpeed = 20;
 			TopInfillSpeed = 20;
-			FirstTopLayerSpeed = 20;
 			BottomInfillSpeed = 20;
 			SupportMaterialSpeed = 40;
 			InfillSpeed = 50;
