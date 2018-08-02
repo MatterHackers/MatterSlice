@@ -37,8 +37,6 @@ namespace MatterHackers.MatterSlice
 	{
 		private int currentExtruderIndex;
 
-		private double extraTime;
-
 		private bool forceRetraction;
 
 		private GCodeExport gcodeExport = new GCodeExport();
@@ -62,7 +60,6 @@ namespace MatterHackers.MatterSlice
 			travelConfig.SetData(travelSpeed, 0, "travel");
 
 			LastPosition = gcode.GetPositionXY();
-			extraTime = 0.0;
 			totalPrintTime = 0.0;
 			forceRetraction = false;
 			currentExtruderIndex = gcode.GetExtruderIndex();
@@ -104,7 +101,7 @@ namespace MatterHackers.MatterSlice
 			return path;
 		}
 
-		public void ForceMinimumLayerTime(double minTime, int minimumPrintingSpeed)
+		public void CorrectLayerTimeConsideringMinimumLayerTime(double minTime, int minimumPrintingSpeed)
 		{
 			IntPoint lastPosition = gcodeExport.GetPosition();
 			double travelTime = 0.0;
@@ -139,18 +136,10 @@ namespace MatterHackers.MatterSlice
 				}
 
 				gcodeExport.LayerSpeedRatio = GetNewLayerSpeedRatio(minimumPrintingSpeed, extrudeTime, minExtrudeTime);
+				gcodeExport.LayerTime = (extrudeTime / gcodeExport.LayerSpeedRatio) + travelTime;
+			}
 
-				if (minTime - (extrudeTime / gcodeExport.LayerSpeedRatio) - travelTime > 0.1)
-				{
-					//TODO: Use up this extra time (circle around the print?)
-					this.extraTime = minTime - (extrudeTime / gcodeExport.LayerSpeedRatio) - travelTime;
-				}
-				this.totalPrintTime = (extrudeTime / gcodeExport.LayerSpeedRatio) + travelTime;
-			}
-			else
-			{
-				this.totalPrintTime = gcodeExport.LayerTime;
-			}
+			this.totalPrintTime = gcodeExport.LayerTime;
 		}
 
 		private double GetNewLayerSpeedRatio(int minimumPrintingSpeed, double extrudeTime, double minExtrudeTime)
