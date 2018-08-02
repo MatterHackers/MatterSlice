@@ -99,7 +99,7 @@ namespace MatterHackers.MatterSlice
 		{
 			GCodePath path = new GCodePath(inPath);
 			// get a new trimmed polygon
-			path.polygon = path.polygon.Trim(targetDistance);
+			path.Polygon = path.Polygon.Trim(targetDistance);
 
 			return path;
 		}
@@ -112,9 +112,9 @@ namespace MatterHackers.MatterSlice
 			for (int pathIndex = 0; pathIndex < paths.Count; pathIndex++)
 			{
 				GCodePath path = paths[pathIndex];
-				for (int pointIndex = 0; pointIndex < path.polygon.Count; pointIndex++)
+				for (int pointIndex = 0; pointIndex < path.Polygon.Count; pointIndex++)
 				{
-					IntPoint currentPosition = path.polygon[pointIndex];
+					IntPoint currentPosition = path.Polygon[pointIndex];
 					double thisTime = (lastPosition - currentPosition).LengthMm() / (double)(path.config.speed);
 					if (path.config.lineWidth_um != 0)
 					{
@@ -186,7 +186,7 @@ namespace MatterHackers.MatterSlice
 
 		public void QueueExtrusionMove(IntPoint destination, GCodePathConfig config)
 		{
-			GetLatestPathWithConfig(config).polygon.Add(new IntPoint(destination, CurrentZ));
+			GetLatestPathWithConfig(config).Polygon.Add(new IntPoint(destination, CurrentZ));
 			LastPosition = destination;
 
 			//ValidatePaths();
@@ -241,6 +241,13 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		public GCodePath QueueFanCommand(int fanSpeedPercent, GCodePathConfig config)
+		{
+			var path = GetNewPath(config);
+			path.FanPercent = fanSpeedPercent;
+			return path;
+		}
+
 		public void QueuePolygons(Polygons polygons, GCodePathConfig config)
 		{
 			foreach (var polygon in polygons)
@@ -293,7 +300,7 @@ namespace MatterHackers.MatterSlice
 						// we can stay inside so move within the boundary
 						for (int positionIndex = 0; positionIndex < pathPolygon.Count; positionIndex++)
 						{
-							path.polygon.Add(new IntPoint(pathPolygon[positionIndex], CurrentZ)
+							path.Polygon.Add(new IntPoint(pathPolygon[positionIndex], CurrentZ)
 							{
 								Width = 0
 							});
@@ -322,7 +329,7 @@ namespace MatterHackers.MatterSlice
 				path.Retract = RetractType.Requested;
 			}
 
-			path.polygon.Add(new IntPoint(positionToMoveTo, CurrentZ)
+			path.Polygon.Add(new IntPoint(positionToMoveTo, CurrentZ)
 			{
 				Width = 0,
 			});
@@ -347,7 +354,7 @@ namespace MatterHackers.MatterSlice
 			currentExtruderIndex = extruder;
 		}
 
-		public void WriteQueuedGCode(int layerThickness, int fanSpeedPercent = -1, int bridgeFanSpeedPercent = -1)
+		public void WriteQueuedGCode(int layerThickness)
 		{
 			GCodePathConfig lastConfig = null;
 			int extruderIndex = gcodeExport.GetExtruderIndex();
@@ -355,9 +362,9 @@ namespace MatterHackers.MatterSlice
 			for (int pathIndex = 0; pathIndex < paths.Count; pathIndex++)
 			{
 				var path = paths[pathIndex];
-				if (extruderIndex != path.extruderIndex)
+				if (extruderIndex != path.ExtruderIndex)
 				{
-					extruderIndex = path.extruderIndex;
+					extruderIndex = path.ExtruderIndex;
 					gcodeExport.SwitchExtruder(extruderIndex);
 				}
 				else if (path.Retract != RetractType.None)
@@ -366,26 +373,21 @@ namespace MatterHackers.MatterSlice
 
 					if (path.config.lineWidth_um == 0)
 					{
-						var lengthToStart = (gcodeExport.GetPosition() - path.polygon[0]).Length();
-						var lengthOfMove = lengthToStart + path.polygon.PolygonLength();
+						var lengthToStart = (gcodeExport.GetPosition() - path.Polygon[0]).Length();
+						var lengthOfMove = lengthToStart + path.Polygon.PolygonLength();
 						timeOfMove = lengthOfMove / 1000.0 / path.config.speed;
 					}
 
 					gcodeExport.WriteRetraction(timeOfMove, path.Retract == RetractType.Force);
 				}
-				if (path.config != travelConfig && lastConfig != path.config)
+				if (lastConfig != path.config && path.config != travelConfig)
 				{
-					if (path.config.gcodeComment == "BRIDGE" && bridgeFanSpeedPercent != -1)
-					{
-						gcodeExport.WriteFanCommand(bridgeFanSpeedPercent);
-					}
-					else if (lastConfig?.gcodeComment == "BRIDGE" && bridgeFanSpeedPercent != -1)
-					{
-						gcodeExport.WriteFanCommand(fanSpeedPercent);
-					}
-
 					gcodeExport.WriteComment("TYPE:{0}".FormatWith(path.config.gcodeComment));
 					lastConfig = path.config;
+				}
+				if (path.FanPercent != -1)
+				{
+					gcodeExport.WriteFanCommand(path.FanPercent);
 				}
 
 				double speed = path.config.speed;
@@ -399,16 +401,16 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				if (path.polygon.Count == 1
+				if (path.Polygon.Count == 1
 					&& path.config != travelConfig
-					&& (gcodeExport.GetPositionXY() - path.polygon[0]).ShorterThen(path.config.lineWidth_um * 2))
+					&& (gcodeExport.GetPositionXY() - path.Polygon[0]).ShorterThen(path.config.lineWidth_um * 2))
 				{
 					//Check for lots of small moves and combine them into one large line
-					IntPoint nextPosition = path.polygon[0];
+					IntPoint nextPosition = path.Polygon[0];
 					int i = pathIndex + 1;
-					while (i < paths.Count && paths[i].polygon.Count == 1 && (nextPosition - paths[i].polygon[0]).ShorterThen(path.config.lineWidth_um * 2))
+					while (i < paths.Count && paths[i].Polygon.Count == 1 && (nextPosition - paths[i].Polygon[0]).ShorterThen(path.config.lineWidth_um * 2))
 					{
-						nextPosition = paths[i].polygon[0];
+						nextPosition = paths[i].Polygon[0];
 						i++;
 					}
 					if (paths[i - 1].config == travelConfig)
@@ -421,24 +423,24 @@ namespace MatterHackers.MatterSlice
 						nextPosition = gcodeExport.GetPosition();
 						for (int x = pathIndex; x < i - 1; x += 2)
 						{
-							long oldLen = (nextPosition - paths[x].polygon[0]).Length();
-							IntPoint newPoint = (paths[x].polygon[0] + paths[x + 1].polygon[0]) / 2;
+							long oldLen = (nextPosition - paths[x].Polygon[0]).Length();
+							IntPoint newPoint = (paths[x].Polygon[0] + paths[x + 1].Polygon[0]) / 2;
 							long newLen = (gcodeExport.GetPosition() - newPoint).Length();
 							if (newLen > 0)
 							{
 								gcodeExport.WriteMove(newPoint, speed, (int)(path.config.lineWidth_um * oldLen / newLen));
 							}
 
-							nextPosition = paths[x + 1].polygon[0];
+							nextPosition = paths[x + 1].Polygon[0];
 						}
 
 						long lineWidth_um = path.config.lineWidth_um;
-						if (paths[i - 1].polygon[0].Width != 0)
+						if (paths[i - 1].Polygon[0].Width != 0)
 						{
-							lineWidth_um = paths[i - 1].polygon[0].Width;
+							lineWidth_um = paths[i - 1].Polygon[0].Width;
 						}
 
-						gcodeExport.WriteMove(paths[i - 1].polygon[0], speed, lineWidth_um);
+						gcodeExport.WriteMove(paths[i - 1].Polygon[0], speed, lineWidth_um);
 						pathIndex = i - 1;
 						continue;
 					}
@@ -463,21 +465,21 @@ namespace MatterHackers.MatterSlice
 					double totalLength = 0;
 					long z = gcodeExport.GetPositionZ();
 					IntPoint currentPosition = gcodeExport.GetPositionXY();
-					for (int pointIndex = 0; pointIndex < path.polygon.Count; pointIndex++)
+					for (int pointIndex = 0; pointIndex < path.Polygon.Count; pointIndex++)
 					{
-						IntPoint nextPosition = path.polygon[pointIndex];
+						IntPoint nextPosition = path.Polygon[pointIndex];
 						totalLength += (currentPosition - nextPosition).LengthMm();
 						currentPosition = nextPosition;
 					}
 
 					double length = 0.0;
 					currentPosition = gcodeExport.GetPositionXY();
-					for (int i = 0; i < path.polygon.Count; i++)
+					for (int i = 0; i < path.Polygon.Count; i++)
 					{
-						IntPoint nextPosition = path.polygon[i];
+						IntPoint nextPosition = path.Polygon[i];
 						length += (currentPosition - nextPosition).LengthMm();
 						currentPosition = nextPosition;
-						IntPoint nextExtrusion = path.polygon[i];
+						IntPoint nextExtrusion = path.Polygon[i];
 						nextExtrusion.Z = (int)(z + layerThickness * length / totalLength + .5);
 						gcodeExport.WriteMove(nextExtrusion, speed, path.config.lineWidth_um);
 					}
@@ -485,10 +487,10 @@ namespace MatterHackers.MatterSlice
 				else
 				{
 					var loopStart = gcodeExport.GetPosition();
-					int pointCount = path.polygon.Count;
+					int pointCount = path.Polygon.Count;
 
 					bool outerPerimeter = (path.config.gcodeComment == "WALL-OUTER" || path.config.gcodeComment == "WALL-INNER");
-					bool completeLoop = (pointCount > 0 && path.polygon[pointCount - 1] == loopStart);
+					bool completeLoop = (pointCount > 0 && path.Polygon[pointCount - 1] == loopStart);
 					bool trimmed = outerPerimeter && completeLoop && perimeterStartEndOverlapRatio < 1;
 
 					// This is test code to remove double drawn small perimeter lines.
@@ -497,18 +499,18 @@ namespace MatterHackers.MatterSlice
 						long targetDistance = (long)(path.config.lineWidth_um * (1 - perimeterStartEndOverlapRatio));
 						path = TrimGCodePath(path, targetDistance);
 						// update the point count after trimming
-						pointCount = path.polygon.Count;
+						pointCount = path.Polygon.Count;
 					}
 
 					for (int i = 0; i < pointCount; i++)
 					{
 						long lineWidth_um = path.config.lineWidth_um;
-						if (path.polygon[i].Width != 0)
+						if (path.Polygon[i].Width != 0)
 						{
-							lineWidth_um = path.polygon[i].Width;
+							lineWidth_um = path.Polygon[i].Width;
 						}
 
-						gcodeExport.WriteMove(path.polygon[i], speed, lineWidth_um);
+						gcodeExport.WriteMove(path.Polygon[i], speed, lineWidth_um);
 					}
 
 					if (trimmed)
@@ -516,7 +518,7 @@ namespace MatterHackers.MatterSlice
 						// go back to the start of the loop
 						gcodeExport.WriteMove(loopStart, speed, 0);
 
-						var length = path.polygon.PolygonLength();
+						var length = path.Polygon.PolygonLength();
 						// retract while moving on down the perimeter
 						//gcodeExport.WriteRetraction
 						// then drive down it just a bit more to make sure we have a clean overlap
@@ -532,7 +534,7 @@ namespace MatterHackers.MatterSlice
 		{
 			if (paths.Count > 0)
 			{
-				paths[paths.Count - 1].done = true;
+				paths[paths.Count - 1].Done = true;
 			}
 		}
 
@@ -540,18 +542,25 @@ namespace MatterHackers.MatterSlice
 		{
 			if (paths.Count > 0
 				&& paths[paths.Count - 1].config == config
-				&& !paths[paths.Count - 1].done)
+				&& !paths[paths.Count - 1].Done)
 			{
 				return paths[paths.Count - 1];
 			}
 
-			paths.Add(new GCodePath());
-			GCodePath ret = paths[paths.Count - 1];
-			ret.Retract = RetractType.None;
-			ret.config = config;
-			ret.extruderIndex = currentExtruderIndex;
-			ret.done = false;
-			return ret;
+			var path = GetNewPath(config);
+			return path;
+		}
+
+		private GCodePath GetNewPath(GCodePathConfig config)
+		{
+			GCodePath path = new GCodePath();
+			paths.Add(path);
+			path.Retract = RetractType.None;
+			path.ExtruderIndex = currentExtruderIndex;
+			path.Done = false;
+			path.config = config;
+
+			return path;
 		}
 
 		private void ValidatePaths()
@@ -561,9 +570,9 @@ namespace MatterHackers.MatterSlice
 			for (int pathIndex = 0; pathIndex < paths.Count; pathIndex++)
 			{
 				var path = paths[pathIndex];
-				for (int polyIndex = 0; polyIndex < path.polygon.Count; polyIndex++)
+				for (int polyIndex = 0; polyIndex < path.Polygon.Count; polyIndex++)
 				{
-					var position = path.polygon[polyIndex];
+					var position = path.Polygon[polyIndex];
 					if (first)
 					{
 						first = false;
@@ -571,7 +580,7 @@ namespace MatterHackers.MatterSlice
 					else
 					{
 						if (pathIndex == paths.Count - 1
-							&& polyIndex == path.polygon.Count - 1
+							&& polyIndex == path.Polygon.Count - 1
 							&& lastValidPathFinder != null
 							&& !lastValidPathFinder.OutlineData.Polygons.PointIsInside((position + lastPosition) / 2))
 						{

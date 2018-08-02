@@ -481,7 +481,8 @@ namespace MatterHackers.MatterSlice
 					QueueSkirtToGCode(slicingData, layerGcodePlanner, layerIndex);
 				}
 
-				int fanSpeedPercent = GetFanSpeed(layerIndex, gcodeExport);
+				List<GCodePath> fanSpeedsToSet = new List<GCodePath>();
+				fanSpeedsToSet.Add(layerGcodePlanner.QueueFanCommand(0, fillConfig));
 
 				for (int extruderIndex = 0; extruderIndex < config.MaxExtruderCount(); extruderIndex++)
 				{
@@ -511,11 +512,11 @@ namespace MatterHackers.MatterSlice
 
 					if (layerIndex == 0)
 					{
-						QueueExtruderLayerToGCode(slicingData, layerGcodePlanner, extruderIndex, layerIndex, config.FirstLayerExtrusionWidth_um, z);
+						QueueExtruderLayerToGCode(slicingData, layerGcodePlanner, extruderIndex, layerIndex, config.FirstLayerExtrusionWidth_um, z, fanSpeedsToSet);
 					}
 					else
 					{
-						QueueExtruderLayerToGCode(slicingData, layerGcodePlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
+						QueueExtruderLayerToGCode(slicingData, layerGcodePlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um, z, fanSpeedsToSet);
 					}
 
 					if (config.AvoidCrossingPerimeters
@@ -571,8 +572,11 @@ namespace MatterHackers.MatterSlice
 
 				//Finish the layer by applying speed corrections for minimum layer times.
 				layerGcodePlanner.ForceMinimumLayerTime(config.MinimumLayerTimeSeconds, config.MinimumPrintingSpeed);
-
-				gcodeExport.WriteFanCommand(fanSpeedPercent);
+				int layerFanSpeed = GetFanSpeed(layerIndex, gcodeExport);
+				foreach (var fanSpeed in fanSpeedsToSet)
+				{
+					fanSpeed.FanPercent = Math.Max(fanSpeed.FanPercent, layerFanSpeed);
+				}
 
 				int currentLayerThickness_um = config.LayerThickness_um;
 				if (layerIndex <= 0)
@@ -580,7 +584,7 @@ namespace MatterHackers.MatterSlice
 					currentLayerThickness_um = config.FirstLayerThickness_um;
 				}
 
-				layerGcodePlanner.WriteQueuedGCode(currentLayerThickness_um, fanSpeedPercent, config.BridgeFanSpeedPercent);
+				layerGcodePlanner.WriteQueuedGCode(currentLayerThickness_um);
 			}
 
 			LogOutput.Log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
@@ -742,7 +746,13 @@ namespace MatterHackers.MatterSlice
 		LayerIsland islandCurrentlyInside = null;
 
 		//Add a single layer from a single extruder to the GCode
-		private void QueueExtruderLayerToGCode(LayerDataStorage slicingData, GCodePlanner layerGcodePlanner, int extruderIndex, int layerIndex, int extrusionWidth_um, long currentZ_um)
+		private void QueueExtruderLayerToGCode(LayerDataStorage slicingData, 
+			GCodePlanner layerGcodePlanner, 
+			int extruderIndex, 
+			int layerIndex, 
+			int extrusionWidth_um, 
+			long currentZ_um,
+			List<GCodePath> fanSpeedsToSet)
 		{
 			if (extruderIndex > slicingData.Extruders.Count - 1)
 			{
@@ -840,6 +850,8 @@ namespace MatterHackers.MatterSlice
 					GCodePathConfig overrideConfig = null;
 					if (bridgePolygons.Count > 0)
 					{
+						// turn it on for bridge (or keep it on)
+						fanSpeedsToSet.Add(layerGcodePlanner.QueueFanCommand(config.BridgeFanSpeedPercent, bridgeConfig));
 						overrideConfig = bridgeConfig;
 					}
 					// If we are on the very first layer we always start with the outside so that we can stick to the bed better.
@@ -972,6 +984,8 @@ namespace MatterHackers.MatterSlice
 				if (bridgePolygons.Count > 0)
 				{
 					QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bridgePolygons, bridgeConfig, SupportWriteType.UnsupportedAreas);
+					// Set it back to what it was
+					fanSpeedsToSet.Add(layerGcodePlanner.QueueFanCommand(0, fillConfig));
 				}
 
 				// TODO: Put all of these segments into a list that can be queued together and still preserve their individual config settings.
@@ -982,10 +996,10 @@ namespace MatterHackers.MatterSlice
 				{
 					int fanSpeedPercent = gcodeExport.CurrentFanSpeed;
 					// turn it on for bridge (or keep it on)
-					gcodeExport.WriteFanCommand(Math.Max(fanSpeedPercent, config.BridgeFanSpeedPercent));
+					layerGcodePlanner.QueueFanCommand(Math.Max(fanSpeedPercent, config.BridgeFanSpeedPercent), bridgeConfig);
 					layerGcodePlanner.QueuePolygonsByOptimizer(firstTopFillPolygons, island.PathFinder, firstTopFillConfig, layerIndex);
 					// Set it back to what it was
-					gcodeExport.WriteFanCommand(fanSpeedPercent);
+					layerGcodePlanner.QueueFanCommand(fanSpeedPercent, fillConfig);
 				}
 				layerGcodePlanner.QueuePolygonsByOptimizer(topFillPolygons, island.PathFinder, topFillConfig, layerIndex);
 			}

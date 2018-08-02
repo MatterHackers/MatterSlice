@@ -25,20 +25,12 @@ using System.Collections.Generic;
 namespace MatterHackers.MatterSlice
 {
 	using Polygon = List<IntPoint>;
+
 	public enum RetractType { None, Requested, Force };
 
 	public class GCodePath
 	{
 		public GCodePathConfig config;
-
-		public Polygon polygon = new Polygon();
-
-		/// <summary>
-		/// Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
-		/// </summary>
-		internal bool done;
-
-		internal int extruderIndex;
 
 		public GCodePath()
 		{
@@ -47,27 +39,35 @@ namespace MatterHackers.MatterSlice
 		public GCodePath(GCodePath copyPath)
 		{
 			this.config = copyPath.config;
-			this.done = copyPath.done;
-			this.extruderIndex = copyPath.extruderIndex;
+			this.Done = copyPath.Done;
+			this.ExtruderIndex = copyPath.ExtruderIndex;
 			this.Retract = copyPath.Retract;
-			this.polygon = new Polygon(copyPath.polygon);
+			this.Polygon = new Polygon(copyPath.Polygon);
 		}
 
-		internal RetractType Retract { get; set; } = RetractType.None;
+		/// <summary>
+		/// Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
+		/// </summary>
+		public bool Done { get; set; }
+
+		public int ExtruderIndex { get; set; }
+		public int FanPercent { get; set; } = -1;
+		public Polygon Polygon { get; set; } = new Polygon();
+		public RetractType Retract { get; set; } = RetractType.None;
 
 		public long Length(bool pathIsClosed)
 		{
 			long totalLength = 0;
-			for (int pointIndex = 0; pointIndex < polygon.Count - 1; pointIndex++)
+			for (int pointIndex = 0; pointIndex < Polygon.Count - 1; pointIndex++)
 			{
 				// Calculate distance between 2 points
-				totalLength += (polygon[pointIndex] - polygon[pointIndex + 1]).Length();
+				totalLength += (Polygon[pointIndex] - Polygon[pointIndex + 1]).Length();
 			}
 
 			if (pathIsClosed)
 			{
 				// add in the move back to the start
-				totalLength += (polygon[polygon.Count - 1] - polygon[0]).Length();
+				totalLength += (Polygon[Polygon.Count - 1] - Polygon[0]).Length();
 			}
 
 			return totalLength;

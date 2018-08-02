@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using MSClipperLib;
@@ -295,6 +294,10 @@ namespace MatterHackers.MatterSlice
 			gcodeFileStream.Write($"; {comment}\n");
 		}
 
+		/// <summary>
+		/// Emit a fan command right now. This will not be part of the queued commands.
+		/// </summary>
+		/// <param name="speed"></param>
 		public void WriteFanCommand(int speed)
 		{
 			if (CurrentFanSpeed == speed)
