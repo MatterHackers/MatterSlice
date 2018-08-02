@@ -331,9 +331,6 @@ namespace MatterHackers.MatterSlice
 
 		public bool ResetLongExtrusion { get; set; }
 
-		[SettingDescription("If set will cause the head to try to wipe itself off after retracting.")]
-		public bool WipeAfterRetraction { get; set; }
-
 		[SettingDescription("If greater than 0 this creates an outline around shapes so the extrude will be wiped when entering.")]
 		public double WipeShieldDistanceFromObject { get; set; }
 
