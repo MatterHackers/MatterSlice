@@ -50,10 +50,10 @@ namespace MatterHackers.MatterSlice.Tests
 			long targetDistance = (long)(inPath.config.lineWidth_um);
 			GCodePath testPath = GCodePlanner.TrimGCodePath(inPath, targetDistance);
 
-			Assert.IsTrue(controlPath.polygon.Count == testPath.polygon.Count);
-			for (int i = 0; i < controlPath.polygon.Count; i++)
+			Assert.IsTrue(controlPath.Polygon.Count == testPath.Polygon.Count);
+			for (int i = 0; i < controlPath.Polygon.Count; i++)
 			{
-				Assert.IsTrue(controlPath.polygon[i] == testPath.polygon[i]);
+				Assert.IsTrue(controlPath.Polygon[i] == testPath.Polygon[i]);
 			}
 		}
 
@@ -456,7 +456,7 @@ namespace MatterHackers.MatterSlice.Tests
 			Polygons pathsWithOverlapsRemoved;
 			bool pathIsClosed = false;
 
-			bool pathHadOverlaps = path.polygon.MergePerimeterOverlaps(path.config.lineWidth_um, out pathsWithOverlapsRemoved, pathIsClosed)
+			bool pathHadOverlaps = path.Polygon.MergePerimeterOverlaps(path.config.lineWidth_um, out pathsWithOverlapsRemoved, pathIsClosed)
 				&& pathsWithOverlapsRemoved.Count > 0;
 
 			Assert.IsFalse(pathHadOverlaps);
