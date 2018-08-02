@@ -571,7 +571,7 @@ namespace MatterHackers.MatterSlice
 				}
 
 				//Finish the layer by applying speed corrections for minimum layer times.
-				layerGcodePlanner.ForceMinimumLayerTime(config.MinimumLayerTimeSeconds, config.MinimumPrintingSpeed);
+				layerGcodePlanner.CorrectLayerTimeConsideringMinimumLayerTime(config.MinimumLayerTimeSeconds, config.MinimumPrintingSpeed);
 				int layerFanSpeed = GetFanSpeed(layerIndex, gcodeExport);
 				foreach (var fanSpeed in fanSpeedsToSet)
 				{
