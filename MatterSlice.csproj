@@ -68,7 +68,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ExtruderLayers.cs" />
-    <Compile Include="GCodeExport.cs" />
+    <Compile Include="gcodeExport.cs" />
     <Compile Include="GCodePath.cs" />
     <Compile Include="GCodePathConfig.cs" />
     <Compile Include="GCodePlanner.cs" />
