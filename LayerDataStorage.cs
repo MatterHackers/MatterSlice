@@ -501,7 +501,7 @@ namespace MatterHackers.MatterSlice
 			bool haveWipeTower = HaveWipeTower(config);
 			if (haveWipeTower)
 			{
-				return layerIndex < LastLayerWithChange(config);
+				return layerIndex <= LastLayerWithChange(config);
 			}
 
 			return false;
