@@ -286,7 +286,7 @@ namespace MatterHackers.MatterSlice
 
 			using (var stream = new StreamWriter(filename))
 			{
-				stream.WriteLine("<svg xmlns=\"http://www.w3.org/2000/svg\" x=\"30\" version=\"1.1\" style='width:{0}px;height:{1}px'>".FormatWith((int)(size.X / scale), (int)(size.Y / scale)));
+				stream.WriteLine("<svg xmlns=\"http://www.w3.org/2000/svg\" x=\"30\" version=\"1.1\" style='width:{0}px;height:{1}px'>", (int)(size.X / scale), (int)(size.Y / scale));
 				stream.WriteLine("<marker id='MidMarker' viewBox='0 0 10 10' refX='5' refY='5' markerUnits='strokeWidth' markerWidth='10' markerHeight='10' stroke='lightblue' stroke-width='2' fill='none' orient='auto'>");
 				stream.WriteLine("<path d='M 0 0 L 10 5 M 0 10 L 10 5'/>");
 				stream.WriteLine("</marker>");
