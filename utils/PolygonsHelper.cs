@@ -282,9 +282,9 @@ namespace MatterHackers.MatterSlice
 			bounds.minY = temp;
 			IntPoint size = new IntPoint(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY);
 			double scale = Max(size.X, size.Y) / scaleDenominator;
+
 			StreamWriter stream = new StreamWriter(filename);
-			stream.Write("<!DOCTYPE html><html><body>\n");
-			stream.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" style='width:{0}px;height:{1}px'>\n".FormatWith((int)(size.X / scale), (int)(size.Y / scale)));
+			stream.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" x=\"30\" version=\"1.1\" style='width:{0}px;height:{1}px'>\n".FormatWith((int)(size.X / scale), (int)(size.Y / scale)));
 			stream.Write("<marker id='MidMarker' viewBox='0 0 10 10' refX='5' refY='5' markerUnits='strokeWidth' markerWidth='10' markerHeight='10' stroke='lightblue' stroke-width='2' fill='none' orient='auto'>");
 			stream.Write("<path d='M 0 0 L 10 5 M 0 10 L 10 5'/>");
 			stream.Write("</marker>");
@@ -321,9 +321,7 @@ namespace MatterHackers.MatterSlice
 				stream.Write("\" style=\"fill: none; stroke:red;stroke-width:1\" />\n");
 			}
 			stream.Write("</svg>\n");
-
-			stream.Write("</body></html>");
-			stream.Close();
+			stream.Dispose();
 		}
 
 		public static bool SegmentTouching(this Polygons polygons, IntPoint start, IntPoint end)
