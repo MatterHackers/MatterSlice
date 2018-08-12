@@ -280,48 +280,52 @@ namespace MatterHackers.MatterSlice
 			long temp = bounds.maxY;
 			bounds.maxY = bounds.minY;
 			bounds.minY = temp;
-			IntPoint size = new IntPoint(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY);
+
+			var size = new IntPoint(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY);
 			double scale = Max(size.X, size.Y) / scaleDenominator;
 
-			StreamWriter stream = new StreamWriter(filename);
-			stream.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" x=\"30\" version=\"1.1\" style='width:{0}px;height:{1}px'>\n".FormatWith((int)(size.X / scale), (int)(size.Y / scale)));
-			stream.Write("<marker id='MidMarker' viewBox='0 0 10 10' refX='5' refY='5' markerUnits='strokeWidth' markerWidth='10' markerHeight='10' stroke='lightblue' stroke-width='2' fill='none' orient='auto'>");
-			stream.Write("<path d='M 0 0 L 10 5 M 0 10 L 10 5'/>");
-			stream.Write("</marker>");
-			stream.Write("<g fill-rule='evenodd' style=\"fill: gray; stroke:black;stroke-width:1\">\n");
-			stream.Write("<path marker-mid='url(#MidMarker)' d=\"");
-			for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
+			using (var stream = new StreamWriter(filename))
 			{
-				Polygon polygon = polygons[polygonIndex];
-				for (int intPointIndex = 0; intPointIndex < polygon.Count; intPointIndex++)
+				stream.Write("<svg xmlns=\"http://www.w3.org/2000/svg\" x=\"30\" version=\"1.1\" style='width:{0}px;height:{1}px'>\n".FormatWith((int)(size.X / scale), (int)(size.Y / scale)));
+				stream.Write("<marker id='MidMarker' viewBox='0 0 10 10' refX='5' refY='5' markerUnits='strokeWidth' markerWidth='10' markerHeight='10' stroke='lightblue' stroke-width='2' fill='none' orient='auto'>");
+				stream.Write("<path d='M 0 0 L 10 5 M 0 10 L 10 5'/>");
+				stream.Write("</marker>");
+				stream.Write("<g fill-rule='evenodd' style=\"fill: gray; stroke:black;stroke-width:1\">\n");
+				stream.Write("<path marker-mid='url(#MidMarker)' d=\"");
+
+				for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
 				{
-					if (intPointIndex == 0)
+					Polygon polygon = polygons[polygonIndex];
+					for (int intPointIndex = 0; intPointIndex < polygon.Count; intPointIndex++)
 					{
-						stream.Write("M");
+						if (intPointIndex == 0)
+						{
+							stream.Write("M");
+						}
+						else
+						{
+							stream.Write("L");
+						}
+						stream.Write("{0},{1} ", (double)(polygon[intPointIndex].X - bounds.minX) / scale, (double)(polygon[intPointIndex].Y - bounds.maxY) / scale);
 					}
-					else
-					{
-						stream.Write("L");
-					}
-					stream.Write("{0},{1} ", (double)(polygon[intPointIndex].X - bounds.minX) / scale, (double)(polygon[intPointIndex].Y - bounds.maxY) / scale);
+					stream.Write("Z\n");
 				}
-				stream.Write("Z\n");
-			}
-			stream.Write("\"/>");
-			stream.Write("</g>\n");
-			for (int openPolygonIndex = 0; openPolygonIndex < polygons.Count; openPolygonIndex++)
-			{
-				Polygon openPolygon = polygons[openPolygonIndex];
-				if (openPolygon.Count < 1) continue;
-				stream.Write("<polyline marker-mid='url(#MidMarker)' points=\"");
-				for (int n = 0; n < openPolygon.Count; n++)
+				stream.Write("\"/>");
+				stream.Write("</g>\n");
+
+				for (int openPolygonIndex = 0; openPolygonIndex < polygons.Count; openPolygonIndex++)
 				{
-					stream.Write("{0},{1} ", (double)(openPolygon[n].X - bounds.minX) / scale, (double)(openPolygon[n].Y - bounds.maxY) / scale);
+					Polygon openPolygon = polygons[openPolygonIndex];
+					if (openPolygon.Count < 1) continue;
+					stream.Write("<polyline marker-mid='url(#MidMarker)' points=\"");
+					for (int n = 0; n < openPolygon.Count; n++)
+					{
+						stream.Write("{0},{1} ", (double)(openPolygon[n].X - bounds.minX) / scale, (double)(openPolygon[n].Y - bounds.maxY) / scale);
+					}
+					stream.Write("\" style=\"fill: none; stroke:red;stroke-width:1\" />\n");
 				}
-				stream.Write("\" style=\"fill: none; stroke:red;stroke-width:1\" />\n");
+				stream.Write("</svg>\n");
 			}
-			stream.Write("</svg>\n");
-			stream.Dispose();
 		}
 
 		public static bool SegmentTouching(this Polygons polygons, IntPoint start, IntPoint end)
