@@ -291,6 +291,24 @@ namespace MatterHackers.MatterSlice
   <marker id='MidMarker' viewBox='0 0 5 5' refX='2.5' refY='2.5' markerUnits='strokeWidth' markerWidth='5' markerHeight='5' stroke='lightblue' stroke-width='.5' fill='none' orient='auto'>
     <path d='M 0 0 L 5 2.5 M 0 5 L 5 2.5'/>
   </marker>
+
+ <defs>
+    <pattern id='smallGrid' width='1' height='1' patternUnits='userSpaceOnUse'>
+      <path d='M 1 0 L 0 0 0 1' fill='none' stroke='#ccc' stroke-width='0.2' />
+    </pattern>
+    <pattern id='grid' width='10' height='10' patternUnits='userSpaceOnUse'>
+      <rect width='10' height='10' fill='url(#smallGrid)' />
+      <path d='M 10 0 L 0 0 0 10' fill='none' stroke='#ccc' stroke-width='0.4' />
+    </pattern>
+    <marker id='arrowS' markerWidth='15' markerHeight='15' refX='1.4' refY='3' orient='auto' markerUnits='strokeWidth' viewBox='0 0 20 20'>
+      <path d='M0,3 L7,6 L7,0 z' />
+    </marker>
+    <marker id='arrowE' markerWidth='15' markerHeight='15' refX='5.6' refY='3' orient='auto' markerUnits='strokeWidth' viewBox='0 0 20 20'>
+      <path d='M0,0 L0,6 L7,3 z' />
+    </marker>
+  </defs>
+  <rect width='100%' height='100%' fill='url(#grid)' opacity='0.5' transform='translate(0, 0)' />
+
   <g fill-rule='evenodd' style='fill: gray; stroke:black;stroke-width:1'>", (int)(size.X / scale), (int)(size.Y / scale));
 				
 				stream.Write("    <path marker-mid='url(#MidMarker)' d='");
