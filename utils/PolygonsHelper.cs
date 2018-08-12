@@ -316,7 +316,7 @@ namespace MatterHackers.MatterSlice
     </defs>
     <rect width='100%' height='100%' fill='url(#grid)' opacity='0.5' transform='translate(0, 0)' />
 
-    <g fill-rule='evenodd' style='fill: gray; stroke:black;stroke-width:1'>", scaledWidth, scaledHeight);
+    <g fill-rule='evenodd' style='fill: gray; stroke:#333; stroke-width:1'>", scaledWidth, scaledHeight);
 
 				stream.Write("    <path marker-mid='url(#MidMarker)' d='");
 
@@ -367,7 +367,7 @@ namespace MatterHackers.MatterSlice
 					{
 						stream.Write("{0},{1} ", (double)(openPolygon[n].X - bounds.minX) / scale, (double)(openPolygon[n].Y - bounds.maxY) / scale);
 					}
-					stream.WriteLine("' style='fill: none; stroke:red;stroke-width:1' />");
+					stream.WriteLine("' style='fill: none; stroke:red; stroke-width:0.3' />");
 				}
 
 				stream.WriteLine("  </svg>");
