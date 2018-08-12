@@ -286,11 +286,13 @@ namespace MatterHackers.MatterSlice
 
 			using (var stream = new StreamWriter(filename))
 			{
-				stream.WriteLine("<svg xmlns='http://www.w3.org/2000/svg' x='30' version='1.1' style='width:{0}px;height:{1}px'>", (int)(size.X / scale), (int)(size.Y / scale));
-				stream.WriteLine("  <marker id='MidMarker' viewBox='0 0 5 5' refX='2.5' refY='2.5' markerUnits='strokeWidth' markerWidth='5' markerHeight='5' stroke='lightblue' stroke-width='.5' fill='none' orient='auto'>");
-				stream.WriteLine("    <path d='M 0 0 L 5 2.5 M 0 5 L 5 2.5'/>");
-				stream.WriteLine("  </marker>");
-				stream.WriteLine("  <g fill-rule='evenodd' style='fill: gray; stroke:black;stroke-width:1'>");
+				stream.WriteLine(@"
+<svg xmlns='http://www.w3.org/2000/svg' x='30' version='1.1' style='width:{0}px;height:{1}px'>
+  <marker id='MidMarker' viewBox='0 0 5 5' refX='2.5' refY='2.5' markerUnits='strokeWidth' markerWidth='5' markerHeight='5' stroke='lightblue' stroke-width='.5' fill='none' orient='auto'>
+    <path d='M 0 0 L 5 2.5 M 0 5 L 5 2.5'/>
+  </marker>
+  <g fill-rule='evenodd' style='fill: gray; stroke:black;stroke-width:1'>", (int)(size.X / scale), (int)(size.Y / scale));
+				
 				stream.Write("    <path marker-mid='url(#MidMarker)' d='");
 
 				for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
