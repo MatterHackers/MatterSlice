@@ -285,7 +285,10 @@ namespace MatterHackers.MatterSlice
 			double scale = Max(size.X, size.Y) / scaleDenominator;
 
 			var scaledWidth = (int)Math.Abs(size.X / scale);
+			scaledWidth += 10 - scaledWidth % 10;
+
 			var scaledHeight = (int)Math.Abs(size.Y / scale);
+			scaledHeight += 10 - scaledHeight % 10;
 
 			using (var stream = new StreamWriter(filename))
 			{
