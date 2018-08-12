@@ -342,12 +342,12 @@ namespace MatterHackers.MatterSlice
 				stream.WriteLine("    </g>");
 
 				// Grid markers
-				for (var i = 0; i < scaledWidth / 10; i++)
+				for (var i = 0; i <= scaledWidth / 10; i++)
 				{
 					stream.WriteLine("    <text x='{0}' y='-1' style='fill: #bbb; font-size: 0.13em;'>{1}</text>", i * 10 - 1, i * 10);
 				}
 
-				for (var i = 1; i < scaledHeight / 10; i++)
+				for (var i = 1; i <= scaledHeight / 10; i++)
 				{
 					stream.WriteLine("    <text x='-4.5' y='{0}' style='fill: #bbb; font-size: 0.13em;'>{1}</text>", i * 10, i * 10);
 				}
