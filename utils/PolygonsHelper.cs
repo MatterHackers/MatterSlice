@@ -287,11 +287,12 @@ namespace MatterHackers.MatterSlice
 			using (var stream = new StreamWriter(filename))
 			{
 				stream.WriteLine("<svg xmlns=\"http://www.w3.org/2000/svg\" x=\"30\" version=\"1.1\" style='width:{0}px;height:{1}px'>", (int)(size.X / scale), (int)(size.Y / scale));
-				stream.WriteLine("<marker id='MidMarker' viewBox='0 0 10 10' refX='5' refY='5' markerUnits='strokeWidth' markerWidth='10' markerHeight='10' stroke='lightblue' stroke-width='2' fill='none' orient='auto'>");
-				stream.WriteLine("<path d='M 0 0 L 10 5 M 0 10 L 10 5'/>");
-				stream.WriteLine("</marker>");
-				stream.WriteLine("<g fill-rule='evenodd' style=\"fill: gray; stroke:black;stroke-width:1\">");
-				stream.Write("<path marker-mid='url(#MidMarker)' d=\"");
+				stream.WriteLine("  <marker id='MidMarker' viewBox='0 0 10 10' refX='5' refY='5' markerUnits='strokeWidth' markerWidth='10' markerHeight='10' stroke='lightblue' stroke-width='2' fill='none' orient='auto'>");
+				stream.WriteLine("    <path d='M 0 0 L 10 5 M 0 10 L 10 5'/>");
+				stream.WriteLine("  </marker>");
+
+				stream.WriteLine("  <g fill-rule='evenodd' style=\"fill: gray; stroke:black;stroke-width:1\">");
+				stream.Write("    <path marker-mid='url(#MidMarker)' d=\"");
 
 				for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
 				{
@@ -312,14 +313,19 @@ namespace MatterHackers.MatterSlice
 				}
 
 				stream.WriteLine("\"/>");
-				stream.WriteLine("</g>");
+				stream.WriteLine("  </g>");
 
 				for (int openPolygonIndex = 0; openPolygonIndex < polygons.Count; openPolygonIndex++)
 				{
 					Polygon openPolygon = polygons[openPolygonIndex];
-					if (openPolygon.Count < 1) continue;
 
-					stream.Write("<polyline marker-mid='url(#MidMarker)' points=\"");
+					if (openPolygon.Count < 1)
+					{
+						continue;
+					}
+
+					stream.Write("  <polyline marker-mid='url(#MidMarker)' points=\"");
+
 					for (int n = 0; n < openPolygon.Count; n++)
 					{
 						stream.Write("{0},{1} ", (double)(openPolygon[n].X - bounds.minX) / scale, (double)(openPolygon[n].Y - bounds.maxY) / scale);
