@@ -286,13 +286,12 @@ namespace MatterHackers.MatterSlice
 
 			using (var stream = new StreamWriter(filename))
 			{
-				stream.WriteLine("<svg xmlns=\"http://www.w3.org/2000/svg\" x=\"30\" version=\"1.1\" style='width:{0}px;height:{1}px'>", (int)(size.X / scale), (int)(size.Y / scale));
+				stream.WriteLine("<svg xmlns='http://www.w3.org/2000/svg' x='30' version='1.1' style='width:{0}px;height:{1}px'>", (int)(size.X / scale), (int)(size.Y / scale));
 				stream.WriteLine("  <marker id='MidMarker' viewBox='0 0 5 5' refX='2.5' refY='2.5' markerUnits='strokeWidth' markerWidth='5' markerHeight='5' stroke='lightblue' stroke-width='.5' fill='none' orient='auto'>");
 				stream.WriteLine("    <path d='M 0 0 L 5 2.5 M 0 5 L 5 2.5'/>");
 				stream.WriteLine("  </marker>");
-
-				stream.WriteLine("  <g fill-rule='evenodd' style=\"fill: gray; stroke:black;stroke-width:1\">");
-				stream.Write("    <path marker-mid='url(#MidMarker)' d=\"");
+				stream.WriteLine("  <g fill-rule='evenodd' style='fill: gray; stroke:black;stroke-width:1'>");
+				stream.Write("    <path marker-mid='url(#MidMarker)' d='");
 
 				for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
 				{
@@ -312,7 +311,7 @@ namespace MatterHackers.MatterSlice
 					stream.Write("Z");
 				}
 
-				stream.WriteLine("\"/>");
+				stream.WriteLine("'/>");
 				stream.WriteLine("  </g>");
 
 				for (int openPolygonIndex = 0; openPolygonIndex < polygons.Count; openPolygonIndex++)
@@ -324,13 +323,13 @@ namespace MatterHackers.MatterSlice
 						continue;
 					}
 
-					stream.Write("  <polyline marker-mid='url(#MidMarker)' points=\"");
+					stream.Write("  <polyline marker-mid='url(#MidMarker)' points='");
 
 					for (int n = 0; n < openPolygon.Count; n++)
 					{
 						stream.Write("{0},{1} ", (double)(openPolygon[n].X - bounds.minX) / scale, (double)(openPolygon[n].Y - bounds.maxY) / scale);
 					}
-					stream.WriteLine("\" style=\"fill: none; stroke:red;stroke-width:1\" />");
+					stream.WriteLine("' style='fill: none; stroke:red;stroke-width:1' />");
 				}
 
 				stream.WriteLine("</svg>");
