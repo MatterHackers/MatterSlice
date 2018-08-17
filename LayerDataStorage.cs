@@ -36,7 +36,6 @@ namespace MatterHackers.MatterSlice
 		public Polygons raftOutline = new Polygons();
 		public Polygons skirt = new Polygons();
 		public NewSupport support = null;
-		public IntPoint wipePoint;
 		public List<Polygons> wipeShield = new List<Polygons>();
 		public Polygons wipeTower = new Polygons();
 
@@ -104,7 +103,8 @@ namespace MatterHackers.MatterSlice
 			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000));
 
 			this.wipeTower.Add(wipeTowerShape);
-			this.wipePoint = new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um / 2, this.modelMax.Y + 3000 + config.WipeTowerSize_um / 2);
+			config.WipeTowerX_um = this.modelMin.X - 3000 - config.WipeTowerSize_um / 2;
+			config.WipeTowerY_um = this.modelMax.Y - 3000 - config.WipeTowerSize_um / 2;
 		}
 
 		public void DumpLayerparts(string filename)

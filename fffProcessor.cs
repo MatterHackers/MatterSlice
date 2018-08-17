@@ -37,7 +37,7 @@ namespace MatterHackers.MatterSlice
 	{
 		private long maxObjectHeight;
 		private int fileNumber;
-		private GCodeExport gcodeExport = new GCodeExport();
+		private GCodeExport gcodeExport;
 		private ConfigSettings config;
 		private Stopwatch timeKeeper = new Stopwatch();
 
@@ -67,6 +67,7 @@ namespace MatterHackers.MatterSlice
 			this.config = config;
 			fileNumber = 1;
 			maxObjectHeight = 0;
+			gcodeExport = new GCodeExport(config);
 		}
 
 		public bool SetTargetFile(string filename)
@@ -188,7 +189,6 @@ namespace MatterHackers.MatterSlice
 			}
 
 			gcodeExport.SetRetractionSettings(config.RetractionOnTravel, config.RetractionSpeed, config.RetractionOnExtruderSwitch, config.MinimumExtrusionBeforeRetraction, config.RetractionZHop, config.UnretractExtraExtrusion, config.RetractRestartExtraTimeToApply, config.UnretractExtraOnExtruderSwitch, config.ResetLongExtrusion);
-			gcodeExport.SetToolChangeCode(config.ToolChangeCode, config.BeforeToolchangeCode);
 
 			gcodeExport.SetLayerChangeCode(config.LayerChangeCode);
 		}
@@ -527,7 +527,7 @@ namespace MatterHackers.MatterSlice
 						if (slicingData.NeedToPrintWipeTower(layerIndex, config))
 						{
 							// move to the wipe tower before we change extruders
-							layerGcodePlanner.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
+							layerGcodePlanner.QueueTravel(config.WipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
 						}
 						// then change extruders
 						layerGcodePlanner.SetExtruder(extruderIndex);
@@ -536,9 +536,10 @@ namespace MatterHackers.MatterSlice
 					if (changingExtruder
 						&& slicingData.NeedToPrintWipeTower(layerIndex, config))
 					{
+						layerGcodePlanner.QueueTravel(config.WipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
 						slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config, false);
 						//Make sure we wipe the old extruder on the wipe tower.
-						layerGcodePlanner.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
+						layerGcodePlanner.QueueTravel(config.WipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
 					}
 
 					// create the insets required by this extruder layer
@@ -1215,7 +1216,7 @@ namespace MatterHackers.MatterSlice
 				if(changingExtruder)
 				{
 					// move to the wipe tower before we change extruders
-					layerGcodePlanner.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
+					layerGcodePlanner.QueueTravel(config.WipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
 					// then change extruders
 					layerGcodePlanner.SetExtruder(extruderIndex);
 				}
@@ -1224,10 +1225,11 @@ namespace MatterHackers.MatterSlice
 					&& slicingData.HaveWipeTower(config)
 					&& layerIndex < slicingData.LastLayerWithChange(config))
 				{
+					layerGcodePlanner.QueueTravel(config.WipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
 					slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config, true);
 
 					//Make sure we wipe the old extruder on the wipe tower.
-					layerGcodePlanner.QueueTravel(slicingData.wipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
+					layerGcodePlanner.QueueTravel(config.WipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
 				}
 
 				SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
