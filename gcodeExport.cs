@@ -247,13 +247,17 @@ namespace MatterHackers.MatterSlice
 			if(newExtruder == 1 
 				&& config.BeforeToolchangeCode1 != "")
 			{
+				var code = config.BeforeToolchangeCode1.Replace("[wipe_tower_x]", config.WipeTowerX.ToString());
+				code = code.Replace("[wipe_tower_y]", config.WipeTowerY.ToString());
 				WriteCode("; Before Tool 1 Change GCode");
-				WriteCode(config.BeforeToolchangeCode1);
+				WriteCode(code);
 			}
 			else if (!string.IsNullOrEmpty(config.BeforeToolchangeCode))
 			{
+				var code = config.BeforeToolchangeCode.Replace("[wipe_tower_x]", config.WipeTowerX.ToString());
+				code = code.Replace("[wipe_tower_y]", config.WipeTowerY.ToString());
 				WriteCode("; Before Tool Change GCode");
-				WriteCode(config.BeforeToolchangeCode);
+				WriteCode(code);
 			}
 
 			if (extruderSwitchRetraction_mm != 0)
