@@ -570,10 +570,9 @@ namespace MatterHackers.MatterSlice
 					{
 						bool movedToIsland = false;
 
-						SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
-
 						if (layerIndex < supportIslands.Count)
 						{
+							SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 							MoveToIsland(layerGcodePlanner, layer, supportIslands[layerIndex]);
 							movedToIsland = true;
 						}
