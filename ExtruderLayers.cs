@@ -195,10 +195,7 @@ namespace MatterHackers.MatterSlice
 
 				Layers.Add(new SliceLayer());
 				Layers[layerIndex].LayerZ = extruderData.layers[layerIndex].Z;
-
-				Layers[layerIndex].AllOutlines = extruderData.layers[layerIndex].PolygonList;
-
-				Layers[layerIndex].AllOutlines = Layers[layerIndex].AllOutlines.GetCorrectedWinding();
+				Layers[layerIndex].AllOutlines = extruderData.layers[layerIndex].PolygonList.GetCorrectedWinding();
 			}
 		}
 

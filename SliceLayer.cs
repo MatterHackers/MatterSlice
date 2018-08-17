@@ -215,13 +215,13 @@ namespace MatterHackers.MatterSlice
 
 		public void CreateIslandData()
 		{
-			List<Polygons> separtedIntoIslands = AllOutlines.ProcessIntoSeparateIslands();
+			List<Polygons> separatedIntoIslands = AllOutlines.ProcessIntoSeparateIslands();
 
 			Islands = new List<LayerIsland>();
-			for (int islandIndex = 0; islandIndex < separtedIntoIslands.Count; islandIndex++)
+			for (int islandIndex = 0; islandIndex < separatedIntoIslands.Count; islandIndex++)
 			{
 				Islands.Add(new LayerIsland());
-				Islands[islandIndex].IslandOutline = separtedIntoIslands[islandIndex];
+				Islands[islandIndex].IslandOutline = separatedIntoIslands[islandIndex];
 
 				Islands[islandIndex].BoundingBox.Calculate(Islands[islandIndex].IslandOutline);
 			}
