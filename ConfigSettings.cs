@@ -72,8 +72,6 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("Avoid crossing any of the perimeters of a shape while printing its parts.")]
 		public bool AvoidCrossingPerimeters { get; set; }
 
-		public string BeforeToolchangeCode { get; set; }
-
 		public string BooleanOperations { get; set; } = "";
 
 		public string AdditionalArgsToProcess { get; set; } = "";
@@ -314,7 +312,13 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The closest xy distance that support will be to the object. mm/s.")]
 		public double SupportXYDistanceFromObject { get; set; }
 
+		public string BeforeToolchangeCode { get; set; }
+
 		public string ToolChangeCode { get; set; }
+
+		public string BeforeToolchangeCode1 { get; set; }
+
+		public string ToolChangeCode1 { get; set; }
 
 		[SettingDescription("This is the speed to print the top layer infill, mm/s.")]
 		public double TopInfillSpeed { get; set; }
@@ -344,6 +348,12 @@ namespace MatterHackers.MatterSlice
 
 		// .4 mm for .4 mm nozzle
 		public int ZOffset_um => (int)(ZOffset * 1000);
+
+		public double WipeTowerX => WipeTowerX_um / 1000.0;
+		public double WipeTowerY => WipeTowerY_um / 1000.0;
+		public long WipeTowerY_um { get; internal set; }
+		public long WipeTowerX_um { get; internal set; }
+		public IntPoint WipePoint => new IntPoint(WipeTowerX_um, WipeTowerY_um);
 
 		// .4 mm for .4 mm nozzle
 		public void DumpSettings(string fileName)

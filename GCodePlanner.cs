@@ -39,7 +39,7 @@ namespace MatterHackers.MatterSlice
 
 		private bool forceRetraction;
 
-		private GCodeExport gcodeExport = new GCodeExport();
+		private GCodeExport gcodeExport;
 
 		private PathFinder lastValidPathFinder;
 		private PathFinder pathFinder;

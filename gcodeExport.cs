@@ -28,7 +28,6 @@ namespace MatterHackers.MatterSlice
 {
 	public class GCodeExport
 	{
-		private string beforeToolchangeCode;
 		public int CurrentFanSpeed { get; private set; }
 		private IntPoint currentPosition_um;
 		private double currentSpeed;
@@ -46,7 +45,7 @@ namespace MatterHackers.MatterSlice
 		private double retractionAmount_mm;
 		private int retractionSpeed;
 		private double retractionZHop_mm;
-		private string toolChangeCode;
+		private ConfigSettings config;
 		private double[] totalFilament_mm = new double[ConfigConstants.MAX_EXTRUDERS];
 		private double totalPrintTime;
 		private double unretractExtraOnExtruderSwitch_mm;
@@ -72,8 +71,9 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public GCodeExport()
+		public GCodeExport(ConfigSettings config)
 		{
+			this.config = config;
 			extrusionAmount_mm = 0;
 			extrusionPerMm = 0;
 			retractionAmount_mm = 0;
@@ -232,12 +232,6 @@ namespace MatterHackers.MatterSlice
 			this.retractionZHop_mm = retractionZHop_mm;
 		}
 
-		public void SetToolChangeCode(string toolChangeCode, string beforeToolchangeCode)
-		{
-			this.toolChangeCode = toolChangeCode;
-			this.beforeToolchangeCode = beforeToolchangeCode;
-		}
-
 		public void SetZ(long z)
 		{
 			this.CurrentZ = z;
@@ -250,10 +244,16 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			if (!string.IsNullOrEmpty(beforeToolchangeCode))
+			if(newExtruder == 1 
+				&& config.BeforeToolchangeCode1 != "")
+			{
+				WriteCode("; Before Tool 1 Change GCode");
+				WriteCode(config.BeforeToolchangeCode1);
+			}
+			else if (!string.IsNullOrEmpty(config.BeforeToolchangeCode))
 			{
 				WriteCode("; Before Tool Change GCode");
-				WriteCode(beforeToolchangeCode);
+				WriteCode(config.BeforeToolchangeCode);
 			}
 
 			if (extruderSwitchRetraction_mm != 0)
@@ -271,11 +271,23 @@ namespace MatterHackers.MatterSlice
 
 			gcodeFileStream.Write("T{0} ; switch extruder\n".FormatWith(extruderIndex));
 
-			if (toolChangeCode != null && toolChangeCode != "")
+			if (newExtruder == 1 
+				&& !string.IsNullOrEmpty(config.ToolChangeCode1))
 			{
-				WriteCode("; After Tool Change GCode");
-				WriteCode(toolChangeCode);
+				var code = config.ToolChangeCode1.Replace("[wipe_tower_x]", config.WipeTowerX.ToString());
+				code = code.Replace("[wipe_tower_y]", config.WipeTowerY.ToString());
+				WriteCode("; After Tool 1 Change GCode");
+				WriteCode(code);
 			}
+			else if (!string.IsNullOrEmpty(config.ToolChangeCode))
+			{
+				var code = config.ToolChangeCode.Replace("[wipe_tower_x]", config.WipeTowerX.ToString());
+				code = code.Replace("[wipe_tower_y]", config.WipeTowerY.ToString());
+				WriteCode("; After Tool Change GCode");
+				WriteCode(code);
+			}
+
+			// if there is a wipe tower go to it
 		}
 
 		public void UpdateTotalPrintTime()
