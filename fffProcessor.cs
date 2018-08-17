@@ -294,20 +294,23 @@ namespace MatterHackers.MatterSlice
 			slicingData.CreateIslandData();
 
 			supportIslands = new List<LayerIsland>();
-			
-			foreach (var region in supportOutlines.Layers)
+
+			if (supportOutlines != null)
 			{
-				foreach (Polygons island in region.AllOutlines.ProcessIntoSeparateIslands())
+				foreach (var region in supportOutlines.Layers)
 				{
-					var layerIsland = new LayerIsland()
+					foreach (Polygons island in region.AllOutlines.ProcessIntoSeparateIslands())
 					{
-						IslandOutline = island,
-						PathFinder = new PathFinder(island, config.ExtrusionWidth_um * 3 / 2, useInsideCache: config.AvoidCrossingPerimeters),
-					};
+						var layerIsland = new LayerIsland()
+						{
+							IslandOutline = island,
+							PathFinder = new PathFinder(island, config.ExtrusionWidth_um * 3 / 2, useInsideCache: config.AvoidCrossingPerimeters),
+						};
 
-					layerIsland.BoundingBox.Calculate(layerIsland.IslandOutline);
+						layerIsland.BoundingBox.Calculate(layerIsland.IslandOutline);
 
-					supportIslands.Add(layerIsland);
+						supportIslands.Add(layerIsland);
+					}
 				}
 			}
 
@@ -959,9 +962,10 @@ namespace MatterHackers.MatterSlice
 										&& insetIndex == island.InsetToolPaths.Count - 1)
 									{
 										var closestInsetStart = FindBestPoint(insetsForThisIsland[0], layerGcodePlanner.LastPosition, layerIndex);
-										if(closestInsetStart.X != long.MinValue)
+										if (closestInsetStart.X != long.MinValue)
 										{
-											layerGcodePlanner.QueueTravel(closestInsetStart);
+											var pointOnInside = insetsForThisIsland[insetsForThisIsland.Count - 1].FindClosestPoint(closestInsetStart).position;
+											layerGcodePlanner.QueueTravel(pointOnInside);
 										}
 									}
 
