@@ -55,7 +55,7 @@ namespace MatterHackers.MatterSlice
 		/// </summary>
 		public List<Polygons> InsetToolPaths { get; set; } = new List<Polygons>();
 
-		public PathFinder PathFinder { get; private set; }
+		public PathFinder PathFinder { get; internal set; }
 		// The outline that the tool head will actually follow (the center of the extrusion)
 		public Polygons BottomPaths { get; set; } = new Polygons();
 		public Polygons SparseInfillPaths { get; set; } = new Polygons();

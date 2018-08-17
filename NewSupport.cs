@@ -249,7 +249,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				Polygons infillOutline = islandOutline.Offset(-supportNormalConfig.lineWidth_um / 2);
+				Polygons infillOutline = islandOutline.Offset(-(int)supportNormalConfig.lineWidth_um);
 
 				if (layerIndex == 0)
 				{
