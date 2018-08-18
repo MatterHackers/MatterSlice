@@ -963,8 +963,16 @@ namespace MatterHackers.MatterSlice
 										var closestInsetStart = FindBestPoint(insetsForThisIsland[0], layerGcodePlanner.LastPosition, layerIndex);
 										if (closestInsetStart.X != long.MinValue)
 										{
-											var pointOnInside = insetsForThisIsland[insetsForThisIsland.Count - 1].FindClosestPoint(closestInsetStart).position;
-											layerGcodePlanner.QueueTravel(pointOnInside);
+											var found = insetsForThisIsland[insetsForThisIsland.Count - 1].FindClosestPoint(closestInsetStart);
+											if (found.polyIndex != -1 
+												&& found.pointIndex != -1)
+											{
+												layerGcodePlanner.QueueTravel(found.position);
+											}
+											else
+											{
+												layerGcodePlanner.QueueTravel(closestInsetStart);
+											}
 										}
 									}
 
