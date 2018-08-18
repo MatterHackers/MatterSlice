@@ -57,7 +57,7 @@
     <Compile Include="MatterSlice\SettingsTests.cs" />
     <Compile Include="MatterSlice\GCodePlannerTests.cs" />
     <Compile Include="MatterSlice\SlicerLayerTests.cs" />
-    <Compile Include="MatterSlice\TestUtlities.cs" />
+    <Compile Include="MatterSlice\TestUtilities.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -184,7 +184,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void InitializeLayerData(ExtruderData extruderData, ConfigSettings config, int extruderIndex)
+		public void InitializeLayerData(ExtruderData extruderData, ConfigSettings config)
 		{
 			for (int layerIndex = 0; layerIndex < extruderData.layers.Count; layerIndex++)
 			{

@@ -50,7 +50,8 @@ namespace MatterHackers.MatterSlice.Tests
 		public Vector3 position;
 	}
 
-	public static class TestUtlities
+
+	public static class TestUtilities
 	{
 		private static string matterSliceBaseDirectory = TestContext.CurrentContext.ResolveProjectPath(4);
 		private static Regex numberRegex = new Regex(@"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?");
@@ -151,7 +152,7 @@ namespace MatterHackers.MatterSlice.Tests
 			int movementCount = 0;
 			double movementAmount = double.MaxValue/2; // always add a new extrusion the first time
 			MovementInfo lastMovement = movementInfo;
-			foreach (MovementInfo currentMovement in TestUtlities.Movements(gcode, lastMovement))
+			foreach (MovementInfo currentMovement in TestUtilities.Movements(gcode, lastMovement))
 			{
 				bool isExtrude = currentMovement.extrusion != lastMovement.extrusion;
 

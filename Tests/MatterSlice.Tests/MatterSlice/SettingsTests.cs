@@ -45,8 +45,8 @@ namespace MatterHackers.MatterSlice.Tests
 		public void InnerPerimeterFirstCorrect()
 		{
 			// By default we need to do the inner perimeters first
-			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
-			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-perimeter.gcode");
+			string box20MmStlFile = TestUtilities.GetStlPath("20mm-box");
+			string boxGCodeFile = TestUtilities.GetTempGCodePath("20mm-box-perimeter.gcode");
 
 			ConfigSettings config = new ConfigSettings();
 			config.NumberOfPerimeters = 3;
@@ -60,13 +60,13 @@ namespace MatterHackers.MatterSlice.Tests
 			processor.DoProcessing();
 			processor.finalize();
 
-			string[] gcode = TestUtlities.LoadGCodeFile(boxGCodeFile);
+			string[] gcode = TestUtilities.LoadGCodeFile(boxGCodeFile);
 
 			MovementInfo movement = new MovementInfo();
 			{
 				// check layer 1
-				string[] layer1Info = TestUtlities.GetGCodeForLayer(gcode, 1);
-				Polygons layer1Polygons = TestUtlities.GetExtrusionPolygons(layer1Info, ref movement);
+				string[] layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
+				Polygons layer1Polygons = TestUtilities.GetExtrusionPolygons(layer1Info, ref movement);
 				// make sure there are 3
 				Assert.IsTrue(layer1Polygons.Count == 3);
 				// make sure they are in the right order (first layer is outside in)
@@ -75,8 +75,8 @@ namespace MatterHackers.MatterSlice.Tests
 
 			{
 				// check layer 2
-				string[] layer2Info = TestUtlities.GetGCodeForLayer(gcode, 2);
-				Polygons layer2Polygons = TestUtlities.GetExtrusionPolygons(layer2Info, ref movement);
+				string[] layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
+				Polygons layer2Polygons = TestUtilities.GetExtrusionPolygons(layer2Info, ref movement);
 
 				// make sure there are 3
 				Assert.IsTrue(layer2Polygons.Count == 3);
@@ -88,8 +88,8 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void OuterPerimeterFirstCorrect()
 		{
-			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
-			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-perimeter.gcode");
+			string box20MmStlFile = TestUtilities.GetStlPath("20mm-box");
+			string boxGCodeFile = TestUtilities.GetTempGCodePath("20mm-box-perimeter.gcode");
 
 			ConfigSettings config = new ConfigSettings();
 			config.NumberOfPerimeters = 3;
@@ -104,13 +104,13 @@ namespace MatterHackers.MatterSlice.Tests
 			processor.DoProcessing();
 			processor.finalize();
 
-			string[] gcode = TestUtlities.LoadGCodeFile(boxGCodeFile);
+			string[] gcode = TestUtilities.LoadGCodeFile(boxGCodeFile);
 
 			MovementInfo movement = new MovementInfo();
 			{
 				// check layer 1
-				string[] layer1Info = TestUtlities.GetGCodeForLayer(gcode, 1);
-				Polygons layer1Polygons = TestUtlities.GetExtrusionPolygons(layer1Info, ref movement);
+				string[] layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
+				Polygons layer1Polygons = TestUtilities.GetExtrusionPolygons(layer1Info, ref movement);
 				// make sure there are 3
 				Assert.IsTrue(layer1Polygons.Count == 3);
 				// make sure they are in the right order (first layer is outside in)
@@ -119,8 +119,8 @@ namespace MatterHackers.MatterSlice.Tests
 
 			{
 				// check layer 2
-				string[] layer2Info = TestUtlities.GetGCodeForLayer(gcode, 2);
-				Polygons layer2Polygons = TestUtlities.GetExtrusionPolygons(layer2Info, ref movement);
+				string[] layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
+				Polygons layer2Polygons = TestUtilities.GetExtrusionPolygons(layer2Info, ref movement);
 
 				// make sure there are 3
 				Assert.IsTrue(layer2Polygons.Count == 3);
@@ -134,8 +134,8 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test, Ignore("WorkInProgress")]
 		public void AllInsidesBeforeAnyOutsides()
 		{
-			string thinAttachStlFile = TestUtlities.GetStlPath("Thin Attach");
-			string thinAttachGCodeFile = TestUtlities.GetTempGCodePath("Thin Attach.gcode");
+			string thinAttachStlFile = TestUtilities.GetStlPath("Thin Attach");
+			string thinAttachGCodeFile = TestUtilities.GetTempGCodePath("Thin Attach.gcode");
 
 			ConfigSettings config = new ConfigSettings();
 			config.NumberOfPerimeters = 2;
@@ -150,7 +150,7 @@ namespace MatterHackers.MatterSlice.Tests
 			processor.DoProcessing();
 			processor.finalize();
 
-			string[] gcode = TestUtlities.LoadGCodeFile(thinAttachGCodeFile);
+			string[] gcode = TestUtilities.LoadGCodeFile(thinAttachGCodeFile);
 
 			// should look like this
 			// ____________   ____________
@@ -163,8 +163,8 @@ namespace MatterHackers.MatterSlice.Tests
 			MovementInfo movement = new MovementInfo();
 			{
 				// check layer 1
-				string[] layer1Info = TestUtlities.GetGCodeForLayer(gcode, 1);
-				Polygons layer1Polygons = TestUtlities.GetExtrusionPolygons(layer1Info, ref movement);
+				string[] layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
+				Polygons layer1Polygons = TestUtilities.GetExtrusionPolygons(layer1Info, ref movement);
 				// make sure there are 5
 				Assert.IsTrue(layer1Polygons.Count == 3);
 				// make sure they are in the right order (two inner polygons print first)
@@ -174,8 +174,8 @@ namespace MatterHackers.MatterSlice.Tests
 
 			{
 				// check layer 2
-				string[] layer2Info = TestUtlities.GetGCodeForLayer(gcode, 2);
-				Polygons layer2Polygons = TestUtlities.GetExtrusionPolygons(layer2Info, ref movement);
+				string[] layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
+				Polygons layer2Polygons = TestUtilities.GetExtrusionPolygons(layer2Info, ref movement);
 
 				// make sure there are 3
 				Assert.IsTrue(layer2Polygons.Count == 3);
@@ -197,10 +197,10 @@ namespace MatterHackers.MatterSlice.Tests
 
 		public void AllMovesRequiringRetractionDoRetraction(string baseFileName, string settingsIniFile = "")
 		{
-			string stlToLoad = TestUtlities.GetStlPath(baseFileName + ".stl");
+			string stlToLoad = TestUtilities.GetStlPath(baseFileName + ".stl");
 
 			// check that default is support printed with extruder 0
-			string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_retract_.gcode");
+			string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_retract_.gcode");
 
 			ConfigSettings config = new ConfigSettings();
 			if (settingsIniFile == "")
@@ -225,17 +225,17 @@ namespace MatterHackers.MatterSlice.Tests
 			processor.DoProcessing();
 			processor.finalize();
 
-			string[] gcodeContents = TestUtlities.LoadGCodeFile(gcodeToCreate);
-			int layerCount = TestUtlities.CountLayers(gcodeContents);
+			string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
+			int layerCount = TestUtilities.CountLayers(gcodeContents);
 			bool firstPosition = true;
 			MovementInfo lastMovement = new MovementInfo();
 			MovementInfo lastExtrusion = new MovementInfo();
 			bool lastMoveIsExtrusion = true;
 			for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
 			{
-				string[] layerGCode = TestUtlities.GetGCodeForLayer(gcodeContents, layerIndex);
+				string[] layerGCode = TestUtilities.GetGCodeForLayer(gcodeContents, layerIndex);
 				int movementIndex = 0;
-				foreach (MovementInfo movement in TestUtlities.Movements(layerGCode, lastMovement))
+				foreach (MovementInfo movement in TestUtilities.Movements(layerGCode, lastMovement))
 				{
 					if (!firstPosition)
 					{
@@ -271,19 +271,19 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 
 			// make sure we don't switch extruders
-			Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 1));
-			Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 2));
+			Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 1));
+			Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 2));
 		}
 
 		[Test]
 		public void CanSetExtruderForSupportMaterial()
 		{
 			string baseFileName = "Support Material 2 Bars";
-			string stlToLoad = TestUtlities.GetStlPath(baseFileName + ".stl");
+			string stlToLoad = TestUtilities.GetStlPath(baseFileName + ".stl");
 
 			// check that default is support printed with extruder 0
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_0_.gcode");
+				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_0_.gcode");
 
 				ConfigSettings config = new ConfigSettings();
 				fffProcessor processor = new fffProcessor(config);
@@ -293,14 +293,14 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.DoProcessing();
 				processor.finalize();
 
-				string[] gcodeContents = TestUtlities.LoadGCodeFile(gcodeToCreate);
-				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 1));
-				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 2));
+				string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
+				Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 1));
+				Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 2));
 			}
 
 			// check that support is printed with extruder 1
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_1b_.gcode");
+				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_1b_.gcode");
 
 				ConfigSettings config = new ConfigSettings();
 				config.SupportExtruder = 1;
@@ -312,14 +312,14 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.DoProcessing();
 				processor.finalize();
 
-				string[] gcodeContents = TestUtlities.LoadGCodeFile(gcodeToCreate);
-				Assert.IsTrue(TestUtlities.UsesExtruder(gcodeContents, 1));
-				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 2));
+				string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
+				Assert.IsTrue(TestUtilities.UsesExtruder(gcodeContents, 1));
+				Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 2));
 			}
 
 			// check that support interface is printed with extruder 1
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_1i_.gcode");
+				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_1i_.gcode");
 
 				ConfigSettings config = new ConfigSettings();
 				config.SupportInterfaceExtruder = 1;
@@ -331,14 +331,14 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.DoProcessing();
 				processor.finalize();
 
-				string[] gcodeContents = TestUtlities.LoadGCodeFile(gcodeToCreate);
-				Assert.IsTrue(TestUtlities.UsesExtruder(gcodeContents, 1));
-				Assert.IsFalse(TestUtlities.UsesExtruder(gcodeContents, 2));
+				string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
+				Assert.IsTrue(TestUtilities.UsesExtruder(gcodeContents, 1));
+				Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 2));
 			}
 
 			// check that support and interface can be set separately
 			{
-				string gcodeToCreate = TestUtlities.GetTempGCodePath(baseFileName + "_1b2i_.gcode");
+				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_1b2i_.gcode");
 
 				ConfigSettings config = new ConfigSettings();
 				config.SupportExtruder = 1;
@@ -351,9 +351,9 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.DoProcessing();
 				processor.finalize();
 
-				string[] gcodeContents = TestUtlities.LoadGCodeFile(gcodeToCreate);
-				Assert.IsTrue(TestUtlities.UsesExtruder(gcodeContents, 1));
-				Assert.IsTrue(TestUtlities.UsesExtruder(gcodeContents, 2));
+				string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
+				Assert.IsTrue(TestUtilities.UsesExtruder(gcodeContents, 1));
+				Assert.IsTrue(TestUtilities.UsesExtruder(gcodeContents, 2));
 			}
 		}
 
@@ -361,16 +361,16 @@ namespace MatterHackers.MatterSlice.Tests
 		public void CorrectNumberOfLayersForLayerHeights()
 		{
 			// test .1 layer height
-			Assert.AreEqual(100, TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.1, .1))));
-			Assert.AreEqual(99, TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .1))));
-			Assert.AreEqual(50, TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2))));
-			Assert.AreEqual(51, TestUtlities.CountLayers(TestUtlities.LoadGCodeFile(CreateGCodeForLayerHeights(.05, .2))));
+			Assert.AreEqual(100, TestUtilities.CountLayers(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.1, .1))));
+			Assert.AreEqual(99, TestUtilities.CountLayers(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .1))));
+			Assert.AreEqual(50, TestUtilities.CountLayers(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2))));
+			Assert.AreEqual(51, TestUtilities.CountLayers(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.05, .2))));
 		}
 
 		public void DoHas2WallRingsAllTheWayUp(string fileName, int expectedLayerCount, bool checkRadius = false)
 		{
-			string stlFile = TestUtlities.GetStlPath(fileName);
-			string gCodeFile = TestUtlities.GetTempGCodePath(fileName + ".gcode");
+			string stlFile = TestUtilities.GetStlPath(fileName);
+			string gCodeFile = TestUtilities.GetTempGCodePath(fileName + ".gcode");
 
 			ConfigSettings config = new ConfigSettings();
 			config.InfillPercent = 0;
@@ -386,19 +386,19 @@ namespace MatterHackers.MatterSlice.Tests
 			processor.DoProcessing();
 			processor.finalize();
 
-			string[] gcodeLines = TestUtlities.LoadGCodeFile(gCodeFile);
+			string[] gcodeLines = TestUtilities.LoadGCodeFile(gCodeFile);
 
-			int layerCount = TestUtlities.CountLayers(gcodeLines);
+			int layerCount = TestUtilities.CountLayers(gcodeLines);
 			Assert.IsTrue(layerCount == expectedLayerCount);
 
 			MovementInfo movement = new MovementInfo();
 			for (int i = 0; i < layerCount - 5; i++)
 			{
-				string[] layerInfo = TestUtlities.GetGCodeForLayer(gcodeLines, i);
+				string[] layerInfo = TestUtilities.GetGCodeForLayer(gcodeLines, i);
 
 				if (i > 0)
 				{
-					Polygons layerPolygons = TestUtlities.GetExtrusionPolygons(layerInfo, ref movement);
+					Polygons layerPolygons = TestUtilities.GetExtrusionPolygons(layerInfo, ref movement);
 
 					Assert.IsTrue(layerPolygons.Count == 2);
 
@@ -422,7 +422,7 @@ namespace MatterHackers.MatterSlice.Tests
 				}
 				else
 				{
-					TestUtlities.GetExtrusionPolygons(layerInfo, ref movement);
+					TestUtilities.GetExtrusionPolygons(layerInfo, ref movement);
 				}
 			}
 		}
@@ -438,10 +438,10 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			string leftPart = "Box Left";
 			string rightPart = "Box Right";
-			string leftStlFile = TestUtlities.GetStlPath(leftPart);
-			string rightStlFile = TestUtlities.GetStlPath(rightPart);
+			string leftStlFile = TestUtilities.GetStlPath(leftPart);
+			string rightStlFile = TestUtilities.GetStlPath(rightPart);
 
-			string outputGCodeFileName = TestUtlities.GetTempGCodePath("DualPartMoves");
+			string outputGCodeFileName = TestUtilities.GetTempGCodePath("DualPartMoves");
 
 			ConfigSettings config = new ConfigSettings();
 			config.FirstLayerThickness = .2;
@@ -463,10 +463,10 @@ namespace MatterHackers.MatterSlice.Tests
 			processor.DoProcessing();
 			processor.finalize();
 
-			string[] gCodeContent = TestUtlities.LoadGCodeFile(outputGCodeFileName);
+			string[] gCodeContent = TestUtilities.LoadGCodeFile(outputGCodeFileName);
 
 			// test .1 layer height
-			int layerCount = TestUtlities.CountLayers(gCodeContent);
+			int layerCount = TestUtilities.CountLayers(gCodeContent);
 			Assert.IsTrue(layerCount == 50);
 
 			bool hadMoveLessThan85 = false;
@@ -474,10 +474,10 @@ namespace MatterHackers.MatterSlice.Tests
 			MovementInfo lastMovement = new MovementInfo();
 			for (int i = 0; i < layerCount - 3; i++)
 			{
-				string[] layerInfo = TestUtlities.GetGCodeForLayer(gCodeContent, i);
+				string[] layerInfo = TestUtilities.GetGCodeForLayer(gCodeContent, i);
 
 				// check that all layers move up continuously
-				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo, lastMovement, onlyG1s: true))
+				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo, lastMovement, onlyG1s: true))
 				{
 					if (i > 2)
 					{
@@ -514,8 +514,8 @@ namespace MatterHackers.MatterSlice.Tests
 		public void ExportGCodeWithRaft()
 		{
 			//test that file has raft
-			Assert.IsTrue(TestUtlities.CheckForRaft(TestUtlities.LoadGCodeFile(CreateGCodeWithRaft(true))) == true);
-			Assert.IsTrue(TestUtlities.CheckForRaft(TestUtlities.LoadGCodeFile(CreateGcodeWithoutRaft(false))) == false);
+			Assert.IsTrue(TestUtilities.CheckForRaft(TestUtilities.LoadGCodeFile(CreateGCodeWithRaft(true))) == true);
+			Assert.IsTrue(TestUtilities.CheckForRaft(TestUtilities.LoadGCodeFile(CreateGcodeWithoutRaft(false))) == false);
 		}
 
 		[Test]
@@ -545,8 +545,8 @@ namespace MatterHackers.MatterSlice.Tests
 
 		private static void CheckLayersIncrement(string stlFile, string gcodeFile)
 		{
-			string risingLayersStlFile = TestUtlities.GetStlPath(stlFile);
-			string risingLayersGCodeFileName = TestUtlities.GetTempGCodePath(gcodeFile);
+			string risingLayersStlFile = TestUtilities.GetStlPath(stlFile);
+			string risingLayersGCodeFileName = TestUtilities.GetTempGCodePath(gcodeFile);
 
 			ConfigSettings config = new ConfigSettings();
 			config.FirstLayerThickness = .2;
@@ -558,19 +558,19 @@ namespace MatterHackers.MatterSlice.Tests
 			processor.DoProcessing();
 			processor.finalize();
 
-			string[] risingLayersGCodeContent = TestUtlities.LoadGCodeFile(risingLayersGCodeFileName);
+			string[] risingLayersGCodeContent = TestUtilities.LoadGCodeFile(risingLayersGCodeFileName);
 
 			// test .1 layer height
-			int layerCount = TestUtlities.CountLayers(risingLayersGCodeContent);
+			int layerCount = TestUtilities.CountLayers(risingLayersGCodeContent);
 			Assert.IsTrue(layerCount == 50);
 
 			MovementInfo startingPosition = new MovementInfo();
 			for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
 			{
-				string[] layerInfo = TestUtlities.GetGCodeForLayer(risingLayersGCodeContent, layerIndex);
+				string[] layerInfo = TestUtilities.GetGCodeForLayer(risingLayersGCodeContent, layerIndex);
 				int movementIndex = 0;
 				// check that all layers move up
-				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo, startingPosition))
+				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo, startingPosition))
 				{
 					if (movement.line.Contains("X")
 						|| movement.line.Contains("Y")
@@ -592,8 +592,8 @@ namespace MatterHackers.MatterSlice.Tests
 
 		private static void CheckSpiralCone(string stlFile, string gcodeFile, bool enableThinWalls = false)
 		{
-			string cylinderStlFile = TestUtlities.GetStlPath(stlFile);
-			string cylinderGCodeFileName = TestUtlities.GetTempGCodePath(gcodeFile);
+			string cylinderStlFile = TestUtilities.GetStlPath(stlFile);
+			string cylinderGCodeFileName = TestUtilities.GetTempGCodePath(gcodeFile);
 
 			ConfigSettings config = new ConfigSettings();
 			config.FirstLayerThickness = .2;
@@ -612,19 +612,19 @@ namespace MatterHackers.MatterSlice.Tests
 			processor.DoProcessing();
 			processor.finalize();
 
-			string[] cylinderGCodeContent = TestUtlities.LoadGCodeFile(cylinderGCodeFileName);
+			string[] cylinderGCodeContent = TestUtilities.LoadGCodeFile(cylinderGCodeFileName);
 
 			// test .1 layer height
-			int layerCount = TestUtlities.CountLayers(cylinderGCodeContent);
+			int layerCount = TestUtilities.CountLayers(cylinderGCodeContent);
 			Assert.IsTrue(layerCount == 50);
 
 			for (int i = 2; i < layerCount - 3; i++)
 			{
-				string[] layerInfo = TestUtlities.GetGCodeForLayer(cylinderGCodeContent, i);
+				string[] layerInfo = TestUtilities.GetGCodeForLayer(cylinderGCodeContent, i);
 
 				// check that all layers move up continuously
 				MovementInfo lastMovement = new MovementInfo();
-				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
+				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo))
 				{
 					Assert.IsTrue(movement.position.z > lastMovement.position.z);
 
@@ -636,7 +636,7 @@ namespace MatterHackers.MatterSlice.Tests
 				bool first = true;
 				lastMovement = new MovementInfo();
 				// check that all moves are on the outside of the cylinder (not crossing to a new point)
-				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
+				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo))
 				{
 					if (!first)
 					{
@@ -654,8 +654,8 @@ namespace MatterHackers.MatterSlice.Tests
 
 		private static void CheckSpiralCylinder(string stlFile, string gcodeFile, int expectedLayers, bool enableThinWalls = false)
 		{
-			string cylinderStlFile = TestUtlities.GetStlPath(stlFile);
-			string cylinderGCodeFileName = TestUtlities.GetTempGCodePath(gcodeFile);
+			string cylinderStlFile = TestUtilities.GetStlPath(stlFile);
+			string cylinderGCodeFileName = TestUtilities.GetTempGCodePath(gcodeFile);
 
 			ConfigSettings config = new ConfigSettings();
 			config.FirstLayerThickness = .2;
@@ -674,19 +674,19 @@ namespace MatterHackers.MatterSlice.Tests
 			processor.DoProcessing();
 			processor.finalize();
 
-			string[] cylinderGCodeContent = TestUtlities.LoadGCodeFile(cylinderGCodeFileName);
+			string[] cylinderGCodeContent = TestUtilities.LoadGCodeFile(cylinderGCodeFileName);
 
 			// test .1 layer height
-			int layerCount = TestUtlities.CountLayers(cylinderGCodeContent);
+			int layerCount = TestUtilities.CountLayers(cylinderGCodeContent);
 			Assert.IsTrue(layerCount == expectedLayers);
 
 			for (int i = 2; i < layerCount - 3; i++)
 			{
-				string[] layerInfo = TestUtlities.GetGCodeForLayer(cylinderGCodeContent, i);
+				string[] layerInfo = TestUtilities.GetGCodeForLayer(cylinderGCodeContent, i);
 
 				// check that all layers move up continuously
 				MovementInfo lastMovement = new MovementInfo();
-				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
+				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo))
 				{
 					Assert.IsTrue(movement.position.z > lastMovement.position.z);
 
@@ -696,7 +696,7 @@ namespace MatterHackers.MatterSlice.Tests
 				bool first = true;
 				lastMovement = new MovementInfo();
 				// check that all moves are on the outside of the cylinder (not crossing to a new point)
-				foreach (MovementInfo movement in TestUtlities.Movements(layerInfo))
+				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo))
 				{
 					if (!first)
 					{
@@ -714,8 +714,8 @@ namespace MatterHackers.MatterSlice.Tests
 
 		private string CreateGCodeForLayerHeights(double firstLayerHeight, double otherLayerHeight)
 		{
-			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
-			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}_o{1}.gcode".FormatWith(firstLayerHeight, otherLayerHeight));
+			string box20MmStlFile = TestUtilities.GetStlPath("20mm-box");
+			string boxGCodeFile = TestUtilities.GetTempGCodePath("20mm-box-f{0}_o{1}.gcode".FormatWith(firstLayerHeight, otherLayerHeight));
 
 			ConfigSettings config = new ConfigSettings();
 			config.FirstLayerThickness = firstLayerHeight;
@@ -732,8 +732,8 @@ namespace MatterHackers.MatterSlice.Tests
 
 		private string CreateGcodeWithoutRaft(bool hasRaft)
 		{
-			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
-			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
+			string box20MmStlFile = TestUtilities.GetStlPath("20mm-box");
+			string boxGCodeFile = TestUtilities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
 
 			ConfigSettings config = new ConfigSettings();
 			config.EnableRaft = hasRaft;
@@ -749,8 +749,8 @@ namespace MatterHackers.MatterSlice.Tests
 
 		private string CreateGCodeWithRaft(bool hasRaft)
 		{
-			string box20MmStlFile = TestUtlities.GetStlPath("20mm-box");
-			string boxGCodeFile = TestUtlities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
+			string box20MmStlFile = TestUtilities.GetStlPath("20mm-box");
+			string boxGCodeFile = TestUtilities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
 
 			ConfigSettings config = new ConfigSettings();
 			config.EnableRaft = hasRaft;

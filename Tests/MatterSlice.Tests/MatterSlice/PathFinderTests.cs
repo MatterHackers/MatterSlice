@@ -344,8 +344,8 @@ namespace MatterHackers.MatterSlice.Tests
 		public void CoinHasCrossingsWhenPathingTurnedOff()
 		{
 			// By default we need to do the inner perimeters first
-			string coinStlFile = TestUtlities.GetStlPath("MatterControl - Coin");
-			string coinGCodeFile = TestUtlities.GetTempGCodePath("MatterControl - Coin.gcode");
+			string coinStlFile = TestUtilities.GetStlPath("MatterControl - Coin");
+			string coinGCodeFile = TestUtilities.GetTempGCodePath("MatterControl - Coin.gcode");
 
 			bool calledPathingCode = false;
 			ConfigSettings config = new ConfigSettings();
@@ -371,8 +371,8 @@ namespace MatterHackers.MatterSlice.Tests
 		public void CoinHasNoCrossingsWhenPathingTurnedOn()
 		{
 			// By default we need to do the inner perimeters first
-			string coinStlFile = TestUtlities.GetStlPath("MatterControl - Coin");
-			string coinGCodeFile = TestUtlities.GetTempGCodePath("MatterControl - Coin.gcode");
+			string coinStlFile = TestUtilities.GetStlPath("MatterControl - Coin");
+			string coinGCodeFile = TestUtilities.GetTempGCodePath("MatterControl - Coin.gcode");
 
 			bool foundBadPath = false;
 			ConfigSettings config = new ConfigSettings();
