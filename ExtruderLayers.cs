@@ -193,9 +193,11 @@ namespace MatterHackers.MatterSlice
 					break;
 				}
 
+				var meshProcessingLayer = extruderData.layers[layerIndex];
+
 				Layers.Add(new SliceLayer());
-				Layers[layerIndex].LayerZ = extruderData.layers[layerIndex].Z;
-				Layers[layerIndex].AllOutlines = extruderData.layers[layerIndex].PolygonList.GetCorrectedWinding();
+				Layers[layerIndex].LayerZ = meshProcessingLayer.Z;
+				Layers[layerIndex].AllOutlines = meshProcessingLayer.PolygonList.GetCorrectedWinding();
 			}
 		}
 
