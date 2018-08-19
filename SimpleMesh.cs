@@ -285,7 +285,11 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			if (vol.faceTriangles.Count > 0)
+			// Detect and skip non-visible mesh
+			var bounds = vol.maxXYZ_um() - vol.minXYZ_um();
+
+			if (vol.faceTriangles.Count > 0
+				&& bounds.X > 0)
 			{
 				simpleModel.SimpleMeshes.Add(vol);
 				return true;
