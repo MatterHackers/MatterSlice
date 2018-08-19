@@ -231,14 +231,15 @@ namespace MatterHackers.MatterSlice
 
 			for (int extruderIndex = 0; extruderIndex < extruderList.Count; extruderIndex++)
 			{
-				slicingData.Extruders.Add(new ExtruderLayers(extruderList[extruderIndex], config.outputOnlyFirstLayer));
-				
+				var extruderLayer = new ExtruderLayers(extruderList[extruderIndex], config.outputOnlyFirstLayer);
+				slicingData.Extruders.Add(extruderLayer);
+
 				if (config.EnableRaft)
 				{
 					//Add the raft offset to each layer.
-					for (int layerIndex = 0; layerIndex < slicingData.Extruders[extruderIndex].Layers.Count; layerIndex++)
+					for (int layerIndex = 0; layerIndex < extruderLayer.Layers.Count; layerIndex++)
 					{
-						slicingData.Extruders[extruderIndex].Layers[layerIndex].LayerZ += config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um;
+						extruderLayer.Layers[layerIndex].LayerZ += config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um;
 					}
 				}
 			}
