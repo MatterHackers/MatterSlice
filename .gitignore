@@ -2,6 +2,8 @@
 [Bb]in/
 [Oo]bj/
 
+GCode_Control/
+
 # TempFiles
 ReferenceCode/
 
