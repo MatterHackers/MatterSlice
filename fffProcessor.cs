@@ -201,10 +201,12 @@ namespace MatterHackers.MatterSlice
 #endif
 
 			LogOutput.Log("Slicing model\n");
-			List<ExtruderData> extruderList = new List<ExtruderData>();
-			for (int optimizedMeshIndex = 0; optimizedMeshIndex < optimizedMeshCollection.OptimizedMeshes.Count; optimizedMeshIndex++)
+
+			var extruderList = new List<ExtruderData>();
+
+			foreach (var optimizedMesh in optimizedMeshCollection.OptimizedMeshes)
 			{
-				ExtruderData extruderData = new ExtruderData(optimizedMeshCollection.OptimizedMeshes[optimizedMeshIndex], config);
+				var extruderData = new ExtruderData(optimizedMesh, config);
 				extruderList.Add(extruderData);
 				extruderData.ReleaseMemory();
 			}
@@ -229,17 +231,17 @@ namespace MatterHackers.MatterSlice
 			}
 			extraPathingConsideration.AddRange(slicingData.wipeTower);
 
-			for (int extruderIndex = 0; extruderIndex < extruderList.Count; extruderIndex++)
+			foreach (var extruderData in extruderList)
 			{
-				var extruderLayer = new ExtruderLayers(extruderList[extruderIndex], config.outputOnlyFirstLayer);
+				var extruderLayer = new ExtruderLayers(extruderData, config.outputOnlyFirstLayer);
 				slicingData.Extruders.Add(extruderLayer);
 
 				if (config.EnableRaft)
 				{
-					//Add the raft offset to each layer.
-					for (int layerIndex = 0; layerIndex < extruderLayer.Layers.Count; layerIndex++)
+					// Add the raft offset to each layer.
+					foreach (var sliceLayer in extruderLayer.Layers)
 					{
-						extruderLayer.Layers[layerIndex].LayerZ += config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um;
+						sliceLayer.LayerZ += config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um;
 					}
 				}
 			}
@@ -890,16 +892,20 @@ namespace MatterHackers.MatterSlice
 					// Put all the insets into a new list so we can keep track of what has been printed.
 					// The island could be a rectangle with 4 screw holes. So, with 3 perimeters that could be the outside 3 + the holes 4 * 3, 15 polygons.
 					List<Polygons> insetsForThisIsland = new List<Polygons>(island.InsetToolPaths.Count);
-					for (int insetIndex = 0; insetIndex < island.InsetToolPaths.Count; insetIndex++)
+
+					foreach (var islandInsetPolygons in island.InsetToolPaths)
 					{
-						insetsForThisIsland.Add(new Polygons());
-						for (int polygonIndex = 0; polygonIndex < island.InsetToolPaths[insetIndex].Count; polygonIndex++)
+						var polygons = new Polygons();
+
+						foreach(var insetPolygon in islandInsetPolygons)
 						{
-							if (island.InsetToolPaths[insetIndex][polygonIndex].Count > 0)
+							if (insetPolygon.Count > 0)
 							{
-								insetsForThisIsland[insetIndex].Add(island.InsetToolPaths[insetIndex][polygonIndex]);
+								polygons.Add(insetPolygon);
 							}
 						}
+
+						insetsForThisIsland.Add(polygons);
 					}
 
 					GCodePathConfig overrideConfig = null;
