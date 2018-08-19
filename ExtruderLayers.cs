@@ -31,6 +31,35 @@ namespace MatterHackers.MatterSlice
 
 		private static readonly double cleanDistance_um = 10;
 
+		public ExtruderLayers()
+		{
+		}
+
+		/// <summary>
+		/// Construct a new instance based on layers from an existing ExtruderData
+		/// </summary>
+		/// <param name="extruderData">The ExtruderData containing layers to process</param>
+		/// <param name="outputOnlyFirstLayer">An indicator if only the first layer should be processed</param>
+		public ExtruderLayers(ExtruderData extruderData, bool outputOnlyFirstLayer)
+		{
+			// Initialize LayerData
+			for (int layerIndex = 0; layerIndex < extruderData.layers.Count; layerIndex++)
+			{
+				if (outputOnlyFirstLayer && layerIndex > 0)
+				{
+					break;
+				}
+
+				var meshProcessingLayer = extruderData.layers[layerIndex];
+
+				this.Layers.Add(new SliceLayer()
+				{
+					LayerZ = meshProcessingLayer.Z,
+					AllOutlines = meshProcessingLayer.PolygonList.GetCorrectedWinding()
+				});
+			}
+		}
+
 		public void CreateIslandData()
 		{
 			for (int layerIndex = 0; layerIndex < Layers.Count; layerIndex++)
@@ -181,25 +210,6 @@ namespace MatterHackers.MatterSlice
 
 					island.SolidInfillPaths = solidInfillPaths;
 				}
-			}
-		}
-
-		public void InitializeLayerData(ExtruderData extruderData, ConfigSettings config)
-		{
-			for (int layerIndex = 0; layerIndex < extruderData.layers.Count; layerIndex++)
-			{
-				if (config.outputOnlyFirstLayer && layerIndex > 0)
-				{
-					break;
-				}
-
-				var meshProcessingLayer = extruderData.layers[layerIndex];
-
-				this.Layers.Add(new SliceLayer()
-				{
-					LayerZ = meshProcessingLayer.Z,
-					AllOutlines = meshProcessingLayer.PolygonList.GetCorrectedWinding()
-				});
 			}
 		}
 

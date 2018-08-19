@@ -231,9 +231,8 @@ namespace MatterHackers.MatterSlice
 
 			for (int extruderIndex = 0; extruderIndex < extruderList.Count; extruderIndex++)
 			{
-				slicingData.Extruders.Add(new ExtruderLayers());
-				slicingData.Extruders[extruderIndex].InitializeLayerData(extruderList[extruderIndex], config);
-
+				slicingData.Extruders.Add(new ExtruderLayers(extruderList[extruderIndex], config.outputOnlyFirstLayer));
+				
 				if (config.EnableRaft)
 				{
 					//Add the raft offset to each layer.
