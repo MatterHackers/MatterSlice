@@ -524,7 +524,10 @@ namespace MatterHackers.MatterSlice
 				for (int extruderIndex = 0; extruderIndex < config.MaxExtruderCount(); extruderIndex++)
 				{
 					int prevExtruder = layerGcodePlanner.GetExtruder();
-					bool changingExtruder = layerGcodePlanner.ExtruderWillChange(extruderIndex);
+					bool changingExtruder = layerGcodePlanner.ExtruderWillChange(extruderIndex)
+						&& extruderIndex < slicingData.Extruders.Count
+						&& slicingData.Extruders[extruderIndex].Layers[layerIndex].Islands.Count > 0;
+
 					if (changingExtruder)
 					{
 						if (slicingData.NeedToPrintWipeTower(layerIndex, config))
@@ -1223,8 +1226,10 @@ namespace MatterHackers.MatterSlice
 				&& layerIndex > 0)
 			{
 				int prevExtruder = layerGcodePlanner.GetExtruder();
-				bool changingExtruder = layerGcodePlanner.ExtruderWillChange(extruderIndex);
-				if(changingExtruder)
+				bool changingExtruder = layerGcodePlanner.ExtruderWillChange(extruderIndex)
+					 && slicingData.Extruders[extruderIndex].Layers[layerIndex].Islands.Count > 0;
+
+				if (changingExtruder)
 				{
 					// move to the wipe tower before we change extruders
 					layerGcodePlanner.QueueTravel(config.WipePoint - config.ExtruderOffsets[prevExtruder] + config.ExtruderOffsets[layerGcodePlanner.GetExtruder()]);
