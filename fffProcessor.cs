@@ -893,11 +893,11 @@ namespace MatterHackers.MatterSlice
 					// The island could be a rectangle with 4 screw holes. So, with 3 perimeters that could be the outside 3 + the holes 4 * 3, 15 polygons.
 					List<Polygons> insetsForThisIsland = new List<Polygons>(island.InsetToolPaths.Count);
 
-					foreach (var islandInsetPolygons in island.InsetToolPaths)
+					foreach (var insetToolPath in island.InsetToolPaths)
 					{
 						var polygons = new Polygons();
 
-						foreach(var insetPolygon in islandInsetPolygons)
+						foreach(var insetPolygon in insetToolPath)
 						{
 							if (insetPolygon.Count > 0)
 							{
