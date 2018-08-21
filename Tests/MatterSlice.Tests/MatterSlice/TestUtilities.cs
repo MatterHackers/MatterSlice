@@ -131,12 +131,6 @@ namespace MatterHackers.MatterSlice.Tests
 			return retractions;
 		}
 
-		public static string GetControlGCodePath(string file)
-		{
-			string fileAndPath = Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "GCode_Control", file), "gcode");
-			return fileAndPath;
-		}
-
 		public static Polygons GetExtrusionPolygons(string[] gcode, long movementToIgnore = 0)
 		{
 			MovementInfo movementInfo = new MovementInfo();
@@ -250,6 +244,14 @@ namespace MatterHackers.MatterSlice.Tests
 		public static string GetStlPath(string file)
 		{
 			return Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "SampleSTLs", file), "stl");
+		}
+
+		public static string GetControlGCodePath(string testName)
+		{
+			string directory = Path.Combine(matterSliceBaseDirectory, "GCode_Control");
+			Directory.CreateDirectory(directory);
+
+			return Path.Combine(directory, testName + ".gcode");
 		}
 
 		public static string GetTempGCodePath(string file)

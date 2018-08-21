@@ -49,7 +49,7 @@ namespace MatterHackers.MatterSlice
 		private double[] totalFilament_mm = new double[ConfigConstants.MAX_EXTRUDERS];
 		private double totalPrintTime;
 		private double unretractExtraOnExtruderSwitch_mm;
-		private bool reletLongExtrusion;
+		private bool resetLongExtrusion;
 		private double unretractExtrusionExtra_mm;
 		private double unretractExtrusionExtraSeconds;
 		double _layerSpeedRatio = 1;
@@ -219,9 +219,9 @@ namespace MatterHackers.MatterSlice
 			double unretractExtrusionExtra_mm, 
 			double unretractExtrusionExtraSeconds, 
 			double unretractExtraOnExtruderSwitch_mm,
-			bool reletLongExtrusion)
+			bool resetLongExtrusion)
 		{
-			this.reletLongExtrusion = reletLongExtrusion;
+			this.resetLongExtrusion = resetLongExtrusion;
 			this.unretractExtrusionExtra_mm = unretractExtrusionExtra_mm;
 			this.unretractExtrusionExtraSeconds = unretractExtrusionExtraSeconds;
 			this.unretractExtraOnExtruderSwitch_mm = unretractExtraOnExtruderSwitch_mm;
@@ -361,7 +361,7 @@ namespace MatterHackers.MatterSlice
 						lineToWrite.Append("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
 					}
 
-					if (this.reletLongExtrusion 
+					if (this.resetLongExtrusion 
 						&& extrusionAmount_mm > 10000.0)
 					{
 						//According to https://github.com/Ultimaker/CuraEngine/issues/14 having more then 21m of extrusion causes inaccuracies. So reset it every 10m, just to be sure.

@@ -213,7 +213,6 @@ namespace MatterHackers.MatterSlice
 
 			if (skirtPolygons.Count > 0)
 			{
-
 				// Find convex hull for the skirt outline
 				Polygons convexHull = new Polygons(new[] { skirtPolygons.CreateConvexHull() });
 
