@@ -62,8 +62,6 @@ namespace MatterHackers.MatterSlice
 		// Store all public instance properties in a local static list to resolve settings mappings
 		private static List<PropertyInfo> allProperties = typeof(ConfigSettings).GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
 
-		private int extruderCount = 0;
-
 		public ConfigSettings()
 		{
 			SetToDefault();
@@ -107,6 +105,8 @@ namespace MatterHackers.MatterSlice
 
 		[SettingDescription("The width of the line to extrude.")]
 		public double ExtrusionWidth { get; set; }
+
+		public int ExtruderCount { get; set; } = 1;
 
 		public int ExtrusionWidth_um => (int)(ExtrusionWidth * 1000);
 		public int FanSpeedMinPercent { get; set; }
@@ -439,11 +439,6 @@ namespace MatterHackers.MatterSlice
 			File.WriteAllLines(fileName, lines.ToArray());
 		}
 
-		public int MaxExtruderCount()
-		{
-			return Math.Max(extruderCount, Math.Max(SupportExtruder + 1, SupportInterfaceExtruder + 1));
-		}
-
 		// .250 mm for .4 mm nozzle
 		public bool ReadSettings(string fileName)
 		{
@@ -475,11 +470,6 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return false;
-		}
-
-		public void SetExtruderCount(int count)
-		{
-			extruderCount = count;
 		}
 
 		// .35 mm for .4 mm nozzle

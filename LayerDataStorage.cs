@@ -94,7 +94,7 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			extrudersThatHaveBeenPrimed = new bool[config.GenerateSupport ? config.MaxExtruderCount() * 2 : config.MaxExtruderCount()];
+			extrudersThatHaveBeenPrimed = new bool[config.GenerateSupport ? config.ExtruderCount * 2 : config.ExtruderCount];
 
 			Polygon wipeTowerShape = new Polygon();
 			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000));
@@ -148,7 +148,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// print all of the extruder loops that have not already been printed
-			int extruderCount = config.GenerateSupport ? config.MaxExtruderCount() * 2 : config.MaxExtruderCount();
+			int extruderCount = config.GenerateSupport ? config.ExtruderCount * 2 : config.ExtruderCount;
 			for (int extruderIndex = 0; extruderIndex < extruderCount; extruderIndex++)
 			{
 				if (!extrudersThatHaveBeenPrimed[extruderIndex])
@@ -235,7 +235,7 @@ namespace MatterHackers.MatterSlice
 
 		public void GenerateWipeTowerInfill(int extruderIndex, Polygons partOutline, Polygons outputfillPolygons, long extrusionWidth_um, ConfigSettings config)
 		{
-			int extruderCount = config.GenerateSupport ? config.MaxExtruderCount() * 2 : config.MaxExtruderCount();
+			int extruderCount = config.GenerateSupport ? config.ExtruderCount * 2 : config.ExtruderCount;
 
 			Polygons outlineForExtruder = partOutline.Offset(-extrusionWidth_um * extruderIndex);
 
@@ -277,7 +277,7 @@ namespace MatterHackers.MatterSlice
 			//If we changed extruder, print the wipe/prime tower for this nozzle;
 			Polygons fillPolygons = new Polygons();
 
-			int extruderIndex = airGapped ? config.MaxExtruderCount() + extruderIndexIn : extruderIndexIn;
+			int extruderIndex = airGapped ? config.ExtruderCount + extruderIndexIn : extruderIndexIn;
 
 			GenerateWipeTowerInfill(extruderIndex, this.wipeTower, fillPolygons, fillConfig.lineWidth_um, config);
 			gcodeLayer.QueuePolygons(fillPolygons, fillConfig);
@@ -471,7 +471,7 @@ namespace MatterHackers.MatterSlice
 			int firstExtruderWithData = -1;
 			for (int checkLayer = numLayers - 1; checkLayer >= 0; checkLayer--)
 			{
-				for (int extruderToCheck = 0; extruderToCheck < config.MaxExtruderCount(); extruderToCheck++)
+				for (int extruderToCheck = 0; extruderToCheck < config.ExtruderCount; extruderToCheck++)
 				{
 					if ((extruderToCheck < Extruders.Count && Extruders[extruderToCheck].Layers[checkLayer].AllOutlines.Count > 0)
 						|| (config.SupportExtruder == extruderToCheck && support != null && support.HasNormalSupport(checkLayer))

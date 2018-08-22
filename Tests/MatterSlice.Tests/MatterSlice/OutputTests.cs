@@ -122,7 +122,7 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			//this.RunGCodeTest("BooleanOperations", (settings) =>
 			//{
-			//	settings.BooleanOperations = ""; 
+			//	settings.BooleanOperations = "";
 			//});
 		}
 
@@ -131,7 +131,7 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			//this.RunGCodeTest("AdditionalArgsToProcess", (settings) =>
 			//{
-			//	settings.AdditionalArgsToProcess = ""; 
+			//	settings.AdditionalArgsToProcess = "";
 			//});
 		}
 
@@ -733,6 +733,7 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			this.RunGCodeTest("SupportExtruder", "Support Material 2 Bars.stl", (settings) =>
 			{
+				settings.ExtruderCount = 3;
 				settings.GenerateSupport = true;
 				settings.SupportExtruder = 2; // Default(-1)
 			});
@@ -763,6 +764,7 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			this.RunGCodeTest("SupportInterfaceExtruder", (settings) =>
 			{
+				settings.ExtruderCount = 3;
 				settings.GenerateSupport = true;
 				settings.SupportInterfaceExtruder = 2; // Default(-1)
 			});

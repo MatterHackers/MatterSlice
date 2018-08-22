@@ -26,6 +26,7 @@ using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+	using System.Linq;
 	using Pathfinding;
 	using QuadTree;
 	using Polygon = List<IntPoint>;
@@ -278,8 +279,6 @@ namespace MatterHackers.MatterSlice
 				slicingData.Extruders.RemoveAt(slicingData.Extruders.Count - 1);
 			}
 
-			config.SetExtruderCount(slicingData.Extruders.Count);
-
 			MultiExtruders.RemoveExtruderIntersections(slicingData.Extruders);
 			MultiExtruders.OverlapMultipleExtrudersSlightly(slicingData.Extruders, config.MultiExtruderOverlapPercent);
 #if False
@@ -523,12 +522,18 @@ namespace MatterHackers.MatterSlice
 				List<GCodePath> fanSpeedsToSet = new List<GCodePath>();
 				fanSpeedsToSet.Add(layerGcodePlanner.QueueFanCommand(0, fillConfig));
 
-				for (int extruderIndex = 0; extruderIndex < config.MaxExtruderCount(); extruderIndex++)
+				for (int extruderIndex = 0; extruderIndex < config.ExtruderCount; extruderIndex++)
 				{
 					int prevExtruder = layerGcodePlanner.GetExtruder();
+
+					bool extruderUsedForSupport = config.SupportExtruder == extruderIndex
+						|| config.SupportInterfaceExtruder == extruderIndex;
 					bool changingExtruder = layerGcodePlanner.ExtruderWillChange(extruderIndex)
-						&& extruderIndex < slicingData.Extruders.Count
-						&& slicingData.Extruders[extruderIndex].Layers[layerIndex].Islands.Count > 0;
+						&& (extruderIndex < slicingData.Extruders.Count
+							&& slicingData.Extruders[extruderIndex].Layers[layerIndex].Islands.Count > 0)
+							|| (config.GenerateSupport
+								&& slicingData.support.SparseSupportOutlines[layerIndex].Count > 0
+								&& extruderUsedForSupport);
 
 					if (changingExtruder)
 					{
@@ -582,8 +587,10 @@ namespace MatterHackers.MatterSlice
 							movedToIsland = true;
 						}
 
-						if ((config.SupportExtruder <= 0 && extruderIndex == 0)
-							|| config.SupportExtruder == extruderIndex)
+						var usableExtruderIndex = config.SupportExtruder < config.ExtruderCount ? config.SupportExtruder : 0;
+
+						if ((usableExtruderIndex <= 0 && extruderIndex == 0)
+							|| usableExtruderIndex == extruderIndex)
 						{
 							if (slicingData.support.QueueNormalSupportLayer(config, layerGcodePlanner, layerIndex, supportNormalConfig))
 							{
@@ -591,8 +598,11 @@ namespace MatterHackers.MatterSlice
 								islandCurrentlyInside = null;
 							}
 						}
-						if ((config.SupportInterfaceExtruder <= 0 && extruderIndex == 0)
-							|| config.SupportInterfaceExtruder == extruderIndex)
+
+						usableExtruderIndex = config.SupportInterfaceExtruder < config.ExtruderCount ? config.SupportInterfaceExtruder : 0;
+
+						if ((usableExtruderIndex <= 0 && extruderIndex == 0)
+							|| usableExtruderIndex == extruderIndex)
 						{
 							if (slicingData.support.QueueInterfaceSupportLayer(config, layerGcodePlanner, layerIndex, supportInterfaceConfig))
 							{
@@ -803,11 +813,11 @@ namespace MatterHackers.MatterSlice
 		LayerIsland islandCurrentlyInside = null;
 
 		//Add a single layer from a single extruder to the GCode
-		private void QueueExtruderLayerToGCode(LayerDataStorage slicingData, 
-			GCodePlanner layerGcodePlanner, 
-			int extruderIndex, 
-			int layerIndex, 
-			int extrusionWidth_um, 
+		private void QueueExtruderLayerToGCode(LayerDataStorage slicingData,
+			GCodePlanner layerGcodePlanner,
+			int extruderIndex,
+			int layerIndex,
+			int extrusionWidth_um,
 			long currentZ_um,
 			List<GCodePath> fanSpeedsToSet)
 		{
@@ -973,7 +983,7 @@ namespace MatterHackers.MatterSlice
 										if (closestInsetStart.X != long.MinValue)
 										{
 											var found = insetsForThisIsland[insetsForThisIsland.Count - 1].FindClosestPoint(closestInsetStart);
-											if (found.polyIndex != -1 
+											if (found.polyIndex != -1
 												&& found.pointIndex != -1)
 											{
 												layerGcodePlanner.QueueTravel(found.position);
@@ -1232,8 +1242,15 @@ namespace MatterHackers.MatterSlice
 				&& layerIndex > 0)
 			{
 				int prevExtruder = layerGcodePlanner.GetExtruder();
+
+				bool extruderUsedForSupport = config.SupportExtruder == extruderIndex
+					|| config.SupportInterfaceExtruder == extruderIndex;
 				bool changingExtruder = layerGcodePlanner.ExtruderWillChange(extruderIndex)
-					 && slicingData.Extruders[extruderIndex].Layers[layerIndex].Islands.Count > 0;
+					&& (extruderIndex < slicingData.Extruders.Count
+						&& slicingData.Extruders[extruderIndex].Layers[layerIndex].Islands.Count > 0)
+						|| (config.GenerateSupport
+							&& slicingData.support.SparseSupportOutlines[layerIndex].Count > 0
+							&& extruderUsedForSupport);
 
 				if (changingExtruder)
 				{
