@@ -103,8 +103,11 @@ namespace MatterHackers.MatterSlice
 			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000));
 
 			this.wipeTower.Add(wipeTowerShape);
-			config.WipeTowerX_um = this.modelMin.X - 3000 - config.WipeTowerSize_um / 2;
-			config.WipeTowerY_um = this.modelMax.Y - 3000 - config.WipeTowerSize_um / 2;
+			var wipeTowerBounds = wipeTowerShape.GetBounds();
+
+			config.WipeCenter_um = new IntPoint(
+				wipeTowerBounds.minX + (wipeTowerBounds.maxX - wipeTowerBounds.minX) / 2,
+				wipeTowerBounds.minY + (wipeTowerBounds.maxY - wipeTowerBounds.minY) / 2);
 		}
 
 		public void DumpLayerparts(string filename)
