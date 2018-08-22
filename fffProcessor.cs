@@ -1444,6 +1444,12 @@ namespace MatterHackers.MatterSlice
 
 		private void CalculateInfillData(LayerDataStorage slicingData, int extruderIndex, int layerIndex, LayerIsland part, Polygons bottomFillLines, Polygons fillPolygons = null, Polygons firstTopFillPolygons = null, Polygons topFillPolygons = null, Polygons bridgePolygons = null)
 		{
+			double alternatingInfillAngle = config.InfillStartingAngle;
+			if ((layerIndex % 2) == 0)
+			{
+				alternatingInfillAngle += 90;
+			}
+			
 			// generate infill for the bottom layer including bridging
 			foreach (Polygons bottomFillIsland in part.BottomPaths.ProcessIntoSeparateIslands())
 			{
@@ -1473,13 +1479,13 @@ namespace MatterHackers.MatterSlice
 								bottomFillLines.Add(line);
 							} */
 
-							Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+							Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, alternatingInfillAngle);
 						}
 					}
 				}
 				else
 				{
-					Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.FirstLayerExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+					Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.FirstLayerExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, alternatingInfillAngle);
 				}
 			}
 
@@ -1488,6 +1494,7 @@ namespace MatterHackers.MatterSlice
 			{
 				foreach (Polygons outline in part.TopPaths.ProcessIntoSeparateIslands())
 				{
+					// the top layer always draws the infill in the same direction (for asthetics)
 					Infill.GenerateLinePaths(outline, topFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
 				}
 			}
@@ -1496,7 +1503,7 @@ namespace MatterHackers.MatterSlice
 			{
 				foreach (Polygons outline in part.FirstTopPaths.ProcessIntoSeparateIslands())
 				{
-					Infill.GenerateLinePaths(outline, firstTopFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+					Infill.GenerateLinePaths(outline, firstTopFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, alternatingInfillAngle);
 				}
 			}
 
@@ -1505,10 +1512,8 @@ namespace MatterHackers.MatterSlice
 			{
 				foreach (Polygons outline in part.SolidInfillPaths.ProcessIntoSeparateIslands())
 				{
-					Infill.GenerateLinePaths(outline, fillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle + 90 * (layerIndex % 2));
+					Infill.GenerateLinePaths(outline, fillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, alternatingInfillAngle);
 				}
-
-				double fillAngle = config.InfillStartingAngle;
 
 				// generate the sparse infill for this part on this layer
 				if (config.InfillPercent > 0)
@@ -1516,23 +1521,19 @@ namespace MatterHackers.MatterSlice
 					switch (config.InfillType)
 					{
 						case ConfigConstants.INFILL_TYPE.LINES:
-							if ((layerIndex & 1) == 1)
-							{
-								fillAngle += 90;
-							}
-							Infill.GenerateLineInfill(config, part.SparseInfillPaths, fillPolygons, fillAngle);
+							Infill.GenerateLineInfill(config, part.SparseInfillPaths, fillPolygons, alternatingInfillAngle);
 							break;
 
 						case ConfigConstants.INFILL_TYPE.GRID:
-							Infill.GenerateGridInfill(config, part.SparseInfillPaths, fillPolygons, fillAngle);
+							Infill.GenerateGridInfill(config, part.SparseInfillPaths, fillPolygons, config.InfillStartingAngle);
 							break;
 
 						case ConfigConstants.INFILL_TYPE.TRIANGLES:
-							Infill.GenerateTriangleInfill(config, part.SparseInfillPaths, fillPolygons, fillAngle);
+							Infill.GenerateTriangleInfill(config, part.SparseInfillPaths, fillPolygons, config.InfillStartingAngle);
 							break;
 
 						case ConfigConstants.INFILL_TYPE.HEXAGON:
-							Infill.GenerateHexagonInfill(config, part.SparseInfillPaths, fillPolygons, fillAngle, layerIndex);
+							Infill.GenerateHexagonInfill(config, part.SparseInfillPaths, fillPolygons, config.InfillStartingAngle, layerIndex);
 							break;
 
 						case ConfigConstants.INFILL_TYPE.CONCENTRIC:
