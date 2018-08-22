@@ -48,7 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MatterSlice\CreateTopAndBottomsTests.cs" />
-    <Compile Include="MatterSlice\OutputTests.cs" />
+    <None Include="MatterSlice\OutputTests.cs" />
     <Compile Include="MatterSlice\OutputTestsGenerator.cs" />
     <Compile Include="MatterSlice\PathFinderTests.cs" />
     <Compile Include="MatterSlice\BridgeTests.cs" />
