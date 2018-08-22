@@ -298,12 +298,33 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 2));
 			}
 
+			// check that support is printed with extruder 0
+			{
+				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_1b_.gcode");
+
+				ConfigSettings config = new ConfigSettings();
+				config.ExtruderCount = 1;
+				config.SupportExtruder = 1; // from a 0 based index
+				config.GenerateSupport = true;
+				fffProcessor processor = new fffProcessor(config);
+				processor.SetTargetFile(gcodeToCreate);
+				processor.LoadStlFile(stlToLoad);
+				// slice and save it
+				processor.DoProcessing();
+				processor.finalize();
+
+				string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
+				Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 1));
+				Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 2));
+			}
+
 			// check that support is printed with extruder 1
 			{
 				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_1b_.gcode");
 
 				ConfigSettings config = new ConfigSettings();
 				config.SupportExtruder = 1;
+				config.ExtruderCount = 2;
 				config.GenerateSupport = true;
 				fffProcessor processor = new fffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
@@ -317,12 +338,76 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 2));
 			}
 
+			// check that support interface is printed with extruder 0
+			{
+				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_1i_.gcode");
+
+				ConfigSettings config = new ConfigSettings();
+				config.ExtruderCount = 1;
+				config.SupportInterfaceExtruder = 1;
+				config.GenerateSupport = true;
+				fffProcessor processor = new fffProcessor(config);
+				processor.SetTargetFile(gcodeToCreate);
+				processor.LoadStlFile(stlToLoad);
+				// slice and save it
+				processor.DoProcessing();
+				processor.finalize();
+
+				string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
+				Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 1));
+				Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 2));
+			}
+
 			// check that support interface is printed with extruder 1
 			{
 				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_1i_.gcode");
 
 				ConfigSettings config = new ConfigSettings();
+				config.ExtruderCount = 2;
 				config.SupportInterfaceExtruder = 1;
+				config.GenerateSupport = true;
+				fffProcessor processor = new fffProcessor(config);
+				processor.SetTargetFile(gcodeToCreate);
+				processor.LoadStlFile(stlToLoad);
+				// slice and save it
+				processor.DoProcessing();
+				processor.finalize();
+
+				string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
+				Assert.IsTrue(TestUtilities.UsesExtruder(gcodeContents, 0));
+				Assert.IsTrue(TestUtilities.UsesExtruder(gcodeContents, 1));
+				Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 2));
+			}
+
+			// check that support and interface can be set separately
+			{
+				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_1b2i_.gcode");
+
+				ConfigSettings config = new ConfigSettings();
+				config.ExtruderCount = 1;
+				config.SupportExtruder = 1;
+				config.SupportInterfaceExtruder = 2;
+				config.GenerateSupport = true;
+				fffProcessor processor = new fffProcessor(config);
+				processor.SetTargetFile(gcodeToCreate);
+				processor.LoadStlFile(stlToLoad);
+				// slice and save it
+				processor.DoProcessing();
+				processor.finalize();
+
+				string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
+				Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 1));
+				Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 2));
+			}
+
+			// check that support and interface can be set separately
+			{
+				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_1b2i_.gcode");
+
+				ConfigSettings config = new ConfigSettings();
+				config.ExtruderCount = 2;
+				config.SupportExtruder = 1;
+				config.SupportInterfaceExtruder = 2;
 				config.GenerateSupport = true;
 				fffProcessor processor = new fffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
@@ -341,6 +426,7 @@ namespace MatterHackers.MatterSlice.Tests
 				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_1b2i_.gcode");
 
 				ConfigSettings config = new ConfigSettings();
+				config.ExtruderCount = 3;
 				config.SupportExtruder = 1;
 				config.SupportInterfaceExtruder = 2;
 				config.GenerateSupport = true;
@@ -444,6 +530,7 @@ namespace MatterHackers.MatterSlice.Tests
 			string outputGCodeFileName = TestUtilities.GetTempGCodePath("DualPartMoves");
 
 			ConfigSettings config = new ConfigSettings();
+			config.ExtruderCount = 2;
 			config.FirstLayerThickness = .2;
 			config.LayerThickness = .2;
 			config.NumberOfBottomLayers = 0;

@@ -26,6 +26,7 @@ using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+	using System.Linq;
 	using Pathfinding;
 	using QuadTree;
 	using Polygon = List<IntPoint>;
@@ -278,8 +279,6 @@ namespace MatterHackers.MatterSlice
 				slicingData.Extruders.RemoveAt(slicingData.Extruders.Count - 1);
 			}
 
-			config.SetExtruderCount(slicingData.Extruders.Count);
-
 			MultiExtruders.RemoveExtruderIntersections(slicingData.Extruders);
 			MultiExtruders.OverlapMultipleExtrudersSlightly(slicingData.Extruders, config.MultiExtruderOverlapPercent);
 #if False
@@ -523,12 +522,18 @@ namespace MatterHackers.MatterSlice
 				List<GCodePath> fanSpeedsToSet = new List<GCodePath>();
 				fanSpeedsToSet.Add(layerGcodePlanner.QueueFanCommand(0, fillConfig));
 
-				for (int extruderIndex = 0; extruderIndex < config.MaxExtruderCount(); extruderIndex++)
+				for (int extruderIndex = 0; extruderIndex < config.ExtruderCount; extruderIndex++)
 				{
 					int prevExtruder = layerGcodePlanner.GetExtruder();
+
+					bool extruderUsedForSupport = config.SupportExtruder == extruderIndex
+						|| config.SupportInterfaceExtruder == extruderIndex;
 					bool changingExtruder = layerGcodePlanner.ExtruderWillChange(extruderIndex)
-						&& extruderIndex < slicingData.Extruders.Count
-						&& slicingData.Extruders[extruderIndex].Layers[layerIndex].Islands.Count > 0;
+						&& (extruderIndex < slicingData.Extruders.Count
+							&& slicingData.Extruders[extruderIndex].Layers[layerIndex].Islands.Count > 0)
+							|| (config.GenerateSupport
+								&& slicingData.support.SparseSupportOutlines[layerIndex].Count > 0
+								&& extruderUsedForSupport);
 
 					if (changingExtruder)
 					{
@@ -582,8 +587,10 @@ namespace MatterHackers.MatterSlice
 							movedToIsland = true;
 						}
 
-						if ((config.SupportExtruder <= 0 && extruderIndex == 0)
-							|| config.SupportExtruder == extruderIndex)
+						var usableExtruderIndex = config.SupportExtruder < config.ExtruderCount ? config.SupportExtruder : 0;
+
+						if ((usableExtruderIndex <= 0 && extruderIndex == 0)
+							|| usableExtruderIndex == extruderIndex)
 						{
 							if (slicingData.support.QueueNormalSupportLayer(config, layerGcodePlanner, layerIndex, supportNormalConfig))
 							{
@@ -591,8 +598,11 @@ namespace MatterHackers.MatterSlice
 								islandCurrentlyInside = null;
 							}
 						}
-						if ((config.SupportInterfaceExtruder <= 0 && extruderIndex == 0)
-							|| config.SupportInterfaceExtruder == extruderIndex)
+
+						usableExtruderIndex = config.SupportInterfaceExtruder < config.ExtruderCount ? config.SupportInterfaceExtruder : 0;
+
+						if ((usableExtruderIndex <= 0 && extruderIndex == 0)
+							|| usableExtruderIndex == extruderIndex)
 						{
 							if (slicingData.support.QueueInterfaceSupportLayer(config, layerGcodePlanner, layerIndex, supportInterfaceConfig))
 							{
@@ -803,11 +813,11 @@ namespace MatterHackers.MatterSlice
 		LayerIsland islandCurrentlyInside = null;
 
 		//Add a single layer from a single extruder to the GCode
-		private void QueueExtruderLayerToGCode(LayerDataStorage slicingData, 
-			GCodePlanner layerGcodePlanner, 
-			int extruderIndex, 
-			int layerIndex, 
-			int extrusionWidth_um, 
+		private void QueueExtruderLayerToGCode(LayerDataStorage slicingData,
+			GCodePlanner layerGcodePlanner,
+			int extruderIndex,
+			int layerIndex,
+			int extrusionWidth_um,
 			long currentZ_um,
 			List<GCodePath> fanSpeedsToSet)
 		{
@@ -973,7 +983,7 @@ namespace MatterHackers.MatterSlice
 										if (closestInsetStart.X != long.MinValue)
 										{
 											var found = insetsForThisIsland[insetsForThisIsland.Count - 1].FindClosestPoint(closestInsetStart);
-											if (found.polyIndex != -1 
+											if (found.polyIndex != -1
 												&& found.pointIndex != -1)
 											{
 												layerGcodePlanner.QueueTravel(found.position);
@@ -1232,8 +1242,15 @@ namespace MatterHackers.MatterSlice
 				&& layerIndex > 0)
 			{
 				int prevExtruder = layerGcodePlanner.GetExtruder();
+
+				bool extruderUsedForSupport = config.SupportExtruder == extruderIndex
+					|| config.SupportInterfaceExtruder == extruderIndex;
 				bool changingExtruder = layerGcodePlanner.ExtruderWillChange(extruderIndex)
-					 && slicingData.Extruders[extruderIndex].Layers[layerIndex].Islands.Count > 0;
+					&& (extruderIndex < slicingData.Extruders.Count
+						&& slicingData.Extruders[extruderIndex].Layers[layerIndex].Islands.Count > 0)
+						|| (config.GenerateSupport
+							&& slicingData.support.SparseSupportOutlines[layerIndex].Count > 0
+							&& extruderUsedForSupport);
 
 				if (changingExtruder)
 				{
@@ -1444,6 +1461,12 @@ namespace MatterHackers.MatterSlice
 
 		private void CalculateInfillData(LayerDataStorage slicingData, int extruderIndex, int layerIndex, LayerIsland part, Polygons bottomFillLines, Polygons fillPolygons = null, Polygons firstTopFillPolygons = null, Polygons topFillPolygons = null, Polygons bridgePolygons = null)
 		{
+			double alternatingInfillAngle = config.InfillStartingAngle;
+			if ((layerIndex % 2) == 0)
+			{
+				alternatingInfillAngle += 90;
+			}
+			
 			// generate infill for the bottom layer including bridging
 			foreach (Polygons bottomFillIsland in part.BottomPaths.ProcessIntoSeparateIslands())
 			{
@@ -1473,13 +1496,13 @@ namespace MatterHackers.MatterSlice
 								bottomFillLines.Add(line);
 							} */
 
-							Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+							Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, alternatingInfillAngle);
 						}
 					}
 				}
 				else
 				{
-					Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.FirstLayerExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+					Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.FirstLayerExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, alternatingInfillAngle);
 				}
 			}
 
@@ -1488,6 +1511,7 @@ namespace MatterHackers.MatterSlice
 			{
 				foreach (Polygons outline in part.TopPaths.ProcessIntoSeparateIslands())
 				{
+					// the top layer always draws the infill in the same direction (for asthetics)
 					Infill.GenerateLinePaths(outline, topFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
 				}
 			}
@@ -1496,7 +1520,7 @@ namespace MatterHackers.MatterSlice
 			{
 				foreach (Polygons outline in part.FirstTopPaths.ProcessIntoSeparateIslands())
 				{
-					Infill.GenerateLinePaths(outline, firstTopFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+					Infill.GenerateLinePaths(outline, firstTopFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, alternatingInfillAngle);
 				}
 			}
 
@@ -1505,10 +1529,8 @@ namespace MatterHackers.MatterSlice
 			{
 				foreach (Polygons outline in part.SolidInfillPaths.ProcessIntoSeparateIslands())
 				{
-					Infill.GenerateLinePaths(outline, fillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle + 90 * (layerIndex % 2));
+					Infill.GenerateLinePaths(outline, fillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, alternatingInfillAngle);
 				}
-
-				double fillAngle = config.InfillStartingAngle;
 
 				// generate the sparse infill for this part on this layer
 				if (config.InfillPercent > 0)
@@ -1516,23 +1538,19 @@ namespace MatterHackers.MatterSlice
 					switch (config.InfillType)
 					{
 						case ConfigConstants.INFILL_TYPE.LINES:
-							if ((layerIndex & 1) == 1)
-							{
-								fillAngle += 90;
-							}
-							Infill.GenerateLineInfill(config, part.SparseInfillPaths, fillPolygons, fillAngle);
+							Infill.GenerateLineInfill(config, part.SparseInfillPaths, fillPolygons, alternatingInfillAngle);
 							break;
 
 						case ConfigConstants.INFILL_TYPE.GRID:
-							Infill.GenerateGridInfill(config, part.SparseInfillPaths, fillPolygons, fillAngle);
+							Infill.GenerateGridInfill(config, part.SparseInfillPaths, fillPolygons, config.InfillStartingAngle);
 							break;
 
 						case ConfigConstants.INFILL_TYPE.TRIANGLES:
-							Infill.GenerateTriangleInfill(config, part.SparseInfillPaths, fillPolygons, fillAngle);
+							Infill.GenerateTriangleInfill(config, part.SparseInfillPaths, fillPolygons, config.InfillStartingAngle);
 							break;
 
 						case ConfigConstants.INFILL_TYPE.HEXAGON:
-							Infill.GenerateHexagonInfill(config, part.SparseInfillPaths, fillPolygons, fillAngle, layerIndex);
+							Infill.GenerateHexagonInfill(config, part.SparseInfillPaths, fillPolygons, config.InfillStartingAngle, layerIndex);
 							break;
 
 						case ConfigConstants.INFILL_TYPE.CONCENTRIC:
