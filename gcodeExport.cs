@@ -247,15 +247,15 @@ namespace MatterHackers.MatterSlice
 			if(newExtruder == 1 
 				&& config.BeforeToolchangeCode1 != "")
 			{
-				var code = config.BeforeToolchangeCode1.Replace("[wipe_tower_x]", config.WipeTowerX.ToString());
-				code = code.Replace("[wipe_tower_y]", config.WipeTowerY.ToString());
+				var code = config.BeforeToolchangeCode1.Replace("[wipe_tower_x]", config.WipeCenterX.ToString());
+				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString());
 				WriteCode("; Before Tool 1 Change GCode");
 				WriteCode(code);
 			}
 			else if (!string.IsNullOrEmpty(config.BeforeToolchangeCode))
 			{
-				var code = config.BeforeToolchangeCode.Replace("[wipe_tower_x]", config.WipeTowerX.ToString());
-				code = code.Replace("[wipe_tower_y]", config.WipeTowerY.ToString());
+				var code = config.BeforeToolchangeCode.Replace("[wipe_tower_x]", config.WipeCenterX.ToString());
+				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString());
 				WriteCode("; Before Tool Change GCode");
 				WriteCode(code);
 			}
@@ -278,15 +278,15 @@ namespace MatterHackers.MatterSlice
 			if (newExtruder == 1 
 				&& !string.IsNullOrEmpty(config.ToolChangeCode1))
 			{
-				var code = config.ToolChangeCode1.Replace("[wipe_tower_x]", config.WipeTowerX.ToString());
-				code = code.Replace("[wipe_tower_y]", config.WipeTowerY.ToString());
+				var code = config.ToolChangeCode1.Replace("[wipe_tower_x]", config.WipeCenterX.ToString());
+				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString());
 				WriteCode("; After Tool 1 Change GCode");
 				WriteCode(code);
 			}
 			else if (!string.IsNullOrEmpty(config.ToolChangeCode))
 			{
-				var code = config.ToolChangeCode.Replace("[wipe_tower_x]", config.WipeTowerX.ToString());
-				code = code.Replace("[wipe_tower_y]", config.WipeTowerY.ToString());
+				var code = config.ToolChangeCode.Replace("[wipe_tower_x]", config.WipeCenterX.ToString());
+				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString());
 				WriteCode("; After Tool Change GCode");
 				WriteCode(code);
 			}

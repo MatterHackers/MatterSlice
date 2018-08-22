@@ -349,11 +349,10 @@ namespace MatterHackers.MatterSlice
 		// .4 mm for .4 mm nozzle
 		public int ZOffset_um => (int)(ZOffset * 1000);
 
-		public double WipeTowerX => WipeTowerX_um / 1000.0;
-		public double WipeTowerY => WipeTowerY_um / 1000.0;
-		public long WipeTowerY_um { get; internal set; }
-		public long WipeTowerX_um { get; internal set; }
-		public IntPoint WipePoint => new IntPoint(WipeTowerX_um, WipeTowerY_um);
+		public object WipeCenterX => WipeCenter_um.X / 1000.0;
+		public object WipeCenterY => WipeCenter_um.Y / 1000.0;
+
+		public IntPoint WipeCenter_um { get; set; }
 
 		// .4 mm for .4 mm nozzle
 		public void DumpSettings(string fileName)
