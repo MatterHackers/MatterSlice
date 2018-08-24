@@ -266,9 +266,11 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public void QueueTravel(IntPoint positionToMoveTo)
+		bool canAppendTravel = true;
+		public void QueueTravel(IntPoint positionToMoveTo, bool forceUniquePath = false)
 		{
-			GCodePath path = GetLatestPathWithConfig(travelConfig);
+			GCodePath path = GetLatestPathWithConfig(travelConfig, forceUniquePath || !canAppendTravel);
+			canAppendTravel = !forceUniquePath;
 
 			if (forceRetraction)
 			{
@@ -527,9 +529,10 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private GCodePath GetLatestPathWithConfig(GCodePathConfig config)
+		private GCodePath GetLatestPathWithConfig(GCodePathConfig config, bool forceUniquePath = false)
 		{
-			if (paths.Count > 0
+			if (!forceUniquePath
+				&& paths.Count > 0
 				&& paths[paths.Count - 1].config == config
 				&& !paths[paths.Count - 1].Done)
 			{

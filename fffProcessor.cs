@@ -982,7 +982,17 @@ namespace MatterHackers.MatterSlice
 										var closestInsetStart = FindBestPoint(insetsForThisIsland[0], layerGcodePlanner.LastPosition, layerIndex);
 										if (closestInsetStart.X != long.MinValue)
 										{
-											var found = insetsForThisIsland[insetsForThisIsland.Count - 1].FindClosestPoint(closestInsetStart);
+											(int polyIndex, int pointIndex, IntPoint position) found = (-1, -1, closestInsetStart);
+											for (int findInsetIndex = island.InsetToolPaths.Count - 1; findInsetIndex  >= 0; findInsetIndex--)
+											{
+												found = insetsForThisIsland[findInsetIndex].FindClosestPoint(closestInsetStart);
+												if (found.polyIndex != -1
+													&& found.pointIndex != -1)
+												{
+													break;
+												}
+											}
+
 											if (found.polyIndex != -1
 												&& found.pointIndex != -1)
 											{
@@ -1002,7 +1012,32 @@ namespace MatterHackers.MatterSlice
 										layerIndex,
 										layerGcodePlanner);
 
-									// Figure out if there is another inset
+									if (insetIndex == 0)
+									{
+										// If we are on the outside perimeter move in before we travel (so we don't retract on the outside)
+										(int polyIndex, int pointIndex, IntPoint position) found2 = (-1, -1, layerGcodePlanner.LastPosition);
+										var distFromLastPoint = double.PositiveInfinity;
+										for (int findInsetIndex = island.InsetToolPaths.Count - 1; findInsetIndex >= 1; findInsetIndex--)
+										{
+											found2 = island.InsetToolPaths[findInsetIndex].FindClosestPoint(layerGcodePlanner.LastPosition);
+											if (found2.polyIndex != -1
+												&& found2.pointIndex != -1)
+											{
+												distFromLastPoint = (found2.position - layerGcodePlanner.LastPosition).Length();
+												if (distFromLastPoint < config.MinimumTravelToCauseRetraction_um)
+												{
+													break;
+												}
+											}
+										}
+
+										if (found2.polyIndex != -1
+											&& found2.pointIndex != -1
+											&& distFromLastPoint < config.MinimumTravelToCauseRetraction_um)
+										{
+											layerGcodePlanner.QueueTravel(found2.position, forceUniquePath: true);
+										}
+									}
 								}
 							}
 
