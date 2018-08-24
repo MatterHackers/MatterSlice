@@ -724,7 +724,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		void QueuePerimeterWithMergOverlaps(Polygon perimeterToCheckForMerge, int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig config)
+		void QueuePerimeterWithMergeOverlaps(Polygon perimeterToCheckForMerge, int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig config)
 		{
 			Polygons pathsWithOverlapsRemoved = null;
 			bool pathHadOverlaps = false;
@@ -944,13 +944,13 @@ namespace MatterHackers.MatterSlice
 								bool limitDistance = false;
 								if (island.InsetToolPaths.Count > 0)
 								{
-									QueueClosetsInset(insetsForThisIsland[0], limitDistance, overrideConfig == null ? inset0Config : overrideConfig, layerIndex, layerGcodePlanner);
+									QueueClosestInset(insetsForThisIsland[0], limitDistance, overrideConfig == null ? inset0Config : overrideConfig, layerIndex, layerGcodePlanner);
 								}
 
 								// Move to the closest inset 1 and print it
 								for (int insetIndex = 1; insetIndex < island.InsetToolPaths.Count; insetIndex++)
 								{
-									limitDistance = QueueClosetsInset(insetsForThisIsland[insetIndex], limitDistance, overrideConfig == null ? insetXConfig : overrideConfig, layerIndex, layerGcodePlanner);
+									limitDistance = QueueClosestInset(insetsForThisIsland[insetIndex], limitDistance, overrideConfig == null ? insetXConfig : overrideConfig, layerIndex, layerGcodePlanner);
 								}
 
 								insetCount = CountInsetsToPrint(insetsForThisIsland);
@@ -1005,7 +1005,7 @@ namespace MatterHackers.MatterSlice
 										}
 									}
 
-									limitDistance = QueueClosetsInset(
+									limitDistance = QueueClosestInset(
 										insetsForThisIsland[insetIndex],
 										limitDistance,
 										overrideConfig == null ? (insetIndex == 0 ? inset0Config : insetXConfig) : overrideConfig,
@@ -1213,7 +1213,7 @@ namespace MatterHackers.MatterSlice
 			return polyPointPosition;
 		}
 
-		private bool QueueClosetsInset(Polygons insetsToConsider, bool limitDistance, GCodePathConfig pathConfig, int layerIndex, GCodePlanner gcodeLayer)
+		private bool QueueClosestInset(Polygons insetsToConsider, bool limitDistance, GCodePathConfig pathConfig, int layerIndex, GCodePlanner gcodeLayer)
 		{
 			// This is the furthest away we will accept a new starting point
 			long maxDist_um = long.MaxValue;
@@ -1244,7 +1244,7 @@ namespace MatterHackers.MatterSlice
 			{
 				if (config.MergeOverlappingLines)
 				{
-					QueuePerimeterWithMergOverlaps(insetsToConsider[polygonPrintedIndex], layerIndex, gcodeLayer, pathConfig);
+					QueuePerimeterWithMergeOverlaps(insetsToConsider[polygonPrintedIndex], layerIndex, gcodeLayer, pathConfig);
 				}
 				else
 				{
