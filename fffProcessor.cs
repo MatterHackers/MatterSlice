@@ -580,14 +580,14 @@ namespace MatterHackers.MatterSlice
 					{
 						bool movedToIsland = false;
 
+						var usableExtruderIndex = config.SupportExtruder < config.ExtruderCount ? config.SupportExtruder : 0;
+
 						if (layerIndex < supportIslands.Count)
 						{
-							SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
+							SliceLayer layer = slicingData.Extruders[usableExtruderIndex].Layers[layerIndex];
 							MoveToIsland(layerGcodePlanner, layer, supportIslands[layerIndex]);
 							movedToIsland = true;
 						}
-
-						var usableExtruderIndex = config.SupportExtruder < config.ExtruderCount ? config.SupportExtruder : 0;
 
 						if ((usableExtruderIndex <= 0 && extruderIndex == 0)
 							|| usableExtruderIndex == extruderIndex)
