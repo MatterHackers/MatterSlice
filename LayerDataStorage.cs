@@ -468,8 +468,15 @@ namespace MatterHackers.MatterSlice
 			return skirtPolygons;
 		}
 
+		int lastLayerWithCange = -1;
+		bool calculatedLastLayer = false;
 		public int LastLayerWithChange(ConfigSettings config)
 		{
+			if (calculatedLastLayer)
+			{
+				return lastLayerWithCange;
+			}
+
 			int numLayers = Extruders[0].Layers.Count;
 			int firstExtruderWithData = -1;
 			for (int checkLayer = numLayers - 1; checkLayer >= 0; checkLayer--)
@@ -488,20 +495,22 @@ namespace MatterHackers.MatterSlice
 						{
 							if (firstExtruderWithData != extruderToCheck)
 							{
-								return checkLayer;
+								lastLayerWithCange = checkLayer;
+								calculatedLastLayer = true;
+								return lastLayerWithCange;
 							}
 						}
 					}
 				}
 			}
 
+			calculatedLastLayer = true;
 			return -1;
 		}
 
 		public bool NeedToPrintWipeTower(int layerIndex, ConfigSettings config)
 		{
-			bool haveWipeTower = HaveWipeTower(config);
-			if (haveWipeTower)
+			if (HaveWipeTower(config))
 			{
 				return layerIndex <= LastLayerWithChange(config);
 			}
