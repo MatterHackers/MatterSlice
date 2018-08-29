@@ -330,7 +330,7 @@ namespace MatterHackers.MatterSlice
 			//ValidatePaths();
 		}
 
-		public bool ExtruderWillChange(int extruder)
+		public bool ToolChangeRequired(int extruder)
 		{
 			if (extruder == currentExtruderIndex)
 			{
