@@ -554,7 +554,14 @@ namespace MatterHackers.MatterSlice
 							break;
 
 						case "String":
-							property.SetValue(this, valueToSetTo.Replace("\\n", "\n"));
+							if (keyToSet == "additionalArgsToProcess")
+							{
+								property.SetValue(this, valueToSetTo);
+							}
+							else
+							{
+								property.SetValue(this, valueToSetTo.Replace("\\n", "\n"));
+							}
 							break;
 
 						case "REPAIR_OVERLAPS":
