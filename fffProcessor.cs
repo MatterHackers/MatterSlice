@@ -65,6 +65,9 @@ namespace MatterHackers.MatterSlice
 
 		public fffProcessor(ConfigSettings config)
 		{
+			// make sure we are not canceled when starting a new Processor
+			MatterSlice.Canceled = false;
+
 			this.config = config;
 			fileNumber = 1;
 			maxObjectHeight = 0;

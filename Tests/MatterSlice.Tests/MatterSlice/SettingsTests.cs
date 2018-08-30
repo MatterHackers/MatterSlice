@@ -98,7 +98,6 @@ namespace MatterHackers.MatterSlice.Tests
 			var configFilePath = Path.ChangeExtension(gcodePath, "ini");
 			using (var stream = new StreamWriter(configFilePath))
 			{
-				stream.WriteLine("booleanOperations = (0)");
 				stream.WriteLine($"additionalArgsToProcess = -m \"1,0,0,0,0,1,0,0,0,0,1,0,5,0,0,1\" \"{stlPath}\"");
 			}
 
@@ -133,8 +132,7 @@ namespace MatterHackers.MatterSlice.Tests
 			var configFilePath = Path.ChangeExtension(gcodePath, "ini");
 			using (var stream = new StreamWriter(configFilePath))
 			{
-				stream.WriteLine("booleanOperations = (0)");
-				stream.WriteLine($"additionalArgsToProcess = -m \"1,0,0,0,0,1,0,0,0,0,1,0,5,0,0,1\" \"{stlPath}\"");
+				stream.WriteLine($"additionalArgsToProcess = -m \"1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1\" \"{stlPath}\"");
 			}
 
 			// Slice file
@@ -168,7 +166,6 @@ namespace MatterHackers.MatterSlice.Tests
 			var configFilePath = Path.ChangeExtension(gcodePath, "ini");
 			using (var stream = new StreamWriter(configFilePath))
 			{
-				stream.WriteLine("booleanOperations = (0)");
 				stream.WriteLine($"additionalArgsToProcess = -m \"1,0,0,0,0,1,0,0,0,0,1,0,5,0,0,1\" \"{stlPath}\"");
 			}
 
@@ -788,17 +785,21 @@ namespace MatterHackers.MatterSlice.Tests
 			string cylinderStlFile = TestUtilities.GetStlPath(stlFile);
 			string cylinderGCodeFileName = TestUtilities.GetTempGCodePath(gcodeFile);
 
-			ConfigSettings config = new ConfigSettings();
-			config.FirstLayerThickness = .2;
-			config.LayerThickness = .2;
+			var config = new ConfigSettings
+			{
+				FirstLayerThickness = .2,
+				LayerThickness = .2,
+				NumberOfBottomLayers = 0,
+				ContinuousSpiralOuterPerimeter = true
+			};
+
 			if (enableThinWalls)
 			{
 				config.ExpandThinWalls = true;
 				config.FillThinGaps = true;
 			}
-			config.NumberOfBottomLayers = 0;
-			config.ContinuousSpiralOuterPerimeter = true;
-			fffProcessor processor = new fffProcessor(config);
+
+			var processor = new fffProcessor(config);
 			processor.SetTargetFile(cylinderGCodeFileName);
 			processor.LoadStlFile(cylinderStlFile);
 			// slice and save it
@@ -809,7 +810,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// test .1 layer height
 			int layerCount = TestUtilities.CountLayers(cylinderGCodeContent);
-			Assert.IsTrue(layerCount == 50);
+			Assert.AreEqual(50, layerCount, "SpiralCone should have 50 layers");
 
 			for (int i = 2; i < layerCount - 3; i++)
 			{
@@ -819,8 +820,7 @@ namespace MatterHackers.MatterSlice.Tests
 				MovementInfo lastMovement = new MovementInfo();
 				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo))
 				{
-					Assert.IsTrue(movement.position.z > lastMovement.position.z);
-
+					Assert.Greater(movement.position.z, lastMovement.position.z, "Z position should increment per layer");
 					lastMovement = movement;
 				}
 

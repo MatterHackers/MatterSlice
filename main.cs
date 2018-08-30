@@ -59,7 +59,7 @@ namespace MatterHackers.MatterSlice
 			return ProcessArgs(args);
 		}
 
-		public static bool Canceled { get; private set; } = false;
+		public static bool Canceled { get; set; } = false;
 
 		public static int ProcessArgs(string argsInString)
 		{
