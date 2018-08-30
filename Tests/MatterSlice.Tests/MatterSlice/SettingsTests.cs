@@ -34,6 +34,7 @@ using NUnit.Framework;
 namespace MatterHackers.MatterSlice.Tests
 {
 	using System;
+	using System.IO;
 	using Polygons = List<List<IntPoint>>;
 
 	[TestFixture, Category("MatterSlice")]
@@ -83,6 +84,108 @@ namespace MatterHackers.MatterSlice.Tests
 				// make sure they are in the right order (other layers are inside out)
 				Assert.IsTrue(layer2Polygons[0].MinX() > layer2Polygons[1].MinX());
 			}
+		}
+
+		[Test]
+		public void SliceFileWithLeadingLowercaseN()
+		{
+			// Stl with leading n - tests past regression due to c:\path\name.stl where \n in path breaks during stuff/unstuff behavior
+			string stlPath = TestUtilities.GetStlPath("name-with-leading-n");
+
+			string gcodePath = TestUtilities.GetTempGCodePath(nameof(SliceFileWithLeadingLowercaseN));
+
+			// Create config file
+			var configFilePath = Path.ChangeExtension(gcodePath, "ini");
+			using (var stream = new StreamWriter(configFilePath))
+			{
+				stream.WriteLine($"additionalArgsToProcess = -m \"1,0,0,0,0,1,0,0,0,0,1,0,5,0,0,1\" \"{stlPath}\"");
+			}
+
+			// Slice file
+			MatterSlice.ProcessArgs($"-v -o \"{gcodePath}\" -c \"{configFilePath}\"");
+
+			// Load and validate generated GCode
+			string[] gcode = TestUtilities.LoadGCodeFile(gcodePath);
+
+			var movement = new MovementInfo();
+
+			// check layer 1
+			var layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
+			var layer1Polygons = TestUtilities.GetExtrusionPolygons(layer1Info, ref movement);
+			Assert.AreEqual(4, layer1Polygons.Count);
+
+			// check layer 2
+			var layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
+			var layer2Polygons = TestUtilities.GetExtrusionPolygons(layer2Info, ref movement);
+			Assert.AreEqual(4, layer2Polygons.Count);
+		}
+
+		[Test]
+		public void SliceFileWithSpaceInName()
+		{
+			// Stl with space in file name - tests past regression due to spaces in file name
+			string stlPath = TestUtilities.GetStlPath("Box Left");
+
+			string gcodePath = TestUtilities.GetTempGCodePath(nameof(SliceFileWithSpaceInName));
+
+			// Create config file
+			var configFilePath = Path.ChangeExtension(gcodePath, "ini");
+			using (var stream = new StreamWriter(configFilePath))
+			{
+				stream.WriteLine($"additionalArgsToProcess = -m \"1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1\" \"{stlPath}\"");
+			}
+
+			// Slice file
+			MatterSlice.ProcessArgs($"-v -o \"{gcodePath}\" -c \"{configFilePath}\"");
+
+			// Load and validate generated GCode
+			string[] gcode = TestUtilities.LoadGCodeFile(gcodePath);
+
+			var movement = new MovementInfo();
+
+			// check layer 1
+			var layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
+			var layer1Polygons = TestUtilities.GetExtrusionPolygons(layer1Info, ref movement);
+			Assert.AreEqual(4, layer1Polygons.Count);
+
+			// check layer 2
+			var layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
+			var layer2Polygons = TestUtilities.GetExtrusionPolygons(layer2Info, ref movement);
+			Assert.AreEqual(4, layer2Polygons.Count);
+		}
+
+		[Test]
+		public void SliceFileWithSpaceInGCodePath()
+		{
+			// GCode file with space in file name
+			string gcodePath = TestUtilities.GetTempGCodePath("gcode file with space");
+
+			string stlPath = TestUtilities.GetStlPath("Box Left");
+
+			// Create config file
+			var configFilePath = Path.ChangeExtension(gcodePath, "ini");
+			using (var stream = new StreamWriter(configFilePath))
+			{
+				stream.WriteLine($"additionalArgsToProcess = -m \"1,0,0,0,0,1,0,0,0,0,1,0,5,0,0,1\" \"{stlPath}\"");
+			}
+
+			// Slice file
+			MatterSlice.ProcessArgs($"-v -o \"{gcodePath}\" -c \"{configFilePath}\"");
+
+			// Load and validate generated GCode
+			string[] gcode = TestUtilities.LoadGCodeFile(gcodePath);
+
+			var movement = new MovementInfo();
+
+			// check layer 1
+			var layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
+			var layer1Polygons = TestUtilities.GetExtrusionPolygons(layer1Info, ref movement);
+			Assert.AreEqual(4, layer1Polygons.Count);
+
+			// check layer 2
+			var layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
+			var layer2Polygons = TestUtilities.GetExtrusionPolygons(layer2Info, ref movement);
+			Assert.AreEqual(4, layer2Polygons.Count);
 		}
 
 		[Test]
@@ -682,17 +785,21 @@ namespace MatterHackers.MatterSlice.Tests
 			string cylinderStlFile = TestUtilities.GetStlPath(stlFile);
 			string cylinderGCodeFileName = TestUtilities.GetTempGCodePath(gcodeFile);
 
-			ConfigSettings config = new ConfigSettings();
-			config.FirstLayerThickness = .2;
-			config.LayerThickness = .2;
+			var config = new ConfigSettings
+			{
+				FirstLayerThickness = .2,
+				LayerThickness = .2,
+				NumberOfBottomLayers = 0,
+				ContinuousSpiralOuterPerimeter = true
+			};
+
 			if (enableThinWalls)
 			{
 				config.ExpandThinWalls = true;
 				config.FillThinGaps = true;
 			}
-			config.NumberOfBottomLayers = 0;
-			config.ContinuousSpiralOuterPerimeter = true;
-			fffProcessor processor = new fffProcessor(config);
+
+			var processor = new fffProcessor(config);
 			processor.SetTargetFile(cylinderGCodeFileName);
 			processor.LoadStlFile(cylinderStlFile);
 			// slice and save it
@@ -703,7 +810,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// test .1 layer height
 			int layerCount = TestUtilities.CountLayers(cylinderGCodeContent);
-			Assert.IsTrue(layerCount == 50);
+			Assert.AreEqual(50, layerCount, "SpiralCone should have 50 layers");
 
 			for (int i = 2; i < layerCount - 3; i++)
 			{
@@ -713,8 +820,7 @@ namespace MatterHackers.MatterSlice.Tests
 				MovementInfo lastMovement = new MovementInfo();
 				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo))
 				{
-					Assert.IsTrue(movement.position.z > lastMovement.position.z);
-
+					Assert.Greater(movement.position.z, lastMovement.position.z, "Z position should increment per layer");
 					lastMovement = movement;
 				}
 

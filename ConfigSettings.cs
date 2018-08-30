@@ -474,8 +474,11 @@ namespace MatterHackers.MatterSlice
 		// .35 mm for .4 mm nozzle
 		public bool SetSetting(string keyToSet, string valueToSetTo)
 		{
-			if (keyToSet != nameof(AdditionalArgsToProcess))
+			// Leave quoted string in place for additionalArgsToProcess - quotes required for file paths
+			if (keyToSet != nameof(AdditionalArgsToProcess)
+				&& keyToSet != "additionalArgsToProcess")
 			{
+				// Drop quotes from all other settings
 				valueToSetTo = valueToSetTo.Replace("\"", "").Trim();
 			}
 
