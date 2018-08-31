@@ -127,15 +127,20 @@ namespace MatterHackers.MatterSlice
 					island.TopPaths = topOutlines;
 				}
 
-				// calculate the solid infill outlines
-				if (upLayerCount > 1 || downLayerCount > 1)
+				if (upLayerCount <= 0 && downLayerCount <= 0)
 				{
+					// Assign infill directly if no top/bottom solid layers
+					island.SparseInfillPaths = sparseInfillPaths;
+				}
+				else
+				{
+					// calculate the solid infill outlines
 					Polygons solidInfillPaths = new Polygons(infillRegionPath);
 
 					// remove all the top layers
 					solidInfillPaths = solidInfillPaths.CreateDifference(island.BottomPaths.Offset(clippingOffset));
 					solidInfillPaths = Clipper.CleanPolygons(solidInfillPaths, cleanDistance_um);
-					
+
 					// remove all the bottom layers
 					solidInfillPaths = solidInfillPaths.CreateDifference(island.TopPaths.Offset(clippingOffset));
 					solidInfillPaths = Clipper.CleanPolygons(solidInfillPaths, cleanDistance_um);
