@@ -820,7 +820,11 @@ namespace MatterHackers.MatterSlice.Tests
 				MovementInfo lastMovement = new MovementInfo();
 				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo))
 				{
+#if __ANDROID__
+					Assert.IsTrue(movement.position.z > lastMovement.position.z);
+#else
 					Assert.Greater(movement.position.z, lastMovement.position.z, "Z position should increment per layer");
+#endif
 					lastMovement = movement;
 				}
 
