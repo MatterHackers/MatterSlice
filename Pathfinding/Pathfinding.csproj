@@ -63,7 +63,7 @@
       <Name>ImageProcessing</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\agg-sharp\VectorMath\VectorMath.csproj">
-      <Project>{D3E41B4E-BFBB-44CA-94C8-95C00F754FDD}</Project>
+      <Project>{d3e41b4e-bfbb-44ca-94c8-95c00f754fdd}</Project>
       <Name>VectorMath</Name>
     </ProjectReference>
     <ProjectReference Include="..\MSClipperLib\MSClipperLib.csproj">
