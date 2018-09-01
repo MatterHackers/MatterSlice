@@ -50,7 +50,6 @@ namespace MatterHackers.MatterSlice.Tests
 		public Vector3 position;
 	}
 
-
 	public static class TestUtilities
 	{
 		private static string matterSliceBaseDirectory = TestContext.CurrentContext.ResolveProjectPath(4);
