@@ -120,7 +120,7 @@ namespace MatterHackers.MatterSlice
 					boundary.min.Y = ((boundary.min.Y / perIncrementOffset) - 2) * perIncrementOffset;
 					boundary.max.X += lineSpacing;
 					boundary.max.Y += perIncrementOffset;
-					Polygons unclipedPatern = new Polygons();
+					Polygons unclippedPattern = new Polygons();
 
 					foreach (IntPoint startPoint in StartPositionIterator(boundary, lineSpacing, layerIndex))
 					{
@@ -142,31 +142,31 @@ namespace MatterHackers.MatterSlice
 								case 0: // left to right
 									attachedLine.Add(left); attachedLine.Add(center);
 									attachedLine.Add(center); attachedLine.Add(right);
-									unclipedPatern.Add(new Polygon() { top, center });
+									unclippedPattern.Add(new Polygon() { top, center });
 									break;
 
 								case 1: // left to top
 									attachedLine.Add(left); attachedLine.Add(center);
 									attachedLine.Add(center); attachedLine.Add(top);
-									unclipedPatern.Add(new Polygon() { center, right });
+									unclippedPattern.Add(new Polygon() { center, right });
 									break;
 
 								case 2: // top to right
 									attachedLine.Add(top); attachedLine.Add(center);
 									attachedLine.Add(center); attachedLine.Add(right);
-									unclipedPatern.Add(new Polygon() { left, center });
+									unclippedPattern.Add(new Polygon() { left, center });
 									break;
 							}
 						}
 						if (attachedLine.Count > 0)
 						{
-							unclipedPatern.Add(attachedLine);
+							unclippedPattern.Add(attachedLine);
 						}
 					}
 
 					PolyTree ret = new PolyTree();
 					Clipper clipper = new Clipper();
-					clipper.AddPaths(unclipedPatern, PolyType.ptSubject, false);
+					clipper.AddPaths(unclippedPattern, PolyType.ptSubject, false);
 					clipper.AddPaths(outlines, PolyType.ptClip, true);
 					clipper.Execute(ClipType.ctIntersection, ret, PolyFillType.pftPositive, PolyFillType.pftEvenOdd);
 
@@ -208,7 +208,7 @@ namespace MatterHackers.MatterSlice
 
 					boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing - rotationOffset;
 					int xLineCount = (int)((boundary.max.X - boundary.min.X + (lineSpacing - 1)) / lineSpacing);
-					Polygons unclipedPatern = new Polygons();
+					Polygons unclippedPattern = new Polygons();
 
 					long firstX = boundary.min.X / lineSpacing * lineSpacing;
 					for (int lineIndex = 0; lineIndex < xLineCount; lineIndex++)
@@ -216,12 +216,12 @@ namespace MatterHackers.MatterSlice
 						Polygon line = new Polygon();
 						line.Add(new IntPoint(firstX + lineIndex * lineSpacing, boundary.min.Y));
 						line.Add(new IntPoint(firstX + lineIndex * lineSpacing, boundary.max.Y));
-						unclipedPatern.Add(line);
+						unclippedPattern.Add(line);
 					}
 
 					PolyTree ret = new PolyTree();
 					Clipper clipper = new Clipper();
-					clipper.AddPaths(unclipedPatern, PolyType.ptSubject, false);
+					clipper.AddPaths(unclippedPattern, PolyType.ptSubject, false);
 					clipper.AddPaths(outlines, PolyType.ptClip, true);
 					clipper.Execute(ClipType.ctIntersection, ret, PolyFillType.pftPositive, PolyFillType.pftEvenOdd);
 
