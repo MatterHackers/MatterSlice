@@ -655,20 +655,32 @@ namespace MatterHackers.MatterSlice
 
 			if (layerGcodePlanner.ToolChangeRequired(extruderIndex))
 			{
+				// make sure that any moves we make while doing wiping are planned around the parst on the bed
+				if (config.AvoidCrossingPerimeters)
+				{
+					SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
+					layerGcodePlanner.PathFinder = layer.PathFinder;
+				}
+
+				// if we are going to do anything at the wipe tower we need to be sure we are on it before we switch extruders
+				// extruders my have lots of leaking material on them and we need to bias to leaving it at the wipe tower position
+				if (slicingData.NeedToPrintWipeTower(layerIndex, config))
+				{
+					// move to the wipe tower before we change extruders
+					layerGcodePlanner.QueueTravel(config.WipeCenter_um, true);
+				}
+
 				if (extruderUsedForWipeTower
 					|| (slicingData.NeedToPrintWipeTower(layerIndex, config)
 						&& extruderUsedForSupport))
 				{
 					int prevExtruder = layerGcodePlanner.GetExtruder();
 
-					// move to the wipe tower before we change extruders
-					layerGcodePlanner.QueueTravel(config.WipeCenter_um);
-
 					// then change extruders
 					layerGcodePlanner.SetExtruder(extruderIndex);
 
 					// move to the wipe tower position with consideration for the new tool/nozzle offset
-					layerGcodePlanner.QueueTravel(config.WipeCenter_um);
+					layerGcodePlanner.QueueTravel(config.WipeCenter_um, true);
 
 					slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config, false);
 
@@ -1144,7 +1156,8 @@ namespace MatterHackers.MatterSlice
 			if (island.IslandOutline.Count > 0)
 			{
 				// If we are already in the island we are going to, don't go there, or there is only one island.
-				if (layer.Islands.Count == 1
+				if ((layer.Islands.Count == 1 && config.ExtruderCount == 1)
+					|| layer.PathFinder.OutlineData.Polygons.Count < 3
 					|| island.PathFinder.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineData.EdgeQuadTrees, island.PathFinder.OutlineData.PointQuadTrees) == true)
 				{
 					islandCurrentlyInside = island;
