@@ -658,8 +658,11 @@ namespace MatterHackers.MatterSlice
 				// make sure that any moves we make while doing wiping are planned around the parst on the bed
 				if (config.AvoidCrossingPerimeters)
 				{
-					SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
+					// we can alway use extruder 0 as all layer PathFinders are the same object
+					SliceLayer layer = slicingData.Extruders[0].Layers[layerIndex];
 					layerGcodePlanner.PathFinder = layer.PathFinder;
+					// and forget that we are in any island
+					islandCurrentlyInside = null;
 				}
 
 				// if we are going to do anything at the wipe tower we need to be sure we are on it before we switch extruders
