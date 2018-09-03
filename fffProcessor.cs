@@ -1272,7 +1272,8 @@ namespace MatterHackers.MatterSlice
 
 			if (polygonPrintedIndex > -1)
 			{
-				if (config.MergeOverlappingLines)
+				if (config.MergeOverlappingLines 
+					&& pathConfig != inset0Config) // we do not merge the outer perimeter
 				{
 					QueuePerimeterWithMergeOverlaps(insetsToConsider[polygonPrintedIndex], layerIndex, gcodeLayer, pathConfig);
 				}
