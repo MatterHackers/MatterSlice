@@ -495,7 +495,8 @@ namespace MatterHackers.MatterSlice
 						{
 							if (firstExtruderWithData != extruderToCheck)
 							{
-								lastLayerWithCange = checkLayer;
+								// have to remember the layer one above this so that we can switch back
+								lastLayerWithCange = checkLayer + 1;
 								calculatedLastLayer = true;
 								return lastLayerWithCange;
 							}
