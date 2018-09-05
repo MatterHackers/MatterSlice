@@ -46,19 +46,6 @@ namespace MatterHackers.MatterSlice
 			LogOutput.LogError("    model.stl, the file that will be loaded and sliced.\n");
 		}
 
-		private static int Main(string[] args)
-		{
-			// this sets the global culture for the app and all new threads
-			CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-			CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
-
-			// and make sure the app is set correctly
-			Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-			Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
-
-			return ProcessArgs(args);
-		}
-
 		public static bool Canceled { get; set; } = false;
 
 		public static int ProcessArgs(string argsInString)

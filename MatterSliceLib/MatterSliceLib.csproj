@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Company>MatterHackers Inc.</Company>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="MSClipperLib\**" />
+    <Compile Remove="Pathfinding\**" />
+    <Compile Remove="QuadTree\**" />
+    <Compile Remove="SampleSTLs\**" />
+    <Compile Remove="Tests\**" />
+    <EmbeddedResource Remove="MSClipperLib\**" />
+    <EmbeddedResource Remove="Pathfinding\**" />
+    <EmbeddedResource Remove="QuadTree\**" />
+    <EmbeddedResource Remove="SampleSTLs\**" />
+    <EmbeddedResource Remove="Tests\**" />
+    <None Remove="MSClipperLib\**" />
+    <None Remove="Pathfinding\**" />
+    <None Remove="QuadTree\**" />
+    <None Remove="SampleSTLs\**" />
+    <None Remove="Tests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MSClipperLib\MSClipperLib.csproj" />
+    <ProjectReference Include="..\Pathfinding\Pathfinding.csproj" />
+    <ProjectReference Include="..\QuadTree\QuadTree.csproj" />
+  </ItemGroup>
+
+</Project>

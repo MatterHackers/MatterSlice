@@ -74,7 +74,7 @@ namespace MatterHackers.MatterSlice
 		}
 	};
 
-	internal static class IntPointHelper
+	public static class IntPointHelper
 	{
 		public static IntPoint Cross(this IntPoint left, IntPoint right)
 		{
