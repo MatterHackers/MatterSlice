@@ -24,6 +24,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -49,7 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="MatterSliceLib\MatterSliceLib.csproj">
-      <Project>{7f077116-2923-4a77-87cc-ec3be7eb8bc3}</Project>
+      <Project>{21fc4fb9-fe9a-4dbb-a9a7-92bc633888de}</Project>
       <Name>MatterSliceLib</Name>
     </ProjectReference>
   </ItemGroup>
