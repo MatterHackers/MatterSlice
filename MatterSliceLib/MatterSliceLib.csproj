@@ -29,9 +29,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\agg-sharp\VectorMath\VectorMath.csproj" />
     <ProjectReference Include="..\MSClipperLib\MSClipperLib.csproj" />
     <ProjectReference Include="..\Pathfinding\Pathfinding.csproj" />
-    <ProjectReference Include="..\QuadTree\QuadTree.csproj" />
   </ItemGroup>
 
 </Project>
