@@ -227,7 +227,7 @@ namespace MatterHackers.MatterSlice
 					return;
 				}
 
-				LogOutput.Log("Generating Layer Outlines {0}/{1}\n".FormatWith(layerIndex + 1, extruders[0].Layers.Count));
+				LogOutput.Log("Generating Outlines {0}/{1}\n".FormatWith(layerIndex + 1, extruders[0].Layers.Count));
 
 				long avoidInset = config.ExtrusionWidth_um * 3 / 2;
 
