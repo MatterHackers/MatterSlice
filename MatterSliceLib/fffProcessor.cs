@@ -522,8 +522,8 @@ namespace MatterHackers.MatterSlice
 					QueueSkirtToGCode(slicingData, layerGcodePlanner, layerIndex);
 				}
 
-				List<GCodePath> fanSpeedsToSet = new List<GCodePath>();
-				fanSpeedsToSet.Add(layerGcodePlanner.QueueFanCommand(0, fillConfig));
+				// start out with the fan off for this layer (the minimum layer fan speed will be applyed later as the gcode is output)
+				layerGcodePlanner.QueueFanCommand(0, fillConfig);
 
 				for (int extruderIndex = 0; extruderIndex < config.ExtruderCount; extruderIndex++)
 				{
@@ -534,11 +534,11 @@ namespace MatterHackers.MatterSlice
 
 					if (layerIndex == 0)
 					{
-						QueueExtruderLayerToGCode(slicingData, layerGcodePlanner, extruderIndex, layerIndex, config.FirstLayerExtrusionWidth_um, z, fanSpeedsToSet);
+						QueueExtruderLayerToGCode(slicingData, layerGcodePlanner, extruderIndex, layerIndex, config.FirstLayerExtrusionWidth_um, z);
 					}
 					else
 					{
-						QueueExtruderLayerToGCode(slicingData, layerGcodePlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um, z, fanSpeedsToSet);
+						QueueExtruderLayerToGCode(slicingData, layerGcodePlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
 					}
 
 					if (config.AvoidCrossingPerimeters
@@ -611,20 +611,13 @@ namespace MatterHackers.MatterSlice
 					slicingData.EnsureWipeTowerIsSolid(layerIndex, layerGcodePlanner, fillConfig, config);
 				}
 
-				//Finish the layer by applying speed corrections for minimum layer times.
-				layerGcodePlanner.CorrectLayerTimeConsideringMinimumLayerTime(config.MinimumLayerTimeSeconds, config.MinimumPrintingSpeed);
-				int layerFanSpeed = GetFanSpeed(layerIndex, gcodeExport);
-				foreach (var fanSpeed in fanSpeedsToSet)
-				{
-					fanSpeed.FanPercent = Math.Max(fanSpeed.FanPercent, layerFanSpeed);
-				}
-
 				int currentLayerThickness_um = config.LayerThickness_um;
 				if (layerIndex <= 0)
 				{
 					currentLayerThickness_um = config.FirstLayerThickness_um;
 				}
 
+				layerGcodePlanner.FinalizeLayerFanSpeeds(config, layerIndex);
 				layerGcodePlanner.WriteQueuedGCode(currentLayerThickness_um);
 			}
 
@@ -778,42 +771,6 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private int GetFanSpeed(int layerIndex, GCodeExport gcodeExport)
-		{
-			if (layerIndex < config.FirstLayerToAllowFan)
-			{
-				// Don't allow the fan below this layer
-				return 0;
-			}
-
-			var minFanSpeedLayerTime = Math.Max(config.MinFanSpeedLayerTime, config.MaxFanSpeedLayerTime);
-			// check if the layer time is slow enough that we need to turn the fan on
-			if (gcodeExport.LayerTime < minFanSpeedLayerTime)
-			{
-				if(config.MaxFanSpeedLayerTime >= minFanSpeedLayerTime)
-				{
-					// the max always comes on first so just return the max speed
-					return config.FanSpeedMaxPercent;
-				}
-
-				// figure out how much to turn it on
-				var amountSmallerThanMin = Math.Max(0, minFanSpeedLayerTime - gcodeExport.LayerTime);
-				var timeToMax = Math.Max(0, minFanSpeedLayerTime - config.MaxFanSpeedLayerTime);
-
-				double ratioToMaxSpeed = 0;
-				if(timeToMax > 0)
-				{
-					ratioToMaxSpeed = Math.Min(1, amountSmallerThanMin / timeToMax);
-				}
-
-				return config.FanSpeedMinPercent + (int)(ratioToMaxSpeed * (config.FanSpeedMaxPercent - config.FanSpeedMinPercent));
-			}
-			else // we are going to slow turn the fan off
-			{
-				return 0;
-			}
-		}
-
 		private void QueueSkirtToGCode(LayerDataStorage slicingData, GCodePlanner gcodeLayer, int layerIndex)
 		{
 			if (slicingData.skirt.Count > 0
@@ -847,8 +804,7 @@ namespace MatterHackers.MatterSlice
 			int extruderIndex,
 			int layerIndex,
 			int extrusionWidth_um,
-			long currentZ_um,
-			List<GCodePath> fanSpeedsToSet)
+			long currentZ_um)
 		{
 			if (extruderIndex > slicingData.Extruders.Count - 1)
 			{
@@ -920,6 +876,8 @@ namespace MatterHackers.MatterSlice
 				CalculateInfillData(slicingData, extruderIndex, layerIndex, island, bottomFillPolygons, fillPolygons, firstTopFillPolygons, topFillPolygons, bridgePolygons);
 				bottomFillIslandPolygons.Add(bottomFillPolygons);
 
+				int fanBeforeBridgePolygons = gcodeExport.CurrentFanSpeed;
+
 				if (config.NumberOfPerimeters > 0)
 				{
 					if (config.ContinuousSpiralOuterPerimeter
@@ -951,7 +909,7 @@ namespace MatterHackers.MatterSlice
 					if (bridgePolygons.Count > 0)
 					{
 						// turn it on for bridge (or keep it on)
-						fanSpeedsToSet.Add(layerGcodePlanner.QueueFanCommand(config.BridgeFanSpeedPercent, bridgeConfig));
+						layerGcodePlanner.QueueFanCommand(config.BridgeFanSpeedPercent, bridgeConfig);
 						overrideConfig = bridgeConfig;
 					}
 					// If we are on the very first layer we always start with the outside so that we can stick to the bed better.
@@ -1129,7 +1087,7 @@ namespace MatterHackers.MatterSlice
 				{
 					QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bridgePolygons, bridgeConfig, SupportWriteType.UnsupportedAreas);
 					// Set it back to what it was
-					fanSpeedsToSet.Add(layerGcodePlanner.QueueFanCommand(0, fillConfig));
+					layerGcodePlanner.QueueFanCommand(fanBeforeBridgePolygons, fillConfig);
 				}
 
 				// TODO: Put all of these segments into a list that can be queued together and still preserve their individual config settings.
