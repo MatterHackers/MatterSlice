@@ -230,11 +230,70 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public GCodePath QueueFanCommand(int fanSpeedPercent, GCodePathConfig config)
+		/// <summary>
+		/// Ensure the layer has the correct minimum fan speeds set
+		/// by applying speed corrections for minimum layer times.
+		/// </summary>
+		/// <param name="config"></param>
+		/// <param name="layerIndex"></param>
+		public void FinalizeLayerFanSpeeds(ConfigSettings config, int layerIndex)
+		{
+			CorrectLayerTimeConsideringMinimumLayerTime(config.MinimumLayerTimeSeconds, config.MinimumPrintingSpeed);
+			int layerFanPercent = GetFanPercent(layerIndex, config, gcodeExport);
+			foreach (var fanSpeed in queuedFanSpeeds)
+			{
+				fanSpeed.FanPercent = Math.Max(fanSpeed.FanPercent, layerFanPercent);
+			}
+		}
+
+		private int GetFanPercent(int layerIndex, ConfigSettings config, GCodeExport gcodeExport)
+		{
+			if (layerIndex < config.FirstLayerToAllowFan)
+			{
+				// Don't allow the fan below this layer
+				return 0;
+			}
+
+			var minFanSpeedLayerTime = Math.Max(config.MinFanSpeedLayerTime, config.MaxFanSpeedLayerTime);
+			// check if the layer time is slow enough that we need to turn the fan on
+			if (gcodeExport.LayerTime < minFanSpeedLayerTime)
+			{
+				if (config.MaxFanSpeedLayerTime >= minFanSpeedLayerTime)
+				{
+					// the max always comes on first so just return the max speed
+					return config.FanSpeedMaxPercent;
+				}
+
+				// figure out how much to turn it on
+				var amountSmallerThanMin = Math.Max(0, minFanSpeedLayerTime - gcodeExport.LayerTime);
+				var timeToMax = Math.Max(0, minFanSpeedLayerTime - config.MaxFanSpeedLayerTime);
+
+				double ratioToMaxSpeed = 0;
+				if (timeToMax > 0)
+				{
+					ratioToMaxSpeed = Math.Min(1, amountSmallerThanMin / timeToMax);
+				}
+
+				return config.FanSpeedMinPercent + (int)(ratioToMaxSpeed * (config.FanSpeedMaxPercent - config.FanSpeedMinPercent));
+			}
+			else // we are going to slow turn the fan off
+			{
+				return 0;
+			}
+		}
+
+		// We need to keep track of all the fan speeds we have queue so that we can set
+		// the minimum fan speed for the layer after all the paths for the layer have been added.
+		// We cannot calculate the minimum fan speed until the entire layer is queued and we then need to 
+		// go back to evry queued fan speed and adjust it
+		List<GCodePath> queuedFanSpeeds = new List<GCodePath>();
+
+		public void QueueFanCommand(int fanSpeedPercent, GCodePathConfig config)
 		{
 			var path = GetNewPath(config);
 			path.FanPercent = fanSpeedPercent;
-			return path;
+
+			queuedFanSpeeds.Add(path);
 		}
 
 		public void QueuePolygons(Polygons polygons, GCodePathConfig config)
