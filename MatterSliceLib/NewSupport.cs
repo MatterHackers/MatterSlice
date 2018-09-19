@@ -145,7 +145,7 @@ namespace MatterHackers.MatterSlice
 			return SparseSupportOutlines[layerIndex].Count > 0;
 		}
 
-		public void QueueAirGappedBottomLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig)
+		public void QueueAirGappedBottomLayer(ConfigSettings config, LayerGCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig)
 		{
 			// normal support
 			Polygons currentAirGappedBottoms = AirGappedBottomOutlines[layerIndex];
@@ -182,7 +182,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public bool QueueInterfaceSupportLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportInterfaceConfig)
+		public bool QueueInterfaceSupportLayer(ConfigSettings config, LayerGCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportInterfaceConfig)
 		{
 			// interface
 			bool outputPaths = false;
@@ -222,7 +222,7 @@ namespace MatterHackers.MatterSlice
 			return outputPaths;
 		}
 
-		public bool QueueNormalSupportLayer(ConfigSettings config, GCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig)
+		public bool QueueNormalSupportLayer(ConfigSettings config, LayerGCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig)
 		{
 			// normal support
 			Polygons currentSupportOutlines = SparseSupportOutlines[layerIndex];

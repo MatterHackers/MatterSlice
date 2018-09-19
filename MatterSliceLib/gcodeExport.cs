@@ -68,6 +68,8 @@ namespace MatterHackers.MatterSlice
 				{
 					_layerSpeedRatio = value;
 				}
+
+				_layerSpeedRatio = Math.Min(1, Math.Max(maxChange, _layerSpeedRatio));
 			}
 		}
 
