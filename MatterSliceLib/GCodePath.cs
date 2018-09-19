@@ -30,7 +30,20 @@ namespace MatterHackers.MatterSlice
 
 	public class GCodePath
 	{
-		public GCodePathConfig config;
+		GCodePathConfig _config;
+		public GCodePathConfig Config
+		{
+			get
+			{
+				return _config;
+			}
+
+			set
+			{
+				_config = value;
+				Speed = _config.Speed;
+			}
+		}
 
 		public GCodePath()
 		{
@@ -38,7 +51,8 @@ namespace MatterHackers.MatterSlice
 
 		public GCodePath(GCodePath copyPath)
 		{
-			this.config = copyPath.config;
+			this.Config = copyPath.Config;
+			this.Speed = copyPath.Speed;
 			this.Done = copyPath.Done;
 			this.ExtruderIndex = copyPath.ExtruderIndex;
 			this.Retract = copyPath.Retract;
@@ -54,6 +68,7 @@ namespace MatterHackers.MatterSlice
 		public int FanPercent { get; set; } = -1;
 		public Polygon Polygon { get; set; } = new Polygon();
 		public RetractType Retract { get; set; } = RetractType.None;
+		public double Speed { get; internal set; }
 
 		public long Length(bool pathIsClosed)
 		{

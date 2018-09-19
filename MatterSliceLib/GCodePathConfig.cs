@@ -30,7 +30,7 @@ namespace MatterHackers.MatterSlice
 		public bool DoSeamHiding { get; set; }
 		public string gcodeComment;
 		public int lineWidth_um;
-		public double speed;
+		public double Speed { get; private set; }
 		public bool spiralize;
 
 		public GCodePathConfig(string configName)
@@ -50,7 +50,7 @@ namespace MatterHackers.MatterSlice
 		public void SetData(double speed, int lineWidth_um, string gcodeComment, bool closedLoop = true)
 		{
 			this.closedLoop = closedLoop;
-			this.speed = speed;
+			this.Speed = speed;
 			this.lineWidth_um = lineWidth_um;
 			this.gcodeComment = gcodeComment;
 		}
