@@ -47,7 +47,7 @@ namespace MatterHackers.MatterSlice
 		private double retractionZHop_mm;
 		private ConfigSettings config;
 		private double[] totalFilament_mm = new double[ConfigConstants.MAX_EXTRUDERS];
-		private double totalPrintTime;
+		private double layerPrintTime;
 		private double unretractExtraOnExtruderSwitch_mm;
 		private bool resetLongExtrusion;
 		private double unretractExtrusionExtra_mm;
@@ -83,7 +83,7 @@ namespace MatterHackers.MatterSlice
 			extruderIndex = 0;
 			CurrentFanSpeed = -1;
 
-			totalPrintTime = 0.0;
+			layerPrintTime = 0.0;
 			for (int e = 0; e < ConfigConstants.MAX_EXTRUDERS; e++)
 			{
 				totalFilament_mm[e] = 0.0;
@@ -98,7 +98,6 @@ namespace MatterHackers.MatterSlice
 		public long CurrentZ { get; private set; }
 
 		public int LayerIndex { get; set; } = 0;
-		public double LayerTime { get; internal set; }
 
 		public void Close()
 		{
@@ -156,7 +155,7 @@ namespace MatterHackers.MatterSlice
 
 		public double GetTotalPrintTime()
 		{
-			return totalPrintTime;
+			return layerPrintTime;
 		}
 
 		public bool IsOpened()
@@ -294,9 +293,9 @@ namespace MatterHackers.MatterSlice
 			// if there is a wipe tower go to it
 		}
 
-		public void UpdateTotalPrintTime()
+		public void UpdateLayerPrintTime()
 		{
-			totalPrintTime += estimateCalculator.calculate();
+			layerPrintTime += estimateCalculator.calculate();
 			estimateCalculator.reset();
 		}
 
