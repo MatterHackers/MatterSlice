@@ -33,7 +33,7 @@ namespace MatterHackers.MatterSlice
 	//The GCodePlanner class stores multiple moves that are planned.
 	// It facilitates the avoidCrossingPerimeters to keep the head inside the print.
 	// It also keeps track of the print time estimate for this planning so speed adjustments can be made for the minimum-layer-time.
-	public class GCodePlanner
+	public class LayerGCodePlanner
 	{
 		private int currentExtruderIndex;
 
@@ -53,7 +53,7 @@ namespace MatterHackers.MatterSlice
 
 		private GCodePathConfig travelConfig;
 
-		public GCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um, double perimeterStartEndOverlap = 0)
+		public LayerGCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um, double perimeterStartEndOverlap = 0)
 		{
 			this.gcodeExport = gcode;
 			travelConfig = new GCodePathConfig("travelConfig");
@@ -112,12 +112,13 @@ namespace MatterHackers.MatterSlice
 				{
 					IntPoint currentPosition = path.Polygon[pointIndex];
 					double thisTime = (lastPosition - currentPosition).LengthMm() / (double)(path.Config.Speed);
-					if (path.Config.lineWidth_um != 0)
+					if (path.Config.lineWidth_um > 0)
 					{
 						totalExtruderTime += thisTime;
 					}
 					else
 					{
+						thisTime = (lastPosition - currentPosition).LengthMm() / (double)(travelConfig.Speed);
 						totalTravelTime += thisTime;
 					}
 
@@ -132,10 +133,16 @@ namespace MatterHackers.MatterSlice
 		{
 			var layerTimes = GetLayerTimes();
 
-			if (layerTimes.totalTime < config.MinimumLayerTimeSeconds && layerTimes.extrudeTime > 0.0)
+			if (layerTimes.totalTime < config.MinimumLayerTimeSeconds 
+				&& layerTimes.extrudeTime > 0.0)
 			{
 				// how much do we need to slow down the extrusions to make the layer time long enough
-				gcodeExport.LayerSpeedRatio = Math.Min(1, layerTimes.extrudeTime / (config.MinimumLayerTimeSeconds - layerTimes.travelTime));
+				var desiredRatio = layerTimes.totalTime / config.MinimumLayerTimeSeconds;
+
+				desiredRatio = layerTimes.extrudeTime / (config.MinimumLayerTimeSeconds - layerTimes.travelTime);
+
+				gcodeExport.LayerSpeedRatio = desiredRatio;
+
 				foreach (var path in paths)
 				{
 					if (path.Config.lineWidth_um == 0
@@ -147,7 +154,8 @@ namespace MatterHackers.MatterSlice
 					else
 					{
 						// change the speed of the extrusion
-						path.Speed = Math.Max(config.MinimumPrintingSpeed, path.Config.Speed * gcodeExport.LayerSpeedRatio);
+						var minSpeedForConfig = Math.Min(config.MinimumPrintingSpeed, path.Config.Speed); // if the actual config speed is < min speed still use it
+						path.Speed = Math.Max(minSpeedForConfig, path.Config.Speed * gcodeExport.LayerSpeedRatio);
 					}
 				}
 			}

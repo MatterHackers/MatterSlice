@@ -142,7 +142,7 @@ namespace MatterHackers.MatterSlice
 			streamToWriteTo.Close();
 		}
 
-		public void EnsureWipeTowerIsSolid(int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
+		public void EnsureWipeTowerIsSolid(int layerIndex, LayerGCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
 		{
 			if (layerIndex >= LastLayerWithChange(config)
 				|| extrudersThatHaveBeenPrimed == null)
@@ -269,7 +269,7 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public void PrimeOnWipeTower(int extruderIndexIn, int layerIndex, GCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config, bool airGapped)
+		public void PrimeOnWipeTower(int extruderIndexIn, int layerIndex, LayerGCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config, bool airGapped)
 		{
 			if (!HaveWipeTower(config)
 				|| layerIndex > LastLayerWithChange(config) + 1)
@@ -305,16 +305,16 @@ namespace MatterHackers.MatterSlice
 				// create the raft base
 				{
 					gcode.WriteComment("RAFT BASE");
-					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+					LayerGCodePlanner layerPlanner = new LayerGCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 					if (config.RaftExtruder >= 0)
 					{
 						// if we have a specified raft extruder use it
-						gcodeLayer.SetExtruder(config.RaftExtruder);
+						layerPlanner.SetExtruder(config.RaftExtruder);
 					}
 					else if (config.SupportExtruder >= 0)
 					{
 						// else preserve the old behavior of using the support extruder if set.
-						gcodeLayer.SetExtruder(config.SupportExtruder);
+						layerPlanner.SetExtruder(config.SupportExtruder);
 					}
 
 					gcode.SetZ(config.RaftBaseThickness_um);
@@ -324,48 +324,48 @@ namespace MatterHackers.MatterSlice
 					gcode.SetExtrusion(config.RaftBaseThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
 					// write the skirt around the raft
-					gcodeLayer.QueuePolygonsByOptimizer(storage.skirt, null, raftBaseConfig, 0);
+					layerPlanner.QueuePolygonsByOptimizer(storage.skirt, null, raftBaseConfig, 0);
 
 					List<Polygons> raftIslands = storage.raftOutline.ProcessIntoSeparateIslands();
 					foreach (var raftIsland in raftIslands)
 					{
 						// write the outline of the raft
-						gcodeLayer.QueuePolygonsByOptimizer(raftIsland, null, raftBaseConfig, 0);
+						layerPlanner.QueuePolygonsByOptimizer(raftIsland, null, raftBaseConfig, 0);
 
 						Polygons raftLines = new Polygons();
 						Infill.GenerateLinePaths(raftIsland.Offset(-config.RaftBaseExtrusionWidth_um) , raftLines, config.RaftBaseLineSpacing_um, config.InfillExtendIntoPerimeter_um, 0);
 
 						// write the inside of the raft base
-						gcodeLayer.QueuePolygonsByOptimizer(raftLines, null, raftBaseConfig, 0);
+						layerPlanner.QueuePolygonsByOptimizer(raftLines, null, raftBaseConfig, 0);
 
 						if (config.RetractWhenChangingIslands)
 						{
-							gcodeLayer.ForceRetract();
+							layerPlanner.ForceRetract();
 						}
 					}
 
-					gcodeLayer.WriteQueuedGCode(config.RaftBaseThickness_um);
+					layerPlanner.WriteQueuedGCode(config.RaftBaseThickness_um);
 				}
 
 				// raft middle layers
 				{
 					gcode.WriteComment("RAFT MIDDLE");
-					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+					LayerGCodePlanner layerPlanner = new LayerGCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 					gcode.SetZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um);
 					gcode.LayerChanged(-2, config.RaftInterfaceThicknes_um);
 					gcode.SetExtrusion(config.RaftInterfaceThicknes_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
 					Polygons raftLines = new Polygons();
 					Infill.GenerateLinePaths(storage.raftOutline, raftLines, config.RaftInterfaceLineSpacing_um, config.InfillExtendIntoPerimeter_um, 45);
-					gcodeLayer.QueuePolygonsByOptimizer(raftLines, null, raftMiddleConfig, 0);
+					layerPlanner.QueuePolygonsByOptimizer(raftLines, null, raftMiddleConfig, 0);
 
-					gcodeLayer.WriteQueuedGCode(config.RaftInterfaceThicknes_um);
+					layerPlanner.WriteQueuedGCode(config.RaftInterfaceThicknes_um);
 				}
 
 				for (int raftSurfaceIndex = 1; raftSurfaceIndex <= config.RaftSurfaceLayers; raftSurfaceIndex++)
 				{
 					gcode.WriteComment("RAFT SURFACE");
-					GCodePlanner gcodeLayer = new GCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+					LayerGCodePlanner layerPlanner = new LayerGCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 					gcode.SetZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um + config.RaftSurfaceThickness_um * raftSurfaceIndex);
 					gcode.LayerChanged(-1, config.RaftSurfaceThickness_um);
 					gcode.SetExtrusion(config.RaftSurfaceThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
@@ -380,9 +380,9 @@ namespace MatterHackers.MatterSlice
 					{
 						Infill.GenerateLinePaths(storage.raftOutline, raftLines, config.RaftSurfaceLineSpacing_um, config.InfillExtendIntoPerimeter_um, 90 * raftSurfaceIndex);
 					}
-					gcodeLayer.QueuePolygonsByOptimizer(raftLines, null, raftSurfaceConfig, 0);
+					layerPlanner.QueuePolygonsByOptimizer(raftLines, null, raftSurfaceConfig, 0);
 
-					gcodeLayer.WriteQueuedGCode(config.RaftInterfaceThicknes_um);
+					layerPlanner.WriteQueuedGCode(config.RaftInterfaceThicknes_um);
 				}
 			}
 		}
