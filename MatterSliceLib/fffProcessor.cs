@@ -815,11 +815,16 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			if (slicingData.wipeShield.Count > 0 && slicingData.Extruders.Count > 1)
+			// the wipe shield is only generated one time per layer
+			if (slicingData.wipeShield.Count > 0
+				&& slicingData.wipeShield[layerIndex].Count > 0
+				&& slicingData.Extruders.Count > 1)
 			{
 				layerGcodePlanner.ForceRetract();
 				layerGcodePlanner.QueuePolygonsByOptimizer(slicingData.wipeShield[layerIndex], null, skirtConfig, layerIndex);
 				layerGcodePlanner.ForceRetract();
+				// remember that we have already layed down the wipe shield by clearing the data for this layer
+				slicingData.wipeShield[layerIndex].Clear();
 			}
 
 			PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(new IntPoint());

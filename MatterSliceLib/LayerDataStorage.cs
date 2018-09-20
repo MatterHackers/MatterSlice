@@ -199,6 +199,11 @@ namespace MatterHackers.MatterSlice
 			}
 
 			storage.raftOutline = storage.raftOutline.CreateUnion(storage.wipeTower.Offset(extraDistanceAroundPart_um));
+			if (storage.wipeShield.Count > 0
+				&& storage.wipeShield[0].Count > 0)
+			{
+				storage.raftOutline = storage.raftOutline.CreateUnion(storage.wipeShield[0].Offset(extraDistanceAroundPart_um));
+			}
 			if (storage.support != null)
 			{
 				storage.raftOutline = storage.raftOutline.CreateUnion(storage.support.GetBedOutlines().Offset(extraDistanceAroundPart_um));
@@ -395,6 +400,12 @@ namespace MatterHackers.MatterSlice
 			else
 			{
 				Polygons allOutlines = hasWipeTower ? new Polygons(storage.wipeTower) : new Polygons();
+
+				if (storage.wipeShield.Count > 0
+					&& storage.wipeShield[0].Count > 0)
+				{
+					allOutlines = allOutlines.CreateUnion(storage.wipeShield[0]);
+				}
 
 				// Loop over every extruder
 				for (int extrudeIndex = 0; extrudeIndex < storage.Extruders.Count; extrudeIndex++)
