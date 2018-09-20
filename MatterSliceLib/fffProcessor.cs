@@ -346,7 +346,7 @@ namespace MatterHackers.MatterSlice
 				slicingData.GenerateSkirt(
 					config.SkirtDistance_um + config.RaftBaseExtrusionWidth_um,
 					config.RaftBaseExtrusionWidth_um,
-					config.NumberOfSkirtLoops,
+					config.NumberOfSkirtLoops * slicingData.Extruders.Count,
 					config.NumberOfBrimLoops,
 					config.SkirtMinLength_um,
 					config);
@@ -356,7 +356,7 @@ namespace MatterHackers.MatterSlice
 				slicingData.GenerateSkirt(
 					config.SkirtDistance_um,
 					config.FirstLayerExtrusionWidth_um,
-					config.NumberOfSkirtLoops,
+					config.NumberOfSkirtLoops * slicingData.Extruders.Count,
 					config.NumberOfBrimLoops,
 					config.SkirtMinLength_um,
 					config);
@@ -516,12 +516,6 @@ namespace MatterHackers.MatterSlice
 
 				gcodeExport.LayerChanged(layerIndex, config.LayerThickness_um);
 
-				// We only create the skirt if we are on layer 0.
-				if (layerIndex == 0 && !config.ShouldGenerateRaft())
-				{
-					QueueSkirtToGCode(slicingData, layerPlanner, layerIndex);
-				}
-
 				// start out with the fan off for this layer (the minimum layer fan speed will be applyed later as the gcode is output)
 				layerPlanner.QueueFanCommand(0, fillConfig);
 
@@ -638,6 +632,14 @@ namespace MatterHackers.MatterSlice
 
 		private void ChangeExtruderIfRequired(LayerDataStorage slicingData, int layerIndex, LayerGCodePlanner layerGcodePlanner, int extruderIndex)
 		{
+			// We only create the skirt if we are on layer 0.
+			if (extruderIndex == 0 
+				&& layerIndex == 0 
+				&& !config.ShouldGenerateRaft())
+			{
+				QueueSkirtToGCode(slicingData, layerGcodePlanner, layerIndex, extruderIndex);
+			}
+
 			bool extruderUsedForSupport = config.GenerateSupport
 				&& ((slicingData.support.SparseSupportOutlines[layerIndex].Count > 0 && config.SupportExtruder == extruderIndex)
 					|| (slicingData.support.InterfaceLayers[layerIndex].Count > 0 && config.SupportInterfaceExtruder == extruderIndex));
@@ -674,6 +676,13 @@ namespace MatterHackers.MatterSlice
 
 					// then change extruders
 					layerGcodePlanner.SetExtruder(extruderIndex);
+
+					if (extruderIndex > 0
+						&& layerIndex == 0
+						&& !config.ShouldGenerateRaft())
+					{
+						QueueSkirtToGCode(slicingData, layerGcodePlanner, layerIndex, extruderIndex);
+					}
 
 					// move to the wipe tower position with consideration for the new tool/nozzle offset
 					layerGcodePlanner.QueueTravel(config.WipeCenter_um, true);
@@ -771,29 +780,16 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private void QueueSkirtToGCode(LayerDataStorage slicingData, LayerGCodePlanner gcodeLayer, int layerIndex)
+		private void QueueSkirtToGCode(LayerDataStorage slicingData, LayerGCodePlanner gcodeLayer, int layerIndex, int extruderIndex)
 		{
-			if (slicingData.skirt.Count > 0
-				&& slicingData.skirt[0].Count > 0)
+			var extruderCount = slicingData.Extruders.Count;
+			var loopsPerExtuder = slicingData.Skirt.Count / extruderCount;
+			var loopIndex = loopsPerExtuder * ((extruderCount - 1) - extruderIndex);
+
+			for (int i = loopIndex + loopsPerExtuder - 1; i >= loopIndex; i--)
 			{
-				IntPoint lowestPoint = slicingData.skirt[0][0];
-
-				// lets make sure we start with the most outside loop
-				foreach (Polygon polygon in slicingData.skirt)
-				{
-					foreach (IntPoint position in polygon)
-					{
-						if (position.Y < lowestPoint.Y)
-						{
-							lowestPoint = polygon[0];
-						}
-					}
-				}
-
-				gcodeLayer.QueueTravel(lowestPoint);
+				gcodeLayer.QueuePolygonByOptimizer(slicingData.Skirt[i], null, skirtConfig, layerIndex);
 			}
-
-			gcodeLayer.QueuePolygonsByOptimizer(slicingData.skirt, null, skirtConfig, layerIndex);
 		}
 
 		LayerIsland islandCurrentlyInside = null;

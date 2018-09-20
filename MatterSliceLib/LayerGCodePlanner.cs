@@ -326,6 +326,22 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		public bool QueuePolygonByOptimizer(Polygon polygon, PathFinder pathFinder, GCodePathConfig config, int layerIndex)
+		{
+			PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(LastPosition);
+			orderOptimizer.AddPolygon(polygon);
+
+			orderOptimizer.Optimize(pathFinder, layerIndex, config);
+
+			for (int i = 0; i < orderOptimizer.bestIslandOrderIndex.Count; i++)
+			{
+				int polygonIndex = orderOptimizer.bestIslandOrderIndex[i];
+				QueuePolygon(polygon, orderOptimizer.startIndexInPolygon[polygonIndex], config);
+			}
+
+			return true;
+		}
+
 		public bool QueuePolygonsByOptimizer(Polygons polygons, PathFinder pathFinder, GCodePathConfig config, int layerIndex)
 		{
 			if (polygons.Count == 0)

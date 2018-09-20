@@ -34,7 +34,7 @@ namespace MatterHackers.MatterSlice
 		public List<ExtruderLayers> Extruders = new List<ExtruderLayers>();
 		public IntPoint modelSize, modelMin, modelMax;
 		public Polygons raftOutline = new Polygons();
-		public Polygons skirt = new Polygons();
+		public Polygons Skirt { get; private set; } = new Polygons();
 		public NewSupport support = null;
 		public List<Polygons> wipeShield = new List<Polygons>();
 		public Polygons wipeTower = new Polygons();
@@ -207,26 +207,21 @@ namespace MatterHackers.MatterSlice
 
 		public void GenerateSkirt(int distance, int extrusionWidth_um, int numberOfLoops, int brimCount, int minLength, ConfigSettings config)
 		{
-			LayerDataStorage storage = this;
-			bool externalOnly = (distance > 0);
+			Polygons islandsToSkirtAround = GetSkirtBounds(config, this, (distance > 0), distance, extrusionWidth_um, brimCount);
 
-			List<Polygons> skirtLoops = new List<Polygons>();
-
-			Polygons skirtPolygons = GetSkirtBounds(config, storage, externalOnly, distance, extrusionWidth_um, brimCount);
-
-			if (skirtPolygons.Count > 0)
+			if (islandsToSkirtAround.Count > 0)
 			{
 				// Find convex hull for the skirt outline
-				Polygons convexHull = new Polygons(new[] { skirtPolygons.CreateConvexHull() });
+				Polygons convexHull = new Polygons(new[] { islandsToSkirtAround.CreateConvexHull() });
 
 				// Create skirt loops from the ConvexHull
 				for (int skirtLoop = 0; skirtLoop < numberOfLoops; skirtLoop++)
 				{
 					int offsetDistance = distance + extrusionWidth_um * skirtLoop + extrusionWidth_um / 2;
 
-					storage.skirt.AddAll(convexHull.Offset(offsetDistance));
+					this.Skirt.AddAll(convexHull.Offset(offsetDistance));
 
-					int length = (int)storage.skirt.PolygonLength();
+					int length = (int)this.Skirt.PolygonLength();
 					if (skirtLoop + 1 >= numberOfLoops && length > 0 && length < minLength)
 					{
 						// add more loops for as long as we have not extruded enough length
@@ -324,7 +319,7 @@ namespace MatterHackers.MatterSlice
 					gcode.SetExtrusion(config.RaftBaseThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
 					// write the skirt around the raft
-					layerPlanner.QueuePolygonsByOptimizer(storage.skirt, null, raftBaseConfig, 0);
+					layerPlanner.QueuePolygonsByOptimizer(storage.Skirt, null, raftBaseConfig, 0);
 
 					List<Polygons> raftIslands = storage.raftOutline.ProcessIntoSeparateIslands();
 					foreach (var raftIsland in raftIslands)
@@ -450,7 +445,7 @@ namespace MatterHackers.MatterSlice
 					}
 
 					// TODO: This is a quick hack, reuse the skirt data to stuff in the brim. Good enough from proof of concept
-					storage.skirt.AddAll(brimLoops);
+					storage.Skirt.AddAll(brimLoops);
 
 					skirtPolygons = skirtPolygons.CreateUnion(brimLoops);
 				}
