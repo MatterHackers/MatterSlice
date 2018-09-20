@@ -489,7 +489,7 @@ namespace MatterHackers.MatterSlice
 					gcodeExport.SetExtrusion(config.LayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 				}
 
-				LayerGCodePlanner layerPlanner = new LayerGCodePlanner(gcodeExport, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+				LayerGCodePlanner layerPlanner = new LayerGCodePlanner(config, gcodeExport, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 				if (layerIndex == 0
 					&& config.RetractionZHop > 0)
 				{
@@ -617,7 +617,7 @@ namespace MatterHackers.MatterSlice
 					currentLayerThickness_um = config.FirstLayerThickness_um;
 				}
 
-				layerPlanner.FinalizeLayerFanSpeeds(config, layerIndex);
+				layerPlanner.FinalizeLayerFanSpeeds(layerIndex);
 				layerPlanner.WriteQueuedGCode(currentLayerThickness_um);
 			}
 

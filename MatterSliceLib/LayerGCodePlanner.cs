@@ -1,4 +1,4 @@
-/*
+﻿/*
 This file is part of MatterSlice. A commandline utility for
 generating 3D printing GCode.
 
@@ -25,6 +25,7 @@ using System.Collections.Generic;
 
 namespace MatterHackers.MatterSlice
 {
+	using MatterHackers.VectorMath;
 	using Pathfinding;
 	using QuadTree;
 	using Polygon = List<IntPoint>;
@@ -53,8 +54,12 @@ namespace MatterHackers.MatterSlice
 
 		private GCodePathConfig travelConfig;
 
-		public LayerGCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um, double perimeterStartEndOverlap = 0)
+		private ConfigSettings config;
+
+		public LayerGCodePlanner(ConfigSettings config, GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um, double perimeterStartEndOverlap = 0)
 		{
+			this.config = config;
+
 			this.gcodeExport = gcode;
 			travelConfig = new GCodePathConfig("travelConfig");
 			travelConfig.SetData(travelSpeed, 0, "travel");
@@ -100,64 +105,77 @@ namespace MatterHackers.MatterSlice
 			return path;
 		}
 
-		public (double travelTime, double extrudeTime, double totalTime) GetLayerTimes()
+		public (double fixedTime, double variableTime, double totalTime) GetLayerTimes()
 		{
 			IntPoint lastPosition = gcodeExport.GetPosition();
-			double totalTravelTime = 0.0;
-			double totalExtruderTime = 0.0;
-			for (int pathIndex = 0; pathIndex < paths.Count; pathIndex++)
+			double fixedTime = 0.0;
+			double variableTime = 0.0;
+			foreach(var path in paths)
 			{
-				GCodePath path = paths[pathIndex];
 				for (int pointIndex = 0; pointIndex < path.Polygon.Count; pointIndex++)
 				{
 					IntPoint currentPosition = path.Polygon[pointIndex];
-					double thisTime = (lastPosition - currentPosition).LengthMm() / (double)(path.Config.Speed);
-					if (path.Config.lineWidth_um > 0)
+
+					double thisTime = (lastPosition - currentPosition).LengthMm() / (double)(path.Speed);
+
+					thisTime = Estimator.GetSecondsForMovement((lastPosition - currentPosition).LengthMm(),
+						path.Speed,
+						config.MaxAcceleration,
+						config.MaxVelocity,
+						config.JerkVelocity);
+
+					if (PathCanAdjustSpeed(path))
 					{
-						totalExtruderTime += thisTime;
+						variableTime += thisTime;
 					}
 					else
 					{
-						thisTime = (lastPosition - currentPosition).LengthMm() / (double)(travelConfig.Speed);
-						totalTravelTime += thisTime;
+						fixedTime += thisTime;
 					}
 
 					lastPosition = currentPosition;
 				}
 			}
 
-			return (totalTravelTime, totalExtruderTime, totalTravelTime + totalExtruderTime);
+			return (fixedTime, variableTime, fixedTime + variableTime);
 		}
 
-		public void CorrectLayerTimeConsideringMinimumLayerTime(ConfigSettings config)
+		bool PathCanAdjustSpeed(GCodePath path)
+		{
+			return path.Config.lineWidth_um > 0 && path.Config.gcodeComment != "BRIDGE";
+		}
+
+		public void CorrectLayerTimeConsideringMinimumLayerTime()
 		{
 			var layerTimes = GetLayerTimes();
 
 			if (layerTimes.totalTime < config.MinimumLayerTimeSeconds 
-				&& layerTimes.extrudeTime > 0.0)
+				&& layerTimes.variableTime > 0.0)
 			{
-				// how much do we need to slow down the extrusions to make the layer time long enough
-				var desiredRatio = layerTimes.totalTime / config.MinimumLayerTimeSeconds;
-
-				desiredRatio = layerTimes.extrudeTime / (config.MinimumLayerTimeSeconds - layerTimes.travelTime);
-
-				gcodeExport.LayerSpeedRatio = desiredRatio;
-
-				foreach (var path in paths)
+				var goalRatio = layerTimes.variableTime / (config.MinimumLayerTimeSeconds - layerTimes.fixedTime);
+				var currentRatio = Math.Max(gcodeExport.LayerSpeedRatio - .1, goalRatio);
+				do
 				{
-					if (path.Config.lineWidth_um == 0
-						|| path.Config.gcodeComment == "BRIDGE")
+					foreach (var path in paths)
 					{
-						// it is a travel or a bridge, don't adjust its speed
-						continue;
+						if (PathCanAdjustSpeed(path))
+						{
+							// change the speed of the extrusion
+							var goalSpeed = path.Config.Speed * currentRatio;
+							if (goalSpeed < path.Config.Speed)
+							{
+								path.Speed = Math.Max(config.MinimumPrintingSpeed, goalSpeed);
+							}
+						}
 					}
-					else
-					{
-						// change the speed of the extrusion
-						var minSpeedForConfig = Math.Min(config.MinimumPrintingSpeed, path.Config.Speed); // if the actual config speed is < min speed still use it
-						path.Speed = Math.Max(minSpeedForConfig, path.Config.Speed * gcodeExport.LayerSpeedRatio);
-					}
-				}
+
+					layerTimes = GetLayerTimes();
+					currentRatio -= .01;
+				} while (layerTimes.totalTime < config.MinimumLayerTimeSeconds
+					&& currentRatio >= (gcodeExport.LayerSpeedRatio - .1)
+					&& currentRatio >= .1);
+
+				gcodeExport.LayerSpeedRatio = currentRatio;
 			}
 			else
 			{
@@ -240,17 +258,17 @@ namespace MatterHackers.MatterSlice
 		/// </summary>
 		/// <param name="config"></param>
 		/// <param name="layerIndex"></param>
-		public void FinalizeLayerFanSpeeds(ConfigSettings config, int layerIndex)
+		public void FinalizeLayerFanSpeeds(int layerIndex)
 		{
-			CorrectLayerTimeConsideringMinimumLayerTime(config);
-			int layerFanPercent = GetFanPercent(layerIndex, config, gcodeExport);
+			CorrectLayerTimeConsideringMinimumLayerTime();
+			int layerFanPercent = GetFanPercent(layerIndex, gcodeExport);
 			foreach (var fanSpeed in queuedFanSpeeds)
 			{
 				fanSpeed.FanPercent = Math.Max(fanSpeed.FanPercent, layerFanPercent);
 			}
 		}
 
-		private int GetFanPercent(int layerIndex, ConfigSettings config, GCodeExport gcodeExport)
+		private int GetFanPercent(int layerIndex, GCodeExport gcodeExport)
 		{
 			if (layerIndex < config.FirstLayerToAllowFan)
 			{
