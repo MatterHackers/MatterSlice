@@ -185,7 +185,7 @@ namespace MatterHackers.MatterSlice
 			bridgeConfig.SetData(config.BridgeSpeed, extrusionWidth, "BRIDGE");
 
 			supportNormalConfig.SetData(config.SupportMaterialSpeed, extrusionWidth, "SUPPORT");
-			supportInterfaceConfig.SetData(config.SupportMaterialSpeed, extrusionWidth, "SUPPORT-INTERFACE");
+			supportInterfaceConfig.SetData(config.SupportMaterialSpeed - 1, extrusionWidth, "SUPPORT-INTERFACE");
 
 			for (int extruderIndex = 0; extruderIndex < ConfigConstants.MAX_EXTRUDERS; extruderIndex++)
 			{
@@ -346,7 +346,7 @@ namespace MatterHackers.MatterSlice
 				slicingData.GenerateSkirt(
 					config.SkirtDistance_um + config.RaftBaseExtrusionWidth_um,
 					config.RaftBaseExtrusionWidth_um,
-					config.NumberOfSkirtLoops * slicingData.Extruders.Count,
+					config.NumberOfSkirtLoops * config.ExtruderCount,
 					config.NumberOfBrimLoops,
 					config.SkirtMinLength_um,
 					config);
@@ -356,7 +356,7 @@ namespace MatterHackers.MatterSlice
 				slicingData.GenerateSkirt(
 					config.SkirtDistance_um,
 					config.FirstLayerExtrusionWidth_um,
-					config.NumberOfSkirtLoops * slicingData.Extruders.Count,
+					config.NumberOfSkirtLoops * config.ExtruderCount,
 					config.NumberOfBrimLoops,
 					config.SkirtMinLength_um,
 					config);
@@ -477,7 +477,7 @@ namespace MatterHackers.MatterSlice
 					bridgeConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um, "BRIDGE");
 
 					supportNormalConfig.SetData(config.SupportMaterialSpeed, config.SupportExtrusionWidth_um, "SUPPORT");
-					supportInterfaceConfig.SetData(config.SupportMaterialSpeed, config.ExtrusionWidth_um, "SUPPORT-INTERFACE");
+					supportInterfaceConfig.SetData(config.FirstLayerSpeed - 1, config.ExtrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 
 				if (layerIndex == 0)
@@ -782,13 +782,12 @@ namespace MatterHackers.MatterSlice
 
 		private void QueueSkirtToGCode(LayerDataStorage slicingData, LayerGCodePlanner gcodeLayer, int layerIndex, int extruderIndex)
 		{
-			var extruderCount = slicingData.Extruders.Count;
-			var loopsPerExtuder = slicingData.Skirt.Count / extruderCount;
-			var loopIndex = loopsPerExtuder * ((extruderCount - 1) - extruderIndex);
+			var loopsPerExtuder = slicingData.Skirt.Count / config.ExtruderCount;
+			var loopIndex = loopsPerExtuder * ((config.ExtruderCount - 1) - extruderIndex);
 
-			for (int i = loopIndex + loopsPerExtuder - 1; i >= loopIndex; i--)
+			for (int i = loopsPerExtuder - 1; i >= 0; i--)
 			{
-				gcodeLayer.QueuePolygonByOptimizer(slicingData.Skirt[i], null, skirtConfig, layerIndex);
+				gcodeLayer.QueuePolygonByOptimizer(slicingData.Skirt[loopIndex + i], null, skirtConfig, layerIndex);
 			}
 		}
 
