@@ -392,7 +392,7 @@ namespace MatterHackers.MatterSlice
 
 			if (currentSpeed != speed)
 			{
-				lineToWrite.Append(" F{0}".FormatWith(speed * 60));
+				lineToWrite.Append(" F{0}".FormatWith((int)(speed * 60)));
 				currentSpeed = speed;
 			}
 

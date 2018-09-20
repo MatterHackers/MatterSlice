@@ -353,6 +353,9 @@ namespace MatterHackers.MatterSlice
 		public object WipeCenterY => WipeCenter_um.Y / 1000.0;
 
 		public IntPoint WipeCenter_um { get; set; }
+		public double MaxAcceleration { get; set; }
+		public double MaxVelocity { get; set; }
+		public double JerkVelocity { get; set; }
 
 		// .4 mm for .4 mm nozzle
 		public void DumpSettings(string fileName)
