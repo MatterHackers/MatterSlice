@@ -305,7 +305,7 @@ namespace MatterHackers.MatterSlice
 				// create the raft base
 				{
 					gcode.WriteComment("RAFT BASE");
-					LayerGCodePlanner layerPlanner = new LayerGCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+					LayerGCodePlanner layerPlanner = new LayerGCodePlanner(config, gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 					if (config.RaftExtruder >= 0)
 					{
 						// if we have a specified raft extruder use it
@@ -350,7 +350,7 @@ namespace MatterHackers.MatterSlice
 				// raft middle layers
 				{
 					gcode.WriteComment("RAFT MIDDLE");
-					LayerGCodePlanner layerPlanner = new LayerGCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+					LayerGCodePlanner layerPlanner = new LayerGCodePlanner(config, gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 					gcode.SetZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um);
 					gcode.LayerChanged(-2, config.RaftInterfaceThicknes_um);
 					gcode.SetExtrusion(config.RaftInterfaceThicknes_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
@@ -365,7 +365,7 @@ namespace MatterHackers.MatterSlice
 				for (int raftSurfaceIndex = 1; raftSurfaceIndex <= config.RaftSurfaceLayers; raftSurfaceIndex++)
 				{
 					gcode.WriteComment("RAFT SURFACE");
-					LayerGCodePlanner layerPlanner = new LayerGCodePlanner(gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+					LayerGCodePlanner layerPlanner = new LayerGCodePlanner(config, gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 					gcode.SetZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um + config.RaftSurfaceThickness_um * raftSurfaceIndex);
 					gcode.LayerChanged(-1, config.RaftSurfaceThickness_um);
 					gcode.SetExtrusion(config.RaftSurfaceThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);

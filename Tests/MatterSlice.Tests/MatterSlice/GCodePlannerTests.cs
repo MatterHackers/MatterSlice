@@ -190,7 +190,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
-				LayerGCodePlanner layerPlanner = new LayerGCodePlanner(new GCodeExport(new ConfigSettings()), travelSpeed, retractionMinimumDistance);
+				LayerGCodePlanner layerPlanner = new LayerGCodePlanner(new ConfigSettings(), new GCodeExport(new ConfigSettings()), travelSpeed, retractionMinimumDistance);
 				Polygon perimeter = new Polygon() { new IntPoint(0, 0, 0), new IntPoint(5000, 0, 0), new IntPoint(5000, 5000, 0), new IntPoint(0, 5000, 0) };
 				Assert.IsTrue(perimeter.Count == 4);
 				Polygons thinLines;
@@ -210,7 +210,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
-				LayerGCodePlanner layerPlanner = new LayerGCodePlanner(new GCodeExport(new ConfigSettings()), travelSpeed, retractionMinimumDistance);
+				LayerGCodePlanner layerPlanner = new LayerGCodePlanner(new ConfigSettings(), new GCodeExport(new ConfigSettings()), travelSpeed, retractionMinimumDistance);
 				Polygon perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50) };
 				Polygons correctedPath;
 				perimeter.MergePerimeterOverlaps(400, out correctedPath);
@@ -226,7 +226,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
-				LayerGCodePlanner layerPlanner = new LayerGCodePlanner(new GCodeExport(new ConfigSettings()), travelSpeed, retractionMinimumDistance);
+				LayerGCodePlanner layerPlanner = new LayerGCodePlanner(new ConfigSettings(), new GCodeExport(new ConfigSettings()), travelSpeed, retractionMinimumDistance);
 				Polygon perimeter = new Polygon() { new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50) };
 				Polygons correctedPath;
 				perimeter.MergePerimeterOverlaps(200, out correctedPath);
@@ -257,7 +257,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
-				LayerGCodePlanner layerPlanner = new LayerGCodePlanner(new GCodeExport(new ConfigSettings()), travelSpeed, retractionMinimumDistance);
+				LayerGCodePlanner layerPlanner = new LayerGCodePlanner(new ConfigSettings(), new GCodeExport(new ConfigSettings()), travelSpeed, retractionMinimumDistance);
 				Polygon perimeter = new Polygon() { new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0) };
 				Polygons correctedPath;
 				perimeter.MergePerimeterOverlaps(400 / 4, out correctedPath);
@@ -431,7 +431,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				int travelSpeed = 50;
 				int retractionMinimumDistance = 20;
-				LayerGCodePlanner layerPlanner = new LayerGCodePlanner(new GCodeExport(new ConfigSettings()), travelSpeed, retractionMinimumDistance);
+				LayerGCodePlanner planner = new LayerGCodePlanner(new ConfigSettings(), new GCodeExport(new ConfigSettings()), travelSpeed, retractionMinimumDistance);
 				Polygon perimeter = new Polygon()
 				{
 					new IntPoint(15000, 0),

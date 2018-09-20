@@ -1,4 +1,4 @@
-/*
+﻿/*
 This file is part of MatterSlice. A commandline utility for
 generating 3D printing GCode.
 
@@ -53,8 +53,12 @@ namespace MatterHackers.MatterSlice
 
 		private GCodePathConfig travelConfig;
 
-		public LayerGCodePlanner(GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um, double perimeterStartEndOverlap = 0)
+		private ConfigSettings config;
+
+		public LayerGCodePlanner(ConfigSettings config, GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um, double perimeterStartEndOverlap = 0)
 		{
+			this.config = config;
+
 			this.gcodeExport = gcode;
 			travelConfig = new GCodePathConfig("travelConfig");
 			travelConfig.SetData(travelSpeed, 0, "travel");
@@ -111,16 +115,8 @@ namespace MatterHackers.MatterSlice
 				for (int pointIndex = 0; pointIndex < path.Polygon.Count; pointIndex++)
 				{
 					IntPoint currentPosition = path.Polygon[pointIndex];
-					double thisTime = (lastPosition - currentPosition).LengthMm() / (double)(path.Config.Speed);
-					if (path.Config.lineWidth_um > 0)
-					{
-						totalExtruderTime += thisTime;
-					}
-					else
-					{
-						thisTime = (lastPosition - currentPosition).LengthMm() / (double)(travelConfig.Speed);
-						totalTravelTime += thisTime;
-					}
+					double thisTime = (lastPosition - currentPosition).LengthMm() / (double)(path.Speed);
+					totalExtruderTime += thisTime;
 
 					lastPosition = currentPosition;
 				}
@@ -129,7 +125,7 @@ namespace MatterHackers.MatterSlice
 			return (totalTravelTime, totalExtruderTime, totalTravelTime + totalExtruderTime);
 		}
 
-		public void CorrectLayerTimeConsideringMinimumLayerTime(ConfigSettings config)
+		public void CorrectLayerTimeConsideringMinimumLayerTime()
 		{
 			var layerTimes = GetLayerTimes();
 
@@ -240,17 +236,17 @@ namespace MatterHackers.MatterSlice
 		/// </summary>
 		/// <param name="config"></param>
 		/// <param name="layerIndex"></param>
-		public void FinalizeLayerFanSpeeds(ConfigSettings config, int layerIndex)
+		public void FinalizeLayerFanSpeeds(int layerIndex)
 		{
-			CorrectLayerTimeConsideringMinimumLayerTime(config);
-			int layerFanPercent = GetFanPercent(layerIndex, config, gcodeExport);
+			CorrectLayerTimeConsideringMinimumLayerTime();
+			int layerFanPercent = GetFanPercent(layerIndex, gcodeExport);
 			foreach (var fanSpeed in queuedFanSpeeds)
 			{
 				fanSpeed.FanPercent = Math.Max(fanSpeed.FanPercent, layerFanPercent);
 			}
 		}
 
-		private int GetFanPercent(int layerIndex, ConfigSettings config, GCodeExport gcodeExport)
+		private int GetFanPercent(int layerIndex, GCodeExport gcodeExport)
 		{
 			if (layerIndex < config.FirstLayerToAllowFan)
 			{
