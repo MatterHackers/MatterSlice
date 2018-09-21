@@ -58,6 +58,7 @@ namespace MatterHackers.MatterSlice
 		private GCodePathConfig topFillConfig = new GCodePathConfig("topFillConfig");
 		private GCodePathConfig firstTopFillConfig = new GCodePathConfig("firstTopFillConfig");
 		private GCodePathConfig bottomFillConfig = new GCodePathConfig("bottomFillConfig");
+		private GCodePathConfig airGappedBottomInsetConfig = new GCodePathConfig("airGappedBottomInsetConfig");
 		private GCodePathConfig airGappedBottomConfig = new GCodePathConfig("airGappedBottomConfig");
 		private GCodePathConfig bridgeConfig = new GCodePathConfig("bridgeConfig");
 		private GCodePathConfig supportNormalConfig = new GCodePathConfig("supportNormalConfig");
@@ -182,10 +183,11 @@ namespace MatterHackers.MatterSlice
 			firstTopFillConfig.SetData(config.BridgeSpeed, extrusionWidth, "FIRST-TOP-Fill", false);
 			bottomFillConfig.SetData(config.BottomInfillSpeed, extrusionWidth, "BOTTOM-FILL", false);
 			airGappedBottomConfig.SetData(config.FirstLayerSpeed, extrusionWidth, "AIR-GAP", false);
+			airGappedBottomInsetConfig.SetData(config.FirstLayerSpeed, extrusionWidth, "AIR-GAP-INSET");
 			bridgeConfig.SetData(config.BridgeSpeed, extrusionWidth, "BRIDGE");
 
 			supportNormalConfig.SetData(config.SupportMaterialSpeed, extrusionWidth, "SUPPORT");
-			supportInterfaceConfig.SetData(config.SupportMaterialSpeed - 1, extrusionWidth, "SUPPORT-INTERFACE");
+			supportInterfaceConfig.SetData(config.SupportMaterialSpeed, extrusionWidth, "SUPPORT-INTERFACE");
 
 			for (int extruderIndex = 0; extruderIndex < ConfigConstants.MAX_EXTRUDERS; extruderIndex++)
 			{
@@ -458,6 +460,7 @@ namespace MatterHackers.MatterSlice
 					firstTopFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerThickness_um, "FIRST-TOP-Fill", false);
 					bottomFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "BOTTOM-FILL", false);
 					airGappedBottomConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "AIR-GAP", false);
+					airGappedBottomInsetConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "AIR-GAP-INSET");
 					bridgeConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "BRIDGE");
 
 					supportNormalConfig.SetData(config.FirstLayerSpeed, config.SupportExtrusionWidth_um, "SUPPORT");
@@ -474,10 +477,11 @@ namespace MatterHackers.MatterSlice
 					firstTopFillConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um, "FIRST-TOP-Fill", false);
 					bottomFillConfig.SetData(config.BottomInfillSpeed, config.ExtrusionWidth_um, "BOTTOM-FILL", false);
 					airGappedBottomConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um, "AIR-GAP", false);
+					airGappedBottomInsetConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um, "AIR-GAP-INSET");
 					bridgeConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um, "BRIDGE");
 
 					supportNormalConfig.SetData(config.SupportMaterialSpeed, config.SupportExtrusionWidth_um, "SUPPORT");
-					supportInterfaceConfig.SetData(config.FirstLayerSpeed - 1, config.ExtrusionWidth_um, "SUPPORT-INTERFACE");
+					supportInterfaceConfig.SetData(config.SupportMaterialSpeed, config.ExtrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 
 				if (layerIndex == 0)
@@ -1301,12 +1305,12 @@ namespace MatterHackers.MatterSlice
 					// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
 					for (int insetIndex = 1; insetIndex < island.InsetToolPaths.Count; insetIndex++)
 					{
-						outputDataForIsland |= QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, island.InsetToolPaths[insetIndex], airGappedBottomConfig, SupportWriteType.SupportedAreasCheckOnly);
+						outputDataForIsland |= QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, island.InsetToolPaths[insetIndex], airGappedBottomInsetConfig, SupportWriteType.SupportedAreasCheckOnly);
 					}
 					// then 0
 					if (island.InsetToolPaths.Count > 0)
 					{
-						outputDataForIsland |= QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, island.InsetToolPaths[0], airGappedBottomConfig, SupportWriteType.SupportedAreasCheckOnly);
+						outputDataForIsland |= QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, island.InsetToolPaths[0], airGappedBottomInsetConfig, SupportWriteType.SupportedAreasCheckOnly);
 					}
 
 					outputDataForIsland |= QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bottomFillPolygons, airGappedBottomConfig, SupportWriteType.SupportedAreasCheckOnly);
@@ -1337,12 +1341,12 @@ namespace MatterHackers.MatterSlice
 						// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
 						for (int insetIndex = 1; insetIndex < island.InsetToolPaths.Count; insetIndex++)
 						{
-							QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, island.InsetToolPaths[insetIndex], airGappedBottomConfig, SupportWriteType.SupportedAreas);
+							QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, island.InsetToolPaths[insetIndex], airGappedBottomInsetConfig, SupportWriteType.SupportedAreas);
 						}
 						// then 0
 						if (island.InsetToolPaths.Count > 0)
 						{
-							QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, island.InsetToolPaths[0], airGappedBottomConfig, SupportWriteType.SupportedAreas);
+							QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, island.InsetToolPaths[0], airGappedBottomInsetConfig, SupportWriteType.SupportedAreas);
 						}
 
 						QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bottomFillPolygons, airGappedBottomConfig, SupportWriteType.SupportedAreas);
