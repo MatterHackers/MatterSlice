@@ -185,7 +185,7 @@ namespace MatterHackers.MatterSlice
 			bridgeConfig.SetData(config.BridgeSpeed, extrusionWidth, "BRIDGE");
 
 			supportNormalConfig.SetData(config.SupportMaterialSpeed, extrusionWidth, "SUPPORT");
-			supportInterfaceConfig.SetData(config.SupportMaterialSpeed - 1, extrusionWidth, "SUPPORT-INTERFACE");
+			supportInterfaceConfig.SetData(config.SupportMaterialSpeed, extrusionWidth, "SUPPORT-INTERFACE");
 
 			for (int extruderIndex = 0; extruderIndex < ConfigConstants.MAX_EXTRUDERS; extruderIndex++)
 			{
@@ -477,7 +477,7 @@ namespace MatterHackers.MatterSlice
 					bridgeConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um, "BRIDGE");
 
 					supportNormalConfig.SetData(config.SupportMaterialSpeed, config.SupportExtrusionWidth_um, "SUPPORT");
-					supportInterfaceConfig.SetData(config.FirstLayerSpeed - 1, config.ExtrusionWidth_um, "SUPPORT-INTERFACE");
+					supportInterfaceConfig.SetData(config.SupportMaterialSpeed, config.ExtrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 
 				if (layerIndex == 0)
