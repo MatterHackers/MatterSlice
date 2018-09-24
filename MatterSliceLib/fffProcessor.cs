@@ -182,8 +182,8 @@ namespace MatterHackers.MatterSlice
 			topFillConfig.SetData(config.TopInfillSpeed, extrusionWidth, "TOP-FILL", false);
 			firstTopFillConfig.SetData(config.BridgeSpeed, extrusionWidth, "FIRST-TOP-Fill", false);
 			bottomFillConfig.SetData(config.BottomInfillSpeed, extrusionWidth, "BOTTOM-FILL", false);
-			airGappedBottomConfig.SetData(config.FirstLayerSpeed, extrusionWidth, "AIR-GAP", false);
-			airGappedBottomInsetConfig.SetData(config.FirstLayerSpeed, extrusionWidth, "AIR-GAP-INSET");
+			airGappedBottomConfig.SetData(config.AirGapSpeed, extrusionWidth, "AIR-GAP", false);
+			airGappedBottomInsetConfig.SetData(config.AirGapSpeed, extrusionWidth, "AIR-GAP-INSET");
 			bridgeConfig.SetData(config.BridgeSpeed, extrusionWidth, "BRIDGE");
 
 			supportNormalConfig.SetData(config.SupportMaterialSpeed, extrusionWidth, "SUPPORT");
@@ -476,8 +476,8 @@ namespace MatterHackers.MatterSlice
 					topFillConfig.SetData(config.TopInfillSpeed, config.ExtrusionWidth_um, "TOP-FILL", false);
 					firstTopFillConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um, "FIRST-TOP-Fill", false);
 					bottomFillConfig.SetData(config.BottomInfillSpeed, config.ExtrusionWidth_um, "BOTTOM-FILL", false);
-					airGappedBottomConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um, "AIR-GAP", false);
-					airGappedBottomInsetConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um, "AIR-GAP-INSET");
+					airGappedBottomConfig.SetData(config.AirGapSpeed, config.ExtrusionWidth_um, "AIR-GAP", false);
+					airGappedBottomInsetConfig.SetData(config.AirGapSpeed, config.ExtrusionWidth_um, "AIR-GAP-INSET");
 					bridgeConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um, "BRIDGE");
 
 					supportNormalConfig.SetData(config.SupportMaterialSpeed, config.SupportExtrusionWidth_um, "SUPPORT");

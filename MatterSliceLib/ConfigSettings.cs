@@ -85,6 +85,9 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("mm/s.")]
 		public int BridgeSpeed { get; set; }
 
+		[SettingDescription("mm/s")]
+		public int AirGapSpeed { get; set; }
+
 		// other
 		[SettingDescription("This will cause the z height to raise continuously while on the outer perimeter.")]
 		public bool ContinuousSpiralOuterPerimeter { get; set; }
@@ -614,6 +617,7 @@ namespace MatterHackers.MatterSlice
 			SupportMaterialSpeed = 40;
 			InfillSpeed = 50;
 			BridgeSpeed = 20;
+			AirGapSpeed = 15;
 			BridgeFanSpeedPercent = 100;
 			RetractWhenChangingIslands = true;
 			OutsidePerimeterSpeed = 50;
