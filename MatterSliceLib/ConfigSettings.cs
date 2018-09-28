@@ -359,6 +359,7 @@ namespace MatterHackers.MatterSlice
 		public double MaxAcceleration { get; set; }
 		public double MaxVelocity { get; set; }
 		public double JerkVelocity { get; set; }
+		public double PrintTimeEstimateMultiplier { get; set; } = 1;
 
 		// .4 mm for .4 mm nozzle
 		public void DumpSettings(string fileName)
