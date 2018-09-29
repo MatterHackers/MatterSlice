@@ -122,7 +122,7 @@ namespace MatterHackers.MatterSlice
 						path.Speed,
 						config.MaxAcceleration,
 						config.MaxVelocity,
-						config.JerkVelocity);
+						config.JerkVelocity) * config.PrintTimeEstimateMultiplier;
 
 					if (PathCanAdjustSpeed(path))
 					{

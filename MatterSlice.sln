@@ -15,10 +15,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MSClipperLib", "MSClipperLi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Agg", "..\agg-sharp\agg\Agg.csproj", "{A010B27A-68F7-421E-ABE2-F81FA19166C4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Typography.OpenFont", "..\agg-sharp\Typography.OpenFont\Typography.OpenFont.csproj", "{1AC4CE0A-15AA-4264-A574-20DAC9C6BEAA}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Typography.GlyphLayout", "..\agg-sharp\Typography.GlyphLayout\Typography.GlyphLayout.csproj", "{2E8DC700-8D46-4B37-9121-B52E2DC9CD69}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VectorMath", "..\agg-sharp\VectorMath\VectorMath.csproj", "{FB8F4604-4604-4E73-8325-2CAEE3441DCB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageProcessing", "..\agg-sharp\ImageProcessing\ImageProcessing.csproj", "{C76A51AE-CB07-486B-9AF7-2A7628BC1587}"
@@ -27,7 +23,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "agg-sharp", "agg-sharp", "{
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MatterSliceLib", "MatterSliceLib\MatterSliceLib.csproj", "{1E97A60A-0B80-404E-B600-F17953DDF152}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Typography.GlyphLayout", "..\agg-sharp\Typography.GlyphLayout\Typography.GlyphLayout.shproj", "{D8861CF8-C506-472B-8A57-632BD6CA6496}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Typography.One", "..\agg-sharp\Typography.One\Typography.One.csproj", "{D666AC28-47EE-4A63-97F0-25068EC73158}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Typography.OpenFont", "..\agg-sharp\Typography.OpenFont\Typography.OpenFont.shproj", "{235A071B-8D06-40AE-A5C5-B1CE59715EE9}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\agg-sharp\Typography.OpenFont\Typography.OpenFont.projitems*{235a071b-8d06-40ae-a5c5-b1ce59715ee9}*SharedItemsImports = 13
+		..\agg-sharp\Typography.GlyphLayout\Typography.GlyphLayout.projitems*{d8861cf8-c506-472b-8a57-632bd6ca6496}*SharedItemsImports = 13
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
@@ -57,14 +63,6 @@ Global
 		{A010B27A-68F7-421E-ABE2-F81FA19166C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A010B27A-68F7-421E-ABE2-F81FA19166C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A010B27A-68F7-421E-ABE2-F81FA19166C4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1AC4CE0A-15AA-4264-A574-20DAC9C6BEAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1AC4CE0A-15AA-4264-A574-20DAC9C6BEAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1AC4CE0A-15AA-4264-A574-20DAC9C6BEAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1AC4CE0A-15AA-4264-A574-20DAC9C6BEAA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2E8DC700-8D46-4B37-9121-B52E2DC9CD69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2E8DC700-8D46-4B37-9121-B52E2DC9CD69}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2E8DC700-8D46-4B37-9121-B52E2DC9CD69}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2E8DC700-8D46-4B37-9121-B52E2DC9CD69}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FB8F4604-4604-4E73-8325-2CAEE3441DCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FB8F4604-4604-4E73-8325-2CAEE3441DCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FB8F4604-4604-4E73-8325-2CAEE3441DCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -77,16 +75,21 @@ Global
 		{1E97A60A-0B80-404E-B600-F17953DDF152}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E97A60A-0B80-404E-B600-F17953DDF152}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E97A60A-0B80-404E-B600-F17953DDF152}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D666AC28-47EE-4A63-97F0-25068EC73158}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D666AC28-47EE-4A63-97F0-25068EC73158}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D666AC28-47EE-4A63-97F0-25068EC73158}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D666AC28-47EE-4A63-97F0-25068EC73158}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A010B27A-68F7-421E-ABE2-F81FA19166C4} = {E72B2FD4-AF23-435B-B4E7-C7DDE1E7D761}
-		{1AC4CE0A-15AA-4264-A574-20DAC9C6BEAA} = {E72B2FD4-AF23-435B-B4E7-C7DDE1E7D761}
-		{2E8DC700-8D46-4B37-9121-B52E2DC9CD69} = {E72B2FD4-AF23-435B-B4E7-C7DDE1E7D761}
 		{FB8F4604-4604-4E73-8325-2CAEE3441DCB} = {E72B2FD4-AF23-435B-B4E7-C7DDE1E7D761}
 		{C76A51AE-CB07-486B-9AF7-2A7628BC1587} = {E72B2FD4-AF23-435B-B4E7-C7DDE1E7D761}
+		{D8861CF8-C506-472B-8A57-632BD6CA6496} = {E72B2FD4-AF23-435B-B4E7-C7DDE1E7D761}
+		{D666AC28-47EE-4A63-97F0-25068EC73158} = {E72B2FD4-AF23-435B-B4E7-C7DDE1E7D761}
+		{235A071B-8D06-40AE-A5C5-B1CE59715EE9} = {E72B2FD4-AF23-435B-B4E7-C7DDE1E7D761}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9705340F-54DD-4DDA-BC83-B9EE3EA6F9BD}
