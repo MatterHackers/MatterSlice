@@ -129,6 +129,76 @@ namespace MatterHackers.QuadTree
 			}
 		}
 
+		public static double Area(this Polygon polygon)
+		{
+			return Clipper.Area(polygon);
+		}
+
+		/// <summary>
+		/// Trim an amount off the end of the polygon
+		/// </summary>
+		/// <param name="inPolygon"></param>
+		/// <param name="amountToTrim"></param>
+		/// <returns></returns>
+		public static Polygon TrimEnd(this Polygon inPolygon, long amountToTrim, bool isClosed = false)
+		{
+			return inPolygon.CutToLength(inPolygon.PolygonLength(isClosed) - amountToTrim);
+		}
+
+		/// <summary>
+		/// Cut off the end of the polygon to change it to be the new length
+		/// </summary>
+		/// <param name="inPolygon"></param>
+		/// <param name="newLength"></param>
+		/// <returns></returns>
+		public static Polygon CutToLength(this Polygon inPolygon, long newLength, bool isClosed = false)
+		{ 
+			var polygon = new Polygon(inPolygon);
+
+			if (polygon.Count > 1)
+			{
+				var lastPoint = polygon[0];
+				for (int i = 1; i < polygon.Count; i++)
+				{
+					// Calculate distance between 2 points
+					var currentPoint = polygon[i];
+					long segmentLength = (currentPoint - lastPoint).Length();
+
+					// If distance exceeds clip distance:
+					//  - Sets the new last path point
+					if (segmentLength > newLength)
+					{
+						if (newLength > 50) // Don't clip segments less than 50 um. We get too much truncation error.
+						{
+							IntPoint dir = (currentPoint - lastPoint) * newLength / segmentLength;
+
+							IntPoint clippedEndpoint = lastPoint + dir;
+
+							polygon[i] = clippedEndpoint;
+							return new Polygon(polygon.GetRange(0, i + 1));
+						}
+						else
+						{
+							return new Polygon(polygon.GetRange(0, i));
+						}
+					}
+					else if (segmentLength == newLength)
+					{
+						// Pops off last point because it is at the limit distance
+						return new Polygon(polygon.GetRange(0, i + 1));
+					}
+					else
+					{
+						// Pops last point and reduces distance remaining to target
+						newLength -= segmentLength;
+						lastPoint = currentPoint;
+					}
+				}
+			}
+
+			return polygon;
+		}
+
 		public static Intersection FindIntersection(this Polygon polygon, IntPoint start, IntPoint end, QuadTree<int> edgeQuadTree = null)
 		{
 			Intersection bestIntersection = Intersection.None;

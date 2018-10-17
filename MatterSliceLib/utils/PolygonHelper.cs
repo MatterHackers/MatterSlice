@@ -30,55 +30,6 @@ namespace MatterHackers.MatterSlice
 
 	public static class PolygonHelper
 	{
-		public static double Area(this Polygon polygon)
-		{
-			return Clipper.Area(polygon);
-		}
-
-		public static Polygon Trim(this Polygon inPolygon, long amountToTrim)
-		{
-			var polygon = new Polygon(inPolygon);
-
-			if (polygon.Count > 1)
-			{
-				for (int pointIndex = polygon.Count - 1; pointIndex > 0; pointIndex--)
-				{
-					// Calculate distance between 2 points
-					long segmentLength = (polygon[pointIndex] - polygon[pointIndex - 1]).Length();
-
-					// If distance exceeds clip distance:
-					//  - Sets the new last path point
-					if (segmentLength > amountToTrim)
-					{
-						long newDistance = segmentLength - amountToTrim;
-						if (amountToTrim > 50) // Don't clip segments less than 50 um. We get too much truncation error.
-						{
-							IntPoint dir = (polygon[pointIndex] - polygon[pointIndex - 1]) * newDistance / segmentLength;
-
-							IntPoint clippedEndpoint = polygon[pointIndex - 1] + dir;
-
-							polygon[pointIndex] = clippedEndpoint;
-						}
-						break;
-					}
-					else if (segmentLength == amountToTrim)
-					{
-						// Pops off last point because it is at the limit distance
-						polygon.RemoveAt(polygon.Count - 1);
-						break;
-					}
-					else
-					{
-						// Pops last point and reduces distance remaining to target
-						amountToTrim -= segmentLength;
-						polygon.RemoveAt(polygon.Count - 1);
-					}
-				}
-			}
-
-			return polygon;
-		}
-
 		public static IntPoint CenterOfMass(this Polygon polygon)
 		{
 			IntPoint center = new IntPoint();

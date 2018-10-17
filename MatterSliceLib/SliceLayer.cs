@@ -25,6 +25,7 @@ using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+	using MatterHackers.QuadTree;
 	using Pathfinding;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;

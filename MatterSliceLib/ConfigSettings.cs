@@ -117,6 +117,9 @@ namespace MatterHackers.MatterSlice
 		public int FanSpeedMaxPercent { get; set; }
 		public int MaxFanSpeedLayerTime { get; set; }
 
+		public long CoastAtEndDistance_um => (int)(CoastAtEndDistance * 1000);
+		public double CoastAtEndDistance { get; set; }
+
 		[SettingDescription("The width of the filament being fed into the extruder, in millimeters.")]
 		public double FilamentDiameter { get; set; }
 
