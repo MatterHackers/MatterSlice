@@ -43,17 +43,61 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void ClipSegmentTests()
 		{
-			GCodePath inPath = Newtonsoft.Json.JsonConvert.DeserializeObject<GCodePath>("{\"config\":{\"closedLoop\":true,\"lineWidth_um\":500,\"gcodeComment\":\"WALL-OUTER\",\"speed\":18.9,\"spiralize\":false,\"doSeamHiding\":true,\"Name\":\"inset0Config\"},\"points\":[{\"x\":105366,\"y\":108976,\"z\":300},{\"x\":105743,\"y\":109188,\"z\":300},{\"x\":106352,\"y\":109582,\"z\":300},{\"x\":106606,\"y\":109674,\"z\":300},{\"x\":107513,\"y\":110120,\"z\":300},{\"x\":107766,\"y\":110836,\"z\":300},{\"x\":107804,\"y\":110986,\"z\":300},{\"x\":107806,\"y\":111124,\"z\":300},{\"x\":106720,\"y\":116034,\"z\":300},{\"x\":106669,\"y\":116205,\"z\":300},{\"x\":106345,\"y\":116505,\"z\":300},{\"x\":103152,\"y\":117619,\"z\":300},{\"x\":102975,\"y\":117661,\"z\":300},{\"x\":102749,\"y\":117546,\"z\":300},{\"x\":101132,\"y\":116186,\"z\":300},{\"x\":100997,\"y\":115990,\"z\":300},{\"x\":100845,\"y\":115704,\"z\":300},{\"x\":100673,\"y\":114777,\"z\":300},{\"x\":100959,\"y\":109833,\"z\":300},{\"x\":101785,\"y\":109149,\"z\":300},{\"x\":101836,\"y\":109129,\"z\":300},{\"x\":101976,\"y\":109137,\"z\":300},{\"x\":102415,\"y\":109277,\"z\":300},{\"x\":102712,\"y\":108910,\"z\":300},{\"x\":103239,\"y\":108477,\"z\":300},{\"x\":103355,\"y\":108453,\"z\":300},{\"x\":103710,\"y\":108924,\"z\":300},{\"x\":104116,\"y\":108883,\"z\":300},{\"x\":104330,\"y\":108371,\"z\":300},{\"x\":104867,\"y\":108245,\"z\":300},{\"x\":104888,\"y\":108273,\"z\":300},{\"x\":104980,\"y\":109145,\"z\":300}]}");
-
-			GCodePath controlPath = Newtonsoft.Json.JsonConvert.DeserializeObject<GCodePath>("{\"config\":{\"closedLoop\":true,\"lineWidth_um\":500,\"gcodeComment\":\"WALL-OUTER\",\"speed\":18.9,\"spiralize\":false,\"doSeamHiding\":true,\"Name\":\"inset0Config\"},\"points\":[{\"x\":105366,\"y\":108976,\"z\":300},{\"x\":105743,\"y\":109188,\"z\":300},{\"x\":106352,\"y\":109582,\"z\":300},{\"x\":106606,\"y\":109674,\"z\":300},{\"x\":107513,\"y\":110120,\"z\":300},{\"x\":107766,\"y\":110836,\"z\":300},{\"x\":107804,\"y\":110986,\"z\":300},{\"x\":107806,\"y\":111124,\"z\":300},{\"x\":106720,\"y\":116034,\"z\":300},{\"x\":106669,\"y\":116205,\"z\":300},{\"x\":106345,\"y\":116505,\"z\":300},{\"x\":103152,\"y\":117619,\"z\":300},{\"x\":102975,\"y\":117661,\"z\":300},{\"x\":102749,\"y\":117546,\"z\":300},{\"x\":101132,\"y\":116186,\"z\":300},{\"x\":100997,\"y\":115990,\"z\":300},{\"x\":100845,\"y\":115704,\"z\":300},{\"x\":100673,\"y\":114777,\"z\":300},{\"x\":100959,\"y\":109833,\"z\":300},{\"x\":101785,\"y\":109149,\"z\":300},{\"x\":101836,\"y\":109129,\"z\":300},{\"x\":101976,\"y\":109137,\"z\":300},{\"x\":102415,\"y\":109277,\"z\":300},{\"x\":102712,\"y\":108910,\"z\":300},{\"x\":103239,\"y\":108477,\"z\":300},{\"x\":103355,\"y\":108453,\"z\":300},{\"x\":103710,\"y\":108924,\"z\":300},{\"x\":104116,\"y\":108883,\"z\":300},{\"x\":104330,\"y\":108371,\"z\":300},{\"x\":104867,\"y\":108245,\"z\":300},{\"x\":104888,\"y\":108273,\"z\":300},{\"x\":104927,\"y\":108647,\"z\":300}]}");
-
-			long targetDistance = (long)(inPath.Config.lineWidth_um);
-			GCodePath testPath = LayerGCodePlanner.TrimGCodePath(inPath, targetDistance);
-
-			Assert.IsTrue(controlPath.Polygon.Count == testPath.Polygon.Count);
-			for (int i = 0; i < controlPath.Polygon.Count; i++)
 			{
-				Assert.IsTrue(controlPath.Polygon[i] == testPath.Polygon[i]);
+				GCodePath inPath = Newtonsoft.Json.JsonConvert.DeserializeObject<GCodePath>("{\"config\":{\"closedLoop\":true,\"lineWidth_um\":500,\"gcodeComment\":\"WALL-OUTER\",\"speed\":18.9,\"spiralize\":false,\"doSeamHiding\":true,\"Name\":\"inset0Config\"},\"points\":[{\"x\":105366,\"y\":108976,\"z\":300},{\"x\":105743,\"y\":109188,\"z\":300},{\"x\":106352,\"y\":109582,\"z\":300},{\"x\":106606,\"y\":109674,\"z\":300},{\"x\":107513,\"y\":110120,\"z\":300},{\"x\":107766,\"y\":110836,\"z\":300},{\"x\":107804,\"y\":110986,\"z\":300},{\"x\":107806,\"y\":111124,\"z\":300},{\"x\":106720,\"y\":116034,\"z\":300},{\"x\":106669,\"y\":116205,\"z\":300},{\"x\":106345,\"y\":116505,\"z\":300},{\"x\":103152,\"y\":117619,\"z\":300},{\"x\":102975,\"y\":117661,\"z\":300},{\"x\":102749,\"y\":117546,\"z\":300},{\"x\":101132,\"y\":116186,\"z\":300},{\"x\":100997,\"y\":115990,\"z\":300},{\"x\":100845,\"y\":115704,\"z\":300},{\"x\":100673,\"y\":114777,\"z\":300},{\"x\":100959,\"y\":109833,\"z\":300},{\"x\":101785,\"y\":109149,\"z\":300},{\"x\":101836,\"y\":109129,\"z\":300},{\"x\":101976,\"y\":109137,\"z\":300},{\"x\":102415,\"y\":109277,\"z\":300},{\"x\":102712,\"y\":108910,\"z\":300},{\"x\":103239,\"y\":108477,\"z\":300},{\"x\":103355,\"y\":108453,\"z\":300},{\"x\":103710,\"y\":108924,\"z\":300},{\"x\":104116,\"y\":108883,\"z\":300},{\"x\":104330,\"y\":108371,\"z\":300},{\"x\":104867,\"y\":108245,\"z\":300},{\"x\":104888,\"y\":108273,\"z\":300},{\"x\":104980,\"y\":109145,\"z\":300}]}");
+
+				GCodePath controlPath = Newtonsoft.Json.JsonConvert.DeserializeObject<GCodePath>("{\"config\":{\"closedLoop\":true,\"lineWidth_um\":500,\"gcodeComment\":\"WALL-OUTER\",\"speed\":18.9,\"spiralize\":false,\"doSeamHiding\":true,\"Name\":\"inset0Config\"},\"points\":[{\"x\":105366,\"y\":108976,\"z\":300},{\"x\":105743,\"y\":109188,\"z\":300},{\"x\":106352,\"y\":109582,\"z\":300},{\"x\":106606,\"y\":109674,\"z\":300},{\"x\":107513,\"y\":110120,\"z\":300},{\"x\":107766,\"y\":110836,\"z\":300},{\"x\":107804,\"y\":110986,\"z\":300},{\"x\":107806,\"y\":111124,\"z\":300},{\"x\":106720,\"y\":116034,\"z\":300},{\"x\":106669,\"y\":116205,\"z\":300},{\"x\":106345,\"y\":116505,\"z\":300},{\"x\":103152,\"y\":117619,\"z\":300},{\"x\":102975,\"y\":117661,\"z\":300},{\"x\":102749,\"y\":117546,\"z\":300},{\"x\":101132,\"y\":116186,\"z\":300},{\"x\":100997,\"y\":115990,\"z\":300},{\"x\":100845,\"y\":115704,\"z\":300},{\"x\":100673,\"y\":114777,\"z\":300},{\"x\":100959,\"y\":109833,\"z\":300},{\"x\":101785,\"y\":109149,\"z\":300},{\"x\":101836,\"y\":109129,\"z\":300},{\"x\":101976,\"y\":109137,\"z\":300},{\"x\":102415,\"y\":109277,\"z\":300},{\"x\":102712,\"y\":108910,\"z\":300},{\"x\":103239,\"y\":108477,\"z\":300},{\"x\":103355,\"y\":108453,\"z\":300},{\"x\":103710,\"y\":108924,\"z\":300},{\"x\":104116,\"y\":108883,\"z\":300},{\"x\":104330,\"y\":108371,\"z\":300},{\"x\":104867,\"y\":108245,\"z\":300},{\"x\":104888,\"y\":108273,\"z\":300},{\"x\":104927,\"y\":108647,\"z\":300}]}");
+
+				long targetDistance = (long)(inPath.Config.lineWidth_um);
+				GCodePath testPath = LayerGCodePlanner.TrimGCodePathEnd(inPath, targetDistance);
+
+				Assert.IsTrue(controlPath.Polygon.Count == testPath.Polygon.Count);
+				for (int i = 0; i < controlPath.Polygon.Count; i++)
+				{
+					Assert.IsTrue(controlPath.Polygon[i] == testPath.Polygon[i]);
+				}
+			}
+
+			{
+				var path = new Polygon(new IntPoint[] { new IntPoint(0, 0), new IntPoint(0, 10000) });
+				var trimPath = path.CutToLength(7000);
+				Assert.AreEqual(2, trimPath.Count);
+				Assert.IsTrue(trimPath[1] == new IntPoint(0, 7000));
+			}
+
+			{
+				var path = new Polygon(new IntPoint[] { new IntPoint(0, 0), new IntPoint(0, 10000) });
+				var trimPath = path.TrimEnd(3000);
+				Assert.AreEqual(2, trimPath.Count);
+				Assert.IsTrue(trimPath[1] == new IntPoint(0, 7000));
+			}
+
+			{
+				var path = new Polygon(new IntPoint[] { new IntPoint(0, 0), new IntPoint(0, 5000), new IntPoint(0, 10000) });
+				var trimPath = path.TrimEnd(3000);
+				Assert.AreEqual(3, trimPath.Count);
+				Assert.IsTrue(trimPath[1] == new IntPoint(0, 5000));
+				Assert.IsTrue(trimPath[2] == new IntPoint(0, 7000));
+			}
+
+			{
+				var path = new Polygon(new IntPoint[] { new IntPoint(0, 0), new IntPoint(0, 5000), new IntPoint(0, 10000) });
+				var trimPath = path.TrimEnd(7000);
+				Assert.AreEqual(2, trimPath.Count);
+				Assert.IsTrue(trimPath[1] == new IntPoint(0, 3000));
+			}
+
+			{
+				var path = new Polygon(new IntPoint[] { new IntPoint(0, 0), new IntPoint(0, 10000) });
+				var trimPath = path.CutToLength(0);
+				Assert.AreEqual(1, trimPath.Count);
+			}
+
+			{
+				var path = new Polygon(new IntPoint[] { new IntPoint(0, 0), new IntPoint(0, 10000) });
+				var trimPath = path.CutToLength(20000);
+				Assert.AreEqual(2, trimPath.Count);
+				Assert.IsTrue(trimPath[1] == new IntPoint(0, 10000));
 			}
 		}
 

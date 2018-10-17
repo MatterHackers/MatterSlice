@@ -96,11 +96,11 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static GCodePath TrimGCodePath(GCodePath inPath, long targetDistance)
+		public static GCodePath TrimGCodePathEnd(GCodePath inPath, long targetDistance)
 		{
 			GCodePath path = new GCodePath(inPath);
 			// get a new trimmed polygon
-			path.Polygon = path.Polygon.Trim(targetDistance);
+			path.Polygon = path.Polygon.TrimEnd(targetDistance);
 
 			return path;
 		}
@@ -566,15 +566,18 @@ namespace MatterHackers.MatterSlice
 					var loopStart = gcodeExport.GetPosition();
 					int pointCount = path.Polygon.Count;
 
-					bool outerPerimeter = (path.Config.gcodeComment == "WALL-OUTER" || path.Config.gcodeComment == "WALL-INNER");
+					bool outerPerimeter = path.Config.gcodeComment == "WALL-OUTER";
+					bool innerPerimeter = path.Config.gcodeComment == "WALL-INNER";
+					bool perimeter = outerPerimeter || innerPerimeter;
+
 					bool completeLoop = (pointCount > 0 && path.Polygon[pointCount - 1] == loopStart);
-					bool trimmed = outerPerimeter && completeLoop && perimeterStartEndOverlapRatio < 1;
+					bool trimmed = perimeter && completeLoop && perimeterStartEndOverlapRatio < 1;
 
 					// This is test code to remove double drawn small perimeter lines.
 					if (trimmed)
 					{
 						long targetDistance = (long)(path.Config.lineWidth_um * (1 - perimeterStartEndOverlapRatio));
-						path = TrimGCodePath(path, targetDistance);
+						path = TrimGCodePathEnd(path, targetDistance);
 						// update the point count after trimming
 						pointCount = path.Polygon.Count;
 					}
@@ -595,11 +598,21 @@ namespace MatterHackers.MatterSlice
 						// go back to the start of the loop
 						gcodeExport.WriteMove(loopStart, path.Speed, 0);
 
-						var length = path.Polygon.PolygonLength();
-						// retract while moving on down the perimeter
-						//gcodeExport.WriteRetraction
-						// then drive down it just a bit more to make sure we have a clean overlap
-						//var extraMove = TrimGCodePath(path, perimeterStartEndOverlapRatio);
+						var length = path.Polygon.PolygonLength(false);
+						if (outerPerimeter
+							&& config.CoastAtEndDistance_um > 0
+							&& length > config.CoastAtEndDistance_um)
+						{
+							//gcodeExport.WriteRetraction
+							var wipePoly = new Polygon(new IntPoint[] { loopStart });
+							wipePoly.AddRange(path.Polygon);
+							// then drive down it just a bit more to make sure we have a clean overlap
+							var extraMove = wipePoly.CutToLength(3000);
+							for (int i = 0; i < extraMove.Count; i++)
+							{
+								gcodeExport.WriteMove(extraMove[i], path.Speed, 0);
+							}
+						}
 					}
 				}
 			}
