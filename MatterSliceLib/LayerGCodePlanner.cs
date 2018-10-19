@@ -607,7 +607,7 @@ namespace MatterHackers.MatterSlice
 							var wipePoly = new Polygon(new IntPoint[] { loopStart });
 							wipePoly.AddRange(path.Polygon);
 							// then drive down it just a bit more to make sure we have a clean overlap
-							var extraMove = wipePoly.CutToLength(3000);
+							var extraMove = wipePoly.CutToLength(config.CoastAtEndDistance_um);
 							for (int i = 0; i < extraMove.Count; i++)
 							{
 								gcodeExport.WriteMove(extraMove[i], path.Speed, 0);
