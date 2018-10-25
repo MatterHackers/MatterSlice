@@ -199,38 +199,45 @@ namespace MatterHackers.MatterSlice
 			return false;
 		}
 
-		public IntPoint maxXYZ_um()
+		public IntPoint MaxXYZ_um()
 		{
 			if (SimpleMeshes.Count < 1)
 			{
 				return new IntPoint(0, 0, 0);
 			}
 
-			IntPoint maxXYZ = SimpleMeshes[0].maxXYZ_um();
-			for (int meshIndex = 1; meshIndex < SimpleMeshes.Count; meshIndex++)
+			IntPoint maxXYZ = new IntPoint(long.MinValue, long.MinValue, long.MinValue);
+			foreach (var mesh in SimpleMeshes)
 			{
-				IntPoint meshMaxXYZ = SimpleMeshes[meshIndex].maxXYZ_um();
-				maxXYZ.X = Math.Max(maxXYZ.X, meshMaxXYZ.X);
-				maxXYZ.Y = Math.Max(maxXYZ.Y, meshMaxXYZ.Y);
-				maxXYZ.Z = Math.Max(maxXYZ.Z, meshMaxXYZ.Z);
+				if (mesh.faceTriangles.Count > 0)
+				{
+					IntPoint meshMaxXYZ = mesh.maxXYZ_um();
+					maxXYZ.X = Math.Max(maxXYZ.X, meshMaxXYZ.X);
+					maxXYZ.Y = Math.Max(maxXYZ.Y, meshMaxXYZ.Y);
+					maxXYZ.Z = Math.Max(maxXYZ.Z, meshMaxXYZ.Z);
+				}
 			}
+
 			return maxXYZ;
 		}
 
-		public IntPoint minXYZ_um()
+		public IntPoint MinXYZ_um()
 		{
 			if (SimpleMeshes.Count < 1)
 			{
 				return new IntPoint(0, 0, 0);
 			}
 
-			IntPoint minXYZ = SimpleMeshes[0].minXYZ_um();
-			for (int meshIndex = 1; meshIndex < SimpleMeshes.Count; meshIndex++)
+			IntPoint minXYZ = new IntPoint(long.MaxValue, long.MaxValue, long.MaxValue);
+			foreach(var mesh in SimpleMeshes)
 			{
-				IntPoint meshMinXYZ = SimpleMeshes[meshIndex].minXYZ_um();
-				minXYZ.X = Math.Min(minXYZ.X, meshMinXYZ.X);
-				minXYZ.Y = Math.Min(minXYZ.Y, meshMinXYZ.Y);
-				minXYZ.Z = Math.Min(minXYZ.Z, meshMinXYZ.Z);
+				if (mesh.faceTriangles.Count > 0)
+				{
+					IntPoint meshMinXYZ = mesh.minXYZ_um();
+					minXYZ.X = Math.Min(minXYZ.X, meshMinXYZ.X);
+					minXYZ.Y = Math.Min(minXYZ.Y, meshMinXYZ.Y);
+					minXYZ.Z = Math.Min(minXYZ.Z, meshMinXYZ.Z);
+				}
 			}
 			return minXYZ;
 		}
@@ -288,9 +295,12 @@ namespace MatterHackers.MatterSlice
 			// Detect and skip non-visible mesh
 			var bounds = vol.maxXYZ_um() - vol.minXYZ_um();
 
-			if (vol.faceTriangles.Count > 0
-				&& bounds.X > 0)
+			if (vol.faceTriangles.Count > 0)
 			{
+				if(bounds.X == 0)
+				{
+					vol.faceTriangles = new List<SimpleFace>();
+				}
 				simpleModel.SimpleMeshes.Add(vol);
 				return true;
 			}

@@ -204,8 +204,8 @@ namespace MatterHackers.MatterSlice
 
 		public void SetSize(SimpleMeshCollection simpleMeshCollection)
 		{
-			minXYZ_um = simpleMeshCollection.minXYZ_um();
-			maxXYZ_um = simpleMeshCollection.maxXYZ_um();
+			minXYZ_um = simpleMeshCollection.MinXYZ_um();
+			maxXYZ_um = simpleMeshCollection.MaxXYZ_um();
 
 			size_um = maxXYZ_um - minXYZ_um;
 		}

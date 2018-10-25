@@ -636,14 +636,6 @@ namespace MatterHackers.MatterSlice
 
 		private void ChangeExtruderIfRequired(LayerDataStorage slicingData, int layerIndex, LayerGCodePlanner layerGcodePlanner, int extruderIndex)
 		{
-			// We only create the skirt if we are on layer 0.
-			if (extruderIndex == 0 
-				&& layerIndex == 0 
-				&& !config.ShouldGenerateRaft())
-			{
-				QueueSkirtToGCode(slicingData, layerGcodePlanner, layerIndex, extruderIndex);
-			}
-
 			bool extruderUsedForSupport = config.GenerateSupport
 				&& ((slicingData.support.SparseSupportOutlines[layerIndex].Count > 0 && config.SupportExtruder == extruderIndex)
 					|| (slicingData.support.InterfaceLayers[layerIndex].Count > 0 && config.SupportInterfaceExtruder == extruderIndex));
@@ -681,12 +673,7 @@ namespace MatterHackers.MatterSlice
 					// then change extruders
 					layerGcodePlanner.SetExtruder(extruderIndex);
 
-					if (extruderIndex > 0
-						&& layerIndex == 0
-						&& !config.ShouldGenerateRaft())
-					{
-						QueueSkirtToGCode(slicingData, layerGcodePlanner, layerIndex, extruderIndex);
-					}
+					DoSkirtAndBrim(slicingData, layerIndex, layerGcodePlanner, extruderIndex, extruderUsedForSupport);
 
 					// move to the wipe tower position with consideration for the new tool/nozzle offset
 					layerGcodePlanner.QueueTravel(config.WipeCenter_um, true);
@@ -696,10 +683,37 @@ namespace MatterHackers.MatterSlice
 					// Make sure we wipe the old extruder on the wipe tower.
 					layerGcodePlanner.QueueTravel(config.WipeCenter_um - config.ExtruderOffsets[prevExtruder]);
 				}
-				else
+				else if(extruderIndex < slicingData.Extruders.Count)
 				{
 					// then change extruders
 					layerGcodePlanner.SetExtruder(extruderIndex);
+
+					DoSkirtAndBrim(slicingData, layerIndex, layerGcodePlanner, extruderIndex, extruderUsedForSupport);
+				}
+			}
+			else 
+			{
+				DoSkirtAndBrim(slicingData, layerIndex, layerGcodePlanner, extruderIndex, extruderUsedForSupport);
+			}
+		}
+
+		bool havePrintedBrims = false;
+		private void DoSkirtAndBrim(LayerDataStorage slicingData, int layerIndex, LayerGCodePlanner layerGcodePlanner, int extruderIndex, bool extruderUsedForSupport)
+		{
+			// if we are on layer 0 we still need to print the skirt and brim
+			if (layerIndex == 0
+				&& (extruderIndex >= slicingData.Extruders.Count
+					|| slicingData.Extruders[extruderIndex].Used
+					|| extruderUsedForSupport))
+			{
+				QueueSkirtToGCode(slicingData, layerGcodePlanner, layerIndex, extruderIndex);
+
+				// we don't print a brim if we have a raft
+				if (!havePrintedBrims
+					&& !config.ShouldGenerateRaft())
+				{
+					QueueBrimsToGCode(slicingData, layerGcodePlanner, layerIndex, extruderIndex);
+					havePrintedBrims = true;
 				}
 			}
 		}
@@ -792,6 +806,17 @@ namespace MatterHackers.MatterSlice
 			for (int i = loopsPerExtuder - 1; i >= 0; i--)
 			{
 				gcodeLayer.QueuePolygonByOptimizer(slicingData.Skirt[loopIndex + i], null, skirtConfig, layerIndex);
+			}
+		}
+
+		private void QueueBrimsToGCode(LayerDataStorage slicingData, LayerGCodePlanner gcodeLayer, int layerIndex, int extruderIndex)
+		{
+			foreach (var brim in slicingData.Brims)
+			{
+				for (int i = brim.Count - 1; i >= 0; i--)
+				{
+					gcodeLayer.QueuePolygonByOptimizer(brim[i], null, skirtConfig, layerIndex);
+				}
 			}
 		}
 
@@ -1357,8 +1382,7 @@ namespace MatterHackers.MatterSlice
 			// gcodeLayer.SetPathFinder(null);
 		}
 
-		private enum SupportWriteType
-		{ UnsupportedAreas, SupportedAreas, SupportedAreasCheckOnly };
+		private enum SupportWriteType { UnsupportedAreas, SupportedAreas, SupportedAreasCheckOnly };
 
 		/// <summary>
 		/// Return true if any polygons are actually output
