@@ -31,6 +31,22 @@ namespace MatterHackers.MatterSlice
 
 		private static readonly double cleanDistance_um = 10;
 
+		public bool Used
+		{
+			get
+			{
+				foreach (var layer in Layers)
+				{
+					if (layer.Islands.Count > 0)
+					{
+						return true;
+					}
+				}
+
+				return false;
+			}
+		}
+
 		public ExtruderLayers()
 		{
 		}

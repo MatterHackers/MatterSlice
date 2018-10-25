@@ -34,7 +34,10 @@ namespace MatterHackers.MatterSlice
 		public List<ExtruderLayers> Extruders = new List<ExtruderLayers>();
 		public IntPoint modelSize, modelMin, modelMax;
 		public Polygons raftOutline = new Polygons();
+
 		public Polygons Skirt { get; private set; } = new Polygons();
+		public List<Polygons> Brims { get; private set; } = new List<Polygons>();
+
 		public NewSupport support = null;
 		public List<Polygons> wipeShield = new List<Polygons>();
 		public Polygons wipeTower = new Polygons();
@@ -444,26 +447,27 @@ namespace MatterHackers.MatterSlice
 						unionedIslandOutlines = unionedIslandOutlines.CreateUnion(storage.support.GetBedOutlines());
 					}
 
-					Polygons brimLoops = new Polygons();
-
 					// Loop over the requested brimCount creating and unioning a new perimeter for each island
-					for (int brimIndex = 0; brimIndex < brimCount; brimIndex++)
+					List<Polygons> brimIslands = unionedIslandOutlines.ProcessIntoSeparateIslands();
+
+					foreach (var brimIsland in brimIslands)
 					{
-						int offsetDistance = extrusionWidth_um * brimIndex + extrusionWidth_um / 2;
+						Polygons brimLoops = new Polygons();
+						for (int brimIndex = 0; brimIndex < brimCount; brimIndex++)
+						{
+							int offsetDistance = extrusionWidth_um * brimIndex + extrusionWidth_um / 2;
 
-						// Extend the polygons to account for the brim (ensures convex hull takes this data into account)
-						brimLoops.AddAll(unionedIslandOutlines.Offset(offsetDistance));
+							// Extend the polygons to account for the brim (ensures convex hull takes this data into account)
+							brimLoops.AddAll(brimIsland.Offset(offsetDistance));
+						}
+
+						storage.Brims.Add(brimLoops);
+						// and extend the bonuds of the skirt polygons
+						skirtPolygons = skirtPolygons.CreateUnion(brimLoops);
 					}
-
-					// TODO: This is a quick hack, reuse the skirt data to stuff in the brim. Good enough from proof of concept
-					storage.Skirt.AddAll(brimLoops);
-
-					skirtPolygons = skirtPolygons.CreateUnion(brimLoops);
 				}
-				else
-				{
-					skirtPolygons = skirtPolygons.CreateUnion(allOutlines);
-				}
+
+				skirtPolygons = skirtPolygons.CreateUnion(allOutlines);
 
 				if (storage.support != null)
 				{
