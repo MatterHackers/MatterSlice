@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
 using System.Collections.Generic;
+using MatterHackers.Pathfinding;
 using MSClipperLib;
 
 // TODO:
@@ -270,10 +271,18 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
+				PathFinder pathFinder = null;
+				if (config.AvoidCrossingPerimeters)
+				{
+					pathFinder = new PathFinder(infillOutline, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters);
+				}
+				var oldPathFinder = gcodeLayer.PathFinder;
+				gcodeLayer.PathFinder = pathFinder;
 				if (gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, null, supportNormalConfig, 0))
 				{
 					outputPaths |= true;
 				}
+				gcodeLayer.PathFinder = oldPathFinder;
 			}
 
 			return outputPaths;
