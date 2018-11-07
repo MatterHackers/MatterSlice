@@ -189,9 +189,6 @@ namespace MatterHackers.MatterSlice
 					outlineForExtruder = outlineForExtruder.Offset(-insetPerLoop);
 				}
 
-				fillPolygons.Reverse();
-
-
 				var oldPathFinder = gcodeLayer.PathFinder;
 				gcodeLayer.PathFinder = null;
 				gcodeLayer.QueuePolygons(fillPolygons, fillConfig);
@@ -206,7 +203,7 @@ namespace MatterHackers.MatterSlice
 					if (!extrudersThatHaveBeenPrimed[extruderIndex])
 					{
 						// write the loops for this extruder, but don't change to it. We are just filling the prime tower.
-						PrimeOnWipeTower(extruderIndex, 0, gcodeLayer, fillConfig, config, false);
+						PrimeOnWipeTower(extruderIndex, layerIndex, gcodeLayer, fillConfig, config, false);
 					}
 
 					// clear the history of printer extruders for the next layer
@@ -453,12 +450,12 @@ namespace MatterHackers.MatterSlice
 			}
 			else
 			{
-				Polygons allOutlines = hasWipeTower ? new Polygons(storage.wipeTower) : new Polygons();
+				Polygons allOutlines = hasWipeTower ? new Polygons(storage.wipeTower.Offset(-extrusionWidth_um / 2)) : new Polygons();
 
 				if (storage.wipeShield.Count > 0
 					&& storage.wipeShield[0].Count > 0)
 				{
-					allOutlines = allOutlines.CreateUnion(storage.wipeShield[0]);
+					allOutlines = allOutlines.CreateUnion(storage.wipeShield[0].Offset(-extrusionWidth_um / 2));
 				}
 
 				// Loop over every extruder
@@ -487,35 +484,38 @@ namespace MatterHackers.MatterSlice
 
 				if (brimCount > 0)
 				{
-					Polygons unionedIslandOutlines = new Polygons();
+					Polygons brimIslandOutlines = new Polygons();
 
 					// Grow each island by the current brim distance
 					// Union the island brims
-					unionedIslandOutlines = unionedIslandOutlines.CreateUnion(allOutlines);
+					brimIslandOutlines = brimIslandOutlines.CreateUnion(allOutlines);
 
 					if (storage.support != null)
 					{
-						unionedIslandOutlines = unionedIslandOutlines.CreateUnion(storage.support.GetBedOutlines());
+						brimIslandOutlines = brimIslandOutlines.CreateUnion(storage.support.GetBedOutlines());
 					}
 
+					brimIslandOutlines = brimIslandOutlines.Offset(extrusionWidth_um * (brimCount - 1));
+
 					// Loop over the requested brimCount creating and unioning a new perimeter for each island
-					List<Polygons> brimIslands = unionedIslandOutlines.ProcessIntoSeparateIslands();
+					List<Polygons> brimIslands = brimIslandOutlines.ProcessIntoSeparateIslands();
 
 					foreach (var brimIsland in brimIslands)
 					{
 						Polygons brimLoops = new Polygons();
-						for (int brimIndex = 0; brimIndex < brimCount; brimIndex++)
+						for (int brimIndex = brimCount - 1; brimIndex >= 0; brimIndex--)
 						{
-							int offsetDistance = extrusionWidth_um * brimIndex + extrusionWidth_um / 2;
+							int offsetDistance = extrusionWidth_um * brimIndex;
 
 							// Extend the polygons to account for the brim (ensures convex hull takes this data into account)
-							brimLoops.AddAll(brimIsland.Offset(offsetDistance));
+							brimLoops.AddAll(brimIsland.Offset(-offsetDistance + extrusionWidth_um / 2));
 						}
 
 						storage.Brims.Add(brimLoops);
-						// and extend the bonuds of the skirt polygons
-						skirtPolygons = skirtPolygons.CreateUnion(brimLoops);
 					}
+
+					// and extend the bonuds of the skirt polygons
+					skirtPolygons = skirtPolygons.CreateUnion(brimIslandOutlines);
 				}
 
 				skirtPolygons = skirtPolygons.CreateUnion(allOutlines);
