@@ -153,18 +153,27 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			// print all of the extruder loops that have not already been printed
-			int extruderCount = config.GenerateSupport ? config.ExtruderCount * 2 : config.ExtruderCount;
-			for (int extruderIndex = 0; extruderIndex < extruderCount; extruderIndex++)
+			// TODO: if layer index == 0 do all the loops from the outside in in order (no lines should be in the wipe tower)
+			// if(layerIndex == 0)
+			if(false)
 			{
-				if (!extrudersThatHaveBeenPrimed[extruderIndex])
-				{
-					// write the loops for this extruder, but don't change to it. We are just filling the prime tower.
-					PrimeOnWipeTower(extruderIndex, 0, gcodeLayer, fillConfig, config, false);
-				}
 
-				// clear the history of printer extruders for the next layer
-				extrudersThatHaveBeenPrimed[extruderIndex] = false;
+			}
+			else
+			{
+				// print all of the extruder loops that have not already been printed
+				int extruderCount = config.GenerateSupport ? config.ExtruderCount * 2 : config.ExtruderCount;
+				for (int extruderIndex = 0; extruderIndex < extruderCount; extruderIndex++)
+				{
+					if (!extrudersThatHaveBeenPrimed[extruderIndex])
+					{
+						// write the loops for this extruder, but don't change to it. We are just filling the prime tower.
+						PrimeOnWipeTower(extruderIndex, 0, gcodeLayer, fillConfig, config, false);
+					}
+
+					// clear the history of printer extruders for the next layer
+					extrudersThatHaveBeenPrimed[extruderIndex] = false;
+				}
 			}
 		}
 
@@ -285,8 +294,10 @@ namespace MatterHackers.MatterSlice
 
 			int extruderIndex = airGapped ? config.ExtruderCount + extruderIndexIn : extruderIndexIn;
 
-			GenerateWipeTowerInfill(extruderIndex, this.wipeTower, fillPolygons, fillConfig.lineWidth_um, config);
+			var oldPathFinder = gcodeLayer.PathFinder;
+			gcodeLayer.PathFinder = null; GenerateWipeTowerInfill(extruderIndex, this.wipeTower, fillPolygons, fillConfig.lineWidth_um, config);
 			gcodeLayer.QueuePolygons(fillPolygons, fillConfig);
+			gcodeLayer.PathFinder = oldPathFinder;
 
 			extrudersThatHaveBeenPrimed[extruderIndex] = true;
 		}
