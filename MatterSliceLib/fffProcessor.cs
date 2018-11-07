@@ -525,7 +525,7 @@ namespace MatterHackers.MatterSlice
 
 				for (int extruderIndex = 0; extruderIndex < config.ExtruderCount; extruderIndex++)
 				{
-					ChangeExtruderIfRequired(slicingData, layerIndex, layerPlanner, extruderIndex);
+					ChangeExtruderIfRequired(slicingData, layerIndex, layerPlanner, extruderIndex, false);
 
 					// create the insets required by this extruder layer
 					CreateRequiredInsets(config, slicingData, layerIndex, extruderIndex);
@@ -634,7 +634,11 @@ namespace MatterHackers.MatterSlice
 			maxObjectHeight = Math.Max(maxObjectHeight, slicingData.modelSize.Z);
 		}
 
-		private void ChangeExtruderIfRequired(LayerDataStorage slicingData, int layerIndex, LayerGCodePlanner layerGcodePlanner, int extruderIndex)
+		private void ChangeExtruderIfRequired(LayerDataStorage slicingData, 
+			int layerIndex, 
+			LayerGCodePlanner layerGcodePlanner, 
+			int extruderIndex,
+			bool airGapped)
 		{
 			bool extruderUsedForSupport = config.GenerateSupport
 				&& ((slicingData.support.SparseSupportOutlines[layerIndex].Count > 0 && config.SupportExtruder == extruderIndex)
@@ -678,7 +682,7 @@ namespace MatterHackers.MatterSlice
 					// move to the wipe tower position with consideration for the new tool/nozzle offset
 					layerGcodePlanner.QueueTravel(config.WipeCenter_um, true);
 
-					slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config, false);
+					slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config, airGapped);
 
 					// Make sure we wipe the old extruder on the wipe tower.
 					layerGcodePlanner.QueueTravel(config.WipeCenter_um - config.ExtruderOffsets[prevExtruder]);
@@ -1294,7 +1298,7 @@ namespace MatterHackers.MatterSlice
 				&& !config.ContinuousSpiralOuterPerimeter
 				&& layerIndex > 0)
 			{
-				ChangeExtruderIfRequired(slicingData, layerIndex, layerGcodePlanner, extruderIndex);
+				ChangeExtruderIfRequired(slicingData, layerIndex, layerGcodePlanner, extruderIndex, true);
 
 				SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 
