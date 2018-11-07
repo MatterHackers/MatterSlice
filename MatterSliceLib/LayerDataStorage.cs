@@ -25,6 +25,7 @@ using MSClipperLib;
 namespace MatterHackers.MatterSlice
 {
 	using System;
+	using System.Diagnostics;
 	using System.IO;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
@@ -145,6 +146,19 @@ namespace MatterHackers.MatterSlice
 			streamToWriteTo.Close();
 		}
 
+		[Conditional("DEBUG")]
+		private void CheckNoExtruderPrimed(ConfigSettings config)
+		{
+			int extruderCount = config.GenerateSupport ? config.ExtruderCount * 2 : config.ExtruderCount;
+			for (int extruderIndex = 0; extruderIndex < extruderCount; extruderIndex++)
+			{
+				if (extrudersThatHaveBeenPrimed[extruderIndex])
+				{
+					throw new Exception("No extruders should be primed");
+				}
+			}
+		}
+
 		public void EnsureWipeTowerIsSolid(int layerIndex, LayerGCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
 		{
 			if (layerIndex >= LastLayerWithChange(config)
@@ -154,10 +168,34 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// TODO: if layer index == 0 do all the loops from the outside in in order (no lines should be in the wipe tower)
-			// if(layerIndex == 0)
-			if(false)
+			if(layerIndex == 0)
 			{
+				CheckNoExtruderPrimed(config);
 
+				long insetPerLoop = fillConfig.lineWidth_um;
+				int extruderCount = config.GenerateSupport ? config.ExtruderCount * 2 : config.ExtruderCount;
+
+				Polygons outlineForExtruder = this.wipeTower.Offset(-insetPerLoop);
+
+				Polygons fillPolygons = new Polygons();
+				while (outlineForExtruder.Count > 0)
+				{
+					for (int polygonIndex = 0; polygonIndex < outlineForExtruder.Count; polygonIndex++)
+					{
+						Polygon newInset = outlineForExtruder[polygonIndex];
+						newInset.Add(newInset[0]); // add in the last move so it is a solid polygon
+						fillPolygons.Add(newInset);
+					}
+					outlineForExtruder = outlineForExtruder.Offset(-insetPerLoop);
+				}
+
+				fillPolygons.Reverse();
+
+
+				var oldPathFinder = gcodeLayer.PathFinder;
+				gcodeLayer.PathFinder = null;
+				gcodeLayer.QueuePolygons(fillPolygons, fillConfig);
+				gcodeLayer.PathFinder = oldPathFinder;
 			}
 			else
 			{
@@ -284,7 +322,8 @@ namespace MatterHackers.MatterSlice
 		public void PrimeOnWipeTower(int extruderIndexIn, int layerIndex, LayerGCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config, bool airGapped)
 		{
 			if (!HaveWipeTower(config)
-				|| layerIndex > LastLayerWithChange(config) + 1)
+				|| layerIndex > LastLayerWithChange(config) + 1
+				|| layerIndex == 0)
 			{
 				return;
 			}
@@ -295,7 +334,8 @@ namespace MatterHackers.MatterSlice
 			int extruderIndex = airGapped ? config.ExtruderCount + extruderIndexIn : extruderIndexIn;
 
 			var oldPathFinder = gcodeLayer.PathFinder;
-			gcodeLayer.PathFinder = null; GenerateWipeTowerInfill(extruderIndex, this.wipeTower, fillPolygons, fillConfig.lineWidth_um, config);
+			gcodeLayer.PathFinder = null;
+			GenerateWipeTowerInfill(extruderIndex, this.wipeTower, fillPolygons, fillConfig.lineWidth_um, config);
 			gcodeLayer.QueuePolygons(fillPolygons, fillConfig);
 			gcodeLayer.PathFinder = oldPathFinder;
 
