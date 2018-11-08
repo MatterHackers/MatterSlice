@@ -390,7 +390,7 @@ namespace MatterHackers.MatterSlice
 				gcodeExport.WriteFanCommand(0);
 				gcodeExport.ResetExtrusionValue();
 				gcodeExport.WriteRetraction(0, false);
-				gcodeExport.SetZ(maxObjectHeight + 5000);
+				gcodeExport.CurrentZ = maxObjectHeight + 5000;
 				gcodeExport.WriteMove(gcodeExport.GetPosition(), config.TravelSpeed, 0);
 				gcodeExport.WriteMove(new IntPoint(slicingData.modelMin.X, slicingData.modelMin.Y, gcodeExport.CurrentZ), config.TravelSpeed, 0);
 			}
@@ -516,7 +516,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				gcodeExport.SetZ(z);
+				gcodeExport.CurrentZ = z;
 
 				gcodeExport.LayerChanged(layerIndex, config.LayerThickness_um);
 
@@ -597,7 +597,7 @@ namespace MatterHackers.MatterSlice
 				else
 				{
 					z += config.SupportAirGap_um;
-					gcodeExport.SetZ(z);
+					gcodeExport.CurrentZ = z;
 
 					for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
 					{
@@ -606,6 +606,9 @@ namespace MatterHackers.MatterSlice
 
 					slicingData.support.QueueAirGappedBottomLayer(config, layerPlanner, layerIndex, airGappedBottomConfig);
 
+					// don't print the wipe tower with air gap height
+					z -= config.SupportAirGap_um;
+					gcodeExport.CurrentZ = z;
 					slicingData.EnsureWipeTowerIsSolid(layerIndex, layerPlanner, fillConfig, config);
 				}
 
