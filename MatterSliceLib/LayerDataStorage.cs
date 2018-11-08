@@ -316,7 +316,7 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public void PrimeOnWipeTower(int extruderIndexIn, int layerIndex, LayerGCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config, bool airGapped)
+		public void PrimeOnWipeTower(int extruderIndexIn, int layerIndex, LayerGCodePlanner layerGcodePlanner, GCodePathConfig fillConfig, ConfigSettings config, bool airGapped)
 		{
 			if (!HaveWipeTower(config)
 				|| layerIndex > LastLayerWithChange(config) + 1
@@ -325,18 +325,30 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
+			if (airGapped)
+			{
+				// don't print the wipe tower with air gap height
+				layerGcodePlanner.CurrentZ -= config.SupportAirGap_um;
+			}
+
 			//If we changed extruder, print the wipe/prime tower for this nozzle;
 			Polygons fillPolygons = new Polygons();
 
 			int extruderIndex = airGapped ? config.ExtruderCount + extruderIndexIn : extruderIndexIn;
 
-			var oldPathFinder = gcodeLayer.PathFinder;
-			gcodeLayer.PathFinder = null;
+			var oldPathFinder = layerGcodePlanner.PathFinder;
+			layerGcodePlanner.PathFinder = null;
 			GenerateWipeTowerInfill(extruderIndex, this.wipeTower, fillPolygons, fillConfig.lineWidth_um, config);
-			gcodeLayer.QueuePolygons(fillPolygons, fillConfig);
-			gcodeLayer.PathFinder = oldPathFinder;
+			layerGcodePlanner.QueuePolygons(fillPolygons, fillConfig);
+			layerGcodePlanner.PathFinder = oldPathFinder;
 
 			extrudersThatHaveBeenPrimed[extruderIndex] = true;
+
+			if (airGapped)
+			{
+				// don't print the wipe tower with air gap height
+				layerGcodePlanner.CurrentZ += config.SupportAirGap_um;
+			}
 		}
 
 		public void WriteRaftGCodeIfRequired(GCodeExport gcode, ConfigSettings config)
@@ -368,7 +380,7 @@ namespace MatterHackers.MatterSlice
 						layerPlanner.SetExtruder(config.SupportExtruder);
 					}
 
-					gcode.SetZ(config.RaftBaseThickness_um);
+					gcode.CurrentZ = config.RaftBaseThickness_um;
 
 					gcode.LayerChanged(-3, config.RaftBaseThickness_um);
 
@@ -402,7 +414,7 @@ namespace MatterHackers.MatterSlice
 				{
 					gcode.WriteComment("RAFT MIDDLE");
 					LayerGCodePlanner layerPlanner = new LayerGCodePlanner(config, gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
-					gcode.SetZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um);
+					gcode.CurrentZ = config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um;
 					gcode.LayerChanged(-2, config.RaftInterfaceThicknes_um);
 					gcode.SetExtrusion(config.RaftInterfaceThicknes_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
@@ -417,7 +429,7 @@ namespace MatterHackers.MatterSlice
 				{
 					gcode.WriteComment("RAFT SURFACE");
 					LayerGCodePlanner layerPlanner = new LayerGCodePlanner(config, gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
-					gcode.SetZ(config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um + config.RaftSurfaceThickness_um * raftSurfaceIndex);
+					gcode.CurrentZ = config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um + config.RaftSurfaceThickness_um * raftSurfaceIndex;
 					gcode.LayerChanged(-1, config.RaftSurfaceThickness_um);
 					gcode.SetExtrusion(config.RaftSurfaceThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 

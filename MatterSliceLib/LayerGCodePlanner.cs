@@ -72,7 +72,18 @@ namespace MatterHackers.MatterSlice
 			this.perimeterStartEndOverlapRatio = Math.Max(0, Math.Min(1, perimeterStartEndOverlap));
 		}
 
-		public long CurrentZ { get { return gcodeExport.CurrentZ; } }
+		public long CurrentZ
+		{
+			get
+			{
+				return gcodeExport.CurrentZ;
+			}
+
+			set
+			{
+				gcodeExport.CurrentZ = value;
+			}
+		}
 
 		public IntPoint LastPosition
 		{

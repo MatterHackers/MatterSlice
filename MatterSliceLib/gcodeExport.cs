@@ -97,7 +97,7 @@ namespace MatterHackers.MatterSlice
 			gcodeFileStream = new StreamWriter(Console.OpenStandardOutput());
 		}
 
-		public long CurrentZ { get; private set; }
+		public long CurrentZ { get; set; }
 
 		public int LayerIndex { get; set; } = 0;
 
@@ -231,11 +231,6 @@ namespace MatterHackers.MatterSlice
 			this.extruderSwitchRetraction_mm = extruderSwitchRetraction;
 			this.minimumExtrusionBeforeRetraction_mm = minimumExtrusionBeforeRetraction_mm;
 			this.retractionZHop_mm = retractionZHop_mm;
-		}
-
-		public void SetZ(long z)
-		{
-			this.CurrentZ = z;
 		}
 
 		public void SwitchExtruder(int newExtruder)
