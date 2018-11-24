@@ -818,13 +818,7 @@ namespace MatterHackers.MatterSlice
 
 		private void QueueBrimsToGCode(LayerDataStorage slicingData, LayerGCodePlanner gcodeLayer, int layerIndex, int extruderIndex)
 		{
-			foreach (var brim in slicingData.Brims)
-			{
-				for (int i = brim.Count - 1; i >= 0; i--)
-				{
-					gcodeLayer.QueuePolygonByOptimizer(brim[i], null, skirtConfig, layerIndex);
-				}
-			}
+			gcodeLayer.QueuePolygonsByOptimizer(slicingData.Brims, null, skirtConfig, layerIndex);
 		}
 
 		LayerIsland islandCurrentlyInside = null;
