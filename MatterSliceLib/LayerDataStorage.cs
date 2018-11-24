@@ -37,7 +37,7 @@ namespace MatterHackers.MatterSlice
 		public Polygons raftOutline = new Polygons();
 
 		public Polygons Skirt { get; private set; } = new Polygons();
-		public List<Polygons> Brims { get; private set; } = new List<Polygons>();
+		public Polygons Brims { get; private set; } = new Polygons();
 
 		public NewSupport support = null;
 		public List<Polygons> wipeShield = new List<Polygons>();
@@ -269,7 +269,7 @@ namespace MatterHackers.MatterSlice
 				// Create skirt loops from the ConvexHull
 				for (int skirtLoop = 0; skirtLoop < numberOfLoops; skirtLoop++)
 				{
-					int offsetDistance = distance + extrusionWidth_um * skirtLoop + extrusionWidth_um / 2;
+					int offsetDistance = distance + extrusionWidth_um * (skirtLoop - 1) - extrusionWidth_um / 2;
 
 					this.Skirt.AddAll(convexHull.Offset(offsetDistance));
 
@@ -507,27 +507,17 @@ namespace MatterHackers.MatterSlice
 						brimIslandOutlines = brimIslandOutlines.CreateUnion(storage.support.GetBedOutlines());
 					}
 
-					brimIslandOutlines = brimIslandOutlines.Offset(extrusionWidth_um * (brimCount - 1));
-
-					// Loop over the requested brimCount creating and unioning a new perimeter for each island
-					List<Polygons> brimIslands = brimIslandOutlines.ProcessIntoSeparateIslands();
-
-					foreach (var brimIsland in brimIslands)
+					Polygons brimLoops = new Polygons();
+					for (int brimIndex = 0; brimIndex < brimCount; brimIndex++)
 					{
-						Polygons brimLoops = new Polygons();
-						for (int brimIndex = brimCount - 1; brimIndex >= 0; brimIndex--)
-						{
-							int offsetDistance = extrusionWidth_um * brimIndex;
-
-							// Extend the polygons to account for the brim (ensures convex hull takes this data into account)
-							brimLoops.AddAll(brimIsland.Offset(-offsetDistance + extrusionWidth_um / 2));
-						}
-
-						storage.Brims.Add(brimLoops);
+						// Extend the polygons to account for the brim (ensures convex hull takes this data into account)
+						brimLoops.AddAll(brimIslandOutlines.Offset(extrusionWidth_um * brimIndex + extrusionWidth_um / 2));
 					}
 
+					storage.Brims.AddAll(brimLoops);
+
 					// and extend the bonuds of the skirt polygons
-					skirtPolygons = skirtPolygons.CreateUnion(brimIslandOutlines);
+					skirtPolygons = skirtPolygons.CreateUnion(brimIslandOutlines.Offset(extrusionWidth_um * brimCount));
 				}
 
 				skirtPolygons = skirtPolygons.CreateUnion(allOutlines);
