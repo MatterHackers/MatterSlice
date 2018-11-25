@@ -40,6 +40,8 @@ namespace MatterHackers.Pathfinding
 	using Polygons = List<List<IntPoint>>;
 	using static System.Math;
 	using MatterHackers.Agg.ImageProcessing;
+	using System;
+
 	/// <summary>
 	/// This is to hold all the data that lets us switch between Boundary and Outline pathing.
 	/// </summary>
@@ -278,16 +280,85 @@ namespace MatterHackers.Pathfinding
 			// First create an image that is fully set on all color values of the original image
 			InsetMap = new ImageBuffer(InsideCache);
 			InsetMap.DoThreshold(1);
-			// Then erode the image multiple times to get the a map of desired insets
+#if true
+			CalculateDistanceToOpen(InsetMap);
+#else
+			// Then erode the image multiple times to get the map of desired insets
 			int count = 8;
 			int step = 255/count;
 			ImageBuffer last = InsetMap;
 			for (int i = 0; i < count; i++)
 			{
-				var erode = new ImageBuffer(last);
-				erode.DoErode3x3Binary(255);
+				var erode = new ImageBuffer(last.Width, last.Height, 8, last.GetRecieveBlender());
+				Erode.DoErode3x3Binary(last, erode, 255);
 				Paint(InsetMap, erode, (i + 1) * step);
 				last = erode;
+			}
+#endif
+		}
+
+		private void CalculateDistanceToOpen(ImageBuffer image)
+		{
+			var maxDist = (image.Height + image.Width) > 255 ? 255 : (image.Height + image.Width);
+			var buffer = image.GetBuffer();
+			byte Get(int x, int y)
+			{
+				return buffer[image.GetBufferOffsetXY(x, y)];
+			}
+			void Set(int x, int y, byte value)
+			{
+				buffer[image.GetBufferOffsetXY(x, y)] = value;
+			}
+			// O(n^2) solution to find the Manhattan distance to "off" pixels in a two dimension array
+			// traverse from top left to bottom right
+			for (int x = 0; x < image.Width; x++)
+			{
+				for (int y = 0; y < image.Height; y++)
+				{
+					if (Get(x, y) == 0)
+					{
+						// first pass and pixel was off, it remains a zero
+					}
+					else
+					{
+						// pixel was on
+						// It is at most the sum of the lengths of the array
+						// away from a pixel that is off
+						Set(x, y, (byte)maxDist);
+						// or one more than the pixel to the north
+						if (x > 0)
+						{
+							var value = Math.Min(Get(x, y), Get(x - 1, y) + 1);
+							Set(x, y, (byte)value);
+						}
+						// or one more than the pixel to the west
+						if (y > 0)
+						{
+							var value = Math.Min(Get(x, y), Get(x, y - 1) + 1);
+							Set(x, y, (byte)value);
+						}
+					}
+				}
+			}
+			// traverse from bottom right to top left
+			for (int x = image.Width - 1; x >= 0; x--)
+			{
+				for (int y = image.Height - 1; y >= 0; y--)
+				{
+					// either what we had on the first pass
+					// or one more than the pixel to the south
+					if (x + 1 < image.Width)
+					{
+						var value = Math.Min(Get(x, y), Get(x + 1, y) + 1);
+						Set(x, y, (byte)value);
+					}
+					// or one more than the pixel to the east
+					if (y + 1 < image.Height)
+					{
+						var value = Math.Min(Get(x, y), Get(x, y + 1) + 1);
+						Set(x, y, (byte)value);
+					}
+				}
 			}
 		}
 
