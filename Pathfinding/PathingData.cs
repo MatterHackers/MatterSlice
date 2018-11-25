@@ -280,21 +280,13 @@ namespace MatterHackers.Pathfinding
 			// First create an image that is fully set on all color values of the original image
 			InsetMap = new ImageBuffer(InsideCache);
 			InsetMap.DoThreshold(1);
-#if true
+
+			//var image32 = new ImageBuffer(InsetMap.Width, InsetMap.Height);
+			//image32.NewGraphics2D().Render(InsetMap, 0, 0);
+			//ImageTgaIO.Save(image32, "c:\\temp\\before.tga");
 			CalculateDistanceToOpen(InsetMap);
-#else
-			// Then erode the image multiple times to get the map of desired insets
-			int count = 8;
-			int step = 255/count;
-			ImageBuffer last = InsetMap;
-			for (int i = 0; i < count; i++)
-			{
-				var erode = new ImageBuffer(last.Width, last.Height, 8, last.GetRecieveBlender());
-				Erode.DoErode3x3Binary(last, erode, 255);
-				Paint(InsetMap, erode, (i + 1) * step);
-				last = erode;
-			}
-#endif
+			//image32.NewGraphics2D().Render(InsetMap, 0, 0);
+			//ImageTgaIO.Save(image32, "c:\\temp\\test.tga");
 		}
 
 		private void CalculateDistanceToOpen(ImageBuffer image)
@@ -309,7 +301,7 @@ namespace MatterHackers.Pathfinding
 			{
 				buffer[image.GetBufferOffsetXY(x, y)] = value;
 			}
-			// O(n^2) solution to find the Manhattan distance to "off" pixels in a two dimension array
+			// O(n^2) solution to find the Manhattan distance to "on" pixels in a two dimension array
 			// traverse from top left to bottom right
 			for (int x = 0; x < image.Width; x++)
 			{
