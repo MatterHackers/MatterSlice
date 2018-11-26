@@ -389,7 +389,7 @@ namespace MatterHackers.Pathfinding
 		{
 			var cutLength = InsetAmount;
 			// Make every segment be a maximum of cutLength long
-			if (OutlineData.InsetMap != null
+			if (OutlineData.DistanceFromOutside != null
 				&& pathThatIsInside.Count >= 2
 				&& InsetAmount > 0)
 			{
@@ -518,7 +518,7 @@ namespace MatterHackers.Pathfinding
 
 		private void MovePointsInsideIfPossible(IntPoint startPointIn, IntPoint endPointIn, Polygon pathThatIsInside)
 		{
-			if (OutlineData.InsetMap != null)
+			if (OutlineData.DistanceFromOutside != null)
 			{
 				// move every segment that can be inside the boundary to be within the boundary
 				if (pathThatIsInside.Count > 1 && InsetAmount > 0)
@@ -587,7 +587,7 @@ namespace MatterHackers.Pathfinding
 
 		private bool SegmentIsAllInside(IntPointNode lastAddedNode, IntPointNode crossingNode)
 		{
-			if (OutlineData.InsideCache == null)
+			if (OutlineData.DistanceFromOutside == null)
 			{
 				// check just the center point
 				return OutlineData.PointIsInside((lastAddedNode.Position + crossingNode.Position) / 2) == QTPolygonsExtensions.InsideState.Inside;
