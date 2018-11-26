@@ -52,7 +52,7 @@ namespace MatterHackers.Pathfinding
 		private bool usingPathingCache;
 		IntRect polygonBounds;
 
-		internal PathingData(Polygons polygons, double unitsPerPixel, bool usingPathingCache)
+		public PathingData(Polygons polygons, double unitsPerPixel, bool usingPathingCache)
 		{
 			this.usingPathingCache = usingPathingCache;
 
@@ -101,8 +101,7 @@ namespace MatterHackers.Pathfinding
 		}
 
 		public List<QuadTree<int>> EdgeQuadTrees { get; }
-		public ImageBuffer InsideCache { get; private set; }
-		public ImageBuffer InsetMap { get; private set; }
+		public ImageBuffer DistanceFromOutside { get; private set; }
 		public List<QuadTree<int>> PointQuadTrees { get; }
 		public Polygons Polygons { get; }
 		public WayPointsToRemove RemovePointList { get; }
@@ -140,7 +139,7 @@ namespace MatterHackers.Pathfinding
 			result = testPoint;
 			bool movedPoint = false;
 
-			for (int i = 0; i < distanceInPixels + distanceInPixels/2; i++)
+			for (int i = 0; i < distanceInPixels + distanceInPixels / 2; i++)
 			{
 				// check each direction to see if we can increase our InsetMap value
 				double x = result.X;
@@ -150,26 +149,26 @@ namespace MatterHackers.Pathfinding
 				int yi = (int)Round(y);
 
 				int current = GetInsetMapValue(xi, yi);
-				if(current == 255)
+				if (current == 255)
 				{
 					// we've made it all the way inside
 				}
 
 				var offset = new IntPoint();
-				movedPoint |= CheckInsetPixel(current, xi, - 1, yi, + 0, ref offset);
-				movedPoint |= CheckInsetPixel(current, xi, - 1, yi, - 1, ref offset);
-				movedPoint |= CheckInsetPixel(current, xi, + 0, yi, - 1, ref offset);
-				movedPoint |= CheckInsetPixel(current, xi, + 1, yi, - 1, ref offset);
-				movedPoint |= CheckInsetPixel(current, xi, + 1, yi, + 0, ref offset);
-				movedPoint |= CheckInsetPixel(current, xi, + 1, yi, + 1, ref offset);
-				movedPoint |= CheckInsetPixel(current, xi, + 0, yi, + 1, ref offset);
-				movedPoint |= CheckInsetPixel(current, xi, - 1, yi, + 1, ref offset);
+				movedPoint |= CheckInsetPixel(current, xi, -1, yi, +0, ref offset);
+				movedPoint |= CheckInsetPixel(current, xi, -1, yi, -1, ref offset);
+				movedPoint |= CheckInsetPixel(current, xi, +0, yi, -1, ref offset);
+				movedPoint |= CheckInsetPixel(current, xi, +1, yi, -1, ref offset);
+				movedPoint |= CheckInsetPixel(current, xi, +1, yi, +0, ref offset);
+				movedPoint |= CheckInsetPixel(current, xi, +1, yi, +1, ref offset);
+				movedPoint |= CheckInsetPixel(current, xi, +0, yi, +1, ref offset);
+				movedPoint |= CheckInsetPixel(current, xi, -1, yi, +1, ref offset);
 
 				if (offset.X < 0) x -= 1; else if (offset.X > 0) x += 1;
 				if (offset.Y < 0) y -= 1; else if (offset.Y > 0) y += 1;
 
 				// if we did not succeed at moving either point
-				if(x == testPoint.X && y == testPoint.Y)
+				if (x == testPoint.X && y == testPoint.Y)
 				{
 					x += 1;
 				}
@@ -194,11 +193,11 @@ namespace MatterHackers.Pathfinding
 
 		private int GetInsetMapValue(int xi, int yi)
 		{
-			if (xi >= 0 && xi < InsetMap.Width
-				&& yi >= 0 && yi < InsetMap.Height)
+			if (xi >= 0 && xi < DistanceFromOutside.Width
+				&& yi >= 0 && yi < DistanceFromOutside.Height)
 			{
-				var buffer = InsetMap.GetBuffer();
-				var offset = InsetMap.GetBufferOffsetXY(xi, yi);
+				var buffer = DistanceFromOutside.GetBuffer();
+				var offset = DistanceFromOutside.GetBufferOffsetXY(xi, yi);
 				return buffer[offset];
 			}
 
@@ -224,26 +223,18 @@ namespace MatterHackers.Pathfinding
 			int xi = (int)Round(xd);
 			int yi = (int)Round(yd);
 
-			int pixelSum = 0;
-			for (int offsetX = -1; offsetX <= 1; offsetX++)
+			int distanceFromOutside = 0;
+			if (yi >= 0 && yi < DistanceFromOutside.Height
+				&& xi >= 0 && xi < DistanceFromOutside.Width)
 			{
-				for (int offsetY = -1; offsetY <= 1; offsetY++)
-				{
-					int x = xi + offsetX;
-					int y = yi + offsetY;
-					if (x >= 0 && x < InsideCache.Width
-						&& y >= 0 && y < InsideCache.Height)
-					{
-						pixelSum += InsideCache.GetBuffer()[InsideCache.GetBufferOffsetXY(x, y)];
-					}
-				}
+				distanceFromOutside = DistanceFromOutside.GetBuffer()[DistanceFromOutside.GetBufferOffsetXY(xi, yi)];
 			}
 
-			if (pixelSum == 0)
+			if (distanceFromOutside == 0)
 			{
 				return QTPolygonsExtensions.InsideState.Outside;
 			}
-			else if (pixelSum / 9 == 255)
+			else if (distanceFromOutside > 1)
 			{
 				return QTPolygonsExtensions.InsideState.Inside;
 			}
@@ -262,7 +253,7 @@ namespace MatterHackers.Pathfinding
 			int width = (int)Round(polygonBounds.Width() / unitsPerPixel);
 			int height = (int)Round(polygonBounds.Height() / unitsPerPixel);
 
-			InsideCache = new ImageBuffer(width + 4, height + 4, 8, new blender_gray(1));
+			DistanceFromOutside = new ImageBuffer(width + 4, height + 4, 8, new blender_gray(1));
 
 			// Set the transform to image space
 			polygonsToImageTransform = Affine.NewIdentity();
@@ -274,48 +265,33 @@ namespace MatterHackers.Pathfinding
 			polygonsToImageTransform *= Affine.NewTranslation(2, 2);
 
 			// and render the polygon to the image
-			InsideCache.NewGraphics2D().Render(new VertexSourceApplyTransform(CreatePathStorage(Polygons), polygonsToImageTransform), Color.White);
+			DistanceFromOutside.NewGraphics2D().Render(new VertexSourceApplyTransform(CreatePathStorage(Polygons), polygonsToImageTransform), Color.White);
 
 			// Now lets create an image that we can use to move points inside the outline
 			// First create an image that is fully set on all color values of the original image
-			InsetMap = new ImageBuffer(InsideCache);
-			InsetMap.DoThreshold(1);
-#if true
-			CalculateDistanceToOpen(InsetMap);
-#else
-			// Then erode the image multiple times to get the map of desired insets
-			int count = 8;
-			int step = 255/count;
-			ImageBuffer last = InsetMap;
-			for (int i = 0; i < count; i++)
-			{
-				var erode = new ImageBuffer(last.Width, last.Height, 8, last.GetRecieveBlender());
-				Erode.DoErode3x3Binary(last, erode, 255);
-				Paint(InsetMap, erode, (i + 1) * step);
-				last = erode;
-			}
-#endif
+			DistanceFromOutside.DoThreshold(1);
+
+			//var image32 = new ImageBuffer(InsetMap.Width, InsetMap.Height);
+			//image32.NewGraphics2D().Render(InsetMap, 0, 0);
+			//ImageTgaIO.Save(image32, "c:\\temp\\before.tga");
+			CalculateDistance(DistanceFromOutside);
+			//image32.NewGraphics2D().Render(InsetMap, 0, 0);
+			//ImageTgaIO.Save(image32, "c:\\temp\\test.tga");
 		}
 
-		private void CalculateDistanceToOpen(ImageBuffer image)
+		private void CalculateDistance(ImageBuffer image)
 		{
 			var maxDist = (image.Height + image.Width) > 255 ? 255 : (image.Height + image.Width);
 			var buffer = image.GetBuffer();
-			byte Get(int x, int y)
-			{
-				return buffer[image.GetBufferOffsetXY(x, y)];
-			}
-			void Set(int x, int y, byte value)
-			{
-				buffer[image.GetBufferOffsetXY(x, y)] = value;
-			}
-			// O(n^2) solution to find the Manhattan distance to "off" pixels in a two dimension array
+
+			// O(n^2) solution to find the Manhattan distance to "on" pixels in a two dimension array
 			// traverse from top left to bottom right
-			for (int x = 0; x < image.Width; x++)
+			for (int y = 0; y < image.Height; y++)
 			{
-				for (int y = 0; y < image.Height; y++)
+				var yOffset = image.GetBufferOffsetY(y);
+				for (int x = 0; x < image.Width; x++)
 				{
-					if (Get(x, y) == 0)
+					if (buffer[yOffset + x] == 0)
 					{
 						// first pass and pixel was off, it remains a zero
 					}
@@ -324,64 +300,41 @@ namespace MatterHackers.Pathfinding
 						// pixel was on
 						// It is at most the sum of the lengths of the array
 						// away from a pixel that is off
-						Set(x, y, (byte)maxDist);
+						buffer[yOffset + x] = (byte)maxDist;
 						// or one more than the pixel to the north
 						if (x > 0)
 						{
-							var value = Math.Min(Get(x, y), Get(x - 1, y) + 1);
-							Set(x, y, (byte)value);
+							var value = Math.Min(buffer[yOffset + x], buffer[yOffset + x - 1] + 1);
+							buffer[yOffset + x] = (byte)value;
 						}
 						// or one more than the pixel to the west
 						if (y > 0)
 						{
-							var value = Math.Min(Get(x, y), Get(x, y - 1) + 1);
-							Set(x, y, (byte)value);
+							var value = Math.Min(buffer[yOffset + x], buffer[yOffset - image.Width + x] + 1);
+							buffer[yOffset + x] = (byte)value;
 						}
 					}
 				}
 			}
 			// traverse from bottom right to top left
-			for (int x = image.Width - 1; x >= 0; x--)
+			for (int y = image.Height - 1; y >= 0; y--)
 			{
-				for (int y = image.Height - 1; y >= 0; y--)
+				var yOffset = image.GetBufferOffsetY(y);
+				for (int x = image.Width - 1; x >= 0; x--)
 				{
 					// either what we had on the first pass
 					// or one more than the pixel to the south
 					if (x + 1 < image.Width)
 					{
-						var value = Math.Min(Get(x, y), Get(x + 1, y) + 1);
-						Set(x, y, (byte)value);
+						var value = Math.Min(buffer[yOffset + x], buffer[yOffset + x + 1] + 1);
+						buffer[yOffset + x] = (byte)value;
 					}
 					// or one more than the pixel to the east
 					if (y + 1 < image.Height)
 					{
-						var value = Math.Min(Get(x, y), Get(x, y + 1) + 1);
-						Set(x, y, (byte)value);
+						var value = Math.Min(buffer[yOffset + x], buffer[yOffset + image.Width + x] + 1);
+						buffer[yOffset + x] = (byte)value;
 					}
-				}
-			}
-		}
-
-		private void Paint(ImageBuffer dest, ImageBuffer source, int level)
-		{
-			int height = source.Height;
-			int width = source.Width;
-			int sourceStrideInBytes = source.StrideInBytes();
-			int destStrideInBytes = dest.StrideInBytes();
-			byte[] sourceBuffer = source.GetBuffer();
-			byte[] destBuffer = dest.GetBuffer();
-
-			for (int y = 1; y < height - 1; y++)
-			{
-				int offset = source.GetBufferOffsetY(y);
-				for (int x = 1; x < width - 1; x++)
-				{
-					if (destBuffer[offset] == 255 // the dest is white
-						&& sourceBuffer[offset] == 0) // the dest is cleared
-					{
-						destBuffer[offset] = (byte)level;
-					}
-					offset++;
 				}
 			}
 		}
