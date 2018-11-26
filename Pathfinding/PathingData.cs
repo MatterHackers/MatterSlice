@@ -149,9 +149,10 @@ namespace MatterHackers.Pathfinding
 				int yi = (int)Round(y);
 
 				int current = GetInsetMapValue(xi, yi);
-				if (current == 255)
+				if (current > distanceInPixels + distanceInPixels / 2)
 				{
 					// we've made it all the way inside
+					return movedPoint;
 				}
 
 				var offset = new IntPoint();
