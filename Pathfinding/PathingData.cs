@@ -169,9 +169,9 @@ namespace MatterHackers.Pathfinding
 				if (offset.Y < 0) y -= 1; else if (offset.Y > 0) y += 1;
 
 				// if we did not succeed at moving either point
-				if (x == testPoint.X && y == testPoint.Y)
+				if (0 == offset.X && 0 == offset.Y)
 				{
-					x += 1;
+					return movedPoint;
 				}
 				polygonsToImageTransform.inverse_transform(ref x, ref y);
 				result = new IntPoint(Round(x), Round(y));
