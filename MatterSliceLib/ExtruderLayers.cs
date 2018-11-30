@@ -199,8 +199,8 @@ namespace MatterHackers.MatterSlice
 					if (config == null  // this is to make our tests test the bridgeOverInfill
 						|| config.BridgeOverInfill)
 					{
-						// no figure out what partof the solid infill is actuall first top layers and switch it to that
-						// we can only have a first topy layer at the bottom of the top layers
+						// now figure out what part of the solid infill is actually first top layers and switch it to that
+						// we can only have a first top y layer at the bottom of the top layers
 						if (layerIndex == extruder.Layers.Count - upLayerCount)
 						{
 							// all of it is first top layers

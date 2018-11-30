@@ -167,7 +167,7 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			// TODO: if layer index == 0 do all the loops from the outside in in order (no lines should be in the wipe tower)
+			// TODO: if layer index == 0 do all the loops from the outside-in, in order (no lines should be in the wipe tower)
 			if(layerIndex == 0)
 			{
 				CheckNoExtruderPrimed(config);
@@ -516,7 +516,7 @@ namespace MatterHackers.MatterSlice
 
 					storage.Brims.AddAll(brimLoops);
 
-					// and extend the bonuds of the skirt polygons
+					// and extend the bounds of the skirt polygons
 					skirtPolygons = skirtPolygons.CreateUnion(brimIslandOutlines.Offset(extrusionWidth_um * brimCount));
 				}
 

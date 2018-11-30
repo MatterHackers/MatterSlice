@@ -520,7 +520,7 @@ namespace MatterHackers.MatterSlice
 
 				gcodeExport.LayerChanged(layerIndex, config.LayerThickness_um);
 
-				// start out with the fan off for this layer (the minimum layer fan speed will be applyed later as the gcode is output)
+				// start out with the fan off for this layer (the minimum layer fan speed will be applied later as the gcode is output)
 				layerPlanner.QueueFanCommand(0, fillConfig);
 
 				for (int extruderIndex = 0; extruderIndex < config.ExtruderCount; extruderIndex++)
@@ -653,7 +653,7 @@ namespace MatterHackers.MatterSlice
 
 			if (layerGcodePlanner.ToolChangeRequired(extruderIndex))
 			{
-				// make sure that any moves we make while doing wiping are planned around the parst on the bed
+				// make sure that any moves we make while doing wiping are planned around the parse on the bed
 				if (config.AvoidCrossingPerimeters)
 				{
 					// we can alway use extruder 0 as all layer PathFinders are the same object
@@ -853,7 +853,7 @@ namespace MatterHackers.MatterSlice
 				layerGcodePlanner.ForceRetract();
 				layerGcodePlanner.QueuePolygonsByOptimizer(slicingData.wipeShield[layerIndex], null, skirtConfig, layerIndex);
 				layerGcodePlanner.ForceRetract();
-				// remember that we have already layed down the wipe shield by clearing the data for this layer
+				// remember that we have already laid down the wipe shield by clearing the data for this layer
 				slicingData.wipeShield[layerIndex].Clear();
 			}
 
@@ -1536,7 +1536,7 @@ namespace MatterHackers.MatterSlice
 			{
 				foreach (Polygons outline in part.TopPaths.ProcessIntoSeparateIslands())
 				{
-					// the top layer always draws the infill in the same direction (for asthetics)
+					// the top layer always draws the infill in the same direction (for aesthetics)
 					Infill.GenerateLinePaths(outline, topFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
 				}
 			}
