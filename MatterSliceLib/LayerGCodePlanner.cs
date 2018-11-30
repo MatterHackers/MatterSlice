@@ -318,7 +318,7 @@ namespace MatterHackers.MatterSlice
 		// We need to keep track of all the fan speeds we have queue so that we can set
 		// the minimum fan speed for the layer after all the paths for the layer have been added.
 		// We cannot calculate the minimum fan speed until the entire layer is queued and we then need to 
-		// go back to evry queued fan speed and adjust it
+		// go back to every queued fan speed and adjust it
 		List<GCodePath> queuedFanSpeeds = new List<GCodePath>();
 
 		public void QueueFanCommand(int fanSpeedPercent, GCodePathConfig config)

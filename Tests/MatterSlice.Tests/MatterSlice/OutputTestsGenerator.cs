@@ -49,7 +49,7 @@ namespace MatterHackers.MatterSlice.Tests
 			// Get default settings
 			var config = new ConfigSettings();
 
-			// Roundtrip through Json.net to drop readonly properties
+			// Round trip through Json.net to drop readonly properties
 			var configText = JsonConvert.SerializeObject(
 				config,
 				Formatting.Indented,

@@ -840,7 +840,7 @@ namespace MatterHackers.MatterSlice.Tests
 			});
 		}
 
-		[Test, Ignore("Orchistrate tool change")]
+		[Test, Ignore("Orchestrate tool change")]
 		public void BeforeToolchangeCodeTest()
 		{
 			this.RunGCodeTest("BeforeToolchangeCode", (settings) =>
@@ -849,7 +849,7 @@ namespace MatterHackers.MatterSlice.Tests
 			});
 		}
 
-		[Test, Ignore("Orchistrate tool change")]
+		[Test, Ignore("Orchestrate tool change")]
 		public void ToolChangeCodeTest()
 		{
 			this.RunGCodeTest("ToolChangeCode", (settings) =>
@@ -858,7 +858,7 @@ namespace MatterHackers.MatterSlice.Tests
 			});
 		}
 
-		[Test, Ignore("Orchistrate tool change")]
+		[Test, Ignore("Orchestrate tool change")]
 		public void BeforeToolchangeCode1Test()
 		{
 			this.RunGCodeTest("BeforeToolchangeCode1", (settings) =>
@@ -932,7 +932,7 @@ namespace MatterHackers.MatterSlice.Tests
 			});
 		}
 
-		[Test, Ignore("Too hard to setup multimaterial")]
+		[Test, Ignore("Too hard to setup multi-material")]
 		public void WipeShieldDistanceFromObjectTest()
 		{
 			this.RunGCodeTest("WipeShieldDistanceFromObject", (settings) =>
