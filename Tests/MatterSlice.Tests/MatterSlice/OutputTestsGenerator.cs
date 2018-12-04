@@ -101,7 +101,6 @@ namespace MatterHackers.MatterSlice.Tests
 
 					case "BooleanOperations":
 					case "AdditionalArgsToProcess":
-					case "ExtruderOffsets":
 					case "ModelMatrix":
 						propertyValue = "";
 						break;
@@ -132,7 +131,6 @@ namespace MatterHackers.MatterSlice.Tests
 					"BooleanOperations",
 					// "BridgeFanSpeedPercent",
 					"AdditionalArgsToProcess",
-					"ExtruderOffsets",
 					"ModelMatrix"
 				};
 
