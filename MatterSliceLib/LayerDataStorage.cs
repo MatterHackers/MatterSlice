@@ -380,7 +380,7 @@ namespace MatterHackers.MatterSlice
 						layerPlanner.SetExtruder(config.SupportExtruder);
 					}
 
-					gcode.CurrentZ = config.RaftBaseThickness_um;
+					gcode.CurrentZ_um = config.RaftBaseThickness_um;
 
 					gcode.LayerChanged(-3, config.RaftBaseThickness_um);
 
@@ -414,7 +414,7 @@ namespace MatterHackers.MatterSlice
 				{
 					gcode.WriteComment("RAFT MIDDLE");
 					LayerGCodePlanner layerPlanner = new LayerGCodePlanner(config, gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
-					gcode.CurrentZ = config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um;
+					gcode.CurrentZ_um = config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um;
 					gcode.LayerChanged(-2, config.RaftInterfaceThicknes_um);
 					gcode.SetExtrusion(config.RaftInterfaceThicknes_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
@@ -429,7 +429,7 @@ namespace MatterHackers.MatterSlice
 				{
 					gcode.WriteComment("RAFT SURFACE");
 					LayerGCodePlanner layerPlanner = new LayerGCodePlanner(config, gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
-					gcode.CurrentZ = config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um + config.RaftSurfaceThickness_um * raftSurfaceIndex;
+					gcode.CurrentZ_um = config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um + config.RaftSurfaceThickness_um * raftSurfaceIndex;
 					gcode.LayerChanged(-1, config.RaftSurfaceThickness_um);
 					gcode.SetExtrusion(config.RaftSurfaceThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 

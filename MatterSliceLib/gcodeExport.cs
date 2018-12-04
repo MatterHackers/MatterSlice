@@ -97,7 +97,8 @@ namespace MatterHackers.MatterSlice
 			gcodeFileStream = new StreamWriter(Console.OpenStandardOutput());
 		}
 
-		public long CurrentZ { get; set; }
+		public double CurrentZ => CurrentZ_um / 1000.0;
+		public long CurrentZ_um { get; set; }
 
 		public int LayerIndex { get; set; } = 0;
 
@@ -245,6 +246,7 @@ namespace MatterHackers.MatterSlice
 			{
 				var code = config.BeforeToolchangeCode1.Replace("[wipe_tower_x]", config.WipeCenterX.ToString());
 				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString());
+				code = code.Replace("[wipe_tower_z]", CurrentZ.ToString("0.####"));
 				WriteCode("; Before Tool 1 Change GCode");
 				WriteCode(code);
 			}
@@ -252,6 +254,7 @@ namespace MatterHackers.MatterSlice
 			{
 				var code = config.BeforeToolchangeCode.Replace("[wipe_tower_x]", config.WipeCenterX.ToString());
 				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString());
+				code = code.Replace("[wipe_tower_z]", CurrentZ.ToString("0.####"));
 				WriteCode("; Before Tool Change GCode");
 				WriteCode(code);
 			}
@@ -276,6 +279,7 @@ namespace MatterHackers.MatterSlice
 			{
 				var code = config.ToolChangeCode1.Replace("[wipe_tower_x]", config.WipeCenterX.ToString());
 				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString());
+				code = code.Replace("[wipe_tower_z]", CurrentZ.ToString("0.####"));
 				WriteCode("; After Tool 1 Change GCode");
 				WriteCode(code);
 			}
@@ -283,6 +287,7 @@ namespace MatterHackers.MatterSlice
 			{
 				var code = config.ToolChangeCode.Replace("[wipe_tower_x]", config.WipeCenterX.ToString());
 				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString());
+				code = code.Replace("[wipe_tower_z]", CurrentZ.ToString("0.####"));
 				WriteCode("; After Tool Change GCode");
 				WriteCode(code);
 			}

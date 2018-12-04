@@ -76,12 +76,12 @@ namespace MatterHackers.MatterSlice
 		{
 			get
 			{
-				return gcodeExport.CurrentZ;
+				return gcodeExport.CurrentZ_um;
 			}
 
 			set
 			{
-				gcodeExport.CurrentZ = value;
+				gcodeExport.CurrentZ_um = value;
 			}
 		}
 
