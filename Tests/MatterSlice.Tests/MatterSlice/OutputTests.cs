@@ -210,15 +210,6 @@ namespace MatterHackers.MatterSlice.Tests
 			});
 		}
 
-		[Test, Ignore("Needs additional setup")]
-		public void ExtruderOffsetsTest()
-		{
-			//this.RunGCodeTest("ExtruderOffsets", (settings) =>
-			//{
-			//	settings.ExtruderOffsets = ""; // Default([{"X":0,"Y":0,"Width":0,"Z":0},{"X":0,"Y":0,"Width":0,"Z":0},{"X":0,"Y":0,"Width":0,"Z":0},{"X":0,"Y":0,"Width":0,"Z":0}])
-			//});
-		}
-
 		[Test]
 		public void ExtrusionMultiplierTest()
 		{

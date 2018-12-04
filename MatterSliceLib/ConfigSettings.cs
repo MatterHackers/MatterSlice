@@ -101,8 +101,6 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("Detect and output walls than are less than the nozzle diameter. Output width will be nozzle diameter.")]
 		public bool ExpandThinWalls { get; set; } = false;
 
-		public IntPoint[] ExtruderOffsets { get; set; } = new IntPoint[ConfigConstants.MAX_EXTRUDERS];
-
 		[SettingDescription("Lets you adjust how much material to extrude.")]
 		public double ExtrusionMultiplier { get; set; }
 

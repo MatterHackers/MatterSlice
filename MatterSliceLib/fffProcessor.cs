@@ -191,7 +191,7 @@ namespace MatterHackers.MatterSlice
 
 			for (int extruderIndex = 0; extruderIndex < ConfigConstants.MAX_EXTRUDERS; extruderIndex++)
 			{
-				gcodeExport.SetExtruderOffset(extruderIndex, config.ExtruderOffsets[extruderIndex], -config.ZOffset_um);
+				gcodeExport.SetExtruderOffset(extruderIndex, -config.ZOffset_um);
 			}
 
 			gcodeExport.SetRetractionSettings(config.RetractionOnTravel, config.RetractionSpeed, config.RetractionOnExtruderSwitch, config.MinimumExtrusionBeforeRetraction, config.RetractionZHop, config.UnretractExtraExtrusion, config.RetractRestartExtraTimeToApply, config.UnretractExtraOnExtruderSwitch, config.ResetLongExtrusion);
@@ -688,7 +688,7 @@ namespace MatterHackers.MatterSlice
 					slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config, airGapped);
 
 					// Make sure we wipe the old extruder on the wipe tower.
-					layerGcodePlanner.QueueTravel(config.WipeCenter_um - config.ExtruderOffsets[prevExtruder]);
+					layerGcodePlanner.QueueTravel(config.WipeCenter_um);
 				}
 				else if(extruderIndex < slicingData.Extruders.Count)
 				{
