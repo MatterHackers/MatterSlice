@@ -731,16 +731,6 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
-		public void SupportExtrusionPercentTest()
-		{
-			this.RunGCodeTest("SupportExtrusionPercent", "Support Material 2 Bars.stl", (settings) =>
-			{
-				settings.GenerateSupport = true;
-				settings.SupportExtrusionPercent = 80; // Default(100.0)
-			});
-		}
-
-		[Test]
 		public void SupportInfillStartingAngleTest()
 		{
 			this.RunGCodeTest("SupportInfillStartingAngle", (settings) =>
