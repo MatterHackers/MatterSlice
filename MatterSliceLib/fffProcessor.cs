@@ -463,7 +463,7 @@ namespace MatterHackers.MatterSlice
 					airGappedBottomInsetConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "AIR-GAP-INSET");
 					bridgeConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "BRIDGE");
 
-					supportNormalConfig.SetData(config.FirstLayerSpeed, config.SupportExtrusionWidth_um, "SUPPORT");
+					supportNormalConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um, "SUPPORT");
 					supportInterfaceConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 				else
@@ -480,7 +480,7 @@ namespace MatterHackers.MatterSlice
 					airGappedBottomInsetConfig.SetData(config.AirGapSpeed, config.ExtrusionWidth_um, "AIR-GAP-INSET");
 					bridgeConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um, "BRIDGE");
 
-					supportNormalConfig.SetData(config.SupportMaterialSpeed, config.SupportExtrusionWidth_um, "SUPPORT");
+					supportNormalConfig.SetData(config.SupportMaterialSpeed, config.ExtrusionWidth_um, "SUPPORT");
 					supportInterfaceConfig.SetData(config.SupportMaterialSpeed, config.ExtrusionWidth_um, "SUPPORT-INTERFACE");
 				}
 

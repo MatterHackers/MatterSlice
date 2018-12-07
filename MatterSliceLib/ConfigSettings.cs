@@ -283,11 +283,6 @@ namespace MatterHackers.MatterSlice
 
 		public int SupportExtruder { get; set; }
 
-		[SettingDescription("Support extrusion percent.")]
-		public double SupportExtrusionPercent { get; set; }
-
-		public int SupportExtrusionWidth_um => (int)(ExtrusionWidth * (SupportExtrusionPercent / 100.0) * 1000);
-
 		[SettingDescription("The starting angle that the support lines will be drawn at (similar to infill start angle).")]
 		public double SupportInfillStartingAngle { get; set; }
 
@@ -609,7 +604,6 @@ namespace MatterHackers.MatterSlice
 			LayerThickness = .1;
 			FirstLayerExtrusionWidth = .8;
 			ExtrusionWidth = .4;
-			SupportExtrusionPercent = 100;
 			NumberOfPerimeters = 2;
 			NumberOfBottomLayers = 6;
 			NumberOfTopLayers = 6;
