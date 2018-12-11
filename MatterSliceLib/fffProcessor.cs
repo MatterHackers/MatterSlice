@@ -651,9 +651,10 @@ namespace MatterHackers.MatterSlice
 				&& slicingData.Extruders[extruderIndex].Layers[layerIndex].Islands.Count > 0
 				&& slicingData.NeedToPrintWipeTower(layerIndex, config);
 
-			if (layerGcodePlanner.ToolChangeRequired(extruderIndex))
+			if ((extruderUsedForSupport || extruderUsedForWipeTower)
+				&& layerGcodePlanner.ToolChangeRequired(extruderIndex))
 			{
-				// make sure that any moves we make while doing wiping are planned around the parse on the bed
+				// make sure that any moves we make while doing wiping are planned around the parts on the bed
 				if (config.AvoidCrossingPerimeters)
 				{
 					// we can alway use extruder 0 as all layer PathFinders are the same object
@@ -661,14 +662,6 @@ namespace MatterHackers.MatterSlice
 					layerGcodePlanner.PathFinder = layer.PathFinder;
 					// and forget that we are in any island
 					islandCurrentlyInside = null;
-				}
-
-				// if we are going to do anything at the wipe tower we need to be sure we are on it before we switch extruders
-				// extruders my have lots of leaking material on them and we need to bias to leaving it at the wipe tower position
-				if (slicingData.NeedToPrintWipeTower(layerIndex, config))
-				{
-					// move to the wipe tower before we change extruders
-					layerGcodePlanner.QueueTravel(config.WipeCenter_um, true);
 				}
 
 				if (extruderUsedForWipeTower
@@ -682,13 +675,7 @@ namespace MatterHackers.MatterSlice
 
 					DoSkirtAndBrim(slicingData, layerIndex, layerGcodePlanner, extruderIndex, extruderUsedForSupport);
 
-					// move to the wipe tower position with consideration for the new tool/nozzle offset
-					layerGcodePlanner.QueueTravel(config.WipeCenter_um, true);
-
 					slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config, airGapped);
-
-					// Make sure we wipe the old extruder on the wipe tower.
-					layerGcodePlanner.QueueTravel(config.WipeCenter_um);
 				}
 				else if(extruderIndex < slicingData.Extruders.Count)
 				{
