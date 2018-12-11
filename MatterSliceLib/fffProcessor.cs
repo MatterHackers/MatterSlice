@@ -651,7 +651,8 @@ namespace MatterHackers.MatterSlice
 				&& slicingData.Extruders[extruderIndex].Layers[layerIndex].Islands.Count > 0
 				&& slicingData.NeedToPrintWipeTower(layerIndex, config);
 
-			if (layerGcodePlanner.ToolChangeRequired(extruderIndex))
+			if ((extruderUsedForSupport || extruderUsedForWipeTower)
+				&& layerGcodePlanner.ToolChangeRequired(extruderIndex))
 			{
 				// make sure that any moves we make while doing wiping are planned around the parts on the bed
 				if (config.AvoidCrossingPerimeters)
