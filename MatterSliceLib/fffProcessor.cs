@@ -647,11 +647,16 @@ namespace MatterHackers.MatterSlice
 				&& ((slicingData.support.SparseSupportOutlines[layerIndex].Count > 0 && config.SupportExtruder == extruderIndex)
 					|| (slicingData.support.InterfaceLayers[layerIndex].Count > 0 && config.SupportInterfaceExtruder == extruderIndex));
 
-			bool extruderUsedForWipeTower = extruderIndex < slicingData.Extruders.Count
-				&& slicingData.Extruders[extruderIndex].Layers[layerIndex].Islands.Count > 0
+			bool extruderUsedForParts = extruderIndex < slicingData.Extruders.Count
+				&& slicingData.Extruders[extruderIndex].Layers[layerIndex].Islands.Count > 0;
+
+			bool extruderUsedForWipeTower = extruderUsedForParts
 				&& slicingData.NeedToPrintWipeTower(layerIndex, config);
 
-			if ((extruderUsedForSupport || extruderUsedForWipeTower)
+
+			if ((extruderUsedForSupport 
+				|| extruderUsedForWipeTower
+				|| extruderUsedForParts)
 				&& layerGcodePlanner.ToolChangeRequired(extruderIndex))
 			{
 				// make sure that any moves we make while doing wiping are planned around the parts on the bed
