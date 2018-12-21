@@ -208,7 +208,15 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			if(newExtruder == 1 
+			// first do any tool change retract
+			if (config.RetractionOnExtruderSwitch != 0)
+			{
+				extruderHaseBeenRetracted[extruderIndex] = true;
+				gcodeFileStream.Write("G1 E{0:0.####} F{1} ; retract\n", extrusionAmount_mm - config.RetractionOnExtruderSwitch, config.RetractionSpeed * 60);
+			}
+
+			// then inject any before change gcode
+			if (newExtruder == 1 
 				&& config.BeforeToolchangeCode1 != "")
 			{
 				var code = config.BeforeToolchangeCode1.Replace("[wipe_tower_x]", config.WipeCenterX.ToString());
@@ -226,18 +234,13 @@ namespace MatterHackers.MatterSlice
 				WriteCode(code);
 			}
 
-			if (config.RetractionOnExtruderSwitch != 0)
-			{
-				extruderHaseBeenRetracted[extruderIndex] = true;
-				gcodeFileStream.Write("G1 E{0:0.####} F{1} ; retract\n", extrusionAmount_mm - config.RetractionOnExtruderSwitch, config.RetractionSpeed * 60);
-			}
-
 			currentSpeed = config.RetractionSpeed;
 
 			ResetExtrusionValue();
 			extruderIndex = newExtruder;
 
 			isRetracted = true;
+			// then unrectract if needed
 			if (config.RetractionOnExtruderSwitch != 0
 				&& extruderHaseBeenRetracted[extruderIndex])
 			{
@@ -246,6 +249,7 @@ namespace MatterHackers.MatterSlice
 
 			gcodeFileStream.Write("T{0} ; switch extruder\n".FormatWith(extruderIndex));
 
+			// then inject any after gcode
 			if (newExtruder == 1 
 				&& !string.IsNullOrEmpty(config.ToolChangeCode1))
 			{
