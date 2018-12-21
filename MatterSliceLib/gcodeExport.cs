@@ -34,24 +34,16 @@ namespace MatterHackers.MatterSlice
 		private TimeEstimateCalculator estimateCalculator = new TimeEstimateCalculator();
 		private int extruderIndex;
 		private double[] extruderZOffset_um = new double[ConfigConstants.MAX_EXTRUDERS];
-		private double extruderSwitchRetraction_mm;
+		private bool[] extruderHaseBeenRetracted = new bool[ConfigConstants.MAX_EXTRUDERS];
 		private double extrusionAmount_mm;
 		private double extrusionAmountAtPreviousRetraction_mm;
 		private double extrusionPerMm;
 		private StreamWriter gcodeFileStream;
 		private bool isRetracted;
 		private string layerChangeCode;
-		private double minimumExtrusionBeforeRetraction_mm;
-		private double retractionAmount_mm;
-		private int retractionSpeed;
-		private double retractionZHop_mm;
 		private ConfigSettings config;
 		private double[] totalFilament_mm = new double[ConfigConstants.MAX_EXTRUDERS];
 		private double layerPrintTime;
-		private double unretractExtraOnExtruderSwitch_mm;
-		private bool resetLongExtrusion;
-		private double unretractExtrusionExtra_mm;
-		private double unretractExtrusionExtraSeconds;
 		double _layerSpeedRatio = 1;
 
 		public double LayerSpeedRatio
@@ -78,10 +70,7 @@ namespace MatterHackers.MatterSlice
 			this.config = config;
 			extrusionAmount_mm = 0;
 			extrusionPerMm = 0;
-			retractionAmount_mm = 0;
-			minimumExtrusionBeforeRetraction_mm = 0.0;
 			extrusionAmountAtPreviousRetraction_mm = -1;
-			extruderSwitchRetraction_mm = 14.5;
 			extruderIndex = 0;
 			CurrentFanSpeed = -1;
 
@@ -92,7 +81,6 @@ namespace MatterHackers.MatterSlice
 			}
 
 			currentSpeed = 0;
-			retractionSpeed = 45;
 			isRetracted = true;
 			gcodeFileStream = new StreamWriter(Console.OpenStandardOutput());
 		}
@@ -213,27 +201,6 @@ namespace MatterHackers.MatterSlice
 			this.layerChangeCode = layerChangeCode;
 		}
 
-		public void SetRetractionSettings(double retractionAmount, 
-			int retractionSpeed, 
-			double extruderSwitchRetraction, 
-			double minimumExtrusionBeforeRetraction_mm, 
-			double retractionZHop_mm, 
-			double unretractExtrusionExtra_mm, 
-			double unretractExtrusionExtraSeconds, 
-			double unretractExtraOnExtruderSwitch_mm,
-			bool resetLongExtrusion)
-		{
-			this.resetLongExtrusion = resetLongExtrusion;
-			this.unretractExtrusionExtra_mm = unretractExtrusionExtra_mm;
-			this.unretractExtrusionExtraSeconds = unretractExtrusionExtraSeconds;
-			this.unretractExtraOnExtruderSwitch_mm = unretractExtraOnExtruderSwitch_mm;
-			this.retractionAmount_mm = retractionAmount;
-			this.retractionSpeed = retractionSpeed;
-			this.extruderSwitchRetraction_mm = extruderSwitchRetraction;
-			this.minimumExtrusionBeforeRetraction_mm = minimumExtrusionBeforeRetraction_mm;
-			this.retractionZHop_mm = retractionZHop_mm;
-		}
-
 		public void SwitchExtruder(int newExtruder)
 		{
 			if (extruderIndex == newExtruder)
@@ -259,18 +226,23 @@ namespace MatterHackers.MatterSlice
 				WriteCode(code);
 			}
 
-			if (extruderSwitchRetraction_mm != 0)
+			if (config.RetractionOnExtruderSwitch != 0)
 			{
-				gcodeFileStream.Write("G1 F{0} E{1:0.####} ; retract\n", retractionSpeed * 60, extrusionAmount_mm - extruderSwitchRetraction_mm);
+				extruderHaseBeenRetracted[extruderIndex] = true;
+				gcodeFileStream.Write("G1 E{0:0.####} F{1} ; retract\n", extrusionAmount_mm - config.RetractionOnExtruderSwitch, config.RetractionSpeed * 60);
 			}
 
-			currentSpeed = retractionSpeed;
+			currentSpeed = config.RetractionSpeed;
 
 			ResetExtrusionValue();
 			extruderIndex = newExtruder;
 
 			isRetracted = true;
-			extrusionAmount_mm = extruderSwitchRetraction_mm + unretractExtraOnExtruderSwitch_mm;
+			if (config.RetractionOnExtruderSwitch != 0
+				&& extruderHaseBeenRetracted[extruderIndex])
+			{
+				extrusionAmount_mm = config.RetractionOnExtruderSwitch;
+			}
 
 			gcodeFileStream.Write("T{0} ; switch extruder\n".FormatWith(extruderIndex));
 
@@ -356,22 +328,22 @@ namespace MatterHackers.MatterSlice
 				IntPoint diff = movePosition_um - GetPosition();
 				if (isRetracted)
 				{
-					if (retractionZHop_mm > 0)
+					if (config.RetractionZHop > 0)
 					{
 						double zWritePosition = (double)(currentPosition_um.Z - extruderZOffset_um[extruderIndex]) / 1000;
 						lineToWrite.Append("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
 					}
 
-					if (this.resetLongExtrusion 
+					if (config.ResetLongExtrusion
 						&& extrusionAmount_mm > 10000.0)
 					{
 						//According to https://github.com/Ultimaker/CuraEngine/issues/14 having more then 21m of extrusion causes inaccuracies. So reset it every 10m, just to be sure.
-						ResetExtrusionValue(retractionAmount_mm);
+						ResetExtrusionValue(config.RetractionOnTravel);
 					}
 
-					lineToWrite.Append("G1 F{0} E{1:0.#####}\n".FormatWith(retractionSpeed * 60, extrusionAmount_mm));
+					lineToWrite.Append("G1 F{0} E{1:0.#####}\n".FormatWith(config.RetractionSpeed * 60, extrusionAmount_mm));
 
-					currentSpeed = retractionSpeed;
+					currentSpeed = config.RetractionSpeed;
 					estimateCalculator.plan(new TimeEstimateCalculator.Position(
 						currentPosition_um.X / 1000.0,
 						currentPosition_um.Y / 1000.0,
@@ -406,7 +378,7 @@ namespace MatterHackers.MatterSlice
 				if (lineWidth_um == 0
 					&& isRetracted)
 				{
-					zWritePosition += retractionZHop_mm;
+					zWritePosition += config.RetractionZHop;
 				}
 				lineToWrite.Append(" Z{0:0.###}".FormatWith(zWritePosition));
 			}
@@ -432,31 +404,34 @@ namespace MatterHackers.MatterSlice
 		{
 			double initialSpeed = currentSpeed;
 
-			if (retractionAmount_mm > 0
+			if (config.RetractionOnTravel > 0
 				&& !isRetracted
-				&& (forceRetraction || extrusionAmountAtPreviousRetraction_mm + minimumExtrusionBeforeRetraction_mm < extrusionAmount_mm))
+				&& (forceRetraction || extrusionAmountAtPreviousRetraction_mm + config.MinimumExtrusionBeforeRetraction < extrusionAmount_mm))
 			{
-				gcodeFileStream.Write("G1 F{0} E{1:0.#####}\n".FormatWith(retractionSpeed * 60, extrusionAmount_mm - retractionAmount_mm));
-				currentSpeed = retractionSpeed;
-				estimateCalculator.plan(new TimeEstimateCalculator.Position((double)(currentPosition_um.X) / 1000.0, (currentPosition_um.Y) / 1000.0, (double)(currentPosition_um.Z) / 1000.0, extrusionAmount_mm - retractionAmount_mm), currentSpeed);
+				gcodeFileStream.Write("G1 F{0} E{1:0.#####}\n".FormatWith(config.RetractionSpeed * 60, extrusionAmount_mm - config.RetractionOnTravel));
+				currentSpeed = config.RetractionSpeed;
+				var timePosition = new TimeEstimateCalculator.Position((double)(currentPosition_um.X) / 1000.0,
+					(currentPosition_um.Y) / 1000.0,
+					(double)(currentPosition_um.Z) / 1000.0, extrusionAmount_mm - config.RetractionOnTravel);
+				estimateCalculator.plan(timePosition, currentSpeed);
 
-				if (retractionZHop_mm > 0)
+				if (config.RetractionZHop > 0)
 				{
-					double zWritePosition = (double)(currentPosition_um.Z - extruderZOffset_um[extruderIndex]) / 1000 + retractionZHop_mm;
+					double zWritePosition = (double)(currentPosition_um.Z - extruderZOffset_um[extruderIndex]) / 1000 + config.RetractionZHop;
 					gcodeFileStream.Write("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
 				}
 
 				// calculate how much time since retract and figure out how much extra extrusion to apply
 				double amountOfExtraExtrusionToApply = 1;
 
-				if (unretractExtrusionExtraSeconds > 0)
+				if (config.RetractRestartExtraTimeToApply > 0)
 				{
-					timeForNextMove = Math.Min(timeForNextMove, unretractExtrusionExtraSeconds);
-					amountOfExtraExtrusionToApply = timeForNextMove / unretractExtrusionExtraSeconds;
+					timeForNextMove = Math.Min(timeForNextMove, config.RetractRestartExtraTimeToApply);
+					amountOfExtraExtrusionToApply = timeForNextMove / config.RetractRestartExtraTimeToApply;
 				}
 
 				// Make sure after a retraction that we will extrude the extra amount on unretraction that the settings want.
-				extrusionAmount_mm += unretractExtrusionExtra_mm * amountOfExtraExtrusionToApply;
+				extrusionAmount_mm += config.UnretractExtraExtrusion * amountOfExtraExtrusionToApply;
 
 				extrusionAmountAtPreviousRetraction_mm = extrusionAmount_mm;
 				isRetracted = true;
