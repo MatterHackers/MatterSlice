@@ -450,11 +450,6 @@ namespace MatterHackers.MatterSlice
 				for (int i = 0; i < lines.Length; i++)
 				{
 					string line = lines[i];
-					int commentStart = line.IndexOf("#");
-					if (commentStart >= 0)
-					{
-						line = line.Substring(0, commentStart);
-					}
 
 					int equalsPos = line.IndexOf('=');
 					if (equalsPos > 0)
