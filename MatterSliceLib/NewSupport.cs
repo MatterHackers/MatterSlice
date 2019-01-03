@@ -82,6 +82,8 @@ namespace MatterHackers.MatterSlice
 				{
 					SparseSupportOutlines[layerIndex] = userGeneratedSupport.Layers[layerIndex].AllOutlines.DeepCopy();
 				}
+
+				SparseSupportOutlines = ExpandToEasyGrabDistance(SparseSupportOutlines, (int)(grabDistanceMm * 1000));
 			}
 
 			// remove the actual parts from the support data
