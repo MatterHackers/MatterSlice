@@ -65,27 +65,32 @@ namespace MatterHackers.MatterSlice.Tests
 				// 0  XXXXXXXXXXXXXXXXXXXX
 
 				List<Polygons> partOutlines = new List<Polygons>();
+				List<Polygons> supportOutlines = new List<Polygons>();
 				Polygons bottomCubeOutline = CLPolygonsExtensions.CreateFromString("x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|");
 				Polygons bottomCubeOutlineResults = bottomCubeOutline.Offset(-200);
 				for (int i = 0; i < 5; i++)
 				{
 					partOutlines.Add(bottomCubeOutline);
-				}
-
-				for (int i = 0; i < 5; i++)
-				{
-					partOutlines.Add(new Polygons());
+					supportOutlines.Add(new Polygons());
 				}
 
 				Polygons topCubeOutline = CLPolygonsExtensions.CreateFromString("x:2500, y:2500,x:7500, y:2500,x:7500, y:7500,x:2500, y:7500,|");
+				for (int i = 0; i < 5; i++)
+				{
+					partOutlines.Add(new Polygons());
+					supportOutlines.Add(topCubeOutline);
+				}
+
 				Polygons topCubeOutlineResults = topCubeOutline.Offset(-200);
 				for (int i = 0; i < 5; i++)
 				{
 					partOutlines.Add(topCubeOutline);
+					supportOutlines.Add(new Polygons());
 				}
 
-				ExtruderLayers layerData = CreateLayerData(partOutlines);
-				NewSupport supportGenerator = new NewSupport(config, new List<ExtruderLayers>() { layerData }, 1);
+				var outputs = CreateLayerData(config, partOutlines, supportOutlines, 1);
+				ExtruderLayers layerData = outputs.Item1;
+				NewSupport supportGenerator = outputs.Item2;
 
 				// check the all part outlines
 				{
@@ -99,23 +104,6 @@ namespace MatterHackers.MatterSlice.Tests
 						null, null, null, null, null,
 						topCubeOutlineResults, topCubeOutlineResults, topCubeOutlineResults, topCubeOutlineResults, topCubeOutlineResults, };
 					CheckLayers(supportGenerator._InsetPartOutlines, polygonsCounts, polygon0Counts, poly0Paths);
-				}
-
-				// check the potential support outlines
-				{
-					List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
-					List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
-					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null, null, null, null, null, topCubeOutlineResults, null, null, null, null, null };
-					CheckLayers(supportGenerator._AllUnsupportedAreas, polygonsCounts, polygon0Counts, poly0Paths);
-				}
-
-				// check the required support outlines
-				{
-					List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
-					List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
-					Polygons expectedSupportOutlines = topCubeOutlineResults.Offset(1000);
-					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null, null, null, null, null, expectedSupportOutlines, null, null, null, null, null };
-					CheckLayers(supportGenerator._RequiredSupportAreas, polygonsCounts, polygon0Counts, poly0Paths);
 				}
 
 				{
@@ -157,20 +145,25 @@ namespace MatterHackers.MatterSlice.Tests
 				config.SupportXYDistanceFromObject = 0;
 				config.SupportInterfaceLayers = 0;
 
+				Polygons cubeOutline = CLPolygonsExtensions.CreateFromString("x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|");
+
 				List<Polygons> partOutlines = new List<Polygons>();
+				List<Polygons> supportOutlines = new List<Polygons>();
 				for (int i = 0; i < 5; i++)
 				{
 					partOutlines.Add(new Polygons());
+					supportOutlines.Add(cubeOutline);
 				}
 
-				Polygons cubeOutline = CLPolygonsExtensions.CreateFromString("x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|");
 				for (int i = 0; i < 5; i++)
 				{
 					partOutlines.Add(cubeOutline);
+					supportOutlines.Add(new Polygons());
 				}
 
-				ExtruderLayers layerData = CreateLayerData(partOutlines);
-				NewSupport supportGenerator = new NewSupport(config, new List<ExtruderLayers>() { layerData }, 0);
+				var outputs = CreateLayerData(config, partOutlines, supportOutlines, 0);
+				ExtruderLayers layerData = outputs.Item1;
+				NewSupport supportGenerator = outputs.Item2;
 
 				Polygons cubeOutlineResults = CLPolygonsExtensions.CreateFromString("x:200, y:200,x:9800, y:200,x:9800, y:9800,x:200, y:9800,|");
 
@@ -180,22 +173,6 @@ namespace MatterHackers.MatterSlice.Tests
 					List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 0, 4, 4, 4, 4, 4, };
 					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, null, cubeOutlineResults, cubeOutlineResults, cubeOutlineResults, cubeOutlineResults, cubeOutlineResults, };
 					CheckLayers(supportGenerator._InsetPartOutlines, polygonsCounts, polygon0Counts, poly0Paths);
-				}
-
-				// check the potential support outlines
-				{
-					List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
-					List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
-					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, cubeOutlineResults, null, null, null, null, null };
-					CheckLayers(supportGenerator._AllUnsupportedAreas, polygonsCounts, polygon0Counts, poly0Paths);
-				}
-
-				// check the required support outlines
-				{
-					List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
-					List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
-					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, cubeOutlineResults, null, null, null, null, null };
-					CheckLayers(supportGenerator._RequiredSupportAreas, polygonsCounts, polygon0Counts, poly0Paths);
 				}
 
 				// check the generated support outlines
@@ -238,28 +215,33 @@ namespace MatterHackers.MatterSlice.Tests
 				// 1
 				// 0
 
+				Polygons halfCubeOutline = CLPolygonsExtensions.CreateFromString("x:0, y:0,x:5000, y:0,x:5000, y:10000,x:0, y:10000,|");
+				Polygons cubeOutline = CLPolygonsExtensions.CreateFromString("x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|");
+
+				List<Polygons> supportOutlines = new List<Polygons>();
 				List<Polygons> partOutlines = new List<Polygons>();
 				for (int i = 0; i < 5; i++)
 				{
 					partOutlines.Add(new Polygons());
+					supportOutlines.Add(cubeOutline);
 				}
 
-				Polygons halfCubeOutline = CLPolygonsExtensions.CreateFromString("x:0, y:0,x:5000, y:0,x:5000, y:10000,x:0, y:10000,|");
 				Polygons halfCubeOutlineResults = halfCubeOutline.Offset(-200);
 				for (int i = 0; i < 5; i++)
 				{
 					partOutlines.Add(halfCubeOutline);
+					supportOutlines.Add(cubeOutline);
 				}
 
-				Polygons cubeOutline = CLPolygonsExtensions.CreateFromString("x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|");
 				Polygons cubeOutlineResults = cubeOutline.Offset(-200);
 				for (int i = 0; i < 5; i++)
 				{
 					partOutlines.Add(cubeOutline);
 				}
 
-				ExtruderLayers layerData = CreateLayerData(partOutlines);
-				NewSupport supportGenerator = new NewSupport(config, new List<ExtruderLayers>() { layerData }, 1);
+				var outputs = CreateLayerData(config, partOutlines, supportOutlines, 1);
+				ExtruderLayers layerData = outputs.Item1;
+				NewSupport supportGenerator = outputs.Item2;
 
 				// check the all part outlines
 				{
@@ -276,21 +258,6 @@ namespace MatterHackers.MatterSlice.Tests
 				}
 
 				Polygons layer9Support = CLPolygonsExtensions.CreateFromString("x:5000, y:200,x:9800, y:200,x:9800, y:9800,x:5000, y:9800,|");
-				// check the potential support outlines
-				{
-					List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
-					List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
-					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, halfCubeOutlineResults, null, null, null, null, layer9Support, null, null, null, null, null };
-					CheckLayers(supportGenerator._AllUnsupportedAreas, polygonsCounts, polygon0Counts, poly0Paths);
-				}
-
-				// check the required support outlines
-				{
-					List<int> polygonsCounts = new List<int> { 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, };
-					List<int> polygon0Counts = new List<int> { 0, 0, 0, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, };
-					List<Polygons> poly0Paths = new List<Polygons>() { null, null, null, null, halfCubeOutlineResults.Offset(1000), null, null, null, null, layer9Support.Offset(1000), null, null, null, null, null };
-					CheckLayers(supportGenerator._RequiredSupportAreas, polygonsCounts, polygon0Counts, poly0Paths);
-				}
 
 				if (false)
 				{
@@ -313,18 +280,30 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		private static ExtruderLayers CreateLayerData(List<Polygons> totalLayerOutlines)
+		private static (ExtruderLayers, NewSupport) CreateLayerData(ConfigSettings config,
+			List<Polygons> totalLayerOutlines, 
+			List<Polygons> supportOutlines,
+			double grabDistance)
 		{
 			int numLayers = totalLayerOutlines.Count;
-			ExtruderLayers layerData = new ExtruderLayers();
+			var layerData = new ExtruderLayers();
+			var supportData = new ExtruderLayers();
 			layerData.Layers = new List<SliceLayer>();
 			for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
 			{
 				SliceLayer layer = new SliceLayer();
 				layer.AllOutlines = totalLayerOutlines[layerIndex];
 				layerData.Layers.Add(layer);
+
+				if (layerIndex < supportOutlines.Count)
+				{
+					SliceLayer supportLayer = new SliceLayer();
+					supportLayer.AllOutlines = supportOutlines[layerIndex];
+					supportData.Layers.Add(supportLayer);
+				}
 			}
-			return layerData;
+			var newSupport = new NewSupport(config, new List<ExtruderLayers>() { layerData }, supportData, grabDistance);
+			return (layerData, newSupport);
 		}
 
 		private void CheckLayers(List<Polygons> polygonsToValidate, List<int> polygonsCounts, List<int> polygon0Counts, List<Polygons> poly0Paths)

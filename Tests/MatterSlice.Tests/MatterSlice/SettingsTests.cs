@@ -383,6 +383,7 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			string baseFileName = "Support Material 2 Bars";
 			string stlToLoad = TestUtilities.GetStlPath(baseFileName + ".stl");
+			string supportToLoad = TestUtilities.GetStlPath("2BarsSupport.stl");
 
 			// check that default is support printed with extruder 0
 			{
@@ -408,10 +409,12 @@ namespace MatterHackers.MatterSlice.Tests
 				ConfigSettings config = new ConfigSettings();
 				config.ExtruderCount = 1;
 				config.SupportExtruder = 1; // from a 0 based index
-				config.GenerateSupport = true;
+				// this is a hack, but it is the signallying mechanism for support
+				config.BooleanOperations = "S";
 				fffProcessor processor = new fffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
+				processor.LoadStlFile(supportToLoad);
 				// slice and save it
 				processor.DoProcessing();
 				processor.finalize();
@@ -428,10 +431,14 @@ namespace MatterHackers.MatterSlice.Tests
 				ConfigSettings config = new ConfigSettings();
 				config.SupportExtruder = 1;
 				config.ExtruderCount = 2;
-				config.GenerateSupport = true;
+				// this is a hack, but it is the signallying mechanism for support
+				config.BooleanOperations = "S";
 				fffProcessor processor = new fffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
+				// we have to have a mesh for every extruder
+				processor.LoadStlFile(stlToLoad);
+				processor.LoadStlFile(supportToLoad);
 				// slice and save it
 				processor.DoProcessing();
 				processor.finalize();
@@ -448,10 +455,12 @@ namespace MatterHackers.MatterSlice.Tests
 				ConfigSettings config = new ConfigSettings();
 				config.ExtruderCount = 1;
 				config.SupportInterfaceExtruder = 1;
-				config.GenerateSupport = true;
+				// this is a hack, but it is the signallying mechanism for support
+				config.BooleanOperations = "S";
 				fffProcessor processor = new fffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
+				processor.LoadStlFile(supportToLoad);
 				// slice and save it
 				processor.DoProcessing();
 				processor.finalize();
@@ -468,10 +477,14 @@ namespace MatterHackers.MatterSlice.Tests
 				ConfigSettings config = new ConfigSettings();
 				config.ExtruderCount = 2;
 				config.SupportInterfaceExtruder = 1;
-				config.GenerateSupport = true;
+				// this is a hack, but it is the signallying mechanism for support
+				config.BooleanOperations = "S";
 				fffProcessor processor = new fffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
+				// we have to have a mesh for every extruder
+				processor.LoadStlFile(stlToLoad);
+				processor.LoadStlFile(supportToLoad);
 				// slice and save it
 				processor.DoProcessing();
 				processor.finalize();
@@ -490,10 +503,12 @@ namespace MatterHackers.MatterSlice.Tests
 				config.ExtruderCount = 1;
 				config.SupportExtruder = 1;
 				config.SupportInterfaceExtruder = 2;
-				config.GenerateSupport = true;
+				// this is a hack, but it is the signallying mechanism for support
+				config.BooleanOperations = "S";
 				fffProcessor processor = new fffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
+				processor.LoadStlFile(supportToLoad);
 				// slice and save it
 				processor.DoProcessing();
 				processor.finalize();
@@ -511,10 +526,14 @@ namespace MatterHackers.MatterSlice.Tests
 				config.ExtruderCount = 2;
 				config.SupportExtruder = 1;
 				config.SupportInterfaceExtruder = 2;
-				config.GenerateSupport = true;
+				// this is a hack, but it is the signallying mechanism for support
+				config.BooleanOperations = "S";
 				fffProcessor processor = new fffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
+				// we have to have a mesh for every extruder
+				processor.LoadStlFile(stlToLoad);
+				processor.LoadStlFile(supportToLoad);
 				// slice and save it
 				processor.DoProcessing();
 				processor.finalize();
@@ -532,10 +551,15 @@ namespace MatterHackers.MatterSlice.Tests
 				config.ExtruderCount = 3;
 				config.SupportExtruder = 1;
 				config.SupportInterfaceExtruder = 2;
-				config.GenerateSupport = true;
+				// this is a hack, but it is the signallying mechanism for support
+				config.BooleanOperations = "S";
 				fffProcessor processor = new fffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
+				// we have to have a mesh for every extruder
+				processor.LoadStlFile(stlToLoad);
+				processor.LoadStlFile(stlToLoad);
+				processor.LoadStlFile(supportToLoad);
 				// slice and save it
 				processor.DoProcessing();
 				processor.finalize();
