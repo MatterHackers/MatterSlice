@@ -94,7 +94,6 @@ namespace MatterHackers.MatterSlice
 			}
 
 			timeKeeper.Restart();
-			LogOutput.Log("Analyzing and optimizing model\n");
 			optimizedMeshCollection = new OptimizedMeshCollection(simpleMeshCollection);
 			if (MatterSlice.Canceled)
 			{
@@ -102,13 +101,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			optimizedMeshCollection.SetSize(simpleMeshCollection);
-			for (int meshIndex = 0; meshIndex < simpleMeshCollection.SimpleMeshes.Count; meshIndex++)
-			{
-				LogOutput.Log("  Face counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleMeshCollection.SimpleMeshes[meshIndex].faceTriangles.Count, (int)optimizedMeshCollection.OptimizedMeshes[meshIndex].facesTriangle.Count, (double)(optimizedMeshCollection.OptimizedMeshes[meshIndex].facesTriangle.Count) / (double)(simpleMeshCollection.SimpleMeshes[meshIndex].faceTriangles.Count) * 100));
-				LogOutput.Log("  Vertex counts: {0} . {1} {2:0.0}%\n".FormatWith((int)simpleMeshCollection.SimpleMeshes[meshIndex].faceTriangles.Count * 3, (int)optimizedMeshCollection.OptimizedMeshes[meshIndex].vertices.Count, (double)(optimizedMeshCollection.OptimizedMeshes[meshIndex].vertices.Count) / (double)(simpleMeshCollection.SimpleMeshes[meshIndex].faceTriangles.Count * 3) * 100));
-			}
-
-			LogOutput.Log("Optimize model {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
+			LogOutput.Log("Optimized model in {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Reset();
 
 			Stopwatch timeKeeperTotal = new Stopwatch();
@@ -150,13 +143,14 @@ namespace MatterHackers.MatterSlice
 		{
 			preSetup(config.ExtrusionWidth_um);
 			timeKeeper.Restart();
-			LogOutput.Log("Loading {0} from disk\n".FormatWith(input_filename));
 			if (!SimpleMeshCollection.LoadModelFromFile(simpleMeshCollection, input_filename, config.ModelMatrix))
 			{
-				LogOutput.LogError("Failed to load model: {0}\n".FormatWith(input_filename));
+				if (!input_filename.Contains("assets"))
+				{
+					LogOutput.LogError("Failed to load model: {0}\n".FormatWith(input_filename));
+				}
 				return false;
 			}
-			LogOutput.Log("Loaded from disk in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			return true;
 		}
 
@@ -203,8 +197,6 @@ namespace MatterHackers.MatterSlice
 #if false
             optimizedModel.saveDebugSTL("debug_output.stl");
 #endif
-
-			LogOutput.Log("Slicing model\n");
 
 			var extruderList = new List<ExtruderData>();
 
@@ -290,8 +282,9 @@ namespace MatterHackers.MatterSlice
 			if (supportOutlines != null
 				&& !config.ContinuousSpiralOuterPerimeter)
 			{
-				LogOutput.Log("Generating support map\n");
+				timeKeeper.Restart();
 				slicingData.Support = new NewSupport(config, slicingData.Extruders, supportOutlines, 1);
+				LogOutput.Log("Generating supports in {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			}
 
 			slicingData.CreateIslandData();
