@@ -57,34 +57,16 @@ namespace MatterHackers.MatterSlice
 			List<Polygons> allPartOutlines = CalculateAllPartOutlines(config, Extruders);
 			_InsetPartOutlines = CreateInsetPartOutlines(allPartOutlines, config.ExtrusionWidth_um / 2);
 
-			if (userGeneratedSupport == null)
+			int numSupportLayers = userGeneratedSupport.Layers.Count;
+			SparseSupportOutlines = CreateEmptyPolygons(numSupportLayers);
+
+			// calculate the combined outlines for everything
+			for (int layerIndex = 0; layerIndex < numSupportLayers; layerIndex++)
 			{
-				_AllUnsupportedAreas = FindAllUnsupportedAreas(_InsetPartOutlines, supportWidth_um);
-
-				_RequiredSupportAreas = RemoveSelfSupportedAreas(_AllUnsupportedAreas, supportWidth_um);
-
-				if (!config.GenerateInternalSupport)
-				{
-					_RequiredSupportAreas = RemoveSupportFromInternalSpaces(_RequiredSupportAreas, _InsetPartOutlines);
-				}
-
-				_RequiredSupportAreas = ExpandToEasyGrabDistance(_RequiredSupportAreas, (int)(grabDistanceMm * 1000));
-
-				SparseSupportOutlines = AccumulateDownPolygons(config, _RequiredSupportAreas, _InsetPartOutlines);
+				SparseSupportOutlines[layerIndex] = userGeneratedSupport.Layers[layerIndex].AllOutlines.DeepCopy();
 			}
-			else
-			{
-				int numSupportLayers = userGeneratedSupport.Layers.Count;
-				SparseSupportOutlines = CreateEmptyPolygons(numSupportLayers);
 
-				// calculate the combined outlines for everything
-				for (int layerIndex = 0; layerIndex < numSupportLayers; layerIndex++)
-				{
-					SparseSupportOutlines[layerIndex] = userGeneratedSupport.Layers[layerIndex].AllOutlines.DeepCopy();
-				}
-
-				SparseSupportOutlines = ExpandToEasyGrabDistance(SparseSupportOutlines, (int)(grabDistanceMm * 1000));
-			}
+			SparseSupportOutlines = ExpandToEasyGrabDistance(SparseSupportOutlines, (int)(grabDistanceMm * 1000));
 
 			// remove the actual parts from the support data
 			SparseSupportOutlines = ClipToXyDistance(SparseSupportOutlines, _InsetPartOutlines, config);

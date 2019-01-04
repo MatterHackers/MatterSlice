@@ -342,25 +342,6 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
-		public void GenerateInternalSupportTest()
-		{
-			this.RunGCodeTest("GenerateInternalSupport", "Support Material 2 Bars.stl", (settings) =>
-			{
-				settings.GenerateSupport = true;
-				settings.GenerateInternalSupport = false; // Default(true)
-			});
-		}
-
-		[Test]
-		public void GenerateSupportTest()
-		{
-			this.RunGCodeTest("GenerateSupport", "Support Material 2 Bars.stl", (settings) =>
-			{
-				settings.GenerateSupport = true; // Default(false)
-			});
-		}
-
-		[Test]
 		public void GenerateSupportPerimeterTest()
 		{
 			this.RunGCodeTest("GenerateSupportPerimeter", "Support Material 2 Bars.stl", (settings) =>
