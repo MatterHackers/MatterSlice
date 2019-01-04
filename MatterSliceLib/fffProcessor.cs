@@ -229,11 +229,11 @@ namespace MatterHackers.MatterSlice
 			slicingData.modelMax = optimizedMeshCollection.maxXYZ_um;
 
 			var extraPathingConsideration = new Polygons();
-			foreach (var polygons in slicingData.wipeShield)
+			foreach (var polygons in slicingData.WipeShield)
 			{
 				extraPathingConsideration.AddRange(polygons);
 			}
-			extraPathingConsideration.AddRange(slicingData.wipeTower);
+			extraPathingConsideration.AddRange(slicingData.WipeTower);
 
 			foreach (var extruderData in extruderList)
 			{
@@ -276,7 +276,6 @@ namespace MatterHackers.MatterSlice
 			ExtruderLayers supportOutlines = null;
 			if (userGeneratedSupport)
 			{
-				config.GenerateSupport = true;
 				supportOutlines = slicingData.Extruders[slicingData.Extruders.Count - 1];
 				// Last extruder was support material, remove it from the list.
 				slicingData.Extruders.RemoveAt(slicingData.Extruders.Count - 1);
@@ -288,11 +287,11 @@ namespace MatterHackers.MatterSlice
             LayerPart.dumpLayerparts(slicingData, "output.html");
 #endif
 
-			if (config.GenerateSupport
+			if (supportOutlines != null
 				&& !config.ContinuousSpiralOuterPerimeter)
 			{
 				LogOutput.Log("Generating support map\n");
-				slicingData.support = new NewSupport(config, slicingData.Extruders, 1, supportOutlines);
+				slicingData.Support = new NewSupport(config, slicingData.Extruders, supportOutlines, 1);
 			}
 
 			slicingData.CreateIslandData();
@@ -546,7 +545,7 @@ namespace MatterHackers.MatterSlice
 						layerPlanner.PathFinder = layer.PathFinder;
 					}
 
-					if (slicingData.support != null)
+					if (slicingData.Support != null)
 					{
 						bool movedToIsland = false;
 
@@ -554,7 +553,7 @@ namespace MatterHackers.MatterSlice
 
 						if (layerIndex < supportIslands.Count)
 						{
-							SliceLayer layer = slicingData.Extruders[usableExtruderIndex].Layers[layerIndex];
+							SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 							MoveToIsland(layerPlanner, layer, supportIslands[layerIndex]);
 							movedToIsland = true;
 						}
@@ -562,7 +561,7 @@ namespace MatterHackers.MatterSlice
 						if ((usableExtruderIndex <= 0 && extruderIndex == 0)
 							|| usableExtruderIndex == extruderIndex)
 						{
-							if (slicingData.support.QueueNormalSupportLayer(config, layerPlanner, layerIndex, supportNormalConfig))
+							if (slicingData.Support.QueueNormalSupportLayer(config, layerPlanner, layerIndex, supportNormalConfig))
 							{
 								// we move out of the island so we aren't in it.
 								islandCurrentlyInside = null;
@@ -574,7 +573,7 @@ namespace MatterHackers.MatterSlice
 						if ((usableExtruderIndex <= 0 && extruderIndex == 0)
 							|| usableExtruderIndex == extruderIndex)
 						{
-							if (slicingData.support.QueueInterfaceSupportLayer(config, layerPlanner, layerIndex, supportInterfaceConfig))
+							if (slicingData.Support.QueueInterfaceSupportLayer(config, layerPlanner, layerIndex, supportInterfaceConfig))
 							{
 								// we move out of the island so we aren't in it.
 								islandCurrentlyInside = null;
@@ -588,7 +587,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				if (slicingData.support == null)
+				if (slicingData.Support == null)
 				{
 					slicingData.EnsureWipeTowerIsSolid(layerIndex, layerPlanner, fillConfig, config);
 				}
@@ -602,7 +601,7 @@ namespace MatterHackers.MatterSlice
 						QueueAirGappedExtruderLayerToGCode(slicingData, layerPlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
 					}
 
-					slicingData.support.QueueAirGappedBottomLayer(config, layerPlanner, layerIndex, airGappedBottomConfig);
+					slicingData.Support.QueueAirGappedBottomLayer(config, layerPlanner, layerIndex, airGappedBottomConfig);
 
 					// don't print the wipe tower with air gap height
 					z -= config.SupportAirGap_um;
@@ -641,9 +640,9 @@ namespace MatterHackers.MatterSlice
 			int extruderIndex,
 			bool airGapped)
 		{
-			bool extruderUsedForSupport = config.GenerateSupport
-				&& ((slicingData.support.SparseSupportOutlines[layerIndex].Count > 0 && config.SupportExtruder == extruderIndex)
-					|| (slicingData.support.InterfaceLayers[layerIndex].Count > 0 && config.SupportInterfaceExtruder == extruderIndex));
+			bool extruderUsedForSupport = slicingData.Support != null
+				&& ((slicingData.Support.SparseSupportOutlines[layerIndex].Count > 0 && config.SupportExtruder == extruderIndex)
+					|| (slicingData.Support.InterfaceLayers[layerIndex].Count > 0 && config.SupportInterfaceExtruder == extruderIndex));
 
 			bool extruderUsedForParts = extruderIndex < slicingData.Extruders.Count
 				&& slicingData.Extruders[extruderIndex].Layers[layerIndex].Islands.Count > 0;
@@ -836,15 +835,15 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// the wipe shield is only generated one time per layer
-			if (slicingData.wipeShield.Count > 0
-				&& slicingData.wipeShield[layerIndex].Count > 0
+			if (slicingData.WipeShield.Count > 0
+				&& slicingData.WipeShield[layerIndex].Count > 0
 				&& slicingData.Extruders.Count > 1)
 			{
 				layerGcodePlanner.ForceRetract();
-				layerGcodePlanner.QueuePolygonsByOptimizer(slicingData.wipeShield[layerIndex], null, skirtConfig, layerIndex);
+				layerGcodePlanner.QueuePolygonsByOptimizer(slicingData.WipeShield[layerIndex], null, skirtConfig, layerIndex);
 				layerGcodePlanner.ForceRetract();
 				// remember that we have already laid down the wipe shield by clearing the data for this layer
-				slicingData.wipeShield[layerIndex].Clear();
+				slicingData.WipeShield[layerIndex].Clear();
 			}
 
 			PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(new IntPoint());
@@ -1281,7 +1280,7 @@ namespace MatterHackers.MatterSlice
 		//Add a single layer from a single extruder to the GCode
 		private void QueueAirGappedExtruderLayerToGCode(LayerDataStorage slicingData, LayerGCodePlanner layerGcodePlanner, int extruderIndex, int layerIndex, int extrusionWidth_um, long currentZ_um)
 		{
-			if (config.GenerateSupport
+			if (slicingData.Support != null
 				&& !config.ContinuousSpiralOuterPerimeter
 				&& layerIndex > 0)
 			{
@@ -1389,11 +1388,11 @@ namespace MatterHackers.MatterSlice
 			bool polygonsWereOutput = false;
 			bool oldLoopValue = fillConfig.closedLoop;
 
-			if (config.GenerateSupport
+			if (slicingData.Support != null
 				&& layerIndex > 0
 				&& !config.ContinuousSpiralOuterPerimeter)
 			{
-				Polygons supportOutlines = slicingData.support.GetRequiredSupportAreas(layerIndex).Offset(fillConfig.lineWidth_um / 2);
+				Polygons supportOutlines = slicingData.Support.GetRequiredSupportAreas(layerIndex).Offset(fillConfig.lineWidth_um / 2);
 
 				if (supportWriteType == SupportWriteType.UnsupportedAreas)
 				{
@@ -1487,7 +1486,7 @@ namespace MatterHackers.MatterSlice
 			{
 				if (layerIndex > 0)
 				{
-					if (config.GenerateSupport)
+					if (slicingData.Support != null)
 					{
 						double infillAngle = config.SupportInterfaceLayers > 0 ? config.InfillStartingAngle : config.InfillStartingAngle + 90;
 						Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, infillAngle);

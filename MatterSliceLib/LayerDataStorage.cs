@@ -39,9 +39,9 @@ namespace MatterHackers.MatterSlice
 		public Polygons Skirt { get; private set; } = new Polygons();
 		public Polygons Brims { get; private set; } = new Polygons();
 
-		public NewSupport support = null;
-		public List<Polygons> wipeShield = new List<Polygons>();
-		public Polygons wipeTower = new Polygons();
+		public NewSupport Support = null;
+		public List<Polygons> WipeShield { get; set; } = new List<Polygons>();
+		public Polygons WipeTower = new Polygons();
 
 		private bool[] extrudersThatHaveBeenPrimed = null;
 
@@ -70,23 +70,23 @@ namespace MatterHackers.MatterSlice
 						wipeShield = wipeShield.CreateUnion(this.Extruders[extruderIndex].Layers[layerIndex].Islands[islandIndex].IslandOutline.Offset(config.WipeShieldDistanceFromShapes_um));
 					}
 				}
-				this.wipeShield.Add(wipeShield);
+				this.WipeShield.Add(wipeShield);
 			}
 
 			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 			{
-				this.wipeShield[layerIndex] = this.wipeShield[layerIndex].Offset(-1000).Offset(1000);
+				this.WipeShield[layerIndex] = this.WipeShield[layerIndex].Offset(-1000).Offset(1000);
 			}
 
 			int offsetAngle = (int)Math.Tan(60.0 * Math.PI / 180) * config.LayerThickness_um;//Allow for a 60deg angle in the wipeShield.
 			for (int layerIndex = 1; layerIndex < totalLayers; layerIndex++)
 			{
-				this.wipeShield[layerIndex] = this.wipeShield[layerIndex].CreateUnion(this.wipeShield[layerIndex - 1].Offset(-offsetAngle));
+				this.WipeShield[layerIndex] = this.WipeShield[layerIndex].CreateUnion(this.WipeShield[layerIndex - 1].Offset(-offsetAngle));
 			}
 
 			for (int layerIndex = totalLayers - 1; layerIndex > 0; layerIndex--)
 			{
-				this.wipeShield[layerIndex - 1] = this.wipeShield[layerIndex - 1].CreateUnion(this.wipeShield[layerIndex].Offset(-offsetAngle));
+				this.WipeShield[layerIndex - 1] = this.WipeShield[layerIndex - 1].CreateUnion(this.WipeShield[layerIndex].Offset(-offsetAngle));
 			}
 		}
 
@@ -98,7 +98,7 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			extrudersThatHaveBeenPrimed = new bool[config.GenerateSupport ? config.ExtruderCount * 2 : config.ExtruderCount];
+			extrudersThatHaveBeenPrimed = new bool[ExtruderContConsideringSuport(config)];
 
 			Polygon wipeTowerShape = new Polygon();
 			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000));
@@ -106,7 +106,7 @@ namespace MatterHackers.MatterSlice
 			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000 + config.WipeTowerSize_um));
 			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000));
 
-			this.wipeTower.Add(wipeTowerShape);
+			this.WipeTower.Add(wipeTowerShape);
 			var wipeTowerBounds = wipeTowerShape.GetBounds();
 
 			config.WipeCenter_um = new IntPoint(
@@ -149,7 +149,7 @@ namespace MatterHackers.MatterSlice
 		[Conditional("DEBUG")]
 		private void CheckNoExtruderPrimed(ConfigSettings config)
 		{
-			int extruderCount = config.GenerateSupport ? config.ExtruderCount * 2 : config.ExtruderCount;
+			int extruderCount = ExtruderContConsideringSuport(config);
 			for (int extruderIndex = 0; extruderIndex < extruderCount; extruderIndex++)
 			{
 				if (extrudersThatHaveBeenPrimed[extruderIndex])
@@ -173,9 +173,9 @@ namespace MatterHackers.MatterSlice
 				CheckNoExtruderPrimed(config);
 
 				long insetPerLoop = fillConfig.lineWidth_um;
-				int extruderCount = config.GenerateSupport ? config.ExtruderCount * 2 : config.ExtruderCount;
+				int extruderCount = ExtruderContConsideringSuport(config);
 
-				Polygons outlineForExtruder = this.wipeTower.Offset(-insetPerLoop);
+				Polygons outlineForExtruder = this.WipeTower.Offset(-insetPerLoop);
 
 				Polygons fillPolygons = new Polygons();
 				while (outlineForExtruder.Count > 0)
@@ -197,7 +197,7 @@ namespace MatterHackers.MatterSlice
 			else
 			{
 				// print all of the extruder loops that have not already been printed
-				int extruderCount = config.GenerateSupport ? config.ExtruderCount * 2 : config.ExtruderCount;
+				int extruderCount = ExtruderContConsideringSuport(config);
 				for (int extruderIndex = 0; extruderIndex < extruderCount; extruderIndex++)
 				{
 					if (!extrudersThatHaveBeenPrimed[extruderIndex])
@@ -245,15 +245,15 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			storage.raftOutline = storage.raftOutline.CreateUnion(storage.wipeTower.Offset(extraDistanceAroundPart_um));
-			if (storage.wipeShield.Count > 0
-				&& storage.wipeShield[0].Count > 0)
+			storage.raftOutline = storage.raftOutline.CreateUnion(storage.WipeTower.Offset(extraDistanceAroundPart_um));
+			if (storage.WipeShield.Count > 0
+				&& storage.WipeShield[0].Count > 0)
 			{
-				storage.raftOutline = storage.raftOutline.CreateUnion(storage.wipeShield[0].Offset(extraDistanceAroundPart_um));
+				storage.raftOutline = storage.raftOutline.CreateUnion(storage.WipeShield[0].Offset(extraDistanceAroundPart_um));
 			}
-			if (storage.support != null)
+			if (storage.Support != null)
 			{
-				storage.raftOutline = storage.raftOutline.CreateUnion(storage.support.GetBedOutlines().Offset(extraDistanceAroundPart_um));
+				storage.raftOutline = storage.raftOutline.CreateUnion(storage.Support.GetBedOutlines().Offset(extraDistanceAroundPart_um));
 			}
 		}
 
@@ -283,9 +283,14 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		private int ExtruderContConsideringSuport(ConfigSettings config)
+		{
+			return Support != null ? config.ExtruderCount * 2 : config.ExtruderCount;
+		}
+
 		public void GenerateWipeTowerInfill(int extruderIndex, Polygons partOutline, Polygons outputfillPolygons, long extrusionWidth_um, ConfigSettings config)
 		{
-			int extruderCount = config.GenerateSupport ? config.ExtruderCount * 2 : config.ExtruderCount;
+			int extruderCount = ExtruderContConsideringSuport(config);
 
 			Polygons outlineForExtruder = partOutline.Offset(-extrusionWidth_um * extruderIndex);
 
@@ -338,7 +343,7 @@ namespace MatterHackers.MatterSlice
 
 			var oldPathFinder = layerGcodePlanner.PathFinder;
 			layerGcodePlanner.PathFinder = null;
-			GenerateWipeTowerInfill(extruderIndex, this.wipeTower, fillPolygons, fillConfig.lineWidth_um, config);
+			GenerateWipeTowerInfill(extruderIndex, this.WipeTower, fillPolygons, fillConfig.lineWidth_um, config);
 			layerGcodePlanner.QueuePolygons(fillPolygons, fillConfig);
 			layerGcodePlanner.PathFinder = oldPathFinder;
 
@@ -452,7 +457,7 @@ namespace MatterHackers.MatterSlice
 
 		private static Polygons GetSkirtBounds(ConfigSettings config, LayerDataStorage storage, bool externalOnly, int distance, int extrusionWidth_um, int brimCount)
 		{
-			bool hasWipeTower = storage.wipeTower.PolygonLength() > 0;
+			bool hasWipeTower = storage.WipeTower.PolygonLength() > 0;
 
 			Polygons skirtPolygons = new Polygons();
 
@@ -462,12 +467,12 @@ namespace MatterHackers.MatterSlice
 			}
 			else
 			{
-				Polygons allOutlines = hasWipeTower ? new Polygons(storage.wipeTower.Offset(-extrusionWidth_um / 2)) : new Polygons();
+				Polygons allOutlines = hasWipeTower ? new Polygons(storage.WipeTower.Offset(-extrusionWidth_um / 2)) : new Polygons();
 
-				if (storage.wipeShield.Count > 0
-					&& storage.wipeShield[0].Count > 0)
+				if (storage.WipeShield.Count > 0
+					&& storage.WipeShield[0].Count > 0)
 				{
-					allOutlines = allOutlines.CreateUnion(storage.wipeShield[0].Offset(-extrusionWidth_um / 2));
+					allOutlines = allOutlines.CreateUnion(storage.WipeShield[0].Offset(-extrusionWidth_um / 2));
 				}
 
 				// Loop over every extruder
@@ -502,9 +507,9 @@ namespace MatterHackers.MatterSlice
 					// Union the island brims
 					brimIslandOutlines = brimIslandOutlines.CreateUnion(allOutlines);
 
-					if (storage.support != null)
+					if (storage.Support != null)
 					{
-						brimIslandOutlines = brimIslandOutlines.CreateUnion(storage.support.GetBedOutlines());
+						brimIslandOutlines = brimIslandOutlines.CreateUnion(storage.Support.GetBedOutlines());
 					}
 
 					Polygons brimLoops = new Polygons();
@@ -522,9 +527,9 @@ namespace MatterHackers.MatterSlice
 
 				skirtPolygons = skirtPolygons.CreateUnion(allOutlines);
 
-				if (storage.support != null)
+				if (storage.Support != null)
 				{
-					skirtPolygons = skirtPolygons.CreateUnion(storage.support.GetBedOutlines());
+					skirtPolygons = skirtPolygons.CreateUnion(storage.Support.GetBedOutlines());
 				}
 			}
 
@@ -547,8 +552,8 @@ namespace MatterHackers.MatterSlice
 				for (int extruderToCheck = 0; extruderToCheck < config.ExtruderCount; extruderToCheck++)
 				{
 					if ((extruderToCheck < Extruders.Count && Extruders[extruderToCheck].Layers[checkLayer].AllOutlines.Count > 0)
-						|| (config.SupportExtruder == extruderToCheck && support != null && support.HasNormalSupport(checkLayer))
-						|| (config.SupportInterfaceExtruder == extruderToCheck && support != null && support.HasInterfaceSupport(checkLayer)))
+						|| (config.SupportExtruder == extruderToCheck && Support != null && Support.HasNormalSupport(checkLayer))
+						|| (config.SupportInterfaceExtruder == extruderToCheck && Support != null && Support.HasInterfaceSupport(checkLayer)))
 					{
 						if (firstExtruderWithData == -1)
 						{

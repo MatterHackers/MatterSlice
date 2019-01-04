@@ -145,12 +145,6 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The fan will be force to stay off below this layer.")]
 		public int FirstLayerToAllowFan { get; set; }
 
-		[SettingDescription("If True, support will be generated within the part as well as from the bed.")]
-		public bool GenerateInternalSupport { get; set; }
-
-		[SettingDescription("If True, support will be generated from the bed. If false no support will be generated at all.")]
-		public bool GenerateSupport { get; set; }
-
 		[SettingDescription("If True, an external perimeter will be created around each support island.")]
 		public bool GenerateSupportPerimeter { get; set; }
 
@@ -632,9 +626,7 @@ namespace MatterHackers.MatterSlice
 			RaftExtraDistanceAroundPart = 5;
 
 			SupportType = ConfigConstants.SUPPORT_TYPE.GRID;
-			GenerateSupport = false;
 			SupportPercent = 50;
-			GenerateInternalSupport = true;
 			GenerateSupportPerimeter = true;
 			RaftExtruder = -1;
 			SupportLineSpacing = ExtrusionWidth * 5;
