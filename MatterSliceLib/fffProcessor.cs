@@ -183,11 +183,6 @@ namespace MatterHackers.MatterSlice
 			supportNormalConfig.SetData(config.SupportMaterialSpeed, extrusionWidth, "SUPPORT");
 			supportInterfaceConfig.SetData(config.SupportMaterialSpeed, extrusionWidth, "SUPPORT-INTERFACE");
 
-			for (int extruderIndex = 0; extruderIndex < ConfigConstants.MAX_EXTRUDERS; extruderIndex++)
-			{
-				gcodeExport.SetExtruderOffset(extruderIndex, -config.ZOffset_um);
-			}
-
 			gcodeExport.SetLayerChangeCode(config.LayerChangeCode);
 		}
 
