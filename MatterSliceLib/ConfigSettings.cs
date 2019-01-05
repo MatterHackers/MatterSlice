@@ -342,8 +342,8 @@ namespace MatterHackers.MatterSlice
 		// .4 mm for .4 mm nozzle
 		public int ZOffset_um => (int)(ZOffset * 1000);
 
-		public object WipeCenterX => WipeCenter_um.X / 1000.0;
-		public object WipeCenterY => WipeCenter_um.Y / 1000.0;
+		public double WipeCenterX => WipeCenter_um.X / 1000.0;
+		public double WipeCenterY => WipeCenter_um.Y / 1000.0;
 
 		public IntPoint WipeCenter_um { get; set; }
 		public double MaxAcceleration { get; set; }

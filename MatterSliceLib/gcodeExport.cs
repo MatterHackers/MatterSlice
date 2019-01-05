@@ -215,21 +215,20 @@ namespace MatterHackers.MatterSlice
 				gcodeFileStream.Write("G1 E{0:0.####} F{1} ; retract\n", extrusionAmount_mm - config.RetractionOnExtruderSwitch, config.RetractionSpeed * 60);
 			}
 
+			var beforeX = this.currentPosition_um.X / 1000.0;
+			var beforeY = this.currentPosition_um.Y / 1000.0;
+
 			// then inject any before change gcode
 			if (newExtruder == 1 
 				&& config.BeforeToolchangeCode1 != "")
 			{
-				var code = config.BeforeToolchangeCode1.Replace("[wipe_tower_x]", config.WipeCenterX.ToString());
-				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString());
-				code = code.Replace("[wipe_tower_z]", CurrentZ.ToString("0.####"));
+				string code = WipeTowerReplacements(config.BeforeToolchangeCode1, beforeX, beforeY);
 				WriteCode("; Before Tool 1 Change GCode");
 				WriteCode(code);
 			}
 			else if (!string.IsNullOrEmpty(config.BeforeToolchangeCode))
 			{
-				var code = config.BeforeToolchangeCode.Replace("[wipe_tower_x]", config.WipeCenterX.ToString());
-				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString());
-				code = code.Replace("[wipe_tower_z]", CurrentZ.ToString("0.####"));
+				var code = WipeTowerReplacements(config.BeforeToolchangeCode, beforeX, beforeY);
 				WriteCode("; Before Tool Change GCode");
 				WriteCode(code);
 			}
@@ -253,22 +252,36 @@ namespace MatterHackers.MatterSlice
 			if (newExtruder == 1 
 				&& !string.IsNullOrEmpty(config.ToolChangeCode1))
 			{
-				var code = config.ToolChangeCode1.Replace("[wipe_tower_x]", config.WipeCenterX.ToString());
-				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString());
-				code = code.Replace("[wipe_tower_z]", CurrentZ.ToString("0.####"));
+				var code = WipeTowerReplacements(config.ToolChangeCode1, beforeX, beforeY);
 				WriteCode("; After Tool 1 Change GCode");
 				WriteCode(code);
 			}
 			else if (!string.IsNullOrEmpty(config.ToolChangeCode))
 			{
-				var code = config.ToolChangeCode.Replace("[wipe_tower_x]", config.WipeCenterX.ToString());
-				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString());
-				code = code.Replace("[wipe_tower_z]", CurrentZ.ToString("0.####"));
+				var code = WipeTowerReplacements(config.ToolChangeCode, beforeX, beforeY);
 				WriteCode("; After Tool Change GCode");
 				WriteCode(code);
 			}
 
 			// if there is a wipe tower go to it
+		}
+
+		private string WipeTowerReplacements(string code, double returnX, double returnY)
+		{
+			if (config.WipeTowerSize > 0)
+			{
+				code = code.Replace("[wipe_tower_x]", config.WipeCenterX.ToString("0.###"));
+				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString("0.###"));
+			}
+			else // go back to the position before the switch extruders
+			{
+				code = code.Replace("[wipe_tower_x]", returnX.ToString("0.###"));
+				code = code.Replace("[wipe_tower_y]", returnY.ToString("0.###"));
+			}
+
+			code = code.Replace("[wipe_tower_z]", CurrentZ.ToString("0.####"));
+
+			return code;
 		}
 
 		public void UpdateLayerPrintTime()
