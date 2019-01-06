@@ -33,7 +33,6 @@ namespace MatterHackers.MatterSlice
 		private double currentSpeed;
 		private TimeEstimateCalculator estimateCalculator = new TimeEstimateCalculator();
 		private int extruderIndex;
-		private double[] extruderZOffset_um = new double[ConfigConstants.MAX_EXTRUDERS];
 		private bool[] extruderHaseBeenRetracted = new bool[ConfigConstants.MAX_EXTRUDERS];
 		private double extrusionAmount_mm;
 		private double extrusionAmountAtPreviousRetraction_mm;
@@ -177,11 +176,6 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void SetExtruderOffset(int extruderIndex, int z_offset_um)
-		{
-			this.extruderZOffset_um[extruderIndex] = z_offset_um;
-		}
-
 		public void SetExtrusion(int layerThickness, int filamentDiameter, double extrusionMultiplier)
 		{
 			//double feedRateRatio = 1 + (Math.PI / 4 - 1) * layerThickness / extrusionWidth;
@@ -215,21 +209,20 @@ namespace MatterHackers.MatterSlice
 				gcodeFileStream.Write("G1 E{0:0.####} F{1} ; retract\n", extrusionAmount_mm - config.RetractionOnExtruderSwitch, config.RetractionSpeed * 60);
 			}
 
+			var beforeX = this.currentPosition_um.X / 1000.0;
+			var beforeY = this.currentPosition_um.Y / 1000.0;
+
 			// then inject any before change gcode
 			if (newExtruder == 1 
 				&& config.BeforeToolchangeCode1 != "")
 			{
-				var code = config.BeforeToolchangeCode1.Replace("[wipe_tower_x]", config.WipeCenterX.ToString());
-				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString());
-				code = code.Replace("[wipe_tower_z]", CurrentZ.ToString("0.####"));
+				string code = WipeTowerReplacements(config.BeforeToolchangeCode1, beforeX, beforeY);
 				WriteCode("; Before Tool 1 Change GCode");
 				WriteCode(code);
 			}
 			else if (!string.IsNullOrEmpty(config.BeforeToolchangeCode))
 			{
-				var code = config.BeforeToolchangeCode.Replace("[wipe_tower_x]", config.WipeCenterX.ToString());
-				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString());
-				code = code.Replace("[wipe_tower_z]", CurrentZ.ToString("0.####"));
+				var code = WipeTowerReplacements(config.BeforeToolchangeCode, beforeX, beforeY);
 				WriteCode("; Before Tool Change GCode");
 				WriteCode(code);
 			}
@@ -253,22 +246,36 @@ namespace MatterHackers.MatterSlice
 			if (newExtruder == 1 
 				&& !string.IsNullOrEmpty(config.ToolChangeCode1))
 			{
-				var code = config.ToolChangeCode1.Replace("[wipe_tower_x]", config.WipeCenterX.ToString());
-				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString());
-				code = code.Replace("[wipe_tower_z]", CurrentZ.ToString("0.####"));
+				var code = WipeTowerReplacements(config.ToolChangeCode1, beforeX, beforeY);
 				WriteCode("; After Tool 1 Change GCode");
 				WriteCode(code);
 			}
 			else if (!string.IsNullOrEmpty(config.ToolChangeCode))
 			{
-				var code = config.ToolChangeCode.Replace("[wipe_tower_x]", config.WipeCenterX.ToString());
-				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString());
-				code = code.Replace("[wipe_tower_z]", CurrentZ.ToString("0.####"));
+				var code = WipeTowerReplacements(config.ToolChangeCode, beforeX, beforeY);
 				WriteCode("; After Tool Change GCode");
 				WriteCode(code);
 			}
 
 			// if there is a wipe tower go to it
+		}
+
+		private string WipeTowerReplacements(string code, double returnX, double returnY)
+		{
+			if (config.WipeTowerSize > 0)
+			{
+				code = code.Replace("[wipe_tower_x]", config.WipeCenterX.ToString("0.###"));
+				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString("0.###"));
+			}
+			else // go back to the position before the switch extruders
+			{
+				code = code.Replace("[wipe_tower_x]", returnX.ToString("0.###"));
+				code = code.Replace("[wipe_tower_y]", returnY.ToString("0.###"));
+			}
+
+			code = code.Replace("[wipe_tower_z]", CurrentZ.ToString("0.####"));
+
+			return code;
 		}
 
 		public void UpdateLayerPrintTime()
@@ -334,7 +341,7 @@ namespace MatterHackers.MatterSlice
 				{
 					if (config.RetractionZHop > 0)
 					{
-						double zWritePosition = (double)(currentPosition_um.Z - extruderZOffset_um[extruderIndex]) / 1000;
+						double zWritePosition = (double)(currentPosition_um.Z) / 1000;
 						lineToWrite.Append("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
 					}
 
@@ -378,7 +385,7 @@ namespace MatterHackers.MatterSlice
 
 			if (movePosition_um.Z != currentPosition_um.Z)
 			{
-				double zWritePosition = (double)(movePosition_um.Z - extruderZOffset_um[extruderIndex]) / 1000.0;
+				double zWritePosition = movePosition_um.Z / 1000.0;
 				if (lineWidth_um == 0
 					&& isRetracted)
 				{
@@ -421,7 +428,7 @@ namespace MatterHackers.MatterSlice
 
 				if (config.RetractionZHop > 0)
 				{
-					double zWritePosition = (double)(currentPosition_um.Z - extruderZOffset_um[extruderIndex]) / 1000 + config.RetractionZHop;
+					double zWritePosition = currentPosition_um.Z / 1000.0 + config.RetractionZHop;
 					gcodeFileStream.Write("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
 				}
 
