@@ -169,17 +169,17 @@ namespace MatterHackers.MatterSlice
 						switch (n)
 						{
 							case 1:
-								var new0 = VectorMath.Vector3.Transform(vertex, matrix) * 1000;
+								var new0 = VectorMath.Vector3Ex.Transform(vertex, matrix) * 1000;
 								v0 = new IntPoint(new0.X, new0.Y, new0.Z);
 								break;
 
 							case 2:
-								var new1 = VectorMath.Vector3.Transform(vertex, matrix) * 1000;
+								var new1 = VectorMath.Vector3Ex.Transform(vertex, matrix) * 1000;
 								v1 = new IntPoint(new1.X, new1.Y, new1.Z);
 								break;
 
 							case 3:
-								var new2 = VectorMath.Vector3.Transform(vertex, matrix) * 1000;
+								var new2 = VectorMath.Vector3Ex.Transform(vertex, matrix) * 1000;
 								v2 = new IntPoint(new2.X, new2.Y, new2.Z);
 								vol.addFaceTriangle(v0, v1, v2);
 								n = 0;
@@ -282,7 +282,7 @@ namespace MatterHackers.MatterSlice
 							System.BitConverter.ToSingle(fileContents, currentPosition + 1 * 4),
 							System.BitConverter.ToSingle(fileContents, currentPosition + 2 * 4));
 
-						var new0 = VectorMath.Vector3.Transform(vertex, matrix);
+						var new0 = VectorMath.Vector3Ex.Transform(vertex, matrix);
 						vector[j] = new IntPoint(new0.X * 1000, new0.Y * 1000, new0.Z * 1000);
 						currentPosition += 3 * 4;
 					}
