@@ -60,7 +60,7 @@ namespace MatterHackers.MatterSlice
 			vertices.Capacity = simpleMesh.faceTriangles.Count * 3;
 			facesTriangle.Capacity = simpleMesh.faceTriangles.Count;
 
-			Dictionary<int, List<int>> indexMap = new Dictionary<int, List<int>>();
+			Dictionary<long, List<int>> indexMap = new Dictionary<long, List<int>>();
 
 			Stopwatch t = new Stopwatch();
 			t.Start();
@@ -78,7 +78,7 @@ namespace MatterHackers.MatterSlice
 				for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
 				{
 					IntPoint p = simpleMesh.faceTriangles[faceIndex].vertices[vertexIndex];
-					int hash = (int)(((p.X + MELD_DIST / 2) / MELD_DIST) ^ (((p.Y + MELD_DIST / 2) / MELD_DIST) << 10) ^ (((p.Z + MELD_DIST / 2) / MELD_DIST) << 20));
+					long hash = (int)(((p.X + MELD_DIST / 2) / MELD_DIST) ^ (((p.Y + MELD_DIST / 2) / MELD_DIST) << 20) ^ (((p.Z + MELD_DIST / 2) / MELD_DIST) << 40));
 					int idx = 0;
 					bool add = true;
 					if (indexMap.ContainsKey(hash))
