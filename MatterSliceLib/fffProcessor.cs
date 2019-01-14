@@ -503,7 +503,14 @@ namespace MatterHackers.MatterSlice
 
 				gcodeExport.CurrentZ_um = z;
 
-				gcodeExport.LayerChanged(layerIndex, config.LayerThickness_um);
+				if (layerIndex == 0)
+				{
+					gcodeExport.LayerChanged(layerIndex, config.FirstLayerThickness_um);
+				}
+				else
+				{
+					gcodeExport.LayerChanged(layerIndex, config.LayerThickness_um);
+				}
 
 				// start out with the fan off for this layer (the minimum layer fan speed will be applied later as the gcode is output)
 				layerPlanner.QueueFanCommand(0, fillConfig);
