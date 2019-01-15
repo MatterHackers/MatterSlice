@@ -409,7 +409,7 @@ namespace MatterHackers.MatterSlice.Tests
 				ConfigSettings config = new ConfigSettings();
 				config.ExtruderCount = 1;
 				config.SupportExtruder = 1; // from a 0 based index
-				// this is a hack, but it is the signallying mechanism for support
+				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
 				fffProcessor processor = new fffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
@@ -431,7 +431,7 @@ namespace MatterHackers.MatterSlice.Tests
 				ConfigSettings config = new ConfigSettings();
 				config.SupportExtruder = 1;
 				config.ExtruderCount = 2;
-				// this is a hack, but it is the signallying mechanism for support
+				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
 				fffProcessor processor = new fffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
@@ -455,7 +455,7 @@ namespace MatterHackers.MatterSlice.Tests
 				ConfigSettings config = new ConfigSettings();
 				config.ExtruderCount = 1;
 				config.SupportInterfaceExtruder = 1;
-				// this is a hack, but it is the signallying mechanism for support
+				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
 				fffProcessor processor = new fffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
@@ -477,7 +477,7 @@ namespace MatterHackers.MatterSlice.Tests
 				ConfigSettings config = new ConfigSettings();
 				config.ExtruderCount = 2;
 				config.SupportInterfaceExtruder = 1;
-				// this is a hack, but it is the signallying mechanism for support
+				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
 				fffProcessor processor = new fffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
@@ -503,7 +503,7 @@ namespace MatterHackers.MatterSlice.Tests
 				config.ExtruderCount = 1;
 				config.SupportExtruder = 1;
 				config.SupportInterfaceExtruder = 2;
-				// this is a hack, but it is the signallying mechanism for support
+				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
 				fffProcessor processor = new fffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
@@ -526,7 +526,7 @@ namespace MatterHackers.MatterSlice.Tests
 				config.ExtruderCount = 2;
 				config.SupportExtruder = 1;
 				config.SupportInterfaceExtruder = 2;
-				// this is a hack, but it is the signallying mechanism for support
+				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
 				fffProcessor processor = new fffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
@@ -551,7 +551,7 @@ namespace MatterHackers.MatterSlice.Tests
 				config.ExtruderCount = 3;
 				config.SupportExtruder = 1;
 				config.SupportInterfaceExtruder = 2;
-				// this is a hack, but it is the signallying mechanism for support
+				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
 				fffProcessor processor = new fffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
