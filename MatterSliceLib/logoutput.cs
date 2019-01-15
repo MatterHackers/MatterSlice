@@ -25,27 +25,14 @@ namespace MatterHackers.MatterSlice
 {
 	public static class LogOutput
 	{
-		public static EventHandler GetLogWrites;
+		public static event EventHandler GetLogWrites;
 		public static int verbose_level;
-
-		public static void _log(string message)
-		{
-			if (verbose_level < 1)
-			{
-				return;
-			}
-
-			Console.Write(message);
-		}
 
 		public static void Log(string output)
 		{
 			Console.Write(output);
 
-			if (GetLogWrites != null)
-			{
-				GetLogWrites(output, null);
-			}
+			GetLogWrites?.Invoke(output, null);
 		}
 
 		public static void LogError(string message)
