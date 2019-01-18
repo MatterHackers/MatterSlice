@@ -48,7 +48,7 @@ namespace MatterHackers.MatterSlice
 
 		private double perimeterStartEndOverlapRatio;
 
-		private int retractionMinimumDistance_um;
+		private long retractionMinimumDistance_um;
 
 		public double LayerTime { get; private set; } = 0;
 
@@ -56,7 +56,7 @@ namespace MatterHackers.MatterSlice
 
 		private ConfigSettings config;
 
-		public LayerGCodePlanner(ConfigSettings config, GCodeExport gcode, int travelSpeed, int retractionMinimumDistance_um, double perimeterStartEndOverlap = 0)
+		public LayerGCodePlanner(ConfigSettings config, GCodeExport gcode, int travelSpeed, long retractionMinimumDistance_um, double perimeterStartEndOverlap = 0)
 		{
 			this.config = config;
 
@@ -453,7 +453,7 @@ namespace MatterHackers.MatterSlice
 			currentExtruderIndex = extruder;
 		}
 
-		public void WriteQueuedGCode(int layerThickness)
+		public void WriteQueuedGCode(long layerThickness_um)
 		{
 			GCodePathConfig lastConfig = null;
 			int extruderIndex = gcodeExport.GetExtruderIndex();
@@ -568,7 +568,7 @@ namespace MatterHackers.MatterSlice
 						length += (currentPosition - nextPosition).LengthMm();
 						currentPosition = nextPosition;
 						IntPoint nextExtrusion = path.Polygon[i];
-						nextExtrusion.Z = (int)(z + layerThickness * length / totalLength + .5);
+						nextExtrusion.Z = (int)(z + layerThickness_um * length / totalLength + .5);
 						gcodeExport.WriteMove(nextExtrusion, path.Speed, path.Config.lineWidth_um);
 					}
 				}

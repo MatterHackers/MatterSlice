@@ -109,7 +109,7 @@ namespace MatterHackers.MatterSlice
 
 		public int ExtruderCount { get; set; } = 1;
 
-		public int ExtrusionWidth_um => (int)(ExtrusionWidth * 1000);
+		public long ExtrusionWidth_um => (long)(ExtrusionWidth * 1000);
 		public int FanSpeedMinPercent { get; set; }
 		public int MinFanSpeedLayerTime { get; set; }
 		public int FanSpeedMaxPercent { get; set; }
@@ -121,7 +121,7 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The width of the filament being fed into the extruder, in millimeters.")]
 		public double FilamentDiameter { get; set; }
 
-		public int FilamentDiameter_um => (int)(FilamentDiameter * 1000);
+		public long FilamentDiameter_um => (long)(FilamentDiameter * 1000);
 
 		[SettingDescription("If set thin gaps between perimeter lines will be filled.")]
 		public bool FillThinGaps { get; set; } = false;
@@ -129,7 +129,7 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The width of the line to extrude for the first layer.")]
 		public double FirstLayerExtrusionWidth { get; set; }
 
-		public int FirstLayerExtrusionWidth_um => (int)(FirstLayerExtrusionWidth * 1000);
+		public long FirstLayerExtrusionWidth_um => (long)(FirstLayerExtrusionWidth * 1000);
 
 		// speed settings
 		[SettingDescription("This is the speed to print everything on the first layer, mm/s.")]
@@ -140,7 +140,7 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The height of the first layer to print, in millimeters.")]
 		public double FirstLayerThickness { get; set; }
 
-		public int FirstLayerThickness_um => (int)(FirstLayerThickness * 1000);
+		public long FirstLayerThickness_um => (long)(FirstLayerThickness * 1000);
 
 		[SettingDescription("The fan will be force to stay off below this layer.")]
 		public int FirstLayerToAllowFan { get; set; }
@@ -151,7 +151,7 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The amount the infill extends into the perimeter in millimeters.")]
 		public double InfillExtendIntoPerimeter { get; set; }
 
-		public int InfillExtendIntoPerimeter_um => (int)(InfillExtendIntoPerimeter * 1000);
+		public long InfillExtendIntoPerimeter_um => (long)(InfillExtendIntoPerimeter * 1000);
 
 		[SettingDescription("The percent of filled space to open space while infilling.")]
 		public double InfillPercent { get; set; }
@@ -173,7 +173,7 @@ namespace MatterHackers.MatterSlice
 		//[LegacyName("layerThickness")] // the name before we added Mm
 		public double LayerThickness { get; set; }
 
-		public int LayerThickness_um => (int)(LayerThickness * 1000);
+		public long LayerThickness_um => (long)(LayerThickness * 1000);
 		public bool MergeOverlappingLines { get; set; } = true;
 
 		[SettingDescription("mm.")]
@@ -188,7 +188,7 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The minimum travel distance that will require a retraction")]
 		public double MinimumTravelToCauseRetraction { get; set; }
 
-		public int MinimumTravelToCauseRetraction_um => (int)(MinimumTravelToCauseRetraction * 1000);
+		public long MinimumTravelToCauseRetraction_um => (long)(MinimumTravelToCauseRetraction * 1000);
 
 		// object transform
 		public Matrix4X4 ModelMatrix { get; set; } = Matrix4X4.Identity;
@@ -209,7 +209,7 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("Output only the first layer of the print.")]
 		public bool outputOnlyFirstLayer { get; set; }
 
-		public int OutsideExtrusionWidth_um => (int)(OutsidePerimeterExtrusionWidth * 1000);
+		public long OutsideExtrusionWidth_um => (long)(OutsidePerimeterExtrusionWidth * 1000);
 
 		[SettingDescription("The extrusion width of all outside perimeters")]
 		public double OutsidePerimeterExtrusionWidth { get; set; }
@@ -224,28 +224,28 @@ namespace MatterHackers.MatterSlice
 		public double PerimeterStartEndOverlapRatio { get; set; } = 1;
 
 		public double RaftAirGap { get; set; }
-		public int RaftAirGap_um => (int)(RaftAirGap * 1000);
-		public int RaftBaseExtrusionWidth_um => ExtrusionWidth_um * 3;
-		public int RaftBaseLineSpacing_um => (int)(ExtrusionWidth_um * 4);
-		public int RaftBaseThickness_um => ExtrusionWidth_um * 300 / 400;
+		public long RaftAirGap_um => (long)(RaftAirGap * 1000);
+		public long RaftBaseExtrusionWidth_um => ExtrusionWidth_um * 3;
+		public long RaftBaseLineSpacing_um => (long)(ExtrusionWidth_um * 4);
+		public long RaftBaseThickness_um => ExtrusionWidth_um * 300 / 400;
 		public double RaftExtraDistanceAroundPart { get; set; }
-		public int RaftExtraDistanceAroundPart_um => (int)(RaftExtraDistanceAroundPart * 1000);
+		public long RaftExtraDistanceAroundPart_um => (long)(RaftExtraDistanceAroundPart * 1000);
 		public int RaftExtruder { get; set; }
 
-		public int RaftInterfaceExtrusionWidth_um => ExtrusionWidth_um * 350 / 400;
-		public int RaftInterfaceLineSpacing_um => ExtrusionWidth_um * 1000 / 400;
+		public long RaftInterfaceExtrusionWidth_um => ExtrusionWidth_um * 350 / 400;
+		public long RaftInterfaceLineSpacing_um => ExtrusionWidth_um * 1000 / 400;
 
 		// the least it can be in the raftExtrusionWidth_um
-		public int RaftInterfaceThicknes_um => ExtrusionWidth_um * 250 / 400;
+		public long RaftInterfaceThicknes_um => ExtrusionWidth_um * 250 / 400;
 
 		// Raft read only info
 		public int RaftPrintSpeed { get; set; }
 
-		public int RaftSurfaceExtrusionWidth_um => ExtrusionWidth_um * 400 / 400;
+		public long RaftSurfaceExtrusionWidth_um => ExtrusionWidth_um * 400 / 400;
 		public int RaftSurfaceLayers => 2;
-		public int RaftSurfaceLineSpacing_um => ExtrusionWidth_um * 400 / 400;
+		public long RaftSurfaceLineSpacing_um => ExtrusionWidth_um * 400 / 400;
 		public int RaftSurfacePrintSpeed => RaftPrintSpeed;
-		public int RaftSurfaceThickness_um => ExtrusionWidth_um * 250 / 400;
+		public long RaftSurfaceThickness_um => ExtrusionWidth_um * 250 / 400;
 
 		// repair settings
 		public double RetractionOnExtruderSwitch { get; set; }
@@ -259,7 +259,7 @@ namespace MatterHackers.MatterSlice
 		public double RetractionZHop { get; set; }
 
 		public bool RetractWhenChangingIslands { get; set; }
-		public int SkirtDistance_um => (int)(SkirtDistanceFromObject * 1000);
+		public long SkirtDistance_um => (long)(SkirtDistanceFromObject * 1000);
 
 		[SettingDescription("How far from objects the first skirt loop should be, in millimeters.")]
 		public double SkirtDistanceFromObject { get; set; }
@@ -267,13 +267,13 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The minimum length of the skirt line, in millimeters.")]
 		public int SkirtMinLength { get; set; }
 
-		public int SkirtMinLength_um => (int)(SkirtMinLength * 1000);
+		public long SkirtMinLength_um => (long)(SkirtMinLength * 1000);
 
 		public string StartCode { get; set; }
 
 		public double SupportAirGap { get; set; }
 
-		public int SupportAirGap_um => (int)(SupportAirGap * 1000);
+		public long SupportAirGap_um => (long)(SupportAirGap * 1000);
 
 		public int SupportExtruder { get; set; }
 
@@ -286,7 +286,7 @@ namespace MatterHackers.MatterSlice
 
 		public double SupportLineSpacing { get; set; }
 
-		public int SupportLineSpacing_um => (int)(SupportLineSpacing * 1000);
+		public long SupportLineSpacing_um => (long)(SupportLineSpacing * 1000);
 
 		[SettingDescription("mm/s.")]
 		public int SupportMaterialSpeed { get; set; }
@@ -300,7 +300,7 @@ namespace MatterHackers.MatterSlice
 		//Support material
 		public ConfigConstants.SUPPORT_TYPE SupportType { get; set; }
 
-		public int SupportXYDistance_um => (int)(SupportXYDistanceFromObject * 1000);
+		public long SupportXYDistance_um => (long)(SupportXYDistanceFromObject * 1000);
 
 		[SettingDescription("The closest xy distance that support will be to the object. mm/s.")]
 		public double SupportXYDistanceFromObject { get; set; }
@@ -331,12 +331,12 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("If greater than 0 this creates an outline around shapes so the extrude will be wiped when entering.")]
 		public double WipeShieldDistanceFromObject { get; set; }
 
-		public int WipeShieldDistanceFromShapes_um => (int)(WipeShieldDistanceFromObject * 1000);
+		public long WipeShieldDistanceFromShapes_um => (long)(WipeShieldDistanceFromObject * 1000);
 
 		[SettingDescription("Unlike the wipe shield this is a square of size*size in the lower left corner for wiping during extruder changing.")]
 		public double WipeTowerSize { get; set; }
 
-		public int WipeTowerSize_um => (int)(WipeTowerSize * 1000);
+		public long WipeTowerSize_um => (long)(WipeTowerSize * 1000);
 
 		public double WipeCenterX => WipeCenter_um.X / 1000.0;
 		public double WipeCenterY => WipeCenter_um.Y / 1000.0;

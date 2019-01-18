@@ -88,7 +88,7 @@ namespace MatterHackers.MatterSlice.Tests
 					supportOutlines.Add(new Polygons());
 				}
 
-				var outputs = CreateLayerData(config, partOutlines, supportOutlines, 1);
+				var outputs = CreateLayerData(config, partOutlines, supportOutlines, 1000);
 				ExtruderLayers layerData = outputs.Item1;
 				NewSupport supportGenerator = outputs.Item2;
 
@@ -239,7 +239,7 @@ namespace MatterHackers.MatterSlice.Tests
 					partOutlines.Add(cubeOutline);
 				}
 
-				var outputs = CreateLayerData(config, partOutlines, supportOutlines, 1);
+				var outputs = CreateLayerData(config, partOutlines, supportOutlines, 1000);
 				ExtruderLayers layerData = outputs.Item1;
 				NewSupport supportGenerator = outputs.Item2;
 
@@ -283,7 +283,7 @@ namespace MatterHackers.MatterSlice.Tests
 		private static (ExtruderLayers, NewSupport) CreateLayerData(ConfigSettings config,
 			List<Polygons> totalLayerOutlines, 
 			List<Polygons> supportOutlines,
-			double grabDistance)
+			long grabDistance_um)
 		{
 			int numLayers = totalLayerOutlines.Count;
 			var layerData = new ExtruderLayers();
@@ -302,7 +302,7 @@ namespace MatterHackers.MatterSlice.Tests
 					supportData.Layers.Add(supportLayer);
 				}
 			}
-			var newSupport = new NewSupport(config, new List<ExtruderLayers>() { layerData }, supportData, grabDistance);
+			var newSupport = new NewSupport(config, new List<ExtruderLayers>() { layerData }, supportData, grabDistance_um);
 			return (layerData, newSupport);
 		}
 

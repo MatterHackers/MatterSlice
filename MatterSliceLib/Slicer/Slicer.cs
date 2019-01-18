@@ -53,8 +53,8 @@ namespace MatterHackers.MatterSlice
 
 		public ExtruderData(OptimizedMesh ov, ConfigSettings config)
 		{
-			int initialLayerThickness_um = config.FirstLayerThickness_um;
-			int layerThickness_um = config.LayerThickness_um;
+			long initialLayerThickness_um = config.FirstLayerThickness_um;
+			long layerThickness_um = config.LayerThickness_um;
 
 			modelSize = ov.containingCollection.size_um;
 			modelMin = ov.containingCollection.minXYZ_um;

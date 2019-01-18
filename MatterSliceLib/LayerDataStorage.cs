@@ -78,15 +78,15 @@ namespace MatterHackers.MatterSlice
 				this.WipeShield[layerIndex] = this.WipeShield[layerIndex].Offset(-1000).Offset(1000);
 			}
 
-			int offsetAngle = (int)Math.Tan(60.0 * Math.PI / 180) * config.LayerThickness_um;//Allow for a 60deg angle in the wipeShield.
+			long offsetAngle_um = (long)(Math.Tan(60.0 * Math.PI / 180) * config.LayerThickness_um);//Allow for a 60deg angle in the wipeShield.
 			for (int layerIndex = 1; layerIndex < totalLayers; layerIndex++)
 			{
-				this.WipeShield[layerIndex] = this.WipeShield[layerIndex].CreateUnion(this.WipeShield[layerIndex - 1].Offset(-offsetAngle));
+				this.WipeShield[layerIndex] = this.WipeShield[layerIndex].CreateUnion(this.WipeShield[layerIndex - 1].Offset(-offsetAngle_um));
 			}
 
 			for (int layerIndex = totalLayers - 1; layerIndex > 0; layerIndex--)
 			{
-				this.WipeShield[layerIndex - 1] = this.WipeShield[layerIndex - 1].CreateUnion(this.WipeShield[layerIndex].Offset(-offsetAngle));
+				this.WipeShield[layerIndex - 1] = this.WipeShield[layerIndex - 1].CreateUnion(this.WipeShield[layerIndex].Offset(-offsetAngle_um));
 			}
 		}
 
@@ -212,7 +212,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void GenerateRaftOutlines(int extraDistanceAroundPart_um, ConfigSettings config)
+		public void GenerateRaftOutlines(long extraDistanceAroundPart_um, ConfigSettings config)
 		{
 			LayerDataStorage storage = this;
 			for (int extruderIndex = 0; extruderIndex < storage.Extruders.Count; extruderIndex++)
@@ -257,9 +257,9 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void GenerateSkirt(int distance, int extrusionWidth_um, int numberOfLoops, int brimCount, int minLength, ConfigSettings config)
+		public void GenerateSkirt(long distance_um, long extrusionWidth_um, int numberOfLoops, int brimCount, long minLength_um, ConfigSettings config)
 		{
-			Polygons islandsToSkirtAround = GetSkirtBounds(config, this, (distance > 0), distance, extrusionWidth_um, brimCount);
+			Polygons islandsToSkirtAround = GetSkirtBounds(config, this, (distance_um > 0), distance_um, extrusionWidth_um, brimCount);
 
 			if (islandsToSkirtAround.Count > 0)
 			{
@@ -269,12 +269,12 @@ namespace MatterHackers.MatterSlice
 				// Create skirt loops from the ConvexHull
 				for (int skirtLoop = 0; skirtLoop < numberOfLoops; skirtLoop++)
 				{
-					int offsetDistance = distance + extrusionWidth_um * (skirtLoop - 1) - extrusionWidth_um / 2;
+					long offsetDistance = distance_um + extrusionWidth_um * (skirtLoop - 1) - extrusionWidth_um / 2;
 
 					this.Skirt.AddAll(convexHull.Offset(offsetDistance));
 
 					int length = (int)this.Skirt.PolygonLength();
-					if (skirtLoop + 1 >= numberOfLoops && length > 0 && length < minLength)
+					if (skirtLoop + 1 >= numberOfLoops && length > 0 && length < minLength_um)
 					{
 						// add more loops for as long as we have not extruded enough length
 						numberOfLoops++;
@@ -455,7 +455,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private static Polygons GetSkirtBounds(ConfigSettings config, LayerDataStorage storage, bool externalOnly, int distance, int extrusionWidth_um, int brimCount)
+		private static Polygons GetSkirtBounds(ConfigSettings config, LayerDataStorage storage, bool externalOnly, long distance_um, long extrusionWidth_um, int brimCount)
 		{
 			bool hasWipeTower = storage.WipeTower.PolygonLength() > 0;
 

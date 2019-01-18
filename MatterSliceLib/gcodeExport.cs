@@ -176,7 +176,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void SetExtrusion(int layerThickness, int filamentDiameter, double extrusionMultiplier)
+		public void SetExtrusion(long layerThickness, long filamentDiameter, double extrusionMultiplier)
 		{
 			//double feedRateRatio = 1 + (Math.PI / 4 - 1) * layerThickness / extrusionWidth;
 			//extrusionMultiplier *= feedRateRatio;

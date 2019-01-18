@@ -23,23 +23,6 @@ using System.Collections.Generic;
 using MatterHackers.Pathfinding;
 using MSClipperLib;
 
-// TODO:
-// split the part into multiple areas for support pillars
-// Create extra upward support for small features (tip of a rotated box)
-// sparse write the support layers so they are easier to remove
-// make column reduced support work
-
-// DONE:
-// check frost morn, should have support under unsupported parts
-// make sure all air gapped layers are written after ALL extruder normal layers
-// Make the on model material be air gapped
-// Offset the output data to account for nozzle diameter (currently they are just the outlines not the extrude positions)
-// Make skirt consider support outlines
-// Make raft consider support outlines
-// Make sure we work correctly with the support extruder set.
-// Make from bed only work (no internal support)
-// Fix extra extruder material on top of interface layer
-
 namespace MatterHackers.MatterSlice
 {
 	using Polygon = List<IntPoint>;
@@ -49,7 +32,7 @@ namespace MatterHackers.MatterSlice
 	{
 		private static double cleanDistance_um = 10;
 
-		public NewSupport(ConfigSettings config, List<ExtruderLayers> Extruders, ExtruderLayers userGeneratedSupport, double grabDistanceMm)
+		public NewSupport(ConfigSettings config, List<ExtruderLayers> Extruders, ExtruderLayers userGeneratedSupport, long grabDistance_um)
 		{
 			cleanDistance_um = config.ExtrusionWidth_um / 10;
 			long supportWidth_um = (long)(config.ExtrusionWidth_um * (100 - config.SupportPercent) / 100);
@@ -66,7 +49,7 @@ namespace MatterHackers.MatterSlice
 				SparseSupportOutlines[layerIndex] = userGeneratedSupport.Layers[layerIndex].AllOutlines.DeepCopy();
 			}
 
-			SparseSupportOutlines = ExpandToEasyGrabDistance(SparseSupportOutlines, (int)(grabDistanceMm * 1000) - supportWidth_um);
+			SparseSupportOutlines = ExpandToEasyGrabDistance(SparseSupportOutlines, grabDistance_um - supportWidth_um);
 
 			// remove the actual parts from the support data
 			SparseSupportOutlines = ClipToXyDistance(SparseSupportOutlines, _InsetPartOutlines, config);

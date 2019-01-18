@@ -84,7 +84,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void GenerateTopAndBottoms(ConfigSettings config, int layerIndex, int extrusionWidth_um, int outerPerimeterWidth_um, int downLayerCount, int upLayerCount, long infillExtendIntoPerimeter_um)
+		public void GenerateTopAndBottoms(ConfigSettings config, int layerIndex, long extrusionWidth_um, long outerPerimeterWidth_um, int downLayerCount, int upLayerCount, long infillExtendIntoPerimeter_um)
 		{
 			var clippingOffset = infillExtendIntoPerimeter_um * 2;
 
