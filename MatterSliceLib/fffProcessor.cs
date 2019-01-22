@@ -166,22 +166,22 @@ namespace MatterHackers.MatterSlice
 			gcodeExport.Close();
 		}
 
-		private void preSetup(int extrusionWidth)
+		private void preSetup(long extrusionWidth_um)
 		{
-			skirtConfig.SetData(config.InsidePerimetersSpeed, extrusionWidth, "SKIRT");
+			skirtConfig.SetData(config.InsidePerimetersSpeed, extrusionWidth_um, "SKIRT");
 			inset0Config.SetData(config.OutsidePerimeterSpeed, config.OutsideExtrusionWidth_um, "WALL-OUTER");
-			insetXConfig.SetData(config.InsidePerimetersSpeed, extrusionWidth, "WALL-INNER");
+			insetXConfig.SetData(config.InsidePerimetersSpeed, extrusionWidth_um, "WALL-INNER");
 
-			fillConfig.SetData(config.InfillSpeed, extrusionWidth, "FILL", false);
-			topFillConfig.SetData(config.TopInfillSpeed, extrusionWidth, "TOP-FILL", false);
-			firstTopFillConfig.SetData(config.BridgeSpeed, extrusionWidth, "FIRST-TOP-Fill", false);
-			bottomFillConfig.SetData(config.BottomInfillSpeed, extrusionWidth, "BOTTOM-FILL", false);
-			airGappedBottomConfig.SetData(config.AirGapSpeed, extrusionWidth, "AIR-GAP", false);
-			airGappedBottomInsetConfig.SetData(config.AirGapSpeed, extrusionWidth, "AIR-GAP-INSET");
-			bridgeConfig.SetData(config.BridgeSpeed, extrusionWidth, "BRIDGE");
+			fillConfig.SetData(config.InfillSpeed, extrusionWidth_um, "FILL", false);
+			topFillConfig.SetData(config.TopInfillSpeed, extrusionWidth_um, "TOP-FILL", false);
+			firstTopFillConfig.SetData(config.BridgeSpeed, extrusionWidth_um, "FIRST-TOP-Fill", false);
+			bottomFillConfig.SetData(config.BottomInfillSpeed, extrusionWidth_um, "BOTTOM-FILL", false);
+			airGappedBottomConfig.SetData(config.AirGapSpeed, extrusionWidth_um, "AIR-GAP", false);
+			airGappedBottomInsetConfig.SetData(config.AirGapSpeed, extrusionWidth_um, "AIR-GAP-INSET");
+			bridgeConfig.SetData(config.BridgeSpeed, extrusionWidth_um, "BRIDGE");
 
-			supportNormalConfig.SetData(config.SupportMaterialSpeed, extrusionWidth, "SUPPORT");
-			supportInterfaceConfig.SetData(config.SupportMaterialSpeed, extrusionWidth, "SUPPORT-INTERFACE");
+			supportNormalConfig.SetData(config.SupportMaterialSpeed, extrusionWidth_um, "SUPPORT");
+			supportInterfaceConfig.SetData(config.SupportMaterialSpeed, extrusionWidth_um, "SUPPORT-INTERFACE");
 
 			gcodeExport.SetLayerChangeCode(config.LayerChangeCode);
 		}
@@ -278,7 +278,7 @@ namespace MatterHackers.MatterSlice
 				&& !config.ContinuousSpiralOuterPerimeter)
 			{
 				timeKeeper.Restart();
-				slicingData.Support = new NewSupport(config, slicingData.Extruders, supportOutlines, 1);
+				slicingData.Support = new NewSupport(config, slicingData.Extruders, supportOutlines, 1000);
 				LogOutput.Log("Generating supports in {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			}
 
@@ -604,7 +604,7 @@ namespace MatterHackers.MatterSlice
 					slicingData.EnsureWipeTowerIsSolid(layerIndex, layerPlanner, fillConfig, config);
 				}
 
-				int currentLayerThickness_um = config.LayerThickness_um;
+				long currentLayerThickness_um = config.LayerThickness_um;
 				if (layerIndex <= 0)
 				{
 					currentLayerThickness_um = config.FirstLayerThickness_um;
@@ -812,7 +812,7 @@ namespace MatterHackers.MatterSlice
 			LayerGCodePlanner layerGcodePlanner,
 			int extruderIndex,
 			int layerIndex,
-			int extrusionWidth_um,
+			long extrusionWidth_um,
 			long currentZ_um)
 		{
 			if (extruderIndex > slicingData.Extruders.Count - 1)
@@ -1273,7 +1273,7 @@ namespace MatterHackers.MatterSlice
 		}
 
 		//Add a single layer from a single extruder to the GCode
-		private void QueueAirGappedExtruderLayerToGCode(LayerDataStorage slicingData, LayerGCodePlanner layerGcodePlanner, int extruderIndex, int layerIndex, int extrusionWidth_um, long currentZ_um)
+		private void QueueAirGappedExtruderLayerToGCode(LayerDataStorage slicingData, LayerGCodePlanner layerGcodePlanner, int extruderIndex, int layerIndex, long extrusionWidth_um, long currentZ_um)
 		{
 			if (slicingData.Support != null
 				&& !config.ContinuousSpiralOuterPerimeter

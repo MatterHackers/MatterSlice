@@ -63,7 +63,7 @@ namespace MatterHackers.MatterSlice
 		public Polygons FirstTopPaths { get; set; } = new Polygons();
 		public Polygons TopPaths { get; set; } = new Polygons();
 
-		public void GenerateInsets(int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount, bool avoidCrossingPerimeters)
+		public void GenerateInsets(long extrusionWidth_um, long outerExtrusionWidth_um, int insetCount, bool avoidCrossingPerimeters)
 		{
 			LayerIsland part = this;
 			part.BoundingBox.Calculate(part.IslandOutline);
@@ -76,10 +76,10 @@ namespace MatterHackers.MatterSlice
 			}
 			else // generate the insets
 			{
-				int currentOffset = 0;
+				long currentOffset = 0;
 
 				// Inset 0 will use the outerExtrusionWidth_um, everyone else will use extrusionWidth_um
-				int offsetBy = outerExtrusionWidth_um / 2;
+				long offsetBy = outerExtrusionWidth_um / 2;
 
 				for (int i = 0; i < insetCount; i++)
 				{

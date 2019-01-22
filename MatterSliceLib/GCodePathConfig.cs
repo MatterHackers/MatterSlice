@@ -29,7 +29,7 @@ namespace MatterHackers.MatterSlice
 		public bool closedLoop = true;
 		public bool DoSeamHiding { get; set; }
 		public string gcodeComment;
-		public int lineWidth_um;
+		public long lineWidth_um;
 		public double Speed { get; private set; }
 		public bool spiralize;
 
@@ -47,7 +47,7 @@ namespace MatterHackers.MatterSlice
 		/// <param name="lineWidth_um"></param>
 		/// <param name="gcodeComment"></param>
 		/// <param name="closedLoop"></param>
-		public void SetData(double speed, int lineWidth_um, string gcodeComment, bool closedLoop = true)
+		public void SetData(double speed, long lineWidth_um, string gcodeComment, bool closedLoop = true)
 		{
 			this.closedLoop = closedLoop;
 			this.Speed = speed;

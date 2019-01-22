@@ -67,7 +67,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static void GenerateGridInfill(ConfigSettings config, Polygons partOutline, Polygons fillPolygons, double fillAngle, int linespacing_um = 0)
+		public static void GenerateGridInfill(ConfigSettings config, Polygons partOutline, Polygons fillPolygons, double fillAngle, long linespacing_um = 0)
 		{
 			if (linespacing_um == 0)
 			{
@@ -101,7 +101,7 @@ namespace MatterHackers.MatterSlice
 			Infill.GenerateHexLinePaths(partOutline, fillPolygons, linespacing_um, config.InfillExtendIntoPerimeter_um, fillAngle, layerIndex);
 		}
 
-		public static void GenerateHexLinePaths(Polygons in_outline, Polygons result, int lineSpacing, int infillExtendIntoPerimeter_um, double rotationDegrees, int layerIndex)
+		public static void GenerateHexLinePaths(Polygons in_outline, Polygons result, int lineSpacing, long infillExtendIntoPerimeter_um, double rotationDegrees, int layerIndex)
 		{
 			int extraRotationAngle = 0;
 			if (in_outline.Count > 0)
@@ -179,7 +179,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static void GenerateLineInfill(ConfigSettings config, Polygons partOutline, Polygons fillPolygons, double fillAngle, int linespacing_um = 0)
+		public static void GenerateLineInfill(ConfigSettings config, Polygons partOutline, Polygons fillPolygons, double fillAngle, long linespacing_um = 0)
 		{
 			if (linespacing_um == 0)
 			{
@@ -193,7 +193,7 @@ namespace MatterHackers.MatterSlice
 			GenerateLinePaths(partOutline, fillPolygons, linespacing_um, config.InfillExtendIntoPerimeter_um, fillAngle);
 		}
 
-		public static void GenerateLinePaths(Polygons polygonToInfill, Polygons infillLinesToPrint, int lineSpacing, int infillExtendIntoPerimeter_um, double rotation, long rotationOffset = 0)
+		public static void GenerateLinePaths(Polygons polygonToInfill, Polygons infillLinesToPrint, long lineSpacing_um, long infillExtendIntoPerimeter_um, double rotation, long rotationOffset = 0)
 		{
 			if (polygonToInfill.Count > 0)
 			{
@@ -206,16 +206,16 @@ namespace MatterHackers.MatterSlice
 
 					Aabb boundary = new Aabb(outlines);
 
-					boundary.min.X = ((boundary.min.X / lineSpacing) - 1) * lineSpacing - rotationOffset;
-					int xLineCount = (int)((boundary.max.X - boundary.min.X + (lineSpacing - 1)) / lineSpacing);
+					boundary.min.X = ((boundary.min.X / lineSpacing_um) - 1) * lineSpacing_um - rotationOffset;
+					int xLineCount = (int)((boundary.max.X - boundary.min.X + (lineSpacing_um - 1)) / lineSpacing_um);
 					Polygons unclippedPattern = new Polygons();
 
-					long firstX = boundary.min.X / lineSpacing * lineSpacing;
+					long firstX = boundary.min.X / lineSpacing_um * lineSpacing_um;
 					for (int lineIndex = 0; lineIndex < xLineCount; lineIndex++)
 					{
 						Polygon line = new Polygon();
-						line.Add(new IntPoint(firstX + lineIndex * lineSpacing, boundary.min.Y));
-						line.Add(new IntPoint(firstX + lineIndex * lineSpacing, boundary.max.Y));
+						line.Add(new IntPoint(firstX + lineIndex * lineSpacing_um, boundary.min.Y));
+						line.Add(new IntPoint(firstX + lineIndex * lineSpacing_um, boundary.max.Y));
 						unclippedPattern.Add(line);
 					}
 

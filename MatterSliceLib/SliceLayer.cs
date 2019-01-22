@@ -228,7 +228,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void GenerateInsets(int extrusionWidth_um, int outerExtrusionWidth_um, int insetCount, bool expandThinWalls, bool avoidCrossingPerimeters)
+		public void GenerateInsets(long extrusionWidth_um, long outerExtrusionWidth_um, int insetCount, bool expandThinWalls, bool avoidCrossingPerimeters)
 		{
 			SliceLayer layer = this;
 			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
