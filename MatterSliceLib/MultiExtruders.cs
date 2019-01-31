@@ -57,9 +57,9 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static void ProcessBooleans(List<ExtruderLayers> allPartsLayers, string booleanOperations)
+		public static List<ExtruderLayers> ProcessBooleans(List<ExtruderLayers> allPartsLayers, string booleanOperations)
 		{
-			BooleanProcessing processor = new BooleanProcessing(allPartsLayers, booleanOperations);
+			return BooleanProcessing.Process(allPartsLayers, booleanOperations);
 		}
 
 		public static void RemoveExtruderIntersections(List<ExtruderLayers> extruders)
@@ -80,18 +80,18 @@ namespace MatterHackers.MatterSlice
 		}
 	}
 
-	public class BooleanProcessing
+	public static class BooleanProcessing
 	{
-		private int currentExtruder = 0;
-		private Stack<int> extruderIndexStack = new Stack<int>();
-		private List<int> layersToRemove = new List<int>();
-		private int numberOfOpens = 0;
+		private static double cleanDistance_um = 10;
 
-		public BooleanProcessing(List<ExtruderLayers> extruders, string booleanOperations)
+		public static List<ExtruderLayers> Process(List<ExtruderLayers> loadedMeshes, string booleanOperations)
 		{
+			List<ExtruderLayers> extruders = new List<ExtruderLayers>();
 			int parseIndex = 0;
-			int totalLayers = extruders[0].Layers.Count;
-			int operands = 0;
+			int totalLayers = loadedMeshes[0].Layers.Count;
+			List<int> meshesToProcess = new List<int>();
+			bool foundSupport = false;
+			int numberOfOpens = 0;
 			while (parseIndex < booleanOperations.Length)
 			{
 				BooleanType typeToDo = BooleanType.None;
@@ -126,63 +126,74 @@ namespace MatterHackers.MatterSlice
 
 					case 'S':
 						parseIndex++;
+						foundSupport = true;
 						break;
 
 					default:
 						// get the number for the operand index
 						int skipCount = 0;
-						extruderIndexStack.Push(GetNextNumber(booleanOperations, parseIndex, out skipCount));
+						meshesToProcess.Add(GetNextNumber(booleanOperations, parseIndex, out skipCount));
 						parseIndex += skipCount;
-						operands++;
 						break;
 				}
 
-				if (typeToDo != BooleanType.None)
+				if (typeToDo == BooleanType.Union
+					|| typeToDo == BooleanType.Difference
+					|| typeToDo == BooleanType.Intersection)
 				{
 					numberOfOpens--;
-
-					if (operands > 1)
+					// we have the conclusion of a group of meshes, do the processing
+					while (meshesToProcess.Count > 1)
 					{
-						int extruderBIndex = extruderIndexStack.Pop();
-						int extruderAIndex = extruderIndexStack.Pop();
-						if (extruders[extruderBIndex].Layers.Count != extruders[extruderAIndex].Layers.Count ||
-							extruders[extruderAIndex].Layers.Count != totalLayers)
+						int removeExtruderIndex = meshesToProcess[meshesToProcess.Count - 2];
+						int keepExtruderIndex = meshesToProcess[meshesToProcess.Count - 1];
+						if (loadedMeshes[removeExtruderIndex].Layers.Count != loadedMeshes[keepExtruderIndex].Layers.Count ||
+							loadedMeshes[keepExtruderIndex].Layers.Count != totalLayers)
 						{
 							throw new Exception("These should be the same.");
 						}
 
 						for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 						{
-							SliceLayer layerA = extruders[extruderAIndex].Layers[layerIndex];
-							SliceLayer layerB = extruders[extruderBIndex].Layers[layerIndex];
-							DoLayerBooleans(layerA, layerB, typeToDo);
-						}
-						layersToRemove.Add(extruderBIndex);
+							if(foundSupport)
+							{
+								// grow the support outlines of the incoming union
+								loadedMeshes[removeExtruderIndex].Layers[layerIndex].AllOutlines 
+									= Clipper.CleanPolygons(loadedMeshes[removeExtruderIndex].Layers[layerIndex].AllOutlines.Offset(1000), cleanDistance_um);
+							}
 
-						extruderIndexStack.Push(extruderAIndex);
-						operands--;
+							SliceLayer keepLayer = loadedMeshes[keepExtruderIndex].Layers[layerIndex];
+							SliceLayer removeLayer = loadedMeshes[removeExtruderIndex].Layers[layerIndex];
+							DoLayerBooleans(keepLayer, removeLayer, typeToDo);
+						}
+
+						meshesToProcess.RemoveAt(meshesToProcess.Count - 2);
 					}
 
-					if(numberOfOpens == 0)  // only one element assigned to extruder and move to next
+					if (numberOfOpens == 0)
 					{
-						currentExtruder++;
-						// next extruder has no operands yet
-						operands = 0;
+						extruders.Add(loadedMeshes[meshesToProcess[0]]);
+						meshesToProcess.Clear();
 					}
 				}
 			}
 
-			layersToRemove.Sort();
-			for (int i = layersToRemove.Count - 1; i >= 0; i--)
+			if (extruders.Count > 0)
 			{
-				extruders.RemoveAt(layersToRemove[i]);
+				return extruders;
 			}
+
+			return loadedMeshes;
 		}
 
 		private enum BooleanType
-		{ None, Union, Difference, Intersection };
+		{
+			None,
+			Union,
+			Difference,
+			Intersection
+		};
 
-		public List<ExtruderLayers> FinalLayers { get; internal set; }
 
 		private static void DoLayerBooleans(SliceLayer layersA, SliceLayer layersB, BooleanType booleanType)
 		{
@@ -214,7 +225,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private int GetNextNumber(string numberString, int index, out int skipCount)
+		private static int GetNextNumber(string numberString, int index, out int skipCount)
 		{
 			string digits = new string(numberString.Substring(index).TakeWhile(c => Char.IsDigit(c)).ToArray());
 			skipCount = digits.Length;
