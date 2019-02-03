@@ -256,7 +256,7 @@ namespace MatterHackers.MatterSlice
 				config.InfillPercent = 0;
 			}
 
-			MultiExtruders.ProcessBooleans(slicingData.Extruders, config.BooleanOperations);
+			slicingData.Extruders = MultiExtruders.ProcessBooleans(slicingData.Extruders, config.BooleanOperations);
 
 			// Is the last extruder data actually support definitions?
 			bool userGeneratedSupport = config.BooleanOperations.Contains("S");
@@ -271,14 +271,14 @@ namespace MatterHackers.MatterSlice
 			MultiExtruders.RemoveExtruderIntersections(slicingData.Extruders);
 			MultiExtruders.OverlapMultipleExtrudersSlightly(slicingData.Extruders, config.MultiExtruderOverlapPercent);
 #if False
-            LayerPart.dumpLayerparts(slicingData, "output.html");
+			LayerPart.dumpLayerparts(slicingData, "output.html");
 #endif
 
 			if (supportOutlines != null
 				&& !config.ContinuousSpiralOuterPerimeter)
 			{
 				timeKeeper.Restart();
-				slicingData.Support = new NewSupport(config, slicingData.Extruders, supportOutlines, 1000);
+				slicingData.Support = new NewSupport(config, slicingData.Extruders, supportOutlines, 0);
 				LogOutput.Log("Generating supports in {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			}
 
