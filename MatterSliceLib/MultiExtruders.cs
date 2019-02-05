@@ -67,12 +67,12 @@ namespace MatterHackers.MatterSlice
 			//Go trough all the extruders, and remove the previous extruders outlines from our own outline, so we never have overlapped areas.
 			for (int extruderIndex = extruders.Count - 1; extruderIndex >= 0; extruderIndex--)
 			{
-				for (int otherExtuderIndex = extruderIndex - 1; otherExtuderIndex >= 0; otherExtuderIndex--)
+				for (int otherExtruderIndex = extruderIndex - 1; otherExtruderIndex >= 0; otherExtruderIndex--)
 				{
 					for (int layerIndex = 0; layerIndex < extruders[extruderIndex].Layers.Count; layerIndex++)
 					{
 						SliceLayer layerToRemoveFrom = extruders[extruderIndex].Layers[layerIndex];
-						SliceLayer layerToRemove = extruders[otherExtuderIndex].Layers[layerIndex];
+						SliceLayer layerToRemove = extruders[otherExtruderIndex].Layers[layerIndex];
 						layerToRemoveFrom.AllOutlines = layerToRemoveFrom.AllOutlines.CreateDifference(layerToRemove.AllOutlines);
 					}
 				}
