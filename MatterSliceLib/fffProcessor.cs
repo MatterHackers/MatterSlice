@@ -515,7 +515,19 @@ namespace MatterHackers.MatterSlice
 				// start out with the fan off for this layer (the minimum layer fan speed will be applied later as the gcode is output)
 				layerPlanner.QueueFanCommand(0, fillConfig);
 
-				for (int extruderIndex = 0; extruderIndex < config.ExtruderCount; extruderIndex++)
+				// Extruders in normal order
+				var extruders = Enumerable.Range(0, config.ExtruderCount).ToList();
+
+				// Stay on active extruder - if not E0, change extruder ordering to remain/start on current index
+				int activeExtruderIndex = layerPlanner.GetExtruder();
+				if (activeExtruderIndex != 0)
+				{
+					extruders.Remove(activeExtruderIndex);
+					extruders.Insert(0, activeExtruderIndex);
+				}
+
+				// Loop over extruders in preferred order
+				foreach (int extruderIndex in extruders)
 				{
 					ChangeExtruderIfRequired(slicingData, layerIndex, layerPlanner, extruderIndex, false);
 
@@ -644,7 +656,6 @@ namespace MatterHackers.MatterSlice
 
 			bool extruderUsedForWipeTower = extruderUsedForParts
 				&& slicingData.NeedToPrintWipeTower(layerIndex, config);
-
 
 			if ((extruderUsedForSupport 
 				|| extruderUsedForWipeTower
