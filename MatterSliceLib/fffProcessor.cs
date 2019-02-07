@@ -1338,18 +1338,12 @@ namespace MatterHackers.MatterSlice
 
 					if (outputDataForIsland)
 					{
-						// TODO: Why two moveToIsland calls below?
-						if (config.AvoidCrossingPerimeters)
+						if (!config.AvoidCrossingPerimeters
+							&& config.RetractWhenChangingIslands)
 						{
-							// Here
-							MoveToIsland(layerGcodePlanner, layer, island);
-						}
-						else
-						{
-							if (config.RetractWhenChangingIslands) layerGcodePlanner.ForceRetract();
+							layerGcodePlanner.ForceRetract();
 						}
 
-						// And unconditionally here
 						MoveToIsland(layerGcodePlanner, layer, island);
 
 						if (config.NumberOfPerimeters > 0
