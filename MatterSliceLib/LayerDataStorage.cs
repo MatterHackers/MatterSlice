@@ -43,7 +43,7 @@ namespace MatterHackers.MatterSlice
 		public List<Polygons> WipeShield { get; set; } = new List<Polygons>();
 		public Polygons WipeTower = new Polygons();
 
-		private bool[] extrudersThatHaveBeenPrimed = null;
+		private int primesThisLayer = 0;
 
 		public void CreateIslandData()
 		{
@@ -98,8 +98,6 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			extrudersThatHaveBeenPrimed = new bool[ExtruderContConsideringSuport(config)];
-
 			Polygon wipeTowerShape = new Polygon();
 			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000));
 			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000 + config.WipeTowerSize_um));
@@ -149,20 +147,15 @@ namespace MatterHackers.MatterSlice
 		[Conditional("DEBUG")]
 		private void CheckNoExtruderPrimed(ConfigSettings config)
 		{
-			int extruderCount = ExtruderContConsideringSuport(config);
-			for (int extruderIndex = 0; extruderIndex < extruderCount; extruderIndex++)
+			if (primesThisLayer > 0)
 			{
-				if (extrudersThatHaveBeenPrimed[extruderIndex])
-				{
-					throw new Exception("No extruders should be primed");
-				}
+				throw new Exception("No extruders should be primed");
 			}
 		}
 
 		public void EnsureWipeTowerIsSolid(int layerIndex, LayerGCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
 		{
-			if (layerIndex >= LastLayerWithChange(config)
-				|| extrudersThatHaveBeenPrimed == null)
+			if (layerIndex >= LastLayerWithChange(config))
 			{
 				return;
 			}
@@ -173,11 +166,11 @@ namespace MatterHackers.MatterSlice
 				CheckNoExtruderPrimed(config);
 
 				long insetPerLoop = fillConfig.lineWidth_um;
-				int extruderCount = ExtruderContConsideringSuport(config);
+				int maxPrimingLoops = MaxPrimingLoops(config);
 
-				Polygons outlineForExtruder = this.WipeTower.Offset(-insetPerLoop);
+				Polygons outlineForExtruder = this.WipeTower;
 
-				Polygons fillPolygons = new Polygons();
+				var fillPolygons = new Polygons();
 				while (outlineForExtruder.Count > 0)
 				{
 					for (int polygonIndex = 0; polygonIndex < outlineForExtruder.Count; polygonIndex++)
@@ -197,18 +190,16 @@ namespace MatterHackers.MatterSlice
 			else
 			{
 				// print all of the extruder loops that have not already been printed
-				int extruderCount = ExtruderContConsideringSuport(config);
-				for (int extruderIndex = 0; extruderIndex < extruderCount; extruderIndex++)
-				{
-					if (!extrudersThatHaveBeenPrimed[extruderIndex])
-					{
-						// write the loops for this extruder, but don't change to it. We are just filling the prime tower.
-						PrimeOnWipeTower(extruderIndex, layerIndex, gcodeLayer, fillConfig, config, false);
-					}
+				int maxPrimingLoops = MaxPrimingLoops(config);
 
-					// clear the history of printer extruders for the next layer
-					extrudersThatHaveBeenPrimed[extruderIndex] = false;
+				for (int primeLoop = primesThisLayer; primeLoop < maxPrimingLoops; primeLoop++)
+				{
+					// write the loops for this extruder, but don't change to it. We are just filling the prime tower.
+					PrimeOnWipeTower(layerIndex, gcodeLayer, fillConfig, config, false);
 				}
+
+				// clear the history of printer extruders for the next layer
+				primesThisLayer = 0;
 			}
 		}
 
@@ -283,18 +274,18 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private int ExtruderContConsideringSuport(ConfigSettings config)
+		private int MaxPrimingLoops(ConfigSettings config)
 		{
-			return Support != null ? config.ExtruderCount * 2 : config.ExtruderCount;
+			return Support != null ? config.ExtruderCount * 2 - 2 : config.ExtruderCount - 1;
 		}
 
 		public void GenerateWipeTowerInfill(int extruderIndex, Polygons partOutline, Polygons outputfillPolygons, long extrusionWidth_um, ConfigSettings config)
 		{
-			int extruderCount = ExtruderContConsideringSuport(config);
+			int maxPrimingLoops = MaxPrimingLoops(config);
 
 			Polygons outlineForExtruder = partOutline.Offset(-extrusionWidth_um * extruderIndex);
 
-			long insetPerLoop = extrusionWidth_um * extruderCount;
+			long insetPerLoop = extrusionWidth_um * maxPrimingLoops;
 			while (outlineForExtruder.Count > 0)
 			{
 				for (int polygonIndex = 0; polygonIndex < outlineForExtruder.Count; polygonIndex++)
@@ -311,8 +302,7 @@ namespace MatterHackers.MatterSlice
 
 		public bool HaveWipeTower(ConfigSettings config)
 		{
-			if (extrudersThatHaveBeenPrimed == null
-				 || config.WipeTowerSize_um == 0
+			if (config.WipeTowerSize_um == 0
 				 || LastLayerWithChange(config) == -1)
 			{
 				return false;
@@ -321,7 +311,7 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public void PrimeOnWipeTower(int extruderIndexIn, int layerIndex, LayerGCodePlanner layerGcodePlanner, GCodePathConfig fillConfig, ConfigSettings config, bool airGapped)
+		public void PrimeOnWipeTower(int layerIndex, LayerGCodePlanner layerGcodePlanner, GCodePathConfig fillConfig, ConfigSettings config, bool airGapped)
 		{
 			if (!HaveWipeTower(config)
 				|| layerIndex > LastLayerWithChange(config) + 1
@@ -339,21 +329,19 @@ namespace MatterHackers.MatterSlice
 			//If we changed extruder, print the wipe/prime tower for this nozzle;
 			Polygons fillPolygons = new Polygons();
 
-			int extruderIndex = airGapped ? config.ExtruderCount + extruderIndexIn : extruderIndexIn;
-
 			var oldPathFinder = layerGcodePlanner.PathFinder;
 			layerGcodePlanner.PathFinder = null;
-			GenerateWipeTowerInfill(extruderIndex, this.WipeTower, fillPolygons, fillConfig.lineWidth_um, config);
+			GenerateWipeTowerInfill(primesThisLayer, this.WipeTower, fillPolygons, fillConfig.lineWidth_um, config);
 			layerGcodePlanner.QueuePolygons(fillPolygons, fillConfig);
 			layerGcodePlanner.PathFinder = oldPathFinder;
-
-			extrudersThatHaveBeenPrimed[extruderIndex] = true;
 
 			if (airGapped)
 			{
 				// don't print the wipe tower with air gap height
 				layerGcodePlanner.CurrentZ += config.SupportAirGap_um;
 			}
+
+			primesThisLayer++;
 		}
 
 		public void WriteRaftGCodeIfRequired(GCodeExport gcode, ConfigSettings config)
@@ -536,13 +524,14 @@ namespace MatterHackers.MatterSlice
 			return skirtPolygons;
 		}
 
-		int lastLayerWithCange = -1;
+		int lastLayerWithChange = -1;
 		bool calculatedLastLayer = false;
+
 		public int LastLayerWithChange(ConfigSettings config)
 		{
 			if (calculatedLastLayer)
 			{
-				return lastLayerWithCange;
+				return lastLayerWithChange;
 			}
 
 			int numLayers = Extruders[0].Layers.Count;
@@ -564,9 +553,9 @@ namespace MatterHackers.MatterSlice
 							if (firstExtruderWithData != extruderToCheck)
 							{
 								// have to remember the layer one above this so that we can switch back
-								lastLayerWithCange = checkLayer + 1;
+								lastLayerWithChange = checkLayer + 1;
 								calculatedLastLayer = true;
-								return lastLayerWithCange;
+								return lastLayerWithChange;
 							}
 						}
 					}

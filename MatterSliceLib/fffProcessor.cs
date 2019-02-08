@@ -30,8 +30,26 @@ namespace MatterHackers.MatterSlice
 	using Pathfinding;
 	using QuadTree;
 	using Polygon = List<IntPoint>;
-
 	using Polygons = List<List<IntPoint>>;
+
+	public static class ExtensionMethods
+	{
+		public static IEnumerable<int> CurrentThenOtherIndexes(this List<ExtruderLayers> extruderLayers, int activeExtruderIndex)
+		{
+			// Extruders in normal order
+			var extruders = Enumerable.Range(0, extruderLayers.Count).ToList();
+
+			// Ensure we stay on the active extruder
+			// - When activeIndex is not E0, change extruder ordering to start with the current, then iterate the rest in normal order
+			if (activeExtruderIndex != 0)
+			{
+				extruders.Remove(activeExtruderIndex);
+				extruders.Insert(0, activeExtruderIndex);
+			}
+
+			return extruders;
+		}
+	}
 
 	// Fused Filament Fabrication processor.
 	public class fffProcessor
@@ -515,19 +533,9 @@ namespace MatterHackers.MatterSlice
 				// start out with the fan off for this layer (the minimum layer fan speed will be applied later as the gcode is output)
 				layerPlanner.QueueFanCommand(0, fillConfig);
 
-				// Extruders in normal order
-				var extruders = Enumerable.Range(0, config.ExtruderCount).ToList();
-
-				// Stay on active extruder - if not E0, change extruder ordering to remain/start on current index
-				int activeExtruderIndex = layerPlanner.GetExtruder();
-				if (activeExtruderIndex != 0)
-				{
-					extruders.Remove(activeExtruderIndex);
-					extruders.Insert(0, activeExtruderIndex);
-				}
-
 				// Loop over extruders in preferred order
-				foreach (int extruderIndex in extruders)
+				var activeThenOtherExtruders = slicingData.Extruders.CurrentThenOtherIndexes(activeExtruderIndex: layerPlanner.GetExtruder());
+				foreach (int extruderIndex in activeThenOtherExtruders)
 				{
 					ChangeExtruderIfRequired(slicingData, layerIndex, layerPlanner, extruderIndex, false);
 
@@ -594,16 +602,12 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				if (slicingData.Support == null)
-				{
-					slicingData.EnsureWipeTowerIsSolid(layerIndex, layerPlanner, fillConfig, config);
-				}
-				else
+				if (slicingData.Support != null)
 				{
 					z += config.SupportAirGap_um;
 					gcodeExport.CurrentZ_um = z;
 
-					for (int extruderIndex = 0; extruderIndex < slicingData.Extruders.Count; extruderIndex++)
+					foreach (int extruderIndex in slicingData.Extruders.CurrentThenOtherIndexes(activeExtruderIndex: layerPlanner.GetExtruder()))
 					{
 						QueueAirGappedExtruderLayerToGCode(slicingData, layerPlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
 					}
@@ -613,8 +617,9 @@ namespace MatterHackers.MatterSlice
 					// don't print the wipe tower with air gap height
 					z -= config.SupportAirGap_um;
 					gcodeExport.CurrentZ_um = z;
-					slicingData.EnsureWipeTowerIsSolid(layerIndex, layerPlanner, fillConfig, config);
 				}
+
+				slicingData.EnsureWipeTowerIsSolid(layerIndex, layerPlanner, fillConfig, config);
 
 				long currentLayerThickness_um = config.LayerThickness_um;
 				if (layerIndex <= 0)
@@ -683,7 +688,7 @@ namespace MatterHackers.MatterSlice
 
 					DoSkirtAndBrim(slicingData, layerIndex, layerGcodePlanner, extruderIndex, extruderUsedForSupport);
 
-					slicingData.PrimeOnWipeTower(extruderIndex, layerIndex, layerGcodePlanner, fillConfig, config, airGapped);
+					slicingData.PrimeOnWipeTower(layerIndex, layerGcodePlanner, fillConfig, config, airGapped);
 				}
 				else if(extruderIndex < slicingData.Extruders.Count)
 				{
@@ -1290,18 +1295,11 @@ namespace MatterHackers.MatterSlice
 				&& !config.ContinuousSpiralOuterPerimeter
 				&& layerIndex > 0)
 			{
-				ChangeExtruderIfRequired(slicingData, layerIndex, layerGcodePlanner, extruderIndex, true);
-
 				SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 
-				PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(new IntPoint());
+				var islandOrderOptimizer = new PathOrderOptimizer(new IntPoint());
 				for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 				{
-					if (config.ContinuousSpiralOuterPerimeter && islandIndex > 0)
-					{
-						continue;
-					}
-
 					if (layer.Islands[islandIndex].InsetToolPaths.Count > 0)
 					{
 						islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].InsetToolPaths[0][0]);
@@ -1311,14 +1309,9 @@ namespace MatterHackers.MatterSlice
 
 				for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.bestIslandOrderIndex.Count; islandOrderIndex++)
 				{
-					if (config.ContinuousSpiralOuterPerimeter && islandOrderIndex > 0)
-					{
-						continue;
-					}
-
 					LayerIsland island = layer.Islands[islandOrderOptimizer.bestIslandOrderIndex[islandOrderIndex]];
 
-					Polygons bottomFillPolygons = new Polygons();
+					var bottomFillPolygons = new Polygons();
 					CalculateInfillData(slicingData, extruderIndex, layerIndex, island, bottomFillPolygons);
 
 					// TODO: check if we are going to output anything
@@ -1338,26 +1331,15 @@ namespace MatterHackers.MatterSlice
 
 					if (outputDataForIsland)
 					{
-						// TODO: Why two moveToIsland calls below?
-						if (config.AvoidCrossingPerimeters)
+						ChangeExtruderIfRequired(slicingData, layerIndex, layerGcodePlanner, extruderIndex, true);
+
+						if (!config.AvoidCrossingPerimeters
+							&& config.RetractWhenChangingIslands)
 						{
-							// Here
-							MoveToIsland(layerGcodePlanner, layer, island);
-						}
-						else
-						{
-							if (config.RetractWhenChangingIslands) layerGcodePlanner.ForceRetract();
+							layerGcodePlanner.ForceRetract();
 						}
 
-						// And unconditionally here
 						MoveToIsland(layerGcodePlanner, layer, island);
-
-						if (config.NumberOfPerimeters > 0
-							&& config.ContinuousSpiralOuterPerimeter
-							&& layerIndex >= config.NumberOfBottomLayers)
-						{
-							inset0Config.spiralize = true;
-						}
 
 						// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
 						for (int insetIndex = 1; insetIndex < island.InsetToolPaths.Count; insetIndex++)
