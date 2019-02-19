@@ -212,21 +212,6 @@ namespace MatterHackers.MatterSlice
 			var beforeX = this.currentPosition_um.X / 1000.0;
 			var beforeY = this.currentPosition_um.Y / 1000.0;
 
-			// then inject any before change gcode
-			if (newExtruder == 1 
-				&& config.BeforeToolchangeCode1 != "")
-			{
-				string code = WipeTowerReplacements(config.BeforeToolchangeCode1, beforeX, beforeY);
-				WriteCode("; Before Tool 1 Change GCode");
-				WriteCode(code);
-			}
-			else if (!string.IsNullOrEmpty(config.BeforeToolchangeCode))
-			{
-				var code = WipeTowerReplacements(config.BeforeToolchangeCode, beforeX, beforeY);
-				WriteCode("; Before Tool Change GCode");
-				WriteCode(code);
-			}
-
 			currentSpeed = config.RetractionSpeed;
 
 			ResetExtrusionValue();

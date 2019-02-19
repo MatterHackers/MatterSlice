@@ -305,11 +305,7 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The closest xy distance that support will be to the object. mm/s.")]
 		public double SupportXYDistanceFromObject { get; set; }
 
-		public string BeforeToolchangeCode { get; set; } = "";
-
 		public string ToolChangeCode { get; set; } = "";
-
-		public string BeforeToolchangeCode1 { get; set; } = "";
 
 		public string ToolChangeCode1 { get; set; } = "";
 
