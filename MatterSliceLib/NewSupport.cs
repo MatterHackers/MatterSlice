@@ -295,7 +295,7 @@ namespace MatterHackers.MatterSlice
 			for (int layerIndex = numLayers - 2; layerIndex >= 0; layerIndex--)
 			{
 				Polygons curRequiredSupport = inputPolys[layerIndex];
-				Polygons expandedlayerPolys = allPartOutlines[layerIndex].Offset(config.SupportXYDistance_um);
+				Polygons expandedlayerPolys = allPartOutlines[layerIndex].Offset(config.SupportXYDistance_um + config.ExtrusionWidth_um / 2);
 				Polygons totalSupportThisLayer = curRequiredSupport.CreateDifference(expandedlayerPolys);
 
 				clippedToXyOutlines[layerIndex] = Clipper.CleanPolygons(totalSupportThisLayer, cleanDistance_um);
