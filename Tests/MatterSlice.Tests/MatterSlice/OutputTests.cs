@@ -802,42 +802,6 @@ namespace MatterHackers.MatterSlice.Tests
 			});
 		}
 
-		[Test, Ignore("Orchestrate tool change")]
-		public void BeforeToolchangeCodeTest()
-		{
-			this.RunGCodeTest("BeforeToolchangeCode", (settings) =>
-			{
-				settings.BeforeToolchangeCode = "BeforeToolchangeCode Text";
-			});
-		}
-
-		[Test, Ignore("Orchestrate tool change")]
-		public void ToolChangeCodeTest()
-		{
-			this.RunGCodeTest("ToolChangeCode", (settings) =>
-			{
-				settings.ToolChangeCode = "ToolChangeCode Text";
-			});
-		}
-
-		[Test, Ignore("Orchestrate tool change")]
-		public void BeforeToolchangeCode1Test()
-		{
-			this.RunGCodeTest("BeforeToolchangeCode1", (settings) =>
-			{
-				settings.BeforeToolchangeCode1 = "BeforeToolchangeCode1 Text";
-			});
-		}
-
-		[Test, Ignore("Unclear how to test")]
-		public void ToolChangeCode1Test()
-		{
-			this.RunGCodeTest("ToolChangeCode1", (settings) =>
-			{
-				settings.ToolChangeCode1 = "ToolChangeCode1 Text";
-			});
-		}
-
 		[Test]
 		public void TopInfillSpeedTest()
 		{

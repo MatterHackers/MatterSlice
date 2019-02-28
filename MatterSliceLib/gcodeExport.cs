@@ -227,40 +227,7 @@ namespace MatterHackers.MatterSlice
 
 			gcodeFileStream.Write("T{0} ; switch extruder\n".FormatWith(extruderIndex));
 
-			// then inject any after gcode
-			if (newExtruder == 1 
-				&& !string.IsNullOrEmpty(config.ToolChangeCode1))
-			{
-				var code = WipeTowerReplacements(config.ToolChangeCode1, beforeX, beforeY);
-				WriteCode("; After Tool 1 Change GCode");
-				WriteCode(code);
-			}
-			else if (!string.IsNullOrEmpty(config.ToolChangeCode))
-			{
-				var code = WipeTowerReplacements(config.ToolChangeCode, beforeX, beforeY);
-				WriteCode("; After Tool Change GCode");
-				WriteCode(code);
-			}
-
 			// if there is a wipe tower go to it
-		}
-
-		private string WipeTowerReplacements(string code, double returnX, double returnY)
-		{
-			if (config.WipeTowerSize > 0)
-			{
-				code = code.Replace("[wipe_tower_x]", config.WipeCenterX.ToString("0.###"));
-				code = code.Replace("[wipe_tower_y]", config.WipeCenterY.ToString("0.###"));
-			}
-			else // go back to the position before the switch extruders
-			{
-				code = code.Replace("[wipe_tower_x]", returnX.ToString("0.###"));
-				code = code.Replace("[wipe_tower_y]", returnY.ToString("0.###"));
-			}
-
-			code = code.Replace("[wipe_tower_z]", CurrentZ.ToString("0.####"));
-
-			return code;
 		}
 
 		public void UpdateLayerPrintTime()
