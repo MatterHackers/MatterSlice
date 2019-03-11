@@ -57,7 +57,7 @@ namespace MatterHackers.MatterSlice
 
 		public void Optimize(PathFinder pathFinder, int layerIndex, GCodePathConfig config = null)
 		{
-			bool canTravelForwardOrBackward = config != null && !config.closedLoop;
+			bool canTravelForwardOrBackward = config != null && !config.ClosedLoop;
 			// Find the point that is closest to our current position (start position)
 			bool[] polygonHasBeenAdded = new bool[polygons.Count];
 			for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
@@ -77,9 +77,9 @@ namespace MatterHackers.MatterSlice
 					int bestPointIndex;
 					if (config != null
 						&& config.DoSeamHiding
-						&& !config.spiralize)
+						&& !config.Spiralize)
 					{
-						bestPointIndex = currentPolygon.FindGreatestTurnIndex(startPosition, layerIndex, config.lineWidth_um);
+						bestPointIndex = currentPolygon.FindGreatestTurnIndex(startPosition, layerIndex, config.LineWidthUM);
 					}
 					else
 					{

@@ -168,7 +168,7 @@ namespace MatterHackers.MatterSlice
 					// make a border if layer 0
 					if (layerIndex == 0)
 					{
-						Polygons infillOutline = interfaceOutline.Offset(-supportInterfaceConfig.lineWidth_um / 2);
+						Polygons infillOutline = interfaceOutline.Offset(-supportInterfaceConfig.LineWidthUM / 2);
 						Polygons outlines = Clipper.CleanPolygons(infillOutline, config.ExtrusionWidth_um / 4);
 						if (gcodeLayer.QueuePolygonsByOptimizer(outlines, null, supportInterfaceConfig, 0))
 						{
@@ -192,7 +192,7 @@ namespace MatterHackers.MatterSlice
 		{
 			// normal support
 			Polygons currentSupportOutlines = SparseSupportOutlines[layerIndex];
-			currentSupportOutlines = currentSupportOutlines.Offset(-supportNormalConfig.lineWidth_um / 2);
+			currentSupportOutlines = currentSupportOutlines.Offset(-supportNormalConfig.LineWidthUM / 2);
 			List<Polygons> supportIslands = currentSupportOutlines.ProcessIntoSeparateIslands();
 
 			bool outputPaths = false;
@@ -215,7 +215,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				Polygons infillOutline = islandOutline.Offset(-(int)supportNormalConfig.lineWidth_um);
+				Polygons infillOutline = islandOutline.Offset(-(int)supportNormalConfig.LineWidthUM);
 
 				if (layerIndex == 0)
 				{

@@ -29,32 +29,32 @@ namespace MatterHackers.MatterSlice
 		public GCodePathConfig(string configName, string gcodeComment, bool closedLoop = true)
 		{
 			this.Name = configName;
-			this.gcodeComment = gcodeComment;
+			this.GCodeComment = gcodeComment;
 		}
 
+		public bool ClosedLoop { get; set; } = true;
+
 		public bool DoSeamHiding { get; set; }
+
+		public string GCodeComment { get; set; }
+
+		public long LineWidthUM { get; set; }
 
 		public string Name { get; set; }
 
 		public double Speed { get; private set; }
 
-		public bool closedLoop { get; set; } = true;
-
-		public string gcodeComment { get; set; }
-
-		public long lineWidth_um { get; set; }
-
-		public bool spiralize { get; set; }
+		public bool Spiralize { get; set; }
 
 		/// <summary>
 		/// Set the data for a path config. This is used to define how different parts (infill, perimeters) are written to gcode.
 		/// </summary>
 		/// <param name="speed"></param>
-		/// <param name="lineWidth_um"></param>
-		public void SetData(double speed, long lineWidth_um)
+		/// <param name="lineWidthUM"></param>
+		public void SetData(double speed, long lineWidthUM)
 		{
 			this.Speed = speed;
-			this.lineWidth_um = lineWidth_um;
+			this.LineWidthUM = lineWidthUM;
 		}
 	}
 }

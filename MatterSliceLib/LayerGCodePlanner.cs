@@ -153,7 +153,7 @@ namespace MatterHackers.MatterSlice
 
 		bool PathCanAdjustSpeed(GCodePath path)
 		{
-			return path.Config.lineWidth_um > 0 && path.Config.gcodeComment != "BRIDGE";
+			return path.Config.LineWidthUM > 0 && path.Config.GCodeComment != "BRIDGE";
 		}
 
 		public void CorrectLayerTimeConsideringMinimumLayerTime()
@@ -218,14 +218,14 @@ namespace MatterHackers.MatterSlice
 		{
 			IntPoint currentPosition = polygon[startIndex];
 
-			if (!config.spiralize
+			if (!config.Spiralize
 				&& (LastPosition.X != currentPosition.X
 				|| LastPosition.Y != currentPosition.Y))
 			{
 				QueueTravel(currentPosition);
 			}
 
-			if (config.closedLoop)
+			if (config.ClosedLoop)
 			{
 				for (int positionIndex = 1; positionIndex < polygon.Count; positionIndex++)
 				{
@@ -470,7 +470,7 @@ namespace MatterHackers.MatterSlice
 				{
 					double timeOfMove = 0;
 
-					if (path.Config.lineWidth_um == 0)
+					if (path.Config.LineWidthUM == 0)
 					{
 						var lengthToStart = (gcodeExport.GetPosition() - path.Polygon[0]).Length();
 						var lengthOfMove = lengthToStart + path.Polygon.PolygonLength();
@@ -481,7 +481,7 @@ namespace MatterHackers.MatterSlice
 				}
 				if (lastConfig != path.Config && path.Config != travelConfig)
 				{
-					gcodeExport.WriteComment("TYPE:{0}".FormatWith(path.Config.gcodeComment));
+					gcodeExport.WriteComment("TYPE:{0}".FormatWith(path.Config.GCodeComment));
 					lastConfig = path.Config;
 				}
 				if (path.FanPercent != -1)
@@ -491,12 +491,12 @@ namespace MatterHackers.MatterSlice
 
 				if (path.Polygon.Count == 1
 					&& path.Config != travelConfig
-					&& (gcodeExport.GetPositionXY() - path.Polygon[0]).ShorterThen(path.Config.lineWidth_um * 2))
+					&& (gcodeExport.GetPositionXY() - path.Polygon[0]).ShorterThen(path.Config.LineWidthUM * 2))
 				{
 					//Check for lots of small moves and combine them into one large line
 					IntPoint nextPosition = path.Polygon[0];
 					int i = pathIndex + 1;
-					while (i < paths.Count && paths[i].Polygon.Count == 1 && (nextPosition - paths[i].Polygon[0]).ShorterThen(path.Config.lineWidth_um * 2))
+					while (i < paths.Count && paths[i].Polygon.Count == 1 && (nextPosition - paths[i].Polygon[0]).ShorterThen(path.Config.LineWidthUM * 2))
 					{
 						nextPosition = paths[i].Polygon[0];
 						i++;
@@ -516,13 +516,13 @@ namespace MatterHackers.MatterSlice
 							long newLen = (gcodeExport.GetPosition() - newPoint).Length();
 							if (newLen > 0)
 							{
-								gcodeExport.WriteMove(newPoint, path.Speed, (int)(path.Config.lineWidth_um * oldLen / newLen));
+								gcodeExport.WriteMove(newPoint, path.Speed, (int)(path.Config.LineWidthUM * oldLen / newLen));
 							}
 
 							nextPosition = paths[x + 1].Polygon[0];
 						}
 
-						long lineWidth_um = path.Config.lineWidth_um;
+						long lineWidth_um = path.Config.LineWidthUM;
 						if (paths[i - 1].Polygon[0].Width != 0)
 						{
 							lineWidth_um = paths[i - 1].Polygon[0].Width;
@@ -534,13 +534,13 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				bool spiralize = path.Config.spiralize;
+				bool spiralize = path.Config.Spiralize;
 				if (spiralize)
 				{
 					//Check if we are the last spiralize path in the list, if not, do not spiralize.
 					for (int m = pathIndex + 1; m < paths.Count; m++)
 					{
-						if (paths[m].Config.spiralize)
+						if (paths[m].Config.Spiralize)
 						{
 							spiralize = false;
 						}
@@ -569,7 +569,7 @@ namespace MatterHackers.MatterSlice
 						currentPosition = nextPosition;
 						IntPoint nextExtrusion = path.Polygon[i];
 						nextExtrusion.Z = (int)(z + layerThickness_um * length / totalLength + .5);
-						gcodeExport.WriteMove(nextExtrusion, path.Speed, path.Config.lineWidth_um);
+						gcodeExport.WriteMove(nextExtrusion, path.Speed, path.Config.LineWidthUM);
 					}
 				}
 				else
@@ -577,8 +577,8 @@ namespace MatterHackers.MatterSlice
 					var loopStart = gcodeExport.GetPosition();
 					int pointCount = path.Polygon.Count;
 
-					bool outerPerimeter = path.Config.gcodeComment == "WALL-OUTER";
-					bool innerPerimeter = path.Config.gcodeComment == "WALL-INNER";
+					bool outerPerimeter = path.Config.GCodeComment == "WALL-OUTER";
+					bool innerPerimeter = path.Config.GCodeComment == "WALL-INNER";
 					bool perimeter = outerPerimeter || innerPerimeter;
 
 					bool completeLoop = (pointCount > 0 && path.Polygon[pointCount - 1] == loopStart);
@@ -587,7 +587,7 @@ namespace MatterHackers.MatterSlice
 					// This is test code to remove double drawn small perimeter lines.
 					if (trimmed)
 					{
-						long targetDistance = (long)(path.Config.lineWidth_um * (1 - perimeterStartEndOverlapRatio));
+						long targetDistance = (long)(path.Config.LineWidthUM * (1 - perimeterStartEndOverlapRatio));
 						path = TrimGCodePathEnd(path, targetDistance);
 						// update the point count after trimming
 						pointCount = path.Polygon.Count;
@@ -595,7 +595,7 @@ namespace MatterHackers.MatterSlice
 
 					for (int i = 0; i < pointCount; i++)
 					{
-						long lineWidth_um = path.Config.lineWidth_um;
+						long lineWidth_um = path.Config.LineWidthUM;
 						if (path.Polygon[i].Width != 0)
 						{
 							lineWidth_um = path.Polygon[i].Width;
