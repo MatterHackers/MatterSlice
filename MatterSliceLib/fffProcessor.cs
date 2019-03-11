@@ -72,12 +72,13 @@ namespace MatterHackers.MatterSlice
 		};
 
 		private GCodePathConfig insetXConfig = new GCodePathConfig("insetXConfig", "WALL-INNER");
-		private GCodePathConfig fillConfig = new GCodePathConfig("fillConfig", "FILL");
-		private GCodePathConfig topFillConfig = new GCodePathConfig("topFillConfig", "TOP-FILL");
-		private GCodePathConfig firstTopFillConfig = new GCodePathConfig("firstTopFillConfig", "FIRST-TOP-Fill");
-		private GCodePathConfig bottomFillConfig = new GCodePathConfig("bottomFillConfig", "BOTTOM-FILL");
+
+		private GCodePathConfig fillConfig = new GCodePathConfig("fillConfig", "FILL", closedLoop: false);
+		private GCodePathConfig topFillConfig = new GCodePathConfig("topFillConfig", "TOP-FILL", closedLoop: false);
+		private GCodePathConfig firstTopFillConfig = new GCodePathConfig("firstTopFillConfig", "FIRST-TOP-Fill", closedLoop: false);
+		private GCodePathConfig bottomFillConfig = new GCodePathConfig("bottomFillConfig", "BOTTOM-FILL", closedLoop: false);
 		private GCodePathConfig airGappedBottomInsetConfig = new GCodePathConfig("airGappedBottomInsetConfig", "AIR-GAP-INSET");
-		private GCodePathConfig airGappedBottomConfig = new GCodePathConfig("airGappedBottomConfig", "AIR-GAP");
+		private GCodePathConfig airGappedBottomConfig = new GCodePathConfig("airGappedBottomConfig", "AIR-GAP", closedLoop: false);
 		private GCodePathConfig bridgeConfig = new GCodePathConfig("bridgeConfig", "BRIDGE");
 		private GCodePathConfig supportNormalConfig = new GCodePathConfig("supportNormalConfig", "SUPPORT");
 		private GCodePathConfig supportInterfaceConfig = new GCodePathConfig("supportInterfaceConfig", "SUPPORT-INTERFACE");
@@ -190,11 +191,11 @@ namespace MatterHackers.MatterSlice
 			inset0Config.SetData(config.OutsidePerimeterSpeed, config.OutsideExtrusionWidth_um);
 			insetXConfig.SetData(config.InsidePerimetersSpeed, extrusionWidth_um);
 
-			fillConfig.SetData(config.InfillSpeed, extrusionWidth_um, false);
-			topFillConfig.SetData(config.TopInfillSpeed, extrusionWidth_um, false);
-			firstTopFillConfig.SetData(config.BridgeSpeed, extrusionWidth_um, false);
-			bottomFillConfig.SetData(config.BottomInfillSpeed, extrusionWidth_um, false);
-			airGappedBottomConfig.SetData(config.AirGapSpeed, extrusionWidth_um, false);
+			fillConfig.SetData(config.InfillSpeed, extrusionWidth_um);
+			topFillConfig.SetData(config.TopInfillSpeed, extrusionWidth_um);
+			firstTopFillConfig.SetData(config.BridgeSpeed, extrusionWidth_um);
+			bottomFillConfig.SetData(config.BottomInfillSpeed, extrusionWidth_um);
+			airGappedBottomConfig.SetData(config.AirGapSpeed, extrusionWidth_um);
 			airGappedBottomInsetConfig.SetData(config.AirGapSpeed, extrusionWidth_um);
 			bridgeConfig.SetData(config.BridgeSpeed, extrusionWidth_um);
 
@@ -458,11 +459,11 @@ namespace MatterHackers.MatterSlice
 					inset0Config.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
 					insetXConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
 
-					fillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, false);
-					topFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, false);
-					firstTopFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerThickness_um, false);
-					bottomFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, false);
-					airGappedBottomConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, false);
+					fillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+					topFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+					firstTopFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerThickness_um);
+					bottomFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+					airGappedBottomConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
 					airGappedBottomInsetConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
 					bridgeConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
 
@@ -475,11 +476,11 @@ namespace MatterHackers.MatterSlice
 					inset0Config.SetData(config.OutsidePerimeterSpeed, config.OutsideExtrusionWidth_um);
 					insetXConfig.SetData(config.InsidePerimetersSpeed, config.ExtrusionWidth_um);
 
-					fillConfig.SetData(config.InfillSpeed, config.ExtrusionWidth_um, false);
-					topFillConfig.SetData(config.TopInfillSpeed, config.ExtrusionWidth_um, false);
-					firstTopFillConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um, false);
-					bottomFillConfig.SetData(config.BottomInfillSpeed, config.ExtrusionWidth_um, false);
-					airGappedBottomConfig.SetData(config.AirGapSpeed, config.ExtrusionWidth_um, false);
+					fillConfig.SetData(config.InfillSpeed, config.ExtrusionWidth_um);
+					topFillConfig.SetData(config.TopInfillSpeed, config.ExtrusionWidth_um);
+					firstTopFillConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um);
+					bottomFillConfig.SetData(config.BottomInfillSpeed, config.ExtrusionWidth_um);
+					airGappedBottomConfig.SetData(config.AirGapSpeed, config.ExtrusionWidth_um);
 					airGappedBottomInsetConfig.SetData(config.AirGapSpeed, config.ExtrusionWidth_um);
 					bridgeConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um);
 
