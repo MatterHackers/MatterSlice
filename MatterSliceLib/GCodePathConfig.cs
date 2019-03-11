@@ -33,7 +33,7 @@ namespace MatterHackers.MatterSlice
 		public double Speed { get; private set; }
 		public bool spiralize;
 
-		public GCodePathConfig(string configName, string gcodeComment = "", bool closedLoop = true)
+		public GCodePathConfig(string configName, string gcodeComment, bool closedLoop = true)
 		{
 			this.Name = configName;
 			this.gcodeComment = gcodeComment;
