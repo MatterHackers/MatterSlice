@@ -471,7 +471,7 @@ namespace MatterHackers.MatterSlice
 					bridgeConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um);
 
 					supportNormalConfig.SetData(config.SupportMaterialSpeed, config.ExtrusionWidth_um);
-					supportInterfaceConfig.SetData(config.SupportMaterialSpeed, config.ExtrusionWidth_um);
+					supportInterfaceConfig.SetData(config.InterfaceLayerSpeed, config.ExtrusionWidth_um);
 				}
 
 				if (layerIndex == 0)
