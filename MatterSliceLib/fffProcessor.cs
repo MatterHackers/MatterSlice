@@ -64,23 +64,18 @@ namespace MatterHackers.MatterSlice
 		private OptimizedMeshCollection optimizedMeshCollection;
 		private LayerDataStorage slicingData = new LayerDataStorage();
 
-		private GCodePathConfig skirtConfig = new GCodePathConfig("skirtConfig");
-
-		private GCodePathConfig inset0Config = new GCodePathConfig("inset0Config")
-		{
-			DoSeamHiding = true,
-		};
-
-		private GCodePathConfig insetXConfig = new GCodePathConfig("insetXConfig");
-		private GCodePathConfig fillConfig = new GCodePathConfig("fillConfig");
-		private GCodePathConfig topFillConfig = new GCodePathConfig("topFillConfig");
-		private GCodePathConfig firstTopFillConfig = new GCodePathConfig("firstTopFillConfig");
-		private GCodePathConfig bottomFillConfig = new GCodePathConfig("bottomFillConfig");
-		private GCodePathConfig airGappedBottomInsetConfig = new GCodePathConfig("airGappedBottomInsetConfig");
-		private GCodePathConfig airGappedBottomConfig = new GCodePathConfig("airGappedBottomConfig");
-		private GCodePathConfig bridgeConfig = new GCodePathConfig("bridgeConfig");
-		private GCodePathConfig supportNormalConfig = new GCodePathConfig("supportNormalConfig");
-		private GCodePathConfig supportInterfaceConfig = new GCodePathConfig("supportInterfaceConfig");
+		private GCodePathConfig skirtConfig;
+		private GCodePathConfig inset0Config;
+		private GCodePathConfig insetXConfig;
+		private GCodePathConfig fillConfig;
+		private GCodePathConfig topFillConfig;
+		private GCodePathConfig firstTopFillConfig;
+		private GCodePathConfig bottomFillConfig;
+		private GCodePathConfig airGappedBottomInsetConfig;
+		private GCodePathConfig airGappedBottomConfig;
+		private GCodePathConfig bridgeConfig;
+		private GCodePathConfig supportNormalConfig;
+		private GCodePathConfig supportInterfaceConfig;
 
 		public fffProcessor(ConfigSettings config)
 		{
@@ -122,9 +117,9 @@ namespace MatterHackers.MatterSlice
 			LogOutput.Log("Optimized model in {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Reset();
 
-			Stopwatch timeKeeperTotal = new Stopwatch();
-			timeKeeperTotal.Start();
-			preSetup(config.ExtrusionWidth_um);
+			var timeKeeperTotal = Stopwatch.StartNew();
+
+			gcodeExport.SetLayerChangeCode(config.LayerChangeCode);
 
 			SliceModels(slicingData);
 
@@ -159,7 +154,6 @@ namespace MatterHackers.MatterSlice
 
 		public bool LoadStlFile(string input_filename)
 		{
-			preSetup(config.ExtrusionWidth_um);
 			timeKeeper.Restart();
 			if (!SimpleMeshCollection.LoadModelFromFile(simpleMeshCollection, input_filename, config.ModelMatrix))
 			{
@@ -182,26 +176,6 @@ namespace MatterHackers.MatterSlice
 			gcodeExport.Finalize(maxObjectHeight, config.TravelSpeed, config.EndCode);
 
 			gcodeExport.Close();
-		}
-
-		private void preSetup(long extrusionWidth_um)
-		{
-			skirtConfig.SetData(config.InsidePerimetersSpeed, extrusionWidth_um, "SKIRT");
-			inset0Config.SetData(config.OutsidePerimeterSpeed, config.OutsideExtrusionWidth_um, "WALL-OUTER");
-			insetXConfig.SetData(config.InsidePerimetersSpeed, extrusionWidth_um, "WALL-INNER");
-
-			fillConfig.SetData(config.InfillSpeed, extrusionWidth_um, "FILL", false);
-			topFillConfig.SetData(config.TopInfillSpeed, extrusionWidth_um, "TOP-FILL", false);
-			firstTopFillConfig.SetData(config.BridgeSpeed, extrusionWidth_um, "FIRST-TOP-Fill", false);
-			bottomFillConfig.SetData(config.BottomInfillSpeed, extrusionWidth_um, "BOTTOM-FILL", false);
-			airGappedBottomConfig.SetData(config.AirGapSpeed, extrusionWidth_um, "AIR-GAP", false);
-			airGappedBottomInsetConfig.SetData(config.AirGapSpeed, extrusionWidth_um, "AIR-GAP-INSET");
-			bridgeConfig.SetData(config.BridgeSpeed, extrusionWidth_um, "BRIDGE");
-
-			supportNormalConfig.SetData(config.SupportMaterialSpeed, extrusionWidth_um, "SUPPORT");
-			supportInterfaceConfig.SetData(config.SupportMaterialSpeed, extrusionWidth_um, "SUPPORT-INTERFACE");
-
-			gcodeExport.SetLayerChangeCode(config.LayerChangeCode);
 		}
 
 		private void SliceModels(LayerDataStorage slicingData)
@@ -436,6 +410,19 @@ namespace MatterHackers.MatterSlice
 			// keep the raft generation code inside of raft
 			slicingData.WriteRaftGCodeIfRequired(gcodeExport, config);
 
+			skirtConfig = new GCodePathConfig("skirtConfig", "SKIRT");
+			inset0Config = new GCodePathConfig("inset0Config", "WALL-OUTER") { DoSeamHiding = true };
+			insetXConfig = new GCodePathConfig("insetXConfig", "WALL-INNER");
+			fillConfig = new GCodePathConfig("fillConfig", "FILL", closedLoop: false);
+			topFillConfig = new GCodePathConfig("topFillConfig", "TOP-FILL", closedLoop: false);
+			firstTopFillConfig = new GCodePathConfig("firstTopFillConfig", "FIRST-TOP-Fill", closedLoop: false);
+			bottomFillConfig = new GCodePathConfig("bottomFillConfig", "BOTTOM-FILL", closedLoop: false);
+			airGappedBottomInsetConfig = new GCodePathConfig("airGappedBottomInsetConfig", "AIR-GAP-INSET");
+			airGappedBottomConfig = new GCodePathConfig("airGappedBottomConfig", "AIR-GAP", closedLoop: false);
+			bridgeConfig = new GCodePathConfig("bridgeConfig", "BRIDGE");
+			supportNormalConfig = new GCodePathConfig("supportNormalConfig", "SUPPORT");
+			supportInterfaceConfig = new GCodePathConfig("supportInterfaceConfig", "SUPPORT-INTERFACE");
+
 			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 			{
 				if (MatterSlice.Canceled)
@@ -454,37 +441,37 @@ namespace MatterHackers.MatterSlice
 
 				if (layerIndex < config.NumberOfFirstLayers)
 				{
-					skirtConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "SKIRT");
-					inset0Config.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "WALL-OUTER");
-					insetXConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "WALL-INNER");
+					skirtConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+					inset0Config.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+					insetXConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
 
-					fillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "FILL", false);
-					topFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "TOP-FILL", false);
-					firstTopFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerThickness_um, "FIRST-TOP-Fill", false);
-					bottomFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "BOTTOM-FILL", false);
-					airGappedBottomConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "AIR-GAP", false);
-					airGappedBottomInsetConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "AIR-GAP-INSET");
-					bridgeConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um, "BRIDGE");
+					fillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+					topFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+					firstTopFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerThickness_um);
+					bottomFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+					airGappedBottomConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+					airGappedBottomInsetConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+					bridgeConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
 
-					supportNormalConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um, "SUPPORT");
-					supportInterfaceConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um, "SUPPORT-INTERFACE");
+					supportNormalConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um);
+					supportInterfaceConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um);
 				}
 				else
 				{
-					skirtConfig.SetData(config.InsidePerimetersSpeed, config.ExtrusionWidth_um, "SKIRT");
-					inset0Config.SetData(config.OutsidePerimeterSpeed, config.OutsideExtrusionWidth_um, "WALL-OUTER");
-					insetXConfig.SetData(config.InsidePerimetersSpeed, config.ExtrusionWidth_um, "WALL-INNER");
+					skirtConfig.SetData(config.InsidePerimetersSpeed, config.ExtrusionWidth_um);
+					inset0Config.SetData(config.OutsidePerimeterSpeed, config.OutsideExtrusionWidth_um);
+					insetXConfig.SetData(config.InsidePerimetersSpeed, config.ExtrusionWidth_um);
 
-					fillConfig.SetData(config.InfillSpeed, config.ExtrusionWidth_um, "FILL", false);
-					topFillConfig.SetData(config.TopInfillSpeed, config.ExtrusionWidth_um, "TOP-FILL", false);
-					firstTopFillConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um, "FIRST-TOP-Fill", false);
-					bottomFillConfig.SetData(config.BottomInfillSpeed, config.ExtrusionWidth_um, "BOTTOM-FILL", false);
-					airGappedBottomConfig.SetData(config.AirGapSpeed, config.ExtrusionWidth_um, "AIR-GAP", false);
-					airGappedBottomInsetConfig.SetData(config.AirGapSpeed, config.ExtrusionWidth_um, "AIR-GAP-INSET");
-					bridgeConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um, "BRIDGE");
+					fillConfig.SetData(config.InfillSpeed, config.ExtrusionWidth_um);
+					topFillConfig.SetData(config.TopInfillSpeed, config.ExtrusionWidth_um);
+					firstTopFillConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um);
+					bottomFillConfig.SetData(config.BottomInfillSpeed, config.ExtrusionWidth_um);
+					airGappedBottomConfig.SetData(config.AirGapSpeed, config.ExtrusionWidth_um);
+					airGappedBottomInsetConfig.SetData(config.AirGapSpeed, config.ExtrusionWidth_um);
+					bridgeConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um);
 
-					supportNormalConfig.SetData(config.SupportMaterialSpeed, config.ExtrusionWidth_um, "SUPPORT");
-					supportInterfaceConfig.SetData(config.SupportMaterialSpeed, config.ExtrusionWidth_um, "SUPPORT-INTERFACE");
+					supportNormalConfig.SetData(config.SupportMaterialSpeed, config.ExtrusionWidth_um);
+					supportInterfaceConfig.SetData(config.SupportMaterialSpeed, config.ExtrusionWidth_um);
 				}
 
 				if (layerIndex == 0)
@@ -646,9 +633,9 @@ namespace MatterHackers.MatterSlice
 			maxObjectHeight = Math.Max(maxObjectHeight, slicingData.modelSize.Z);
 		}
 
-		private void ChangeExtruderIfRequired(LayerDataStorage slicingData, 
-			int layerIndex, 
-			LayerGCodePlanner layerGcodePlanner, 
+		private void ChangeExtruderIfRequired(LayerDataStorage slicingData,
+			int layerIndex,
+			LayerGCodePlanner layerGcodePlanner,
 			int extruderIndex,
 			bool airGapped)
 		{
@@ -662,7 +649,7 @@ namespace MatterHackers.MatterSlice
 			bool extruderUsedForWipeTower = extruderUsedForParts
 				&& slicingData.NeedToPrintWipeTower(layerIndex, config);
 
-			if ((extruderUsedForSupport 
+			if ((extruderUsedForSupport
 				|| extruderUsedForWipeTower
 				|| extruderUsedForParts)
 				&& layerGcodePlanner.ToolChangeRequired(extruderIndex))
@@ -698,7 +685,7 @@ namespace MatterHackers.MatterSlice
 					DoSkirtAndBrim(slicingData, layerIndex, layerGcodePlanner, extruderIndex, extruderUsedForSupport);
 				}
 			}
-			else 
+			else
 			{
 				DoSkirtAndBrim(slicingData, layerIndex, layerGcodePlanner, extruderIndex, extruderUsedForSupport);
 			}
@@ -1260,7 +1247,7 @@ namespace MatterHackers.MatterSlice
 
 			if (polygonPrintedIndex > -1)
 			{
-				if (config.MergeOverlappingLines 
+				if (config.MergeOverlappingLines
 					&& pathConfig != inset0Config) // we do not merge the outer perimeter
 				{
 					QueuePerimeterWithMergeOverlaps(insetsToConsider[polygonPrintedIndex], layerIndex, gcodeLayer, pathConfig);

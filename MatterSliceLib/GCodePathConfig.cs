@@ -33,9 +33,10 @@ namespace MatterHackers.MatterSlice
 		public double Speed { get; private set; }
 		public bool spiralize;
 
-		public GCodePathConfig(string configName)
+		public GCodePathConfig(string configName, string gcodeComment, bool closedLoop = true)
 		{
 			this.Name = configName;
+			this.gcodeComment = gcodeComment;
 		}
 
 		public string Name { get; set; }
@@ -46,13 +47,10 @@ namespace MatterHackers.MatterSlice
 		/// <param name="speed"></param>
 		/// <param name="lineWidth_um"></param>
 		/// <param name="gcodeComment"></param>
-		/// <param name="closedLoop"></param>
-		public void SetData(double speed, long lineWidth_um, string gcodeComment, bool closedLoop = true)
+		public void SetData(double speed, long lineWidth_um)
 		{
-			this.closedLoop = closedLoop;
 			this.Speed = speed;
 			this.lineWidth_um = lineWidth_um;
-			this.gcodeComment = gcodeComment;
 		}
 	}
 }
