@@ -61,8 +61,8 @@ namespace MatterHackers.MatterSlice
 			this.config = config;
 
 			this.gcodeExport = gcode;
-			travelConfig = new GCodePathConfig("travelConfig");
-			travelConfig.SetData(travelSpeed, 0, "travel");
+			travelConfig = new GCodePathConfig("travelConfig", "travel");
+			travelConfig.SetData(travelSpeed, 0);
 
 			LastPosition = gcode.GetPositionXY();
 			forceRetraction = false;
@@ -160,7 +160,7 @@ namespace MatterHackers.MatterSlice
 		{
 			var layerTimes = GetLayerTimes();
 
-			if (layerTimes.totalTime < config.MinimumLayerTimeSeconds 
+			if (layerTimes.totalTime < config.MinimumLayerTimeSeconds
 				&& layerTimes.variableTime > 0.0)
 			{
 				var goalRatio = layerTimes.variableTime / (config.MinimumLayerTimeSeconds - layerTimes.fixedTime);
@@ -317,7 +317,7 @@ namespace MatterHackers.MatterSlice
 
 		// We need to keep track of all the fan speeds we have queue so that we can set
 		// the minimum fan speed for the layer after all the paths for the layer have been added.
-		// We cannot calculate the minimum fan speed until the entire layer is queued and we then need to 
+		// We cannot calculate the minimum fan speed until the entire layer is queued and we then need to
 		// go back to every queued fan speed and adjust it
 		List<GCodePath> queuedFanSpeeds = new List<GCodePath>();
 

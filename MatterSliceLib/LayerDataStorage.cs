@@ -349,14 +349,14 @@ namespace MatterHackers.MatterSlice
 			LayerDataStorage storage = this;
 			if (config.ShouldGenerateRaft())
 			{
-				GCodePathConfig raftBaseConfig = new GCodePathConfig("raftBaseConfig");
-				raftBaseConfig.SetData(config.FirstLayerSpeed, config.RaftBaseExtrusionWidth_um, "SUPPORT");
+				var raftBaseConfig = new GCodePathConfig("raftBaseConfig", "SUPPORT");
+				raftBaseConfig.SetData(config.FirstLayerSpeed, config.RaftBaseExtrusionWidth_um);
 
-				GCodePathConfig raftMiddleConfig = new GCodePathConfig("raftMiddleConfig");
-				raftMiddleConfig.SetData(config.RaftPrintSpeed, config.RaftInterfaceExtrusionWidth_um, "SUPPORT");
+				var raftMiddleConfig = new GCodePathConfig("raftMiddleConfig", "SUPPORT");
+				raftMiddleConfig.SetData(config.RaftPrintSpeed, config.RaftInterfaceExtrusionWidth_um);
 
-				GCodePathConfig raftSurfaceConfig = new GCodePathConfig("raftMiddleConfig");
-				raftSurfaceConfig.SetData((config.RaftSurfacePrintSpeed > 0) ? config.RaftSurfacePrintSpeed : config.RaftPrintSpeed, config.RaftSurfaceExtrusionWidth_um, "SUPPORT");
+				var raftSurfaceConfig = new GCodePathConfig("raftMiddleConfig", "SUPPORT");
+				raftSurfaceConfig.SetData((config.RaftSurfacePrintSpeed > 0) ? config.RaftSurfacePrintSpeed : config.RaftPrintSpeed, config.RaftSurfaceExtrusionWidth_um);
 
 				// create the raft base
 				{
