@@ -117,8 +117,7 @@ namespace MatterHackers.MatterSlice
 			LogOutput.Log("Optimized model in {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Reset();
 
-			Stopwatch timeKeeperTotal = new Stopwatch();
-			timeKeeperTotal.Start();
+			var timeKeeperTotal = Stopwatch.StartNew();
 
 			gcodeExport.SetLayerChangeCode(config.LayerChangeCode);
 
