@@ -291,6 +291,8 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("mm/s.")]
 		public int SupportMaterialSpeed { get; set; }
 
+		public int InterfaceLayerSpeed { get; set; }
+
 		[SettingDescription("The number of layers to skip in z. The gap between the support and the model.")]
 		public int SupportNumberOfLayersToSkipInZ { get; set; }
 
@@ -588,6 +590,7 @@ namespace MatterHackers.MatterSlice
 			TopInfillSpeed = 20;
 			BottomInfillSpeed = 20;
 			SupportMaterialSpeed = 40;
+			InterfaceLayerSpeed = 40;
 			InfillSpeed = 50;
 			BridgeSpeed = 20;
 			AirGapSpeed = 15;
