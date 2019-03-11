@@ -64,24 +64,18 @@ namespace MatterHackers.MatterSlice
 		private OptimizedMeshCollection optimizedMeshCollection;
 		private LayerDataStorage slicingData = new LayerDataStorage();
 
-		private GCodePathConfig skirtConfig = new GCodePathConfig("skirtConfig", "SKIRT");
-
-		private GCodePathConfig inset0Config = new GCodePathConfig("inset0Config", "WALL-OUTER")
-		{
-			DoSeamHiding = true,
-		};
-
-		private GCodePathConfig insetXConfig = new GCodePathConfig("insetXConfig", "WALL-INNER");
-
-		private GCodePathConfig fillConfig = new GCodePathConfig("fillConfig", "FILL", closedLoop: false);
-		private GCodePathConfig topFillConfig = new GCodePathConfig("topFillConfig", "TOP-FILL", closedLoop: false);
-		private GCodePathConfig firstTopFillConfig = new GCodePathConfig("firstTopFillConfig", "FIRST-TOP-Fill", closedLoop: false);
-		private GCodePathConfig bottomFillConfig = new GCodePathConfig("bottomFillConfig", "BOTTOM-FILL", closedLoop: false);
-		private GCodePathConfig airGappedBottomInsetConfig = new GCodePathConfig("airGappedBottomInsetConfig", "AIR-GAP-INSET");
-		private GCodePathConfig airGappedBottomConfig = new GCodePathConfig("airGappedBottomConfig", "AIR-GAP", closedLoop: false);
-		private GCodePathConfig bridgeConfig = new GCodePathConfig("bridgeConfig", "BRIDGE");
-		private GCodePathConfig supportNormalConfig = new GCodePathConfig("supportNormalConfig", "SUPPORT");
-		private GCodePathConfig supportInterfaceConfig = new GCodePathConfig("supportInterfaceConfig", "SUPPORT-INTERFACE");
+		private GCodePathConfig skirtConfig;
+		private GCodePathConfig inset0Config;
+		private GCodePathConfig insetXConfig;
+		private GCodePathConfig fillConfig;
+		private GCodePathConfig topFillConfig;
+		private GCodePathConfig firstTopFillConfig;
+		private GCodePathConfig bottomFillConfig;
+		private GCodePathConfig airGappedBottomInsetConfig;
+		private GCodePathConfig airGappedBottomConfig;
+		private GCodePathConfig bridgeConfig;
+		private GCodePathConfig supportNormalConfig;
+		private GCodePathConfig supportInterfaceConfig;
 
 		public fffProcessor(ConfigSettings config)
 		{
@@ -416,6 +410,19 @@ namespace MatterHackers.MatterSlice
 
 			// keep the raft generation code inside of raft
 			slicingData.WriteRaftGCodeIfRequired(gcodeExport, config);
+
+			skirtConfig = new GCodePathConfig("skirtConfig", "SKIRT");
+			inset0Config = new GCodePathConfig("inset0Config", "WALL-OUTER") { DoSeamHiding = true };
+			insetXConfig = new GCodePathConfig("insetXConfig", "WALL-INNER");
+			fillConfig = new GCodePathConfig("fillConfig", "FILL", closedLoop: false);
+			topFillConfig = new GCodePathConfig("topFillConfig", "TOP-FILL", closedLoop: false);
+			firstTopFillConfig = new GCodePathConfig("firstTopFillConfig", "FIRST-TOP-Fill", closedLoop: false);
+			bottomFillConfig = new GCodePathConfig("bottomFillConfig", "BOTTOM-FILL", closedLoop: false);
+			airGappedBottomInsetConfig = new GCodePathConfig("airGappedBottomInsetConfig", "AIR-GAP-INSET");
+			airGappedBottomConfig = new GCodePathConfig("airGappedBottomConfig", "AIR-GAP", closedLoop: false);
+			bridgeConfig = new GCodePathConfig("bridgeConfig", "BRIDGE");
+			supportNormalConfig = new GCodePathConfig("supportNormalConfig", "SUPPORT");
+			supportInterfaceConfig = new GCodePathConfig("supportInterfaceConfig", "SUPPORT-INTERFACE");
 
 			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 			{
