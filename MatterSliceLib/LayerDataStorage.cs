@@ -165,7 +165,7 @@ namespace MatterHackers.MatterSlice
 			{
 				CheckNoExtruderPrimed(config);
 
-				long insetPerLoop = fillConfig.lineWidth_um;
+				long insetPerLoop = fillConfig.LineWidthUM;
 				int maxPrimingLoops = MaxPrimingLoops(config);
 
 				Polygons outlineForExtruder = this.WipeTower;
@@ -331,7 +331,7 @@ namespace MatterHackers.MatterSlice
 
 			var oldPathFinder = layerGcodePlanner.PathFinder;
 			layerGcodePlanner.PathFinder = null;
-			GenerateWipeTowerInfill(primesThisLayer, this.WipeTower, fillPolygons, fillConfig.lineWidth_um, config);
+			GenerateWipeTowerInfill(primesThisLayer, this.WipeTower, fillPolygons, fillConfig.LineWidthUM, config);
 			layerGcodePlanner.QueuePolygons(fillPolygons, fillConfig);
 			layerGcodePlanner.PathFinder = oldPathFinder;
 

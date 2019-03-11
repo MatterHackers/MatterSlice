@@ -775,16 +775,16 @@ namespace MatterHackers.MatterSlice
 
 			if (perimeterToCheckForMerge.Count > 2)
 			{
-				pathHadOverlaps = perimeterToCheckForMerge.MergePerimeterOverlaps(config.lineWidth_um, out pathsWithOverlapsRemoved, pathIsClosed)
+				pathHadOverlaps = perimeterToCheckForMerge.MergePerimeterOverlaps(config.LineWidthUM, out pathsWithOverlapsRemoved, pathIsClosed)
 					&& pathsWithOverlapsRemoved.Count > 0;
 			}
 
 			if (pathHadOverlaps)
 			{
-				bool oldClosedLoop = config.closedLoop;
-				config.closedLoop = false;
+				bool oldClosedLoop = config.ClosedLoop;
+				config.ClosedLoop = false;
 				QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, pathsWithOverlapsRemoved, config, SupportWriteType.UnsupportedAreas);
-				config.closedLoop = oldClosedLoop;
+				config.ClosedLoop = oldClosedLoop;
 			}
 			else
 			{
@@ -900,7 +900,7 @@ namespace MatterHackers.MatterSlice
 					if (config.ContinuousSpiralOuterPerimeter
 						&& layerIndex >= config.NumberOfBottomLayers)
 					{
-						inset0Config.spiralize = true;
+						inset0Config.Spiralize = true;
 					}
 
 					// Put all the insets into a new list so we can keep track of what has been printed.
@@ -930,9 +930,9 @@ namespace MatterHackers.MatterSlice
 						overrideConfig = bridgeConfig;
 					}
 					// If we are on the very first layer we always start with the outside so that we can stick to the bed better.
-					if (config.OutsidePerimetersFirst || layerIndex == 0 || inset0Config.spiralize)
+					if (config.OutsidePerimetersFirst || layerIndex == 0 || inset0Config.Spiralize)
 					{
-						if (inset0Config.spiralize)
+						if (inset0Config.Spiralize)
 						{
 							if (island.InsetToolPaths.Count > 0)
 							{
@@ -1361,13 +1361,13 @@ namespace MatterHackers.MatterSlice
 		private bool QueuePolygonsConsideringSupport(int layerIndex, LayerGCodePlanner gcodeLayer, Polygons polygonsToWrite, GCodePathConfig fillConfig, SupportWriteType supportWriteType)
 		{
 			bool polygonsWereOutput = false;
-			bool oldLoopValue = fillConfig.closedLoop;
+			bool oldLoopValue = fillConfig.ClosedLoop;
 
 			if (slicingData.Support != null
 				&& layerIndex > 0
 				&& !config.ContinuousSpiralOuterPerimeter)
 			{
-				Polygons supportOutlines = slicingData.Support.GetRequiredSupportAreas(layerIndex).Offset(fillConfig.lineWidth_um / 2);
+				Polygons supportOutlines = slicingData.Support.GetRequiredSupportAreas(layerIndex).Offset(fillConfig.LineWidthUM / 2);
 
 				if (supportWriteType == SupportWriteType.UnsupportedAreas)
 				{
@@ -1377,8 +1377,8 @@ namespace MatterHackers.MatterSlice
 						Polygons polysToWriteAtNormalHeight = new Polygons();
 						Polygons polysToWriteAtAirGapHeight = new Polygons();
 
-						GetSegmentsConsideringSupport(polygonsToWrite, supportOutlines, polysToWriteAtNormalHeight, polysToWriteAtAirGapHeight, false, fillConfig.closedLoop);
-						fillConfig.closedLoop = false;
+						GetSegmentsConsideringSupport(polygonsToWrite, supportOutlines, polysToWriteAtNormalHeight, polysToWriteAtAirGapHeight, false, fillConfig.ClosedLoop);
+						fillConfig.ClosedLoop = false;
 						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtNormalHeight, null, fillConfig, layerIndex);
 					}
 					else
@@ -1392,8 +1392,8 @@ namespace MatterHackers.MatterSlice
 					Polygons polysToWriteAtNormalHeight = new Polygons();
 					Polygons polysToWriteAtAirGapHeight = new Polygons();
 
-					GetSegmentsConsideringSupport(polygonsToWrite, supportOutlines, polysToWriteAtNormalHeight, polysToWriteAtAirGapHeight, true, fillConfig.closedLoop);
-					fillConfig.closedLoop = false;
+					GetSegmentsConsideringSupport(polygonsToWrite, supportOutlines, polysToWriteAtNormalHeight, polysToWriteAtAirGapHeight, true, fillConfig.ClosedLoop);
+					fillConfig.ClosedLoop = false;
 
 					if (supportWriteType == SupportWriteType.SupportedAreasCheckOnly)
 					{
@@ -1410,7 +1410,7 @@ namespace MatterHackers.MatterSlice
 				polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, null, fillConfig, layerIndex);
 			}
 
-			fillConfig.closedLoop = oldLoopValue;
+			fillConfig.ClosedLoop = oldLoopValue;
 
 			return polygonsWereOutput;
 		}
@@ -1418,7 +1418,7 @@ namespace MatterHackers.MatterSlice
 		private void GetSegmentsConsideringSupport(Polygons polygonsToWrite, Polygons supportOutlines, Polygons polysToWriteAtNormalHeight, Polygons polysToWriteAtAirGapHeight, bool forAirGap, bool closedLoop)
 		{
 			// make an expanded area to constrain our segments to
-			Polygons maxSupportOutlines = supportOutlines.Offset(fillConfig.lineWidth_um * 2 + config.SupportXYDistance_um);
+			Polygons maxSupportOutlines = supportOutlines.Offset(fillConfig.LineWidthUM * 2 + config.SupportXYDistance_um);
 
 			Polygons polygonsToWriteAsLines = PolygonsHelper.ConvertToLines(polygonsToWrite, closedLoop);
 
