@@ -125,7 +125,8 @@ namespace MatterHackers.MatterSlice
 
 			Stopwatch timeKeeperTotal = new Stopwatch();
 			timeKeeperTotal.Start();
-			preSetup(config.ExtrusionWidth_um);
+
+			gcodeExport.SetLayerChangeCode(config.LayerChangeCode);
 
 			SliceModels(slicingData);
 
@@ -160,7 +161,6 @@ namespace MatterHackers.MatterSlice
 
 		public bool LoadStlFile(string input_filename)
 		{
-			preSetup(config.ExtrusionWidth_um);
 			timeKeeper.Restart();
 			if (!SimpleMeshCollection.LoadModelFromFile(simpleMeshCollection, input_filename, config.ModelMatrix))
 			{
@@ -183,26 +183,6 @@ namespace MatterHackers.MatterSlice
 			gcodeExport.Finalize(maxObjectHeight, config.TravelSpeed, config.EndCode);
 
 			gcodeExport.Close();
-		}
-
-		private void preSetup(long extrusionWidth_um)
-		{
-			skirtConfig.SetData(config.InsidePerimetersSpeed, extrusionWidth_um);
-			inset0Config.SetData(config.OutsidePerimeterSpeed, config.OutsideExtrusionWidth_um);
-			insetXConfig.SetData(config.InsidePerimetersSpeed, extrusionWidth_um);
-
-			fillConfig.SetData(config.InfillSpeed, extrusionWidth_um);
-			topFillConfig.SetData(config.TopInfillSpeed, extrusionWidth_um);
-			firstTopFillConfig.SetData(config.BridgeSpeed, extrusionWidth_um);
-			bottomFillConfig.SetData(config.BottomInfillSpeed, extrusionWidth_um);
-			airGappedBottomConfig.SetData(config.AirGapSpeed, extrusionWidth_um);
-			airGappedBottomInsetConfig.SetData(config.AirGapSpeed, extrusionWidth_um);
-			bridgeConfig.SetData(config.BridgeSpeed, extrusionWidth_um);
-
-			supportNormalConfig.SetData(config.SupportMaterialSpeed, extrusionWidth_um);
-			supportInterfaceConfig.SetData(config.SupportMaterialSpeed, extrusionWidth_um);
-
-			gcodeExport.SetLayerChangeCode(config.LayerChangeCode);
 		}
 
 		private void SliceModels(LayerDataStorage slicingData)
