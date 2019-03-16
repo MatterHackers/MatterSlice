@@ -80,19 +80,25 @@ namespace MatterHackers.Pathfinding
 		private void SetGoodUnitsPerPixel(double unitsPerPixel)
 		{
 			unitsPerPixel = Max(unitsPerPixel, 1);
+
+			// if x or y are bigger than max Image Size, scale down
 			if (polygonBounds.Width() / unitsPerPixel > maxImageSize)
 			{
 				unitsPerPixel = Max(1, polygonBounds.Width() / maxImageSize);
 			}
+
 			if (polygonBounds.Height() / unitsPerPixel > maxImageSize)
 			{
 				unitsPerPixel = Max(1, polygonBounds.Height() / maxImageSize);
 			}
+
+			// make sure that both axis have at least 32 pixels in them (may make one axis bigger than max image size)
 			if (polygonBounds.Width() / unitsPerPixel < 32)
 			{
 				unitsPerPixel = polygonBounds.Width() / 32;
 			}
-			if (polygonBounds.Height() / unitsPerPixel > maxImageSize)
+
+			if (polygonBounds.Height() / unitsPerPixel < 32)
 			{
 				unitsPerPixel = polygonBounds.Height() / 32;
 			}
@@ -272,12 +278,12 @@ namespace MatterHackers.Pathfinding
 			// First create an image that is fully set on all color values of the original image
 			DistanceFromOutside.DoThreshold(1);
 
-			//var image32 = new ImageBuffer(InsetMap.Width, InsetMap.Height);
-			//image32.NewGraphics2D().Render(InsetMap, 0, 0);
-			//ImageTgaIO.Save(image32, "c:\\temp\\before.tga");
 			CalculateDistance(DistanceFromOutside);
-			//image32.NewGraphics2D().Render(InsetMap, 0, 0);
-			//ImageTgaIO.Save(image32, "c:\\temp\\test.tga");
+
+			//var image32 = new ImageBuffer(DistanceFromOutside.Width, DistanceFromOutside.Height);
+			//image32.NewGraphics2D().Render(DistanceFromOutside, 0, 0);
+
+			//Agg.Platform.AggContext.ImageIO.SaveImageData("c:\\temp\\DistanceFromOutside.png", image32);
 		}
 
 		private void CalculateDistance(ImageBuffer image)
