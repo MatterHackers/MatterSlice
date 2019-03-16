@@ -106,7 +106,7 @@ namespace MatterHackers.Pathfinding
 
 			// set it to 1/4 the inset amount
 			int devisor = 4;
-			OutlineData = new PathingData(outsidePolygons, avoidInset / devisor, useInsideCache);
+			OutlineData = new PathingData(outsidePolygons, Math.Abs(avoidInset / devisor), useInsideCache);
 		}
 
 		public long InsetAmount { get; private set; }
