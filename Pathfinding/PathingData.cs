@@ -92,7 +92,7 @@ namespace MatterHackers.Pathfinding
 			{
 				unitsPerPixel = polygonBounds.Width() / 32;
 			}
-			if (polygonBounds.Height() / unitsPerPixel > maxImageSize)
+			if (polygonBounds.Height() / unitsPerPixel < 32)
 			{
 				unitsPerPixel = polygonBounds.Height() / 32;
 			}
