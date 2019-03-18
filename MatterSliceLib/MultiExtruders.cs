@@ -129,6 +129,10 @@ namespace MatterHackers.MatterSlice
 						foundSupport = true;
 						break;
 
+					case 'W':
+						parseIndex++;
+						break;
+
 					default:
 						// get the number for the operand index
 						int skipCount = 0;

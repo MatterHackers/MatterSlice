@@ -90,8 +90,16 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void CreateWipeTower(int totalLayers, ConfigSettings config)
+		public void CreateWipeTower(int totalLayers, ConfigSettings config, ExtruderLayers wipeTowerLayers)
 		{
+			if(wipeTowerLayers != null
+				&& wipeTowerLayers.Layers.Count > 0
+				&& wipeTowerLayers.Layers[0].AllOutlines.Count > 0)
+			{
+				this.WipeTower = wipeTowerLayers.Layers[0].AllOutlines;
+				return;
+			}
+
 			if (config.WipeTowerSize_um < 1
 				|| LastLayerWithChange(config) == -1)
 			{
@@ -105,11 +113,6 @@ namespace MatterHackers.MatterSlice
 			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000));
 
 			this.WipeTower.Add(wipeTowerShape);
-			var wipeTowerBounds = wipeTowerShape.GetBounds();
-
-			config.WipeCenter_um = new IntPoint(
-				wipeTowerBounds.minX + (wipeTowerBounds.maxX - wipeTowerBounds.minX) / 2,
-				wipeTowerBounds.minY + (wipeTowerBounds.maxY - wipeTowerBounds.minY) / 2);
 		}
 
 		public void DumpLayerparts(string filename)

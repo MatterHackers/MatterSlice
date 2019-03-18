@@ -250,6 +250,18 @@ namespace MatterHackers.MatterSlice
 
 			slicingData.Extruders = MultiExtruders.ProcessBooleans(slicingData.Extruders, config.BooleanOperations);
 
+			MultiExtruders.RemoveExtruderIntersections(slicingData.Extruders);
+
+			// Is the last extruder data actually wipe tower definitions?
+			bool userGeneratedWipeTower = config.BooleanOperations.Contains("W");
+			ExtruderLayers wipeTowerOutlines = null;
+			if (userGeneratedWipeTower)
+			{
+				wipeTowerOutlines = slicingData.Extruders[slicingData.Extruders.Count - 1];
+				// Last extruder was support material, remove it from the list.
+				slicingData.Extruders.RemoveAt(slicingData.Extruders.Count - 1);
+			}
+
 			// Is the last extruder data actually support definitions?
 			bool userGeneratedSupport = config.BooleanOperations.Contains("S");
 			ExtruderLayers supportOutlines = null;
@@ -260,7 +272,6 @@ namespace MatterHackers.MatterSlice
 				slicingData.Extruders.RemoveAt(slicingData.Extruders.Count - 1);
 			}
 
-			MultiExtruders.RemoveExtruderIntersections(slicingData.Extruders);
 			MultiExtruders.OverlapMultipleExtrudersSlightly(slicingData.Extruders, config.MultiExtruderOverlapPercent);
 #if False
 			LayerPart.dumpLayerparts(slicingData, "output.html");
@@ -316,7 +327,7 @@ namespace MatterHackers.MatterSlice
 
 			timeKeeper.Restart();
 
-			slicingData.CreateWipeTower(totalLayers, config);
+			slicingData.CreateWipeTower(totalLayers, config, wipeTowerOutlines);
 
 			if (config.EnableRaft)
 			{

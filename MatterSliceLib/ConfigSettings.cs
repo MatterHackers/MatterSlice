@@ -332,10 +332,6 @@ namespace MatterHackers.MatterSlice
 
 		public long WipeTowerSize_um => (long)(WipeTowerSize * 1000);
 
-		public double WipeCenterX => WipeCenter_um.X / 1000.0;
-		public double WipeCenterY => WipeCenter_um.Y / 1000.0;
-
-		public IntPoint WipeCenter_um { get; set; }
 		public double MaxAcceleration { get; set; }
 		public double MaxVelocity { get; set; }
 		public double JerkVelocity { get; set; }
