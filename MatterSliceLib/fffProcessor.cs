@@ -706,19 +706,22 @@ namespace MatterHackers.MatterSlice
 		private void DoSkirtAndBrim(LayerDataStorage slicingData, int layerIndex, LayerGCodePlanner layerGcodePlanner, int extruderIndex, bool extruderUsedForSupport)
 		{
 			// if we are on layer 0 we still need to print the skirt and brim
-			if (layerIndex == 0
-				&& !config.ShouldGenerateRaft()
-				&& (extruderIndex >= slicingData.Extruders.Count
-					|| slicingData.Extruders[extruderIndex].Used
-					|| extruderUsedForSupport))
+			if (layerIndex == 0)
 			{
-				QueueSkirtToGCode(slicingData, layerGcodePlanner, layerIndex, extruderIndex);
-
-				// we don't print a brim if we have a raft
-				if (!havePrintedBrims)
+				var extruderUsed = extruderIndex >= 0 
+					&& extruderIndex < slicingData.Extruders.Count 
+					&& slicingData.Extruders[extruderIndex].Used;
+				if (!config.ShouldGenerateRaft()
+					&& (extruderUsed || extruderUsedForSupport))
 				{
-					QueueBrimsToGCode(slicingData, layerGcodePlanner, layerIndex, extruderIndex);
-					havePrintedBrims = true;
+					QueueSkirtToGCode(slicingData, layerGcodePlanner, layerIndex, extruderIndex);
+
+					// we don't print a brim if we have a raft
+					if (!havePrintedBrims)
+					{
+						QueueBrimsToGCode(slicingData, layerGcodePlanner, layerIndex, extruderIndex);
+						havePrintedBrims = true;
+					}
 				}
 			}
 		}
