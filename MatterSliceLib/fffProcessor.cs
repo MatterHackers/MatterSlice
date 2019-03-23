@@ -124,6 +124,15 @@ namespace MatterHackers.MatterSlice
 			SliceModels(slicingData);
 
 			ProcessSliceData(slicingData);
+
+			var extraPathingConsideration = new Polygons();
+			foreach (var polygons in slicingData.WipeShield)
+			{
+				extraPathingConsideration.AddRange(polygons);
+			}
+			extraPathingConsideration.AddRange(slicingData.WipeTower);
+			ExtruderLayers.InitializeLayerPathing(config, extraPathingConsideration, slicingData.Extruders);
+
 			if (MatterSlice.Canceled)
 			{
 				return;
@@ -207,13 +216,6 @@ namespace MatterHackers.MatterSlice
 			slicingData.modelMin = optimizedMeshCollection.minXYZ_um;
 			slicingData.modelMax = optimizedMeshCollection.maxXYZ_um;
 
-			var extraPathingConsideration = new Polygons();
-			foreach (var polygons in slicingData.WipeShield)
-			{
-				extraPathingConsideration.AddRange(polygons);
-			}
-			extraPathingConsideration.AddRange(slicingData.WipeTower);
-
 			foreach (var extruderData in extruderList)
 			{
 				var extruderLayer = new ExtruderLayers(extruderData, config.outputOnlyFirstLayer);
@@ -228,8 +230,6 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 			}
-
-			ExtruderLayers.InitializeLayerPathing(config, extraPathingConsideration, slicingData.Extruders);
 
 			// make the path finding data include all the layer info
 
@@ -531,11 +531,23 @@ namespace MatterHackers.MatterSlice
 				// start out with the fan off for this layer (the minimum layer fan speed will be applied later as the gcode is output)
 				layerPlanner.QueueFanCommand(0, fillConfig);
 
+				// hold the current layer path finder
+				PathFinder layerPathFinder = null;
+
 				// Loop over extruders in preferred order
 				var activeThenOtherExtruders = slicingData.Extruders.CurrentThenOtherIndexes(activeExtruderIndex: layerPlanner.GetExtruder());
 				foreach (int extruderIndex in activeThenOtherExtruders)
 				{
-					ChangeExtruderIfRequired(slicingData, layerIndex, layerPlanner, extruderIndex, false);
+					if (config.AvoidCrossingPerimeters
+						&& slicingData.Extruders != null
+						&& slicingData.Extruders.Count > extruderIndex)
+					{
+						// set the path planner to avoid islands
+						layerPathFinder = slicingData.Extruders[extruderIndex].Layers[layerIndex].PathFinder;
+						layerPlanner.PathFinder = layerPathFinder;
+					}
+
+					ChangeExtruderIfRequired(slicingData, layerPathFinder, layerIndex, layerPlanner, extruderIndex, false);
 
 					// create the insets required by this extruder layer
 					CreateRequiredInsets(config, slicingData, layerIndex, extruderIndex);
@@ -547,15 +559,6 @@ namespace MatterHackers.MatterSlice
 					else
 					{
 						QueueExtruderLayerToGCode(slicingData, layerPlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
-					}
-
-					if (config.AvoidCrossingPerimeters
-						&& slicingData.Extruders != null
-						&& slicingData.Extruders.Count > extruderIndex)
-					{
-						// set the path planner to avoid islands
-						SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
-						layerPlanner.PathFinder = layer.PathFinder;
 					}
 
 					if (slicingData.Support != null)
@@ -607,7 +610,7 @@ namespace MatterHackers.MatterSlice
 
 					foreach (int extruderIndex in slicingData.Extruders.CurrentThenOtherIndexes(activeExtruderIndex: layerPlanner.GetExtruder()))
 					{
-						QueueAirGappedExtruderLayerToGCode(slicingData, layerPlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
+						QueueAirGappedExtruderLayerToGCode(slicingData, layerPathFinder, layerPlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
 					}
 
 					slicingData.Support.QueueAirGappedBottomLayer(config, layerPlanner, layerIndex, airGappedBottomConfig);
@@ -617,7 +620,10 @@ namespace MatterHackers.MatterSlice
 					gcodeExport.CurrentZ_um = z;
 				}
 
-				slicingData.EnsureWipeTowerIsSolid(layerIndex, layerPlanner, fillConfig, config);
+				if (slicingData.EnsureWipeTowerIsSolid(layerIndex, layerPathFinder, layerPlanner, fillConfig, config))
+				{
+					islandCurrentlyInside = null;
+				}
 
 				long currentLayerThickness_um = config.LayerThickness_um;
 				if (layerIndex <= 0)
@@ -645,6 +651,7 @@ namespace MatterHackers.MatterSlice
 		}
 
 		private void ChangeExtruderIfRequired(LayerDataStorage slicingData,
+			PathFinder layerPathFinder,
 			int layerIndex,
 			LayerGCodePlanner layerGcodePlanner,
 			int extruderIndex,
@@ -681,12 +688,27 @@ namespace MatterHackers.MatterSlice
 				{
 					int prevExtruder = layerGcodePlanner.GetExtruder();
 
+					if(layerIndex > 0)
+					{
+						if (config.AvoidCrossingPerimeters)
+						{
+							// set the path planner to avoid islands
+							layerGcodePlanner.PathFinder = slicingData.Extruders[extruderIndex].Layers[layerIndex].PathFinder;
+						}
+						// make sure we path plan our way to the wipe tower before switching extruders
+						layerGcodePlanner.QueueTravel(slicingData.WipeCenter_um);
+						islandCurrentlyInside = null;
+					}
+
 					// then change extruders
 					layerGcodePlanner.SetExtruder(extruderIndex);
 
 					DoSkirtAndBrim(slicingData, layerIndex, layerGcodePlanner, extruderIndex, extruderUsedForSupport);
 
-					slicingData.PrimeOnWipeTower(layerIndex, layerGcodePlanner, fillConfig, config, airGapped);
+					if(slicingData.PrimeOnWipeTower(layerIndex, layerGcodePlanner, layerPathFinder, fillConfig, config, airGapped))
+					{
+						islandCurrentlyInside = null;
+					}
 				}
 				else if(extruderIndex < slicingData.Extruders.Count)
 				{
@@ -1149,7 +1171,7 @@ namespace MatterHackers.MatterSlice
 			{
 				// If we are already in the island we are going to, don't go there, or there is only one island.
 				if ((layer.Islands.Count == 1 && config.ExtruderCount == 1)
-					|| layer.PathFinder.OutlineData.Polygons.Count < 3
+					|| layer.PathFinder.OutlineData?.Polygons.Count < 3
 					|| island.PathFinder.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineData.EdgeQuadTrees, island.PathFinder.OutlineData.PointQuadTrees) == true)
 				{
 					islandCurrentlyInside = island;
@@ -1290,7 +1312,7 @@ namespace MatterHackers.MatterSlice
 		}
 
 		//Add a single layer from a single extruder to the GCode
-		private void QueueAirGappedExtruderLayerToGCode(LayerDataStorage slicingData, LayerGCodePlanner layerGcodePlanner, int extruderIndex, int layerIndex, long extrusionWidth_um, long currentZ_um)
+		private void QueueAirGappedExtruderLayerToGCode(LayerDataStorage slicingData, PathFinder layerPathFinder, LayerGCodePlanner layerGcodePlanner, int extruderIndex, int layerIndex, long extrusionWidth_um, long currentZ_um)
 		{
 			if (slicingData.Support != null
 				&& !config.ContinuousSpiralOuterPerimeter
@@ -1332,7 +1354,7 @@ namespace MatterHackers.MatterSlice
 
 					if (outputDataForIsland)
 					{
-						ChangeExtruderIfRequired(slicingData, layerIndex, layerGcodePlanner, extruderIndex, true);
+						ChangeExtruderIfRequired(slicingData, layerPathFinder, layerIndex, layerGcodePlanner, extruderIndex, true);
 
 						if (!config.AvoidCrossingPerimeters
 							&& config.RetractWhenChangingIslands)
