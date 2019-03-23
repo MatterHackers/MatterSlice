@@ -27,6 +27,7 @@ namespace MatterHackers.MatterSlice
 	using System;
 	using System.Diagnostics;
 	using System.IO;
+	using MatterHackers.Pathfinding;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
@@ -41,6 +42,8 @@ namespace MatterHackers.MatterSlice
 
 		public NewSupport Support = null;
 		public List<Polygons> WipeShield { get; set; } = new List<Polygons>();
+		public IntPoint WipeCenter_um { get; private set; }
+
 		public Polygons WipeTower = new Polygons();
 
 		private int primesThisLayer = 0;
@@ -113,6 +116,12 @@ namespace MatterHackers.MatterSlice
 			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000));
 
 			this.WipeTower.Add(wipeTowerShape);
+
+			var wipeTowerBounds = wipeTowerShape.GetBounds();
+
+			WipeCenter_um = new IntPoint(
+				wipeTowerBounds.minX + (wipeTowerBounds.maxX - wipeTowerBounds.minX) / 2,
+				wipeTowerBounds.minY + (wipeTowerBounds.maxY - wipeTowerBounds.minY) / 2);
 		}
 
 		public void DumpLayerparts(string filename)
@@ -156,11 +165,11 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void EnsureWipeTowerIsSolid(int layerIndex, LayerGCodePlanner gcodeLayer, GCodePathConfig fillConfig, ConfigSettings config)
+		public bool EnsureWipeTowerIsSolid(int layerIndex, PathFinder pathFinder, LayerGCodePlanner layerGcodePlanner, GCodePathConfig fillConfig, ConfigSettings config)
 		{
 			if (layerIndex >= LastLayerWithChange(config))
 			{
-				return;
+				return false;
 			}
 
 			// TODO: if layer index == 0 do all the loops from the outside-in, in order (no lines should be in the wipe tower)
@@ -185,10 +194,16 @@ namespace MatterHackers.MatterSlice
 					outlineForExtruder = outlineForExtruder.Offset(-insetPerLoop);
 				}
 
-				var oldPathFinder = gcodeLayer.PathFinder;
-				gcodeLayer.PathFinder = null;
-				gcodeLayer.QueuePolygons(fillPolygons, fillConfig);
-				gcodeLayer.PathFinder = oldPathFinder;
+				// set the path planner to avoid islands
+				layerGcodePlanner.PathFinder = pathFinder;
+				layerGcodePlanner.QueueTravel(WipeCenter_um);
+
+				// turn off the planner for the wipe tower
+				layerGcodePlanner.PathFinder = null;
+				layerGcodePlanner.QueuePolygons(fillPolygons, fillConfig);
+
+				// turn it back on for leaving the wipe tower
+				layerGcodePlanner.PathFinder = pathFinder;
 			}
 			else
 			{
@@ -198,12 +213,14 @@ namespace MatterHackers.MatterSlice
 				for (int primeLoop = primesThisLayer; primeLoop < maxPrimingLoops; primeLoop++)
 				{
 					// write the loops for this extruder, but don't change to it. We are just filling the prime tower.
-					PrimeOnWipeTower(layerIndex, gcodeLayer, fillConfig, config, false);
+					PrimeOnWipeTower(layerIndex, layerGcodePlanner, pathFinder, fillConfig, config, false);
 				}
 
 				// clear the history of printer extruders for the next layer
 				primesThisLayer = 0;
 			}
+
+			return true;
 		}
 
 		public void GenerateRaftOutlines(long extraDistanceAroundPart_um, ConfigSettings config)
@@ -314,13 +331,13 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public void PrimeOnWipeTower(int layerIndex, LayerGCodePlanner layerGcodePlanner, GCodePathConfig fillConfig, ConfigSettings config, bool airGapped)
+		public bool PrimeOnWipeTower(int layerIndex, LayerGCodePlanner layerGcodePlanner, PathFinder pathFinder, GCodePathConfig fillConfig, ConfigSettings config, bool airGapped)
 		{
 			if (!HaveWipeTower(config)
 				|| layerIndex > LastLayerWithChange(config) + 1
 				|| layerIndex == 0)
 			{
-				return;
+				return false;
 			}
 
 			if (airGapped)
@@ -331,20 +348,32 @@ namespace MatterHackers.MatterSlice
 
 			//If we changed extruder, print the wipe/prime tower for this nozzle;
 			Polygons fillPolygons = new Polygons();
-
-			var oldPathFinder = layerGcodePlanner.PathFinder;
-			layerGcodePlanner.PathFinder = null;
 			GenerateWipeTowerInfill(primesThisLayer, this.WipeTower, fillPolygons, fillConfig.LineWidthUM, config);
-			layerGcodePlanner.QueuePolygons(fillPolygons, fillConfig);
-			layerGcodePlanner.PathFinder = oldPathFinder;
 
-			if (airGapped)
+			if (fillPolygons.Count > 0)
 			{
-				// don't print the wipe tower with air gap height
-				layerGcodePlanner.CurrentZ += config.SupportAirGap_um;
+				// move over to the wipe tower with the layer planner in place
+				layerGcodePlanner.PathFinder = pathFinder;
+				layerGcodePlanner.QueueTravel(WipeCenter_um);
+
+				// print the wipe tower with no planning
+				layerGcodePlanner.PathFinder = null;
+				layerGcodePlanner.QueuePolygons(fillPolygons, fillConfig);
+
+				// turn back on the layer planner
+				layerGcodePlanner.PathFinder = pathFinder;
+
+				if (airGapped)
+				{
+					// don't print the wipe tower with air gap height
+					layerGcodePlanner.CurrentZ += config.SupportAirGap_um;
+				}
+
+				primesThisLayer++;
+				return true;
 			}
 
-			primesThisLayer++;
+			return false;
 		}
 
 		public void WriteRaftGCodeIfRequired(GCodeExport gcode, ConfigSettings config)
