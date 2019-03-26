@@ -45,6 +45,20 @@ namespace MatterHackers.MatterSlice
 
 		private static readonly double minimumDistanceToCreateNewPosition = 10;
 
+		public LayerIsland()
+		{
+		}
+
+		/// <summary>
+		/// Constructs a new LayerIsland based on referenced Polgons and calculates its BoundingBox
+		/// </summary>
+		/// <param name="islandOutline">The LayerIsland outlines</param>
+		public LayerIsland(Polygons islandOutline)
+		{
+			this.IslandOutline = islandOutline;
+			this.BoundingBox.Calculate(this.IslandOutline);
+		}
+
 		/// <summary>
 		/// The outline of the island as defined by the original mesh polygons (not inset at all).
 		/// </summary>
