@@ -655,12 +655,15 @@ namespace MatterHackers.MatterSlice
 
 		private GCodePath GetNewPath(GCodePathConfig config)
 		{
-			GCodePath path = new GCodePath();
+			var path = new GCodePath
+			{
+				Retract = RetractType.None,
+				ExtruderIndex = currentExtruderIndex,
+				Done = false,
+				Config = config
+			};
+
 			paths.Add(path);
-			path.Retract = RetractType.None;
-			path.ExtruderIndex = currentExtruderIndex;
-			path.Done = false;
-			path.Config = config;
 
 			return path;
 		}
@@ -668,7 +671,7 @@ namespace MatterHackers.MatterSlice
 		private void ValidatePaths()
 		{
 			bool first = true;
-			IntPoint lastPosition = new IntPoint();
+			var lastPosition = new IntPoint();
 			for (int pathIndex = 0; pathIndex < paths.Count; pathIndex++)
 			{
 				var path = paths[pathIndex];

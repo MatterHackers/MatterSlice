@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 using System.Collections.Generic;
+using System.Linq;
 using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
@@ -31,24 +32,23 @@ namespace MatterHackers.MatterSlice
 
 		private static readonly double cleanDistance_um = 10;
 
-		public bool Used
-		{
-			get
-			{
-				foreach (var layer in Layers)
-				{
-					if (layer.Islands.Count > 0)
-					{
-						return true;
-					}
-				}
-
-				return false;
-			}
-		}
-
 		public ExtruderLayers()
 		{
+		}
+
+		/// <summary>
+		///  Indicates if the extruder is used in any layer
+		/// </summary>
+		public bool Used => this.Layers.Any(layer => layer.Islands.Count > 0);
+
+		/// <summary>
+		/// Indicates if the extruder is used in the given layer
+		/// </summary>
+		/// <param name="layerIndex">The layer to check</param>
+		/// <returns>A something</returns>
+		public bool UsedInLayer(int layerIndex)
+		{
+			return this.Layers[layerIndex].Islands.Count > 0;
 		}
 
 		/// <summary>
