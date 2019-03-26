@@ -333,20 +333,24 @@ namespace MatterHackers.MatterSlice
 			{
 				slicingData.GenerateRaftOutlines(config.RaftExtraDistanceAroundPart_um, config);
 
+				var extrudersInLayer0 = slicingData.Extruders.Count(e => e.UsedInLayer(0));
+
 				slicingData.GenerateSkirt(
 					config.SkirtDistance_um + config.RaftBaseExtrusionWidth_um,
 					config.RaftBaseExtrusionWidth_um,
-					config.NumberOfSkirtLoops * config.ExtruderCount,
+					config.NumberOfSkirtLoops * extrudersInLayer0,
 					config.NumberOfBrimLoops,
 					config.SkirtMinLength_um,
 					config);
 			}
 			else
 			{
+				var extrudersInLayer0 = slicingData.Extruders.Count(e => e.UsedInLayer(0));
+
 				slicingData.GenerateSkirt(
 					config.SkirtDistance_um,
 					config.FirstLayerExtrusionWidth_um,
-					config.NumberOfSkirtLoops * config.ExtruderCount,
+					config.NumberOfSkirtLoops * extrudersInLayer0,
 					config.NumberOfBrimLoops,
 					config.SkirtMinLength_um,
 					config);
@@ -732,7 +736,8 @@ namespace MatterHackers.MatterSlice
 			{
 				var extruderUsed = extruderIndex >= 0 
 					&& extruderIndex < slicingData.Extruders.Count 
-					&& slicingData.Extruders[extruderIndex].Used;
+					&& slicingData.Extruders[extruderIndex].UsedInLayer(0);
+
 				if (!config.ShouldGenerateRaft()
 					&& (extruderUsed || extruderUsedForSupport))
 				{
@@ -830,7 +835,22 @@ namespace MatterHackers.MatterSlice
 
 		private void QueueSkirtToGCode(LayerDataStorage slicingData, LayerGCodePlanner gcodeLayer, int layerIndex, int extruderIndex)
 		{
-			var loopsPerExtruder = slicingData.Skirt.Count / config.ExtruderCount;
+			var extrudersInLayer0 = slicingData.Extruders.Count(e => e.UsedInLayer(0));
+
+			var loopsPerExtruder = slicingData.Skirt.Count / extrudersInLayer0;
+
+			// Single extruder in layer 0 - print all on target extruder
+			if (extrudersInLayer0 == 1)
+			{
+				for (int i = loopsPerExtruder - 1; i >= 0; i--)
+				{
+					gcodeLayer.QueuePolygonByOptimizer(slicingData.Skirt[i], null, skirtConfig, layerIndex);
+				}
+
+				return;
+			}
+
+			// Multiple extruders in layer 0 - split up skirt loops
 			var loopIndex = loopsPerExtruder * ((config.ExtruderCount - 1) - extruderIndex);
 
 			for (int i = loopsPerExtruder - 1; i >= 0; i--)
