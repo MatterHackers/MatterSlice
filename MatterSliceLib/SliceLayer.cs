@@ -221,10 +221,7 @@ namespace MatterHackers.MatterSlice
 			Islands = new List<LayerIsland>();
 			for (int islandIndex = 0; islandIndex < separatedIntoIslands.Count; islandIndex++)
 			{
-				Islands.Add(new LayerIsland());
-				Islands[islandIndex].IslandOutline = separatedIntoIslands[islandIndex];
-
-				Islands[islandIndex].BoundingBox.Calculate(Islands[islandIndex].IslandOutline);
+				Islands.Add(new LayerIsland(separatedIntoIslands[islandIndex]));
 			}
 		}
 
