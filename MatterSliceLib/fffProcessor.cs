@@ -830,10 +830,10 @@ namespace MatterHackers.MatterSlice
 
 		private void QueueSkirtToGCode(LayerDataStorage slicingData, LayerGCodePlanner gcodeLayer, int layerIndex, int extruderIndex)
 		{
-			var loopsPerExtuder = slicingData.Skirt.Count / config.ExtruderCount;
-			var loopIndex = loopsPerExtuder * ((config.ExtruderCount - 1) - extruderIndex);
+			var loopsPerExtruder = slicingData.Skirt.Count / config.ExtruderCount;
+			var loopIndex = loopsPerExtruder * ((config.ExtruderCount - 1) - extruderIndex);
 
-			for (int i = loopsPerExtuder - 1; i >= 0; i--)
+			for (int i = loopsPerExtruder - 1; i >= 0; i--)
 			{
 				gcodeLayer.QueuePolygonByOptimizer(slicingData.Skirt[loopIndex + i], null, skirtConfig, layerIndex);
 			}
