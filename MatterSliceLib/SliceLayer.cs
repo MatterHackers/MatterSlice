@@ -218,7 +218,8 @@ namespace MatterHackers.MatterSlice
 		public void CreateIslandData()
 		{
 			// Build Islands from outlines
-			this.Islands = this.AllOutlines.ProcessIntoSeparateIslands().Select(outlines => new LayerIsland(outlines)).ToList();
+			this.Islands = (from outline in this.AllOutlines.ProcessIntoSeparateIslands()
+							select new LayerIsland(outline)).ToList();
 		}
 
 		public void GenerateInsets(long extrusionWidth_um, long outerExtrusionWidth_um, int insetCount, bool expandThinWalls, bool avoidCrossingPerimeters)
