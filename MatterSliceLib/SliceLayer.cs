@@ -25,6 +25,7 @@ using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+	using System.Linq;
 	using MatterHackers.QuadTree;
 	using Pathfinding;
 	using Polygon = List<IntPoint>;
@@ -216,13 +217,8 @@ namespace MatterHackers.MatterSlice
 
 		public void CreateIslandData()
 		{
-			List<Polygons> separatedIntoIslands = AllOutlines.ProcessIntoSeparateIslands();
-
-			Islands = new List<LayerIsland>();
-			for (int islandIndex = 0; islandIndex < separatedIntoIslands.Count; islandIndex++)
-			{
-				Islands.Add(new LayerIsland(separatedIntoIslands[islandIndex]));
-			}
+			// Build Islands from outlines
+			this.Islands = this.AllOutlines.ProcessIntoSeparateIslands().Select(outlines => new LayerIsland(outlines)).ToList();
 		}
 
 		public void GenerateInsets(long extrusionWidth_um, long outerExtrusionWidth_um, int insetCount, bool expandThinWalls, bool avoidCrossingPerimeters)
