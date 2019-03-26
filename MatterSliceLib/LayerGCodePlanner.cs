@@ -31,7 +31,7 @@ namespace MatterHackers.MatterSlice
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
-	//The GCodePlanner class stores multiple moves that are planned.
+	// The GCodePlanner class stores multiple moves that are planned.
 	// It facilitates the avoidCrossingPerimeters to keep the head inside the print.
 	// It also keeps track of the print time estimate for this planning so speed adjustments can be made for the minimum-layer-time.
 	public class LayerGCodePlanner
@@ -74,28 +74,15 @@ namespace MatterHackers.MatterSlice
 
 		public long CurrentZ
 		{
-			get
-			{
-				return gcodeExport.CurrentZ_um;
-			}
-
-			set
-			{
-				gcodeExport.CurrentZ_um = value;
-			}
+			get => gcodeExport.CurrentZ_um;
+			set => gcodeExport.CurrentZ_um = value;
 		}
 
-		public IntPoint LastPosition
-		{
-			get; private set;
-		}
+		public IntPoint LastPosition { get; private set; }
 
 		public PathFinder PathFinder
 		{
-			get
-			{
-				return pathFinder;
-			}
+			get => pathFinder;
 			set
 			{
 				if (value != null
@@ -103,13 +90,14 @@ namespace MatterHackers.MatterSlice
 				{
 					lastValidPathFinder = value;
 				}
+
 				pathFinder = value;
 			}
 		}
 
 		public static GCodePath TrimGCodePathEnd(GCodePath inPath, long targetDistance)
 		{
-			GCodePath path = new GCodePath(inPath);
+			var path = new GCodePath(inPath);
 			// get a new trimmed polygon
 			path.Polygon = path.Polygon.TrimEnd(targetDistance);
 
@@ -121,7 +109,8 @@ namespace MatterHackers.MatterSlice
 			IntPoint lastPosition = gcodeExport.GetPosition();
 			double fixedTime = 0.0;
 			double variableTime = 0.0;
-			foreach(var path in paths)
+
+			foreach (var path in paths)
 			{
 				for (int pointIndex = 0; pointIndex < path.Polygon.Count; pointIndex++)
 				{
@@ -151,7 +140,7 @@ namespace MatterHackers.MatterSlice
 			return (fixedTime, variableTime, fixedTime + variableTime);
 		}
 
-		bool PathCanAdjustSpeed(GCodePath path)
+		private bool PathCanAdjustSpeed(GCodePath path)
 		{
 			return path.Config.LineWidthUM > 0 && path.Config.GCodeComment != "BRIDGE";
 		}
@@ -211,7 +200,7 @@ namespace MatterHackers.MatterSlice
 			GetLatestPathWithConfig(config).Polygon.Add(new IntPoint(destination, CurrentZ));
 			LastPosition = destination;
 
-			//ValidatePaths();
+			// ValidatePaths();
 		}
 
 		public void QueuePolygon(Polygon polygon, int startIndex, GCodePathConfig config)
@@ -267,7 +256,6 @@ namespace MatterHackers.MatterSlice
 		/// Ensure the layer has the correct minimum fan speeds set
 		/// by applying speed corrections for minimum layer times.
 		/// </summary>
-		/// <param name="config"></param>
 		/// <param name="layerIndex"></param>
 		public void FinalizeLayerFanSpeeds(int layerIndex)
 		{

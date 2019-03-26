@@ -33,6 +33,9 @@ namespace MatterHackers.MatterSlice
 
 	public class LayerDataStorage
 	{
+		private int lastLayerWithChange = -1;
+		private bool calculatedLastLayer = false;
+
 		public List<ExtruderLayers> Extruders = new List<ExtruderLayers>();
 		public IntPoint modelSize, modelMin, modelMax;
 		public Polygons raftOutline = new Polygons();
@@ -65,7 +68,7 @@ namespace MatterHackers.MatterSlice
 
 			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 			{
-				Polygons wipeShield = new Polygons();
+				var wipeShield = new Polygons();
 				for (int extruderIndex = 0; extruderIndex < this.Extruders.Count; extruderIndex++)
 				{
 					for (int islandIndex = 0; islandIndex < this.Extruders[extruderIndex].Layers[layerIndex].Islands.Count; islandIndex++)
@@ -73,6 +76,7 @@ namespace MatterHackers.MatterSlice
 						wipeShield = wipeShield.CreateUnion(this.Extruders[extruderIndex].Layers[layerIndex].Islands[islandIndex].IslandOutline.Offset(config.WipeShieldDistanceFromShapes_um));
 					}
 				}
+
 				this.WipeShield.Add(wipeShield);
 			}
 
@@ -81,7 +85,7 @@ namespace MatterHackers.MatterSlice
 				this.WipeShield[layerIndex] = this.WipeShield[layerIndex].Offset(-1000).Offset(1000);
 			}
 
-			long offsetAngle_um = (long)(Math.Tan(60.0 * Math.PI / 180) * config.LayerThickness_um);//Allow for a 60deg angle in the wipeShield.
+			long offsetAngle_um = (long)(Math.Tan(60.0 * Math.PI / 180) * config.LayerThickness_um); // Allow for a 60deg angle in the wipeShield.
 			for (int layerIndex = 1; layerIndex < totalLayers; layerIndex++)
 			{
 				this.WipeShield[layerIndex] = this.WipeShield[layerIndex].CreateUnion(this.WipeShield[layerIndex - 1].Offset(-offsetAngle_um));
@@ -95,7 +99,7 @@ namespace MatterHackers.MatterSlice
 
 		public void CreateWipeTower(int totalLayers, ConfigSettings config, ExtruderLayers wipeTowerLayers)
 		{
-			if(wipeTowerLayers != null
+			if (wipeTowerLayers != null
 				&& wipeTowerLayers.Layers.Count > 0
 				&& wipeTowerLayers.Layers[0].AllOutlines.Count > 0)
 			{
@@ -109,7 +113,7 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			Polygon wipeTowerShape = new Polygon();
+			var wipeTowerShape = new Polygon();
 			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000));
 			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000 + config.WipeTowerSize_um));
 			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000 + config.WipeTowerSize_um));
@@ -126,7 +130,7 @@ namespace MatterHackers.MatterSlice
 
 		public void DumpLayerparts(string filename)
 		{
-			StreamWriter streamToWriteTo = new StreamWriter(filename);
+			var streamToWriteTo = new StreamWriter(filename);
 			streamToWriteTo.Write("<!DOCTYPE html><html><body>");
 
 			for (int extruderIndex = 0; extruderIndex < this.Extruders.Count; extruderIndex++)
@@ -141,17 +145,27 @@ namespace MatterHackers.MatterSlice
 						for (int j = 0; j < part.IslandOutline.Count; j++)
 						{
 							streamToWriteTo.Write("<polygon points=\"");
+
 							for (int k = 0; k < part.IslandOutline[j].Count; k++)
+							{
 								streamToWriteTo.Write("{0},{1} ".FormatWith((float)(part.IslandOutline[j][k].X - modelMin.X) / modelSize.X * 500, (float)(part.IslandOutline[j][k].Y - modelMin.Y) / modelSize.Y * 500));
+							}
+
 							if (j == 0)
+							{
 								streamToWriteTo.Write("\" style=\"fill:gray; stroke:black;stroke-width:1\" />\n");
+							}
 							else
+							{
 								streamToWriteTo.Write("\" style=\"fill:red; stroke:black;stroke-width:1\" />\n");
+							}
 						}
 					}
+
 					streamToWriteTo.Write("</svg>\n");
 				}
 			}
+
 			streamToWriteTo.Write("</body></html>");
 			streamToWriteTo.Close();
 		}
@@ -173,7 +187,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// TODO: if layer index == 0 do all the loops from the outside-in, in order (no lines should be in the wipe tower)
-			if(layerIndex == 0)
+			if (layerIndex == 0)
 			{
 				CheckNoExtruderPrimed(config);
 
@@ -191,6 +205,7 @@ namespace MatterHackers.MatterSlice
 						newInset.Add(newInset[0]); // add in the last move so it is a solid polygon
 						fillPolygons.Add(newInset);
 					}
+
 					outlineForExtruder = outlineForExtruder.Offset(-insetPerLoop);
 				}
 
@@ -257,11 +272,13 @@ namespace MatterHackers.MatterSlice
 			}
 
 			storage.raftOutline = storage.raftOutline.CreateUnion(storage.WipeTower.Offset(extraDistanceAroundPart_um));
+
 			if (storage.WipeShield.Count > 0
 				&& storage.WipeShield[0].Count > 0)
 			{
 				storage.raftOutline = storage.raftOutline.CreateUnion(storage.WipeShield[0].Offset(extraDistanceAroundPart_um));
 			}
+
 			if (storage.Support != null)
 			{
 				storage.raftOutline = storage.raftOutline.CreateUnion(storage.Support.GetBedOutlines().Offset(extraDistanceAroundPart_um));
@@ -270,12 +287,18 @@ namespace MatterHackers.MatterSlice
 
 		public void GenerateSkirt(long distance_um, long extrusionWidth_um, int numberOfLoops, int brimCount, long minLength_um, ConfigSettings config)
 		{
-			Polygons islandsToSkirtAround = GetSkirtBounds(config, this, (distance_um > 0), distance_um, extrusionWidth_um, brimCount);
+			Polygons islandsToSkirtAround = GetSkirtBounds(
+				config,
+				this,
+				distance_um > 0,
+				distance_um,
+				extrusionWidth_um,
+				brimCount);
 
 			if (islandsToSkirtAround.Count > 0)
 			{
 				// Find convex hull for the skirt outline
-				Polygons convexHull = new Polygons(new[] { islandsToSkirtAround.CreateConvexHull() });
+				var convexHull = new Polygons(new[] { islandsToSkirtAround.CreateConvexHull() });
 
 				// Create skirt loops from the ConvexHull
 				for (int skirtLoop = 0; skirtLoop < numberOfLoops; skirtLoop++)
@@ -314,6 +337,7 @@ namespace MatterHackers.MatterSlice
 					newInset.Add(newInset[0]); // add in the last move so it is a solid polygon
 					outputfillPolygons.Add(newInset);
 				}
+
 				outlineForExtruder = outlineForExtruder.Offset(-insetPerLoop);
 			}
 
@@ -346,8 +370,8 @@ namespace MatterHackers.MatterSlice
 				layerGcodePlanner.CurrentZ -= config.SupportAirGap_um;
 			}
 
-			//If we changed extruder, print the wipe/prime tower for this nozzle;
-			Polygons fillPolygons = new Polygons();
+			// If we changed extruder, print the wipe/prime tower for this nozzle;
+			var fillPolygons = new Polygons();
 			GenerateWipeTowerInfill(primesThisLayer, this.WipeTower, fillPolygons, fillConfig.LineWidthUM, config);
 
 			if (fillPolygons.Count > 0)
@@ -393,7 +417,7 @@ namespace MatterHackers.MatterSlice
 				// create the raft base
 				{
 					gcode.WriteComment("RAFT BASE");
-					LayerGCodePlanner layerPlanner = new LayerGCodePlanner(config, gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+					var layerPlanner = new LayerGCodePlanner(config, gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 					if (config.RaftExtruder >= 0)
 					{
 						// if we have a specified raft extruder use it
@@ -420,8 +444,13 @@ namespace MatterHackers.MatterSlice
 						// write the outline of the raft
 						layerPlanner.QueuePolygonsByOptimizer(raftIsland, null, raftBaseConfig, 0);
 
-						Polygons raftLines = new Polygons();
-						Infill.GenerateLinePaths(raftIsland.Offset(-config.RaftBaseExtrusionWidth_um) , raftLines, config.RaftBaseLineSpacing_um, config.InfillExtendIntoPerimeter_um, 0);
+						var raftLines = new Polygons();
+						Infill.GenerateLinePaths(
+							raftIsland.Offset(-config.RaftBaseExtrusionWidth_um),
+							raftLines,
+							config.RaftBaseLineSpacing_um,
+							config.InfillExtendIntoPerimeter_um,
+							0);
 
 						// write the inside of the raft base
 						layerPlanner.QueuePolygonsByOptimizer(raftLines, null, raftBaseConfig, 0);
@@ -438,12 +467,12 @@ namespace MatterHackers.MatterSlice
 				// raft middle layers
 				{
 					gcode.WriteComment("RAFT MIDDLE");
-					LayerGCodePlanner layerPlanner = new LayerGCodePlanner(config, gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+					var layerPlanner = new LayerGCodePlanner(config, gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 					gcode.CurrentZ_um = config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um;
 					gcode.LayerChanged(-2, config.RaftInterfaceThicknes_um);
 					gcode.SetExtrusion(config.RaftInterfaceThicknes_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
-					Polygons raftLines = new Polygons();
+					var raftLines = new Polygons();
 					Infill.GenerateLinePaths(storage.raftOutline, raftLines, config.RaftInterfaceLineSpacing_um, config.InfillExtendIntoPerimeter_um, 45);
 					layerPlanner.QueuePolygonsByOptimizer(raftLines, null, raftMiddleConfig, 0);
 
@@ -453,12 +482,12 @@ namespace MatterHackers.MatterSlice
 				for (int raftSurfaceIndex = 1; raftSurfaceIndex <= config.RaftSurfaceLayers; raftSurfaceIndex++)
 				{
 					gcode.WriteComment("RAFT SURFACE");
-					LayerGCodePlanner layerPlanner = new LayerGCodePlanner(config, gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+					var layerPlanner = new LayerGCodePlanner(config, gcode, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 					gcode.CurrentZ_um = config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um + config.RaftSurfaceThickness_um * raftSurfaceIndex;
 					gcode.LayerChanged(-1, config.RaftSurfaceThickness_um);
 					gcode.SetExtrusion(config.RaftSurfaceThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 
-					Polygons raftLines = new Polygons();
+					var raftLines = new Polygons();
 					if (raftSurfaceIndex == config.RaftSurfaceLayers)
 					{
 						// make sure the top layer of the raft is 90 degrees offset to the first layer of the part so that it has minimum contact points.
@@ -468,6 +497,7 @@ namespace MatterHackers.MatterSlice
 					{
 						Infill.GenerateLinePaths(storage.raftOutline, raftLines, config.RaftSurfaceLineSpacing_um, config.InfillExtendIntoPerimeter_um, 90 * raftSurfaceIndex);
 					}
+
 					layerPlanner.QueuePolygonsByOptimizer(raftLines, null, raftSurfaceConfig, 0);
 
 					layerPlanner.WriteQueuedGCode(config.RaftInterfaceThicknes_um);
@@ -479,7 +509,7 @@ namespace MatterHackers.MatterSlice
 		{
 			bool hasWipeTower = storage.WipeTower.PolygonLength() > 0;
 
-			Polygons skirtPolygons = new Polygons();
+			var skirtPolygons = new Polygons();
 
 			if (config.EnableRaft)
 			{
@@ -487,7 +517,7 @@ namespace MatterHackers.MatterSlice
 			}
 			else
 			{
-				Polygons allOutlines = hasWipeTower ? new Polygons(storage.WipeTower.Offset(-extrusionWidth_um / 2)) : new Polygons();
+				var allOutlines = hasWipeTower ? new Polygons(storage.WipeTower.Offset(-extrusionWidth_um / 2)) : new Polygons();
 
 				if (storage.WipeShield.Count > 0
 					&& storage.WipeShield[0].Count > 0)
@@ -509,7 +539,7 @@ namespace MatterHackers.MatterSlice
 					{
 						// Add the layers outline to allOutlines
 						SliceLayer layer = storage.Extruders[extrudeIndex].Layers[0];
-						foreach(var island in layer.Islands)
+						foreach (var island in layer.Islands)
 						{
 							if (island.IslandOutline?.Count > 0)
 							{
@@ -555,9 +585,6 @@ namespace MatterHackers.MatterSlice
 
 			return skirtPolygons;
 		}
-
-		int lastLayerWithChange = -1;
-		bool calculatedLastLayer = false;
 
 		public int LastLayerWithChange(ConfigSettings config)
 		{

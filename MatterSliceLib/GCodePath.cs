@@ -19,25 +19,27 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System.Collections.Generic;
+using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
 	using Polygon = List<IntPoint>;
 
-	public enum RetractType { None, Requested, Force };
+	public enum RetractType
+	{
+		None,
+		Requested,
+		Force,
+	}
 
 	public class GCodePath
 	{
-		GCodePathConfig _config;
+		private GCodePathConfig _config;
+
 		public GCodePathConfig Config
 		{
-			get
-			{
-				return _config;
-			}
-
+			get => _config;
 			set
 			{
 				_config = value;
@@ -60,14 +62,18 @@ namespace MatterHackers.MatterSlice
 		}
 
 		/// <summary>
-		/// Path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
+		/// Gets or sets a value indicating whether the path is finished, no more moves should be added, and a new path should be started instead of any appending done to this one.
 		/// </summary>
 		public bool Done { get; set; }
 
 		public int ExtruderIndex { get; set; }
+
 		public int FanPercent { get; set; } = -1;
+
 		public Polygon Polygon { get; set; } = new Polygon();
+
 		public RetractType Retract { get; set; } = RetractType.None;
+
 		public double Speed { get; internal set; }
 
 		public long Length(bool pathIsClosed)
