@@ -866,18 +866,21 @@ namespace MatterHackers.MatterSlice
 
 			var usedExtruders = new HashSet<int>(layer0Extruders);
 
-			// Add interface layer extruder from layer 0
-			if (slicingData.Support.InterfaceLayers.Any()
-				&& slicingData.Support.InterfaceLayers[0].Any())
+			if (slicingData.Support != null)
 			{
-				usedExtruders.Add(config.SupportInterfaceExtruder);
-			}
+				// Add interface layer extruder from layer 0
+				if (slicingData.Support.InterfaceLayers.Any() == true
+					&& slicingData.Support.InterfaceLayers[0].Any())
+				{
+					usedExtruders.Add(config.SupportInterfaceExtruder);
+				}
 
-			// Add support extruders from layer 0
-			if (slicingData.Support.SparseSupportOutlines.Any()
-				&& slicingData.Support.SparseSupportOutlines[0].Any())
-			{
-				usedExtruders.Add(config.SupportExtruder);
+				// Add support extruders from layer 0
+				if (slicingData.Support.SparseSupportOutlines.Any()
+					&& slicingData.Support.SparseSupportOutlines[0].Any())
+				{
+					usedExtruders.Add(config.SupportExtruder);
+				}
 			}
 
 			// Add raft extruders from layer 0
