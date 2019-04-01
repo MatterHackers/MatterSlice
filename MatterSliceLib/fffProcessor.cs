@@ -329,28 +329,26 @@ namespace MatterHackers.MatterSlice
 
 			slicingData.CreateWipeTower(totalLayers, config, wipeTowerOutlines);
 
+			int extrudersUsedInLayer0 = this.ExtrudersUsedInLayer0(config, slicingData).Count();
+
 			if (config.EnableRaft)
 			{
 				slicingData.GenerateRaftOutlines(config.RaftExtraDistanceAroundPart_um, config);
 
-				var extrudersInLayer0 = slicingData.Extruders.Count(e => e.UsedInLayer(0));
-
 				slicingData.GenerateSkirt(
 					config.SkirtDistance_um + config.RaftBaseExtrusionWidth_um,
 					config.RaftBaseExtrusionWidth_um,
-					config.NumberOfSkirtLoops * extrudersInLayer0,
+					config.NumberOfSkirtLoops * extrudersUsedInLayer0,
 					config.NumberOfBrimLoops,
 					config.SkirtMinLength_um,
 					config);
 			}
 			else
 			{
-				var extrudersInLayer0 = slicingData.Extruders.Count(e => e.UsedInLayer(0));
-
 				slicingData.GenerateSkirt(
 					config.SkirtDistance_um,
 					config.FirstLayerExtrusionWidth_um,
-					config.NumberOfSkirtLoops * extrudersInLayer0,
+					config.NumberOfSkirtLoops * extrudersUsedInLayer0,
 					config.NumberOfBrimLoops,
 					config.SkirtMinLength_um,
 					config);
@@ -729,14 +727,17 @@ namespace MatterHackers.MatterSlice
 		}
 
 		bool havePrintedBrims = false;
+
 		private void DoSkirtAndBrim(LayerDataStorage slicingData, int layerIndex, LayerGCodePlanner layerGcodePlanner, int extruderIndex, bool extruderUsedForSupport)
 		{
 			// if we are on layer 0 we still need to print the skirt and brim
 			if (layerIndex == 0)
 			{
-				var extruderUsed = extruderIndex >= 0 
-					&& extruderIndex < slicingData.Extruders.Count 
-					&& slicingData.Extruders[extruderIndex].UsedInLayer(0);
+				var extrudersInLayer0 = this.ExtrudersUsedInLayer0(config, slicingData);
+
+				var extruderUsed = extruderIndex >= 0
+					&& extruderIndex < slicingData.Extruders.Count
+					&& extrudersInLayer0.Contains(extruderIndex);
 
 				if (!config.ShouldGenerateRaft()
 					&& (extruderUsed || extruderUsedForSupport))
@@ -835,7 +836,7 @@ namespace MatterHackers.MatterSlice
 
 		private void QueueSkirtToGCode(LayerDataStorage slicingData, LayerGCodePlanner gcodeLayer, int layerIndex, int extruderIndex)
 		{
-			var extrudersInLayer0 = slicingData.Extruders.Count(e => e.UsedInLayer(0));
+			var extrudersInLayer0 = this.ExtrudersUsedInLayer0(config, slicingData).Count();
 
 			var loopsPerExtruder = slicingData.Skirt.Count / extrudersInLayer0;
 
@@ -857,6 +858,39 @@ namespace MatterHackers.MatterSlice
 			{
 				gcodeLayer.QueuePolygonByOptimizer(slicingData.Skirt[loopIndex + i], null, skirtConfig, layerIndex);
 			}
+		}
+
+		private HashSet<int> ExtrudersUsedInLayer0(ConfigSettings config, LayerDataStorage slicingData)
+		{
+			var layer0Extruders = slicingData.Extruders.Where(e => e.UsedInLayer(0)).Select((e, index) => index);
+
+			var usedExtruders = new HashSet<int>(layer0Extruders);
+
+			if (slicingData.Support != null)
+			{
+				// Add interface layer extruder from layer 0
+				if (slicingData.Support.InterfaceLayers.Any() == true
+					&& slicingData.Support.InterfaceLayers[0].Any())
+				{
+					usedExtruders.Add(config.SupportInterfaceExtruder);
+				}
+
+				// Add support extruders from layer 0
+				if (slicingData.Support.SparseSupportOutlines.Any()
+					&& slicingData.Support.SparseSupportOutlines[0].Any())
+				{
+					usedExtruders.Add(config.SupportExtruder);
+				}
+			}
+
+			// Add raft extruders from layer 0
+			if (slicingData.raftOutline.Any()
+				&& slicingData.raftOutline[0].Any())
+			{
+				usedExtruders.Add(config.RaftExtruder);
+			}
+
+			return usedExtruders;
 		}
 
 		private void QueueBrimsToGCode(LayerDataStorage slicingData, LayerGCodePlanner gcodeLayer, int layerIndex, int extruderIndex)
