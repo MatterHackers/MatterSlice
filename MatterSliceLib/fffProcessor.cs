@@ -730,11 +730,11 @@ namespace MatterHackers.MatterSlice
 
 		private void DoSkirtAndBrim(LayerDataStorage slicingData, int layerIndex, LayerGCodePlanner layerGcodePlanner, int extruderIndex, bool extruderUsedForSupport)
 		{
-			var extrudersInLayer0 = this.ExtrudersUsedInLayer0(config, slicingData);
-
 			// if we are on layer 0 we still need to print the skirt and brim
 			if (layerIndex == 0)
 			{
+				var extrudersInLayer0 = this.ExtrudersUsedInLayer0(config, slicingData);
+
 				var extruderUsed = extruderIndex >= 0
 					&& extruderIndex < slicingData.Extruders.Count
 					&& extrudersInLayer0.Contains(extruderIndex);
