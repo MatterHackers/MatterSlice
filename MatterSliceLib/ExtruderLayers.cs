@@ -37,12 +37,12 @@ namespace MatterHackers.MatterSlice
 		}
 
 		/// <summary>
-		///  Indicates if the extruder is used in any layer
+		///  Gets a value indicating whether the extruder is used in any layer.
 		/// </summary>
 		public bool Used => this.Layers.Any(layer => layer.Islands.Count > 0);
 
 		/// <summary>
-		/// Indicates if the extruder is used in the given layer
+		/// Indicates if the extruder is used in the given layer.
 		/// </summary>
 		/// <param name="layerIndex">The layer to check</param>
 		/// <returns>A something</returns>
