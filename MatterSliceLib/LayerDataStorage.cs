@@ -104,24 +104,24 @@ namespace MatterHackers.MatterSlice
 				&& wipeTowerLayers.Layers[0].AllOutlines.Count > 0)
 			{
 				this.WipeTower = wipeTowerLayers.Layers[0].AllOutlines;
-				return;
 			}
-
-			if (config.WipeTowerSize_um < 1
+			else if (config.WipeTowerSize_um < 1
 				|| LastLayerWithChange(config) == -1)
 			{
 				return;
 			}
+			else
+			{
+				var wipeTowerShape = new Polygon();
+				wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000));
+				wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000 + config.WipeTowerSize_um));
+				wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000 + config.WipeTowerSize_um));
+				wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000));
 
-			var wipeTowerShape = new Polygon();
-			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000));
-			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000 + config.WipeTowerSize_um));
-			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000 + config.WipeTowerSize_um));
-			wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000));
+				this.WipeTower.Add(wipeTowerShape);
+			}
 
-			this.WipeTower.Add(wipeTowerShape);
-
-			var wipeTowerBounds = wipeTowerShape.GetBounds();
+			var wipeTowerBounds = this.WipeTower.GetBounds();
 
 			WipeCenter_um = new IntPoint(
 				wipeTowerBounds.minX + (wipeTowerBounds.maxX - wipeTowerBounds.minX) / 2,
