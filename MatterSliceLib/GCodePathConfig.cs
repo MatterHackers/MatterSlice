@@ -38,7 +38,7 @@ namespace MatterHackers.MatterSlice
 
 		public string GCodeComment { get; set; }
 
-		public long LineWidthUM { get; set; }
+		public long LineWidth_um { get; set; }
 
 		public string Name { get; set; }
 
@@ -50,11 +50,11 @@ namespace MatterHackers.MatterSlice
 		/// Set the data for a path config. This is used to define how different parts (infill, perimeters) are written to gcode.
 		/// </summary>
 		/// <param name="speed"></param>
-		/// <param name="lineWidthUM"></param>
-		public void SetData(double speed, long lineWidthUM)
+		/// <param name="lineWidth_um"></param>
+		public void SetData(double speed, long lineWidth_um)
 		{
 			this.Speed = speed;
-			this.LineWidthUM = lineWidthUM;
+			this.LineWidth_um = lineWidth_um;
 		}
 	}
 }

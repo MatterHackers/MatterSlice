@@ -90,7 +90,6 @@ namespace MatterHackers.MatterSlice
 			int parseIndex = 0;
 			int totalLayers = loadedMeshes[0].Layers.Count;
 			List<int> meshesToProcess = new List<int>();
-			bool foundSupport = false;
 			int numberOfOpens = 0;
 			while (parseIndex < booleanOperations.Length)
 			{
@@ -126,7 +125,6 @@ namespace MatterHackers.MatterSlice
 
 					case 'S':
 						parseIndex++;
-						foundSupport = true;
 						break;
 
 					case 'W':
@@ -159,13 +157,6 @@ namespace MatterHackers.MatterSlice
 
 						for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 						{
-							if(foundSupport)
-							{
-								// grow the support outlines of the incoming union
-								loadedMeshes[removeExtruderIndex].Layers[layerIndex].AllOutlines 
-									= Clipper.CleanPolygons(loadedMeshes[removeExtruderIndex].Layers[layerIndex].AllOutlines.Offset(1000), cleanDistance_um);
-							}
-
 							SliceLayer keepLayer = loadedMeshes[keepExtruderIndex].Layers[layerIndex];
 							SliceLayer removeLayer = loadedMeshes[removeExtruderIndex].Layers[layerIndex];
 							DoLayerBooleans(keepLayer, removeLayer, typeToDo);

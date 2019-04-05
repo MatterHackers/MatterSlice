@@ -32,10 +32,9 @@ namespace MatterHackers.MatterSlice
 	{
 		private static double cleanDistance_um = 10;
 
-		public NewSupport(ConfigSettings config, List<ExtruderLayers> Extruders, ExtruderLayers userGeneratedSupport, long grabDistance_um)
+		public NewSupport(ConfigSettings config, List<ExtruderLayers> Extruders, ExtruderLayers userGeneratedSupport)
 		{
 			cleanDistance_um = config.ExtrusionWidth_um / 10;
-			long supportWidth_um = (long)(config.ExtrusionWidth_um * (100 - config.SupportPercent) / 100);
 			// create starting support outlines
 			List<Polygons> allPartOutlines = CalculateAllPartOutlines(config, Extruders);
 			_InsetPartOutlines = CreateInsetPartOutlines(allPartOutlines, config.ExtrusionWidth_um / 2);
@@ -48,8 +47,6 @@ namespace MatterHackers.MatterSlice
 			{
 				SparseSupportOutlines[layerIndex] = userGeneratedSupport.Layers[layerIndex].AllOutlines.DeepCopy();
 			}
-
-			SparseSupportOutlines = ExpandToEasyGrabDistance(SparseSupportOutlines, grabDistance_um - supportWidth_um);
 
 			// remove the actual parts from the support data
 			SparseSupportOutlines = ClipToXyDistance(SparseSupportOutlines, _InsetPartOutlines, config);
@@ -116,10 +113,9 @@ namespace MatterHackers.MatterSlice
 		{
 			// normal support
 			Polygons currentAirGappedBottoms = AirGappedBottomOutlines[layerIndex];
-			currentAirGappedBottoms = currentAirGappedBottoms.Offset(-config.ExtrusionWidth_um / 2);
 			List<Polygons> supportIslands = currentAirGappedBottoms.ProcessIntoSeparateIslands();
 
-			foreach (Polygons islandOutline in supportIslands)
+			foreach (Polygons supportIsland in supportIslands)
 			{
 				// force a retract if changing islands
 				if (config.RetractWhenChangingIslands)
@@ -127,14 +123,17 @@ namespace MatterHackers.MatterSlice
 					gcodeLayer.ForceRetract();
 				}
 
-				Polygons islandInfillLines = new Polygons();
-				// render a grid of support
-				if (config.GenerateSupportPerimeter)
+				var infillOffset = -config.ExtrusionWidth_um + config.InfillExtendIntoPerimeter_um;
+
+				// make a border if layer 0
+				if (config.GenerateSupportPerimeter || layerIndex == 0)
 				{
-					Polygons outlines = Clipper.CleanPolygons(islandOutline, config.ExtrusionWidth_um / 4);
-					gcodeLayer.QueuePolygonsByOptimizer(outlines, null, supportNormalConfig, 0);
+					gcodeLayer.QueuePolygonsByOptimizer(supportIsland.Offset(-config.ExtrusionWidth_um / 2), null, supportNormalConfig, 0);
+					infillOffset = config.ExtrusionWidth_um * -2 + config.InfillExtendIntoPerimeter_um;
 				}
-				Polygons infillOutline = islandOutline.Offset(-config.ExtrusionWidth_um / 2);
+
+				Polygons infillOutline = supportIsland.Offset(infillOffset);
+				Polygons islandInfillLines = new Polygons();
 				switch (config.SupportType)
 				{
 					case ConfigConstants.SUPPORT_TYPE.GRID:
@@ -145,7 +144,16 @@ namespace MatterHackers.MatterSlice
 						Infill.GenerateLineInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
 						break;
 				}
+
+				PathFinder pathFinder = null;
+				if (config.AvoidCrossingPerimeters)
+				{
+					pathFinder = new PathFinder(infillOutline, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters);
+				}
+				var oldPathFinder = gcodeLayer.PathFinder;
+				gcodeLayer.PathFinder = pathFinder;
 				gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, null, supportNormalConfig, 0);
+				gcodeLayer.PathFinder = oldPathFinder;
 			}
 		}
 
@@ -153,12 +161,12 @@ namespace MatterHackers.MatterSlice
 		{
 			// interface
 			bool outputPaths = false;
-			Polygons currentInterfaceOutlines2 = InterfaceLayers[layerIndex].Offset(-config.ExtrusionWidth_um / 2);
-			if (currentInterfaceOutlines2.Count > 0)
+			Polygons interfaceOutlines = InterfaceLayers[layerIndex];
+			if (interfaceOutlines.Count > 0)
 			{
-				List<Polygons> interfaceIslands = currentInterfaceOutlines2.ProcessIntoSeparateIslands();
+				List<Polygons> interfaceIslands = interfaceOutlines.ProcessIntoSeparateIslands();
 
-				foreach (Polygons interfaceOutline in interfaceIslands)
+				foreach (Polygons interfaceIsland in interfaceIslands)
 				{
 					// force a retract if changing islands
 					if (config.RetractWhenChangingIslands)
@@ -166,19 +174,21 @@ namespace MatterHackers.MatterSlice
 						gcodeLayer.ForceRetract();
 					}
 
+					var infillOffset = -config.ExtrusionWidth_um + config.InfillExtendIntoPerimeter_um;
+
 					// make a border if layer 0
-					if (layerIndex == 0)
+					if (config.GenerateSupportPerimeter || layerIndex == 0)
 					{
-						Polygons infillOutline = interfaceOutline.Offset(-supportInterfaceConfig.LineWidthUM / 2);
-						Polygons outlines = Clipper.CleanPolygons(infillOutline, config.ExtrusionWidth_um / 4);
-						if (gcodeLayer.QueuePolygonsByOptimizer(outlines, null, supportInterfaceConfig, 0))
+						if (gcodeLayer.QueuePolygonsByOptimizer(interfaceIsland.Offset(-config.ExtrusionWidth_um / 2), null, supportInterfaceConfig, 0))
 						{
 							outputPaths = true;
 						}
+
+						infillOffset = config.ExtrusionWidth_um * -2 + config.InfillExtendIntoPerimeter_um;
 					}
 
 					Polygons supportLines = new Polygons();
-					Infill.GenerateLineInfill(config, interfaceOutline, supportLines, config.InfillStartingAngle + 90, config.ExtrusionWidth_um);
+					Infill.GenerateLineInfill(config, interfaceIsland.Offset(infillOffset), supportLines, config.InfillStartingAngle + 90, config.ExtrusionWidth_um);
 					if (gcodeLayer.QueuePolygonsByOptimizer(supportLines, null, supportInterfaceConfig, 0))
 					{
 						outputPaths = true;
@@ -193,11 +203,10 @@ namespace MatterHackers.MatterSlice
 		{
 			// normal support
 			Polygons currentSupportOutlines = SparseSupportOutlines[layerIndex];
-			currentSupportOutlines = currentSupportOutlines.Offset(-supportNormalConfig.LineWidthUM / 2);
 			List<Polygons> supportIslands = currentSupportOutlines.ProcessIntoSeparateIslands();
 
 			bool outputPaths = false;
-			foreach (Polygons islandOutline in supportIslands)
+			foreach (Polygons supportIsland in supportIslands)
 			{
 				// force a retract if changing islands
 				if (config.RetractWhenChangingIslands)
@@ -205,19 +214,21 @@ namespace MatterHackers.MatterSlice
 					gcodeLayer.ForceRetract();
 				}
 
-				Polygons islandInfillLines = new Polygons();
-				// render a grid of support
+				var infillOffset = -config.ExtrusionWidth_um + config.InfillExtendIntoPerimeter_um;
+
+				// make a border if layer 0
 				if (config.GenerateSupportPerimeter || layerIndex == 0)
 				{
-					Polygons outlines = Clipper.CleanPolygons(islandOutline, config.ExtrusionWidth_um / 4);
-					if (gcodeLayer.QueuePolygonsByOptimizer(outlines, null, supportNormalConfig, 0))
+					if (gcodeLayer.QueuePolygonsByOptimizer(supportIsland.Offset(-config.ExtrusionWidth_um / 2), null, supportNormalConfig, 0))
 					{
 						outputPaths = true;
 					}
+
+					infillOffset = config.ExtrusionWidth_um * -2 + config.InfillExtendIntoPerimeter_um;
 				}
 
-				Polygons infillOutline = islandOutline.Offset(-(int)supportNormalConfig.LineWidthUM);
-
+				Polygons infillOutline = supportIsland.Offset(infillOffset);
+				Polygons islandInfillLines = new Polygons();
 				if (layerIndex == 0)
 				{
 					// on the first layer print this as solid
@@ -387,20 +398,6 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return allInterfaceLayers;
-		}
-
-		private static List<Polygons> ExpandToEasyGrabDistance(List<Polygons> inputPolys, long grabDistance_um)
-		{
-			int numLayers = inputPolys.Count;
-
-			List<Polygons> easyGrabDistanceOutlines = CreateEmptyPolygons(numLayers);
-			for (int layerIndex = numLayers - 1; layerIndex >= 0; layerIndex--)
-			{
-				Polygons curLayerPolys = inputPolys[layerIndex];
-				easyGrabDistanceOutlines[layerIndex] = Clipper.CleanPolygons(curLayerPolys.Offset(grabDistance_um), cleanDistance_um);
-			}
-
-			return easyGrabDistanceOutlines;
 		}
 	}
 }

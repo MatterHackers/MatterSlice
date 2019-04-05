@@ -142,7 +142,7 @@ namespace MatterHackers.MatterSlice
 
 		private bool PathCanAdjustSpeed(GCodePath path)
 		{
-			return path.Config.LineWidthUM > 0 && path.Config.GCodeComment != "BRIDGE";
+			return path.Config.LineWidth_um > 0 && path.Config.GCodeComment != "BRIDGE";
 		}
 
 		public void CorrectLayerTimeConsideringMinimumLayerTime()
@@ -458,7 +458,7 @@ namespace MatterHackers.MatterSlice
 				{
 					double timeOfMove = 0;
 
-					if (path.Config.LineWidthUM == 0)
+					if (path.Config.LineWidth_um == 0)
 					{
 						var lengthToStart = (gcodeExport.GetPosition() - path.Polygon[0]).Length();
 						var lengthOfMove = lengthToStart + path.Polygon.PolygonLength();
@@ -479,12 +479,12 @@ namespace MatterHackers.MatterSlice
 
 				if (path.Polygon.Count == 1
 					&& path.Config != travelConfig
-					&& (gcodeExport.GetPositionXY() - path.Polygon[0]).ShorterThen(path.Config.LineWidthUM * 2))
+					&& (gcodeExport.GetPositionXY() - path.Polygon[0]).ShorterThen(path.Config.LineWidth_um * 2))
 				{
 					//Check for lots of small moves and combine them into one large line
 					IntPoint nextPosition = path.Polygon[0];
 					int i = pathIndex + 1;
-					while (i < paths.Count && paths[i].Polygon.Count == 1 && (nextPosition - paths[i].Polygon[0]).ShorterThen(path.Config.LineWidthUM * 2))
+					while (i < paths.Count && paths[i].Polygon.Count == 1 && (nextPosition - paths[i].Polygon[0]).ShorterThen(path.Config.LineWidth_um * 2))
 					{
 						nextPosition = paths[i].Polygon[0];
 						i++;
@@ -504,13 +504,13 @@ namespace MatterHackers.MatterSlice
 							long newLen = (gcodeExport.GetPosition() - newPoint).Length();
 							if (newLen > 0)
 							{
-								gcodeExport.WriteMove(newPoint, path.Speed, (int)(path.Config.LineWidthUM * oldLen / newLen));
+								gcodeExport.WriteMove(newPoint, path.Speed, (int)(path.Config.LineWidth_um * oldLen / newLen));
 							}
 
 							nextPosition = paths[x + 1].Polygon[0];
 						}
 
-						long lineWidth_um = path.Config.LineWidthUM;
+						long lineWidth_um = path.Config.LineWidth_um;
 						if (paths[i - 1].Polygon[0].Width != 0)
 						{
 							lineWidth_um = paths[i - 1].Polygon[0].Width;
@@ -557,7 +557,7 @@ namespace MatterHackers.MatterSlice
 						currentPosition = nextPosition;
 						IntPoint nextExtrusion = path.Polygon[i];
 						nextExtrusion.Z = (int)(z + layerThickness_um * length / totalLength + .5);
-						gcodeExport.WriteMove(nextExtrusion, path.Speed, path.Config.LineWidthUM);
+						gcodeExport.WriteMove(nextExtrusion, path.Speed, path.Config.LineWidth_um);
 					}
 				}
 				else
@@ -575,7 +575,7 @@ namespace MatterHackers.MatterSlice
 					// This is test code to remove double drawn small perimeter lines.
 					if (trimmed)
 					{
-						long targetDistance = (long)(path.Config.LineWidthUM * (1 - perimeterStartEndOverlapRatio));
+						long targetDistance = (long)(path.Config.LineWidth_um * (1 - perimeterStartEndOverlapRatio));
 						path = TrimGCodePathEnd(path, targetDistance);
 						// update the point count after trimming
 						pointCount = path.Polygon.Count;
@@ -583,7 +583,7 @@ namespace MatterHackers.MatterSlice
 
 					for (int i = 0; i < pointCount; i++)
 					{
-						long lineWidth_um = path.Config.LineWidthUM;
+						long lineWidth_um = path.Config.LineWidth_um;
 						if (path.Polygon[i].Width != 0)
 						{
 							lineWidth_um = path.Polygon[i].Width;

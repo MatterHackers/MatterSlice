@@ -281,7 +281,7 @@ namespace MatterHackers.MatterSlice
 				&& !config.ContinuousSpiralOuterPerimeter)
 			{
 				timeKeeper.Restart();
-				slicingData.Support = new NewSupport(config, slicingData.Extruders, supportOutlines, 0);
+				slicingData.Support = new NewSupport(config, slicingData.Extruders, supportOutlines);
 				LogOutput.Log("Generating supports in {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			}
 
@@ -817,7 +817,7 @@ namespace MatterHackers.MatterSlice
 
 			if (perimeterToCheckForMerge.Count > 2)
 			{
-				pathHadOverlaps = perimeterToCheckForMerge.MergePerimeterOverlaps(config.LineWidthUM, out pathsWithOverlapsRemoved, pathIsClosed)
+				pathHadOverlaps = perimeterToCheckForMerge.MergePerimeterOverlaps(config.LineWidth_um, out pathsWithOverlapsRemoved, pathIsClosed)
 					&& pathsWithOverlapsRemoved.Count > 0;
 			}
 
@@ -1457,7 +1457,7 @@ namespace MatterHackers.MatterSlice
 				&& layerIndex > 0
 				&& !config.ContinuousSpiralOuterPerimeter)
 			{
-				Polygons supportOutlines = slicingData.Support.GetRequiredSupportAreas(layerIndex).Offset(fillConfig.LineWidthUM / 2);
+				Polygons supportOutlines = slicingData.Support.GetRequiredSupportAreas(layerIndex).Offset(fillConfig.LineWidth_um / 2);
 
 				if (supportWriteType == SupportWriteType.UnsupportedAreas)
 				{
@@ -1508,7 +1508,7 @@ namespace MatterHackers.MatterSlice
 		private void GetSegmentsConsideringSupport(Polygons polygonsToWrite, Polygons supportOutlines, Polygons polysToWriteAtNormalHeight, Polygons polysToWriteAtAirGapHeight, bool forAirGap, bool closedLoop)
 		{
 			// make an expanded area to constrain our segments to
-			Polygons maxSupportOutlines = supportOutlines.Offset(fillConfig.LineWidthUM * 2 + config.SupportXYDistance_um);
+			Polygons maxSupportOutlines = supportOutlines.Offset(fillConfig.LineWidth_um * 2 + config.SupportXYDistance_um);
 
 			Polygons polygonsToWriteAsLines = PolygonsHelper.ConvertToLines(polygonsToWrite, closedLoop);
 

@@ -82,6 +82,7 @@ namespace MatterHackers.MatterSlice
 
 			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 			{
+				// get rid of thin sections by reducing than expanding back the outlines
 				this.WipeShield[layerIndex] = this.WipeShield[layerIndex].Offset(-1000).Offset(1000);
 			}
 
@@ -191,7 +192,7 @@ namespace MatterHackers.MatterSlice
 			{
 				CheckNoExtruderPrimed(config);
 
-				long insetPerLoop = fillConfig.LineWidthUM;
+				long insetPerLoop = fillConfig.LineWidth_um;
 				int maxPrimingLoops = MaxPrimingLoops(config);
 
 				Polygons outlineForExtruder = this.WipeTower;
@@ -372,7 +373,7 @@ namespace MatterHackers.MatterSlice
 
 			// If we changed extruder, print the wipe/prime tower for this nozzle;
 			var fillPolygons = new Polygons();
-			GenerateWipeTowerInfill(primesThisLayer, this.WipeTower, fillPolygons, fillConfig.LineWidthUM, config);
+			GenerateWipeTowerInfill(primesThisLayer, this.WipeTower, fillPolygons, fillConfig.LineWidth_um, config);
 
 			if (fillPolygons.Count > 0)
 			{

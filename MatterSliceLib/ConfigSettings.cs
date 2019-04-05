@@ -296,9 +296,6 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The number of layers to skip in z. The gap between the support and the model.")]
 		public int SupportNumberOfLayersToSkipInZ { get; set; }
 
-		[SettingDescription("The percent of support to generate.")]
-		public double SupportPercent { get; set; }
-
 		//Support material
 		public ConfigConstants.SUPPORT_TYPE SupportType { get; set; }
 
@@ -613,7 +610,6 @@ namespace MatterHackers.MatterSlice
 			RaftExtraDistanceAroundPart = 5;
 
 			SupportType = ConfigConstants.SUPPORT_TYPE.GRID;
-			SupportPercent = 50;
 			GenerateSupportPerimeter = true;
 			RaftExtruder = -1;
 			SupportLineSpacing = ExtrusionWidth * 5;

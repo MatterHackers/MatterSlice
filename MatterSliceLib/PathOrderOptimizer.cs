@@ -79,7 +79,7 @@ namespace MatterHackers.MatterSlice
 						&& config.DoSeamHiding
 						&& !config.Spiralize)
 					{
-						bestPointIndex = currentPolygon.FindGreatestTurnIndex(startPosition, layerIndex, config.LineWidthUM);
+						bestPointIndex = currentPolygon.FindGreatestTurnIndex(startPosition, layerIndex, config.LineWidth_um);
 					}
 					else
 					{
