@@ -295,15 +295,10 @@ namespace MatterHackers.MatterSlice
 				{
 					foreach (Polygons island in region.AllOutlines.ProcessIntoSeparateIslands())
 					{
-						var layerIsland = new LayerIsland()
+						supportIslands.Add(new LayerIsland(island)
 						{
-							IslandOutline = island,
 							PathFinder = new PathFinder(island, config.ExtrusionWidth_um * 3 / 2, useInsideCache: config.AvoidCrossingPerimeters),
-						};
-
-						layerIsland.BoundingBox.Calculate(layerIsland.IslandOutline);
-
-						supportIslands.Add(layerIsland);
+						});
 					}
 				}
 			}
