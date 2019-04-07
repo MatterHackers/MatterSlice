@@ -68,6 +68,7 @@ namespace MatterHackers.MatterSlice
 		private GCodePathConfig inset0Config;
 		private GCodePathConfig insetXConfig;
 		private GCodePathConfig fillConfig;
+		private GCodePathConfig thinFillConfig;
 		private GCodePathConfig topFillConfig;
 		private GCodePathConfig firstTopFillConfig;
 		private GCodePathConfig bottomFillConfig;
@@ -481,6 +482,9 @@ namespace MatterHackers.MatterSlice
 					supportNormalConfig.SetData(config.SupportMaterialSpeed, config.ExtrusionWidth_um);
 					supportInterfaceConfig.SetData(config.InterfaceLayerSpeed, config.ExtrusionWidth_um);
 				}
+
+				thinFillConfig = fillConfig.Clone("thinFillConfig", "THIN-FILL");
+				thinFillConfig.ClosedLoop = false;
 
 				if (layerIndex == 0)
 				{
@@ -969,6 +973,7 @@ namespace MatterHackers.MatterSlice
 				}
 
 				var fillPolygons = new Polygons();
+				var thinGapPolygons = new Polygons();
 				var topFillPolygons = new Polygons();
 				var firstTopFillPolygons = new Polygons();
 				var bridgePolygons = new Polygons();
@@ -1142,7 +1147,7 @@ namespace MatterHackers.MatterSlice
 							Polygons thinLines = null;
 							if (island.IslandOutline.Offset(-extrusionWidth_um * (1 + perimeter)).FindThinLines(extrusionWidth_um + 2, extrusionWidth_um / 5, out thinLines, true))
 							{
-								fillPolygons.AddRange(thinLines);
+								thinGapPolygons.AddRange(thinLines);
 							}
 						}
 					}
@@ -1195,6 +1200,8 @@ namespace MatterHackers.MatterSlice
 				// TODO: Put all of these segments into a list that can be queued together and still preserve their individual config settings.
 				// This will make the total amount of travel while printing infill much less.
 				layerGcodePlanner.QueuePolygonsByOptimizer(fillPolygons, island.PathFinder, fillConfig, layerIndex);
+				layerGcodePlanner.QueuePolygonsByOptimizer(thinGapPolygons, island.PathFinder, thinFillConfig, layerIndex);
+
 				QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bottomFillPolygons, bottomFillConfig, SupportWriteType.UnsupportedAreas);
 				if (firstTopFillPolygons.Count > 0)
 				{

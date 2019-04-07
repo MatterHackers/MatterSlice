@@ -56,5 +56,17 @@ namespace MatterHackers.MatterSlice
 			this.Speed = speed;
 			this.LineWidth_um = lineWidth_um;
 		}
+
+		public GCodePathConfig Clone(string newConfigName, string newGCodeComment)
+		{
+			return new GCodePathConfig(newConfigName, newGCodeComment)
+			{
+				ClosedLoop = this.ClosedLoop,
+				DoSeamHiding = this.DoSeamHiding,
+				LineWidth_um = this.LineWidth_um,
+				Speed = this.Speed,
+				Spiralize = this.Spiralize
+			};
+		}
 	}
 }
