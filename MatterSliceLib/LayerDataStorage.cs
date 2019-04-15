@@ -71,9 +71,27 @@ namespace MatterHackers.MatterSlice
 				var wipeShield = new Polygons();
 				for (int extruderIndex = 0; extruderIndex < this.Extruders.Count; extruderIndex++)
 				{
-					for (int islandIndex = 0; islandIndex < this.Extruders[extruderIndex].Layers[layerIndex].Islands.Count; islandIndex++)
+					wipeShield = wipeShield.CreateUnion(this.Extruders[extruderIndex].Layers[layerIndex].AllOutlines.Offset(config.WipeShieldDistanceFromShapes_um));
+
+					if (this.Support.AirGappedBottomOutlines != null
+						&& layerIndex < this.Support.AirGappedBottomOutlines.Count
+						&& this.Support.AirGappedBottomOutlines[layerIndex] != null)
 					{
-						wipeShield = wipeShield.CreateUnion(this.Extruders[extruderIndex].Layers[layerIndex].Islands[islandIndex].IslandOutline.Offset(config.WipeShieldDistanceFromShapes_um));
+						wipeShield = wipeShield.CreateUnion(this.Support.AirGappedBottomOutlines[layerIndex].Offset(config.WipeShieldDistanceFromShapes_um));
+					}
+
+					if (this.Support.InterfaceLayers != null
+						&& layerIndex < this.Support.InterfaceLayers.Count
+						&& this.Support.InterfaceLayers[layerIndex] != null)
+					{
+						wipeShield = wipeShield.CreateUnion(this.Support.InterfaceLayers[layerIndex].Offset(config.WipeShieldDistanceFromShapes_um));
+					}
+
+					if (this.Support.SparseSupportOutlines != null
+						&& layerIndex < this.Support.SparseSupportOutlines.Count
+						&& this.Support.SparseSupportOutlines[layerIndex] != null)
+					{
+						wipeShield = wipeShield.CreateUnion(this.Support.SparseSupportOutlines[layerIndex].Offset(config.WipeShieldDistanceFromShapes_um));
 					}
 				}
 
