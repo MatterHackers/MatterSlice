@@ -218,7 +218,7 @@ namespace MatterHackers.MatterSlice
 			extruderIndex = newExtruder;
 
 			isRetracted = true;
-			// then unrectract if needed
+			// then unretract if needed
 			if (config.RetractionOnExtruderSwitch != 0
 				&& extruderHaseBeenRetracted[extruderIndex])
 			{
