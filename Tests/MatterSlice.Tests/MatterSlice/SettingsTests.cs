@@ -669,7 +669,8 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				config.WipeTowerSize = 0;
 			}
-			fffProcessor processor = new fffProcessor(config);
+
+			var processor = new fffProcessor(config);
 			processor.SetTargetFile(outputGCodeFileName);
 			processor.LoadStlFile(leftStlFile);
 			processor.LoadStlFile(rightStlFile);

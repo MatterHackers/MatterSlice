@@ -50,7 +50,7 @@ namespace MatterHackers.MatterSlice
 		}
 
 		/// <summary>
-		/// Constructs a new LayerIsland based on referenced Polgons and calculates its BoundingBox
+		/// Constructs a new LayerIsland based on referenced Polygons and calculates its BoundingBox
 		/// </summary>
 		/// <param name="islandOutline">The LayerIsland outlines</param>
 		public LayerIsland(Polygons islandOutline)
