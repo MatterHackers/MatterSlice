@@ -535,6 +535,8 @@ namespace MatterHackers.MatterSlice
 				// hold the current layer path finder
 				PathFinder layerPathFinder = null;
 
+				var supportExturderIndex = config.SupportExtruder < config.ExtruderCount ? config.SupportExtruder : 0;
+
 				// Loop over extruders in preferred order
 				var activeThenOtherExtruders = slicingData.Extruders.CurrentThenOtherIndexes(activeExtruderIndex: layerPlanner.GetExtruder());
 				foreach (int extruderIndex in activeThenOtherExtruders)
@@ -566,8 +568,6 @@ namespace MatterHackers.MatterSlice
 					{
 						bool movedToIsland = false;
 
-						var usableExtruderIndex = config.SupportExtruder < config.ExtruderCount ? config.SupportExtruder : 0;
-
 						if (layerIndex < supportIslands.Count)
 						{
 							SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
@@ -575,8 +575,8 @@ namespace MatterHackers.MatterSlice
 							movedToIsland = true;
 						}
 
-						if ((usableExtruderIndex <= 0 && extruderIndex == 0)
-							|| usableExtruderIndex == extruderIndex)
+						if ((supportExturderIndex <= 0 && extruderIndex == 0)
+							|| supportExturderIndex == extruderIndex)
 						{
 							if (slicingData.Support.QueueNormalSupportLayer(config, layerPlanner, layerIndex, supportNormalConfig))
 							{
@@ -585,10 +585,10 @@ namespace MatterHackers.MatterSlice
 							}
 						}
 
-						usableExtruderIndex = config.SupportInterfaceExtruder < config.ExtruderCount ? config.SupportInterfaceExtruder : 0;
+						supportExturderIndex = config.SupportInterfaceExtruder < config.ExtruderCount ? config.SupportInterfaceExtruder : 0;
 
-						if ((usableExtruderIndex <= 0 && extruderIndex == 0)
-							|| usableExtruderIndex == extruderIndex)
+						if ((supportExturderIndex <= 0 && extruderIndex == 0)
+							|| supportExturderIndex == extruderIndex)
 						{
 							if (slicingData.Support.QueueInterfaceSupportLayer(config, layerPlanner, layerIndex, supportInterfaceConfig))
 							{
@@ -609,12 +609,22 @@ namespace MatterHackers.MatterSlice
 					z += config.SupportAirGap_um;
 					gcodeExport.CurrentZ_um = z;
 
+					bool extrudedAirGappedSupport = false;
 					foreach (int extruderIndex in slicingData.Extruders.CurrentThenOtherIndexes(activeExtruderIndex: layerPlanner.GetExtruder()))
 					{
 						QueueAirGappedExtruderLayerToGCode(slicingData, layerPathFinder, layerPlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
-					}
+						if (!extrudedAirGappedSupport
+							&& ((supportExturderIndex <= 0 && extruderIndex == 0) || supportExturderIndex == extruderIndex))
+						{
+							if (slicingData.Support.HaveAirGappedBottomLayer(layerIndex))
+							{
+								ChangeExtruderIfRequired(slicingData, layerPathFinder, layerIndex, layerPlanner, extruderIndex, true);
+							}
 
-					slicingData.Support.QueueAirGappedBottomLayer(config, layerPlanner, layerIndex, airGappedBottomConfig);
+							slicingData.Support.QueueAirGappedBottomLayer(config, layerPlanner, layerIndex, airGappedBottomConfig);
+							extrudedAirGappedSupport = true;
+						}
+					}
 
 					// don't print the wipe tower with air gap height
 					z -= config.SupportAirGap_um;

@@ -109,6 +109,11 @@ namespace MatterHackers.MatterSlice
 			return SparseSupportOutlines[layerIndex].Count > 0;
 		}
 
+		public bool HaveAirGappedBottomLayer(int layerIndex)
+		{
+			return AirGappedBottomOutlines[layerIndex].Count > 0;
+		}
+
 		public void QueueAirGappedBottomLayer(ConfigSettings config, LayerGCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig)
 		{
 			// normal support
