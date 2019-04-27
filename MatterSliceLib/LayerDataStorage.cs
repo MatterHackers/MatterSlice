@@ -226,7 +226,10 @@ namespace MatterHackers.MatterSlice
 
 				// set the path planner to avoid islands
 				layerGcodePlanner.PathFinder = pathFinder;
-				layerGcodePlanner.QueueTravel(WipeCenter_um);
+				if (this.NeedToPrintWipeTower(layerIndex, config))
+				{
+					layerGcodePlanner.QueueTravel(WipeCenter_um);
+				}
 
 				// turn off the planner for the wipe tower
 				layerGcodePlanner.PathFinder = null;
