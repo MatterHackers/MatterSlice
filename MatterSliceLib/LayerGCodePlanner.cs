@@ -19,18 +19,17 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using MSClipperLib;
 using System;
 using System.Collections.Generic;
+using MatterHackers.Pathfinding;
+using MatterHackers.QuadTree;
+using MatterHackers.VectorMath;
+using MSClipperLib;
+using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice
 {
-	using MatterHackers.VectorMath;
-	using Pathfinding;
-	using QuadTree;
-	using Polygon = List<IntPoint>;
-	using Polygons = List<List<IntPoint>>;
-
 	// The GCodePlanner class stores multiple moves that are planned.
 	// It facilitates the avoidCrossingPerimeters to keep the head inside the print.
 	// It also keeps track of the print time estimate for this planning so speed adjustments can be made for the minimum-layer-time.
@@ -116,7 +115,7 @@ namespace MatterHackers.MatterSlice
 				{
 					IntPoint currentPosition = path.Polygon[pointIndex];
 
-					double thisTime = (lastPosition - currentPosition).LengthMm() / (double)(path.Speed);
+					double thisTime = (lastPosition - currentPosition).LengthMm() / (double)path.Speed;
 
 					thisTime = Estimator.GetSecondsForMovement((lastPosition - currentPosition).LengthMm(),
 						path.Speed,
@@ -171,7 +170,8 @@ namespace MatterHackers.MatterSlice
 
 					layerTimes = GetLayerTimes();
 					currentRatio -= .01;
-				} while (layerTimes.totalTime < config.MinimumLayerTimeSeconds
+				}
+				while (layerTimes.totalTime < config.MinimumLayerTimeSeconds
 					&& currentRatio >= (gcodeExport.LayerSpeedRatio - .1)
 					&& currentRatio >= .1);
 
@@ -307,7 +307,7 @@ namespace MatterHackers.MatterSlice
 		// the minimum fan speed for the layer after all the paths for the layer have been added.
 		// We cannot calculate the minimum fan speed until the entire layer is queued and we then need to
 		// go back to every queued fan speed and adjust it
-		List<GCodePath> queuedFanSpeeds = new List<GCodePath>();
+		private List<GCodePath> queuedFanSpeeds = new List<GCodePath>();
 
 		public void QueueFanCommand(int fanSpeedPercent, GCodePathConfig config)
 		{
@@ -362,7 +362,8 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		bool canAppendTravel = true;
+		private bool canAppendTravel = true;
+
 		public void QueueTravel(IntPoint positionToMoveTo, bool forceUniquePath = false)
 		{
 			GCodePath path = GetLatestPathWithConfig(travelConfig, forceUniquePath || !canAppendTravel);
@@ -401,6 +402,7 @@ namespace MatterHackers.MatterSlice
 							path.Retract = RetractType.Requested;
 						}
 					}
+
 					// else the path is good it just goes directly to the positionToMoveTo
 				}
 				else if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um / 10))
@@ -423,7 +425,7 @@ namespace MatterHackers.MatterSlice
 
 			LastPosition = positionToMoveTo;
 
-			//ValidatePaths();
+			// ValidatePaths();
 		}
 
 		public bool ToolChangeRequired(int extruder)
@@ -467,11 +469,13 @@ namespace MatterHackers.MatterSlice
 
 					gcodeExport.WriteRetraction(timeOfMove, path.Retract == RetractType.Force);
 				}
+
 				if (lastConfig != path.Config && path.Config != travelConfig)
 				{
 					gcodeExport.WriteComment("TYPE:{0}".FormatWith(path.Config.GCodeComment));
 					lastConfig = path.Config;
 				}
+
 				if (path.FanPercent != -1)
 				{
 					gcodeExport.WriteFanCommand(path.FanPercent);
@@ -481,7 +485,7 @@ namespace MatterHackers.MatterSlice
 					&& path.Config != travelConfig
 					&& (gcodeExport.GetPositionXY() - path.Polygon[0]).ShorterThen(path.Config.LineWidth_um * 2))
 				{
-					//Check for lots of small moves and combine them into one large line
+					// Check for lots of small moves and combine them into one large line
 					IntPoint nextPosition = path.Polygon[0];
 					int i = pathIndex + 1;
 					while (i < paths.Count && paths[i].Polygon.Count == 1 && (nextPosition - paths[i].Polygon[0]).ShorterThen(path.Config.LineWidth_um * 2))
@@ -489,6 +493,7 @@ namespace MatterHackers.MatterSlice
 						nextPosition = paths[i].Polygon[0];
 						i++;
 					}
+
 					if (paths[i - 1].Config == travelConfig)
 					{
 						i--;
@@ -525,7 +530,7 @@ namespace MatterHackers.MatterSlice
 				bool spiralize = path.Config.Spiralize;
 				if (spiralize)
 				{
-					//Check if we are the last spiralize path in the list, if not, do not spiralize.
+					// Check if we are the last spiralize path in the list, if not, do not spiralize.
 					for (int m = pathIndex + 1; m < paths.Count; m++)
 					{
 						if (paths[m].Config.Spiralize)
@@ -537,7 +542,7 @@ namespace MatterHackers.MatterSlice
 
 				if (spiralize) // if we are still in spiralize mode
 				{
-					//If we need to spiralize then raise the head slowly by 1 layer as this path progresses.
+					// If we need to spiralize then raise the head slowly by 1 layer as this path progresses.
 					double totalLength = 0;
 					long z = gcodeExport.GetPositionZ();
 					IntPoint currentPosition = gcodeExport.GetPositionXY();
@@ -569,7 +574,7 @@ namespace MatterHackers.MatterSlice
 					bool innerPerimeter = path.Config.GCodeComment == "WALL-INNER";
 					bool perimeter = outerPerimeter || innerPerimeter;
 
-					bool completeLoop = (pointCount > 0 && path.Polygon[pointCount - 1] == loopStart);
+					bool completeLoop = pointCount > 0 && path.Polygon[pointCount - 1] == loopStart;
 					bool trimmed = perimeter && completeLoop && perimeterStartEndOverlapRatio < 1;
 
 					// This is test code to remove double drawn small perimeter lines.
@@ -602,7 +607,7 @@ namespace MatterHackers.MatterSlice
 							&& config.CoastAtEndDistance_um > 0
 							&& length > config.CoastAtEndDistance_um)
 						{
-							//gcodeExport.WriteRetraction
+							// gcodeExport.WriteRetraction
 							var wipePoly = new Polygon(new IntPoint[] { loopStart });
 							wipePoly.AddRange(path.Polygon);
 							// then drive down it just a bit more to make sure we have a clean overlap
@@ -659,7 +664,7 @@ namespace MatterHackers.MatterSlice
 		private void ValidatePaths()
 		{
 			bool first = true;
-			var lastPosition = new IntPoint();
+			var lastPosition = default(IntPoint);
 			for (int pathIndex = 0; pathIndex < paths.Count; pathIndex++)
 			{
 				var path = paths[pathIndex];
@@ -683,6 +688,7 @@ namespace MatterHackers.MatterSlice
 							long length = (position - lastPosition).Length();
 						}
 					}
+
 					lastPosition = position;
 				}
 			}

@@ -23,13 +23,11 @@ using System;
 using System.Collections.Generic;
 using MatterHackers.Pathfinding;
 using MSClipperLib;
+using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice
 {
-	using Polygon = List<IntPoint>;
-
-	using Polygons = List<List<IntPoint>>;
-
 	public class PathOrderOptimizer
 	{
 		public List<int> bestIslandOrderIndex = new List<int>();
@@ -70,8 +68,8 @@ namespace MatterHackers.MatterSlice
 				else // This is a closed loop.
 				{
 					// some code for helping create unit tests
-					//string polyString = currentPolygon.WriteToString();
-					//currentPolygon.SaveToGCode("perimeter.gcode");
+					// string polyString = currentPolygon.WriteToString();
+					// currentPolygon.SaveToGCode("perimeter.gcode");
 
 					// this is our new seam hiding code
 					int bestPointIndex;
@@ -152,6 +150,7 @@ namespace MatterHackers.MatterSlice
 					{
 						currentPosition = polygons[bestPolygonIndex][startIndexInPolygon[bestPolygonIndex]];
 					}
+
 					polygonHasBeenAdded[bestPolygonIndex] = true;
 					bestIslandOrderIndex.Add(bestPolygonIndex);
 				}

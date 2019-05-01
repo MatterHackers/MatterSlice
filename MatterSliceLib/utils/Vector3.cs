@@ -59,7 +59,7 @@ namespace MatterHackers.MatterSlice
 
 		public static double CalculateAngle(Vector3 first, Vector3 second)
 		{
-			return Math.Acos((Vector3.Dot(first, second)) / (first.Length * second.Length));
+			return Math.Acos(Vector3.Dot(first, second) / (first.Length * second.Length));
 		}
 
 		public static double Dot(Vector3 left, Vector3 right)
@@ -108,7 +108,9 @@ namespace MatterHackers.MatterSlice
 		public override bool Equals(object obj)
 		{
 			if (!(obj is Vector3))
+			{
 				return false;
+			}
 
 			return this.Equals((Vector3)obj);
 		}
@@ -133,8 +135,16 @@ namespace MatterHackers.MatterSlice
 
 		private double max()
 		{
-			if (x > y && x > z) return x;
-			if (y > z) return y;
+			if (x > y && x > z)
+			{
+				return x;
+			}
+
+			if (y > z)
+			{
+				return y;
+			}
+
 			return z;
 		}
 

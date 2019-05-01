@@ -21,11 +21,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System.Collections.Generic;
 using System.Linq;
 using MSClipperLib;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice
 {
-	using Polygons = List<List<IntPoint>>;
-
 	public class ExtruderLayers
 	{
 		public List<SliceLayer> Layers = new List<SliceLayer>();
@@ -44,18 +43,18 @@ namespace MatterHackers.MatterSlice
 		/// <summary>
 		/// Indicates if the extruder is used in the given layer.
 		/// </summary>
-		/// <param name="layerIndex">The layer to check</param>
-		/// <returns>A something</returns>
+		/// <param name="layerIndex">The layer to check.</param>
+		/// <returns>A something.</returns>
 		public bool UsedInLayer(int layerIndex)
 		{
 			return this.Layers[layerIndex].Islands.Count > 0;
 		}
 
 		/// <summary>
-		/// Construct a new instance based on layers from an existing ExtruderData
+		/// Construct a new instance based on layers from an existing ExtruderData.
 		/// </summary>
-		/// <param name="extruderData">The ExtruderData containing layers to process</param>
-		/// <param name="outputOnlyFirstLayer">An indicator if only the first layer should be processed</param>
+		/// <param name="extruderData">The ExtruderData containing layers to process.</param>
+		/// <param name="outputOnlyFirstLayer">An indicator if only the first layer should be processed.</param>
 		public ExtruderLayers(ExtruderData extruderData, bool outputOnlyFirstLayer)
 		{
 			// Initialize LayerData
@@ -98,6 +97,7 @@ namespace MatterHackers.MatterSlice
 				{
 					continue;
 				}
+
 				// this is the entire extrusion width to make sure we are outside of the extrusion line
 				Polygons lastInset = island.InsetToolPaths[island.InsetToolPaths.Count - 1];
 				Polygons infillRegionPath = lastInset.Offset(-extrusionWidth_um);
@@ -248,7 +248,7 @@ namespace MatterHackers.MatterSlice
 				long avoidInset = config.ExtrusionWidth_um * 3 / 2;
 
 				var allOutlines = new Polygons();
-				for (int extruderIndex =0; extruderIndex < extruders.Count; extruderIndex++)
+				for (int extruderIndex = 0; extruderIndex < extruders.Count; extruderIndex++)
 				{
 					allOutlines.AddRange(extruders[extruderIndex].Layers[layerIndex].AllOutlines);
 				}

@@ -61,8 +61,9 @@ public class TimeEstimateCalculator
 
 			totalTime += acceleration_time_from_distance(blocks[n].initial_feedrate, blocks[n].accelerate_until, blocks[n].acceleration);
 			totalTime += plateau_distance / blocks[n].nominal_feedrate;
-			totalTime += acceleration_time_from_distance(blocks[n].final_feedrate, (blocks[n].distance - blocks[n].decelerate_after), blocks[n].acceleration);
+			totalTime += acceleration_time_from_distance(blocks[n].final_feedrate, blocks[n].distance - blocks[n].decelerate_after, blocks[n].acceleration);
 		}
+
 		return totalTime;
 	}
 
@@ -77,13 +78,23 @@ public class TimeEstimateCalculator
 			block.absDelta[n] = Math.Abs(block.delta[n]);
 			block.maxTravel = Math.Max(block.maxTravel, block.absDelta[n]);
 		}
+
 		if (block.maxTravel <= 0)
+		{
 			return;
+		}
+
 		if (feedrate < minimumfeedrate)
+		{
 			feedrate = minimumfeedrate;
+		}
+
 		block.distance = Math.Sqrt(square(block.absDelta[0]) + square(block.absDelta[1]) + square(block.absDelta[2]));
 		if (block.distance == 0.0)
+		{
 			block.distance = block.absDelta[3];
+		}
+
 		block.nominal_feedrate = feedrate;
 
 		Position current_feedrate = new Position();
@@ -94,9 +105,12 @@ public class TimeEstimateCalculator
 			current_feedrate[n] = block.delta[n] * feedrate / block.distance;
 			current_abs_feedrate[n] = Math.Abs(current_feedrate[n]);
 			if (current_abs_feedrate[n] > max_feedrate[n])
+			{
 				feedrate_factor = Math.Min(feedrate_factor, max_feedrate[n] / current_abs_feedrate[n]);
+			}
 		}
-		//TODO: XY_FREQUENCY_LIMIT
+
+		// TODO: XY_FREQUENCY_LIMIT
 
 		if (feedrate_factor < 1.0)
 		{
@@ -105,6 +119,7 @@ public class TimeEstimateCalculator
 				current_feedrate[n] *= feedrate_factor;
 				current_abs_feedrate[n] *= feedrate_factor;
 			}
+
 			block.nominal_feedrate *= feedrate_factor;
 		}
 
@@ -112,15 +127,23 @@ public class TimeEstimateCalculator
 		for (int n = 0; n < NUM_AXIS; n++)
 		{
 			if (block.acceleration * (block.absDelta[n] / block.distance) > max_acceleration[n])
+			{
 				block.acceleration = max_acceleration[n];
+			}
 		}
 
 		double vmax_junction = max_xy_jerk / 2;
 		double vmax_junction_factor = 1.0;
 		if (current_abs_feedrate[Z_AXIS] > max_z_jerk / 2)
+		{
 			vmax_junction = Math.Min(vmax_junction, max_z_jerk / 2);
+		}
+
 		if (current_abs_feedrate[E_AXIS] > max_e_jerk / 2)
+		{
 			vmax_junction = Math.Min(vmax_junction, max_e_jerk / 2);
+		}
+
 		vmax_junction = Math.Min(vmax_junction, block.nominal_feedrate);
 		double safe_speed = vmax_junction;
 
@@ -130,16 +153,19 @@ public class TimeEstimateCalculator
 			vmax_junction = block.nominal_feedrate;
 			if (xy_jerk > max_xy_jerk)
 			{
-				vmax_junction_factor = (max_xy_jerk / xy_jerk);
+				vmax_junction_factor = max_xy_jerk / xy_jerk;
 			}
+
 			if (Math.Abs(current_feedrate[Z_AXIS] - previous_feedrate[Z_AXIS]) > max_z_jerk)
 			{
-				vmax_junction_factor = Math.Min(vmax_junction_factor, (max_z_jerk / Math.Abs(current_feedrate[Z_AXIS] - previous_feedrate[Z_AXIS])));
+				vmax_junction_factor = Math.Min(vmax_junction_factor, max_z_jerk / Math.Abs(current_feedrate[Z_AXIS] - previous_feedrate[Z_AXIS]));
 			}
+
 			if (Math.Abs(current_feedrate[E_AXIS] - previous_feedrate[E_AXIS]) > max_e_jerk)
 			{
-				vmax_junction_factor = Math.Min(vmax_junction_factor, (max_e_jerk / Math.Abs(current_feedrate[E_AXIS] - previous_feedrate[E_AXIS])));
+				vmax_junction_factor = Math.Min(vmax_junction_factor, max_e_jerk / Math.Abs(current_feedrate[E_AXIS] - previous_feedrate[E_AXIS]));
 			}
+
 			vmax_junction = Math.Min(previous_nominal_feedrate, vmax_junction * vmax_junction_factor); // Limit speed to max previous speed
 		}
 
@@ -181,7 +207,10 @@ public class TimeEstimateCalculator
 	private static double estimate_acceleration_distance(double initial_rate, double target_rate, double acceleration)
 	{
 		if (acceleration == 0)
+		{
 			return 0.0;
+		}
+
 		return (square(target_rate) - square(initial_rate)) / (2.0 * acceleration);
 	}
 
@@ -192,7 +221,10 @@ public class TimeEstimateCalculator
 	private static double intersection_distance(double initial_rate, double final_rate, double acceleration, double distance)
 	{
 		if (acceleration == 0.0)
+		{
 			return 0.0;
+		}
+
 		return (2.0 * acceleration * distance - square(initial_rate) + square(final_rate)) / (4.0 * acceleration);
 	}
 
@@ -228,7 +260,7 @@ public class TimeEstimateCalculator
 		{
 			accelerate_distance = intersection_distance(initial_feedrate, final_feedrate, acceleration, block.distance);
 			accelerate_distance = Math.Max(accelerate_distance, 0.0); // Check limits due to numerical round-off
-			accelerate_distance = Math.Min(accelerate_distance, block.distance);//(We can cast here to unsigned, because the above line ensures that we are above zero)
+			accelerate_distance = Math.Min(accelerate_distance, block.distance);// (We can cast here to unsigned, because the above line ensures that we are above zero)
 			plateau_distance = 0;
 		}
 
@@ -248,6 +280,7 @@ public class TimeEstimateCalculator
 			block[2] = blocks[n];
 			planner_forward_pass_kernel(block[0], block[1], block[2]);
 		}
+
 		planner_forward_pass_kernel(block[1], block[2], null);
 	}
 
@@ -255,7 +288,9 @@ public class TimeEstimateCalculator
 	private void planner_forward_pass_kernel(Block previous, Block current, Block next)
 	{
 		if (previous == null)
+		{
 			return;
+		}
 
 		// If the previous block is an acceleration block, but it is not long enough to complete the
 		// full speed change within the block, we need to adjust the entry speed accordingly. Entry
@@ -281,7 +316,9 @@ public class TimeEstimateCalculator
 	private void planner_reverse_pass_kernel(Block previous, Block current, Block next)
 	{
 		if (current == null || next == null)
+		{
 			return;
+		}
 
 		// If entry speed is already at the maximum entry speed, no need to recheck. Block is cruising.
 		// If not, block in state of acceleration or deceleration. Reset entry speed to maximum and
@@ -298,6 +335,7 @@ public class TimeEstimateCalculator
 			{
 				current.entry_speed = current.max_entry_speed;
 			}
+
 			current.recalculate_flag = true;
 		}
 	}
@@ -325,6 +363,7 @@ public class TimeEstimateCalculator
 				}
 			}
 		}
+
 		// Last/newest block in buffer. Exit speed is set with MINIMUM_PLANNER_SPEED. Always recalculated.
 		if (next != null)
 		{
@@ -361,7 +400,9 @@ public class TimeEstimateCalculator
 		public double nominal_feedrate;
 		public bool nominal_length_flag;
 		public bool recalculate_flag;
-	};
+	}
+
+;
 
 	public class Position
 	{
@@ -369,7 +410,10 @@ public class TimeEstimateCalculator
 
 		public Position()
 		{
-			for (int n = 0; n < NUM_AXIS; n++) axis[n] = 0;
+			for (int n = 0; n < NUM_AXIS; n++)
+			{
+				axis[n] = 0;
+			}
 		}
 
 		public Position(double x, double y, double z, double e)
@@ -383,10 +427,13 @@ public class TimeEstimateCalculator
 			{
 				return axis[index];
 			}
+
 			set
 			{
 				axis[index] = value;
 			}
 		}
-	};
+	}
+
+;
 }

@@ -19,19 +19,19 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
+using MatterHackers.Pathfinding;
 using MSClipperLib;
+using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice
 {
-	using System;
-	using Pathfinding;
-	using Polygon = List<IntPoint>;
-	using Polygons = List<List<IntPoint>>;
-
 	public class InsetPaths
 	{
 		public InsetPaths Children { get; set; }
+
 		public Polygon InsetPath { get; set; }
 	}
 
@@ -50,9 +50,9 @@ namespace MatterHackers.MatterSlice
 		}
 
 		/// <summary>
-		/// Constructs a new LayerIsland based on referenced Polygons and calculates its BoundingBox
+		/// Constructs a new LayerIsland based on referenced Polygons and calculates its BoundingBox.
 		/// </summary>
-		/// <param name="islandOutline">The LayerIsland outlines</param>
+		/// <param name="islandOutline">The LayerIsland outlines.</param>
 		public LayerIsland(Polygons islandOutline)
 		{
 			this.IslandOutline = islandOutline;
@@ -70,11 +70,16 @@ namespace MatterHackers.MatterSlice
 		public List<Polygons> InsetToolPaths { get; set; } = new List<Polygons>();
 
 		public PathFinder PathFinder { get; internal set; }
+
 		// The outline that the tool head will actually follow (the center of the extrusion)
 		public Polygons BottomPaths { get; set; } = new Polygons();
+
 		public Polygons SparseInfillPaths { get; set; } = new Polygons();
+
 		public Polygons SolidInfillPaths { get; set; } = new Polygons();
+
 		public Polygons FirstTopPaths { get; set; } = new Polygons();
+
 		public Polygons TopPaths { get; set; } = new Polygons();
 
 		public void GenerateInsets(long extrusionWidth_um, long outerExtrusionWidth_um, int insetCount, bool avoidCrossingPerimeters)
@@ -126,5 +131,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 		}
-	};
+	}
+
+;
 }

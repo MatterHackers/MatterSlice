@@ -22,17 +22,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System.Collections.Generic;
 using System.IO;
 using MSClipperLib;
+using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice
 {
-	using Polygon = List<IntPoint>;
-	using Polygons = List<List<IntPoint>>;
-
 	public static class PolygonHelper
 	{
 		public static IntPoint CenterOfMass(this Polygon polygon)
 		{
-			IntPoint center = new IntPoint();
+			IntPoint center = default(IntPoint);
 			for (int positionIndex = 0; positionIndex < polygon.Count; positionIndex++)
 			{
 				center += polygon[positionIndex];
@@ -82,8 +81,8 @@ namespace MatterHackers.MatterSlice
 			IntPoint p1 = poly[point_idx];
 			IntPoint p2 = poly[(point_idx < (poly.size() - 1)) ? (point_idx + 1) : 0];
 
-			IntPoint off0 = ((p1 - p0).Normal(1000)).CrossZ(); // 1.0 for some precision
-			IntPoint off1 = ((p2 - p1).Normal(1000)).CrossZ(); // 1.0 for some precision
+			IntPoint off0 = (p1 - p0).Normal(1000).CrossZ(); // 1.0 for some precision
+			IntPoint off1 = (p2 - p1).Normal(1000).CrossZ(); // 1.0 for some precision
 			IntPoint n = (off0 + off1).Normal(-offset);
 
 			return p1 + n;
@@ -188,8 +187,8 @@ namespace MatterHackers.MatterSlice
 			double firstY = 0;
 			for (int intPointIndex = 0; intPointIndex < polygon.Count; intPointIndex++)
 			{
-				double x = (double)(polygon[intPointIndex].X) / scale;
-				double y = (double)(polygon[intPointIndex].Y) / scale;
+				double x = (double)polygon[intPointIndex].X / scale;
+				double y = (double)polygon[intPointIndex].Y / scale;
 				if (intPointIndex == 0)
 				{
 					firstX = x;
@@ -201,6 +200,7 @@ namespace MatterHackers.MatterSlice
 					stream.Write("G1 X{0} Y{1} E{2}\n", x, y, ++extrudeAmount);
 				}
 			}
+
 			stream.Write("G1 X{0} Y{1} E{2}\n", firstX, firstY, ++extrudeAmount);
 
 			stream.Close();
@@ -266,20 +266,51 @@ namespace MatterHackers.MatterSlice
 			{
 				for (int j = 0; j < polys[i].Count; j++)
 				{
-					if (min.X > polys[i][j].X) min.X = polys[i][j].X;
-					if (min.Y > polys[i][j].Y) min.Y = polys[i][j].Y;
-					if (max.X < polys[i][j].X) max.X = polys[i][j].X;
-					if (max.Y < polys[i][j].Y) max.Y = polys[i][j].Y;
+					if (min.X > polys[i][j].X)
+					{
+						min.X = polys[i][j].X;
+					}
+
+					if (min.Y > polys[i][j].Y)
+					{
+						min.Y = polys[i][j].Y;
+					}
+
+					if (max.X < polys[i][j].X)
+					{
+						max.X = polys[i][j].X;
+					}
+
+					if (max.Y < polys[i][j].Y)
+					{
+						max.Y = polys[i][j].Y;
+					}
 				}
 			}
 		}
 
 		public bool Hit(Aabb other)
 		{
-			if (max.X < other.min.X) return false;
-			if (min.X > other.max.X) return false;
-			if (max.Y < other.min.Y) return false;
-			if (min.Y > other.max.Y) return false;
+			if (max.X < other.min.X)
+			{
+				return false;
+			}
+
+			if (min.X > other.max.X)
+			{
+				return false;
+			}
+
+			if (max.Y < other.min.Y)
+			{
+				return false;
+			}
+
+			if (min.Y > other.max.Y)
+			{
+				return false;
+			}
+
 			return true;
 		}
 	}

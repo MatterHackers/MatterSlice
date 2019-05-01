@@ -43,13 +43,13 @@ namespace MatterHackers.MatterSlice
 		}
 
 		/// <summary>
-		/// Returns the convex hull of the points created from the list
+		/// Returns the convex hull of the points created from the list.
 		/// <code>points</code>. Note that the first and last point in the
-		/// returned <code>List&lt;java.awt.Point&gt;</code> are the same
+		/// returned. <code>List&lt;java.awt.Point&gt;</code> are the same
 		/// point.
 		/// </summary>
 		/// <param name="points">The list of points. </param>
-		/// <returns>The convex hull of the points created from the list <code>points</code>. </returns>
+		/// <returns>The convex hull of the points created from the list. <code>points</code>. </returns>
 		public static IList<IntPoint> GetConvexHull(List<IntPoint> points)
 		{
 			IntPoint lowestPoint = GetLowestPoint(points);
@@ -106,10 +106,10 @@ namespace MatterHackers.MatterSlice
 		}
 
 		/// <summary>
-		/// Returns true if all points in <code>points</code> are collinear.
+		/// Returns true if all points in. <code>points</code> are collinear.
 		/// </summary>
 		/// <param name="points"> the list of points. </param>
-		/// <returns>       true if all points in <code>points</code> are collinear. </returns>
+		/// <returns>       true if all points in. <code>points</code> are collinear. </returns>
 		private static bool AreAllCollinear(IList<IntPoint> points)
 		{
 			if (points.Count < 2)
@@ -160,7 +160,7 @@ namespace MatterHackers.MatterSlice
 
 		/// <summary>
 		/// Returns the GrahamScan#Turn formed by traversing through the
-		/// ordered points <code>a</code>, <code>b</code> and <code>c</code>.
+		/// ordered points. <code>a</code>,. <code>b</code> and. <code>c</code>.
 		/// More specifically, the cross product <tt>C</tt> between the
 		/// 3 points (vectors) is calculated:
 		///
@@ -174,7 +174,7 @@ namespace MatterHackers.MatterSlice
 		/// <param name="b"> the second point. </param>
 		/// <param name="c"> the end point. </param>
 		/// <returns> the GrahamScan#Turn formed by traversing through the
-		///         ordered points <code>a</code>, <code>b</code> and
+		///         ordered points. <code>a</code>,. <code>b</code> and.
 		///         <code>c</code>. </returns>
 		private static Turn GetTurn(IntPoint a, IntPoint b, IntPoint c)
 		{
@@ -196,7 +196,7 @@ namespace MatterHackers.MatterSlice
 		}
 
 		/// <summary>
-		/// Sorts a set of IntPoint values by their angle to the referenced lowestPoint
+		/// Sorts a set of IntPoint values by their angle to the referenced lowestPoint.
 		/// </summary>
 		private class IntPointSorter
 		{

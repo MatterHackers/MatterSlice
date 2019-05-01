@@ -19,18 +19,17 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using MatterHackers.Pathfinding;
 using MSClipperLib;
+using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice
 {
-	using System;
-	using System.Diagnostics;
-	using System.IO;
-	using MatterHackers.Pathfinding;
-	using Polygon = List<IntPoint>;
-	using Polygons = List<List<IntPoint>>;
-
 	public class LayerDataStorage
 	{
 		private int lastLayerWithChange = -1;
@@ -41,10 +40,13 @@ namespace MatterHackers.MatterSlice
 		public Polygons raftOutline = new Polygons();
 
 		public Polygons Skirt { get; private set; } = new Polygons();
+
 		public Polygons Brims { get; private set; } = new Polygons();
 
 		public NewSupport Support = null;
+
 		public List<Polygons> WipeShield { get; set; } = new List<Polygons>();
+
 		public IntPoint WipeCenter_um { get; private set; }
 
 		public Polygons WipeTower = new Polygons();

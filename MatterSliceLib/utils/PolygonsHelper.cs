@@ -19,22 +19,26 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using MatterHackers.QuadTree;
 using MSClipperLib;
 using static System.Math;
+using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice
 {
-	using System;
-	using System.Linq;
-	using QuadTree;
-	using Polygon = List<IntPoint>;
-	using Polygons = List<List<IntPoint>>;
-
 	public static class PolygonsHelper
 	{
-		public enum LayerOperation { EvenOdd, UnionAll };
+		public enum LayerOperation
+		{
+			EvenOdd,
+			UnionAll
+		}
+;
 
 		public static void AddAll(this Polygons polygons, Polygons other)
 		{
@@ -227,7 +231,7 @@ namespace MatterHackers.MatterSlice
 
 		public static void RemoveSmallAreas(this Polygons polygons, long extrusionWidth)
 		{
-			double areaOfExtrusion = (extrusionWidth / 1000.0) * (extrusionWidth / 1000.0); // convert from microns to mm's.
+			double areaOfExtrusion = extrusionWidth / 1000.0 * (extrusionWidth / 1000.0); // convert from microns to mm's.
 			double minAreaSize = areaOfExtrusion / 2;
 			for (int outlineIndex = polygons.Count - 1; outlineIndex >= 0; outlineIndex--)
 			{
@@ -255,8 +259,8 @@ namespace MatterHackers.MatterSlice
 
 				for (int intPointIndex = 0; intPointIndex < polygon.Count; intPointIndex++)
 				{
-					double x = (double)(polygon[intPointIndex].X) / scale;
-					double y = (double)(polygon[intPointIndex].Y) / scale;
+					double x = (double)polygon[intPointIndex].X / scale;
+					double y = (double)polygon[intPointIndex].Y / scale;
 					if (intPointIndex == 0)
 					{
 						firstX = x;
@@ -268,8 +272,10 @@ namespace MatterHackers.MatterSlice
 						stream.Write("G1 X{0} Y{1} E{2}\n", x, y, ++extrudeAmount);
 					}
 				}
+
 				stream.Write("G1 X{0} Y{1} E{2}\n", firstX, firstY, ++extrudeAmount);
 			}
+
 			stream.Close();
 		}
 
@@ -333,8 +339,10 @@ namespace MatterHackers.MatterSlice
 						{
 							stream.Write("L");
 						}
+
 						stream.Write("{0},{1} ", (double)(polygon[intPointIndex].X - bounds.minX) / scale, (double)(polygon[intPointIndex].Y - bounds.maxY) / scale);
 					}
+
 					stream.Write("Z");
 				}
 
@@ -367,6 +375,7 @@ namespace MatterHackers.MatterSlice
 					{
 						stream.Write("{0},{1} ", (double)(openPolygon[n].X - bounds.minX) / scale, (double)(openPolygon[n].Y - bounds.maxY) / scale);
 					}
+
 					stream.WriteLine("' style='fill: none; stroke:red; stroke-width:0.3' />");
 				}
 
@@ -395,7 +404,7 @@ namespace MatterHackers.MatterSlice
 		}
 
 		/// <summary>
-		/// Return a list of polygons of this polygon split into triangles
+		/// Return a list of polygons of this polygon split into triangles.
 		/// </summary>
 		/// <param name="polygons"></param>
 		/// <returns></returns>
@@ -416,6 +425,7 @@ namespace MatterHackers.MatterSlice
 					polygons.Add(child.Childs[i].Contour);
 					polygonsIn.ProcessPolyTreeNodeIntoSeparateIslands(child.Childs[i], ret);
 				}
+
 				ret.Add(polygons);
 			}
 		}

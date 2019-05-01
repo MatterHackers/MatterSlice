@@ -23,11 +23,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using MSClipperLib;
+using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
 
 namespace MatterHackers.MatterSlice
 {
-	using Polygon = List<IntPoint>;
-
 	public class SlicePerimeterSegment
 	{
 		public IntPoint end;
@@ -68,6 +67,7 @@ namespace MatterHackers.MatterSlice
 				// we have to add in the first layer (that is a different size)
 				layerCount++;
 			}
+
 			if (config.outputOnlyFirstLayer)
 			{
 				layerCount = 1;
@@ -85,6 +85,7 @@ namespace MatterHackers.MatterSlice
 				{
 					z = initialLayerThickness_um + layerThickness_um / 2 + layerThickness_um * (layerIndex - 1);
 				}
+
 				layers.Add(new MeshProcessingLayer(z));
 			}
 
@@ -100,10 +101,25 @@ namespace MatterHackers.MatterSlice
 				IntPoint p2 = ov.vertices[ov.facesTriangle[faceIndex].vertexIndex[2]].position;
 				long minZ = p0.Z;
 				long maxZ = p0.Z;
-				if (p1.Z < minZ) minZ = p1.Z;
-				if (p2.Z < minZ) minZ = p2.Z;
-				if (p1.Z > maxZ) maxZ = p1.Z;
-				if (p2.Z > maxZ) maxZ = p2.Z;
+				if (p1.Z < minZ)
+				{
+					minZ = p1.Z;
+				}
+
+				if (p2.Z < minZ)
+				{
+					minZ = p2.Z;
+				}
+
+				if (p1.Z > maxZ)
+				{
+					maxZ = p1.Z;
+				}
+
+				if (p2.Z > maxZ)
+				{
+					maxZ = p2.Z;
+				}
 
 				for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
 				{
@@ -123,7 +139,7 @@ namespace MatterHackers.MatterSlice
 					}
 					else if (p0.Z >= z && p1.Z < z && p2.Z < z)
 					{
-						//   p0
+						// p0
 						// --------
 						// p1  p2
 						polyCrossingAtThisZ = GetCrossingAtZ(p0, p1, p2, z);
@@ -137,7 +153,7 @@ namespace MatterHackers.MatterSlice
 					}
 					else if (p1.Z >= z && p0.Z < z && p2.Z < z)
 					{
-						//   p1
+						// p1
 						// --------
 						// p0  p2
 						polyCrossingAtThisZ = GetCrossingAtZ(p1, p2, p0, z);
@@ -151,14 +167,14 @@ namespace MatterHackers.MatterSlice
 					}
 					else if (p2.Z >= z && p1.Z < z && p0.Z < z)
 					{
-						//   p2
+						// p2
 						// --------
 						// p1  p0
 						polyCrossingAtThisZ = GetCrossingAtZ(p2, p0, p1, z);
 					}
 					else
 					{
-						//Not all cases create a segment, because a point of a face could create just a dot, and two touching faces
+						// Not all cases create a segment, because a point of a face could create just a dot, and two touching faces
 						//  on the slice would create two segments
 						continue;
 					}
@@ -189,22 +205,24 @@ namespace MatterHackers.MatterSlice
 					if (polygon.Count > 0)
 					{
 						// move to the start without extruding (so it is a move)
-						stream.Write("G1 X{0}Y{1}\n", (double)(polygon[0].X) / scale,
-							(double)(polygon[0].Y) / scale);
+						stream.Write("G1 X{0}Y{1}\n", (double)polygon[0].X / scale,
+							(double)polygon[0].Y / scale);
 						for (int intPointIndex = 1; intPointIndex < polygon.Count; intPointIndex++)
 						{
 							// do all the points with extruding
-							stream.Write("G1 X{0}Y{1}E{2}\n", (double)(polygon[intPointIndex].X) / scale,
-								(double)(polygon[intPointIndex].Y) / scale, extrudeAmount++);
+							stream.Write("G1 X{0}Y{1}E{2}\n", (double)polygon[intPointIndex].X / scale,
+								(double)polygon[intPointIndex].Y / scale, extrudeAmount++);
 						}
+
 						// go back to the start extruding
-						stream.Write("G1 X{0}Y{1}E{2}\n", (double)(polygon[0].X) / scale,
-							(double)(polygon[0].Y) / scale, extrudeAmount++);
+						stream.Write("G1 X{0}Y{1}E{2}\n", (double)polygon[0].X / scale,
+							(double)polygon[0].Y / scale, extrudeAmount++);
 					}
 				}
 
 				layers[layerIndex].DumpPolygonsToGcode(stream, scale, extrudeAmount);
 			}
+
 			stream.Close();
 		}
 
@@ -220,13 +238,14 @@ namespace MatterHackers.MatterSlice
 				List<SlicePerimeterSegment> segmentList = layers[layerIndex].SegmentList;
 				for (int segmentIndex = 0; segmentIndex < segmentList.Count; segmentIndex++)
 				{
-					stream.Write("G1 X{0}Y{1}\n", (double)(segmentList[segmentIndex].start.X) / scale,
-						(double)(segmentList[segmentIndex].start.Y) / scale);
-					stream.Write("G1 X{0}Y{1}E{2}\n", (double)(segmentList[segmentIndex].end.X) / scale,
-						(double)(segmentList[segmentIndex].end.Y) / scale,
+					stream.Write("G1 X{0}Y{1}\n", (double)segmentList[segmentIndex].start.X / scale,
+						(double)segmentList[segmentIndex].start.Y / scale);
+					stream.Write("G1 X{0}Y{1}E{2}\n", (double)segmentList[segmentIndex].end.X / scale,
+						(double)segmentList[segmentIndex].end.Y / scale,
 						extrudeAmount++);
 				}
 			}
+
 			stream.Close();
 		}
 
