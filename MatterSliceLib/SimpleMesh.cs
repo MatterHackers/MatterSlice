@@ -37,7 +37,9 @@ namespace MatterHackers.MatterSlice
 		{
 			vertices[0] = v0; vertices[1] = v1; vertices[2] = v2;
 		}
-	};
+	}
+
+;
 
 	// A SimpleVolume is the most basic representation of a 3D model. It contains all the faces as SimpleTriangles, with nothing fancy.
 	public class SimpleMesh
@@ -69,6 +71,7 @@ namespace MatterHackers.MatterSlice
 				SET_MAX(ref ret.Y, faceTriangles[i].vertices[2].Y);
 				SET_MAX(ref ret.Z, faceTriangles[i].vertices[2].Z);
 			}
+
 			return ret;
 		}
 
@@ -92,35 +95,44 @@ namespace MatterHackers.MatterSlice
 				SET_MIN(ref ret.Y, faceTriangles[faceIndex].vertices[2].Y);
 				SET_MIN(ref ret.Z, faceTriangles[faceIndex].vertices[2].Z);
 			}
+
 			return ret;
 		}
 
 		private void SET_MAX(ref int n, int m)
 		{
-			if ((m) > (n))
+			if (m > n)
+			{
 				n = m;
+			}
 		}
 
 		private void SET_MAX(ref long n, long m)
 		{
-			if ((m) > (n))
+			if (m > n)
+			{
 				n = m;
+			}
 		}
 
 		private void SET_MIN(ref int n, int m)
 		{
-			if ((m) < (n))
+			if (m < n)
+			{
 				n = m;
+			}
 		}
 
 		private void SET_MIN(ref long n, long m)
 		{
-			if ((m) < (n))
+			if (m < n)
+			{
 				n = m;
+			}
 		}
 	}
 
-	//A SimpleModel is a 3D model with 1 or more 3D volumes.
+	// A SimpleModel is a 3D model with 1 or more 3D volumes.
 	public class SimpleMeshCollection
 	{
 		public List<SimpleMesh> SimpleMeshes = new List<SimpleMesh>();
@@ -142,7 +154,7 @@ namespace MatterHackers.MatterSlice
 			{
 				// check for "SOLID"
 
-				var vertex = new MatterHackers.VectorMath.Vector3();
+				var vertex = default(MatterHackers.VectorMath.Vector3);
 				int n = 0;
 				IntPoint v0 = new IntPoint(0, 0, 0);
 				IntPoint v1 = new IntPoint(0, 0, 0);
@@ -156,6 +168,7 @@ namespace MatterHackers.MatterSlice
 					{
 						return false;
 					}
+
 					line = onlySingleSpaces.Replace(line, " ");
 					var parts = line.Trim().Split(' ');
 					if (parts[0].Trim() == "vertex")
@@ -186,6 +199,7 @@ namespace MatterHackers.MatterSlice
 								break;
 						}
 					}
+
 					line = f.ReadLine();
 				}
 			}
@@ -229,7 +243,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			IntPoint minXYZ = new IntPoint(long.MaxValue, long.MaxValue, long.MaxValue);
-			foreach(var mesh in SimpleMeshes)
+			foreach (var mesh in SimpleMeshes)
 			{
 				if (mesh.faceTriangles.Count > 0)
 				{
@@ -239,6 +253,7 @@ namespace MatterHackers.MatterSlice
 					minXYZ.Z = Math.Min(minXYZ.Z, meshMinXYZ.Z);
 				}
 			}
+
 			return minXYZ;
 		}
 
@@ -258,6 +273,7 @@ namespace MatterHackers.MatterSlice
 				{
 					return false;
 				}
+
 				uint numTriangles = System.BitConverter.ToUInt32(fileContents, currentPosition);
 				long bytesForNormals = numTriangles * 3 * 4;
 				long bytesForVertices = numTriangles * 3 * 4;
@@ -286,6 +302,7 @@ namespace MatterHackers.MatterSlice
 						vector[j] = new IntPoint(new0.X * 1000, new0.Y * 1000, new0.Z * 1000);
 						currentPosition += 3 * 4;
 					}
+
 					currentPosition += 2; // skip the attribute
 
 					vol.addFaceTriangle(vector[2], vector[1], vector[0]);
@@ -297,10 +314,11 @@ namespace MatterHackers.MatterSlice
 
 			if (vol.faceTriangles.Count > 0)
 			{
-				if(bounds.X == 0)
+				if (bounds.X == 0)
 				{
 					vol.faceTriangles = new List<SimpleFace>();
 				}
+
 				simpleModel.SimpleMeshes.Add(vol);
 				return true;
 			}

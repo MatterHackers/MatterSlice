@@ -29,6 +29,7 @@ namespace MatterHackers.MatterSlice
 	public class GCodeExport
 	{
 		public int CurrentFanSpeed { get; private set; }
+
 		private IntPoint currentPosition_um;
 		private double currentSpeed;
 		private TimeEstimateCalculator estimateCalculator = new TimeEstimateCalculator();
@@ -43,11 +44,12 @@ namespace MatterHackers.MatterSlice
 		private ConfigSettings config;
 		private double[] totalFilament_mm = new double[ConfigConstants.MAX_EXTRUDERS];
 		private double layerPrintTime;
-		double _layerSpeedRatio = 1;
+		private double _layerSpeedRatio = 1;
 
 		public double LayerSpeedRatio
 		{
 			get { return _layerSpeedRatio; }
+
 			set
 			{
 				var maxChange = .1;
@@ -85,6 +87,7 @@ namespace MatterHackers.MatterSlice
 		}
 
 		public double CurrentZ => CurrentZ_um / 1000.0;
+
 		public long CurrentZ_um { get; set; }
 
 		public int LayerIndex { get; set; } = 0;
@@ -103,9 +106,9 @@ namespace MatterHackers.MatterSlice
 			WriteComment("filament used extruder 2 (mm) = {0:0.0}".FormatWith(GetTotalFilamentUsed(1)));
 			WriteComment("total print time (s) = {0:0}".FormatWith(GetTotalPrintTime()));
 
-			LogOutput.Log("Print time: {0}\n".FormatWith((int)(GetTotalPrintTime())));
-			LogOutput.Log("Filament: {0}\n".FormatWith((int)(GetTotalFilamentUsed(0))));
-			LogOutput.Log("Filament2: {0}\n".FormatWith((int)(GetTotalFilamentUsed(1))));
+			LogOutput.Log("Print time: {0}\n".FormatWith((int)GetTotalPrintTime()));
+			LogOutput.Log("Filament: {0}\n".FormatWith((int)GetTotalFilamentUsed(0)));
+			LogOutput.Log("Filament2: {0}\n".FormatWith((int)GetTotalFilamentUsed(1)));
 		}
 
 		public int GetExtruderIndex()
@@ -178,10 +181,10 @@ namespace MatterHackers.MatterSlice
 
 		public void SetExtrusion(long layerThickness, long filamentDiameter, double extrusionMultiplier)
 		{
-			//double feedRateRatio = 1 + (Math.PI / 4 - 1) * layerThickness / extrusionWidth;
-			//extrusionMultiplier *= feedRateRatio;
-			double filamentArea = Math.PI * ((double)(filamentDiameter) / 1000.0 / 2.0) * ((double)(filamentDiameter) / 1000.0 / 2.0);
-			extrusionPerMm = (double)(layerThickness) / 1000.0 / filamentArea * extrusionMultiplier;
+			// double feedRateRatio = 1 + (Math.PI / 4 - 1) * layerThickness / extrusionWidth;
+			// extrusionMultiplier *= feedRateRatio;
+			double filamentArea = Math.PI * ((double)filamentDiameter / 1000.0 / 2.0) * ((double)filamentDiameter / 1000.0 / 2.0);
+			extrusionPerMm = (double)layerThickness / 1000.0 / filamentArea * extrusionMultiplier;
 		}
 
 		public void SetFilename(string filename)
@@ -268,6 +271,7 @@ namespace MatterHackers.MatterSlice
 			{
 				gcodeFileStream.Write("M107\n");
 			}
+
 			CurrentFanSpeed = speed;
 		}
 
@@ -285,7 +289,7 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			//Normal E handling.
+			// Normal E handling.
 			if (lineWidth_um != 0)
 			{
 				IntPoint diff = movePosition_um - GetPosition();
@@ -293,14 +297,14 @@ namespace MatterHackers.MatterSlice
 				{
 					if (config.RetractionZHop > 0)
 					{
-						double zWritePosition = (double)(currentPosition_um.Z) / 1000;
+						double zWritePosition = (double)currentPosition_um.Z / 1000;
 						lineToWrite.Append("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
 					}
 
 					if (config.ResetLongExtrusion
 						&& extrusionAmount_mm > 10000.0)
 					{
-						//According to https://github.com/Ultimaker/CuraEngine/issues/14 having more then 21m of extrusion causes inaccuracies. So reset it every 10m, just to be sure.
+						// According to https://github.com/Ultimaker/CuraEngine/issues/14 having more then 21m of extrusion causes inaccuracies. So reset it every 10m, just to be sure.
 						ResetExtrusionValue(config.RetractionOnTravel);
 					}
 
@@ -331,8 +335,8 @@ namespace MatterHackers.MatterSlice
 				currentSpeed = speed;
 			}
 
-			double xWritePosition = (double)(movePosition_um.X) / 1000.0;
-			double yWritePosition = (double)(movePosition_um.Y) / 1000.0;
+			double xWritePosition = (double)movePosition_um.X / 1000.0;
+			double yWritePosition = (double)movePosition_um.Y / 1000.0;
 			lineToWrite.Append(" X{0:0.###} Y{1:0.###}".FormatWith(xWritePosition, yWritePosition));
 
 			if (movePosition_um.Z != currentPosition_um.Z)
@@ -343,6 +347,7 @@ namespace MatterHackers.MatterSlice
 				{
 					zWritePosition += config.RetractionZHop;
 				}
+
 				lineToWrite.Append(" Z{0:0.###}".FormatWith(zWritePosition));
 			}
 
@@ -373,9 +378,9 @@ namespace MatterHackers.MatterSlice
 			{
 				gcodeFileStream.Write("G1 F{0} E{1:0.#####}\n".FormatWith(config.RetractionSpeed * 60, extrusionAmount_mm - config.RetractionOnTravel));
 				currentSpeed = config.RetractionSpeed;
-				var timePosition = new TimeEstimateCalculator.Position((double)(currentPosition_um.X) / 1000.0,
-					(currentPosition_um.Y) / 1000.0,
-					(double)(currentPosition_um.Z) / 1000.0, extrusionAmount_mm - config.RetractionOnTravel);
+				var timePosition = new TimeEstimateCalculator.Position((double)currentPosition_um.X / 1000.0,
+					currentPosition_um.Y / 1000.0,
+					(double)currentPosition_um.Z / 1000.0, extrusionAmount_mm - config.RetractionOnTravel);
 				estimateCalculator.plan(timePosition, currentSpeed);
 
 				if (config.RetractionZHop > 0)

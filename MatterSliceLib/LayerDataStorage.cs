@@ -19,18 +19,17 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using MatterHackers.Pathfinding;
 using MSClipperLib;
+using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice
 {
-	using System;
-	using System.Diagnostics;
-	using System.IO;
-	using MatterHackers.Pathfinding;
-	using Polygon = List<IntPoint>;
-	using Polygons = List<List<IntPoint>>;
-
 	public class LayerDataStorage
 	{
 		private int lastLayerWithChange = -1;
@@ -41,10 +40,13 @@ namespace MatterHackers.MatterSlice
 		public Polygons raftOutline = new Polygons();
 
 		public Polygons Skirt { get; private set; } = new Polygons();
+
 		public Polygons Brims { get; private set; } = new Polygons();
 
 		public NewSupport Support = null;
+
 		public List<Polygons> WipeShield { get; set; } = new List<Polygons>();
+
 		public IntPoint WipeCenter_um { get; private set; }
 
 		public Polygons WipeTower = new Polygons();
@@ -226,7 +228,7 @@ namespace MatterHackers.MatterSlice
 
 				// set the path planner to avoid islands
 				layerGcodePlanner.PathFinder = pathFinder;
-				if (this.NeedToPrintWipeTower(layerIndex, config))
+				if (this.HaveWipeTower(config, layerIndex))
 				{
 					layerGcodePlanner.QueueTravel(WipeCenter_um);
 				}
@@ -362,10 +364,11 @@ namespace MatterHackers.MatterSlice
 			outputfillPolygons.Reverse();
 		}
 
-		public bool HaveWipeTower(ConfigSettings config)
+		public bool HaveWipeTower(ConfigSettings config, int layerIndex)
 		{
-			if (config.WipeTowerSize_um == 0
-				 || LastLayerWithChange(config) == -1)
+			if (WipeTower == null
+				|| WipeTower.Count == 0
+				|| layerIndex > LastLayerWithChange(config) + 1)
 			{
 				return false;
 			}
@@ -375,8 +378,7 @@ namespace MatterHackers.MatterSlice
 
 		public bool PrimeOnWipeTower(int layerIndex, LayerGCodePlanner layerGcodePlanner, PathFinder pathFinder, GCodePathConfig fillConfig, ConfigSettings config, bool airGapped)
 		{
-			if (!HaveWipeTower(config)
-				|| layerIndex > LastLayerWithChange(config) + 1
+			if (!HaveWipeTower(config, layerIndex)
 				|| layerIndex == 0)
 			{
 				return false;
@@ -641,16 +643,6 @@ namespace MatterHackers.MatterSlice
 
 			calculatedLastLayer = true;
 			return -1;
-		}
-
-		public bool NeedToPrintWipeTower(int layerIndex, ConfigSettings config)
-		{
-			if (HaveWipeTower(config))
-			{
-				return layerIndex <= LastLayerWithChange(config);
-			}
-
-			return false;
 		}
 	}
 }

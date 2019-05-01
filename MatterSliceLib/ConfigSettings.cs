@@ -110,12 +110,17 @@ namespace MatterHackers.MatterSlice
 		public int ExtruderCount { get; set; } = 1;
 
 		public long ExtrusionWidth_um => (long)(ExtrusionWidth * 1000);
+
 		public int FanSpeedMinPercent { get; set; }
+
 		public int MinFanSpeedLayerTime { get; set; }
+
 		public int FanSpeedMaxPercent { get; set; }
+
 		public int MaxFanSpeedLayerTime { get; set; }
 
 		public long CoastAtEndDistance_um => (long)(CoastAtEndDistance * 1000);
+
 		public double CoastAtEndDistance { get; set; }
 
 		[SettingDescription("The width of the filament being fed into the extruder, in millimeters.")]
@@ -170,16 +175,17 @@ namespace MatterHackers.MatterSlice
 		public string LayerChangeCode { get; set; } = "; LAYER:[layer_num]";
 
 		// if you were to change the layerThicknessMm variable you would add a legacy name so that we can still use old settings
-		//[LegacyName("layerThickness")] // the name before we added Mm
+		// [LegacyName("layerThickness")] // the name before we added Mm
 		public double LayerThickness { get; set; }
 
 		public long LayerThickness_um => (long)(LayerThickness * 1000);
+
 		public bool MergeOverlappingLines { get; set; } = true;
 
 		[SettingDescription("mm.")]
 		public double MinimumExtrusionBeforeRetraction { get; set; }
 
-		//Cool settings
+		// Cool settings
 		public int MinimumLayerTimeSeconds { get; set; }
 
 		[SettingDescription("The minimum speed that the extruder is allowed to move while printing. mm/s.")]
@@ -194,6 +200,7 @@ namespace MatterHackers.MatterSlice
 		public Matrix4X4 ModelMatrix { get; set; } = Matrix4X4.Identity;
 
 		public int MultiExtruderOverlapPercent { get; set; }
+
 		public int NumberOfBottomLayers { get; set; }
 
 		[SettingDescription("The number of loops to draw around islands.")]
@@ -224,15 +231,23 @@ namespace MatterHackers.MatterSlice
 		public double PerimeterStartEndOverlapRatio { get; set; } = 1;
 
 		public double RaftAirGap { get; set; }
+
 		public long RaftAirGap_um => (long)(RaftAirGap * 1000);
+
 		public long RaftBaseExtrusionWidth_um => ExtrusionWidth_um * 3;
+
 		public long RaftBaseLineSpacing_um => (long)(ExtrusionWidth_um * 4);
+
 		public long RaftBaseThickness_um => ExtrusionWidth_um * 300 / 400;
+
 		public double RaftExtraDistanceAroundPart { get; set; }
+
 		public long RaftExtraDistanceAroundPart_um => (long)(RaftExtraDistanceAroundPart * 1000);
+
 		public int RaftExtruder { get; set; }
 
 		public long RaftInterfaceExtrusionWidth_um => ExtrusionWidth_um * 350 / 400;
+
 		public long RaftInterfaceLineSpacing_um => ExtrusionWidth_um * 1000 / 400;
 
 		// the least it can be in the raftExtrusionWidth_um
@@ -242,9 +257,13 @@ namespace MatterHackers.MatterSlice
 		public int RaftPrintSpeed { get; set; }
 
 		public long RaftSurfaceExtrusionWidth_um => ExtrusionWidth_um * 400 / 400;
+
 		public int RaftSurfaceLayers => 2;
+
 		public long RaftSurfaceLineSpacing_um => ExtrusionWidth_um * 400 / 400;
+
 		public int RaftSurfacePrintSpeed => RaftPrintSpeed;
+
 		public long RaftSurfaceThickness_um => ExtrusionWidth_um * 250 / 400;
 
 		// repair settings
@@ -259,6 +278,7 @@ namespace MatterHackers.MatterSlice
 		public double RetractionZHop { get; set; }
 
 		public bool RetractWhenChangingIslands { get; set; }
+
 		public long SkirtDistance_um => (long)(SkirtDistanceFromObject * 1000);
 
 		[SettingDescription("How far from objects the first skirt loop should be, in millimeters.")]
@@ -296,7 +316,7 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The number of layers to skip in z. The gap between the support and the model.")]
 		public int SupportNumberOfLayersToSkipInZ { get; set; }
 
-		//Support material
+		// Support material
 		public ConfigConstants.SUPPORT_TYPE SupportType { get; set; }
 
 		public long SupportXYDistance_um => (long)(SupportXYDistanceFromObject * 1000);
@@ -330,8 +350,11 @@ namespace MatterHackers.MatterSlice
 		public long WipeTowerSize_um => (long)(WipeTowerSize * 1000);
 
 		public double MaxAcceleration { get; set; }
+
 		public double MaxVelocity { get; set; }
+
 		public double JerkVelocity { get; set; }
+
 		public double PrintTimeEstimateMultiplier { get; set; } = 1;
 
 		// .4 mm for .4 mm nozzle
@@ -382,11 +405,14 @@ namespace MatterHackers.MatterSlice
 								{
 									values += ",";
 								}
+
 								values = values + intPoint.OutputInMm();
 								first = false;
 							}
+
 							lines.Add("{0}={1}]{2}".FormatWith(name, values, fieldDescription));
 						}
+
 						break;
 
 					case "String":
@@ -495,6 +521,7 @@ namespace MatterHackers.MatterSlice
 							{
 								property.SetValue(this, new DMatrix3x3(valueToSetTo));
 							}
+
 							break;
 
 						case "DoublePoint":
@@ -503,6 +530,7 @@ namespace MatterHackers.MatterSlice
 								string[] xyValues = bracketContents.Split(',');
 								property.SetValue(this, new DoublePoint(double.Parse(xyValues[0]), double.Parse(xyValues[1])));
 							}
+
 							break;
 
 						case "IntPoint":
@@ -511,6 +539,7 @@ namespace MatterHackers.MatterSlice
 								string[] xyValues = bracketContents.Split(',');
 								property.SetValue(this, new IntPoint(double.Parse(xyValues[0]), double.Parse(xyValues[1])));
 							}
+
 							break;
 
 						case "IntPoint[]":
@@ -526,9 +555,11 @@ namespace MatterHackers.MatterSlice
 									points.Add(new IntPoint(double.Parse(xyValues[0]) * 1000, double.Parse(xyValues[1]) * 1000));
 
 									nextIndex = GetInsides(out intPointString, bracketContents, '[', ']', nextIndex);
-								} while (nextIndex != -1);
+								}
+								while (nextIndex != -1);
 								property.SetValue(this, points.ToArray());
 							}
+
 							break;
 
 						case "String":
@@ -540,6 +571,7 @@ namespace MatterHackers.MatterSlice
 							{
 								property.SetValue(this, valueToSetTo.Replace("\\n", "\n"));
 							}
+
 							break;
 
 						case "REPAIR_OVERLAPS":
@@ -555,6 +587,7 @@ namespace MatterHackers.MatterSlice
 							catch (Exception)
 							{
 							}
+
 							break;
 
 						default:
@@ -564,6 +597,7 @@ namespace MatterHackers.MatterSlice
 					return true;
 				}
 			}
+
 			return false;
 		}
 
@@ -606,7 +640,7 @@ namespace MatterHackers.MatterSlice
 			// raft settings
 			EnableRaft = false;
 			RaftAirGap = .2; // .2 mm for .4 mm nozzle
-			SupportAirGap = .3; //
+			SupportAirGap = .3;
 			RaftExtraDistanceAroundPart = 5;
 
 			SupportType = ConfigConstants.SUPPORT_TYPE.GRID;
@@ -673,6 +707,7 @@ namespace MatterHackers.MatterSlice
 					{
 						helpLine += ", ";
 					}
+
 					helpLine += names[1];
 					first = false;
 				}
@@ -694,6 +729,7 @@ namespace MatterHackers.MatterSlice
 			{
 				endIndex = content.Length;
 			}
+
 			insides = "";
 			int firstOpen = -1;
 			int openCount = 0;
@@ -706,6 +742,7 @@ namespace MatterHackers.MatterSlice
 					{
 						firstOpen = i;
 					}
+
 					openCount++;
 				}
 				else if (openCount > 0 && content[i] == endingChar)

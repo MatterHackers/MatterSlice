@@ -21,22 +21,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using MatterHackers.Pathfinding;
+using MatterHackers.QuadTree;
 using MSClipperLib;
+using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice
 {
-	using System.Linq;
-	using MatterHackers.QuadTree;
-	using Pathfinding;
-	using Polygon = List<IntPoint>;
-	using Polygons = List<List<IntPoint>>;
-
 	public class SliceLayer
 	{
 		public Polygons AllOutlines { get; set; }
+
 		public PathFinder PathFinder { get; set; }
+
 		public List<LayerIsland> Islands = null;
+
 		public bool CreatedInsets { get; set; } = false;
+
 		public long LayerZ;
 		private static bool OUTPUT_DEBUG_DATA = false;
 
@@ -104,6 +107,7 @@ namespace MatterHackers.MatterSlice
 								{
 									island.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, bestAngle));
 								}
+
 								island0PointIndex = j + 1;
 								break;
 							}
@@ -127,7 +131,7 @@ namespace MatterHackers.MatterSlice
 			SliceLayer layerToRestOn = this;
 			bridgeAngle = -1;
 			Aabb boundaryBox = new Aabb(areaAboveToFill);
-			//To detect if we have a bridge, first calculate the intersection of the current layer with the previous layer.
+			// To detect if we have a bridge, first calculate the intersection of the current layer with the previous layer.
 			// This gives us the islands that the layer rests on.
 			Polygons islandsToRestOn = new Polygons();
 			foreach (LayerIsland islandToRestOn in layerToRestOn.Islands)
@@ -174,7 +178,7 @@ namespace MatterHackers.MatterSlice
 			int indexOfNextBigest = -1;
 			for (int islandIndex = 0; islandIndex < islandsToRestOn.Count; islandIndex++)
 			{
-				//Skip internal holes
+				// Skip internal holes
 				if (!islandsToRestOn[islandIndex].Orientation())
 				{
 					continue;
@@ -188,6 +192,7 @@ namespace MatterHackers.MatterSlice
 						nextBiggestArea = biggestArea;
 						indexOfNextBigest = indexOfBiggest;
 					}
+
 					biggestArea = area;
 					indexOfBiggest = islandIndex;
 				}
@@ -212,6 +217,7 @@ namespace MatterHackers.MatterSlice
 			{
 				islandsToRestOn.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, bridgeAngle));
 			}
+
 			return true;
 		}
 
@@ -232,7 +238,7 @@ namespace MatterHackers.MatterSlice
 
 			if (!expandThinWalls)
 			{
-				//Remove the parts which did not generate an inset. As these parts are too small to print,
+				// Remove the parts which did not generate an inset. As these parts are too small to print,
 				// and later code can now assume that there is always minimum 1 inset line.
 				for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 				{
@@ -251,6 +257,7 @@ namespace MatterHackers.MatterSlice
 			{
 				angle += 360;
 			}
+
 			if (angle > 360)
 			{
 				angle -= 360;

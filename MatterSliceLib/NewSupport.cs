@@ -22,12 +22,11 @@ using System;
 using System.Collections.Generic;
 using MatterHackers.Pathfinding;
 using MSClipperLib;
+using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice
 {
-	using Polygon = List<IntPoint>;
-	using Polygons = List<List<IntPoint>>;
-
 	public class NewSupport
 	{
 		private static double cleanDistance_um = 10;
@@ -63,7 +62,7 @@ namespace MatterHackers.MatterSlice
 			SparseSupportOutlines = CalculateDifferencePerLayer(SparseSupportOutlines, AirGappedBottomOutlines);
 		}
 
-		//List<Polygons> pushedUpTopOutlines = new List<Polygons>();
+		// List<Polygons> pushedUpTopOutlines = new List<Polygons>();
 		public List<Polygons> AirGappedBottomOutlines { get; }
 
 		public List<Polygons> InterfaceLayers { get; }
@@ -155,6 +154,7 @@ namespace MatterHackers.MatterSlice
 				{
 					pathFinder = new PathFinder(infillOutline, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters);
 				}
+
 				var oldPathFinder = gcodeLayer.PathFinder;
 				gcodeLayer.PathFinder = pathFinder;
 				gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, null, supportNormalConfig, 0);
@@ -258,12 +258,14 @@ namespace MatterHackers.MatterSlice
 				{
 					pathFinder = new PathFinder(infillOutline, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters);
 				}
+
 				var oldPathFinder = gcodeLayer.PathFinder;
 				gcodeLayer.PathFinder = pathFinder;
 				if (gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, null, supportNormalConfig, 0))
 				{
 					outputPaths |= true;
 				}
+
 				gcodeLayer.PathFinder = oldPathFinder;
 			}
 
@@ -384,7 +386,7 @@ namespace MatterHackers.MatterSlice
 				{
 					Polygons requiredInterfacePolys = inputPolys[layerIndex].DeepCopy();
 
-					if (layerIndex < numLayers- 1)
+					if (layerIndex < numLayers - 1)
 					{
 						Polygons intersectionsAbove = inputPolys[layerIndex + 1].DeepCopy();
 

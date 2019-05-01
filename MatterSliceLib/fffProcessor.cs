@@ -22,16 +22,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using MatterHackers.Pathfinding;
+using MatterHackers.QuadTree;
 using MSClipperLib;
+using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice
 {
-	using System.Linq;
-	using Pathfinding;
-	using QuadTree;
-	using Polygon = List<IntPoint>;
-	using Polygons = List<List<IntPoint>>;
-
 	public static class ExtensionMethods
 	{
 		public static IEnumerable<int> CurrentThenOtherIndexes(this List<ExtruderLayers> extruderLayers, int activeExtruderIndex)
@@ -131,6 +130,7 @@ namespace MatterHackers.MatterSlice
 			{
 				extraPathingConsideration.AddRange(polygons);
 			}
+
 			extraPathingConsideration.AddRange(slicingData.WipeTower);
 			ExtruderLayers.InitializeLayerPathing(config, extraPathingConsideration, slicingData.Extruders);
 
@@ -158,7 +158,7 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			LogOutput.logProgress("process", 1, 1); //Report to the GUI that a file has been fully processed.
+			LogOutput.logProgress("process", 1, 1); // Report to the GUI that a file has been fully processed.
 			LogOutput.Log("Total time elapsed {0:0.00}s.\n".FormatWith(timeKeeperTotal.Elapsed.TotalSeconds));
 		}
 
@@ -171,8 +171,10 @@ namespace MatterHackers.MatterSlice
 				{
 					LogOutput.LogError("Failed to load model: {0}\n".FormatWith(input_filename));
 				}
+
 				return false;
 			}
+
 			return true;
 		}
 
@@ -380,6 +382,7 @@ namespace MatterHackers.MatterSlice
 				gcodeExport.WriteMove(gcodeExport.GetPosition(), config.TravelSpeed, 0);
 				gcodeExport.WriteMove(new IntPoint(slicingData.modelMin.X, slicingData.modelMin.Y, gcodeExport.CurrentZ_um), config.TravelSpeed, 0);
 			}
+
 			fileNumber++;
 
 			int totalLayers = slicingData.Extruders[0].Layers.Count;
@@ -411,9 +414,11 @@ namespace MatterHackers.MatterSlice
 					{
 						break;
 					}
+
 					totalLayers--;
 				}
 			}
+
 			gcodeExport.WriteComment("Layer count: {0}".FormatWith(totalLayers));
 
 			// keep the raft generation code inside of raft
@@ -657,7 +662,7 @@ namespace MatterHackers.MatterSlice
 
 			gcodeExport.WriteLine("; MatterSlice Completed Successfully");
 
-			//Store the object height for when we are printing multiple objects, as we need to clear every one of them when moving to the next position.
+			// Store the object height for when we are printing multiple objects, as we need to clear every one of them when moving to the next position.
 			maxObjectHeight = Math.Max(maxObjectHeight, slicingData.modelSize.Z);
 		}
 
@@ -676,7 +681,7 @@ namespace MatterHackers.MatterSlice
 				&& slicingData.Extruders[extruderIndex].Layers[layerIndex].Islands.Count > 0;
 
 			bool extruderUsedForWipeTower = extruderUsedForParts
-				&& slicingData.NeedToPrintWipeTower(layerIndex, config);
+				&& slicingData.HaveWipeTower(config, layerIndex);
 
 			if ((extruderUsedForSupport
 				|| extruderUsedForWipeTower
@@ -694,18 +699,19 @@ namespace MatterHackers.MatterSlice
 				}
 
 				if (extruderUsedForWipeTower
-					|| (slicingData.NeedToPrintWipeTower(layerIndex, config)
+					|| (slicingData.HaveWipeTower(config, layerIndex)
 						&& extruderUsedForSupport))
 				{
 					int prevExtruder = layerGcodePlanner.GetExtruder();
 
-					if(layerIndex > 0)
+					if (layerIndex > 0)
 					{
 						if (config.AvoidCrossingPerimeters)
 						{
 							// set the path planner to avoid islands
 							layerGcodePlanner.PathFinder = slicingData.Extruders[extruderIndex].Layers[layerIndex].PathFinder;
 						}
+
 						// make sure we path plan our way to the wipe tower before switching extruders
 						layerGcodePlanner.QueueTravel(slicingData.WipeCenter_um);
 						islandCurrentlyInside = null;
@@ -716,12 +722,12 @@ namespace MatterHackers.MatterSlice
 
 					DoSkirtAndBrim(slicingData, layerIndex, layerGcodePlanner, extruderIndex, extruderUsedForSupport);
 
-					if(slicingData.PrimeOnWipeTower(layerIndex, layerGcodePlanner, layerPathFinder, fillConfig, config, airGapped))
+					if (slicingData.PrimeOnWipeTower(layerIndex, layerGcodePlanner, layerPathFinder, fillConfig, config, airGapped))
 					{
 						islandCurrentlyInside = null;
 					}
 				}
-				else if(extruderIndex < slicingData.Extruders.Count)
+				else if (extruderIndex < slicingData.Extruders.Count)
 				{
 					// then change extruders
 					layerGcodePlanner.SetExtruder(extruderIndex);
@@ -735,7 +741,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		bool havePrintedBrims = false;
+		private bool havePrintedBrims = false;
 
 		private void DoSkirtAndBrim(LayerDataStorage slicingData, int layerIndex, LayerGCodePlanner layerGcodePlanner, int extruderIndex, bool extruderUsedForSupport)
 		{
@@ -786,9 +792,9 @@ namespace MatterHackers.MatterSlice
 					{
 						layer.CreatedInsets = true;
 						int insetCount = config.NumberOfPerimeters;
-						if (config.ContinuousSpiralOuterPerimeter && (int)(layerIndex) < config.NumberOfBottomLayers && layerIndex % 2 == 1)
+						if (config.ContinuousSpiralOuterPerimeter && (int)layerIndex < config.NumberOfBottomLayers && layerIndex % 2 == 1)
 						{
-							//Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
+							// Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
 							insetCount += 1;
 						}
 
@@ -803,8 +809,8 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				//Only generate bottom and top layers and infill for the first X layers when spiralize is chosen.
-				if (!config.ContinuousSpiralOuterPerimeter || (int)(outputLayerIndex) < config.NumberOfBottomLayers)
+				// Only generate bottom and top layers and infill for the first X layers when spiralize is chosen.
+				if (!config.ContinuousSpiralOuterPerimeter || (int)outputLayerIndex < config.NumberOfBottomLayers)
 				{
 					if (outputLayerIndex == 0)
 					{
@@ -818,7 +824,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		void QueuePerimeterWithMergeOverlaps(Polygon perimeterToCheckForMerge, int layerIndex, LayerGCodePlanner gcodeLayer, GCodePathConfig config)
+		private void QueuePerimeterWithMergeOverlaps(Polygon perimeterToCheckForMerge, int layerIndex, LayerGCodePlanner gcodeLayer, GCodePathConfig config)
 		{
 			Polygons pathsWithOverlapsRemoved = null;
 			bool pathHadOverlaps = false;
@@ -861,7 +867,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// Multiple extruders in layer 0 - split up skirt loops
-			var loopIndex = loopsPerExtruder * ((config.ExtruderCount - 1) - extruderIndex);
+			var loopIndex = loopsPerExtruder * (config.ExtruderCount - 1 - extruderIndex);
 
 			for (int i = loopsPerExtruder - 1; i >= 0; i--)
 			{
@@ -907,9 +913,9 @@ namespace MatterHackers.MatterSlice
 			gcodeLayer.QueuePolygonsByOptimizer(slicingData.Brims, null, skirtConfig, layerIndex);
 		}
 
-		LayerIsland islandCurrentlyInside = null;
+		private LayerIsland islandCurrentlyInside = null;
 
-		//Add a single layer from a single extruder to the GCode
+		// Add a single layer from a single extruder to the GCode
 		private void QueueExtruderLayerToGCode(LayerDataStorage slicingData,
 			LayerGCodePlanner layerGcodePlanner,
 			int extruderIndex,
@@ -943,7 +949,7 @@ namespace MatterHackers.MatterSlice
 				slicingData.WipeShield[layerIndex].Clear();
 			}
 
-			PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(new IntPoint());
+			PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(default(IntPoint));
 			for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
 			{
 				if (config.ContinuousSpiralOuterPerimeter && partIndex > 0)
@@ -960,6 +966,7 @@ namespace MatterHackers.MatterSlice
 					islandOrderOptimizer.AddPolygon(layer.Islands[partIndex].InsetToolPaths[0][0]);
 				}
 			}
+
 			islandOrderOptimizer.Optimize(layer.PathFinder, layerIndex);
 
 			List<Polygons> bottomFillIslandPolygons = new List<Polygons>();
@@ -979,7 +986,10 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					if(config.RetractWhenChangingIslands)  layerGcodePlanner.ForceRetract();
+					if (config.RetractWhenChangingIslands)
+					{
+						layerGcodePlanner.ForceRetract();
+					}
 				}
 
 				var fillPolygons = new Polygons();
@@ -1011,7 +1021,7 @@ namespace MatterHackers.MatterSlice
 					{
 						var polygons = new Polygons();
 
-						foreach(var insetPolygon in insetToolPath)
+						foreach (var insetPolygon in insetToolPath)
 						{
 							if (insetPolygon.Count > 0)
 							{
@@ -1029,6 +1039,7 @@ namespace MatterHackers.MatterSlice
 						layerGcodePlanner.QueueFanCommand(config.BridgeFanSpeedPercent, bridgeConfig);
 						overrideConfig = bridgeConfig;
 					}
+
 					// If we are on the very first layer we always start with the outside so that we can stick to the bed better.
 					if (config.OutsidePerimetersFirst || layerIndex == 0 || inset0Config.Spiralize)
 					{
@@ -1064,7 +1075,7 @@ namespace MatterHackers.MatterSlice
 					else // This is so we can do overhangs better (the outside can stick a bit to the inside).
 					{
 						int insetCount = CountInsetsToPrint(insetsForThisIsland);
-						if(insetCount == 0
+						if (insetCount == 0
 							&& config.ExpandThinWalls
 							&& island.IslandOutline.Count > 0
 							&& island.IslandOutline[0].Count > 0)
@@ -1072,6 +1083,7 @@ namespace MatterHackers.MatterSlice
 							// There are no insets but we should still try to go to the start position of the first perimeter if we are expanding thin walls
 							layerGcodePlanner.QueueTravel(island.IslandOutline[0][0]);
 						}
+
 						while (insetCount > 0)
 						{
 							bool limitDistance = false;
@@ -1087,7 +1099,7 @@ namespace MatterHackers.MatterSlice
 										if (closestInsetStart.X != long.MinValue)
 										{
 											(int polyIndex, int pointIndex, IntPoint position) found = (-1, -1, closestInsetStart);
-											for (int findInsetIndex = island.InsetToolPaths.Count - 1; findInsetIndex  >= 0; findInsetIndex--)
+											for (int findInsetIndex = island.InsetToolPaths.Count - 1; findInsetIndex >= 0; findInsetIndex--)
 											{
 												found = insetsForThisIsland[findInsetIndex].FindClosestPoint(closestInsetStart);
 												if (found.polyIndex != -1
@@ -1166,10 +1178,10 @@ namespace MatterHackers.MatterSlice
 					{
 						Polygons thinLines = null;
 						// Collect all of the lines up to one third the extrusion diameter
-						//string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(island.IslandOutline);
+						// string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(island.IslandOutline);
 						if (island.IslandOutline.FindThinLines(extrusionWidth_um + 2, extrusionWidth_um / 3, out thinLines, true))
 						{
-							for(int polyIndex=thinLines.Count-1; polyIndex>=0; polyIndex--)
+							for (int polyIndex = thinLines.Count - 1; polyIndex >= 0; polyIndex--)
 							{
 								var polygon = thinLines[polyIndex];
 
@@ -1222,13 +1234,14 @@ namespace MatterHackers.MatterSlice
 					// Set it back to what it was
 					layerGcodePlanner.QueueFanCommand(fanSpeedPercent, fillConfig);
 				}
+
 				layerGcodePlanner.QueuePolygonsByOptimizer(topFillPolygons, island.PathFinder, topFillConfig, layerIndex);
 			}
 		}
 
 		private void MoveToIsland(LayerGCodePlanner layerGcodePlanner, SliceLayer layer, LayerIsland island)
 		{
-			if(config.ContinuousSpiralOuterPerimeter)
+			if (config.ContinuousSpiralOuterPerimeter)
 			{
 				return;
 			}
@@ -1358,6 +1371,7 @@ namespace MatterHackers.MatterSlice
 				{
 					QueuePolygonsConsideringSupport(layerIndex, gcodeLayer, new Polygons() { insetsToConsider[polygonPrintedIndex] }, pathConfig, SupportWriteType.UnsupportedAreas);
 				}
+
 				insetsToConsider.RemoveAt(polygonPrintedIndex);
 				return true;
 			}
@@ -1377,7 +1391,7 @@ namespace MatterHackers.MatterSlice
 			return total;
 		}
 
-		//Add a single layer from a single extruder to the GCode
+		// Add a single layer from a single extruder to the GCode
 		private void QueueAirGappedExtruderLayerToGCode(LayerDataStorage slicingData, PathFinder layerPathFinder, LayerGCodePlanner layerGcodePlanner, int extruderIndex, int layerIndex, long extrusionWidth_um, long currentZ_um)
 		{
 			if (slicingData.Support != null
@@ -1386,7 +1400,7 @@ namespace MatterHackers.MatterSlice
 			{
 				SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 
-				var islandOrderOptimizer = new PathOrderOptimizer(new IntPoint());
+				var islandOrderOptimizer = new PathOrderOptimizer(default(IntPoint));
 				for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 				{
 					if (layer.Islands[islandIndex].InsetToolPaths.Count > 0)
@@ -1394,6 +1408,7 @@ namespace MatterHackers.MatterSlice
 						islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].InsetToolPaths[0][0]);
 					}
 				}
+
 				islandOrderOptimizer.Optimize(layer.PathFinder, layerIndex);
 
 				for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.bestIslandOrderIndex.Count; islandOrderIndex++)
@@ -1410,6 +1425,7 @@ namespace MatterHackers.MatterSlice
 					{
 						outputDataForIsland |= QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, island.InsetToolPaths[insetIndex], airGappedBottomInsetConfig, SupportWriteType.SupportedAreasCheckOnly);
 					}
+
 					// then 0
 					if (island.InsetToolPaths.Count > 0)
 					{
@@ -1435,6 +1451,7 @@ namespace MatterHackers.MatterSlice
 						{
 							QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, island.InsetToolPaths[insetIndex], airGappedBottomInsetConfig, SupportWriteType.SupportedAreas);
 						}
+
 						// then 0
 						if (island.InsetToolPaths.Count > 0)
 						{
@@ -1449,10 +1466,15 @@ namespace MatterHackers.MatterSlice
 			// gcodeLayer.SetPathFinder(null);
 		}
 
-		private enum SupportWriteType { UnsupportedAreas, SupportedAreas, SupportedAreasCheckOnly };
+		private enum SupportWriteType
+		{
+			UnsupportedAreas,
+			SupportedAreas,
+			SupportedAreasCheckOnly
+		}
 
 		/// <summary>
-		/// Return true if any polygons are actually output
+		/// Return true if any polygons are actually output.
 		/// </summary>
 		/// <param name="layerIndex"></param>
 		/// <param name="gcodeLayer"></param>
@@ -1606,6 +1628,7 @@ namespace MatterHackers.MatterSlice
 					Infill.GenerateLinePaths(outline, topFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
 				}
 			}
+
 			// generate infill for the top layer
 			if (firstTopFillPolygons != null)
 			{

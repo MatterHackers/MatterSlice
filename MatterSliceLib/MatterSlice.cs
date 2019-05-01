@@ -56,6 +56,7 @@ namespace MatterHackers.MatterSlice
 			{
 				commands.Add(command);
 			}
+
 			string[] args = commands.ToArray();
 			return ProcessArgs(args);
 		}
@@ -78,7 +79,7 @@ namespace MatterHackers.MatterSlice
 
 			LogOutput.Log("\nMatterSlice version {0}\n\n".FormatWith(ConfigConstants.VERSION));
 
-			if(ProcessArgs(args, config, processor) == 0)
+			if (ProcessArgs(args, config, processor) == 0)
 			{
 				return 0;
 			}
@@ -87,10 +88,12 @@ namespace MatterHackers.MatterSlice
 			{
 				processor.DoProcessing();
 			}
+
 			if (!Canceled)
 			{
 				processor.finalize();
 			}
+
 			if (Canceled)
 			{
 				processor.Cancel();
@@ -127,6 +130,7 @@ namespace MatterHackers.MatterSlice
 									LogOutput.LogError("Failed to open {0} for output.\n".FormatWith(args[argn]));
 									return 1;
 								}
+
 								break;
 
 							case 'c':
@@ -144,9 +148,11 @@ namespace MatterHackers.MatterSlice
 									{
 										commands.Add(command);
 									}
+
 									string[] subArgs = commands.ToArray();
 									ProcessArgs(subArgs, config, processor);
 								}
+
 								break;
 
 							case 'd':
@@ -170,6 +176,7 @@ namespace MatterHackers.MatterSlice
 										}
 									}
 								}
+
 								break;
 
 							case 'm':
@@ -188,13 +195,14 @@ namespace MatterHackers.MatterSlice
 										}
 									}
 								}
+
 								config.ModelMatrix = loadedMatrix;
 								break;
 
 							default:
 								throw new NotImplementedException("Unknown option: {0}\n".FormatWith(str));
-								//LogOutput.logError("Unknown option: {0}\n".FormatWith(str));
-								//break;
+								// LogOutput.logError("Unknown option: {0}\n".FormatWith(str));
+								// break;
 						}
 					}
 				}

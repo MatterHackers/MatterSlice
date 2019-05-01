@@ -70,11 +70,13 @@ namespace MatterHackers.MatterSlice
 				{
 					return;
 				}
+
 				OptimizedFace optimizedFace = new OptimizedFace();
 				if ((faceIndex % 1000 == 0) && t.Elapsed.TotalSeconds > 2)
 				{
 					LogOutput.logProgress("optimized", faceIndex + 1, simpleMesh.faceTriangles.Count);
 				}
+
 				for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
 				{
 					IntPoint p = simpleMesh.faceTriangles[faceIndex].vertices[vertexIndex];
@@ -93,21 +95,25 @@ namespace MatterHackers.MatterSlice
 							}
 						}
 					}
+
 					if (add)
 					{
 						if (!indexMap.ContainsKey(hash))
 						{
 							indexMap.Add(hash, new List<int>());
 						}
+
 						indexMap[hash].Add(vertices.Count);
 						idx = vertices.Count;
 						vertices.Add(new OptimizedPoint3(p));
 					}
+
 					optimizedFace.vertexIndex[vertexIndex] = idx;
 				}
+
 				if (optimizedFace.vertexIndex[0] != optimizedFace.vertexIndex[1] && optimizedFace.vertexIndex[0] != optimizedFace.vertexIndex[2] && optimizedFace.vertexIndex[1] != optimizedFace.vertexIndex[2])
 				{
-					//Check if there is a face with the same points
+					// Check if there is a face with the same points
 					bool duplicate = false;
 					for (int _idx0 = 0; _idx0 < vertices[optimizedFace.vertexIndex[0]].usedByFacesList.Count; _idx0++)
 					{
@@ -116,10 +122,13 @@ namespace MatterHackers.MatterSlice
 							for (int _idx2 = 0; _idx2 < vertices[optimizedFace.vertexIndex[2]].usedByFacesList.Count; _idx2++)
 							{
 								if (vertices[optimizedFace.vertexIndex[0]].usedByFacesList[_idx0] == vertices[optimizedFace.vertexIndex[1]].usedByFacesList[_idx1] && vertices[optimizedFace.vertexIndex[0]].usedByFacesList[_idx0] == vertices[optimizedFace.vertexIndex[2]].usedByFacesList[_idx2])
+								{
 									duplicate = true;
+								}
 							}
 						}
 					}
+
 					if (!duplicate)
 					{
 						vertices[optimizedFace.vertexIndex[0]].usedByFacesList.Add(facesTriangle.Count);
@@ -129,7 +138,8 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 			}
-			//fprintf(stdout, "\rAll faces are optimized in %5.1fs.\n",timeElapsed(t));
+
+			// fprintf(stdout, "\rAll faces are optimized in %5.1fs.\n",timeElapsed(t));
 
 			int openFacesCount = 0;
 			for (int faceIndex = 0; faceIndex < facesTriangle.Count; faceIndex++)
@@ -142,16 +152,19 @@ namespace MatterHackers.MatterSlice
 				{
 					openFacesCount++;
 				}
+
 				if (optimizedFace.touchingFaces[1] == -1)
 				{
 					openFacesCount++;
 				}
+
 				if (optimizedFace.touchingFaces[2] == -1)
 				{
 					openFacesCount++;
 				}
 			}
-			//fprintf(stdout, "  Number of open faces: %i\n", openFacesCount);
+
+			// fprintf(stdout, "  Number of open faces: %i\n", openFacesCount);
 		}
 
 		public int getOtherFaceIndexContainingVertices(int vertex1Index, int vertex2Index, int faceWeKnow)

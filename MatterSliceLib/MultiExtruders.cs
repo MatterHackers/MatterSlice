@@ -19,19 +19,18 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using MSClipperLib;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice
 {
-	using System;
-	using System.Linq;
-	using Polygons = List<List<IntPoint>>;
-
 	public static class MultiExtruders
 	{
-		//Expand each layer a bit and then keep the extra overlapping parts that overlap with other extruders.
-		//This generates some overlap in dual extrusion, for better bonding in touching parts.
+		// Expand each layer a bit and then keep the extra overlapping parts that overlap with other extruders.
+		// This generates some overlap in dual extrusion, for better bonding in touching parts.
 		public static void OverlapMultipleExtrudersSlightly(List<ExtruderLayers> extruders, int overlapUm)
 		{
 			if (extruders.Count < 2 || overlapUm <= 0)
@@ -47,6 +46,7 @@ namespace MatterHackers.MatterSlice
 					SliceLayer layer1 = extruders[extruderIndex].Layers[layerIndex];
 					fullLayer = fullLayer.CreateUnion(layer1.AllOutlines.Offset(20));
 				}
+
 				fullLayer = fullLayer.Offset(-20);
 
 				for (int extruderIndex = 0; extruderIndex < extruders.Count; extruderIndex++)
@@ -64,7 +64,7 @@ namespace MatterHackers.MatterSlice
 
 		public static void RemoveExtruderIntersections(List<ExtruderLayers> extruders)
 		{
-			//Go trough all the extruders, and remove the previous extruders outlines from our own outline, so we never have overlapped areas.
+			// Go trough all the extruders, and remove the previous extruders outlines from our own outline, so we never have overlapped areas.
 			for (int extruderIndex = extruders.Count - 1; extruderIndex >= 0; extruderIndex--)
 			{
 				for (int otherExtruderIndex = extruderIndex - 1; otherExtruderIndex >= 0; otherExtruderIndex--)
@@ -187,7 +187,9 @@ namespace MatterHackers.MatterSlice
 			Union,
 			Difference,
 			Intersection
-		};
+		}
+
+;
 
 
 		private static void DoLayerBooleans(SliceLayer layersA, SliceLayer layersB, BooleanType booleanType)
@@ -208,6 +210,7 @@ namespace MatterHackers.MatterSlice
 					{
 						layersA.AllOutlines = layersA.AllOutlines.CreateUnion(layersB.AllOutlines);
 					}
+
 					break;
 
 				case BooleanType.Difference:

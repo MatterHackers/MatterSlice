@@ -20,19 +20,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 using System.Collections.Generic;
+using System.IO;
 using MSClipperLib;
+using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice
 {
-	using System.IO;
-	using Polygon = List<IntPoint>;
-
-	using Polygons = List<List<IntPoint>>;
-
 	public class ClosePolygonResult
 	{
-		//The result of trying to find a point on a closed polygon line. This gives back the point index, the polygon index, and the point of the connection.
-		//The line on which the point lays is between pointIdx-1 and pointIdx
+		// The result of trying to find a point on a closed polygon line. This gives back the point index, the polygon index, and the point of the connection.
+		// The line on which the point lays is between pointIdx-1 and pointIdx
 		public IntPoint intersectionPoint;
 
 		public int pointIdx;
@@ -90,6 +88,7 @@ namespace MatterHackers.MatterSlice
 						int yIndex = elementY.IndexOf("y:");
 						outPoints.Add(new IntPoint(int.Parse(elementX.Substring(xIndex + 2)), int.Parse(elementY.Substring(yIndex + 2))));
 					}
+
 					output.Add(new SlicePerimeterSegment(outPoints[0], outPoints[1]));
 				}
 			}
@@ -105,6 +104,7 @@ namespace MatterHackers.MatterSlice
 				total += point.start.ToString() + "&";
 				total += point.end.ToString() + "|";
 			}
+
 			return total;
 		}
 
@@ -117,17 +117,18 @@ namespace MatterHackers.MatterSlice
 				if (openPolygon.Count > 0)
 				{
 					// move to the start without extruding (so it is a move)
-					stream.Write("G1 X{0}Y{1}\n", (double)(openPolygon[0].X) / scale,
-						(double)(openPolygon[0].Y) / scale);
+					stream.Write("G1 X{0}Y{1}\n", (double)openPolygon[0].X / scale,
+						(double)openPolygon[0].Y / scale);
 					for (int intPointIndex = 1; intPointIndex < openPolygon.Count; intPointIndex++)
 					{
 						// do all the points with extruding
-						stream.Write("G1 X{0}Y{1}E{2}\n", (double)(openPolygon[intPointIndex].X) / scale,
-							(double)(openPolygon[intPointIndex].Y) / scale, extrudeAmount++);
+						stream.Write("G1 X{0}Y{1}E{2}\n", (double)openPolygon[intPointIndex].X / scale,
+							(double)openPolygon[intPointIndex].Y / scale, extrudeAmount++);
 					}
+
 					// go back to the start extruding
-					stream.Write("G1 X{0}Y{1}E{2}\n", (double)(openPolygon[0].X) / scale,
-						(double)(openPolygon[0].Y) / scale, extrudeAmount++);
+					stream.Write("G1 X{0}Y{1}E{2}\n", (double)openPolygon[0].X / scale,
+						(double)openPolygon[0].Y / scale, extrudeAmount++);
 				}
 			}
 		}
@@ -173,6 +174,7 @@ namespace MatterHackers.MatterSlice
 						{
 							canClose = true;
 						}
+
 						break;
 					}
 					else
@@ -211,16 +213,16 @@ namespace MatterHackers.MatterSlice
 				{
 					bool allSame = true;
 					var first = openPolygonList[i][0];
-					for(int j=1; j< openPolygonList[i].Count; j++)
+					for (int j = 1; j < openPolygonList[i].Count; j++)
 					{
-						if(openPolygonList[i][j] != first)
+						if (openPolygonList[i][j] != first)
 						{
 							allSame = false;
 							break;
 						}
 					}
 
-					if(allSame)
+					if (allSame)
 					{
 						openPolygonList.RemoveAt(i);
 					}
@@ -232,6 +234,7 @@ namespace MatterHackers.MatterSlice
 			{
 				startSorter.Add(i, openPolygonList[i][0]);
 			}
+
 			startSorter.Sort();
 
 			SortedIntPoint endSorter = new SortedIntPoint();
@@ -239,6 +242,7 @@ namespace MatterHackers.MatterSlice
 			{
 				endSorter.Add(i, openPolygonList[i][openPolygonList[i].Count - 1]);
 			}
+
 			endSorter.Sort();
 
 			// Link up all the missing ends, closing up the smallest gaps first. This is an inefficient implementation which can run in O(n*n*n) time.
@@ -320,6 +324,7 @@ namespace MatterHackers.MatterSlice
 							{
 								openPolygonList[bestA].Add(openPolygonList[bestB][indexB]);
 							}
+
 							openPolygonList[bestB].Clear();
 							endSorter.Remove(bestB);
 							startSorter.Remove(bestB);
@@ -330,6 +335,7 @@ namespace MatterHackers.MatterSlice
 							{
 								openPolygonList[bestB].Add(openPolygonList[bestA][indexA]);
 							}
+
 							openPolygonList[bestA].Clear();
 							endSorter.Remove(bestA);
 							startSorter.Remove(bestA);
@@ -345,7 +351,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			//Remove all the tiny polygons, or polygons that are not closed. As they do not contribute to the actual print.
+			// Remove all the tiny polygons, or polygons that are not closed. As they do not contribute to the actual print.
 			int minimumPerimeter = 1000;
 			for (int polygonIndex = 0; polygonIndex < PolygonList.Count; polygonIndex++)
 			{
@@ -359,6 +365,7 @@ namespace MatterHackers.MatterSlice
 						break;
 					}
 				}
+
 				if (perimeterLength < minimumPerimeter)
 				{
 					PolygonList.RemoveAt(polygonIndex);
@@ -366,7 +373,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			//Finally optimize all the polygons. Every point removed saves time in the long run.
+			// Finally optimize all the polygons. Every point removed saves time in the long run.
 			double minimumDistanceToCreateNewPosition = 10;
 			PolygonList = Clipper.CleanPolygons(PolygonList, minimumDistanceToCreateNewPosition);
 		}
@@ -403,6 +410,7 @@ namespace MatterHackers.MatterSlice
 				ret.len = -1;
 				return ret;
 			}
+
 			ret.polygonIndex = c1.polygonIdx;
 			ret.pointIndexA = c1.pointIdx;
 			ret.pointIndexB = c2.pointIdx;
@@ -410,12 +418,12 @@ namespace MatterHackers.MatterSlice
 
 			if (ret.pointIndexA == ret.pointIndexB)
 			{
-				//Connection points are on the same line segment.
+				// Connection points are on the same line segment.
 				ret.len = (ip0 - ip1).Length();
 			}
 			else
 			{
-				//Find out if we have should go from A to B or the other way around.
+				// Find out if we have should go from A to B or the other way around.
 				IntPoint p0 = PolygonList[ret.polygonIndex][ret.pointIndexA];
 				long lenA = (p0 - ip0).Length();
 				for (int i = ret.pointIndexA; i != ret.pointIndexB; i = (i + 1) % PolygonList[ret.polygonIndex].Count)
@@ -424,6 +432,7 @@ namespace MatterHackers.MatterSlice
 					lenA += (p0 - p1).Length();
 					p0 = p1;
 				}
+
 				lenA += (p0 - ip1).Length();
 
 				p0 = PolygonList[ret.polygonIndex][ret.pointIndexB];
@@ -434,6 +443,7 @@ namespace MatterHackers.MatterSlice
 					lenB += (p0 - p1).Length();
 					p0 = p1;
 				}
+
 				lenB += (p0 - ip0).Length();
 
 				if (lenA < lenB)
@@ -447,6 +457,7 @@ namespace MatterHackers.MatterSlice
 					ret.len = lenB;
 				}
 			}
+
 			return ret;
 		}
 
@@ -460,12 +471,12 @@ namespace MatterHackers.MatterSlice
 				{
 					IntPoint p1 = PolygonList[n][i];
 
-					//Q = A + Normal( B - A ) * ((( B - A ) dot ( P - A )) / VSize( A - B ));
+					// Q = A + Normal( B - A ) * ((( B - A ) dot ( P - A )) / VSize( A - B ));
 					IntPoint pDiff = p1 - p0;
-					long lineLength = (pDiff).Length();
+					long lineLength = pDiff.Length();
 					if (lineLength > 1)
 					{
-						long distOnLine = (pDiff).Dot(input - p0) / lineLength;
+						long distOnLine = pDiff.Dot(input - p0) / lineLength;
 						if (distOnLine >= 0 && distOnLine <= lineLength)
 						{
 							IntPoint q = p0 + pDiff * distOnLine / lineLength;
@@ -478,9 +489,11 @@ namespace MatterHackers.MatterSlice
 							}
 						}
 					}
+
 					p0 = p1;
 				}
 			}
+
 			ret.polygonIdx = -1;
 			return ret;
 		}
