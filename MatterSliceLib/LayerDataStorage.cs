@@ -226,7 +226,7 @@ namespace MatterHackers.MatterSlice
 
 				// set the path planner to avoid islands
 				layerGcodePlanner.PathFinder = pathFinder;
-				if (this.NeedToPrintWipeTower(layerIndex, config))
+				if (this.HaveWipeTower(config, layerIndex))
 				{
 					layerGcodePlanner.QueueTravel(WipeCenter_um);
 				}
@@ -362,10 +362,11 @@ namespace MatterHackers.MatterSlice
 			outputfillPolygons.Reverse();
 		}
 
-		public bool HaveWipeTower(ConfigSettings config)
+		public bool HaveWipeTower(ConfigSettings config, int layerIndex)
 		{
-			if (config.WipeTowerSize_um == 0
-				 || LastLayerWithChange(config) == -1)
+			if (WipeTower == null
+				|| WipeTower.Count == 0
+				|| layerIndex > LastLayerWithChange(config) + 1)
 			{
 				return false;
 			}
@@ -375,8 +376,7 @@ namespace MatterHackers.MatterSlice
 
 		public bool PrimeOnWipeTower(int layerIndex, LayerGCodePlanner layerGcodePlanner, PathFinder pathFinder, GCodePathConfig fillConfig, ConfigSettings config, bool airGapped)
 		{
-			if (!HaveWipeTower(config)
-				|| layerIndex > LastLayerWithChange(config) + 1
+			if (!HaveWipeTower(config, layerIndex)
 				|| layerIndex == 0)
 			{
 				return false;
@@ -641,16 +641,6 @@ namespace MatterHackers.MatterSlice
 
 			calculatedLastLayer = true;
 			return -1;
-		}
-
-		public bool NeedToPrintWipeTower(int layerIndex, ConfigSettings config)
-		{
-			if (HaveWipeTower(config))
-			{
-				return layerIndex <= LastLayerWithChange(config);
-			}
-
-			return false;
 		}
 	}
 }

@@ -676,7 +676,7 @@ namespace MatterHackers.MatterSlice
 				&& slicingData.Extruders[extruderIndex].Layers[layerIndex].Islands.Count > 0;
 
 			bool extruderUsedForWipeTower = extruderUsedForParts
-				&& slicingData.NeedToPrintWipeTower(layerIndex, config);
+				&& slicingData.HaveWipeTower(config, layerIndex);
 
 			if ((extruderUsedForSupport
 				|| extruderUsedForWipeTower
@@ -694,7 +694,7 @@ namespace MatterHackers.MatterSlice
 				}
 
 				if (extruderUsedForWipeTower
-					|| (slicingData.NeedToPrintWipeTower(layerIndex, config)
+					|| (slicingData.HaveWipeTower(config, layerIndex)
 						&& extruderUsedForSupport))
 				{
 					int prevExtruder = layerGcodePlanner.GetExtruder();
