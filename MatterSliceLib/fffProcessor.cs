@@ -251,7 +251,11 @@ namespace MatterHackers.MatterSlice
 				config.InfillPercent = 0;
 			}
 
+			LogOutput.Log("Processing support regions");
+
 			slicingData.Extruders = MultiExtruders.ProcessBooleans(slicingData.Extruders, config.BooleanOperations);
+
+			LogOutput.Log("Processed support regions in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 
 			MultiExtruders.RemoveExtruderIntersections(slicingData.Extruders);
 
