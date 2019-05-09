@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using MatterHackers.Pathfinding;
 using MSClipperLib;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
@@ -242,13 +243,44 @@ namespace MatterHackers.MatterSlice
 			}
 			else
 			{
-				// print all of the extruder loops that have not already been printed
-				int maxPrimingLoops = MaxPrimingLoops(config);
-
-				for (int primeLoop = primesThisLayer; primeLoop < maxPrimingLoops; primeLoop++)
+				if (primesThisLayer == 0)
 				{
-					// write the loops for this extruder, but don't change to it. We are just filling the prime tower.
-					PrimeOnWipeTower(layerIndex, layerGcodePlanner, pathFinder, fillConfig, config, false);
+					var outlinePolygons = new Polygons();
+
+					for (int i = 0; i < config.NumberOfPerimeters; i++)
+					{
+						var insets = this.WipeTower.Offset(i * -fillConfig.LineWidth_um);
+						foreach (var inset in insets)
+						{
+							outlinePolygons.Add(inset);
+							// Add the first point back onto the polygon
+							outlinePolygons.Last().Add(outlinePolygons.Last()[0]);
+						}
+					}
+
+					layerGcodePlanner.QueuePolygons(outlinePolygons, fillConfig);
+
+					// print sparse infill on the wipe tower
+					var fillPolygons = new Polygons();
+
+					Infill.GenerateTriangleInfill(
+						config,
+						this.WipeTower.Offset(config.NumberOfPerimeters * -fillConfig.LineWidth_um),
+						fillPolygons,
+						config.InfillStartingAngle);
+
+					layerGcodePlanner.QueuePolygonsByOptimizer(fillPolygons, null, fillConfig, layerIndex);
+				}
+				else
+				{
+					// print all of the extruder loops that have not already been printed
+					int maxPrimingLoops = MaxPrimingLoops(config);
+
+					for (int primeLoop = primesThisLayer; primeLoop < maxPrimingLoops; primeLoop++)
+					{
+						// write the loops for this extruder, but don't change to it. We are just filling the prime tower.
+						PrimeOnWipeTower(layerIndex, layerGcodePlanner, pathFinder, fillConfig, config, false);
+					}
 				}
 
 				// clear the history of printer extruders for the next layer
