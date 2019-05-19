@@ -585,7 +585,10 @@ namespace MatterHackers.MatterSlice
 					if (config.ContinuousSpiralOuterPerimeter)
 					{
 						SliceLayer layer0 = storage.Extruders[extrudeIndex].Layers[0];
-						allOutlines.AddAll(layer0.Islands[0]?.IslandOutline);
+						if (layer0.Islands.Count > 0)
+						{
+							allOutlines.AddAll(layer0.Islands[0]?.IslandOutline);
+						}
 					}
 					else
 					{
