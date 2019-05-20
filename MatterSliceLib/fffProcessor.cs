@@ -1171,7 +1171,7 @@ namespace MatterHackers.MatterSlice
 						for (int perimeter = 0; perimeter < config.NumberOfPerimeters; perimeter++)
 						{
 							Polygons thinLines = null;
-							if (island.IslandOutline.Offset(-extrusionWidth_um * (1 + perimeter)).FindThinLines(extrusionWidth_um + 2, extrusionWidth_um / 5, out thinLines, true))
+							if (island.IslandOutline.Offset(-extrusionWidth_um * (1 + perimeter)).FindThinLines(extrusionWidth_um + 2, extrusionWidth_um / 10, out thinLines, true))
 							{
 								thinGapPolygons.AddRange(thinLines);
 							}
