@@ -491,7 +491,6 @@ namespace MatterHackers.MatterSlice
 					supportInterfaceConfig.SetData(config.InterfaceLayerSpeed, config.ExtrusionWidth_um);
 				}
 
-				fillConfig.ClosedLoop = false;
 				if (layerIndex == 0)
 				{
 					gcodeExport.SetExtrusion(config.FirstLayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
@@ -501,7 +500,7 @@ namespace MatterHackers.MatterSlice
 					gcodeExport.SetExtrusion(config.LayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 				}
 
-				LayerGCodePlanner layerPlanner = new LayerGCodePlanner(config, gcodeExport, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+				var layerPlanner = new LayerGCodePlanner(config, gcodeExport, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 				if (layerIndex == 0
 					&& config.RetractionZHop > 0)
 				{
@@ -1223,6 +1222,19 @@ namespace MatterHackers.MatterSlice
 				// Put all of these segments into a list that can be queued together and still preserve their individual config settings.
 				// This makes the total amount of travel while printing infill much less.
 				fillPolygons.AddRange(thinGapPolygons);
+				if (topFillConfig.Speed == fillConfig.Speed)
+				{
+					fillPolygons.AddRange(topFillPolygons);
+					topFillPolygons.Clear();
+				}
+
+				if (bottomFillConfig.Speed == fillConfig.Speed
+					&& slicingData.Support == null)
+				{
+					fillPolygons.AddRange(bottomFillPolygons);
+					bottomFillPolygons.Clear();
+				}
+
 				layerGcodePlanner.QueuePolygonsByOptimizer(fillPolygons, island.PathFinder, fillConfig, layerIndex);
 
 				QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bottomFillPolygons, bottomFillConfig, SupportWriteType.UnsupportedAreas);
