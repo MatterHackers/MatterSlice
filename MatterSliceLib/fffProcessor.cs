@@ -67,7 +67,6 @@ namespace MatterHackers.MatterSlice
 		private GCodePathConfig inset0Config;
 		private GCodePathConfig insetXConfig;
 		private GCodePathConfig fillConfig;
-		private GCodePathConfig thinFillConfig;
 		private GCodePathConfig topFillConfig;
 		private GCodePathConfig firstTopFillConfig;
 		private GCodePathConfig bottomFillConfig;
@@ -492,9 +491,6 @@ namespace MatterHackers.MatterSlice
 					supportInterfaceConfig.SetData(config.InterfaceLayerSpeed, config.ExtrusionWidth_um);
 				}
 
-				thinFillConfig = fillConfig.Clone("thinFillConfig", "THIN-FILL");
-				thinFillConfig.ClosedLoop = false;
-
 				if (layerIndex == 0)
 				{
 					gcodeExport.SetExtrusion(config.FirstLayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
@@ -504,7 +500,7 @@ namespace MatterHackers.MatterSlice
 					gcodeExport.SetExtrusion(config.LayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
 				}
 
-				LayerGCodePlanner layerPlanner = new LayerGCodePlanner(config, gcodeExport, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+				var layerPlanner = new LayerGCodePlanner(config, gcodeExport, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
 				if (layerIndex == 0
 					&& config.RetractionZHop > 0)
 				{
@@ -953,7 +949,7 @@ namespace MatterHackers.MatterSlice
 				slicingData.WipeShield[layerIndex].Clear();
 			}
 
-			PathOrderOptimizer islandOrderOptimizer = new PathOrderOptimizer(default(IntPoint));
+			var islandOrderOptimizer = new PathOrderOptimizer(default(IntPoint));
 			for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
 			{
 				if (config.ContinuousSpiralOuterPerimeter && partIndex > 0)
@@ -973,7 +969,7 @@ namespace MatterHackers.MatterSlice
 
 			islandOrderOptimizer.Optimize(layer.PathFinder, layerIndex);
 
-			List<Polygons> bottomFillIslandPolygons = new List<Polygons>();
+			var bottomFillIslandPolygons = new List<Polygons>();
 
 			for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.bestIslandOrderIndex.Count; islandOrderIndex++)
 			{
@@ -1019,7 +1015,7 @@ namespace MatterHackers.MatterSlice
 
 					// Put all the insets into a new list so we can keep track of what has been printed.
 					// The island could be a rectangle with 4 screw holes. So, with 3 perimeters that could be the outside 3 + the holes 4 * 3, 15 polygons.
-					List<Polygons> insetsForThisIsland = new List<Polygons>(island.InsetToolPaths.Count);
+					var insetsForThisIsland = new List<Polygons>(island.InsetToolPaths.Count);
 
 					foreach (var insetToolPath in island.InsetToolPaths)
 					{
@@ -1223,10 +1219,23 @@ namespace MatterHackers.MatterSlice
 					layerGcodePlanner.QueueFanCommand(fanBeforeBridgePolygons, fillConfig);
 				}
 
-				// TODO: Put all of these segments into a list that can be queued together and still preserve their individual config settings.
-				// This will make the total amount of travel while printing infill much less.
+				// Put all of these segments into a list that can be queued together and still preserve their individual config settings.
+				// This makes the total amount of travel while printing infill much less.
+				fillPolygons.AddRange(thinGapPolygons);
+				if (topFillConfig.Speed == fillConfig.Speed)
+				{
+					fillPolygons.AddRange(topFillPolygons);
+					topFillPolygons.Clear();
+				}
+
+				if (bottomFillConfig.Speed == fillConfig.Speed
+					&& slicingData.Support == null)
+				{
+					fillPolygons.AddRange(bottomFillPolygons);
+					bottomFillPolygons.Clear();
+				}
+
 				layerGcodePlanner.QueuePolygonsByOptimizer(fillPolygons, island.PathFinder, fillConfig, layerIndex);
-				layerGcodePlanner.QueuePolygonsByOptimizer(thinGapPolygons, island.PathFinder, thinFillConfig, layerIndex);
 
 				QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bottomFillPolygons, bottomFillConfig, SupportWriteType.UnsupportedAreas);
 				if (firstTopFillPolygons.Count > 0)
@@ -1489,7 +1498,6 @@ namespace MatterHackers.MatterSlice
 		private bool QueuePolygonsConsideringSupport(int layerIndex, LayerGCodePlanner gcodeLayer, Polygons polygonsToWrite, GCodePathConfig fillConfig, SupportWriteType supportWriteType)
 		{
 			bool polygonsWereOutput = false;
-			bool oldLoopValue = fillConfig.ClosedLoop;
 
 			if (slicingData.Support != null
 				&& layerIndex > 0
@@ -1506,7 +1514,6 @@ namespace MatterHackers.MatterSlice
 						Polygons polysToWriteAtAirGapHeight = new Polygons();
 
 						GetSegmentsConsideringSupport(polygonsToWrite, supportOutlines, polysToWriteAtNormalHeight, polysToWriteAtAirGapHeight, false, fillConfig.ClosedLoop);
-						fillConfig.ClosedLoop = false;
 						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtNormalHeight, null, fillConfig, layerIndex);
 					}
 					else
@@ -1521,7 +1528,6 @@ namespace MatterHackers.MatterSlice
 					Polygons polysToWriteAtAirGapHeight = new Polygons();
 
 					GetSegmentsConsideringSupport(polygonsToWrite, supportOutlines, polysToWriteAtNormalHeight, polysToWriteAtAirGapHeight, true, fillConfig.ClosedLoop);
-					fillConfig.ClosedLoop = false;
 
 					if (supportWriteType == SupportWriteType.SupportedAreasCheckOnly)
 					{
@@ -1537,8 +1543,6 @@ namespace MatterHackers.MatterSlice
 			{
 				polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, null, fillConfig, layerIndex);
 			}
-
-			fillConfig.ClosedLoop = oldLoopValue;
 
 			return polygonsWereOutput;
 		}
