@@ -430,12 +430,12 @@ namespace MatterHackers.MatterSlice
 			skirtConfig = new GCodePathConfig("skirtConfig", "SKIRT");
 			inset0Config = new GCodePathConfig("inset0Config", "WALL-OUTER") { DoSeamHiding = true };
 			insetXConfig = new GCodePathConfig("insetXConfig", "WALL-INNER");
-			fillConfig = new GCodePathConfig("fillConfig", "FILL", closedLoop: false);
-			topFillConfig = new GCodePathConfig("topFillConfig", "TOP-FILL", closedLoop: false);
-			firstTopFillConfig = new GCodePathConfig("firstTopFillConfig", "FIRST-TOP-Fill", closedLoop: false);
-			bottomFillConfig = new GCodePathConfig("bottomFillConfig", "BOTTOM-FILL", closedLoop: false);
+			fillConfig = new GCodePathConfig("fillConfig", "FILL") { ClosedLoop = false };
+			topFillConfig = new GCodePathConfig("topFillConfig", "TOP-FILL") { ClosedLoop = false };
+			firstTopFillConfig = new GCodePathConfig("firstTopFillConfig", "FIRST-TOP-Fill") { ClosedLoop = false };
+			bottomFillConfig = new GCodePathConfig("bottomFillConfig", "BOTTOM-FILL") { ClosedLoop = false };
 			airGappedBottomInsetConfig = new GCodePathConfig("airGappedBottomInsetConfig", "AIR-GAP-INSET");
-			airGappedBottomConfig = new GCodePathConfig("airGappedBottomConfig", "AIR-GAP", closedLoop: false);
+			airGappedBottomConfig = new GCodePathConfig("airGappedBottomConfig", "AIR-GAP") { ClosedLoop = false };
 			bridgeConfig = new GCodePathConfig("bridgeConfig", "BRIDGE");
 			supportNormalConfig = new GCodePathConfig("supportNormalConfig", "SUPPORT");
 			supportInterfaceConfig = new GCodePathConfig("supportInterfaceConfig", "SUPPORT-INTERFACE");
