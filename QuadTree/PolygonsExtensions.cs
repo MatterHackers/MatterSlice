@@ -212,8 +212,8 @@ namespace MatterHackers.QuadTree
 				currentPolygon.Add(polySegments[polySegments.Count - 1].End);
 			}
 
-			//long cleanDistance = overlapMergeAmount / 40;
-			//Clipper.CleanPolygons(onlyMergeLines, cleanDistance);
+			long cleanDistance = overlapMergeAmount / 40;
+			Clipper.CleanPolygons(onlyMergeLines, cleanDistance);
 
 			return pathHasMergeLines;
 		}
