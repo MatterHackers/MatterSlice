@@ -51,7 +51,7 @@ namespace MatterHackers.MatterSlice
 	}
 
 	// Fused Filament Fabrication processor.
-	public class fffProcessor
+	public class FffProcessor
 	{
 		private long maxObjectHeight;
 		private int fileNumber;
@@ -76,7 +76,7 @@ namespace MatterHackers.MatterSlice
 		private GCodePathConfig supportNormalConfig;
 		private GCodePathConfig supportInterfaceConfig;
 
-		public fffProcessor(ConfigSettings config)
+		public FffProcessor(ConfigSettings config)
 		{
 			// make sure we are not canceled when starting a new Processor
 			MatterSlice.Canceled = false;
@@ -177,7 +177,7 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public void finalize()
+		public void Finalize()
 		{
 			if (!gcodeExport.IsOpened())
 			{

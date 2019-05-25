@@ -113,7 +113,7 @@ namespace MatterHackers.QuadTree
 		/// <returns></returns>
 		public static bool FindThinLines(this Polygons polygons, long overlapMergeAmount, long minimumRequiredWidth, out Polygons onlyMergeLines, bool pathIsClosed = true)
 		{
-			polygons = Clipper.CleanPolygons(polygons, overlapMergeAmount/8);
+			polygons = Clipper.CleanPolygons(polygons, overlapMergeAmount / 8);
 			bool pathHasMergeLines = false;
 
 			polygons = MakeCloseSegmentsMergable(polygons, overlapMergeAmount, pathIsClosed);
@@ -191,6 +191,7 @@ namespace MatterHackers.QuadTree
 			{
 				// add the start point
 				currentPolygon.Add(polySegments[segmentIndex].Start);
+
 
 				// if the next segment is not connected to this one
 				if (segmentIndex < polySegments.Count - 1

@@ -54,12 +54,12 @@ namespace MatterHackers.MatterSlice.Tests
 			config.InfillPercent = 0;
 			config.NumberOfTopLayers = 0;
 			config.NumberOfBottomLayers = 0;
-			fffProcessor processor = new fffProcessor(config);
+			FffProcessor processor = new FffProcessor(config);
 			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);
 			// slice and save it
 			processor.DoProcessing();
-			processor.finalize();
+			processor.Finalize();
 
 			string[] gcode = TestUtilities.LoadGCodeFile(boxGCodeFile);
 
@@ -200,12 +200,12 @@ namespace MatterHackers.MatterSlice.Tests
 			config.InfillPercent = 0;
 			config.NumberOfTopLayers = 0;
 			config.NumberOfBottomLayers = 0;
-			fffProcessor processor = new fffProcessor(config);
+			FffProcessor processor = new FffProcessor(config);
 			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);
 			// slice and save it
 			processor.DoProcessing();
-			processor.finalize();
+			processor.Finalize();
 
 			string[] gcode = TestUtilities.LoadGCodeFile(boxGCodeFile);
 
@@ -246,12 +246,12 @@ namespace MatterHackers.MatterSlice.Tests
 			config.NumberOfTopLayers = 0;
 			config.FirstLayerExtrusionWidth = .4;
 			config.NumberOfBottomLayers = 0;
-			fffProcessor processor = new fffProcessor(config);
+			FffProcessor processor = new FffProcessor(config);
 			processor.SetTargetFile(thinAttachGCodeFile);
 			processor.LoadStlFile(thinAttachStlFile);
 			// slice and save it
 			processor.DoProcessing();
-			processor.finalize();
+			processor.Finalize();
 
 			string[] gcode = TestUtilities.LoadGCodeFile(thinAttachGCodeFile);
 
@@ -321,12 +321,12 @@ namespace MatterHackers.MatterSlice.Tests
 			// this is what we detect
 			config.RetractionZHop = 5;
 
-			fffProcessor processor = new fffProcessor(config);
+			FffProcessor processor = new FffProcessor(config);
 			processor.SetTargetFile(gcodeToCreate);
 			processor.LoadStlFile(stlToLoad);
 			// slice and save it
 			processor.DoProcessing();
-			processor.finalize();
+			processor.Finalize();
 
 			string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
 			int layerCount = TestUtilities.CountLayers(gcodeContents);
@@ -390,12 +390,12 @@ namespace MatterHackers.MatterSlice.Tests
 				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_0_.gcode");
 
 				ConfigSettings config = new ConfigSettings();
-				fffProcessor processor = new fffProcessor(config);
+				FffProcessor processor = new FffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
 				// slice and save it
 				processor.DoProcessing();
-				processor.finalize();
+				processor.Finalize();
 
 				string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
 				Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 1));
@@ -411,13 +411,13 @@ namespace MatterHackers.MatterSlice.Tests
 				config.SupportExtruder = 1; // from a 0 based index
 				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
-				fffProcessor processor = new fffProcessor(config);
+				FffProcessor processor = new FffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
 				processor.LoadStlFile(supportToLoad);
 				// slice and save it
 				processor.DoProcessing();
-				processor.finalize();
+				processor.Finalize();
 
 				string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
 				Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 1));
@@ -433,7 +433,7 @@ namespace MatterHackers.MatterSlice.Tests
 				config.ExtruderCount = 2;
 				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
-				fffProcessor processor = new fffProcessor(config);
+				FffProcessor processor = new FffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
 				// we have to have a mesh for every extruder
@@ -441,7 +441,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(supportToLoad);
 				// slice and save it
 				processor.DoProcessing();
-				processor.finalize();
+				processor.Finalize();
 
 				string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
 				Assert.IsTrue(TestUtilities.UsesExtruder(gcodeContents, 1));
@@ -457,13 +457,13 @@ namespace MatterHackers.MatterSlice.Tests
 				config.SupportInterfaceExtruder = 1;
 				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
-				fffProcessor processor = new fffProcessor(config);
+				FffProcessor processor = new FffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
 				processor.LoadStlFile(supportToLoad);
 				// slice and save it
 				processor.DoProcessing();
-				processor.finalize();
+				processor.Finalize();
 
 				string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
 				Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 1));
@@ -479,7 +479,7 @@ namespace MatterHackers.MatterSlice.Tests
 				config.SupportInterfaceExtruder = 1;
 				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
-				fffProcessor processor = new fffProcessor(config);
+				FffProcessor processor = new FffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
 				// we have to have a mesh for every extruder
@@ -487,7 +487,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(supportToLoad);
 				// slice and save it
 				processor.DoProcessing();
-				processor.finalize();
+				processor.Finalize();
 
 				string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
 				Assert.IsTrue(TestUtilities.UsesExtruder(gcodeContents, 0));
@@ -505,13 +505,13 @@ namespace MatterHackers.MatterSlice.Tests
 				config.SupportInterfaceExtruder = 2;
 				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
-				fffProcessor processor = new fffProcessor(config);
+				FffProcessor processor = new FffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
 				processor.LoadStlFile(supportToLoad);
 				// slice and save it
 				processor.DoProcessing();
-				processor.finalize();
+				processor.Finalize();
 
 				string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
 				Assert.IsFalse(TestUtilities.UsesExtruder(gcodeContents, 1));
@@ -528,7 +528,7 @@ namespace MatterHackers.MatterSlice.Tests
 				config.SupportInterfaceExtruder = 2;
 				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
-				fffProcessor processor = new fffProcessor(config);
+				FffProcessor processor = new FffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
 				// we have to have a mesh for every extruder
@@ -536,7 +536,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(supportToLoad);
 				// slice and save it
 				processor.DoProcessing();
-				processor.finalize();
+				processor.Finalize();
 
 				string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
 				Assert.IsTrue(TestUtilities.UsesExtruder(gcodeContents, 1));
@@ -553,7 +553,7 @@ namespace MatterHackers.MatterSlice.Tests
 				config.SupportInterfaceExtruder = 2;
 				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
-				fffProcessor processor = new fffProcessor(config);
+				FffProcessor processor = new FffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
 				// we have to have a mesh for every extruder
@@ -562,7 +562,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(supportToLoad);
 				// slice and save it
 				processor.DoProcessing();
-				processor.finalize();
+				processor.Finalize();
 
 				string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
 				Assert.IsTrue(TestUtilities.UsesExtruder(gcodeContents, 1));
@@ -592,12 +592,12 @@ namespace MatterHackers.MatterSlice.Tests
 			config.LayerThickness = .2;
 			config.NumberOfBottomLayers = 0;
 			config.NumberOfTopLayers = 0;
-			fffProcessor processor = new fffProcessor(config);
+			FffProcessor processor = new FffProcessor(config);
 			processor.SetTargetFile(gCodeFile);
 			processor.LoadStlFile(stlFile);
 			// slice and save it
 			processor.DoProcessing();
-			processor.finalize();
+			processor.Finalize();
 
 			string[] gcodeLines = TestUtilities.LoadGCodeFile(gCodeFile);
 
@@ -670,13 +670,13 @@ namespace MatterHackers.MatterSlice.Tests
 				config.WipeTowerSize = 0;
 			}
 
-			var processor = new fffProcessor(config);
+			var processor = new FffProcessor(config);
 			processor.SetTargetFile(outputGCodeFileName);
 			processor.LoadStlFile(leftStlFile);
 			processor.LoadStlFile(rightStlFile);
 			// slice and save it
 			processor.DoProcessing();
-			processor.finalize();
+			processor.Finalize();
 
 			string[] gCodeContent = TestUtilities.LoadGCodeFile(outputGCodeFileName);
 
@@ -766,12 +766,12 @@ namespace MatterHackers.MatterSlice.Tests
 			ConfigSettings config = new ConfigSettings();
 			config.FirstLayerThickness = .2;
 			config.LayerThickness = .2;
-			fffProcessor processor = new fffProcessor(config);
+			FffProcessor processor = new FffProcessor(config);
 			processor.SetTargetFile(risingLayersGCodeFileName);
 			processor.LoadStlFile(risingLayersStlFile);
 			// slice and save it
 			processor.DoProcessing();
-			processor.finalize();
+			processor.Finalize();
 
 			string[] risingLayersGCodeContent = TestUtilities.LoadGCodeFile(risingLayersGCodeFileName);
 
@@ -824,12 +824,12 @@ namespace MatterHackers.MatterSlice.Tests
 				config.FillThinGaps = true;
 			}
 
-			var processor = new fffProcessor(config);
+			var processor = new FffProcessor(config);
 			processor.SetTargetFile(cylinderGCodeFileName);
 			processor.LoadStlFile(cylinderStlFile);
 			// slice and save it
 			processor.DoProcessing();
-			processor.finalize();
+			processor.Finalize();
 
 			string[] cylinderGCodeContent = TestUtilities.LoadGCodeFile(cylinderGCodeFileName);
 
@@ -889,12 +889,12 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 			config.NumberOfBottomLayers = 0;
 			config.ContinuousSpiralOuterPerimeter = true;
-			fffProcessor processor = new fffProcessor(config);
+			FffProcessor processor = new FffProcessor(config);
 			processor.SetTargetFile(cylinderGCodeFileName);
 			processor.LoadStlFile(cylinderStlFile);
 			// slice and save it
 			processor.DoProcessing();
-			processor.finalize();
+			processor.Finalize();
 
 			string[] cylinderGCodeContent = TestUtilities.LoadGCodeFile(cylinderGCodeFileName);
 
@@ -942,12 +942,12 @@ namespace MatterHackers.MatterSlice.Tests
 			ConfigSettings config = new ConfigSettings();
 			config.FirstLayerThickness = firstLayerHeight;
 			config.LayerThickness = otherLayerHeight;
-			fffProcessor processor = new fffProcessor(config);
+			FffProcessor processor = new FffProcessor(config);
 			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);
 			// slice and save it
 			processor.DoProcessing();
-			processor.finalize();
+			processor.Finalize();
 
 			return boxGCodeFile;
 		}
@@ -959,12 +959,12 @@ namespace MatterHackers.MatterSlice.Tests
 
 			ConfigSettings config = new ConfigSettings();
 			config.EnableRaft = hasRaft;
-			fffProcessor processor = new fffProcessor(config);
+			FffProcessor processor = new FffProcessor(config);
 			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);
 			// slice and save it
 			processor.DoProcessing();
-			processor.finalize();
+			processor.Finalize();
 
 			return boxGCodeFile;
 		}
@@ -976,12 +976,12 @@ namespace MatterHackers.MatterSlice.Tests
 
 			ConfigSettings config = new ConfigSettings();
 			config.EnableRaft = hasRaft;
-			fffProcessor processor = new fffProcessor(config);
+			FffProcessor processor = new FffProcessor(config);
 			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);
 			// slice and save it
 			processor.DoProcessing();
-			processor.finalize();
+			processor.Finalize();
 
 			return boxGCodeFile;
 		}
