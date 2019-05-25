@@ -49,12 +49,12 @@ namespace MatterHackers.MatterSlice.Tests
 				ConfigSettings config = new ConfigSettings();
 				// make sure no retractions are going to occur that are island crossing
 				config.MinimumTravelToCauseRetraction = 2000;
-				fffProcessor processor = new fffProcessor(config);
+				FffProcessor processor = new FffProcessor(config);
 				processor.SetTargetFile(gCodeWithIslands);
 				processor.LoadStlFile(meshWithIslands);
 				// slice and save it
 				processor.DoProcessing();
-				processor.finalize();
+				processor.Finalize();
 
 				string[] gcodeContents = TestUtilities.LoadGCodeFile(gCodeWithIslands);
 				int numLayers = TestUtilities.CountLayers(gcodeContents);
@@ -77,12 +77,12 @@ namespace MatterHackers.MatterSlice.Tests
 				// load a model that is correctly manifold
 				ConfigSettings config = new ConfigSettings();
 				config.ExpandThinWalls = true;
-				fffProcessor processor = new fffProcessor(config);
+				FffProcessor processor = new FffProcessor(config);
 				processor.SetTargetFile(thinWallsGCode);
 				processor.LoadStlFile(thinWallsSTL);
 				// slice and save it
 				processor.DoProcessing();
-				processor.finalize();
+				processor.Finalize();
 
 				string[] thinWallsGCodeContent = TestUtilities.LoadGCodeFile(thinWallsGCode);
 				int layerCount = TestUtilities.CountLayers(thinWallsGCodeContent);
@@ -285,23 +285,23 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				// load a model that is correctly manifold
 				ConfigSettings config = new ConfigSettings();
-				fffProcessor processor = new fffProcessor(config);
+				FffProcessor processor = new FffProcessor(config);
 				processor.SetTargetFile(manifoldGCode);
 				processor.LoadStlFile(manifoldFile);
 				// slice and save it
 				processor.DoProcessing();
-				processor.finalize();
+				processor.Finalize();
 			}
 
 			{
 				// load a model that has some faces pointing the wrong way
 				ConfigSettings config = new ConfigSettings();
-				fffProcessor processor = new fffProcessor(config);
+				FffProcessor processor = new FffProcessor(config);
 				processor.SetTargetFile(nonManifoldGCode);
 				processor.LoadStlFile(nonManifoldFile);
 				// slice and save it
 				processor.DoProcessing();
-				processor.finalize();
+				processor.Finalize();
 			}
 
 			// load both gcode files and check that they are the same

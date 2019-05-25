@@ -75,7 +75,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			ConfigSettings config = new ConfigSettings();
-			fffProcessor processor = new fffProcessor(config);
+			FffProcessor processor = new FffProcessor(config);
 
 			LogOutput.Log("\nMatterSlice version {0}\n\n".FormatWith(ConfigConstants.VERSION));
 
@@ -91,7 +91,7 @@ namespace MatterHackers.MatterSlice
 
 			if (!Canceled)
 			{
-				processor.finalize();
+				processor.Finalize();
 			}
 
 			if (Canceled)
@@ -104,7 +104,7 @@ namespace MatterHackers.MatterSlice
 			return 0;
 		}
 
-		public static int ProcessArgs(string[] args, ConfigSettings config, fffProcessor processor)
+		public static int ProcessArgs(string[] args, ConfigSettings config, FffProcessor processor)
 		{
 			for (int argn = 0; argn < args.Length; argn++)
 			{

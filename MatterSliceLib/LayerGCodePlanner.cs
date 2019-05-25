@@ -39,21 +39,21 @@ namespace MatterHackers.MatterSlice
 
 		private bool forceRetraction;
 
-		private GCodeExport gcodeExport;
+		private readonly GCodeExport gcodeExport;
 
 		private PathFinder lastValidPathFinder;
 		private PathFinder pathFinder;
-		private List<GCodePath> paths = new List<GCodePath>();
+		private readonly List<GCodePath> paths = new List<GCodePath>();
 
-		private double perimeterStartEndOverlapRatio;
+		private readonly double perimeterStartEndOverlapRatio;
 
-		private long retractionMinimumDistance_um;
+		private readonly long retractionMinimumDistance_um;
 
 		public double LayerTime { get; private set; } = 0;
 
-		private GCodePathConfig travelConfig;
+		private readonly GCodePathConfig travelConfig;
 
-		private ConfigSettings config;
+		private readonly ConfigSettings config;
 
 		public LayerGCodePlanner(ConfigSettings config, GCodeExport gcode, int travelSpeed, long retractionMinimumDistance_um, double perimeterStartEndOverlap = 0)
 		{
@@ -220,7 +220,6 @@ namespace MatterHackers.MatterSlice
 				{
 					IntPoint destination = polygon[(startIndex + positionIndex) % polygon.Count];
 					QueueExtrusionMove(destination, config);
-					currentPosition = destination;
 				}
 
 				// We need to actually close the polygon so go back to the first point
@@ -237,7 +236,6 @@ namespace MatterHackers.MatterSlice
 					{
 						IntPoint destination = polygon[positionIndex];
 						QueueExtrusionMove(destination, config);
-						currentPosition = destination;
 					}
 				}
 				else
@@ -246,7 +244,6 @@ namespace MatterHackers.MatterSlice
 					{
 						IntPoint destination = polygon[(startIndex + positionIndex) % polygon.Count];
 						QueueExtrusionMove(destination, config);
-						currentPosition = destination;
 					}
 				}
 			}
@@ -256,18 +253,18 @@ namespace MatterHackers.MatterSlice
 		/// Ensure the layer has the correct minimum fan speeds set
 		/// by applying speed corrections for minimum layer times.
 		/// </summary>
-		/// <param name="layerIndex"></param>
+		/// <param name="layerIndex">The layer to finalize the speed on.</param>
 		public void FinalizeLayerFanSpeeds(int layerIndex)
 		{
 			CorrectLayerTimeConsideringMinimumLayerTime();
-			int layerFanPercent = GetFanPercent(layerIndex, gcodeExport);
+			int layerFanPercent = GetFanPercent(layerIndex);
 			foreach (var fanSpeed in queuedFanSpeeds)
 			{
 				fanSpeed.FanPercent = Math.Max(fanSpeed.FanPercent, layerFanPercent);
 			}
 		}
 
-		private int GetFanPercent(int layerIndex, GCodeExport gcodeExport)
+		private int GetFanPercent(int layerIndex)
 		{
 			if (layerIndex < config.FirstLayerToAllowFan)
 			{
@@ -307,7 +304,7 @@ namespace MatterHackers.MatterSlice
 		// the minimum fan speed for the layer after all the paths for the layer have been added.
 		// We cannot calculate the minimum fan speed until the entire layer is queued and we then need to
 		// go back to every queued fan speed and adjust it
-		private List<GCodePath> queuedFanSpeeds = new List<GCodePath>();
+		private readonly List<GCodePath> queuedFanSpeeds = new List<GCodePath>();
 
 		public void QueueFanCommand(int fanSpeedPercent, GCodePathConfig config)
 		{
@@ -327,7 +324,7 @@ namespace MatterHackers.MatterSlice
 
 		public bool QueuePolygonByOptimizer(Polygon polygon, PathFinder pathFinder, GCodePathConfig config, int layerIndex)
 		{
-			PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(LastPosition);
+			var orderOptimizer = new PathOrderOptimizer(LastPosition);
 			orderOptimizer.AddPolygon(polygon);
 
 			orderOptimizer.Optimize(pathFinder, layerIndex, config);
@@ -348,7 +345,7 @@ namespace MatterHackers.MatterSlice
 				return false;
 			}
 
-			PathOrderOptimizer orderOptimizer = new PathOrderOptimizer(LastPosition);
+			var orderOptimizer = new PathOrderOptimizer(LastPosition);
 			orderOptimizer.AddPolygons(polygons);
 
 			orderOptimizer.Optimize(pathFinder, layerIndex, config);
@@ -377,7 +374,7 @@ namespace MatterHackers.MatterSlice
 
 			if (PathFinder != null)
 			{
-				Polygon pathPolygon = new Polygon();
+				var pathPolygon = new Polygon();
 				if (PathFinder.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pathPolygon, true, gcodeExport.LayerIndex))
 				{
 					IntPoint lastPathPosition = LastPosition;
@@ -624,14 +621,6 @@ namespace MatterHackers.MatterSlice
 			gcodeExport.UpdateLayerPrintTime();
 		}
 
-		private void ForceNewPathStart()
-		{
-			if (paths.Count > 0)
-			{
-				paths[paths.Count - 1].Done = true;
-			}
-		}
-
 		private GCodePath GetLatestPathWithConfig(GCodePathConfig config, bool forceUniquePath = false)
 		{
 			if (!forceUniquePath
@@ -659,39 +648,6 @@ namespace MatterHackers.MatterSlice
 			paths.Add(path);
 
 			return path;
-		}
-
-		private void ValidatePaths()
-		{
-			bool first = true;
-			var lastPosition = default(IntPoint);
-			for (int pathIndex = 0; pathIndex < paths.Count; pathIndex++)
-			{
-				var path = paths[pathIndex];
-				for (int polyIndex = 0; polyIndex < path.Polygon.Count; polyIndex++)
-				{
-					var position = path.Polygon[polyIndex];
-					if (first)
-					{
-						first = false;
-					}
-					else
-					{
-						if (pathIndex == paths.Count - 1
-							&& polyIndex == path.Polygon.Count - 1
-							&& lastValidPathFinder != null
-							&& !lastValidPathFinder.OutlineData.Polygons.PointIsInside((position + lastPosition) / 2))
-						{
-							// an easy way to get the path
-							string startEndString = $"start:({position.X}, {position.Y}), end:({lastPosition.X}, {lastPosition.Y})";
-							string outlineString = lastValidPathFinder.OutlineData.Polygons.WriteToString();
-							long length = (position - lastPosition).Length();
-						}
-					}
-
-					lastPosition = position;
-				}
-			}
 		}
 	}
 }

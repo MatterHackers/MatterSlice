@@ -356,12 +356,12 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				calledPathingCode = true;
 			};
-			fffProcessor processor = new fffProcessor(config);
+			FffProcessor processor = new FffProcessor(config);
 			processor.SetTargetFile(coinGCodeFile);
 			processor.LoadStlFile(coinStlFile);
 			// slice and save it
 			processor.DoProcessing();
-			processor.finalize();
+			processor.Finalize();
 
 			// with avoid off we should find a bad path
 			Assert.IsFalse(calledPathingCode);
@@ -387,12 +387,12 @@ namespace MatterHackers.MatterSlice.Tests
 					foundBadPath = true;
 				}
 			};
-			fffProcessor processor = new fffProcessor(config);
+			FffProcessor processor = new FffProcessor(config);
 			processor.SetTargetFile(coinGCodeFile);
 			processor.LoadStlFile(coinStlFile);
 			// slice and save it
 			processor.DoProcessing();
-			processor.finalize();
+			processor.Finalize();
 
 			// with avoid off we should find a bad path
 			Assert.IsFalse(foundBadPath);

@@ -26,7 +26,7 @@ namespace MatterHackers.MatterSlice
 	/// </summary>
 	public class GCodePathConfig
 	{
-		public GCodePathConfig(string configName, string gcodeComment, bool closedLoop = true)
+		public GCodePathConfig(string configName, string gcodeComment)
 		{
 			this.Name = configName;
 			this.GCodeComment = gcodeComment;
