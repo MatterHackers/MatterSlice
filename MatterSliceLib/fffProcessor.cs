@@ -540,7 +540,8 @@ namespace MatterHackers.MatterSlice
 				// hold the current layer path finder
 				PathFinder layerPathFinder = null;
 
-				var supportExturderIndex = config.SupportExtruder < config.ExtruderCount ? config.SupportExtruder : 0;
+				var supportExturderIndex2 = config.SupportExtruder < config.ExtruderCount ? config.SupportExtruder : 0;
+				var interfaceExturderIndex = config.SupportInterfaceExtruder < config.ExtruderCount ? config.SupportInterfaceExtruder : 0;
 
 				// Loop over extruders in preferred order
 				var activeThenOtherExtruders = slicingData.Extruders.CurrentThenOtherIndexes(activeExtruderIndex: layerPlanner.GetExtruder());
@@ -580,8 +581,8 @@ namespace MatterHackers.MatterSlice
 							movedToIsland = true;
 						}
 
-						if ((supportExturderIndex <= 0 && extruderIndex == 0)
-							|| supportExturderIndex == extruderIndex)
+						if ((supportExturderIndex2 <= 0 && extruderIndex == 0)
+							|| supportExturderIndex2 == extruderIndex)
 						{
 							if (slicingData.Support.QueueNormalSupportLayer(config, layerPlanner, layerIndex, supportNormalConfig))
 							{
@@ -590,10 +591,8 @@ namespace MatterHackers.MatterSlice
 							}
 						}
 
-						supportExturderIndex = config.SupportInterfaceExtruder < config.ExtruderCount ? config.SupportInterfaceExtruder : 0;
-
-						if ((supportExturderIndex <= 0 && extruderIndex == 0)
-							|| supportExturderIndex == extruderIndex)
+						if ((interfaceExturderIndex <= 0 && extruderIndex == 0)
+							|| interfaceExturderIndex == extruderIndex)
 						{
 							if (slicingData.Support.QueueInterfaceSupportLayer(config, layerPlanner, layerIndex, supportInterfaceConfig))
 							{
@@ -619,7 +618,7 @@ namespace MatterHackers.MatterSlice
 					{
 						QueueAirGappedExtruderLayerToGCode(slicingData, layerPathFinder, layerPlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
 						if (!extrudedAirGappedSupport
-							&& ((supportExturderIndex <= 0 && extruderIndex == 0) || supportExturderIndex == extruderIndex))
+							&& ((interfaceExturderIndex <= 0 && extruderIndex == 0) || interfaceExturderIndex == extruderIndex))
 						{
 							if (slicingData.Support.HaveAirGappedBottomLayer(layerIndex))
 							{

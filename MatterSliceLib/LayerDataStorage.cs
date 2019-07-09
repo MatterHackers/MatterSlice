@@ -243,7 +243,10 @@ namespace MatterHackers.MatterSlice
 			}
 			else
 			{
-				if (primesThisLayer == 0)
+				bool allowPartialInfill = false;
+				// check if there was a change, if not partial fill the wipe tower
+				if (primesThisLayer == 0
+					&& allowPartialInfill)
 				{
 					var outlinePolygons = new Polygons();
 
