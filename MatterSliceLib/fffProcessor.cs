@@ -130,7 +130,11 @@ namespace MatterHackers.MatterSlice
 				extraPathingConsideration.AddRange(polygons);
 			}
 
-			extraPathingConsideration.AddRange(slicingData.WipeTower);
+			foreach (var polygons in slicingData.WipeTower)
+			{
+				extraPathingConsideration.AddRange(polygons);
+			}
+
 			ExtruderLayers.InitializeLayerPathing(config, extraPathingConsideration, slicingData.Extruders);
 
 			if (MatterSlice.Canceled)
