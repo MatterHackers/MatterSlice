@@ -56,7 +56,7 @@ namespace MatterHackers.MatterSlice
 		{
 			if (WipeTower.Count == 0)
 			{
-				return null;
+				WipeTower.Add(new Polygons());
 			}
 
 			if (layerIndex < WipeTower.Count)
