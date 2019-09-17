@@ -50,7 +50,7 @@ namespace MatterHackers.MatterSlice
 
 		public IntPoint WipeCenter_um { get; private set; }
 
-		public List<Polygons> WipeTower = new List<Polygons>();
+		public List<Polygons> WipeTower { get; private set; } = new List<Polygons>();
 
 		public Polygons WipeLayer(int layerIndex)
 		{
@@ -172,6 +172,12 @@ namespace MatterHackers.MatterSlice
 
 				this.WipeTower.Add(new Polygons() { wipeTowerShape });
 			}
+
+			var wipeTowerBounds = this.WipeTower[0].GetBounds();
+
+			WipeCenter_um = new IntPoint(
+				wipeTowerBounds.minX + (wipeTowerBounds.maxX - wipeTowerBounds.minX) / 2,
+				wipeTowerBounds.minY + (wipeTowerBounds.maxY - wipeTowerBounds.minY) / 2);
 		}
 
 		public void DumpLayerparts(string filename)
@@ -431,6 +437,7 @@ namespace MatterHackers.MatterSlice
 		{
 			if (WipeTower == null
 				|| WipeTower.Count == 0
+				|| WipeTower[0].Count == 0
 				|| layerIndex > LastLayerWithChange(config) + 1)
 			{
 				return false;
