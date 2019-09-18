@@ -225,7 +225,7 @@ namespace MatterHackers.MatterSlice
 			if (config.RetractionOnExtruderSwitch != 0
 				&& extruderHaseBeenRetracted[extruderIndex])
 			{
-				extrusionAmount_mm = config.RetractionOnExtruderSwitch;
+				extrusionAmount_mm = config.RetractionOnExtruderSwitch + config.UnretractExtraOnExtruderSwitch;
 			}
 
 			gcodeFileStream.Write("T{0} ; switch extruder\n".FormatWith(extruderIndex));
