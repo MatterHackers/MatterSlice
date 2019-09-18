@@ -50,7 +50,22 @@ namespace MatterHackers.MatterSlice
 
 		public IntPoint WipeCenter_um { get; private set; }
 
-		public Polygons WipeTower = new Polygons();
+		public List<Polygons> WipeTower { get; private set; } = new List<Polygons>();
+
+		public Polygons WipeLayer(int layerIndex)
+		{
+			if (WipeTower.Count == 0)
+			{
+				WipeTower.Add(new Polygons());
+			}
+
+			if (layerIndex < WipeTower.Count)
+			{
+				return WipeTower[layerIndex];
+			}
+
+			return WipeTower[WipeTower.Count - 1];
+		}
 
 		private int primesThisLayer = 0;
 
@@ -121,7 +136,19 @@ namespace MatterHackers.MatterSlice
 				&& wipeTowerLayers.Layers.Count > 0
 				&& wipeTowerLayers.Layers[0].AllOutlines.Count > 0)
 			{
-				this.WipeTower = wipeTowerLayers.Layers[0].AllOutlines;
+				for (int i = 0; i < wipeTowerLayers.Layers.Count; i++)
+				{
+					var layer = wipeTowerLayers.Layers[i];
+
+					if (layer.AllOutlines.PolygonLength() > 0)
+					{
+						this.WipeTower.Add(layer.AllOutlines);
+					}
+					else
+					{
+						this.WipeTower.Add(this.WipeTower[i - 1]);
+					}
+				}
 			}
 			else if (config.WipeTowerSize_um < 1
 				|| LastLayerWithChange(config) == -1)
@@ -131,15 +158,22 @@ namespace MatterHackers.MatterSlice
 			else
 			{
 				var wipeTowerShape = new Polygon();
-				wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000));
-				wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000, this.modelMax.Y + 3000 + config.WipeTowerSize_um));
-				wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000 + config.WipeTowerSize_um));
-				wipeTowerShape.Add(new IntPoint(this.modelMin.X - 3000 - config.WipeTowerSize_um, this.modelMax.Y + 3000));
 
-				this.WipeTower.Add(wipeTowerShape);
+				var size = config.WipeTowerSize_um;
+				WipeCenter_um = new IntPoint(this.modelMin.X - 3000 - size / 2,
+					this.modelMax.Y + 3000 + size / 2);
+
+				var points = 100;
+				for (int i = 0; i < points; i++)
+				{
+					var angle = Math.PI * 2 * i / points;
+					wipeTowerShape.Add(WipeCenter_um + new IntPoint(Math.Cos(angle) * size / 2, Math.Sin(angle) * size / 2));
+				}
+
+				this.WipeTower.Add(new Polygons() { wipeTowerShape });
 			}
 
-			var wipeTowerBounds = this.WipeTower.GetBounds();
+			var wipeTowerBounds = this.WipeTower[0].GetBounds();
 
 			WipeCenter_um = new IntPoint(
 				wipeTowerBounds.minX + (wipeTowerBounds.maxX - wipeTowerBounds.minX) / 2,
@@ -212,7 +246,7 @@ namespace MatterHackers.MatterSlice
 				long insetPerLoop = fillConfig.LineWidth_um;
 				int maxPrimingLoops = MaxPrimingLoops(config);
 
-				Polygons outlineForExtruder = this.WipeTower;
+				Polygons outlineForExtruder = this.WipeLayer(layerIndex);
 
 				var fillPolygons = new Polygons();
 				while (outlineForExtruder.Count > 0)
@@ -252,7 +286,7 @@ namespace MatterHackers.MatterSlice
 
 					for (int i = 0; i < config.NumberOfPerimeters; i++)
 					{
-						var insets = this.WipeTower.Offset(i * -fillConfig.LineWidth_um);
+						var insets = this.WipeLayer(layerIndex).Offset(i * -fillConfig.LineWidth_um);
 						foreach (var inset in insets)
 						{
 							outlinePolygons.Add(inset);
@@ -268,7 +302,7 @@ namespace MatterHackers.MatterSlice
 
 					Infill.GenerateTriangleInfill(
 						config,
-						this.WipeTower.Offset(config.NumberOfPerimeters * -fillConfig.LineWidth_um),
+						this.WipeLayer(layerIndex).Offset(config.NumberOfPerimeters * -fillConfig.LineWidth_um),
 						fillPolygons,
 						config.InfillStartingAngle);
 
@@ -326,7 +360,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			storage.raftOutline = storage.raftOutline.CreateUnion(storage.WipeTower.Offset(extraDistanceAroundPart_um));
+			storage.raftOutline = storage.raftOutline.CreateUnion(storage.WipeLayer(0).Offset(extraDistanceAroundPart_um));
 
 			if (storage.WipeShield.Count > 0
 				&& storage.WipeShield[0].Count > 0)
@@ -403,6 +437,7 @@ namespace MatterHackers.MatterSlice
 		{
 			if (WipeTower == null
 				|| WipeTower.Count == 0
+				|| WipeTower[0].Count == 0
 				|| layerIndex > LastLayerWithChange(config) + 1)
 			{
 				return false;
@@ -427,7 +462,7 @@ namespace MatterHackers.MatterSlice
 
 			// If we changed extruder, print the wipe/prime tower for this nozzle;
 			var fillPolygons = new Polygons();
-			GenerateWipeTowerInfill(primesThisLayer, this.WipeTower, fillPolygons, fillConfig.LineWidth_um, config);
+			GenerateWipeTowerInfill(primesThisLayer, this.WipeLayer(layerIndex), fillPolygons, fillConfig.LineWidth_um, config);
 
 			if (fillPolygons.Count > 0)
 			{
@@ -562,7 +597,7 @@ namespace MatterHackers.MatterSlice
 
 		private static Polygons GetSkirtBounds(ConfigSettings config, LayerDataStorage storage, bool externalOnly, long distance_um, long extrusionWidth_um, int brimCount)
 		{
-			bool hasWipeTower = storage.WipeTower.PolygonLength() > 0;
+			bool hasWipeTower = storage.WipeLayer(0).PolygonLength() > 0;
 
 			var skirtPolygons = new Polygons();
 
@@ -572,7 +607,7 @@ namespace MatterHackers.MatterSlice
 			}
 			else
 			{
-				var allOutlines = hasWipeTower ? new Polygons(storage.WipeTower.Offset(-extrusionWidth_um / 2)) : new Polygons();
+				var allOutlines = hasWipeTower ? new Polygons(storage.WipeLayer(0).Offset(-extrusionWidth_um / 2)) : new Polygons();
 
 				if (storage.WipeShield.Count > 0
 					&& storage.WipeShield[0].Count > 0)
