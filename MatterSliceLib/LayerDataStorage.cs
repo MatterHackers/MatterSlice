@@ -239,7 +239,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// TODO: if layer index == 0 do all the loops from the outside-in, in order (no lines should be in the wipe tower)
-			if (layerIndex == 0)
+			if (layerIndex == 0 && !config.EnableRaft)
 			{
 				CheckNoExtruderPrimed(config);
 
@@ -449,7 +449,7 @@ namespace MatterHackers.MatterSlice
 		public bool PrimeOnWipeTower(int layerIndex, LayerGCodePlanner layerGcodePlanner, PathFinder pathFinder, GCodePathConfig fillConfig, ConfigSettings config, bool airGapped)
 		{
 			if (!HaveWipeTower(config, layerIndex)
-				|| layerIndex == 0)
+				|| (layerIndex == 0 && !config.EnableRaft))
 			{
 				return false;
 			}
