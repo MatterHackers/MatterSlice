@@ -287,7 +287,7 @@ namespace MatterHackers.MatterSlice
 			LayerPart.dumpLayerparts(slicingData, "output.html");
 #endif
 
-			if (supportOutlines != null
+			if ((config.GenerateSupport || supportOutlines != null)
 				&& !config.ContinuousSpiralOuterPerimeter)
 			{
 				timeKeeper.Restart();
@@ -1238,7 +1238,7 @@ namespace MatterHackers.MatterSlice
 					bottomFillPolygons.Clear();
 				}
 
-				layerGcodePlanner.QueuePolygonsByOptimizer(fillPolygons, island.PathFinder, fillConfig, layerIndex);
+				QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, fillPolygons, fillConfig, SupportWriteType.UnsupportedAreas);
 
 				QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bottomFillPolygons, bottomFillConfig, SupportWriteType.UnsupportedAreas);
 				if (firstTopFillPolygons.Count > 0)
