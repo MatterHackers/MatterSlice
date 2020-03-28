@@ -51,9 +51,9 @@ namespace MatterHackers.MatterSlice
 					_RequiredSupportAreas = RemoveSupportFromInternalSpaces(_RequiredSupportAreas, _InsetPartOutlines);
 				}
 
-				SparseSupportOutlines = ExpandToEasyGrabDistance(_RequiredSupportAreas, config.SupportGrabDistance_um - supportWidth_um);
-
 				SparseSupportOutlines = AccumulateDownPolygons(config, _RequiredSupportAreas, _InsetPartOutlines);
+
+				SparseSupportOutlines = ExpandToEasyGrabDistance(SparseSupportOutlines, config.SupportGrabDistance_um - supportWidth_um);
 			}
 			else
 			{
@@ -105,7 +105,7 @@ namespace MatterHackers.MatterSlice
 		{
 			return SparseSupportOutlines[0].CreateUnion(InterfaceLayers[0]);
 		}
-		
+
 		private static List<Polygons> ExpandToEasyGrabDistance(List<Polygons> inputPolys, long grabDistance_um)
 		{
 			int numLayers = inputPolys.Count;
