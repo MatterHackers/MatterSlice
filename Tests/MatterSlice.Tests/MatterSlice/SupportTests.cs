@@ -302,6 +302,7 @@ namespace MatterHackers.MatterSlice.Tests
 					supportData.Layers.Add(supportLayer);
 				}
 			}
+
 			var newSupport = new NewSupport(config, new List<ExtruderLayers>() { layerData }, supportData);
 			return (layerData, newSupport);
 		}

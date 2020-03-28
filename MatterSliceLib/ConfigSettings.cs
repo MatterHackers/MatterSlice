@@ -57,7 +57,7 @@ namespace MatterHackers.MatterSlice
 	}
 
 	// all the variables in this class will be saved and loaded from settings files
-	public class ConfigSettings
+	public class ConfigSettings 
 	{
 		// Store all public instance properties in a local static list to resolve settings mappings
 		private static List<PropertyInfo> allProperties = typeof(ConfigSettings).GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
@@ -317,6 +317,21 @@ namespace MatterHackers.MatterSlice
 		public int SupportNumberOfLayersToSkipInZ { get; set; }
 
 		// Support material
+		[SettingDescription("If True, support will be generated from the bed. If false no support will be generated at all.")]
+		public bool GenerateSupport { get; set; } = false;
+
+		[SettingDescription("If True, support will be generated within the part as well as from the bed.")]
+		public bool GenerateInternalSupport { get; set; } = false;
+
+		public long SupportGrabDistance_um => (long)(SupportGrabDistance * 1000);
+
+		[SettingDescription("The amount automatic support is expanded so that it is easy to grab.")]
+		public double SupportGrabDistance { get; set; } = 1;
+
+
+		[SettingDescription("The percent of support to generate.")]
+		public double SupportPercent { get; set; } = 50;
+
 		public ConfigConstants.SUPPORT_TYPE SupportType { get; set; }
 
 		public long SupportXYDistance_um => (long)(SupportXYDistanceFromObject * 1000);

@@ -287,7 +287,7 @@ namespace MatterHackers.MatterSlice
 			LayerPart.dumpLayerparts(slicingData, "output.html");
 #endif
 
-			if (supportOutlines != null
+			if ((config.GenerateSupport || supportOutlines != null)
 				&& !config.ContinuousSpiralOuterPerimeter)
 			{
 				timeKeeper.Restart();
