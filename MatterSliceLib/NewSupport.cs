@@ -80,6 +80,8 @@ namespace MatterHackers.MatterSlice
 			SparseSupportOutlines = CalculateDifferencePerLayer(SparseSupportOutlines, InterfaceLayers);
 			// remove the airGappedBottomOutlines layers from the normal support layers
 			SparseSupportOutlines = CalculateDifferencePerLayer(SparseSupportOutlines, AirGappedBottomOutlines);
+			// make sure we don't print an interface layer where there is a bottom layer
+			InterfaceLayers = CalculateDifferencePerLayer(InterfaceLayers, AirGappedBottomOutlines);
 		}
 
 		// List<Polygons> pushedUpTopOutlines = new List<Polygons>();
@@ -258,8 +260,11 @@ namespace MatterHackers.MatterSlice
 				// make a border if layer 0
 				if (config.GenerateSupportPerimeter || layerIndex == 0)
 				{
-					gcodeLayer.QueuePolygonsByOptimizer(supportIsland.Offset(-config.ExtrusionWidth_um / 2), null, supportNormalConfig, 0);
+					var closedLoop = supportNormalConfig.ClosedLoop;
+					supportNormalConfig.ClosedLoop = true;
+					gcodeLayer.QueuePolygonsByOptimizer(supportIsland.Offset(-config.ExtrusionWidth_um / 2), null, supportNormalConfig, layerIndex);
 					infillOffset = config.ExtrusionWidth_um * -2 + config.InfillExtendIntoPerimeter_um;
+					supportNormalConfig.ClosedLoop = closedLoop;
 				}
 
 				Polygons infillOutline = supportIsland.Offset(infillOffset);

@@ -1238,7 +1238,7 @@ namespace MatterHackers.MatterSlice
 					bottomFillPolygons.Clear();
 				}
 
-				layerGcodePlanner.QueuePolygonsByOptimizer(fillPolygons, island.PathFinder, fillConfig, layerIndex);
+				QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, fillPolygons, fillConfig, SupportWriteType.UnsupportedAreas);
 
 				QueuePolygonsConsideringSupport(layerIndex, layerGcodePlanner, bottomFillPolygons, bottomFillConfig, SupportWriteType.UnsupportedAreas);
 				if (firstTopFillPolygons.Count > 0)
