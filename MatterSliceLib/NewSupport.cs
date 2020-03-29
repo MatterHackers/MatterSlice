@@ -65,10 +65,10 @@ namespace MatterHackers.MatterSlice
 				{
 					SparseSupportOutlines[layerIndex] = userGeneratedSupport.Layers[layerIndex].AllOutlines.DeepCopy();
 				}
-
-				// remove the actual parts from the support data
-				SparseSupportOutlines = ClipToXyDistance(SparseSupportOutlines, _InsetPartOutlines, config);
 			}
+
+			// remove the actual parts from the support data
+			SparseSupportOutlines = ClipToXyDistance(SparseSupportOutlines, _InsetPartOutlines, config);
 
 			// create the interface layers
 			InterfaceLayers = CreateInterfaceLayers(SparseSupportOutlines, config.SupportInterfaceLayers);
