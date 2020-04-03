@@ -41,8 +41,6 @@ namespace MatterHackers.MatterSlice
 
 		private readonly GCodeExport gcodeExport;
 
-		private PathFinder lastValidPathFinder;
-		private PathFinder pathFinder;
 		private readonly List<GCodePath> paths = new List<GCodePath>();
 
 		private readonly double perimeterStartEndOverlapRatio;
@@ -79,20 +77,7 @@ namespace MatterHackers.MatterSlice
 
 		public IntPoint LastPosition { get; private set; }
 
-		public PathFinder PathFinder
-		{
-			get => pathFinder;
-			set
-			{
-				if (value != null
-					&& lastValidPathFinder != value)
-				{
-					lastValidPathFinder = value;
-				}
-
-				pathFinder = value;
-			}
-		}
+		public PathFinder PathFinder { get; set; }
 
 		public static GCodePath TrimGCodePathEnd(GCodePath inPath, long targetDistance)
 		{
@@ -203,7 +188,7 @@ namespace MatterHackers.MatterSlice
 			// ValidatePaths();
 		}
 
-		public void QueuePolygon(Polygon polygon, int startIndex, GCodePathConfig config)
+		private void QueuePolygon(Polygon polygon, int startIndex, GCodePathConfig config)
 		{
 			IntPoint currentPosition = polygon[startIndex];
 
