@@ -573,7 +573,6 @@ namespace MatterHackers.MatterSlice
 					{
 						// set the path planner to avoid islands
 						layerPathFinder = slicingData.Extruders[extruderIndex].Layers[layerIndex].PathFinder;
-						layerPlanner.PathFinder = layerPathFinder;
 					}
 
 					ChangeExtruderIfRequired(slicingData, layerPathFinder, layerIndex, layerPlanner, extruderIndex, false);
@@ -712,7 +711,6 @@ namespace MatterHackers.MatterSlice
 				{
 					// we can alway use extruder 0 as all layer PathFinders are the same object
 					SliceLayer layer = slicingData.Extruders[0].Layers[layerIndex];
-					layerGcodePlanner.PathFinder = layer.PathFinder;
 					// and forget that we are in any island
 					islandCurrentlyInside = null;
 				}
@@ -728,9 +726,8 @@ namespace MatterHackers.MatterSlice
 						PathFinder pathFinder = null;
 						if (config.AvoidCrossingPerimeters)
 						{
-							pathFinder = slicingData.Extruders[extruderIndex].Layers[layerIndex].PathFinder;
 							// set the path planner to avoid islands
-							layerGcodePlanner.PathFinder = pathFinder;
+							pathFinder = slicingData.Extruders[extruderIndex].Layers[layerIndex].PathFinder;
 						}
 
 						// make sure we path plan our way to the wipe tower before switching extruders
@@ -1132,7 +1129,6 @@ namespace MatterHackers.MatterSlice
 												}
 											}
 
-											layerGcodePlanner.PathFinder = island.PathFinder;
 											if (found.polyIndex != -1
 												&& found.pointIndex != -1)
 											{
@@ -1319,8 +1315,7 @@ namespace MatterHackers.MatterSlice
 						IntPoint closestLastIslandPoint = polygons[closestPointOnLastIsland.Item1][closestPointOnLastIsland.Item2];
 						// make sure we are planning within the last island we were using
 						pathFinder = islandCurrentlyInside.PathFinder;
-						layerGcodePlanner.PathFinder = pathFinder;
-						layerGcodePlanner.QueueTravel(closestLastIslandPoint, islandCurrentlyInside.PathFinder);
+						layerGcodePlanner.QueueTravel(closestLastIslandPoint, pathFinder);
 					}
 				}
 
@@ -1331,14 +1326,12 @@ namespace MatterHackers.MatterSlice
 				{
 					// make sure we are not planning moves for the move away from the island
 					pathFinder = null;
-					layerGcodePlanner.PathFinder = pathFinder;
 					// move away from our current island as much as the inset amount to avoid planning around where we are
 					var awayFromIslandPosition = layerGcodePlanner.LastPosition + delta.Normal(layer.PathFinder.InsetAmount);
 					layerGcodePlanner.QueueTravel(awayFromIslandPosition, null);
 
 					// let's move to this island avoiding running into any other islands
 					pathFinder = layer.PathFinder;
-					layerGcodePlanner.PathFinder = pathFinder;
 					// find the closest point to where we are now
 					// and do a move to there
 				}
@@ -1350,7 +1343,6 @@ namespace MatterHackers.MatterSlice
 				islandCurrentlyInside = island;
 				// set the path planner to the current island
 				pathFinder = island.PathFinder;
-				layerGcodePlanner.PathFinder = pathFinder;
 			}
 		}
 
@@ -1488,8 +1480,6 @@ namespace MatterHackers.MatterSlice
 						}
 
 						MoveToIsland(layerGcodePlanner, layer, island);
-
-						layerGcodePlanner.PathFinder = island.PathFinder;
 
 						// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
 						for (int insetIndex = 1; insetIndex < island.InsetToolPaths.Count; insetIndex++)

@@ -262,18 +262,13 @@ namespace MatterHackers.MatterSlice
 				}
 
 				// set the path planner to avoid islands
-				layerGcodePlanner.PathFinder = pathFinder;
 				if (this.HaveWipeTower(config, layerIndex))
 				{
 					layerGcodePlanner.QueueTravel(WipeCenter_um, pathFinder);
 				}
 
 				// turn off the planner for the wipe tower
-				layerGcodePlanner.PathFinder = null;
 				layerGcodePlanner.QueuePolygons(fillPolygons, null, fillConfig);
-
-				// turn it back on for leaving the wipe tower
-				layerGcodePlanner.PathFinder = pathFinder;
 			}
 			else
 			{
@@ -467,15 +462,10 @@ namespace MatterHackers.MatterSlice
 			if (fillPolygons.Count > 0)
 			{
 				// move over to the wipe tower with the layer planner in place
-				layerGcodePlanner.PathFinder = pathFinder;
 				layerGcodePlanner.QueueTravel(WipeCenter_um, pathFinder);
 
 				// print the wipe tower with no planning
-				layerGcodePlanner.PathFinder = null;
 				layerGcodePlanner.QueuePolygons(fillPolygons, null, fillConfig);
-
-				// turn back on the layer planner
-				layerGcodePlanner.PathFinder = pathFinder;
 
 				if (airGapped)
 				{

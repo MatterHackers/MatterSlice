@@ -255,9 +255,6 @@ namespace MatterHackers.MatterSlice
 					pathFinder = new PathFinder(supportIsland, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters, name: "air gap");
 				}
 
-				var oldPathFinder = gcodeLayer.PathFinder;
-				gcodeLayer.PathFinder = pathFinder;
-
 				// force a retract if changing islands
 				if (config.RetractWhenChangingIslands)
 				{
@@ -290,7 +287,6 @@ namespace MatterHackers.MatterSlice
 				}
 
 				gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, pathFinder, supportNormalConfig, 0);
-				gcodeLayer.PathFinder = oldPathFinder;
 			}
 		}
 
@@ -310,9 +306,6 @@ namespace MatterHackers.MatterSlice
 					{
 						pathFinder = new PathFinder(interfaceIsland, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters, name: "interface");
 					}
-
-					var oldPathFinder = gcodeLayer.PathFinder;
-					gcodeLayer.PathFinder = pathFinder;
 
 					// force a retract if changing islands
 					if (config.RetractWhenChangingIslands)
@@ -339,8 +332,6 @@ namespace MatterHackers.MatterSlice
 					{
 						outputPaths = true;
 					}
-
-					gcodeLayer.PathFinder = oldPathFinder;
 				}
 			}
 
@@ -370,9 +361,6 @@ namespace MatterHackers.MatterSlice
 				{
 					pathFinder = new PathFinder(infillOutline, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters, name: "normal support");
 				}
-
-				var oldPathFinder = gcodeLayer.PathFinder;
-				gcodeLayer.PathFinder = pathFinder;
 
 				// make a border if layer 0
 				if (config.GenerateSupportPerimeter || layerIndex == 0)
@@ -409,8 +397,6 @@ namespace MatterHackers.MatterSlice
 				{
 					outputPaths |= true;
 				}
-
-				gcodeLayer.PathFinder = oldPathFinder;
 			}
 
 			return outputPaths;

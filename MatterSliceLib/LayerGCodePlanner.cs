@@ -77,8 +77,6 @@ namespace MatterHackers.MatterSlice
 
 		public IntPoint LastPosition { get; private set; }
 
-		public PathFinder PathFinder { get; set; }
-
 		public static GCodePath TrimGCodePathEnd(GCodePath inPath, long targetDistance)
 		{
 			var path = new GCodePath(inPath);
@@ -190,11 +188,6 @@ namespace MatterHackers.MatterSlice
 
 		private void QueuePolygon(Polygon polygon, PathFinder pathFinder, int startIndex, GCodePathConfig config)
 		{
-			if (pathFinder != PathFinder)
-			{
-				int a = 0;
-			}
-
 			IntPoint currentPosition = polygon[startIndex];
 
 			if (!config.Spiralize
@@ -357,11 +350,6 @@ namespace MatterHackers.MatterSlice
 
 		public void QueueTravel(IntPoint positionToMoveTo, PathFinder pathFinder, bool forceUniquePath = false)
 		{
-			if (pathFinder != PathFinder)
-			{
-				int a = 0;
-			}
-
 			GCodePath path = GetLatestPathWithConfig(travelConfig, forceUniquePath || !canAppendTravel);
 			canAppendTravel = !forceUniquePath;
 
