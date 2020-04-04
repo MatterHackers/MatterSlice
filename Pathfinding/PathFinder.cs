@@ -44,9 +44,15 @@ namespace MatterHackers.Pathfinding
 		public static Action<PathFinder, Polygon, IntPoint, IntPoint> CalculatedPath = null;
 		private static string lastOutlineString = "";
 		private static bool saveBadPathToDisk = false;
+		public string Name { get; private set; }
 
-		public PathFinder(Polygons outlinePolygons, long avoidInset, IntRect? stayInsideBounds = null, bool useInsideCache = true)
+		public PathFinder(Polygons outlinePolygons,
+			long avoidInset,
+			IntRect? stayInsideBounds = null,
+			bool useInsideCache = true,
+			string name = "")
 		{
+			this.Name = name;
 			if (outlinePolygons.Count == 0)
 			{
 				return;

@@ -319,7 +319,7 @@ namespace MatterHackers.MatterSlice
 					{
 						supportIslands.Add(new LayerIsland(island)
 						{
-							PathFinder = new PathFinder(island, config.ExtrusionWidth_um * 3 / 2, useInsideCache: config.AvoidCrossingPerimeters),
+							PathFinder = new PathFinder(island, config.ExtrusionWidth_um * 3 / 2, useInsideCache: config.AvoidCrossingPerimeters, name: "support island"),
 						});
 					}
 				}
@@ -725,14 +725,16 @@ namespace MatterHackers.MatterSlice
 
 					if (layerIndex > 0)
 					{
+						PathFinder pathFinder = null;
 						if (config.AvoidCrossingPerimeters)
 						{
+							pathFinder = slicingData.Extruders[extruderIndex].Layers[layerIndex].PathFinder;
 							// set the path planner to avoid islands
-							layerGcodePlanner.PathFinder = slicingData.Extruders[extruderIndex].Layers[layerIndex].PathFinder;
+							layerGcodePlanner.PathFinder = pathFinder;
 						}
 
 						// make sure we path plan our way to the wipe tower before switching extruders
-						layerGcodePlanner.QueueTravel(slicingData.WipeCenter_um, null);
+						layerGcodePlanner.QueueTravel(slicingData.WipeCenter_um, pathFinder);
 						islandCurrentlyInside = null;
 					}
 
@@ -964,7 +966,7 @@ namespace MatterHackers.MatterSlice
 				&& slicingData.Extruders.Count > 1)
 			{
 				layerGcodePlanner.ForceRetract();
-				layerGcodePlanner.QueuePolygonsByOptimizer(slicingData.WipeShield[layerIndex], null, skirtConfig, layerIndex);
+				layerGcodePlanner.QueuePolygonsByOptimizer(slicingData.WipeShield[layerIndex], layer.PathFinder, skirtConfig, layerIndex);
 				layerGcodePlanner.ForceRetract();
 				// remember that we have already laid down the wipe shield by clearing the data for this layer
 				slicingData.WipeShield[layerIndex].Clear();

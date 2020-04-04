@@ -274,7 +274,7 @@ namespace MatterHackers.MatterSlice
 
 				if (config.AvoidCrossingPerimeters)
 				{
-					var pathFinder = new Pathfinding.PathFinder(allOutlines, avoidInset, boundary, config.AvoidCrossingPerimeters);
+					var pathFinder = new Pathfinding.PathFinder(allOutlines, avoidInset, boundary, config.AvoidCrossingPerimeters, $"layer {layerIndex}");
 
 					// assign the same pathing to all extruders for this layer
 					for (int extruderIndex = 0; extruderIndex < extruders.Count; extruderIndex++)

@@ -89,7 +89,7 @@ namespace MatterHackers.MatterSlice
 
 			if (avoidCrossingPerimeters)
 			{
-				part.PathFinder = new PathFinder(part.IslandOutline, extrusionWidth_um * 3 / 2, useInsideCache: avoidCrossingPerimeters);
+				part.PathFinder = new PathFinder(part.IslandOutline, extrusionWidth_um * 3 / 2, useInsideCache: avoidCrossingPerimeters, name: "inset island");
 			}
 
 			if (insetCount == 0)

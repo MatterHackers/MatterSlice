@@ -252,7 +252,7 @@ namespace MatterHackers.MatterSlice
 				PathFinder pathFinder = null;
 				if (config.AvoidCrossingPerimeters)
 				{
-					pathFinder = new PathFinder(supportIsland, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters);
+					pathFinder = new PathFinder(supportIsland, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters, name: "air gap");
 				}
 
 				var oldPathFinder = gcodeLayer.PathFinder;
@@ -308,7 +308,7 @@ namespace MatterHackers.MatterSlice
 					PathFinder pathFinder = null;
 					if (config.AvoidCrossingPerimeters)
 					{
-						pathFinder = new PathFinder(interfaceIsland, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters);
+						pathFinder = new PathFinder(interfaceIsland, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters, name: "interface");
 					}
 
 					var oldPathFinder = gcodeLayer.PathFinder;
@@ -368,7 +368,7 @@ namespace MatterHackers.MatterSlice
 				PathFinder pathFinder = null;
 				if (config.AvoidCrossingPerimeters)
 				{
-					pathFinder = new PathFinder(infillOutline, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters);
+					pathFinder = new PathFinder(infillOutline, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters, name: "normal support");
 				}
 
 				var oldPathFinder = gcodeLayer.PathFinder;

@@ -265,7 +265,7 @@ namespace MatterHackers.MatterSlice
 				layerGcodePlanner.PathFinder = pathFinder;
 				if (this.HaveWipeTower(config, layerIndex))
 				{
-					layerGcodePlanner.QueueTravel(WipeCenter_um, null);
+					layerGcodePlanner.QueueTravel(WipeCenter_um, pathFinder);
 				}
 
 				// turn off the planner for the wipe tower
@@ -468,7 +468,7 @@ namespace MatterHackers.MatterSlice
 			{
 				// move over to the wipe tower with the layer planner in place
 				layerGcodePlanner.PathFinder = pathFinder;
-				layerGcodePlanner.QueueTravel(WipeCenter_um, null);
+				layerGcodePlanner.QueueTravel(WipeCenter_um, pathFinder);
 
 				// print the wipe tower with no planning
 				layerGcodePlanner.PathFinder = null;
