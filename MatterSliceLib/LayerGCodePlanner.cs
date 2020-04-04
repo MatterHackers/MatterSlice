@@ -312,12 +312,12 @@ namespace MatterHackers.MatterSlice
 
 			orderOptimizer.Optimize(pathFinder, layerIndex, config);
 
-			for (int i = 0; i < orderOptimizer.bestIslandOrderIndex.Count; i++)
+			for (int i = 0; i < orderOptimizer.BestIslandOrderIndex.Count; i++)
 			{
-				int polygonIndex = orderOptimizer.bestIslandOrderIndex[i];
+				int polygonIndex = orderOptimizer.BestIslandOrderIndex[i];
 				// The order optimizer should already have created all the right moves
 				// so pass a null for the path finder (don't re-plan them).
-				QueuePolygon(polygon, pathFinder, orderOptimizer.startIndexInPolygon[polygonIndex], config);
+				QueuePolygon(polygon, pathFinder, orderOptimizer.StartIndexInPolygon[polygonIndex], config);
 			}
 
 			return true;
@@ -335,12 +335,12 @@ namespace MatterHackers.MatterSlice
 
 			orderOptimizer.Optimize(pathFinder, layerIndex, config);
 
-			for (int i = 0; i < orderOptimizer.bestIslandOrderIndex.Count; i++)
+			for (int i = 0; i < orderOptimizer.BestIslandOrderIndex.Count; i++)
 			{
-				int polygonIndex = orderOptimizer.bestIslandOrderIndex[i];
+				int polygonIndex = orderOptimizer.BestIslandOrderIndex[i];
 				// The order optimizer should already have created all the right moves
 				// so pass a null for the path finder (don't re-plan them).
-				QueuePolygon(polygons[polygonIndex], pathFinder, orderOptimizer.startIndexInPolygon[polygonIndex], config);
+				QueuePolygon(polygons[polygonIndex], pathFinder, orderOptimizer.StartIndexInPolygon[polygonIndex], config);
 			}
 
 			return true;

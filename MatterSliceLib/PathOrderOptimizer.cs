@@ -19,7 +19,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
 using System.Collections.Generic;
 using MatterHackers.Pathfinding;
 using MSClipperLib;
@@ -30,8 +29,8 @@ namespace MatterHackers.MatterSlice
 {
 	public class PathOrderOptimizer
 	{
-		public List<int> bestIslandOrderIndex = new List<int>();
-		public List<int> startIndexInPolygon = new List<int>();
+		public List<int> BestIslandOrderIndex { get; private set; } = new List<int>();
+		public List<int> StartIndexInPolygon { get; private set; } = new List<int>();
 		private List<Polygon> polygons = new List<Polygon>();
 		private IntPoint startPosition;
 
@@ -63,7 +62,7 @@ namespace MatterHackers.MatterSlice
 				Polygon currentPolygon = polygons[polygonIndex];
 				if (canTravelForwardOrBackward || currentPolygon.Count < 3)
 				{
-					startIndexInPolygon.Add(0);
+					StartIndexInPolygon.Add(0);
 				}
 				else // This is a closed loop.
 				{
@@ -84,7 +83,7 @@ namespace MatterHackers.MatterSlice
 						bestPointIndex = currentPolygon.FindClosestPositionIndex(startPosition);
 					}
 
-					startIndexInPolygon.Add(bestPointIndex);
+					StartIndexInPolygon.Add(bestPointIndex);
 				}
 			}
 
@@ -109,7 +108,7 @@ namespace MatterHackers.MatterSlice
 						{
 							bestPolygonIndex = polygonIndex;
 							bestDist = distToSart;
-							startIndexInPolygon[polygonIndex] = 0;
+							StartIndexInPolygon[polygonIndex] = 0;
 						}
 
 						double distToEnd = (polygons[polygonIndex][polygons[polygonIndex].Count - 1] - currentPosition).LengthSquared();
@@ -117,12 +116,12 @@ namespace MatterHackers.MatterSlice
 						{
 							bestPolygonIndex = polygonIndex;
 							bestDist = distToEnd;
-							startIndexInPolygon[polygonIndex] = 1;
+							StartIndexInPolygon[polygonIndex] = 1;
 						}
 					}
 					else
 					{
-						double dist = (polygons[polygonIndex][startIndexInPolygon[polygonIndex]] - currentPosition).LengthSquared();
+						double dist = (polygons[polygonIndex][StartIndexInPolygon[polygonIndex]] - currentPosition).LengthSquared();
 						if (dist < bestDist)
 						{
 							bestPolygonIndex = polygonIndex;
@@ -136,7 +135,7 @@ namespace MatterHackers.MatterSlice
 					if (polygons[bestPolygonIndex].Count == 2 || canTravelForwardOrBackward)
 					{
 						// get the point that is opposite from the one we started on
-						int startIndex = startIndexInPolygon[bestPolygonIndex];
+						int startIndex = StartIndexInPolygon[bestPolygonIndex];
 						if (startIndex == 0)
 						{
 							currentPosition = polygons[bestPolygonIndex][polygons[bestPolygonIndex].Count - 1];
@@ -148,16 +147,16 @@ namespace MatterHackers.MatterSlice
 					}
 					else
 					{
-						currentPosition = polygons[bestPolygonIndex][startIndexInPolygon[bestPolygonIndex]];
+						currentPosition = polygons[bestPolygonIndex][StartIndexInPolygon[bestPolygonIndex]];
 					}
 
 					polygonHasBeenAdded[bestPolygonIndex] = true;
-					bestIslandOrderIndex.Add(bestPolygonIndex);
+					BestIslandOrderIndex.Add(bestPolygonIndex);
 				}
 			}
 
 			currentPosition = startPosition;
-			foreach (int bestPolygonIndex in bestIslandOrderIndex)
+			foreach (int bestPolygonIndex in BestIslandOrderIndex)
 			{
 				int bestStartPoint = -1;
 				double bestDist = double.MaxValue;
@@ -175,7 +174,7 @@ namespace MatterHackers.MatterSlice
 						bestDist = dist;
 					}
 
-					startIndexInPolygon[bestPolygonIndex] = bestStartPoint;
+					StartIndexInPolygon[bestPolygonIndex] = bestStartPoint;
 				}
 				else
 				{

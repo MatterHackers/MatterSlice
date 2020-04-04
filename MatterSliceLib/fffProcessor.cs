@@ -991,14 +991,14 @@ namespace MatterHackers.MatterSlice
 
 			var bottomFillIslandPolygons = new List<Polygons>();
 
-			for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.bestIslandOrderIndex.Count; islandOrderIndex++)
+			for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.BestIslandOrderIndex.Count; islandOrderIndex++)
 			{
 				if (config.ContinuousSpiralOuterPerimeter && islandOrderIndex > 0)
 				{
 					continue;
 				}
 
-				LayerIsland island = layer.Islands[islandOrderOptimizer.bestIslandOrderIndex[islandOrderIndex]];
+				LayerIsland island = layer.Islands[islandOrderOptimizer.BestIslandOrderIndex[islandOrderIndex]];
 
 				if (config.AvoidCrossingPerimeters)
 				{
@@ -1446,9 +1446,9 @@ namespace MatterHackers.MatterSlice
 
 				islandOrderOptimizer.Optimize(layer.PathFinder, layerIndex);
 
-				for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.bestIslandOrderIndex.Count; islandOrderIndex++)
+				for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.BestIslandOrderIndex.Count; islandOrderIndex++)
 				{
-					LayerIsland island = layer.Islands[islandOrderOptimizer.bestIslandOrderIndex[islandOrderIndex]];
+					LayerIsland island = layer.Islands[islandOrderOptimizer.BestIslandOrderIndex[islandOrderIndex]];
 
 					var bottomFillPolygons = new Polygons();
 					CalculateInfillData(slicingData, extruderIndex, layerIndex, island, bottomFillPolygons);
