@@ -265,12 +265,12 @@ namespace MatterHackers.MatterSlice
 				layerGcodePlanner.PathFinder = pathFinder;
 				if (this.HaveWipeTower(config, layerIndex))
 				{
-					layerGcodePlanner.QueueTravel(WipeCenter_um);
+					layerGcodePlanner.QueueTravel(WipeCenter_um, null);
 				}
 
 				// turn off the planner for the wipe tower
 				layerGcodePlanner.PathFinder = null;
-				layerGcodePlanner.QueuePolygons(fillPolygons, fillConfig);
+				layerGcodePlanner.QueuePolygons(fillPolygons, null, fillConfig);
 
 				// turn it back on for leaving the wipe tower
 				layerGcodePlanner.PathFinder = pathFinder;
@@ -295,7 +295,7 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 
-					layerGcodePlanner.QueuePolygons(outlinePolygons, fillConfig);
+					layerGcodePlanner.QueuePolygons(outlinePolygons, null, fillConfig);
 
 					// print sparse infill on the wipe tower
 					var fillPolygons = new Polygons();
@@ -468,11 +468,11 @@ namespace MatterHackers.MatterSlice
 			{
 				// move over to the wipe tower with the layer planner in place
 				layerGcodePlanner.PathFinder = pathFinder;
-				layerGcodePlanner.QueueTravel(WipeCenter_um);
+				layerGcodePlanner.QueueTravel(WipeCenter_um, null);
 
 				// print the wipe tower with no planning
 				layerGcodePlanner.PathFinder = null;
-				layerGcodePlanner.QueuePolygons(fillPolygons, fillConfig);
+				layerGcodePlanner.QueuePolygons(fillPolygons, null, fillConfig);
 
 				// turn back on the layer planner
 				layerGcodePlanner.PathFinder = pathFinder;

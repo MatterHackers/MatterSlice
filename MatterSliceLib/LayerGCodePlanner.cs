@@ -180,7 +180,7 @@ namespace MatterHackers.MatterSlice
 			return currentExtruderIndex;
 		}
 
-		public void QueueExtrusionMove(IntPoint destination, GCodePathConfig config)
+		private void QueueExtrusionMove(IntPoint destination, GCodePathConfig config)
 		{
 			GetLatestPathWithConfig(config).Polygon.Add(new IntPoint(destination, CurrentZ));
 			LastPosition = destination;
@@ -188,15 +188,20 @@ namespace MatterHackers.MatterSlice
 			// ValidatePaths();
 		}
 
-		private void QueuePolygon(Polygon polygon, int startIndex, GCodePathConfig config)
+		private void QueuePolygon(Polygon polygon, PathFinder pathFinder, int startIndex, GCodePathConfig config)
 		{
+			if (pathFinder != PathFinder)
+			{
+				int a = 0;
+			}
+
 			IntPoint currentPosition = polygon[startIndex];
 
 			if (!config.Spiralize
 				&& (LastPosition.X != currentPosition.X
 				|| LastPosition.Y != currentPosition.Y))
 			{
-				QueueTravel(currentPosition);
+				QueueTravel(currentPosition, pathFinder);
 			}
 
 			if (config.ClosedLoop)
@@ -299,11 +304,11 @@ namespace MatterHackers.MatterSlice
 			queuedFanSpeeds.Add(path);
 		}
 
-		public void QueuePolygons(Polygons polygons, GCodePathConfig config)
+		public void QueuePolygons(Polygons polygons, PathFinder pathFinder, GCodePathConfig config)
 		{
 			foreach (var polygon in polygons)
 			{
-				QueuePolygon(polygon, 0, config);
+				QueuePolygon(polygon, pathFinder, 0, config);
 			}
 		}
 
@@ -317,7 +322,9 @@ namespace MatterHackers.MatterSlice
 			for (int i = 0; i < orderOptimizer.bestIslandOrderIndex.Count; i++)
 			{
 				int polygonIndex = orderOptimizer.bestIslandOrderIndex[i];
-				QueuePolygon(polygon, orderOptimizer.startIndexInPolygon[polygonIndex], config);
+				// The order optimizer should already have created all the right moves
+				// so pass a null for the path finder (don't re-plan them).
+				QueuePolygon(polygon, pathFinder, orderOptimizer.startIndexInPolygon[polygonIndex], config);
 			}
 
 			return true;
@@ -338,7 +345,9 @@ namespace MatterHackers.MatterSlice
 			for (int i = 0; i < orderOptimizer.bestIslandOrderIndex.Count; i++)
 			{
 				int polygonIndex = orderOptimizer.bestIslandOrderIndex[i];
-				QueuePolygon(polygons[polygonIndex], orderOptimizer.startIndexInPolygon[polygonIndex], config);
+				// The order optimizer should already have created all the right moves
+				// so pass a null for the path finder (don't re-plan them).
+				QueuePolygon(polygons[polygonIndex], pathFinder, orderOptimizer.startIndexInPolygon[polygonIndex], config);
 			}
 
 			return true;
@@ -346,8 +355,13 @@ namespace MatterHackers.MatterSlice
 
 		private bool canAppendTravel = true;
 
-		public void QueueTravel(IntPoint positionToMoveTo, bool forceUniquePath = false)
+		public void QueueTravel(IntPoint positionToMoveTo, PathFinder pathFinder, bool forceUniquePath = false)
 		{
+			if (pathFinder != PathFinder)
+			{
+				int a = 0;
+			}
+
 			GCodePath path = GetLatestPathWithConfig(travelConfig, forceUniquePath || !canAppendTravel);
 			canAppendTravel = !forceUniquePath;
 
@@ -357,10 +371,10 @@ namespace MatterHackers.MatterSlice
 				forceRetraction = false;
 			}
 
-			if (PathFinder != null)
+			if (pathFinder != null)
 			{
 				var pathPolygon = new Polygon();
-				if (PathFinder.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pathPolygon, true, gcodeExport.LayerIndex))
+				if (pathFinder.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pathPolygon, true, gcodeExport.LayerIndex))
 				{
 					IntPoint lastPathPosition = LastPosition;
 					long lineLength_um = 0;
