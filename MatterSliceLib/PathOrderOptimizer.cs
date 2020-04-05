@@ -36,12 +36,10 @@ namespace MatterHackers.MatterSlice
 
 		private readonly List<Polygon> polygons = new List<Polygon>();
 		private readonly ConfigSettings config;
-		private IntPoint startPosition;
 
-		public PathOrderOptimizer(IntPoint startPoint, ConfigSettings config)
+		public PathOrderOptimizer(ConfigSettings config)
 		{
 			this.config = config;
-			this.startPosition = startPoint;
 		}
 
 		public void AddPolygon(Polygon polygon)
@@ -57,7 +55,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void Optimize(PathFinder pathFinder, int layerIndex, GCodePathConfig pathConfig = null)
+		public void Optimize(IntPoint startPosition, PathFinder pathFinder, int layerIndex, GCodePathConfig pathConfig = null)
 		{
 			bool canTravelForwardOrBackward = pathConfig != null && !pathConfig.ClosedLoop;
 			// Find the point that is closest to our current position (start position)
@@ -81,18 +79,18 @@ namespace MatterHackers.MatterSlice
 						&& pathConfig.DoSeamHiding
 						&& !pathConfig.Spiralize)
 					{
-						bestPointIndex = currentPolygon.FindGreatestTurnIndex(this.startPosition, layerIndex, pathConfig.LineWidth_um);
+						bestPointIndex = currentPolygon.FindGreatestTurnIndex(startPosition, layerIndex, pathConfig.LineWidth_um);
 					}
 					else
 					{
-						bestPointIndex = currentPolygon.FindClosestPositionIndex(this.startPosition);
+						bestPointIndex = currentPolygon.FindClosestPositionIndex(startPosition);
 					}
 
 					this.StartIndexInPolygon.Add(bestPointIndex);
 				}
 			}
 
-			IntPoint currentPosition = this.startPosition;
+			IntPoint currentPosition = startPosition;
 			// We loop over the polygon list twice, at each inner loop we only pick one polygon.
 			for (int polygonIndexOuter = 0; polygonIndexOuter < this.polygons.Count; polygonIndexOuter++)
 			{
@@ -162,7 +160,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			currentPosition = this.startPosition;
+			currentPosition = startPosition;
 			foreach (int bestPolygonIndex in this.BestIslandOrderIndex)
 			{
 				int bestStartPoint = -1;

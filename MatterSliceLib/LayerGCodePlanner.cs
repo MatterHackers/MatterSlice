@@ -307,10 +307,10 @@ namespace MatterHackers.MatterSlice
 
 		public bool QueuePolygonByOptimizer(Polygon polygon, PathFinder pathFinder, GCodePathConfig pathConfig, int layerIndex)
 		{
-			var orderOptimizer = new PathOrderOptimizer(LastPosition, config);
+			var orderOptimizer = new PathOrderOptimizer(config);
 			orderOptimizer.AddPolygon(polygon);
 
-			orderOptimizer.Optimize(pathFinder, layerIndex, pathConfig);
+			orderOptimizer.Optimize(LastPosition, pathFinder, layerIndex, pathConfig);
 
 			for (int i = 0; i < orderOptimizer.BestIslandOrderIndex.Count; i++)
 			{
@@ -330,10 +330,10 @@ namespace MatterHackers.MatterSlice
 				return false;
 			}
 
-			var orderOptimizer = new PathOrderOptimizer(LastPosition, config);
+			var orderOptimizer = new PathOrderOptimizer(config);
 			orderOptimizer.AddPolygons(polygons);
 
-			orderOptimizer.Optimize(pathFinder, layerIndex, pathConfig);
+			orderOptimizer.Optimize(LastPosition, pathFinder, layerIndex, pathConfig);
 
 			for (int i = 0; i < orderOptimizer.BestIslandOrderIndex.Count; i++)
 			{

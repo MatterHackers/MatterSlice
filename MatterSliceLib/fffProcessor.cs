@@ -969,7 +969,7 @@ namespace MatterHackers.MatterSlice
 				slicingData.WipeShield[layerIndex].Clear();
 			}
 
-			var islandOrderOptimizer = new PathOrderOptimizer(default(IntPoint), config);
+			var islandOrderOptimizer = new PathOrderOptimizer(config);
 			for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
 			{
 				if (config.ContinuousSpiralOuterPerimeter && partIndex > 0)
@@ -987,7 +987,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			islandOrderOptimizer.Optimize(layer.PathFinder, layerIndex);
+			islandOrderOptimizer.Optimize(default(IntPoint), layer.PathFinder, layerIndex);
 
 			var bottomFillIslandPolygons = new List<Polygons>();
 
@@ -1435,7 +1435,7 @@ namespace MatterHackers.MatterSlice
 			{
 				SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 
-				var islandOrderOptimizer = new PathOrderOptimizer(default(IntPoint), config);
+				var islandOrderOptimizer = new PathOrderOptimizer(config);
 				for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 				{
 					if (layer.Islands[islandIndex].InsetToolPaths.Count > 0)
@@ -1444,7 +1444,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				islandOrderOptimizer.Optimize(layer.PathFinder, layerIndex);
+				islandOrderOptimizer.Optimize(default(IntPoint), layer.PathFinder, layerIndex);
 
 				for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.BestIslandOrderIndex.Count; islandOrderIndex++)
 				{
