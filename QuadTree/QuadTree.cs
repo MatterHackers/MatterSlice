@@ -37,7 +37,7 @@ namespace MatterHackers.QuadTree
 		public List<T> QueryResults { get; private set; } = new List<T>();
 
 		/// <summary>
-		/// Creates a new QuadTree.
+		/// Initializes a new instance of the <see cref="QuadTree{T}"/> class.
 		/// </summary>
 		/// <param name="splitCount">How many leaves a branch can hold before it splits into sub-branches.</param>
 		/// <param name="region">The region that your quadtree occupies, all inserted quads should fit into this.</param>
@@ -48,7 +48,7 @@ namespace MatterHackers.QuadTree
 		}
 
 		/// <summary>
-		/// Creates a new QuadTree.
+		/// Initializes a new instance of the <see cref="QuadTree{T}"/> class.
 		/// </summary>
 		/// <param name="splitCount">How many leaves a branch can hold before it splits into sub-branches.</param>
 		/// <param name="region">The region that your quadtree occupies, all inserted quads should fit into this.</param>
@@ -58,7 +58,7 @@ namespace MatterHackers.QuadTree
 		}
 
 		/// <summary>
-		/// Creates a new QuadTree.
+		/// Initializes a new instance of the <see cref="QuadTree{T}"/> class.
 		/// </summary>
 		/// <param name="splitCount">How many leaves a branch can hold before it splits into sub-branches.</param>
 		/// <param name="minX">X position of the region.</param>
@@ -86,6 +86,7 @@ namespace MatterHackers.QuadTree
 		/// <summary>
 		/// Count how many branches are in the QuadTree.
 		/// </summary>
+		/// <returns>Number of branches</returns>
 		public int CountBranches()
 		{
 			int count = 0;
@@ -96,9 +97,7 @@ namespace MatterHackers.QuadTree
 		/// <summary>
 		/// Find all other values whose areas are overlapping the specified value.
 		/// </summary>
-		/// <returns>True if any collisions were found.</returns>
 		/// <param name="value">The value to check collisions against.</param>
-		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
 		public void FindCollisions(T value)
 		{
 			QueryResults.Clear();
@@ -145,6 +144,7 @@ namespace MatterHackers.QuadTree
 							}
 						}
 					}
+
 					branch = branch.Parent;
 				}
 			}
@@ -181,10 +181,10 @@ namespace MatterHackers.QuadTree
 		/// Insert a new leaf node into the QuadTree.
 		/// </summary>
 		/// <param name="value">The leaf value.</param>
-		/// <param name="x">X position of the leaf.</param>
-		/// <param name="y">Y position of the leaf.</param>
-		/// <param name="width">Width of the leaf.</param>
-		/// <param name="height">Height of the leaf.</param>
+		/// <param name="minX">The minimum value to find for x.</param>
+		/// <param name="minY">The minimum value to find for y.</param>
+		/// <param name="maxX">The maximum value to find for x.</param>
+		/// <param name="maxY">The maximum value to find for y.</param>
 		public void Insert(T value, long minX, long minY, long maxX, long maxY)
 		{
 			var quad = new Quad(minX, minY, maxX, maxY);
@@ -194,9 +194,7 @@ namespace MatterHackers.QuadTree
 		/// <summary>
 		/// Find all values contained in the specified area.
 		/// </summary>
-		/// <returns>True if any values were found.</returns>
 		/// <param name="quad">The area to search.</param>
-		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
 		public void SearchArea(Quad quad)
 		{
 			QueryResults.Clear();
@@ -206,10 +204,8 @@ namespace MatterHackers.QuadTree
 		/// <summary>
 		/// Find all values overlapping the specified point.
 		/// </summary>
-		/// <returns>True if any values were found.</returns>
 		/// <param name="x">The x coordinate.</param>
 		/// <param name="y">The y coordinate.</param>
-		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
 		public void SearchPoint(long x, long y)
 		{
 			QueryResults.Clear();

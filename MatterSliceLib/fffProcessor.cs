@@ -1282,15 +1282,12 @@ namespace MatterHackers.MatterSlice
 
 			if (island.IslandOutline.Count > 0)
 			{
-				PathFinder pathFinder = null;
-
 				// If we are already in the island we are going to, don't go there, or there is only one island.
 				if ((layer.Islands.Count == 1 && config.ExtruderCount == 1)
 					|| layer.PathFinder?.OutlineData?.Polygons.Count < 3
 					|| island.PathFinder?.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineData.EdgeQuadTrees, island.PathFinder.OutlineData.PointQuadTrees) == true)
 				{
 					islandCurrentlyInside = island;
-					pathFinder = island.PathFinder;
 					return;
 				}
 
@@ -1300,9 +1297,10 @@ namespace MatterHackers.MatterSlice
 					layerGcodePlanner.ForceRetract();
 				}
 
-				var closestPointOnNextIsland = island.IslandOutline.FindClosestPoint(layerGcodePlanner.LastPosition);
-				IntPoint closestNextIslandPoint = island.IslandOutline[closestPointOnNextIsland.polyIndex][closestPointOnNextIsland.pointIndex];
+				var (polyIndex, pointIndex, position) = island.IslandOutline.FindClosestPoint(layerGcodePlanner.LastPosition);
+				IntPoint closestNextIslandPoint = island.IslandOutline[polyIndex][pointIndex];
 
+				PathFinder pathFinder = null;
 				if (islandCurrentlyInside?.PathFinder?.OutlineData.Polygons.Count > 0
 					&& islandCurrentlyInside?.PathFinder?.OutlineData.Polygons?[0]?.Count > 3)
 				{
@@ -1341,8 +1339,6 @@ namespace MatterHackers.MatterSlice
 
 				// and remember that we are now in the new island
 				islandCurrentlyInside = island;
-				// set the path planner to the current island
-				pathFinder = island.PathFinder;
 			}
 		}
 
