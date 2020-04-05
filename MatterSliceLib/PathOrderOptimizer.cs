@@ -19,6 +19,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using MatterHackers.Pathfinding;
 using MSClipperLib;
@@ -30,12 +31,16 @@ namespace MatterHackers.MatterSlice
 	public class PathOrderOptimizer
 	{
 		public List<int> BestIslandOrderIndex { get; private set; } = new List<int>();
+
 		public List<int> StartIndexInPolygon { get; private set; } = new List<int>();
-		private List<Polygon> polygons = new List<Polygon>();
+
+		private readonly List<Polygon> polygons = new List<Polygon>();
+		private readonly ConfigSettings config;
 		private IntPoint startPosition;
 
-		public PathOrderOptimizer(IntPoint startPoint)
+		public PathOrderOptimizer(IntPoint startPoint, ConfigSettings config)
 		{
+			this.config = config;
 			this.startPosition = startPoint;
 		}
 
@@ -52,17 +57,17 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void Optimize(PathFinder pathFinder, int layerIndex, GCodePathConfig config = null)
+		public void Optimize(PathFinder pathFinder, int layerIndex, GCodePathConfig pathConfig = null)
 		{
-			bool canTravelForwardOrBackward = config != null && !config.ClosedLoop;
+			bool canTravelForwardOrBackward = pathConfig != null && !pathConfig.ClosedLoop;
 			// Find the point that is closest to our current position (start position)
-			bool[] polygonHasBeenAdded = new bool[polygons.Count];
-			for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
+			bool[] polygonHasBeenAdded = new bool[this.polygons.Count];
+			for (int polygonIndex = 0; polygonIndex < this.polygons.Count; polygonIndex++)
 			{
-				Polygon currentPolygon = polygons[polygonIndex];
+				Polygon currentPolygon = this.polygons[polygonIndex];
 				if (canTravelForwardOrBackward || currentPolygon.Count < 3)
 				{
-					StartIndexInPolygon.Add(0);
+					this.StartIndexInPolygon.Add(0);
 				}
 				else // This is a closed loop.
 				{
@@ -72,59 +77,60 @@ namespace MatterHackers.MatterSlice
 
 					// this is our new seam hiding code
 					int bestPointIndex;
-					if (config != null
-						&& config.DoSeamHiding
-						&& !config.Spiralize)
+					if (pathConfig != null
+						&& pathConfig.DoSeamHiding
+						&& !pathConfig.Spiralize)
 					{
-						bestPointIndex = currentPolygon.FindGreatestTurnIndex(startPosition, layerIndex, config.LineWidth_um);
+						bestPointIndex = currentPolygon.FindGreatestTurnIndex(this.startPosition, layerIndex, pathConfig.LineWidth_um);
 					}
 					else
 					{
-						bestPointIndex = currentPolygon.FindClosestPositionIndex(startPosition);
+						bestPointIndex = currentPolygon.FindClosestPositionIndex(this.startPosition);
 					}
 
-					StartIndexInPolygon.Add(bestPointIndex);
+					this.StartIndexInPolygon.Add(bestPointIndex);
 				}
 			}
 
-			IntPoint currentPosition = startPosition;
+			IntPoint currentPosition = this.startPosition;
 			// We loop over the polygon list twice, at each inner loop we only pick one polygon.
-			for (int polygonIndexOuterLoop = 0; polygonIndexOuterLoop < polygons.Count; polygonIndexOuterLoop++)
+			for (int polygonIndexOuter = 0; polygonIndexOuter < this.polygons.Count; polygonIndexOuter++)
 			{
 				int bestPolygonIndex = -1;
 				double bestDist = double.MaxValue;
-				for (int polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
+				for (int polygonIndexInner = 0; polygonIndexInner < this.polygons.Count; polygonIndexInner++)
 				{
-					if (polygonHasBeenAdded[polygonIndex] || polygons[polygonIndex].Count < 1)
+					if (polygonHasBeenAdded[polygonIndexInner] || this.polygons[polygonIndexInner].Count < 1)
 					{
 						continue;
 					}
 
 					// If there are only 2 points (a single line) or the path is marked as travel both ways, we are willing to start from the start or the end.
-					if (polygons[polygonIndex].Count == 2 || canTravelForwardOrBackward)
+					if (this.polygons[polygonIndexInner].Count == 2 || canTravelForwardOrBackward)
 					{
-						double distToSart = (polygons[polygonIndex][0] - currentPosition).LengthSquared();
+						double distToSart = (this.polygons[polygonIndexInner][0] - currentPosition).LengthSquared();
 						if (distToSart <= bestDist)
 						{
-							bestPolygonIndex = polygonIndex;
+							bestPolygonIndex = polygonIndexInner;
 							bestDist = distToSart;
-							StartIndexInPolygon[polygonIndex] = 0;
+							this.StartIndexInPolygon[polygonIndexInner] = 0;
 						}
 
-						double distToEnd = (polygons[polygonIndex][polygons[polygonIndex].Count - 1] - currentPosition).LengthSquared();
+						int endIndex = this.polygons[bestPolygonIndex].Count - 1;
+						double distToEnd = (this.polygons[polygonIndexInner][endIndex] - currentPosition).LengthSquared();
 						if (distToEnd < bestDist)
 						{
-							bestPolygonIndex = polygonIndex;
+							bestPolygonIndex = polygonIndexInner;
 							bestDist = distToEnd;
-							StartIndexInPolygon[polygonIndex] = 1;
+							this.StartIndexInPolygon[polygonIndexInner] = 1;
 						}
 					}
 					else
 					{
-						double dist = (polygons[polygonIndex][StartIndexInPolygon[polygonIndex]] - currentPosition).LengthSquared();
+						double dist = (this.polygons[polygonIndexInner][this.StartIndexInPolygon[polygonIndexInner]] - currentPosition).LengthSquared();
 						if (dist < bestDist)
 						{
-							bestPolygonIndex = polygonIndex;
+							bestPolygonIndex = polygonIndexInner;
 							bestDist = dist;
 						}
 					}
@@ -132,55 +138,56 @@ namespace MatterHackers.MatterSlice
 
 				if (bestPolygonIndex > -1)
 				{
-					if (polygons[bestPolygonIndex].Count == 2 || canTravelForwardOrBackward)
+					if (this.polygons[bestPolygonIndex].Count == 2 || canTravelForwardOrBackward)
 					{
 						// get the point that is opposite from the one we started on
-						int startIndex = StartIndexInPolygon[bestPolygonIndex];
+						int startIndex = this.StartIndexInPolygon[bestPolygonIndex];
 						if (startIndex == 0)
 						{
-							currentPosition = polygons[bestPolygonIndex][polygons[bestPolygonIndex].Count - 1];
+							int endIndex = this.polygons[bestPolygonIndex].Count - 1;
+							currentPosition = this.polygons[bestPolygonIndex][endIndex];
 						}
 						else
 						{
-							currentPosition = polygons[bestPolygonIndex][0];
+							currentPosition = this.polygons[bestPolygonIndex][0];
 						}
 					}
 					else
 					{
-						currentPosition = polygons[bestPolygonIndex][StartIndexInPolygon[bestPolygonIndex]];
+						currentPosition = this.polygons[bestPolygonIndex][this.StartIndexInPolygon[bestPolygonIndex]];
 					}
 
 					polygonHasBeenAdded[bestPolygonIndex] = true;
-					BestIslandOrderIndex.Add(bestPolygonIndex);
+					this.BestIslandOrderIndex.Add(bestPolygonIndex);
 				}
 			}
 
-			currentPosition = startPosition;
-			foreach (int bestPolygonIndex in BestIslandOrderIndex)
+			currentPosition = this.startPosition;
+			foreach (int bestPolygonIndex in this.BestIslandOrderIndex)
 			{
 				int bestStartPoint = -1;
 				double bestDist = double.MaxValue;
 				if (canTravelForwardOrBackward)
 				{
-					bestDist = (polygons[bestPolygonIndex][0] - currentPosition).LengthSquared();
+					bestDist = (this.polygons[bestPolygonIndex][0] - currentPosition).LengthSquared();
 					bestStartPoint = 0;
 
 					// check if the end is better
-					int endIndex = polygons[bestPolygonIndex].Count - 1;
-					double dist = (polygons[bestPolygonIndex][endIndex] - currentPosition).LengthSquared();
+					int endIndex = this.polygons[bestPolygonIndex].Count - 1;
+					double dist = (this.polygons[bestPolygonIndex][endIndex] - currentPosition).LengthSquared();
 					if (dist < bestDist)
 					{
 						bestStartPoint = endIndex;
 						bestDist = dist;
 					}
 
-					StartIndexInPolygon[bestPolygonIndex] = bestStartPoint;
+					this.StartIndexInPolygon[bestPolygonIndex] = bestStartPoint;
 				}
 				else
 				{
-					for (int pointIndex = 0; pointIndex < polygons[bestPolygonIndex].Count; pointIndex++)
+					for (int pointIndex = 0; pointIndex < this.polygons[bestPolygonIndex].Count; pointIndex++)
 					{
-						double dist = (polygons[bestPolygonIndex][pointIndex] - currentPosition).LengthSquared();
+						double dist = (this.polygons[bestPolygonIndex][pointIndex] - currentPosition).LengthSquared();
 						if (dist < bestDist)
 						{
 							bestStartPoint = pointIndex;
@@ -189,20 +196,21 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				if (polygons[bestPolygonIndex].Count == 2 || canTravelForwardOrBackward)
+				if (this.polygons[bestPolygonIndex].Count == 2 || canTravelForwardOrBackward)
 				{
 					if (bestStartPoint == 0)
 					{
-						currentPosition = polygons[bestPolygonIndex][polygons[bestPolygonIndex].Count - 1];
+						var endIndex = this.polygons[bestPolygonIndex].Count - 1;
+						currentPosition = this.polygons[bestPolygonIndex][endIndex];
 					}
 					else
 					{
-						currentPosition = polygons[bestPolygonIndex][0];
+						currentPosition = this.polygons[bestPolygonIndex][0];
 					}
 				}
 				else
 				{
-					currentPosition = polygons[bestPolygonIndex][bestStartPoint];
+					currentPosition = this.polygons[bestPolygonIndex][bestStartPoint];
 				}
 			}
 		}

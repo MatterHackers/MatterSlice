@@ -21,7 +21,6 @@
 //SOFTWARE.
 
 using System;
-using System.Collections.Generic;
 using MSClipperLib;
 
 namespace MatterHackers.QuadTree

@@ -969,7 +969,7 @@ namespace MatterHackers.MatterSlice
 				slicingData.WipeShield[layerIndex].Clear();
 			}
 
-			var islandOrderOptimizer = new PathOrderOptimizer(default(IntPoint));
+			var islandOrderOptimizer = new PathOrderOptimizer(default(IntPoint), config);
 			for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
 			{
 				if (config.ContinuousSpiralOuterPerimeter && partIndex > 0)
@@ -1435,7 +1435,7 @@ namespace MatterHackers.MatterSlice
 			{
 				SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 
-				var islandOrderOptimizer = new PathOrderOptimizer(default(IntPoint));
+				var islandOrderOptimizer = new PathOrderOptimizer(default(IntPoint), config);
 				for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 				{
 					if (layer.Islands[islandIndex].InsetToolPaths.Count > 0)

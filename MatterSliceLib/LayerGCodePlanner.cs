@@ -305,42 +305,42 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public bool QueuePolygonByOptimizer(Polygon polygon, PathFinder pathFinder, GCodePathConfig config, int layerIndex)
+		public bool QueuePolygonByOptimizer(Polygon polygon, PathFinder pathFinder, GCodePathConfig pathConfig, int layerIndex)
 		{
-			var orderOptimizer = new PathOrderOptimizer(LastPosition);
+			var orderOptimizer = new PathOrderOptimizer(LastPosition, config);
 			orderOptimizer.AddPolygon(polygon);
 
-			orderOptimizer.Optimize(pathFinder, layerIndex, config);
+			orderOptimizer.Optimize(pathFinder, layerIndex, pathConfig);
 
 			for (int i = 0; i < orderOptimizer.BestIslandOrderIndex.Count; i++)
 			{
 				int polygonIndex = orderOptimizer.BestIslandOrderIndex[i];
 				// The order optimizer should already have created all the right moves
 				// so pass a null for the path finder (don't re-plan them).
-				QueuePolygon(polygon, pathFinder, orderOptimizer.StartIndexInPolygon[polygonIndex], config);
+				QueuePolygon(polygon, pathFinder, orderOptimizer.StartIndexInPolygon[polygonIndex], pathConfig);
 			}
 
 			return true;
 		}
 
-		public bool QueuePolygonsByOptimizer(Polygons polygons, PathFinder pathFinder, GCodePathConfig config, int layerIndex)
+		public bool QueuePolygonsByOptimizer(Polygons polygons, PathFinder pathFinder, GCodePathConfig pathConfig, int layerIndex)
 		{
 			if (polygons.Count == 0)
 			{
 				return false;
 			}
 
-			var orderOptimizer = new PathOrderOptimizer(LastPosition);
+			var orderOptimizer = new PathOrderOptimizer(LastPosition, config);
 			orderOptimizer.AddPolygons(polygons);
 
-			orderOptimizer.Optimize(pathFinder, layerIndex, config);
+			orderOptimizer.Optimize(pathFinder, layerIndex, pathConfig);
 
 			for (int i = 0; i < orderOptimizer.BestIslandOrderIndex.Count; i++)
 			{
 				int polygonIndex = orderOptimizer.BestIslandOrderIndex[i];
 				// The order optimizer should already have created all the right moves
 				// so pass a null for the path finder (don't re-plan them).
-				QueuePolygon(polygons[polygonIndex], pathFinder, orderOptimizer.StartIndexInPolygon[polygonIndex], config);
+				QueuePolygon(polygons[polygonIndex], pathFinder, orderOptimizer.StartIndexInPolygon[polygonIndex], pathConfig);
 			}
 
 			return true;

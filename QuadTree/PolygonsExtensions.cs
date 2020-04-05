@@ -33,7 +33,6 @@ using MSClipperLib;
 
 namespace MatterHackers.QuadTree
 {
-	using System.Linq;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
