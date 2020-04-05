@@ -114,13 +114,13 @@ namespace MatterHackers.MatterSlice
 							this.StartIndexInPolygon[polygonIndexInner] = 0;
 						}
 
-						int endIndex = this.polygons[bestPolygonIndex].Count - 1;
+						int endIndex = this.polygons[polygonIndexInner].Count - 1;
 						double distToEnd = (this.polygons[polygonIndexInner][endIndex] - currentPosition).LengthSquared();
 						if (distToEnd < bestDist)
 						{
 							bestPolygonIndex = polygonIndexInner;
 							bestDist = distToEnd;
-							this.StartIndexInPolygon[polygonIndexInner] = 1;
+							this.StartIndexInPolygon[polygonIndexInner] = endIndex;
 						}
 					}
 					else
