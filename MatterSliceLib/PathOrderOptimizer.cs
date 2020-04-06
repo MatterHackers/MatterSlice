@@ -19,28 +19,43 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
-using System.Collections.Generic;
 using MatterHackers.Pathfinding;
 using MSClipperLib;
+using System;
+using System.Collections.Generic;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice
 {
+	public class PolyAndPoint
+	{
+		public int PointIndex { get; set; }
+
+		public int PolyIndex { get; set; }
+
+		public PolyAndPoint()
+		{
+		}
+
+		public PolyAndPoint(int poly, int point)
+		{
+			this.PolyIndex = poly;
+			this.PointIndex = point;
+		}
+	}
+
 	public class PathOrderOptimizer
 	{
-		public List<int> BestIslandOrderIndex { get; private set; } = new List<int>();
-
-		public List<int> StartIndexInPolygon { get; private set; } = new List<int>();
-
-		private readonly List<Polygon> polygons = new List<Polygon>();
 		private readonly ConfigSettings config;
+		private readonly List<Polygon> polygons = new List<Polygon>();
 
 		public PathOrderOptimizer(ConfigSettings config)
 		{
 			this.config = config;
 		}
+
+		public List<PolyAndPoint> Order { get; private set; } = new List<PolyAndPoint>();
 
 		public void AddPolygon(Polygon polygon)
 		{
@@ -57,160 +72,115 @@ namespace MatterHackers.MatterSlice
 
 		public void Optimize(IntPoint startPosition, PathFinder pathFinder, int layerIndex, GCodePathConfig pathConfig = null)
 		{
+			this.Order.Clear();
+
+			bool doSeamHiding = pathConfig != null && pathConfig.DoSeamHiding && !pathConfig.Spiralize;
 			bool canTravelForwardOrBackward = pathConfig != null && !pathConfig.ClosedLoop;
 			// Find the point that is closest to our current position (start position)
-			bool[] polygonHasBeenAdded = new bool[this.polygons.Count];
-			for (int polygonIndex = 0; polygonIndex < this.polygons.Count; polygonIndex++)
-			{
-				Polygon currentPolygon = this.polygons[polygonIndex];
-				if (canTravelForwardOrBackward || currentPolygon.Count < 3)
-				{
-					this.StartIndexInPolygon.Add(0);
-				}
-				else // This is a closed loop.
-				{
-					// some code for helping create unit tests
-					// string polyString = currentPolygon.WriteToString();
-					// currentPolygon.SaveToGCode("perimeter.gcode");
 
-					// this is our new seam hiding code
-					int bestPointIndex;
-					if (pathConfig != null
-						&& pathConfig.DoSeamHiding
-						&& !pathConfig.Spiralize)
-					{
-						bestPointIndex = currentPolygon.FindGreatestTurnIndex(startPosition, layerIndex, pathConfig.LineWidth_um);
-					}
-					else
-					{
-						bestPointIndex = currentPolygon.FindClosestPositionIndex(startPosition);
-					}
-
-					this.StartIndexInPolygon.Add(bestPointIndex);
-				}
-			}
+			var completatedPolygons = new HashSet<int>();
 
 			IntPoint currentPosition = startPosition;
-			// We loop over the polygon list twice, at each inner loop we only pick one polygon.
-			for (int polygonIndexOuter = 0; polygonIndexOuter < this.polygons.Count; polygonIndexOuter++)
+			while (completatedPolygons.Count < polygons.Count)
 			{
-				int bestPolygonIndex = -1;
-				double bestDist = double.MaxValue;
-				for (int polygonIndexInner = 0; polygonIndexInner < this.polygons.Count; polygonIndexInner++)
+				var closestPolyPoint = FindClosestPolyAndPoint(currentPosition,
+					completatedPolygons,
+					doSeamHiding,
+					layerIndex,
+					pathConfig != null ? pathConfig.LineWidth_um : 0,
+					canTravelForwardOrBackward,
+					out IntPoint endPosition);
+
+				Order.Add(closestPolyPoint);
+				completatedPolygons.Add(closestPolyPoint.PolyIndex);
+
+				currentPosition = endPosition;
+			}
+		}
+
+		private PolyAndPoint FindClosestPolyAndPoint(IntPoint currentPosition,
+			HashSet<int> compleatedPolygons,
+			bool doSeamHiding,
+			int layerIndex,
+			long lineWidth_um,
+			bool canTravelForwardOrBackward,
+			out IntPoint endPosition)
+		{
+			endPosition = currentPosition;
+			var bestDistSquared = double.MaxValue;
+			var bestResult = new PolyAndPoint();
+			for (int i = 0; i < polygons.Count; i++)
+			{
+				if (compleatedPolygons.Contains(i))
 				{
-					if (polygonHasBeenAdded[polygonIndexInner] || this.polygons[polygonIndexInner].Count < 1)
-					{
-						continue;
-					}
-
-					// If there are only 2 points (a single line) or the path is marked as travel both ways, we are willing to start from the start or the end.
-					if (this.polygons[polygonIndexInner].Count == 2 || canTravelForwardOrBackward)
-					{
-						double distToSart = (this.polygons[polygonIndexInner][0] - currentPosition).LengthSquared();
-						if (distToSart <= bestDist)
-						{
-							bestPolygonIndex = polygonIndexInner;
-							bestDist = distToSart;
-							this.StartIndexInPolygon[polygonIndexInner] = 0;
-						}
-
-						int endIndex = this.polygons[polygonIndexInner].Count - 1;
-						double distToEnd = (this.polygons[polygonIndexInner][endIndex] - currentPosition).LengthSquared();
-						if (distToEnd < bestDist)
-						{
-							bestPolygonIndex = polygonIndexInner;
-							bestDist = distToEnd;
-							this.StartIndexInPolygon[polygonIndexInner] = endIndex;
-						}
-					}
-					else
-					{
-						double dist = (this.polygons[polygonIndexInner][this.StartIndexInPolygon[polygonIndexInner]] - currentPosition).LengthSquared();
-						if (dist < bestDist)
-						{
-							bestPolygonIndex = polygonIndexInner;
-							bestDist = dist;
-						}
-					}
+					// skip this polygon it has been processed
+					continue;
 				}
 
-				if (bestPolygonIndex > -1)
-				{
-					if (this.polygons[bestPolygonIndex].Count == 2 || canTravelForwardOrBackward)
-					{
-						// get the point that is opposite from the one we started on
-						int startIndex = this.StartIndexInPolygon[bestPolygonIndex];
-						if (startIndex == 0)
-						{
-							int endIndex = this.polygons[bestPolygonIndex].Count - 1;
-							currentPosition = this.polygons[bestPolygonIndex][endIndex];
-						}
-						else
-						{
-							currentPosition = this.polygons[bestPolygonIndex][0];
-						}
-					}
-					else
-					{
-						currentPosition = this.polygons[bestPolygonIndex][this.StartIndexInPolygon[bestPolygonIndex]];
-					}
+				int pointIndex = FindClosestPoint(polygons[i],
+					currentPosition,
+					doSeamHiding,
+					canTravelForwardOrBackward,
+					layerIndex,
+					lineWidth_um,
+					out double distanceSquared,
+					out IntPoint polyEndPosition);
 
-					polygonHasBeenAdded[bestPolygonIndex] = true;
-					this.BestIslandOrderIndex.Add(bestPolygonIndex);
+				if (distanceSquared < bestDistSquared)
+				{
+					bestDistSquared = distanceSquared;
+					endPosition = polyEndPosition;
+					bestResult = new PolyAndPoint(i, pointIndex);
 				}
 			}
 
-			currentPosition = startPosition;
-			foreach (int bestPolygonIndex in this.BestIslandOrderIndex)
+			return bestResult;
+		}
+
+		private int FindClosestPoint(Polygon polygon,
+			IntPoint currentPosition,
+			bool doSeamHiding,
+			bool canTravelForwardOrBackward,
+			int layerIndex,
+			long lineWidth_um,
+			out double bestDistSquared,
+			out IntPoint endPosition)
+		{
+			int bestPoint;
+			if (canTravelForwardOrBackward || polygon.Count == 2)
 			{
-				int bestStartPoint = -1;
-				double bestDist = double.MaxValue;
-				if (canTravelForwardOrBackward)
-				{
-					bestDist = (this.polygons[bestPolygonIndex][0] - currentPosition).LengthSquared();
-					bestStartPoint = 0;
+				int endIndex = polygon.Count - 1;
 
-					// check if the end is better
-					int endIndex = this.polygons[bestPolygonIndex].Count - 1;
-					double dist = (this.polygons[bestPolygonIndex][endIndex] - currentPosition).LengthSquared();
-					if (dist < bestDist)
-					{
-						bestStartPoint = endIndex;
-						bestDist = dist;
-					}
+				bestDistSquared = (polygon[0] - currentPosition).LengthSquared();
+				bestPoint = 0;
+				endPosition = polygon[endIndex];
 
-					this.StartIndexInPolygon[bestPolygonIndex] = bestStartPoint;
-				}
-				else
+				// check if the end is better
+				double distSquared = (polygon[endIndex] - currentPosition).LengthSquared();
+				if (distSquared < bestDistSquared)
 				{
-					for (int pointIndex = 0; pointIndex < this.polygons[bestPolygonIndex].Count; pointIndex++)
-					{
-						double dist = (this.polygons[bestPolygonIndex][pointIndex] - currentPosition).LengthSquared();
-						if (dist < bestDist)
-						{
-							bestStartPoint = pointIndex;
-							bestDist = dist;
-						}
-					}
-				}
-
-				if (this.polygons[bestPolygonIndex].Count == 2 || canTravelForwardOrBackward)
-				{
-					if (bestStartPoint == 0)
-					{
-						var endIndex = this.polygons[bestPolygonIndex].Count - 1;
-						currentPosition = this.polygons[bestPolygonIndex][endIndex];
-					}
-					else
-					{
-						currentPosition = this.polygons[bestPolygonIndex][0];
-					}
-				}
-				else
-				{
-					currentPosition = this.polygons[bestPolygonIndex][bestStartPoint];
+					bestDistSquared = distSquared;
+					bestPoint = endIndex;
+					endPosition = polygon[0];
 				}
 			}
+			else
+			{
+				if (doSeamHiding)
+				{
+					bestPoint = polygon.FindGreatestTurnIndex(currentPosition, layerIndex, lineWidth_um);
+				}
+				else
+				{
+					bestPoint = polygon.FindClosestPositionIndex(currentPosition);
+				}
+
+				bestDistSquared = (polygon[bestPoint] - currentPosition).LengthSquared();
+
+				endPosition = polygon[bestPoint];
+			}
+
+			return bestPoint;
 		}
 	}
 }

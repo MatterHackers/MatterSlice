@@ -311,7 +311,7 @@ namespace MatterHackers.MatterSlice
 			orderOptimizer.AddPolygon(polygon);
 
 			orderOptimizer.Optimize(LastPosition, pathFinder, layerIndex, pathConfig);
-			QueuePolygon(polygon, pathFinder, orderOptimizer.StartIndexInPolygon[0], pathConfig);
+			QueuePolygon(polygon, pathFinder, orderOptimizer.Order[0].PointIndex, pathConfig);
 
 			return true;
 		}
@@ -328,12 +328,11 @@ namespace MatterHackers.MatterSlice
 
 			orderOptimizer.Optimize(LastPosition, pathFinder, layerIndex, pathConfig);
 
-			for (int i = 0; i < orderOptimizer.BestIslandOrderIndex.Count; i++)
+			foreach (var order in orderOptimizer.Order)
 			{
-				int polygonIndex = orderOptimizer.BestIslandOrderIndex[i];
 				// The order optimizer should already have created all the right moves
 				// so pass a null for the path finder (don't re-plan them).
-				QueuePolygon(polygons[polygonIndex], pathFinder, orderOptimizer.StartIndexInPolygon[polygonIndex], pathConfig);
+				QueuePolygon(polygons[order.PolyIndex], pathFinder, order.PointIndex, pathConfig);
 			}
 
 			return true;
