@@ -78,21 +78,57 @@ namespace MatterHackers.MatterSlice
 			bool canTravelForwardOrBackward = pathConfig != null && !pathConfig.ClosedLoop;
 			// Find the point that is closest to our current position (start position)
 
-			var completatedPolygons = new HashSet<int>();
+			var completedPolygons = new HashSet<int>();
 
 			IntPoint currentPosition = startPosition;
-			while (completatedPolygons.Count < polygons.Count)
+			while (completedPolygons.Count < polygons.Count)
 			{
 				var closestPolyPoint = FindClosestPolyAndPoint(currentPosition,
-					completatedPolygons,
+					completedPolygons,
 					doSeamHiding,
 					layerIndex,
 					pathConfig != null ? pathConfig.LineWidth_um : 0,
 					canTravelForwardOrBackward,
 					out IntPoint endPosition);
 
+				// if we have a path finder check if we have actually found the shortest path
+				if (pathFinder != null)
+				{
+					var pathPolygon = new Polygon();
+					// path find the start and end that we found to find out how far it is
+					if (pathFinder.CreatePathInsideBoundary(currentPosition, endPosition, pathPolygon, true, layerIndex))
+					{
+						var pathLength = pathPolygon.PolygonLength();
+						var directLength = (endPosition - currentPosition).Length();
+
+						if (pathLength > config.MinimumTravelToCauseRetraction_um
+							&& pathLength > 2 * directLength)
+						{
+							// try to find a closer place to go to by looking at the center of the returned path
+							var center = pathPolygon.GetPositionAllongPath(.5, pathConfig != null ? pathConfig.ClosedLoop : false);
+							var midPolyPoint = FindClosestPolyAndPoint(center,
+								completedPolygons,
+								doSeamHiding,
+								layerIndex,
+								pathConfig != null ? pathConfig.LineWidth_um : 0,
+								canTravelForwardOrBackward,
+								out IntPoint midEndPosition);
+
+							if (pathFinder.CreatePathInsideBoundary(currentPosition, midEndPosition, pathPolygon, true, layerIndex))
+							{
+								var midPathLength = pathPolygon.PolygonLength();
+								if (midPathLength < pathLength)
+								{
+									closestPolyPoint = midPolyPoint;
+									endPosition = midEndPosition;
+								}
+							}
+						}
+					}
+				}
+
 				Order.Add(closestPolyPoint);
-				completatedPolygons.Add(closestPolyPoint.PolyIndex);
+				completedPolygons.Add(closestPolyPoint.PolyIndex);
 
 				currentPosition = endPosition;
 			}
