@@ -74,7 +74,7 @@ namespace MatterHackers.MatterSlice.Tests
 				pPathOrderOptimizer.AddPolygon(polyQ2);
 
 				// starting at low far right
-				pPathOrderOptimizer.Optimize(new IntPoint(20, 0), null, 0, null);
+				pPathOrderOptimizer.Optimize(new IntPoint(20, 0), null, 0, false, null);
 				Assert.AreEqual(2, pPathOrderOptimizer.Order.Count);
 				Assert.AreEqual(0, pPathOrderOptimizer.Order[0].PolyIndex);
 				Assert.AreEqual(3, pPathOrderOptimizer.Order[0].PointIndex);
@@ -82,7 +82,7 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.AreEqual(0, pPathOrderOptimizer.Order[1].PointIndex);
 
 				// starting at high far right
-				pPathOrderOptimizer.Optimize(new IntPoint(20, 20), null, 0, null);
+				pPathOrderOptimizer.Optimize(new IntPoint(20, 20), null, 0, false, null);
 				Assert.AreEqual(2, pPathOrderOptimizer.Order.Count);
 				Assert.AreEqual(0, pPathOrderOptimizer.Order[0].PolyIndex);
 				Assert.AreEqual(2, pPathOrderOptimizer.Order[0].PointIndex);
@@ -90,7 +90,7 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.AreEqual(1, pPathOrderOptimizer.Order[1].PointIndex);
 
 				// starting at high far left
-				pPathOrderOptimizer.Optimize(new IntPoint(-20, 20), null, 0, null);
+				pPathOrderOptimizer.Optimize(new IntPoint(-20, 20), null, 0, false, null);
 				Assert.AreEqual(2, pPathOrderOptimizer.Order.Count);
 				Assert.AreEqual(1, pPathOrderOptimizer.Order[0].PolyIndex);
 				Assert.AreEqual(2, pPathOrderOptimizer.Order[0].PointIndex);
@@ -106,7 +106,7 @@ namespace MatterHackers.MatterSlice.Tests
 						"x:0, y:0,x:500, y:0,|x:0, y:100,x:500, y:100,|x:0, y:200,x:500, y:200,|x:0, y:300,x:500, y:300,|"));
 
 				// starting at low far right
-				pPathOrderOptimizer.Optimize(new IntPoint(0, 0), null, 0, null);
+				pPathOrderOptimizer.Optimize(new IntPoint(0, 0), null, 0, false, null);
 				Assert.AreEqual(4, pPathOrderOptimizer.Order.Count);
 				Assert.AreEqual(0, pPathOrderOptimizer.Order[0].PolyIndex);
 				Assert.AreEqual(1, pPathOrderOptimizer.Order[1].PolyIndex);

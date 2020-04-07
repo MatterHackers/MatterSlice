@@ -34,21 +34,30 @@ namespace MatterHackers.MatterSlice
 
 		public int PolyIndex { get; set; }
 
+		public bool IsExtrude { get; set; } = true;
+
 		public PolyAndPoint()
 		{
 		}
 
-		public PolyAndPoint(int poly, int point)
+		public PolyAndPoint(int poly, int point, bool isExtrude)
 		{
 			this.PolyIndex = poly;
 			this.PointIndex = point;
+			this.IsExtrude = isExtrude;
+		}
+
+		public override string ToString()
+		{
+			var description = IsExtrude ? "extrude" : "travel";
+			return $"poly: {PolyIndex} point: {PointIndex} {description}";
 		}
 	}
 
 	public class PathOrderOptimizer
 	{
 		private readonly ConfigSettings config;
-		private readonly List<Polygon> polygons = new List<Polygon>();
+		public List<Polygon> Polygons { get; private set; } = new List<Polygon>();
 
 		public PathOrderOptimizer(ConfigSettings config)
 		{
@@ -59,18 +68,18 @@ namespace MatterHackers.MatterSlice
 
 		public void AddPolygon(Polygon polygon)
 		{
-			this.polygons.Add(polygon);
+			this.Polygons.Add(polygon);
 		}
 
 		public void AddPolygons(Polygons polygons)
 		{
 			for (int i = 0; i < polygons.Count; i++)
 			{
-				this.polygons.Add(polygons[i]);
+				this.Polygons.Add(polygons[i]);
 			}
 		}
 
-		public void Optimize(IntPoint startPosition, PathFinder pathFinder, int layerIndex, GCodePathConfig pathConfig = null)
+		public void Optimize(IntPoint startPosition, PathFinder pathFinder, int layerIndex, bool addMovePolys, GCodePathConfig pathConfig = null)
 		{
 			this.Order.Clear();
 
@@ -81,7 +90,7 @@ namespace MatterHackers.MatterSlice
 			var completedPolygons = new HashSet<int>();
 
 			IntPoint currentPosition = startPosition;
-			while (completedPolygons.Count < polygons.Count)
+			while (completedPolygons.Count < Polygons.Count)
 			{
 				var closestPolyPoint = FindClosestPolyAndPoint(currentPosition,
 					completedPolygons,
@@ -114,6 +123,7 @@ namespace MatterHackers.MatterSlice
 								canTravelForwardOrBackward,
 								out IntPoint midEndPosition);
 
+							var centerPathPolygon = new Polygon();
 							if (pathFinder.CreatePathInsideBoundary(currentPosition, midEndPosition, pathPolygon, true, layerIndex))
 							{
 								var midPathLength = pathPolygon.PolygonLength();
@@ -121,8 +131,17 @@ namespace MatterHackers.MatterSlice
 								{
 									closestPolyPoint = midPolyPoint;
 									endPosition = midEndPosition;
+									pathPolygon = centerPathPolygon;
 								}
 							}
+						}
+
+						if (addMovePolys)
+						{
+							// add in the move
+							Order.Add(new PolyAndPoint(Polygons.Count, 0, false));
+							completedPolygons.Add(Polygons.Count);
+							Polygons.Add(pathPolygon);
 						}
 					}
 				}
@@ -145,7 +164,7 @@ namespace MatterHackers.MatterSlice
 			endPosition = currentPosition;
 			var bestDistSquared = double.MaxValue;
 			var bestResult = new PolyAndPoint();
-			for (int i = 0; i < polygons.Count; i++)
+			for (int i = 0; i < Polygons.Count; i++)
 			{
 				if (compleatedPolygons.Contains(i))
 				{
@@ -153,7 +172,7 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				int pointIndex = FindClosestPoint(polygons[i],
+				int pointIndex = FindClosestPoint(Polygons[i],
 					currentPosition,
 					doSeamHiding,
 					canTravelForwardOrBackward,
@@ -166,7 +185,7 @@ namespace MatterHackers.MatterSlice
 				{
 					bestDistSquared = distanceSquared;
 					endPosition = polyEndPosition;
-					bestResult = new PolyAndPoint(i, pointIndex);
+					bestResult = new PolyAndPoint(i, pointIndex, true);
 				}
 			}
 
