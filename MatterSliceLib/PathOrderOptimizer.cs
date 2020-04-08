@@ -139,9 +139,9 @@ namespace MatterHackers.MatterSlice
 						if (addMovePolys)
 						{
 							// add in the move
-							Order.Add(new PolyAndPoint(Polygons.Count, 0, false));
-							completedPolygons.Add(Polygons.Count);
-							Polygons.Add(pathPolygon);
+							//Order.Add(new PolyAndPoint(Polygons.Count, 0, false));
+							//completedPolygons.Add(Polygons.Count);
+							//Polygons.Add(pathPolygon);
 						}
 					}
 				}
