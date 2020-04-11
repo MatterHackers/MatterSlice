@@ -36,15 +36,18 @@ namespace MatterHackers.MatterSlice
 
 		public bool IsExtrude { get; set; } = true;
 
+		public bool FoundPath { get; } = false;
+
 		public PolyAndPoint()
 		{
 		}
 
-		public PolyAndPoint(int poly, int point, bool isExtrude)
+		public PolyAndPoint(int poly, int point, bool isExtrude, bool foundPath)
 		{
 			this.PolyIndex = poly;
 			this.PointIndex = point;
 			this.IsExtrude = isExtrude;
+			this.FoundPath = foundPath;
 		}
 
 		public override string ToString()
@@ -103,10 +106,12 @@ namespace MatterHackers.MatterSlice
 				// if we have a path finder check if we have actually found the shortest path
 				if (pathFinder != null)
 				{
+					var foundPath = false;
 					var pathPolygon = new Polygon();
 					// path find the start and end that we found to find out how far it is
 					if (pathFinder.CreatePathInsideBoundary(currentPosition, endPosition, pathPolygon, true, layerIndex))
 					{
+						foundPath = true;
 						var pathLength = pathPolygon.PolygonLength();
 						var directLength = (endPosition - currentPosition).Length();
 
@@ -135,14 +140,18 @@ namespace MatterHackers.MatterSlice
 								}
 							}
 						}
+					}
+					else // can't find a path
+					{
+						foundPath = false;
+					}
 
-						if (addMovePolys)
-						{
-							// add in the move
-							//Order.Add(new PolyAndPoint(Polygons.Count, 0, false));
-							//completedPolygons.Add(Polygons.Count);
-							//Polygons.Add(pathPolygon);
-						}
+					if (addMovePolys)
+					{
+						// add in the move
+						//Order.Add(new PolyAndPoint(Polygons.Count, 0, false, foundPath));
+						//completedPolygons.Add(Polygons.Count);
+						//Polygons.Add(pathPolygon);
 					}
 				}
 
@@ -185,7 +194,7 @@ namespace MatterHackers.MatterSlice
 				{
 					bestDistSquared = distanceSquared;
 					endPosition = polyEndPosition;
-					bestResult = new PolyAndPoint(i, pointIndex, true);
+					bestResult = new PolyAndPoint(i, pointIndex, true, false);
 				}
 			}
 
