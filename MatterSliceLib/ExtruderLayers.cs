@@ -235,6 +235,9 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		static HashSet<int> layersSeen = new HashSet<int>();
+		static object locker = new object();
+
 		public static void InitializeLayerPathing(ConfigSettings config, Polygons extraPathingConsideration, List<ExtruderLayers> extruders)
 		{
 			Parallel.For(0, extruders[0].Layers.Count, (layerIndex) =>
@@ -245,7 +248,15 @@ namespace MatterHackers.MatterSlice
 					return;
 				}
 
-				LogOutput.Log("Generating Outlines {0}/{1}\n".FormatWith(layerIndex + 1, extruders[0].Layers.Count));
+				lock (locker)
+				{
+					if (!layersSeen.Contains(layerIndex))
+					{
+						layersSeen.Add(layerIndex);
+					}
+
+					LogOutput.Log("Generating Outlines {0}/{1}\n".FormatWith(layersSeen.Count(), extruders[0].Layers.Count));
+				}
 
 				long avoidInset = config.ExtrusionWidth_um * 3 / 2;
 

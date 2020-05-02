@@ -114,7 +114,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 			optimizedMeshCollection.SetSize(simpleMeshCollection);
-			LogOutput.Log("Optimized model in {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
+			LogOutput.Log("Optimized model: {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Reset();
 
 			var timeKeeperTotal = Stopwatch.StartNew();
@@ -222,7 +222,7 @@ namespace MatterHackers.MatterSlice
             //slicerList[0].DumpPolygonsToHTML("Volume 0 Polygons.html");
 #endif
 
-			LogOutput.Log("Sliced model in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
+			LogOutput.Log("Sliced model: {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Restart();
 
 			slicingData.modelSize = optimizedMeshCollection.size_um;
@@ -251,7 +251,7 @@ namespace MatterHackers.MatterSlice
 
 			// make the path finding data include all the layer info
 
-			LogOutput.Log("Generated layer parts in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
+			LogOutput.Log("Generated layer parts: {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Restart();
 		}
 
@@ -270,7 +270,7 @@ namespace MatterHackers.MatterSlice
 
 			slicingData.Extruders = MultiExtruders.ProcessBooleans(slicingData.Extruders, config.BooleanOperations);
 
-			LogOutput.Log("Processed support regions in {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
+			LogOutput.Log("Processed support regions: {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 
 			MultiExtruders.RemoveExtruderIntersections(slicingData.Extruders);
 
@@ -304,7 +304,7 @@ namespace MatterHackers.MatterSlice
 			{
 				timeKeeper.Restart();
 				slicingData.Support = new NewSupport(config, slicingData.Extruders, supportOutlines);
-				LogOutput.Log("Generating supports in {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
+				LogOutput.Log("Generated supports: {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			}
 
 			slicingData.CreateIslandData();
@@ -468,9 +468,13 @@ namespace MatterHackers.MatterSlice
 					break;
 				}
 
-				LogOutput.Log("Writing Layers {0}/{1}\n".FormatWith(layerIndex + 1, totalLayers));
+				lock (locker)
+				{
+					LogOutput.Log("Writing Layers {0}/{1}\n".FormatWith(layerWriten, totalLayers));
 
-				LogOutput.logProgress("export", layerIndex + 1, totalLayers);
+					LogOutput.logProgress("export", layerWriten, totalLayers);
+					layerWriten++;
+				}
 
 				if (layerIndex < config.NumberOfFirstLayers)
 				{
@@ -666,7 +670,7 @@ namespace MatterHackers.MatterSlice
 				layerPlanner.WriteQueuedGCode(currentLayerThickness_um);
 			}
 
-			LogOutput.Log("Wrote layers in {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
+			LogOutput.Log("Wrote layers: {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Restart();
 			gcodeExport.WriteFanCommand(0);
 
@@ -929,6 +933,8 @@ namespace MatterHackers.MatterSlice
 		}
 
 		private LayerIsland islandCurrentlyInside = null;
+		private int layerWriten = 1;
+		private object locker = new object();
 
 		// Add a single layer from a single extruder to the GCode
 		private void QueueExtruderLayerToGCode(LayerDataStorage slicingData,
