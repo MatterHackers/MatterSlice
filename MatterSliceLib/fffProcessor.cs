@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using MatterHackers.Pathfinding;
 using MatterHackers.QuadTree;
 using MSClipperLib;
@@ -200,14 +201,20 @@ namespace MatterHackers.MatterSlice
             optimizedModel.saveDebugSTL("debug_output.stl");
 #endif
 
-			var extruderList = new List<ExtruderData>();
-
-			foreach (var optimizedMesh in optimizedMeshCollection.OptimizedMeshes)
+			var extruderDataLayers = new List<ExtruderData>();
+			for (int i = 0; i < optimizedMeshCollection.OptimizedMeshes.Count; i++)
 			{
-				var extruderData = new ExtruderData(optimizedMesh, config);
-				extruderList.Add(extruderData);
-				extruderData.ReleaseMemory();
+				extruderDataLayers.Add(null);
 			}
+
+			Parallel.For(0, optimizedMeshCollection.OptimizedMeshes.Count, (index) =>
+			// foreach (var optimizedMesh in optimizedMeshCollection.OptimizedMeshes)
+			{
+				var optimizedMesh = optimizedMeshCollection.OptimizedMeshes[index];
+				var extruderData = new ExtruderData(optimizedMesh, config);
+				extruderDataLayers[index] = extruderData;
+				extruderData.ReleaseMemory();
+			});
 
 #if false
             slicerList[0].DumpSegmentsToGcode("Volume 0 Segments.gcode");
@@ -222,10 +229,15 @@ namespace MatterHackers.MatterSlice
 			slicingData.modelMin = optimizedMeshCollection.minXYZ_um;
 			slicingData.modelMax = optimizedMeshCollection.maxXYZ_um;
 
-			foreach (var extruderData in extruderList)
+			for (int i = 0; i < extruderDataLayers.Count; i++)
 			{
-				var extruderLayer = new ExtruderLayers(extruderData, config.outputOnlyFirstLayer);
-				slicingData.Extruders.Add(extruderLayer);
+				slicingData.Extruders.Add(null);
+			}
+
+			Parallel.For(0, extruderDataLayers.Count, (index) =>
+			{
+				var extruderLayer = new ExtruderLayers(extruderDataLayers[index], config.outputOnlyFirstLayer);
+				slicingData.Extruders[index] = extruderLayer;
 
 				if (config.EnableRaft)
 				{
@@ -235,7 +247,7 @@ namespace MatterHackers.MatterSlice
 						sliceLayer.LayerZ += config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um;
 					}
 				}
-			}
+			});
 
 			// make the path finding data include all the layer info
 

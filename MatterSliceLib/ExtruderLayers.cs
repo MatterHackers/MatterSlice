@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using MSClipperLib;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
@@ -236,7 +237,8 @@ namespace MatterHackers.MatterSlice
 
 		public static void InitializeLayerPathing(ConfigSettings config, Polygons extraPathingConsideration, List<ExtruderLayers> extruders)
 		{
-			for (int layerIndex = 0; layerIndex < extruders[0].Layers.Count; layerIndex++)
+			Parallel.For(0, extruders[0].Layers.Count, (layerIndex) =>
+			// for (int layerIndex = 0; layerIndex < extruders[0].Layers.Count; layerIndex++)
 			{
 				if (MatterSlice.Canceled)
 				{
@@ -266,7 +268,7 @@ namespace MatterHackers.MatterSlice
 				{
 					extruders[extruderIndex].Layers[layerIndex].PathFinder = pathFinder;
 				}
-			}
+			});
 		}
 
 		public bool OnlyHasBottom(int layerToCheck)

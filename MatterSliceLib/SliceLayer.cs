@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using MatterHackers.Pathfinding;
 using MatterHackers.QuadTree;
 using MSClipperLib;
@@ -231,10 +232,11 @@ namespace MatterHackers.MatterSlice
 		public void GenerateInsets(long extrusionWidth_um, long outerExtrusionWidth_um, int insetCount, bool expandThinWalls, bool avoidCrossingPerimeters)
 		{
 			SliceLayer layer = this;
-			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
+			Parallel.For(0, layer.Islands.Count, (islandIndex) =>
+			// for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 			{
 				layer.Islands[islandIndex].GenerateInsets(extrusionWidth_um, outerExtrusionWidth_um, insetCount, avoidCrossingPerimeters);
-			}
+			});
 
 			if (!expandThinWalls)
 			{

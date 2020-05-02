@@ -30,11 +30,11 @@ namespace MatterHackers.QuadTree
 	public class Branch<T>
 	{
 		public List<Leaf<T>> Leaves = new List<Leaf<T>>();
-		internal static Stack<List<Leaf<T>>> tempPool = new Stack<List<Leaf<T>>>();
 
 		internal Branch<T> Parent;
 		internal bool Split;
 		internal QuadTree<T> Tree;
+
 		public Branch<T>[] Branches { get; private set; } = new Branch<T>[4];
 		public Quad[] Quads { get; private set; } = new Quad[4];
 		public Quad Bounds { get; private set; }
@@ -54,7 +54,6 @@ namespace MatterHackers.QuadTree
 			{
 				if (Branches[i] != null)
 				{
-					QuadTree<T>.branchPool.Push(Branches[i]);
 					Branches[i].Clear();
 					Branches[i] = null;
 				}
@@ -62,7 +61,6 @@ namespace MatterHackers.QuadTree
 
 			for (int i = 0; i < Leaves.Count; ++i)
 			{
-				QuadTree<T>.leafPool.Push(Leaves[i]);
 				Leaves[i].ContainingBranch = null;
 				Leaves[i].Value = default(T);
 			}
@@ -103,7 +101,9 @@ namespace MatterHackers.QuadTree
 					if (Quads[0].MinX + 2 < Quads[0].MaxX
 						&& Quads[0].MinY + 2 < Quads[0].MaxY)
 					{
-						var temp = tempPool.Count > 0 ? tempPool.Pop() : new List<Leaf<T>>();
+						List<Leaf<T>> temp = null;
+						temp = new List<Leaf<T>>();
+
 						temp.AddRange(Leaves);
 						Leaves.Clear();
 						Split = true;
@@ -111,8 +111,6 @@ namespace MatterHackers.QuadTree
 						{
 							Insert(temp[i]);
 						}
-						temp.Clear();
-						tempPool.Push(temp);
 					}
 				}
 			}

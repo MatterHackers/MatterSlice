@@ -27,30 +27,30 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using MatterHackers.Agg;
+using MatterHackers.Agg.Image;
+using MatterHackers.Agg.ImageProcessing;
+using MatterHackers.Agg.Transform;
+using MatterHackers.Agg.VertexSource;
+using MatterHackers.QuadTree;
 using MSClipperLib;
+using static System.Math;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.Pathfinding
 {
-	using MatterHackers.Agg;
-	using MatterHackers.Agg.Image;
-	using MatterHackers.Agg.Transform;
-	using MatterHackers.Agg.VertexSource;
-	using QuadTree;
-	using Polygons = List<List<IntPoint>>;
-	using static System.Math;
-	using MatterHackers.Agg.ImageProcessing;
-	using System;
-
-	/// <summary>
-	/// This is to hold all the data that lets us switch between Boundary and Outline pathing.
-	/// </summary>
-	public class PathingData
+    /// <summary>
+    /// This is to hold all the data that lets us switch between Boundary and Outline pathing.
+    /// </summary>
+    public class PathingData
 	{
 		private Affine polygonsToImageTransform;
 		private double unitsPerPixel;
 		private bool usingPathingCache;
-		IntRect polygonBounds;
+		private IntRect polygonBounds;
 
 		public PathingData(Polygons polygons, double unitsPerPixel, bool usingPathingCache)
 		{
@@ -76,20 +76,21 @@ namespace MatterHackers.Pathfinding
 			}
 		}
 
-		const int maxImageSize = 4096;
+		private const int MaxImageSize = 4096;
+
 		private void SetGoodUnitsPerPixel(double unitsPerPixel)
 		{
 			unitsPerPixel = Max(unitsPerPixel, 1);
 
 			// if x or y are bigger than max Image Size, scale down
-			if (polygonBounds.Width() / unitsPerPixel > maxImageSize)
+			if (polygonBounds.Width() / unitsPerPixel > MaxImageSize)
 			{
-				unitsPerPixel = Max(1, polygonBounds.Width() / maxImageSize);
+				unitsPerPixel = Max(1, polygonBounds.Width() / MaxImageSize);
 			}
 
-			if (polygonBounds.Height() / unitsPerPixel > maxImageSize)
+			if (polygonBounds.Height() / unitsPerPixel > MaxImageSize)
 			{
-				unitsPerPixel = Max(1, polygonBounds.Height() / maxImageSize);
+				unitsPerPixel = Max(1, polygonBounds.Height() / MaxImageSize);
 			}
 
 			// make sure that both axis have at least 32 pixels in them (may make one axis bigger than max image size)
@@ -107,10 +108,15 @@ namespace MatterHackers.Pathfinding
 		}
 
 		public List<QuadTree<int>> EdgeQuadTrees { get; }
+
 		public ImageBuffer DistanceFromOutside { get; private set; }
+
 		public List<QuadTree<int>> PointQuadTrees { get; }
+
 		public Polygons Polygons { get; }
+
 		public WayPointsToRemove RemovePointList { get; }
+
 		public IntPointPathNetwork Waypoints { get; } = new IntPointPathNetwork();
 
 		public static VertexStorage CreatePathStorage(List<List<IntPoint>> polygons)
@@ -161,7 +167,7 @@ namespace MatterHackers.Pathfinding
 					return movedPoint;
 				}
 
-				var offset = new IntPoint();
+				var offset = default(IntPoint);
 				movedPoint |= CheckInsetPixel(current, xi, -1, yi, +0, ref offset);
 				movedPoint |= CheckInsetPixel(current, xi, -1, yi, -1, ref offset);
 				movedPoint |= CheckInsetPixel(current, xi, +0, yi, -1, ref offset);
@@ -171,14 +177,30 @@ namespace MatterHackers.Pathfinding
 				movedPoint |= CheckInsetPixel(current, xi, +0, yi, +1, ref offset);
 				movedPoint |= CheckInsetPixel(current, xi, -1, yi, +1, ref offset);
 
-				if (offset.X < 0) x -= 1; else if (offset.X > 0) x += 1;
-				if (offset.Y < 0) y -= 1; else if (offset.Y > 0) y += 1;
+				if (offset.X < 0)
+				{
+					x -= 1;
+				}
+				else if (offset.X > 0)
+				{
+					x += 1;
+				}
+
+				if (offset.Y < 0)
+				{
+					y -= 1;
+				}
+				else if (offset.Y > 0)
+				{
+					y += 1;
+				}
 
 				// if we did not succeed at moving either point
-				if (0 == offset.X && 0 == offset.Y)
+				if (offset.X == 0 && offset.Y == 0)
 				{
 					return movedPoint;
 				}
+
 				polygonsToImageTransform.inverse_transform(ref x, ref y);
 				result = new IntPoint(Round(x), Round(y));
 			}
@@ -280,10 +302,10 @@ namespace MatterHackers.Pathfinding
 
 			CalculateDistance(DistanceFromOutside);
 
-			//var image32 = new ImageBuffer(DistanceFromOutside.Width, DistanceFromOutside.Height);
-			//image32.NewGraphics2D().Render(DistanceFromOutside, 0, 0);
+			// var image32 = new ImageBuffer(DistanceFromOutside.Width, DistanceFromOutside.Height);
+			// image32.NewGraphics2D().Render(DistanceFromOutside, 0, 0);
 
-			//Agg.Platform.AggContext.ImageIO.SaveImageData("c:\\temp\\DistanceFromOutside.png", image32);
+			// Agg.Platform.AggContext.ImageIO.SaveImageData("c:\\temp\\DistanceFromOutside.png", image32);
 		}
 
 		private void CalculateDistance(ImageBuffer image)
@@ -293,7 +315,8 @@ namespace MatterHackers.Pathfinding
 
 			// O(n^2) solution to find the Manhattan distance to "on" pixels in a two dimension array
 			// traverse from top left to bottom right
-			for (int y = 0; y < image.Height; y++)
+			Parallel.For(0, image.Height, (y) =>
+			// for (int y = 0; y < image.Height; y++)
 			{
 				var yOffset = image.GetBufferOffsetY(y);
 				for (int x = 0; x < image.Width; x++)
@@ -314,6 +337,7 @@ namespace MatterHackers.Pathfinding
 							var value = Math.Min(buffer[yOffset + x], buffer[yOffset + x - 1] + 1);
 							buffer[yOffset + x] = (byte)value;
 						}
+
 						// or one more than the pixel to the west
 						if (y > 0)
 						{
@@ -322,10 +346,13 @@ namespace MatterHackers.Pathfinding
 						}
 					}
 				}
-			}
+			});
+
 			// traverse from bottom right to top left
-			for (int y = image.Height - 1; y >= 0; y--)
+			Parallel.For(0, image.Height, (y0ToHeight) =>
+			// for (int y = image.Height - 1; y >= 0; y--)
 			{
+				var y = image.Height - y0ToHeight - 1;
 				var yOffset = image.GetBufferOffsetY(y);
 				for (int x = image.Width - 1; x >= 0; x--)
 				{
@@ -336,6 +363,7 @@ namespace MatterHackers.Pathfinding
 						var value = Math.Min(buffer[yOffset + x], buffer[yOffset + x + 1] + 1);
 						buffer[yOffset + x] = (byte)value;
 					}
+
 					// or one more than the pixel to the east
 					if (y + 1 < image.Height)
 					{
@@ -343,7 +371,7 @@ namespace MatterHackers.Pathfinding
 						buffer[yOffset + x] = (byte)value;
 					}
 				}
-			}
+			});
 		}
 	}
 }

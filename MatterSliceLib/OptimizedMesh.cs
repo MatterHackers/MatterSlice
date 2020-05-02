@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
@@ -207,12 +208,18 @@ namespace MatterHackers.MatterSlice
 		{
 			for (int simpleMeshIndex = 0; simpleMeshIndex < simpleMeshCollection.SimpleMeshes.Count; simpleMeshIndex++)
 			{
-				OptimizedMeshes.Add(new OptimizedMesh(simpleMeshCollection.SimpleMeshes[simpleMeshIndex], this));
+				OptimizedMeshes.Add(null);
+			}
+
+			Parallel.For(0, simpleMeshCollection.SimpleMeshes.Count, (simpleMeshIndex) =>
+			// for (int simpleMeshIndex = 0; simpleMeshIndex < simpleMeshCollection.SimpleMeshes.Count; simpleMeshIndex++)
+			{
+				OptimizedMeshes[simpleMeshIndex] = new OptimizedMesh(simpleMeshCollection.SimpleMeshes[simpleMeshIndex], this);
 				if (MatterSlice.Canceled)
 				{
 					return;
 				}
-			}
+			});
 		}
 
 		public void SetSize(SimpleMeshCollection simpleMeshCollection)
