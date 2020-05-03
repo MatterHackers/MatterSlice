@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using MatterHackers.Pathfinding;
 using MSClipperLib;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
@@ -344,56 +345,67 @@ namespace MatterHackers.MatterSlice
 			Polygons currentSupportOutlines = SparseSupportOutlines[layerIndex];
 			List<Polygons> supportIslands = currentSupportOutlines.ProcessIntoSeparateIslands();
 
-			bool outputPaths = false;
-			foreach (Polygons supportIsland in supportIslands)
+			List<PathFinder> pathFinders = new List<PathFinder>();
+			List<Polygons> infillOutlines = new List<Polygons>();
+			for (int i = 0; i < supportIslands.Count; i++)
 			{
+				pathFinders.Add(null);
+				infillOutlines.Add(null);
+			}
+
+			Parallel.For(0, supportIslands.Count, (index) =>
+			{
+				var infillOffset = -config.ExtrusionWidth_um + config.InfillExtendIntoPerimeter_um;
+				var supportIsland = supportIslands[index];
+				infillOutlines[index] = supportIsland.Offset(infillOffset);
+
+				if (config.AvoidCrossingPerimeters)
+				{
+					pathFinders[index] = new PathFinder(infillOutlines[index], -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters, name: "normal support");
+				}
+			});
+
+			bool outputPaths = false;
+			for (int i = 0; i < supportIslands.Count; i++)
+			{
+				var supportIsland = supportIslands[i];
+
 				// force a retract if changing islands
 				if (config.RetractWhenChangingIslands)
 				{
 					gcodeLayer.ForceRetract();
 				}
 
-				var infillOffset = -config.ExtrusionWidth_um + config.InfillExtendIntoPerimeter_um;
-
-				Polygons infillOutline = supportIsland.Offset(infillOffset);
-				PathFinder pathFinder = null;
-				if (config.AvoidCrossingPerimeters)
-				{
-					pathFinder = new PathFinder(infillOutline, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters, name: "normal support");
-				}
-
 				// make a border if layer 0
 				if (config.GenerateSupportPerimeter || layerIndex == 0)
 				{
-					if (gcodeLayer.QueuePolygonsByOptimizer(supportIsland.Offset(-config.ExtrusionWidth_um / 2), pathFinder, supportNormalConfig, 0))
+					if (gcodeLayer.QueuePolygonsByOptimizer(supportIsland.Offset(-config.ExtrusionWidth_um / 2), pathFinders[i], supportNormalConfig, 0))
 					{
 						outputPaths = true;
 					}
-
-					infillOffset = config.ExtrusionWidth_um * -2 + config.InfillExtendIntoPerimeter_um;
 				}
 
 				Polygons islandInfillLines = new Polygons();
 				if (layerIndex == 0)
 				{
 					// on the first layer print this as solid
-					Infill.GenerateLineInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.ExtrusionWidth_um);
+					Infill.GenerateLineInfill(config, infillOutlines[i], islandInfillLines, config.SupportInfillStartingAngle, config.ExtrusionWidth_um);
 				}
 				else
 				{
 					switch (config.SupportType)
 					{
 						case ConfigConstants.SUPPORT_TYPE.GRID:
-							Infill.GenerateGridInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
+							Infill.GenerateGridInfill(config, infillOutlines[i], islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
 							break;
 
 						case ConfigConstants.SUPPORT_TYPE.LINES:
-							Infill.GenerateLineInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
+							Infill.GenerateLineInfill(config, infillOutlines[i], islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
 							break;
 					}
 				}
 
-				if (gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, pathFinder, supportNormalConfig, 0))
+				if (gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, pathFinders[i], supportNormalConfig, 0))
 				{
 					outputPaths |= true;
 				}

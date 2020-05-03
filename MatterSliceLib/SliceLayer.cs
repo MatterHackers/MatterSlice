@@ -232,11 +232,10 @@ namespace MatterHackers.MatterSlice
 		public void GenerateInsets(long extrusionWidth_um, long outerExtrusionWidth_um, int insetCount, bool expandThinWalls, bool avoidCrossingPerimeters)
 		{
 			SliceLayer layer = this;
-			Parallel.For(0, layer.Islands.Count, (islandIndex) =>
-			// for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
+			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 			{
 				layer.Islands[islandIndex].GenerateInsets(extrusionWidth_um, outerExtrusionWidth_um, insetCount, avoidCrossingPerimeters);
-			});
+			}
 
 			if (!expandThinWalls)
 			{

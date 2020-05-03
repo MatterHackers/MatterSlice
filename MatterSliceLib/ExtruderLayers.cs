@@ -91,12 +91,13 @@ namespace MatterHackers.MatterSlice
 			ExtruderLayers extruder = this;
 			SliceLayer layer = extruder.Layers[layerIndex];
 
-			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
+			Parallel.For(0, layer.Islands.Count, (islandIndex) =>
+			// for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 			{
 				LayerIsland island = layer.Islands[islandIndex];
 				if (island.InsetToolPaths.Count == 0)
 				{
-					continue;
+					return;
 				}
 
 				// this is the entire extrusion width to make sure we are outside of the extrusion line
@@ -170,21 +171,23 @@ namespace MatterHackers.MatterSlice
 
 						int upStart = layerIndex + 2;
 
-						for (int layerToTest = upStart; layerToTest < upEnd; layerToTest++)
+						Parallel.For(upStart, upEnd, (layerToTest) =>
+						// for (int layerToTest = upStart; layerToTest < upEnd; layerToTest++)
 						{
 							regionsThatWillBeSparse = IntersectWithPolygons(extruder.Layers[layerToTest].Islands, island.BoundingBox, regionsThatWillBeSparse);
 							regionsThatWillBeSparse = Clipper.CleanPolygons(regionsThatWillBeSparse, cleanDistance_um);
-						}
+						});
 
 						// find all the solid infill bottom layers
 						int downStart = layerIndex - 1;
 						int downEnd = layerIndex - downLayerCount;
 
-						for (int layerToTest = downStart; layerToTest >= downEnd; layerToTest--)
+						Parallel.For(downStart, downEnd, (layerToTest) =>
+						// for (int layerToTest = downStart; layerToTest >= downEnd; layerToTest--)
 						{
 							regionsThatWillBeSparse = IntersectWithPolygons(extruder.Layers[layerToTest].Islands, island.BoundingBox, regionsThatWillBeSparse);
 							regionsThatWillBeSparse = Clipper.CleanPolygons(regionsThatWillBeSparse, cleanDistance_um);
-						}
+						});
 
 						solidInfillPaths = solidInfillPaths.CreateDifference(regionsThatWillBeSparse);
 						solidInfillPaths.RemoveSmallAreas(extrusionWidth_um);
@@ -232,7 +235,7 @@ namespace MatterHackers.MatterSlice
 
 					island.SolidInfillPaths = solidInfillPaths;
 				}
-			}
+			});
 		}
 
 		static HashSet<int> layersSeen = new HashSet<int>();

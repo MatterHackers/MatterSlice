@@ -792,7 +792,14 @@ namespace MatterHackers.MatterSlice
 			if (extruderIndex < slicingData.Extruders.Count)
 			{
 				var startIndex = Math.Max(0, outputLayerIndex - config.NumberOfBottomLayers - 1);
-				var endIndex = Math.Min(slicingData.Extruders[extruderIndex].Layers.Count - 1, outputLayerIndex + config.NumberOfTopLayers + 1);
+				// figure out how many layers we need to calculate
+				var endIndex = outputLayerIndex + config.NumberOfTopLayers + 1;
+				var threadExtra = 10;
+				endIndex = (endIndex / threadExtra) * threadExtra + threadExtra;
+
+				// now bias more in to help multi threading
+				// and clamp to the number there are to make sure we can do it
+				endIndex = Math.Min(endIndex, slicingData.Extruders[extruderIndex].Layers.Count - 1);
 
 				// free up the insets from the previous layer
 				if (startIndex > config.NumberOfBottomLayers + 1)
@@ -801,7 +808,8 @@ namespace MatterHackers.MatterSlice
 					previousLayer.FreeIslandMemory();
 				}
 
-				for (int layerIndex = startIndex; layerIndex <= endIndex; layerIndex++)
+				Parallel.For(startIndex, endIndex, (layerIndex) =>
+				// for (int layerIndex = startIndex; layerIndex <= endIndex; layerIndex++)
 				{
 					SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 
@@ -825,7 +833,7 @@ namespace MatterHackers.MatterSlice
 							layer.GenerateInsets(config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, insetCount, config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter, config.AvoidCrossingPerimeters);
 						}
 					}
-				}
+				});
 
 				// Only generate bottom and top layers and infill for the first X layers when spiralize is chosen.
 				if (!config.ContinuousSpiralOuterPerimeter || (int)outputLayerIndex < config.NumberOfBottomLayers)

@@ -60,6 +60,7 @@ namespace MatterHackers.MatterSlice
 	public class PathOrderOptimizer
 	{
 		private readonly ConfigSettings config;
+
 		public List<Polygon> Polygons { get; private set; } = new List<Polygon>();
 
 		public PathOrderOptimizer(ConfigSettings config)
@@ -71,19 +72,24 @@ namespace MatterHackers.MatterSlice
 
 		public void AddPolygon(Polygon polygon)
 		{
-			this.Polygons.Add(polygon);
+			if (polygon.Count > 0)
+			{
+				this.Polygons.Add(polygon);
+			}
 		}
 
 		public void AddPolygons(Polygons polygons)
 		{
 			for (int i = 0; i < polygons.Count; i++)
 			{
-				this.Polygons.Add(polygons[i]);
+				this.AddPolygon(polygons[i]);
 			}
 		}
 
 		public void Optimize(IntPoint startPosition, PathFinder pathFinder, int layerIndex, bool addMovePolys, GCodePathConfig pathConfig = null)
 		{
+			pathFinder = null;
+
 			this.Order.Clear();
 
 			bool doSeamHiding = pathConfig != null && pathConfig.DoSeamHiding && !pathConfig.Spiralize;
