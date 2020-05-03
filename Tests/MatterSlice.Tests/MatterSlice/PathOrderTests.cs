@@ -31,6 +31,7 @@ using System;
 using System.Collections.Generic;
 using MSClipperLib;
 using NUnit.Framework;
+using MatterHackers.QuadTree;
 
 namespace MatterHackers.MatterSlice.Tests
 {

@@ -20,9 +20,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 using MatterHackers.Pathfinding;
+using MatterHackers.QuadTree;
 using MSClipperLib;
+using Supercluster.KDTree;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
@@ -59,9 +62,46 @@ namespace MatterHackers.MatterSlice
 
 	public class PathOrderOptimizer
 	{
+		static double Distance(long[] first, long[] second)
+		{
+			double dist = 0;
+			for (int i = 0; i < first.Length; i++)
+			{
+				dist += (first[i] - second[i]) * (first[i] - second[i]);
+			}
+
+			return dist;
+		}
+
+		public static KDTree<long, int> GenerateData(Polygon inPolygon)
+		{
+			// if there are not enough points it is much faster to just iterate the array
+			if (inPolygon.Count < 8)
+			{
+				return null;
+			}
+
+			long[][] Positions(Polygon polygon)
+			{
+				var data = new List<long[]>();
+
+				for (int i = 0; i < polygon.Count; i++)
+				{
+					data.Add(new long[] { polygon[i].X, polygon[i].Y });
+				}
+
+				return data.ToArray();
+			}
+
+			return new KDTree<long, int>(2,
+				Positions(inPolygon),
+				Enumerable.Range(0, inPolygon.Count).Select(i => i).ToArray(),
+				Distance);
+		}
+
 		private readonly ConfigSettings config;
 
-		public List<Polygon> Polygons { get; private set; } = new List<Polygon>();
+		public List<(Polygon polygon, KDTree<long, int> tree)> Data { get; private set; } = new List<(Polygon polygon, KDTree<long, int> tree)>();
 
 		public PathOrderOptimizer(ConfigSettings config)
 		{
@@ -74,7 +114,7 @@ namespace MatterHackers.MatterSlice
 		{
 			if (polygon.Count > 0)
 			{
-				this.Polygons.Add(polygon);
+				this.Data.Add((polygon, GenerateData(polygon)));
 			}
 		}
 
@@ -99,7 +139,7 @@ namespace MatterHackers.MatterSlice
 			var completedPolygons = new HashSet<int>();
 
 			IntPoint currentPosition = startPosition;
-			while (completedPolygons.Count < Polygons.Count)
+			while (completedPolygons.Count < Data.Count)
 			{
 				var closestPolyPoint = FindClosestPolyAndPoint(currentPosition,
 					completedPolygons,
@@ -179,7 +219,7 @@ namespace MatterHackers.MatterSlice
 			endPosition = currentPosition;
 			var bestDistSquared = double.MaxValue;
 			var bestResult = new PolyAndPoint();
-			for (int i = 0; i < Polygons.Count; i++)
+			for (int i = 0; i < Data.Count; i++)
 			{
 				if (compleatedPolygons.Contains(i))
 				{
@@ -187,7 +227,7 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				int pointIndex = FindClosestPoint(Polygons[i],
+				int pointIndex = FindClosestPoint(Data[i],
 					currentPosition,
 					doSeamHiding,
 					canTravelForwardOrBackward,
@@ -207,7 +247,7 @@ namespace MatterHackers.MatterSlice
 			return bestResult;
 		}
 
-		private int FindClosestPoint(Polygon polygon,
+		private int FindClosestPoint((Polygon polygon, KDTree<long, int> kdTree) data,
 			IntPoint currentPosition,
 			bool doSeamHiding,
 			bool canTravelForwardOrBackward,
@@ -217,37 +257,37 @@ namespace MatterHackers.MatterSlice
 			out IntPoint endPosition)
 		{
 			int bestPoint;
-			if (canTravelForwardOrBackward || polygon.Count == 2)
+			if (canTravelForwardOrBackward || data.polygon.Count == 2)
 			{
-				int endIndex = polygon.Count - 1;
+				int endIndex = data.polygon.Count - 1;
 
-				bestDistSquared = (polygon[0] - currentPosition).LengthSquared();
+				bestDistSquared = (data.polygon[0] - currentPosition).LengthSquared();
 				bestPoint = 0;
-				endPosition = polygon[endIndex];
+				endPosition = data.polygon[endIndex];
 
 				// check if the end is better
-				double distSquared = (polygon[endIndex] - currentPosition).LengthSquared();
+				double distSquared = (data.polygon[endIndex] - currentPosition).LengthSquared();
 				if (distSquared < bestDistSquared)
 				{
 					bestDistSquared = distSquared;
 					bestPoint = endIndex;
-					endPosition = polygon[0];
+					endPosition = data.polygon[0];
 				}
 			}
 			else
 			{
 				if (doSeamHiding)
 				{
-					bestPoint = polygon.FindGreatestTurnIndex(currentPosition, layerIndex, lineWidth_um);
+					bestPoint = data.polygon.FindGreatestTurnIndex(currentPosition, layerIndex, lineWidth_um, data.kdTree);
 				}
 				else
 				{
-					bestPoint = polygon.FindClosestPositionIndex(currentPosition);
+					bestPoint = data.polygon.FindClosestPositionIndex(currentPosition, data.kdTree);
 				}
 
-				bestDistSquared = (polygon[bestPoint] - currentPosition).LengthSquared();
+				bestDistSquared = (data.polygon[bestPoint] - currentPosition).LengthSquared();
 
-				endPosition = polygon[bestPoint];
+				endPosition = data.polygon[bestPoint];
 			}
 
 			return bestPoint;

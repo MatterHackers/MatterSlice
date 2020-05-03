@@ -30,6 +30,7 @@ either expressed or implied, of the FreeBSD Project.
 using System;
 using System.Collections.Generic;
 using MSClipperLib;
+using Supercluster.KDTree;
 
 namespace MatterHackers.QuadTree
 {
@@ -99,6 +100,44 @@ namespace MatterHackers.QuadTree
 			}
 
 			return polyPointPosition;
+		}
+
+		/// <summary>
+		/// This will find the largest turn in a given models. It prefers concave turns to convex turns.
+		/// </summary>
+		/// <param name="inputPolygon"></param>
+		/// <param name="lineWidth"></param>
+		/// <returns></returns>
+		public static int FindGreatestTurnIndex(this Polygon inputPolygon, IntPoint? startPosition = null, int layerIndex = 0, long lineWidth = 3, KDTree<long, int> pointKDTree = null)
+		{
+			// get the best position on a cleaned polygon
+			IntPoint bestPosition = inputPolygon.FindGreatestTurnPosition(lineWidth, layerIndex, startPosition);
+			// because FindGreatestTurnPosition cleans the polygon we need to see what the cleaned position is closest to on the actual polygon
+			return inputPolygon.FindClosestPositionIndex(bestPosition, pointKDTree);
+		}
+
+		public static int FindClosestPositionIndex(this Polygon polygon, IntPoint position, KDTree<long, int> pointKDTree = null)
+		{
+			if (pointKDTree != null)
+			{
+				return pointKDTree.NearestNeighbors(new long[] { position.X, position.Y }, 1)[0].Item2;
+			}
+			else
+			{
+				int bestPointIndex = -1;
+				double closestDist = double.MaxValue;
+				for (int pointIndex = 0; pointIndex < polygon.Count; pointIndex++)
+				{
+					double dist = (polygon[pointIndex] - position).LengthSquared();
+					if (dist < closestDist)
+					{
+						bestPointIndex = pointIndex;
+						closestDist = dist;
+					}
+				}
+
+				return bestPointIndex;
+			}
 		}
 
 		public static IEnumerable<(int pointIndex, IntPoint position)> FindCrossingPoints(this Polygon polygon, IntPoint start, IntPoint end, QuadTree<int> edgeQuadTree = null)

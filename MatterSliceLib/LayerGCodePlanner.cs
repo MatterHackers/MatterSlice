@@ -333,12 +333,12 @@ namespace MatterHackers.MatterSlice
 				// so pass a null for the path finder (don't re-plan them).
 				if (order.IsExtrude)
 				{
-					QueuePolygon(orderOptimizer.Polygons[order.PolyIndex], pathFinder, order.PointIndex, pathConfig);
+					QueuePolygon(orderOptimizer.Data[order.PolyIndex].polygon, pathFinder, order.PointIndex, pathConfig);
 					// QueueExtrusionPolygon(orderOptimizer.Polygons[order.PolyIndex], order.PointIndex, pathConfig);
 				}
 				else
 				{
-					QueueTravel(orderOptimizer.Polygons[order.PolyIndex]);
+					QueueTravel(orderOptimizer.Data[order.PolyIndex].polygon);
 				}
 			}
 
