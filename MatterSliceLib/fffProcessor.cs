@@ -23,7 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
+using MatterHackers.Agg;
 using MatterHackers.Pathfinding;
 using MatterHackers.QuadTree;
 using MSClipperLib;
@@ -207,7 +207,7 @@ namespace MatterHackers.MatterSlice
 				extruderDataLayers.Add(null);
 			}
 
-			Parallel.For(0, optimizedMeshCollection.OptimizedMeshes.Count, (index) =>
+			Agg.Parallel.For(0, optimizedMeshCollection.OptimizedMeshes.Count, (index) =>
 			// foreach (var optimizedMesh in optimizedMeshCollection.OptimizedMeshes)
 			{
 				var optimizedMesh = optimizedMeshCollection.OptimizedMeshes[index];
@@ -234,7 +234,7 @@ namespace MatterHackers.MatterSlice
 				slicingData.Extruders.Add(null);
 			}
 
-			Parallel.For(0, extruderDataLayers.Count, (index) =>
+			Agg.Parallel.For(0, extruderDataLayers.Count, (index) =>
 			{
 				var extruderLayer = new ExtruderLayers(extruderDataLayers[index], config.outputOnlyFirstLayer);
 				slicingData.Extruders[index] = extruderLayer;
@@ -808,7 +808,7 @@ namespace MatterHackers.MatterSlice
 					previousLayer.FreeIslandMemory();
 				}
 
-				Parallel.For(startIndex, endIndex, (layerIndex) =>
+				Agg.Parallel.For(startIndex, endIndex, (layerIndex) =>
 				// for (int layerIndex = startIndex; layerIndex <= endIndex; layerIndex++)
 				{
 					SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];

@@ -315,7 +315,7 @@ namespace MatterHackers.Pathfinding
 
 			// O(n^2) solution to find the Manhattan distance to "on" pixels in a two dimension array
 			// traverse from top left to bottom right
-			Parallel.For(0, image.Height, (y) =>
+			Agg.Parallel.For(0, image.Height, (y) =>
 			// for (int y = 0; y < image.Height; y++)
 			{
 				var yOffset = image.GetBufferOffsetY(y);
@@ -349,7 +349,7 @@ namespace MatterHackers.Pathfinding
 			});
 
 			// traverse from bottom right to top left
-			Parallel.For(0, image.Height, (y0ToHeight) =>
+			Agg.Parallel.For(0, image.Height, (y0ToHeight) =>
 			// for (int y = image.Height - 1; y >= 0; y--)
 			{
 				var y = image.Height - y0ToHeight - 1;

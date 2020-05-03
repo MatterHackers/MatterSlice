@@ -22,7 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using MSClipperLib;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
@@ -156,14 +155,14 @@ namespace MatterHackers.MatterSlice
 							throw new Exception("These should be the same.");
 						}
 
-						Parallel.For(0, totalLayers, (layerIndex) =>
+						Agg.Parallel.For(0, totalLayers, (layerIndex) =>
 						// for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 						{
 							SliceLayer keepLayer = loadedMeshes[keepExtruderIndex].Layers[layerIndex];
 							SliceLayer removeLayer = loadedMeshes[removeExtruderIndex].Layers[layerIndex];
 							DoLayerBooleans(keepLayer, removeLayer, typeToDo);
 						});
-	
+
 						meshesToProcess.RemoveAt(meshesToProcess.Count - 2);
 
 					}

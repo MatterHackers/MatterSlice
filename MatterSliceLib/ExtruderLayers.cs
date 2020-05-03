@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using MSClipperLib;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
@@ -91,7 +90,7 @@ namespace MatterHackers.MatterSlice
 			ExtruderLayers extruder = this;
 			SliceLayer layer = extruder.Layers[layerIndex];
 
-			Parallel.For(0, layer.Islands.Count, (islandIndex) =>
+			Agg.Parallel.For(0, layer.Islands.Count, (islandIndex) =>
 			// for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 			{
 				LayerIsland island = layer.Islands[islandIndex];
@@ -171,7 +170,7 @@ namespace MatterHackers.MatterSlice
 
 						int upStart = layerIndex + 2;
 
-						Parallel.For(upStart, upEnd, (layerToTest) =>
+						Agg.Parallel.For(upStart, upEnd, (layerToTest) =>
 						// for (int layerToTest = upStart; layerToTest < upEnd; layerToTest++)
 						{
 							regionsThatWillBeSparse = IntersectWithPolygons(extruder.Layers[layerToTest].Islands, island.BoundingBox, regionsThatWillBeSparse);
@@ -182,7 +181,7 @@ namespace MatterHackers.MatterSlice
 						int downStart = layerIndex - 1;
 						int downEnd = layerIndex - downLayerCount;
 
-						Parallel.For(downStart, downEnd, (layerToTest) =>
+						Agg.Parallel.For(downStart, downEnd, (layerToTest) =>
 						// for (int layerToTest = downStart; layerToTest >= downEnd; layerToTest--)
 						{
 							regionsThatWillBeSparse = IntersectWithPolygons(extruder.Layers[layerToTest].Islands, island.BoundingBox, regionsThatWillBeSparse);
@@ -243,7 +242,7 @@ namespace MatterHackers.MatterSlice
 
 		public static void InitializeLayerPathing(ConfigSettings config, Polygons extraPathingConsideration, List<ExtruderLayers> extruders)
 		{
-			Parallel.For(0, extruders[0].Layers.Count, (layerIndex) =>
+			Agg.Parallel.For(0, extruders[0].Layers.Count, (layerIndex) =>
 			// for (int layerIndex = 0; layerIndex < extruders[0].Layers.Count; layerIndex++)
 			{
 				if (MatterSlice.Canceled)

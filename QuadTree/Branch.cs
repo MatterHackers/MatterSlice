@@ -20,6 +20,7 @@
 //OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //SOFTWARE.
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -28,6 +29,7 @@ namespace MatterHackers.QuadTree
 	public class Branch<T>
 	{
 		public List<Leaf<T>> Leaves = new List<Leaf<T>>();
+		internal static ConcurrentStack<List<Leaf<T>>> tempPool = new ConcurrentStack<List<Leaf<T>>>();
 
 		internal Branch<T> Parent;
 		internal bool Split;
@@ -52,6 +54,7 @@ namespace MatterHackers.QuadTree
 			{
 				if (Branches[i] != null)
 				{
+					QuadTree<T>.branchPool.Push(Branches[i]);
 					Branches[i].Clear();
 					Branches[i] = null;
 				}
@@ -59,6 +62,7 @@ namespace MatterHackers.QuadTree
 
 			for (int i = 0; i < Leaves.Count; ++i)
 			{
+				QuadTree<T>.leafPool.Push(Leaves[i]);
 				Leaves[i].ContainingBranch = null;
 				Leaves[i].Value = default(T);
 			}
@@ -99,8 +103,11 @@ namespace MatterHackers.QuadTree
 					if (Quads[0].MinX + 2 < Quads[0].MaxX
 						&& Quads[0].MinY + 2 < Quads[0].MaxY)
 					{
-						List<Leaf<T>> temp = null;
-						temp = new List<Leaf<T>>();
+						List<Leaf<T>> temp;
+						if (!tempPool.TryPop(out temp))
+						{
+							temp = new List<Leaf<T>>();
+						}
 
 						temp.AddRange(Leaves);
 						Leaves.Clear();
@@ -109,6 +116,9 @@ namespace MatterHackers.QuadTree
 						{
 							Insert(temp[i]);
 						}
+
+						temp.Clear();
+						tempPool.Push(temp);
 					}
 				}
 			}

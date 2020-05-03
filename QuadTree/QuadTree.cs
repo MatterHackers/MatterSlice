@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace MatterHackers.QuadTree
@@ -31,6 +32,9 @@ namespace MatterHackers.QuadTree
 	/// </summary>
 	public class QuadTree<T>
 	{
+		internal static ConcurrentStack<Branch<T>> branchPool = new ConcurrentStack<Branch<T>>();
+		internal static ConcurrentStack<Leaf<T>> leafPool = new ConcurrentStack<Leaf<T>>();
+
 		private Dictionary<T, Leaf<T>> leafLookup = new Dictionary<T, Leaf<T>>();
 		internal int splitCount;
 
@@ -71,6 +75,17 @@ namespace MatterHackers.QuadTree
 		}
 
 		public Branch<T> Root { get; private set; }
+
+		/// <summary>
+		/// QuadTree internally keeps pools of Branches and Leaves. If you want to clear these to clean up memory,
+		/// you can call this function. Most of the time you'll want to leave this alone, though.
+		/// </summary>
+		public static void ClearPools()
+		{
+			branchPool = new ConcurrentStack<Branch<T>>();
+			leafPool = new ConcurrentStack<Leaf<T>>();
+			Branch<T>.tempPool = new ConcurrentStack<List<Leaf<T>>>();
+		}
 
 		/// <summary>
 		/// Clear the QuadTree. This will remove all leaves and branches. If you have a lot of moving objects,
@@ -215,7 +230,10 @@ namespace MatterHackers.QuadTree
 		internal static Branch<T> CreateBranch(QuadTree<T> tree, Branch<T> parent, ref Quad quad)
 		{
 			Branch<T> branch;
-			branch = new Branch<T>(quad);
+			if (!branchPool.TryPop(out branch))
+			{
+				branch = new Branch<T>(quad);
+			}
 
 			branch.Tree = tree;
 			branch.Parent = parent;
@@ -231,7 +249,11 @@ namespace MatterHackers.QuadTree
 
 		private static Leaf<T> CreateLeaf(T value, ref Quad quad)
 		{
-			Leaf<T> leaf = new Leaf<T>();
+			Leaf<T> leaf;
+			if (!leafPool.TryPop(out leaf))
+			{
+				leaf = new Leaf<T>();
+			}
 
 			leaf.Value = value;
 			leaf.Quad = quad;

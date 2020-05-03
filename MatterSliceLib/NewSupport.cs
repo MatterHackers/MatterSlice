@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using MatterHackers.Pathfinding;
 using MSClipperLib;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
@@ -353,7 +352,7 @@ namespace MatterHackers.MatterSlice
 				infillOutlines.Add(null);
 			}
 
-			Parallel.For(0, supportIslands.Count, (index) =>
+			Agg.Parallel.For(0, supportIslands.Count, (index) =>
 			{
 				var infillOffset = -config.ExtrusionWidth_um + config.InfillExtendIntoPerimeter_um;
 				var supportIsland = supportIslands[index];
