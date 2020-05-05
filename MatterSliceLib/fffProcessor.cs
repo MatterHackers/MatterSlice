@@ -1007,7 +1007,7 @@ namespace MatterHackers.MatterSlice
 				{
 					islandOrderOptimizer.AddPolygon(layer.Islands[partIndex].IslandOutline[0]);
 				}
-				else
+				else if (layer.Islands[partIndex].InsetToolPaths.Count > 0)
 				{
 					islandOrderOptimizer.AddPolygon(layer.Islands[partIndex].InsetToolPaths[0][0]);
 				}

@@ -121,7 +121,19 @@ namespace MatterHackers.QuadTree
 		{
 			if (pointKDTree != null)
 			{
-				return pointKDTree.NearestNeighbors(new long[] { position.X, position.Y }, 1)[0].Item2;
+				int bestPointIndex = -1;
+				double closestDist = double.MaxValue;
+				foreach (var item in pointKDTree.NearestNeighbors(new long[] { position.X, position.Y }, 1))
+				{
+					double dist = (polygon[item.Item2] - position).LengthSquared();
+					if (dist < closestDist)
+					{
+						bestPointIndex = item.Item2;
+						closestDist = dist;
+					}
+				}
+
+				return bestPointIndex;
 			}
 			else
 			{

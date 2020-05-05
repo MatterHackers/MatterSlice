@@ -18,6 +18,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MSClipperLib;
@@ -178,8 +179,8 @@ namespace MatterHackers.MatterSlice
 						});
 
 						// find all the solid infill bottom layers
-						int downStart = layerIndex - 1;
-						int downEnd = layerIndex - downLayerCount;
+						int downStart = Math.Max(0, layerIndex - 1);
+						int downEnd = Math.Max(0, layerIndex - downLayerCount);
 
 						Agg.Parallel.For(downStart, downEnd, (layerToTest) =>
 						// for (int layerToTest = downStart; layerToTest >= downEnd; layerToTest--)
