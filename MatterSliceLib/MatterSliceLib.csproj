@@ -30,6 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\agg-sharp\agg\Agg.csproj" />
     <ProjectReference Include="..\..\agg-sharp\VectorMath\VectorMath.csproj" />
     <ProjectReference Include="..\MSClipperLib\MSClipperLib.csproj" />
     <ProjectReference Include="..\Pathfinding\Pathfinding.csproj" />
