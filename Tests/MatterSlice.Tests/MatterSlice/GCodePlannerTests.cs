@@ -505,25 +505,5 @@ namespace MatterHackers.MatterSlice.Tests
 
 			Assert.IsFalse(pathHadOverlaps);
 		}
-
-		[Test]
-		public void QuadTreeWorking()
-		{
-			var tree = new QuadTree<int>(5, 10, 10, 2000, 2000);
-			tree.Insert(0, new Quad(50, 50, 60, 60));
-			tree.Insert(1, new Quad(52, 53, 60, 60));
-			//tree.Insert(0, new Quad(500, 50, 560, 60));
-			//tree.Insert(0, new Quad(20, 50, 61, 60));
-			//tree.Insert(0, new Quad(150, 50, 160, 60));
-
-			int count = 0;
-			tree.FindCollisions(0);
-			foreach (var index in tree.QueryResults)
-			{
-				count++;
-			}
-
-			Assert.IsTrue(count == 1);
-		}
 	}
 }

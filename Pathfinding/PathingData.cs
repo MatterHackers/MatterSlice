@@ -37,6 +37,7 @@ using MatterHackers.Agg.Transform;
 using MatterHackers.Agg.VertexSource;
 using MatterHackers.QuadTree;
 using MSClipperLib;
+using Supercluster.KDTree;
 using static System.Math;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
@@ -61,7 +62,7 @@ namespace MatterHackers.Pathfinding
 			SetGoodUnitsPerPixel(unitsPerPixel);
 
 			EdgeQuadTrees = Polygons.GetEdgeQuadTrees();
-			PointQuadTrees = Polygons.GetPointQuadTrees();
+			PointKDTrees = Polygons.ConditionalKDTrees();
 
 			foreach (var polygon in Polygons)
 			{
@@ -111,7 +112,7 @@ namespace MatterHackers.Pathfinding
 
 		public ImageBuffer DistanceFromOutside { get; private set; }
 
-		public List<QuadTree<int>> PointQuadTrees { get; }
+		public List<KDTree<long, int>> PointKDTrees { get; }
 
 		public Polygons Polygons { get; }
 
@@ -237,7 +238,7 @@ namespace MatterHackers.Pathfinding
 		{
 			if (!usingPathingCache)
 			{
-				if (Polygons.PointIsInside(testPoint, EdgeQuadTrees, PointQuadTrees))
+				if (Polygons.PointIsInside(testPoint, EdgeQuadTrees, PointKDTrees))
 				{
 					return QTPolygonsExtensions.InsideState.Inside;
 				}
@@ -269,7 +270,7 @@ namespace MatterHackers.Pathfinding
 			}
 
 			// The cache could not definitively tell us, so check the polygons
-			if (Polygons.PointIsInside(testPoint, EdgeQuadTrees, PointQuadTrees))
+			if (Polygons.PointIsInside(testPoint, EdgeQuadTrees, PointKDTrees))
 			{
 				return QTPolygonsExtensions.InsideState.Inside;
 			}

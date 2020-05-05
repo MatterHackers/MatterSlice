@@ -30,6 +30,7 @@ either expressed or implied, of the FreeBSD Project.
 using System;
 using System.Collections.Generic;
 using MSClipperLib;
+using Supercluster.KDTree;
 
 namespace MatterHackers.QuadTree
 {
@@ -46,12 +47,24 @@ namespace MatterHackers.QuadTree
 		{
 			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
 			{
-				List<Tuple<int, IntPoint>> polyCrossings = new List<Tuple<int, IntPoint>>();
+				var polyCrossings = new List<Tuple<int, IntPoint>>();
 				foreach (var crossing in polygons[polyIndex].FindCrossingPoints(start, end, edgeQuadTrees == null ? null : edgeQuadTrees[polyIndex]))
 				{
 					yield return (polyIndex, crossing.pointIndex, crossing.position);
 				}
 			}
+		}
+
+		public static List<KDTree<long, int>> ConditionalKDTrees(this Polygons inPolygons)
+		{
+			var kdTRees = new List<KDTree<long, int>>();
+
+			for (int i = 0; i < inPolygons.Count; i++)
+			{
+				kdTRees.Add(inPolygons[i].ConditionalKDTree());
+			}
+
+			return kdTRees;
 		}
 
 		public static Intersection FindIntersection(this Polygons polygons, IntPoint start, IntPoint end, List<QuadTree<int>> edgeQuadTrees = null)
@@ -73,13 +86,13 @@ namespace MatterHackers.QuadTree
 			return bestIntersection;
 		}
 
-		public static Tuple<int, int> FindPoint(this Polygons polygons, IntPoint position, List<QuadTree<int>> pointQuadTrees = null)
+		public static Tuple<int, int> FindPoint(this Polygons polygons, IntPoint position, List<KDTree<long, int>> pointKDTrees = null)
 		{
-			if (pointQuadTrees != null)
+			if (pointKDTrees != null)
 			{
 				for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
 				{
-					int pointIndex = polygons[polyIndex].FindPoint(position, pointQuadTrees[polyIndex]);
+					var pointIndex = polygons[polyIndex].FindPoint(position, pointKDTrees[polyIndex]);
 					if (pointIndex != -1)
 					{
 						return new Tuple<int, int>(polyIndex, pointIndex);
@@ -120,7 +133,7 @@ namespace MatterHackers.QuadTree
 			// make a copy that has every point duplicated (so that we have them as segments).
 			List<Segment> polySegments = Segment.ConvertToSegments(polygons);
 
-			Altered[] markedAltered = new Altered[polySegments.Count];
+			var markedAltered = new Altered[polySegments.Count];
 
 			var touchingEnumerator = new CloseSegmentsIterator(polySegments, overlapMergeAmount);
 			int segmentCount = polySegments.Count;
@@ -183,7 +196,7 @@ namespace MatterHackers.QuadTree
 
 			// go through the polySegments and create a new polygon for every connected set of segments
 			onlyMergeLines = new Polygons();
-			Polygon currentPolygon = new Polygon();
+			var currentPolygon = new Polygon();
 			onlyMergeLines.Add(currentPolygon);
 			// put in the first point
 			for (int segmentIndex = 0; segmentIndex < polySegments.Count; segmentIndex++)
@@ -241,7 +254,7 @@ namespace MatterHackers.QuadTree
 
 		public static IntPoint Center(this Polygons polygons)
 		{
-			IntPoint center = new IntPoint();
+			var center = default(IntPoint);
 			int count = 0;
 			foreach (var polygon in polygons)
 			{
@@ -261,7 +274,7 @@ namespace MatterHackers.QuadTree
 
 		public static Polygons MakeCloseSegmentsMergable(this Polygons polygonsToSplit, long distanceNeedingAdd, bool pathsAreClosed = true)
 		{
-			Polygons splitPolygons = new Polygons();
+			var splitPolygons = new Polygons();
 			for (int i = 0; i < polygonsToSplit.Count; i++)
 			{
 				Polygon accumulatedSplits = polygonsToSplit[i];
@@ -277,7 +290,7 @@ namespace MatterHackers.QuadTree
 
 		public static (int polyIndex, int pointIndex, IntPoint position) FindClosestPoint(this Polygons boundaryPolygons, IntPoint position, Func<int, Polygon, bool> considerPolygon = null, Func<int, IntPoint, bool> considerPoint = null)
 		{
-			var polyPointPosition = (-1, -1, new IntPoint());
+			var polyPointPosition = (-1, -1, default(IntPoint));
 
 			long bestDist = long.MaxValue;
 			for (int polygonIndex = 0; polygonIndex < boundaryPolygons.Count; polygonIndex++)
@@ -300,22 +313,24 @@ namespace MatterHackers.QuadTree
 			return polyPointPosition;
 		}
 
-		public static void MovePointInsideBoundary(this Polygons boundaryPolygons, IntPoint startPosition, out (int polyIndex, int pointIndex, IntPoint position) polyPointPosition, 
+		public static void MovePointInsideBoundary(this Polygons boundaryPolygons,
+			IntPoint startPosition,
+			out (int polyIndex, int pointIndex, IntPoint position) polyPointPosition,
 			List<QuadTree<int>> edgeQuadTrees = null,
-			List<QuadTree<int>> pointQuadTrees = null,
+			List<KDTree<long, int>> pointKDTrees = null,
 			Func<IntPoint, InsideState> fastInsideCheck = null)
 		{
 			var bestPolyPointPosition = (0, 0, startPosition);
 
-			if (boundaryPolygons.PointIsInside(startPosition, edgeQuadTrees, pointQuadTrees, fastInsideCheck))
+			if (boundaryPolygons.PointIsInside(startPosition, edgeQuadTrees, pointKDTrees, fastInsideCheck))
 			{
 				// already inside
-				polyPointPosition = (-1, -1, new IntPoint());
+				polyPointPosition = (-1, -1, default(IntPoint));
 				return;
 			}
 
 			long bestDist = long.MaxValue;
-			IntPoint bestMoveDelta = new IntPoint();
+			var bestMoveDelta = default(IntPoint);
 			for (int polygonIndex = 0; polygonIndex < boundaryPolygons.Count; polygonIndex++)
 			{
 				var boundaryPolygon = boundaryPolygons[polygonIndex];
@@ -375,8 +390,8 @@ namespace MatterHackers.QuadTree
 
 		public enum InsideState { Inside, Outside, Unknown }
 		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint, 
-			List<QuadTree<int>> edgeQuadTrees = null, 
-			List<QuadTree<int>> pointQuadTrees = null,
+			List<QuadTree<int>> edgeQuadTrees = null,
+			List<KDTree<long, int>> pointKDTrees = null,
 			Func<IntPoint, InsideState> fastInsideCheck = null)
 		{
 			if (polygons.TouchingEdge(testPoint, edgeQuadTrees))
@@ -398,14 +413,14 @@ namespace MatterHackers.QuadTree
 						case InsideState.Outside:
 							return false;
 						case InsideState.Unknown:
-							if(polygon.PointIsInside(testPoint, pointQuadTrees == null ? null : pointQuadTrees[i]) != 0)
+							if(polygon.PointIsInside(testPoint, pointKDTrees == null ? null : pointKDTrees[i]) != 0)
 							{
 								insideCount++;
 							}
 							break;
 					}
 				}
-				else if (polygon.PointIsInside(testPoint, pointQuadTrees == null ? null : pointQuadTrees[i]) != 0)
+				else if (polygon.PointIsInside(testPoint, pointKDTrees == null ? null : pointKDTrees[i]) != 0)
 				{
 					insideCount++;
 				}

@@ -302,6 +302,7 @@ namespace MatterHackers.MatterSlice
 			if ((config.GenerateSupport || supportOutlines != null)
 				&& !config.ContinuousSpiralOuterPerimeter)
 			{
+				LogOutput.Log("Generating supports\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 				timeKeeper.Restart();
 				slicingData.Support = new NewSupport(config, slicingData.Extruders, supportOutlines);
 				LogOutput.Log("Generated supports: {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
@@ -456,217 +457,226 @@ namespace MatterHackers.MatterSlice
 			supportNormalConfig = new GCodePathConfig("supportNormalConfig", "SUPPORT");
 			supportInterfaceConfig = new GCodePathConfig("supportInterfaceConfig", "SUPPORT-INTERFACE");
 
-			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
+			using (new QuickTimer2("All Layers"))
 			{
-				if (MatterSlice.Canceled)
+				for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 				{
-					return;
-				}
-
-				if (config.outputOnlyFirstLayer && layerIndex > 0)
-				{
-					break;
-				}
-
-				lock (locker)
-				{
-					LogOutput.Log("Writing Layers {0}/{1}\n".FormatWith(layerWriten, totalLayers));
-
-					LogOutput.logProgress("export", layerWriten, totalLayers);
-					layerWriten++;
-				}
-
-				if (layerIndex < config.NumberOfFirstLayers)
-				{
-					skirtConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
-					inset0Config.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
-					insetXConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
-
-					fillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
-					topFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
-					firstTopFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerThickness_um);
-					bottomFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
-					airGappedBottomConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
-					airGappedBottomInsetConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
-					bridgeConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
-
-					supportNormalConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um);
-					supportInterfaceConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um);
-				}
-				else
-				{
-					skirtConfig.SetData(config.InsidePerimetersSpeed, config.ExtrusionWidth_um);
-					inset0Config.SetData(config.OutsidePerimeterSpeed, config.OutsideExtrusionWidth_um);
-					insetXConfig.SetData(config.InsidePerimetersSpeed, config.ExtrusionWidth_um);
-
-					fillConfig.SetData(config.InfillSpeed, config.ExtrusionWidth_um);
-					topFillConfig.SetData(config.TopInfillSpeed, config.ExtrusionWidth_um);
-					firstTopFillConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um);
-					bottomFillConfig.SetData(config.BottomInfillSpeed, config.ExtrusionWidth_um);
-					airGappedBottomConfig.SetData(config.AirGapSpeed, config.ExtrusionWidth_um);
-					airGappedBottomInsetConfig.SetData(config.AirGapSpeed, config.ExtrusionWidth_um);
-					bridgeConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um);
-
-					supportNormalConfig.SetData(config.SupportMaterialSpeed, config.ExtrusionWidth_um);
-					supportInterfaceConfig.SetData(config.InterfaceLayerSpeed, config.ExtrusionWidth_um);
-				}
-
-				if (layerIndex == 0)
-				{
-					gcodeExport.SetExtrusion(config.FirstLayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
-				}
-				else
-				{
-					gcodeExport.SetExtrusion(config.LayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
-				}
-
-				var layerPlanner = new LayerGCodePlanner(config, gcodeExport, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
-				if (layerIndex == 0
-					&& config.RetractionZHop > 0)
-				{
-					layerPlanner.ForceRetract();
-				}
-
-				// get the correct height for this layer
-				long z = config.FirstLayerThickness_um + layerIndex * config.LayerThickness_um;
-				if (config.EnableRaft)
-				{
-					z += config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um + config.RaftSurfaceLayers * config.RaftSurfaceThickness_um;
-					if (layerIndex == 0)
+					if (MatterSlice.Canceled)
 					{
-						// We only raise the first layer of the print up by the air gap.
-						// To give it:
-						//   Less press into the raft
-						//   More time to cool
-						//   more surface area to air while extruding
-						z += config.RaftAirGap_um;
-					}
-				}
-
-				gcodeExport.CurrentZ_um = z;
-
-				if (layerIndex == 0)
-				{
-					gcodeExport.LayerChanged(layerIndex, config.FirstLayerThickness_um);
-				}
-				else
-				{
-					gcodeExport.LayerChanged(layerIndex, config.LayerThickness_um);
-				}
-
-				// start out with the fan off for this layer (the minimum layer fan speed will be applied later as the gcode is output)
-				layerPlanner.QueueFanCommand(0, fillConfig);
-
-				// hold the current layer path finder
-				PathFinder layerPathFinder = null;
-
-				var supportExturderIndex2 = config.SupportExtruder < config.ExtruderCount ? config.SupportExtruder : 0;
-				var interfaceExturderIndex = config.SupportInterfaceExtruder < config.ExtruderCount ? config.SupportInterfaceExtruder : 0;
-
-				// Loop over extruders in preferred order
-				var activeThenOtherExtruders = slicingData.Extruders.CurrentThenOtherIndexes(activeExtruderIndex: layerPlanner.GetExtruder());
-				foreach (int extruderIndex in activeThenOtherExtruders)
-				{
-					if (config.AvoidCrossingPerimeters
-						&& slicingData.Extruders != null
-						&& slicingData.Extruders.Count > extruderIndex)
-					{
-						// set the path planner to avoid islands
-						layerPathFinder = slicingData.Extruders[extruderIndex].Layers[layerIndex].PathFinder;
+						return;
 					}
 
-					ChangeExtruderIfRequired(slicingData, layerPathFinder, layerIndex, layerPlanner, extruderIndex, false);
-
-					// create the insets required by this extruder layer
-					CreateRequiredInsets(config, slicingData, layerIndex, extruderIndex);
-
-					if (layerIndex == 0)
+					if (config.outputOnlyFirstLayer && layerIndex > 0)
 					{
-						QueueExtruderLayerToGCode(slicingData, layerPlanner, extruderIndex, layerIndex, config.FirstLayerExtrusionWidth_um, z);
+						break;
+					}
+
+					lock (locker)
+					{
+						LogOutput.Log("Writing Layers {0}/{1}\n".FormatWith(layerWriten, totalLayers));
+
+						LogOutput.logProgress("export", layerWriten, totalLayers);
+						layerWriten++;
+					}
+
+					if (layerIndex < config.NumberOfFirstLayers)
+					{
+						skirtConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+						inset0Config.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+						insetXConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+
+						fillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+						topFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+						firstTopFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerThickness_um);
+						bottomFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+						airGappedBottomConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+						airGappedBottomInsetConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+						bridgeConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+
+						supportNormalConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um);
+						supportInterfaceConfig.SetData(config.FirstLayerSpeed, config.ExtrusionWidth_um);
 					}
 					else
 					{
-						QueueExtruderLayerToGCode(slicingData, layerPlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
+						skirtConfig.SetData(config.InsidePerimetersSpeed, config.ExtrusionWidth_um);
+						inset0Config.SetData(config.OutsidePerimeterSpeed, config.OutsideExtrusionWidth_um);
+						insetXConfig.SetData(config.InsidePerimetersSpeed, config.ExtrusionWidth_um);
+
+						fillConfig.SetData(config.InfillSpeed, config.ExtrusionWidth_um);
+						topFillConfig.SetData(config.TopInfillSpeed, config.ExtrusionWidth_um);
+						firstTopFillConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um);
+						bottomFillConfig.SetData(config.BottomInfillSpeed, config.ExtrusionWidth_um);
+						airGappedBottomConfig.SetData(config.AirGapSpeed, config.ExtrusionWidth_um);
+						airGappedBottomInsetConfig.SetData(config.AirGapSpeed, config.ExtrusionWidth_um);
+						bridgeConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um);
+
+						supportNormalConfig.SetData(config.SupportMaterialSpeed, config.ExtrusionWidth_um);
+						supportInterfaceConfig.SetData(config.InterfaceLayerSpeed, config.ExtrusionWidth_um);
+					}
+
+					if (layerIndex == 0)
+					{
+						gcodeExport.SetExtrusion(config.FirstLayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
+					}
+					else
+					{
+						gcodeExport.SetExtrusion(config.LayerThickness_um, config.FilamentDiameter_um, config.ExtrusionMultiplier);
+					}
+
+					var layerPlanner = new LayerGCodePlanner(config, gcodeExport, config.TravelSpeed, config.MinimumTravelToCauseRetraction_um, config.PerimeterStartEndOverlapRatio);
+					if (layerIndex == 0
+						&& config.RetractionZHop > 0)
+					{
+						layerPlanner.ForceRetract();
+					}
+
+					// get the correct height for this layer
+					long z = config.FirstLayerThickness_um + layerIndex * config.LayerThickness_um;
+					if (config.EnableRaft)
+					{
+						z += config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um + config.RaftSurfaceLayers * config.RaftSurfaceThickness_um;
+						if (layerIndex == 0)
+						{
+							// We only raise the first layer of the print up by the air gap.
+							// To give it:
+							//   Less press into the raft
+							//   More time to cool
+							//   more surface area to air while extruding
+							z += config.RaftAirGap_um;
+						}
+					}
+
+					gcodeExport.CurrentZ_um = z;
+
+					if (layerIndex == 0)
+					{
+						gcodeExport.LayerChanged(layerIndex, config.FirstLayerThickness_um);
+					}
+					else
+					{
+						gcodeExport.LayerChanged(layerIndex, config.LayerThickness_um);
+					}
+
+					// start out with the fan off for this layer (the minimum layer fan speed will be applied later as the gcode is output)
+					layerPlanner.QueueFanCommand(0, fillConfig);
+
+					// hold the current layer path finder
+					PathFinder layerPathFinder = null;
+
+					var supportExturderIndex2 = config.SupportExtruder < config.ExtruderCount ? config.SupportExtruder : 0;
+					var interfaceExturderIndex = config.SupportInterfaceExtruder < config.ExtruderCount ? config.SupportInterfaceExtruder : 0;
+
+					// Loop over extruders in preferred order
+					var activeThenOtherExtruders = slicingData.Extruders.CurrentThenOtherIndexes(activeExtruderIndex: layerPlanner.GetExtruder());
+					foreach (int extruderIndex in activeThenOtherExtruders)
+					{
+						if (config.AvoidCrossingPerimeters
+							&& slicingData.Extruders != null
+							&& slicingData.Extruders.Count > extruderIndex)
+						{
+							// set the path planner to avoid islands
+							layerPathFinder = slicingData.Extruders[extruderIndex].Layers[layerIndex].PathFinder;
+						}
+
+						ChangeExtruderIfRequired(slicingData, layerPathFinder, layerIndex, layerPlanner, extruderIndex, false);
+
+						using (new QuickTimer2("CreateRequiredInsets"))
+						{
+							// create the insets required by this extruder layer
+							CreateRequiredInsets(config, slicingData, layerIndex, extruderIndex);
+						}
+
+						if (layerIndex == 0)
+						{
+							QueueExtruderLayerToGCode(slicingData, layerPlanner, extruderIndex, layerIndex, config.FirstLayerExtrusionWidth_um, z);
+						}
+						else
+						{
+							QueueExtruderLayerToGCode(slicingData, layerPlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
+						}
+
+						if (slicingData.Support != null)
+						{
+							bool movedToIsland = false;
+
+							if (layerIndex < supportIslands.Count)
+							{
+								SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
+								MoveToIsland(layerPlanner, layer, supportIslands[layerIndex]);
+								movedToIsland = true;
+							}
+
+							if ((supportExturderIndex2 <= 0 && extruderIndex == 0)
+								|| supportExturderIndex2 == extruderIndex)
+							{
+								if (slicingData.Support.QueueNormalSupportLayer(config, layerPlanner, layerIndex, supportNormalConfig))
+								{
+									// we move out of the island so we aren't in it.
+									islandCurrentlyInside = null;
+								}
+							}
+
+							if ((interfaceExturderIndex <= 0 && extruderIndex == 0)
+								|| interfaceExturderIndex == extruderIndex)
+							{
+								if (slicingData.Support.QueueInterfaceSupportLayer(config, layerPlanner, layerIndex, supportInterfaceConfig))
+								{
+									// we move out of the island so we aren't in it.
+									islandCurrentlyInside = null;
+								}
+							}
+
+							if (movedToIsland)
+							{
+								islandCurrentlyInside = null;
+							}
+						}
 					}
 
 					if (slicingData.Support != null)
 					{
-						bool movedToIsland = false;
+						z += config.SupportAirGap_um;
+						gcodeExport.CurrentZ_um = z;
 
-						if (layerIndex < supportIslands.Count)
+						bool extrudedAirGappedSupport = false;
+						foreach (int extruderIndex in slicingData.Extruders.CurrentThenOtherIndexes(activeExtruderIndex: layerPlanner.GetExtruder()))
 						{
-							SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
-							MoveToIsland(layerPlanner, layer, supportIslands[layerIndex]);
-							movedToIsland = true;
-						}
-
-						if ((supportExturderIndex2 <= 0 && extruderIndex == 0)
-							|| supportExturderIndex2 == extruderIndex)
-						{
-							if (slicingData.Support.QueueNormalSupportLayer(config, layerPlanner, layerIndex, supportNormalConfig))
+							QueueAirGappedExtruderLayerToGCode(slicingData, layerPathFinder, layerPlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
+							if (!extrudedAirGappedSupport
+								&& ((interfaceExturderIndex <= 0 && extruderIndex == 0) || interfaceExturderIndex == extruderIndex))
 							{
-								// we move out of the island so we aren't in it.
-								islandCurrentlyInside = null;
+								if (slicingData.Support.HaveAirGappedBottomLayer(layerIndex))
+								{
+									ChangeExtruderIfRequired(slicingData, layerPathFinder, layerIndex, layerPlanner, extruderIndex, true);
+								}
+
+								slicingData.Support.QueueAirGappedBottomLayer(config, layerPlanner, layerIndex, airGappedBottomConfig);
+								extrudedAirGappedSupport = true;
 							}
 						}
 
-						if ((interfaceExturderIndex <= 0 && extruderIndex == 0)
-							|| interfaceExturderIndex == extruderIndex)
-						{
-							if (slicingData.Support.QueueInterfaceSupportLayer(config, layerPlanner, layerIndex, supportInterfaceConfig))
-							{
-								// we move out of the island so we aren't in it.
-								islandCurrentlyInside = null;
-							}
-						}
-
-						if (movedToIsland)
-						{
-							islandCurrentlyInside = null;
-						}
+						// don't print the wipe tower with air gap height
+						z -= config.SupportAirGap_um;
+						gcodeExport.CurrentZ_um = z;
 					}
-				}
 
-				if (slicingData.Support != null)
-				{
-					z += config.SupportAirGap_um;
-					gcodeExport.CurrentZ_um = z;
-
-					bool extrudedAirGappedSupport = false;
-					foreach (int extruderIndex in slicingData.Extruders.CurrentThenOtherIndexes(activeExtruderIndex: layerPlanner.GetExtruder()))
+					if (slicingData.EnsureWipeTowerIsSolid(layerIndex, layerPathFinder, layerPlanner, fillConfig, config))
 					{
-						QueueAirGappedExtruderLayerToGCode(slicingData, layerPathFinder, layerPlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
-						if (!extrudedAirGappedSupport
-							&& ((interfaceExturderIndex <= 0 && extruderIndex == 0) || interfaceExturderIndex == extruderIndex))
-						{
-							if (slicingData.Support.HaveAirGappedBottomLayer(layerIndex))
-							{
-								ChangeExtruderIfRequired(slicingData, layerPathFinder, layerIndex, layerPlanner, extruderIndex, true);
-							}
-
-							slicingData.Support.QueueAirGappedBottomLayer(config, layerPlanner, layerIndex, airGappedBottomConfig);
-							extrudedAirGappedSupport = true;
-						}
+						islandCurrentlyInside = null;
 					}
 
-					// don't print the wipe tower with air gap height
-					z -= config.SupportAirGap_um;
-					gcodeExport.CurrentZ_um = z;
-				}
+					long currentLayerThickness_um = config.LayerThickness_um;
+					if (layerIndex <= 0)
+					{
+						currentLayerThickness_um = config.FirstLayerThickness_um;
+					}
 
-				if (slicingData.EnsureWipeTowerIsSolid(layerIndex, layerPathFinder, layerPlanner, fillConfig, config))
-				{
-					islandCurrentlyInside = null;
+					layerPlanner.FinalizeLayerFanSpeeds(layerIndex);
+					using (new QuickTimer2("WriteQueuedGCode"))
+					{
+						layerPlanner.WriteQueuedGCode(currentLayerThickness_um);
+					}
 				}
-
-				long currentLayerThickness_um = config.LayerThickness_um;
-				if (layerIndex <= 0)
-				{
-					currentLayerThickness_um = config.FirstLayerThickness_um;
-				}
-
-				layerPlanner.FinalizeLayerFanSpeeds(layerIndex);
-				layerPlanner.WriteQueuedGCode(currentLayerThickness_um);
 			}
 
 			LogOutput.Log("Wrote layers: {0:0.00}s.\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
@@ -682,6 +692,8 @@ namespace MatterHackers.MatterSlice
 
 			// Store the object height for when we are printing multiple objects, as we need to clear every one of them when moving to the next position.
 			maxObjectHeight = Math.Max(maxObjectHeight, slicingData.modelSize.Z);
+
+			QuickTimer2.Report();
 		}
 
 		private void ChangeExtruderIfRequired(LayerDataStorage slicingData,
@@ -808,43 +820,49 @@ namespace MatterHackers.MatterSlice
 					previousLayer.FreeIslandMemory();
 				}
 
-				Agg.Parallel.For(startIndex, endIndex, (layerIndex) =>
-				// for (int layerIndex = startIndex; layerIndex <= endIndex; layerIndex++)
+				using (new QuickTimer2("GenerateInsets"))
 				{
-					SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
-
-					if (layer.Islands.Count > 0
-						&& !layer.CreatedInsets)
+					Agg.Parallel.For(startIndex, endIndex, (layerIndex) =>
+					// for (int layerIndex = startIndex; layerIndex <= endIndex; layerIndex++)
 					{
-						layer.CreatedInsets = true;
-						int insetCount = config.NumberOfPerimeters;
-						if (config.ContinuousSpiralOuterPerimeter && (int)layerIndex < config.NumberOfBottomLayers && layerIndex % 2 == 1)
+						SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
+
+						if (layer.Islands.Count > 0
+							&& !layer.CreatedInsets)
 						{
+							layer.CreatedInsets = true;
+							int insetCount = config.NumberOfPerimeters;
+							if (config.ContinuousSpiralOuterPerimeter && (int)layerIndex < config.NumberOfBottomLayers && layerIndex % 2 == 1)
+							{
 							// Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
 							insetCount += 1;
-						}
+							}
 
-						if (layerIndex == 0)
+							if (layerIndex == 0)
+							{
+								layer.GenerateInsets(config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, insetCount, config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter, config.AvoidCrossingPerimeters);
+							}
+							else
+							{
+								layer.GenerateInsets(config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, insetCount, config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter, config.AvoidCrossingPerimeters);
+							}
+						}
+					});
+				}
+
+				using (new QuickTimer2("GenerateTopAndBottoms"))
+				{
+					// Only generate bottom and top layers and infill for the first X layers when spiralize is chosen.
+					if (!config.ContinuousSpiralOuterPerimeter || (int)outputLayerIndex < config.NumberOfBottomLayers)
+					{
+						if (outputLayerIndex == 0)
 						{
-							layer.GenerateInsets(config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, insetCount, config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter, config.AvoidCrossingPerimeters);
+							slicingData.Extruders[extruderIndex].GenerateTopAndBottoms(config, outputLayerIndex, config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, config.NumberOfBottomLayers, config.NumberOfTopLayers, config.InfillExtendIntoPerimeter_um);
 						}
 						else
 						{
-							layer.GenerateInsets(config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, insetCount, config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter, config.AvoidCrossingPerimeters);
+							slicingData.Extruders[extruderIndex].GenerateTopAndBottoms(config, outputLayerIndex, config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, config.NumberOfBottomLayers, config.NumberOfTopLayers, config.InfillExtendIntoPerimeter_um);
 						}
-					}
-				});
-
-				// Only generate bottom and top layers and infill for the first X layers when spiralize is chosen.
-				if (!config.ContinuousSpiralOuterPerimeter || (int)outputLayerIndex < config.NumberOfBottomLayers)
-				{
-					if (outputLayerIndex == 0)
-					{
-						slicingData.Extruders[extruderIndex].GenerateTopAndBottoms(config, outputLayerIndex, config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, config.NumberOfBottomLayers, config.NumberOfTopLayers, config.InfillExtendIntoPerimeter_um);
-					}
-					else
-					{
-						slicingData.Extruders[extruderIndex].GenerateTopAndBottoms(config, outputLayerIndex, config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, config.NumberOfBottomLayers, config.NumberOfTopLayers, config.InfillExtendIntoPerimeter_um);
 					}
 				}
 			}
@@ -1293,7 +1311,7 @@ namespace MatterHackers.MatterSlice
 				// If we are already in the island we are going to, don't go there, or there is only one island.
 				if ((layer.Islands.Count == 1 && config.ExtruderCount == 1)
 					|| layer.PathFinder?.OutlineData?.Polygons.Count < 3
-					|| island.PathFinder?.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineData.EdgeQuadTrees, island.PathFinder.OutlineData.PointQuadTrees) == true)
+					|| island.PathFinder?.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineData.EdgeQuadTrees, island.PathFinder.OutlineData.PointKDTrees) == true)
 				{
 					islandCurrentlyInside = island;
 					return;

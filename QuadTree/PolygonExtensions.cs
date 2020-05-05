@@ -29,6 +29,7 @@ either expressed or implied, of the FreeBSD Project.
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using MSClipperLib;
 using Supercluster.KDTree;
 
@@ -138,6 +139,44 @@ namespace MatterHackers.QuadTree
 
 				return bestPointIndex;
 			}
+		}
+
+
+		public static KDTree<long, int> ConditionalKDTree(this Polygon inPolygon)
+		{
+			double Distance(long[] first, long[] second)
+			{
+				double dist = 0;
+				for (int i = 0; i < first.Length; i++)
+				{
+					dist += (first[i] - second[i]) * (first[i] - second[i]);
+				}
+
+				return dist;
+			}
+
+			// if there are not enough points it is much faster to just iterate the array
+			if (inPolygon.Count < 8)
+			{
+				return null;
+			}
+
+			long[][] Positions(Polygon polygon)
+			{
+				var data = new List<long[]>();
+
+				for (int i = 0; i < polygon.Count; i++)
+				{
+					data.Add(new long[] { polygon[i].X, polygon[i].Y });
+				}
+
+				return data.ToArray();
+			}
+
+			return new KDTree<long, int>(2,
+				Positions(inPolygon),
+				Enumerable.Range(0, inPolygon.Count).Select(i => i).ToArray(),
+				Distance);
 		}
 
 		public static IEnumerable<(int pointIndex, IntPoint position)> FindCrossingPoints(this Polygon polygon, IntPoint start, IntPoint end, QuadTree<int> edgeQuadTree = null)
@@ -278,16 +317,15 @@ namespace MatterHackers.QuadTree
 		/// <param name="polygon"></param>
 		/// <param name="position"></param>
 		/// <returns></returns>
-		public static int FindPoint(this Polygon polygon, IntPoint position, QuadTree<int> pointQuadTree = null)
+		public static int FindPoint(this Polygon polygon, IntPoint position, KDTree<long, int> pointKDTree = null)
 		{
-			if (pointQuadTree != null)
+			if (pointKDTree != null)
 			{
-				pointQuadTree.SearchPoint(position.X, position.Y);
-				foreach (var index in pointQuadTree.QueryResults)
+				foreach (var index in pointKDTree.NearestNeighbors(new long[] { position.X, position.Y }, 1))
 				{
-					if (position == polygon[index])
+					if (position == polygon[index.Item2])
 					{
-						return index;
+						return index.Item2;
 					}
 				}
 			}
@@ -589,12 +627,13 @@ namespace MatterHackers.QuadTree
 		}
 
 		//returns 0 if false, +1 if true, -1 if pt ON polygon boundary
-		public static int PointIsInside(this Polygon polygon, IntPoint testPoint, QuadTree<int> pointQuadTree = null)
+		public static int PointIsInside(this Polygon polygon, IntPoint testPoint, KDTree<long, int> pointKDTree = null)
 		{
-			if (polygon.FindPoint(testPoint, pointQuadTree) != -1)
+			if (polygon.FindPoint(testPoint, pointKDTree) != -1)
 			{
 				return -1;
 			}
+
 			return Clipper.PointInPolygon(testPoint, polygon);
 		}
 

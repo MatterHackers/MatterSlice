@@ -223,7 +223,7 @@ namespace MatterHackers.Pathfinding
 				OutlineData.Polygons.MovePointInsideBoundary(testPosition,
 					out endPolyPointPosition,
 					OutlineData.EdgeQuadTrees,
-					OutlineData.PointQuadTrees,
+					OutlineData.PointKDTrees,
 					OutlineData.PointIsInside);
 
 				if (endPolyPointPosition.pointIndex != -1)
@@ -456,7 +456,7 @@ namespace MatterHackers.Pathfinding
 		private IntPointNode GetWayPointInside(IntPoint position, out IntPointNode waypointAtPosition)
 		{
 			waypointAtPosition = null;
-			OutlineData.Polygons.MovePointInsideBoundary(position, out (int polyIndex, int pointIndex, IntPoint position) foundPolyPointPosition, OutlineData.EdgeQuadTrees, OutlineData.PointQuadTrees, OutlineData.PointIsInside);
+			OutlineData.Polygons.MovePointInsideBoundary(position, out (int polyIndex, int pointIndex, IntPoint position) foundPolyPointPosition, OutlineData.EdgeQuadTrees, OutlineData.PointKDTrees, OutlineData.PointIsInside);
 			if (foundPolyPointPosition.polyIndex == -1)
 			{
 				// The point is already inside
@@ -607,7 +607,7 @@ namespace MatterHackers.Pathfinding
 		private bool ValidPoint(PathingData outlineData, IntPoint position)
 		{
 			long movedDist = 0;
-			OutlineData.Polygons.MovePointInsideBoundary(position, out (int polyIndex, int pointIndex, IntPoint position) movedPosition, OutlineData.EdgeQuadTrees, OutlineData.PointQuadTrees, OutlineData.PointIsInside);
+			OutlineData.Polygons.MovePointInsideBoundary(position, out (int polyIndex, int pointIndex, IntPoint position) movedPosition, OutlineData.EdgeQuadTrees, OutlineData.PointKDTrees, OutlineData.PointIsInside);
 			if (movedPosition.polyIndex != -1)
 			{
 				movedDist = (position - movedPosition.position).Length();

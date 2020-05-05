@@ -62,43 +62,6 @@ namespace MatterHackers.MatterSlice
 
 	public class PathOrderOptimizer
 	{
-		static double Distance(long[] first, long[] second)
-		{
-			double dist = 0;
-			for (int i = 0; i < first.Length; i++)
-			{
-				dist += (first[i] - second[i]) * (first[i] - second[i]);
-			}
-
-			return dist;
-		}
-
-		public static KDTree<long, int> GenerateData(Polygon inPolygon)
-		{
-			// if there are not enough points it is much faster to just iterate the array
-			if (inPolygon.Count < 8)
-			{
-				return null;
-			}
-
-			long[][] Positions(Polygon polygon)
-			{
-				var data = new List<long[]>();
-
-				for (int i = 0; i < polygon.Count; i++)
-				{
-					data.Add(new long[] { polygon[i].X, polygon[i].Y });
-				}
-
-				return data.ToArray();
-			}
-
-			return new KDTree<long, int>(2,
-				Positions(inPolygon),
-				Enumerable.Range(0, inPolygon.Count).Select(i => i).ToArray(),
-				Distance);
-		}
-
 		private readonly ConfigSettings config;
 
 		public List<(Polygon polygon, KDTree<long, int> tree)> Data { get; private set; } = new List<(Polygon polygon, KDTree<long, int> tree)>();
@@ -114,7 +77,7 @@ namespace MatterHackers.MatterSlice
 		{
 			if (polygon.Count > 0)
 			{
-				this.Data.Add((polygon, GenerateData(polygon)));
+				this.Data.Add((polygon, polygon.ConditionalKDTree()));
 			}
 		}
 
