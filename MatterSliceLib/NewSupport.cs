@@ -249,6 +249,12 @@ namespace MatterHackers.MatterSlice
 
 			foreach (Polygons supportIsland in supportIslands)
 			{
+				PathFinder pathFinder = null;
+				if (config.AvoidCrossingPerimeters)
+				{
+					pathFinder = new PathFinder(supportIsland, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters, name: "air gap");
+				}
+
 				// force a retract if changing islands
 				if (config.RetractWhenChangingIslands)
 				{
@@ -262,7 +268,7 @@ namespace MatterHackers.MatterSlice
 				{
 					var closedLoop = supportNormalConfig.ClosedLoop;
 					supportNormalConfig.ClosedLoop = true;
-					gcodeLayer.QueuePolygonsByOptimizer(supportIsland.Offset(-config.ExtrusionWidth_um / 2), null, supportNormalConfig, layerIndex);
+					gcodeLayer.QueuePolygonsByOptimizer(supportIsland.Offset(-config.ExtrusionWidth_um / 2), pathFinder, supportNormalConfig, layerIndex);
 					infillOffset = config.ExtrusionWidth_um * -2 + config.InfillExtendIntoPerimeter_um;
 					supportNormalConfig.ClosedLoop = closedLoop;
 				}
@@ -280,16 +286,7 @@ namespace MatterHackers.MatterSlice
 						break;
 				}
 
-				PathFinder pathFinder = null;
-				if (config.AvoidCrossingPerimeters)
-				{
-					pathFinder = new PathFinder(infillOutline, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters);
-				}
-
-				var oldPathFinder = gcodeLayer.PathFinder;
-				gcodeLayer.PathFinder = pathFinder;
-				gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, null, supportNormalConfig, 0);
-				gcodeLayer.PathFinder = oldPathFinder;
+				gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, pathFinder, supportNormalConfig, 0);
 			}
 		}
 
@@ -304,6 +301,12 @@ namespace MatterHackers.MatterSlice
 
 				foreach (Polygons interfaceIsland in interfaceIslands)
 				{
+					PathFinder pathFinder = null;
+					if (config.AvoidCrossingPerimeters)
+					{
+						pathFinder = new PathFinder(interfaceIsland, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters, name: "interface");
+					}
+
 					// force a retract if changing islands
 					if (config.RetractWhenChangingIslands)
 					{
@@ -315,7 +318,7 @@ namespace MatterHackers.MatterSlice
 					// make a border if layer 0
 					if (config.GenerateSupportPerimeter || layerIndex == 0)
 					{
-						if (gcodeLayer.QueuePolygonsByOptimizer(interfaceIsland.Offset(-config.ExtrusionWidth_um / 2), null, supportInterfaceConfig, 0))
+						if (gcodeLayer.QueuePolygonsByOptimizer(interfaceIsland.Offset(-config.ExtrusionWidth_um / 2), pathFinder, supportInterfaceConfig, 0))
 						{
 							outputPaths = true;
 						}
@@ -325,7 +328,7 @@ namespace MatterHackers.MatterSlice
 
 					Polygons supportLines = new Polygons();
 					Infill.GenerateLineInfill(config, interfaceIsland.Offset(infillOffset), supportLines, config.InfillStartingAngle + 90, config.ExtrusionWidth_um);
-					if (gcodeLayer.QueuePolygonsByOptimizer(supportLines, null, supportInterfaceConfig, 0))
+					if (gcodeLayer.QueuePolygonsByOptimizer(supportLines, pathFinder, supportInterfaceConfig, 0))
 					{
 						outputPaths = true;
 					}
@@ -341,63 +344,70 @@ namespace MatterHackers.MatterSlice
 			Polygons currentSupportOutlines = SparseSupportOutlines[layerIndex];
 			List<Polygons> supportIslands = currentSupportOutlines.ProcessIntoSeparateIslands();
 
-			bool outputPaths = false;
-			foreach (Polygons supportIsland in supportIslands)
+			List<PathFinder> pathFinders = new List<PathFinder>();
+			List<Polygons> infillOutlines = new List<Polygons>();
+			for (int i = 0; i < supportIslands.Count; i++)
 			{
+				pathFinders.Add(null);
+				infillOutlines.Add(null);
+			}
+
+			Agg.Parallel.For(0, supportIslands.Count, (index) =>
+			{
+				var infillOffset = -config.ExtrusionWidth_um + config.InfillExtendIntoPerimeter_um;
+				var supportIsland = supportIslands[index];
+				infillOutlines[index] = supportIsland.Offset(infillOffset);
+
+				if (config.AvoidCrossingPerimeters)
+				{
+					pathFinders[index] = new PathFinder(infillOutlines[index], -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters, name: "normal support");
+				}
+			});
+
+			bool outputPaths = false;
+			for (int i = 0; i < supportIslands.Count; i++)
+			{
+				var supportIsland = supportIslands[i];
+
 				// force a retract if changing islands
 				if (config.RetractWhenChangingIslands)
 				{
 					gcodeLayer.ForceRetract();
 				}
 
-				var infillOffset = -config.ExtrusionWidth_um + config.InfillExtendIntoPerimeter_um;
-
 				// make a border if layer 0
 				if (config.GenerateSupportPerimeter || layerIndex == 0)
 				{
-					if (gcodeLayer.QueuePolygonsByOptimizer(supportIsland.Offset(-config.ExtrusionWidth_um / 2), null, supportNormalConfig, 0))
+					if (gcodeLayer.QueuePolygonsByOptimizer(supportIsland.Offset(-config.ExtrusionWidth_um / 2), pathFinders[i], supportNormalConfig, 0))
 					{
 						outputPaths = true;
 					}
-
-					infillOffset = config.ExtrusionWidth_um * -2 + config.InfillExtendIntoPerimeter_um;
 				}
 
-				Polygons infillOutline = supportIsland.Offset(infillOffset);
 				Polygons islandInfillLines = new Polygons();
 				if (layerIndex == 0)
 				{
 					// on the first layer print this as solid
-					Infill.GenerateLineInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.ExtrusionWidth_um);
+					Infill.GenerateLineInfill(config, infillOutlines[i], islandInfillLines, config.SupportInfillStartingAngle, config.ExtrusionWidth_um);
 				}
 				else
 				{
 					switch (config.SupportType)
 					{
 						case ConfigConstants.SUPPORT_TYPE.GRID:
-							Infill.GenerateGridInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
+							Infill.GenerateGridInfill(config, infillOutlines[i], islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
 							break;
 
 						case ConfigConstants.SUPPORT_TYPE.LINES:
-							Infill.GenerateLineInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
+							Infill.GenerateLineInfill(config, infillOutlines[i], islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
 							break;
 					}
 				}
 
-				PathFinder pathFinder = null;
-				if (config.AvoidCrossingPerimeters)
-				{
-					pathFinder = new PathFinder(infillOutline, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters);
-				}
-
-				var oldPathFinder = gcodeLayer.PathFinder;
-				gcodeLayer.PathFinder = pathFinder;
-				if (gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, null, supportNormalConfig, 0))
+				if (gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, pathFinders[i], supportNormalConfig, 0))
 				{
 					outputPaths |= true;
 				}
-
-				gcodeLayer.PathFinder = oldPathFinder;
 			}
 
 			return outputPaths;

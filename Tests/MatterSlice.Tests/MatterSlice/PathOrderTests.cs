@@ -31,12 +31,95 @@ using System;
 using System.Collections.Generic;
 using MSClipperLib;
 using NUnit.Framework;
+using MatterHackers.QuadTree;
 
 namespace MatterHackers.MatterSlice.Tests
 {
 	[TestFixture, Category("MatterSlice.PathOrderTests")]
 	public class PathOrderTests
 	{
+		[Test]
+		public void CorrectPolygonOrder()
+		{
+			//                  |
+			//     2       1    |    1       2
+			//                  |
+			//                  |
+			//     3       0    |    0       3
+			// _________________|__________________
+			//                  |
+			//     3       0    |    0       3
+			//                  |
+			//                  |
+			//     2       1    |    1       2
+			//                  |
+
+			string polyQ1String = "x:5, y:5,x:5, y:10,x:10, y:10,x:10, y:5,|";
+			var polyQ1 = CLPolygonsExtensions.CreateFromString(polyQ1String)[0];
+
+			string polyQ2String = "x:-5, y:5,x:-5, y:10,x:-10, y:10,x:-10, y:5,|";
+			var polyQ2 = CLPolygonsExtensions.CreateFromString(polyQ2String)[0];
+
+			string polyQ3String = "x:-5, y:-5,x:-5, y:-10,x:-10, y:-10,x:-10, y:-5,|";
+			var polyQ3 = CLPolygonsExtensions.CreateFromString(polyQ3String)[0];
+
+			string polyQ4String = "x:5, y:-5,x:5, y:-10,x:10, y:-10,x:10, y:-5,|";
+			var polyQ4 = CLPolygonsExtensions.CreateFromString(polyQ4String)[0];
+
+			var settings = new ConfigSettings();
+
+			// test simple finding
+			{
+				var pPathOrderOptimizer = new PathOrderOptimizer(settings);
+				pPathOrderOptimizer.AddPolygon(polyQ1);
+				pPathOrderOptimizer.AddPolygon(polyQ2);
+
+				// starting at low far right
+				pPathOrderOptimizer.Optimize(new IntPoint(20, 0), null, 0, false, null);
+				Assert.AreEqual(2, pPathOrderOptimizer.Order.Count);
+				Assert.AreEqual(0, pPathOrderOptimizer.Order[0].PolyIndex);
+				Assert.AreEqual(3, pPathOrderOptimizer.Order[0].PointIndex);
+				Assert.AreEqual(1, pPathOrderOptimizer.Order[1].PolyIndex);
+				Assert.AreEqual(0, pPathOrderOptimizer.Order[1].PointIndex);
+
+				// starting at high far right
+				pPathOrderOptimizer.Optimize(new IntPoint(20, 20), null, 0, false, null);
+				Assert.AreEqual(2, pPathOrderOptimizer.Order.Count);
+				Assert.AreEqual(0, pPathOrderOptimizer.Order[0].PolyIndex);
+				Assert.AreEqual(2, pPathOrderOptimizer.Order[0].PointIndex);
+				Assert.AreEqual(1, pPathOrderOptimizer.Order[1].PolyIndex);
+				Assert.AreEqual(1, pPathOrderOptimizer.Order[1].PointIndex);
+
+				// starting at high far left
+				pPathOrderOptimizer.Optimize(new IntPoint(-20, 20), null, 0, false, null);
+				Assert.AreEqual(2, pPathOrderOptimizer.Order.Count);
+				Assert.AreEqual(1, pPathOrderOptimizer.Order[0].PolyIndex);
+				Assert.AreEqual(2, pPathOrderOptimizer.Order[0].PointIndex);
+				Assert.AreEqual(0, pPathOrderOptimizer.Order[1].PolyIndex);
+				Assert.AreEqual(1, pPathOrderOptimizer.Order[1].PointIndex);
+			}
+
+			// test that single lines connect correctly
+			{
+				var pPathOrderOptimizer = new PathOrderOptimizer(settings);
+				pPathOrderOptimizer.AddPolygons(
+					CLPolygonsExtensions.CreateFromString(
+						"x:0, y:0,x:500, y:0,|x:0, y:100,x:500, y:100,|x:0, y:200,x:500, y:200,|x:0, y:300,x:500, y:300,|"));
+
+				// starting at low far right
+				pPathOrderOptimizer.Optimize(new IntPoint(0, 0), null, 0, false, null);
+				Assert.AreEqual(4, pPathOrderOptimizer.Order.Count);
+				Assert.AreEqual(0, pPathOrderOptimizer.Order[0].PolyIndex);
+				Assert.AreEqual(1, pPathOrderOptimizer.Order[1].PolyIndex);
+				Assert.AreEqual(2, pPathOrderOptimizer.Order[2].PolyIndex);
+				Assert.AreEqual(3, pPathOrderOptimizer.Order[3].PolyIndex);
+				Assert.AreEqual(0, pPathOrderOptimizer.Order[0].PointIndex);
+				Assert.AreEqual(1, pPathOrderOptimizer.Order[1].PointIndex);
+				Assert.AreEqual(0, pPathOrderOptimizer.Order[0].PointIndex);
+				Assert.AreEqual(1, pPathOrderOptimizer.Order[1].PointIndex);
+			}
+		}
+
 		[Test]
 		public void CorrectSeamPlacement()
 		{

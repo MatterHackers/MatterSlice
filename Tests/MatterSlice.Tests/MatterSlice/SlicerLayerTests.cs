@@ -27,6 +27,7 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using MatterHackers.QuadTree;
@@ -305,9 +306,13 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 
 			// load both gcode files and check that they are the same
-			string manifoldGCodeContent = File.ReadAllText(manifoldGCode);
-			string nonManifoldGCodeContent = File.ReadAllText(nonManifoldGCode);
-			Assert.AreEqual(manifoldGCodeContent, nonManifoldGCodeContent);
+			var manifoldGCodeContent = File.ReadAllLines(manifoldGCode);
+			var nonManifoldGCodeContent = File.ReadAllLines(nonManifoldGCode);
+			Assert.AreEqual(manifoldGCodeContent.Length, nonManifoldGCodeContent.Length);
+			for (int i = 0; i < Math.Min(manifoldGCodeContent.Length, nonManifoldGCodeContent.Length); i++)
+			{
+				Assert.AreEqual(manifoldGCodeContent[i], nonManifoldGCodeContent[i]);
+			}
 		}
 
 		private static void LayersHaveCorrectPolygonCount(string[] segmentsToCheck, int expectedCount = 1)

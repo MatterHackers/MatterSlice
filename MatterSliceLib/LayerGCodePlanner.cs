@@ -41,8 +41,6 @@ namespace MatterHackers.MatterSlice
 
 		private readonly GCodeExport gcodeExport;
 
-		private PathFinder lastValidPathFinder;
-		private PathFinder pathFinder;
 		private readonly List<GCodePath> paths = new List<GCodePath>();
 
 		private readonly double perimeterStartEndOverlapRatio;
@@ -78,21 +76,6 @@ namespace MatterHackers.MatterSlice
 		}
 
 		public IntPoint LastPosition { get; private set; }
-
-		public PathFinder PathFinder
-		{
-			get => pathFinder;
-			set
-			{
-				if (value != null
-					&& lastValidPathFinder != value)
-				{
-					lastValidPathFinder = value;
-				}
-
-				pathFinder = value;
-			}
-		}
 
 		public static GCodePath TrimGCodePathEnd(GCodePath inPath, long targetDistance)
 		{
@@ -195,7 +178,7 @@ namespace MatterHackers.MatterSlice
 			return currentExtruderIndex;
 		}
 
-		public void QueueExtrusionMove(IntPoint destination, GCodePathConfig config)
+		private void QueueExtrusionMove(IntPoint destination, GCodePathConfig config)
 		{
 			GetLatestPathWithConfig(config).Polygon.Add(new IntPoint(destination, CurrentZ));
 			LastPosition = destination;
@@ -203,7 +186,7 @@ namespace MatterHackers.MatterSlice
 			// ValidatePaths();
 		}
 
-		public void QueuePolygon(Polygon polygon, int startIndex, GCodePathConfig config)
+		private void QueuePolygon(Polygon polygon, PathFinder pathFinder, int startIndex, GCodePathConfig config)
 		{
 			IntPoint currentPosition = polygon[startIndex];
 
@@ -211,9 +194,14 @@ namespace MatterHackers.MatterSlice
 				&& (LastPosition.X != currentPosition.X
 				|| LastPosition.Y != currentPosition.Y))
 			{
-				QueueTravel(currentPosition);
+				QueueTravel(currentPosition, pathFinder);
 			}
 
+			QueueExtrusionPolygon(polygon, startIndex, config);
+		}
+
+		private void QueueExtrusionPolygon(Polygon polygon, int startIndex, GCodePathConfig config)
+		{
 			if (config.ClosedLoop)
 			{
 				for (int positionIndex = 1; positionIndex < polygon.Count; positionIndex++)
@@ -314,46 +302,44 @@ namespace MatterHackers.MatterSlice
 			queuedFanSpeeds.Add(path);
 		}
 
-		public void QueuePolygons(Polygons polygons, GCodePathConfig config)
+		public void QueuePolygons(Polygons polygons, PathFinder pathFinder, GCodePathConfig config)
 		{
 			foreach (var polygon in polygons)
 			{
-				QueuePolygon(polygon, 0, config);
+				QueuePolygon(polygon, pathFinder, 0, config);
 			}
 		}
 
-		public bool QueuePolygonByOptimizer(Polygon polygon, PathFinder pathFinder, GCodePathConfig config, int layerIndex)
+		public bool QueuePolygonByOptimizer(Polygon polygon, PathFinder pathFinder, GCodePathConfig pathConfig, int layerIndex)
 		{
-			var orderOptimizer = new PathOrderOptimizer(LastPosition);
-			orderOptimizer.AddPolygon(polygon);
-
-			orderOptimizer.Optimize(pathFinder, layerIndex, config);
-
-			for (int i = 0; i < orderOptimizer.bestIslandOrderIndex.Count; i++)
-			{
-				int polygonIndex = orderOptimizer.bestIslandOrderIndex[i];
-				QueuePolygon(polygon, orderOptimizer.startIndexInPolygon[polygonIndex], config);
-			}
-
-			return true;
+			return QueuePolygonsByOptimizer(new Polygons() { polygon }, pathFinder, pathConfig, layerIndex);
 		}
 
-		public bool QueuePolygonsByOptimizer(Polygons polygons, PathFinder pathFinder, GCodePathConfig config, int layerIndex)
+		public bool QueuePolygonsByOptimizer(Polygons polygons, PathFinder pathFinder, GCodePathConfig pathConfig, int layerIndex)
 		{
 			if (polygons.Count == 0)
 			{
 				return false;
 			}
 
-			var orderOptimizer = new PathOrderOptimizer(LastPosition);
+			var orderOptimizer = new PathOrderOptimizer(config);
 			orderOptimizer.AddPolygons(polygons);
 
-			orderOptimizer.Optimize(pathFinder, layerIndex, config);
+			orderOptimizer.Optimize(LastPosition, pathFinder, layerIndex, true, pathConfig);
 
-			for (int i = 0; i < orderOptimizer.bestIslandOrderIndex.Count; i++)
+			foreach (var order in orderOptimizer.Order)
 			{
-				int polygonIndex = orderOptimizer.bestIslandOrderIndex[i];
-				QueuePolygon(polygons[polygonIndex], orderOptimizer.startIndexInPolygon[polygonIndex], config);
+				// The order optimizer should already have created all the right moves
+				// so pass a null for the path finder (don't re-plan them).
+				if (order.IsExtrude)
+				{
+					QueuePolygon(orderOptimizer.Data[order.PolyIndex].polygon, pathFinder, order.PointIndex, pathConfig);
+					// QueueExtrusionPolygon(orderOptimizer.Polygons[order.PolyIndex], order.PointIndex, pathConfig);
+				}
+				else
+				{
+					QueueTravel(orderOptimizer.Data[order.PolyIndex].polygon);
+				}
 			}
 
 			return true;
@@ -361,7 +347,24 @@ namespace MatterHackers.MatterSlice
 
 		private bool canAppendTravel = true;
 
-		public void QueueTravel(IntPoint positionToMoveTo, bool forceUniquePath = false)
+		public void QueueTravel(IntPoint positionToMoveTo, PathFinder pathFinder, bool forceUniquePath = false)
+		{
+			var pathPolygon = new Polygon();
+
+			if (pathFinder != null)
+			{
+				pathFinder.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pathPolygon, true, gcodeExport.LayerIndex);
+			}
+
+			if (pathPolygon.Count == 0)
+			{
+				pathPolygon = new Polygon() { positionToMoveTo };
+			}
+
+			QueueTravel(pathPolygon, forceUniquePath);
+		}
+
+		public void QueueTravel(Polygon pathPolygon, bool forceUniquePath = false)
 		{
 			GCodePath path = GetLatestPathWithConfig(travelConfig, forceUniquePath || !canAppendTravel);
 			canAppendTravel = !forceUniquePath;
@@ -372,55 +375,29 @@ namespace MatterHackers.MatterSlice
 				forceRetraction = false;
 			}
 
-			if (PathFinder != null)
+			IntPoint lastPathPosition = LastPosition;
+			long lineLength_um = 0;
+
+			// we can stay inside so move within the boundary
+			for (int positionIndex = 0; positionIndex < pathPolygon.Count; positionIndex++)
 			{
-				var pathPolygon = new Polygon();
-				if (PathFinder.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pathPolygon, true, gcodeExport.LayerIndex))
+				path.Polygon.Add(new IntPoint(pathPolygon[positionIndex], CurrentZ)
 				{
-					IntPoint lastPathPosition = LastPosition;
-					long lineLength_um = 0;
+					Width = 0
+				});
 
-					if (pathPolygon.Count > 0)
-					{
-						// we can stay inside so move within the boundary
-						for (int positionIndex = 0; positionIndex < pathPolygon.Count; positionIndex++)
-						{
-							path.Polygon.Add(new IntPoint(pathPolygon[positionIndex], CurrentZ)
-							{
-								Width = 0
-							});
-							lineLength_um += (pathPolygon[positionIndex] - lastPathPosition).Length();
-							lastPathPosition = pathPolygon[positionIndex];
-						}
-
-						// If the internal move is very long (> retractionMinimumDistance_um), do a retraction
-						if (lineLength_um > retractionMinimumDistance_um)
-						{
-							path.Retract = RetractType.Requested;
-						}
-					}
-
-					// else the path is good it just goes directly to the positionToMoveTo
-				}
-				else if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um / 10))
-				{
-					// can't find a good path and moving more than a very little bit
-					path.Retract = RetractType.Requested;
-				}
+				lineLength_um += (pathPolygon[positionIndex] - lastPathPosition).Length();
+				lastPathPosition = pathPolygon[positionIndex];
 			}
 
-			// Always check if the distance is greater than the amount need to retract.
-			if ((LastPosition - positionToMoveTo).LongerThen(retractionMinimumDistance_um))
+			// If the internal move is very long (> retractionMinimumDistance_um), do a retraction
+			if (lineLength_um > retractionMinimumDistance_um)
 			{
 				path.Retract = RetractType.Requested;
 			}
 
-			path.Polygon.Add(new IntPoint(positionToMoveTo, CurrentZ)
-			{
-				Width = 0,
-			});
 
-			LastPosition = positionToMoveTo;
+			LastPosition = lastPathPosition;
 
 			// ValidatePaths();
 		}

@@ -29,7 +29,9 @@ either expressed or implied, of the FreeBSD Project.
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using MSClipperLib;
+using Supercluster.KDTree;
 
 namespace MatterHackers.QuadTree
 {
@@ -99,6 +101,94 @@ namespace MatterHackers.QuadTree
 			}
 
 			return polyPointPosition;
+		}
+
+		/// <summary>
+		/// This will find the largest turn in a given models. It prefers concave turns to convex turns.
+		/// </summary>
+		/// <param name="inputPolygon"></param>
+		/// <param name="lineWidth"></param>
+		/// <returns></returns>
+		public static int FindGreatestTurnIndex(this Polygon inputPolygon, IntPoint? startPosition = null, int layerIndex = 0, long lineWidth = 3, KDTree<long, int> pointKDTree = null)
+		{
+			// get the best position on a cleaned polygon
+			IntPoint bestPosition = inputPolygon.FindGreatestTurnPosition(lineWidth, layerIndex, startPosition);
+			// because FindGreatestTurnPosition cleans the polygon we need to see what the cleaned position is closest to on the actual polygon
+			return inputPolygon.FindClosestPositionIndex(bestPosition, pointKDTree);
+		}
+
+		public static int FindClosestPositionIndex(this Polygon polygon, IntPoint position, KDTree<long, int> pointKDTree = null)
+		{
+			if (pointKDTree != null)
+			{
+				int bestPointIndex = -1;
+				double closestDist = double.MaxValue;
+				foreach (var item in pointKDTree.NearestNeighbors(new long[] { position.X, position.Y }, 1))
+				{
+					double dist = (polygon[item.Item2] - position).LengthSquared();
+					if (dist < closestDist)
+					{
+						bestPointIndex = item.Item2;
+						closestDist = dist;
+					}
+				}
+
+				return bestPointIndex;
+			}
+			else
+			{
+				int bestPointIndex = -1;
+				double closestDist = double.MaxValue;
+				for (int pointIndex = 0; pointIndex < polygon.Count; pointIndex++)
+				{
+					double dist = (polygon[pointIndex] - position).LengthSquared();
+					if (dist < closestDist)
+					{
+						bestPointIndex = pointIndex;
+						closestDist = dist;
+					}
+				}
+
+				return bestPointIndex;
+			}
+		}
+
+
+		public static KDTree<long, int> ConditionalKDTree(this Polygon inPolygon)
+		{
+			double Distance(long[] first, long[] second)
+			{
+				double dist = 0;
+				for (int i = 0; i < first.Length; i++)
+				{
+					dist += (first[i] - second[i]) * (first[i] - second[i]);
+				}
+
+				return dist;
+			}
+
+			// if there are not enough points it is much faster to just iterate the array
+			if (inPolygon.Count < 8)
+			{
+				return null;
+			}
+
+			long[][] Positions(Polygon polygon)
+			{
+				var data = new List<long[]>();
+
+				for (int i = 0; i < polygon.Count; i++)
+				{
+					data.Add(new long[] { polygon[i].X, polygon[i].Y });
+				}
+
+				return data.ToArray();
+			}
+
+			return new KDTree<long, int>(2,
+				Positions(inPolygon),
+				Enumerable.Range(0, inPolygon.Count).Select(i => i).ToArray(),
+				Distance);
 		}
 
 		public static IEnumerable<(int pointIndex, IntPoint position)> FindCrossingPoints(this Polygon polygon, IntPoint start, IntPoint end, QuadTree<int> edgeQuadTree = null)
@@ -239,16 +329,15 @@ namespace MatterHackers.QuadTree
 		/// <param name="polygon"></param>
 		/// <param name="position"></param>
 		/// <returns></returns>
-		public static int FindPoint(this Polygon polygon, IntPoint position, QuadTree<int> pointQuadTree = null)
+		public static int FindPoint(this Polygon polygon, IntPoint position, KDTree<long, int> pointKDTree = null)
 		{
-			if (pointQuadTree != null)
+			if (pointKDTree != null)
 			{
-				pointQuadTree.SearchPoint(position.X, position.Y);
-				foreach (var index in pointQuadTree.QueryResults)
+				foreach (var index in pointKDTree.NearestNeighbors(new long[] { position.X, position.Y }, 1))
 				{
-					if (position == polygon[index])
+					if (position == polygon[index.Item2])
 					{
-						return index;
+						return index.Item2;
 					}
 				}
 			}
@@ -550,12 +639,13 @@ namespace MatterHackers.QuadTree
 		}
 
 		//returns 0 if false, +1 if true, -1 if pt ON polygon boundary
-		public static int PointIsInside(this Polygon polygon, IntPoint testPoint, QuadTree<int> pointQuadTree = null)
+		public static int PointIsInside(this Polygon polygon, IntPoint testPoint, KDTree<long, int> pointKDTree = null)
 		{
-			if (polygon.FindPoint(testPoint, pointQuadTree) != -1)
+			if (polygon.FindPoint(testPoint, pointKDTree) != -1)
 			{
 				return -1;
 			}
+
 			return Clipper.PointInPolygon(testPoint, polygon);
 		}
 

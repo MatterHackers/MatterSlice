@@ -65,37 +65,6 @@ namespace MSClipperLib
 
 		/// <summary>
 		/// This will find the largest turn in a given models. It prefers concave turns to convex turns.
-		/// </summary>
-		/// <param name="inputPolygon"></param>
-		/// <param name="lineWidth"></param>
-		/// <returns></returns>
-		public static int FindGreatestTurnIndex(this Polygon inputPolygon, IntPoint? startPosition = null, int layerIndex = 0, long lineWidth = 3)
-		{
-			// get the best position on a cleaned polygon
-			IntPoint bestPosition = inputPolygon.FindGreatestTurnPosition(lineWidth, layerIndex, startPosition);
-			// because FindGreatestTurnPosition cleans the polygon we need to see what the cleaned position is closest to on the actual polygon
-			return inputPolygon.FindClosestPositionIndex(bestPosition);
-		}
-
-		public static int FindClosestPositionIndex(this Polygon polygon, IntPoint position)
-		{
-			int bestPointIndex = -1;
-			double closestDist = double.MaxValue;
-			for (int pointIndex = 0; pointIndex < polygon.Count; pointIndex++)
-			{
-				double dist = (polygon[pointIndex] - position).LengthSquared();
-				if (dist < closestDist)
-				{
-					bestPointIndex = pointIndex;
-					closestDist = dist;
-				}
-			}
-
-			return bestPointIndex;
-		}
-
-		/// <summary>
-		/// This will find the largest turn in a given models. It prefers concave turns to convex turns.
 		/// If turn amount is the same bias towards the smallest y position.
 		/// </summary>
 		/// <param name="inputPolygon"></param>

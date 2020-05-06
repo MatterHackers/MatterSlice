@@ -155,14 +155,16 @@ namespace MatterHackers.MatterSlice
 							throw new Exception("These should be the same.");
 						}
 
-						for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
+						Agg.Parallel.For(0, totalLayers, (layerIndex) =>
+						// for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 						{
 							SliceLayer keepLayer = loadedMeshes[keepExtruderIndex].Layers[layerIndex];
 							SliceLayer removeLayer = loadedMeshes[removeExtruderIndex].Layers[layerIndex];
 							DoLayerBooleans(keepLayer, removeLayer, typeToDo);
-						}
+						});
 
 						meshesToProcess.RemoveAt(meshesToProcess.Count - 2);
+
 					}
 
 					if (numberOfOpens == 0)

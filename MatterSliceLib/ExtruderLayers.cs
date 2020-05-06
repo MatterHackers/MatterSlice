@@ -18,6 +18,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MSClipperLib;
@@ -90,12 +91,13 @@ namespace MatterHackers.MatterSlice
 			ExtruderLayers extruder = this;
 			SliceLayer layer = extruder.Layers[layerIndex];
 
-			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
+			Agg.Parallel.For(0, layer.Islands.Count, (islandIndex) =>
+			// for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 			{
 				LayerIsland island = layer.Islands[islandIndex];
 				if (island.InsetToolPaths.Count == 0)
 				{
-					continue;
+					return;
 				}
 
 				// this is the entire extrusion width to make sure we are outside of the extrusion line
@@ -169,21 +171,23 @@ namespace MatterHackers.MatterSlice
 
 						int upStart = layerIndex + 2;
 
-						for (int layerToTest = upStart; layerToTest < upEnd; layerToTest++)
+						Agg.Parallel.For(upStart, upEnd, (layerToTest) =>
+						// for (int layerToTest = upStart; layerToTest < upEnd; layerToTest++)
 						{
 							regionsThatWillBeSparse = IntersectWithPolygons(extruder.Layers[layerToTest].Islands, island.BoundingBox, regionsThatWillBeSparse);
 							regionsThatWillBeSparse = Clipper.CleanPolygons(regionsThatWillBeSparse, cleanDistance_um);
-						}
+						});
 
 						// find all the solid infill bottom layers
-						int downStart = layerIndex - 1;
-						int downEnd = layerIndex - downLayerCount;
+						int downStart = Math.Max(0, layerIndex - 1);
+						int downEnd = Math.Max(0, layerIndex - downLayerCount);
 
-						for (int layerToTest = downStart; layerToTest >= downEnd; layerToTest--)
+						Agg.Parallel.For(downStart, downEnd, (layerToTest) =>
+						// for (int layerToTest = downStart; layerToTest >= downEnd; layerToTest--)
 						{
 							regionsThatWillBeSparse = IntersectWithPolygons(extruder.Layers[layerToTest].Islands, island.BoundingBox, regionsThatWillBeSparse);
 							regionsThatWillBeSparse = Clipper.CleanPolygons(regionsThatWillBeSparse, cleanDistance_um);
-						}
+						});
 
 						solidInfillPaths = solidInfillPaths.CreateDifference(regionsThatWillBeSparse);
 						solidInfillPaths.RemoveSmallAreas(extrusionWidth_um);
@@ -231,19 +235,31 @@ namespace MatterHackers.MatterSlice
 
 					island.SolidInfillPaths = solidInfillPaths;
 				}
-			}
+			});
 		}
+
+		static HashSet<int> layersSeen = new HashSet<int>();
+		static object locker = new object();
 
 		public static void InitializeLayerPathing(ConfigSettings config, Polygons extraPathingConsideration, List<ExtruderLayers> extruders)
 		{
-			for (int layerIndex = 0; layerIndex < extruders[0].Layers.Count; layerIndex++)
+			Agg.Parallel.For(0, extruders[0].Layers.Count, (layerIndex) =>
+			// for (int layerIndex = 0; layerIndex < extruders[0].Layers.Count; layerIndex++)
 			{
 				if (MatterSlice.Canceled)
 				{
 					return;
 				}
 
-				LogOutput.Log("Generating Outlines {0}/{1}\n".FormatWith(layerIndex + 1, extruders[0].Layers.Count));
+				lock (locker)
+				{
+					if (!layersSeen.Contains(layerIndex))
+					{
+						layersSeen.Add(layerIndex);
+					}
+
+					LogOutput.Log("Generating Outlines {0}/{1}\n".FormatWith(layersSeen.Count(), extruders[0].Layers.Count));
+				}
 
 				long avoidInset = config.ExtrusionWidth_um * 3 / 2;
 
@@ -259,14 +275,17 @@ namespace MatterHackers.MatterSlice
 				boundary.ExpandToInclude(extraBoundary);
 				boundary.Inflate(config.ExtrusionWidth_um * 10);
 
-				var pathFinder = new Pathfinding.PathFinder(allOutlines, avoidInset, boundary, config.AvoidCrossingPerimeters);
-
-				// assign the same pathing to all extruders for this layer
-				for (int extruderIndex = 0; extruderIndex < extruders.Count; extruderIndex++)
+				if (config.AvoidCrossingPerimeters)
 				{
-					extruders[extruderIndex].Layers[layerIndex].PathFinder = pathFinder;
+					var pathFinder = new Pathfinding.PathFinder(allOutlines, avoidInset, boundary, config.AvoidCrossingPerimeters, $"layer {layerIndex}");
+
+					// assign the same pathing to all extruders for this layer
+					for (int extruderIndex = 0; extruderIndex < extruders.Count; extruderIndex++)
+					{
+						extruders[extruderIndex].Layers[layerIndex].PathFinder = pathFinder;
+					}
 				}
-			}
+			});
 		}
 
 		public bool OnlyHasBottom(int layerToCheck)

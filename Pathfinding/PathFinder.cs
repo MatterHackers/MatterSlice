@@ -44,9 +44,15 @@ namespace MatterHackers.Pathfinding
 		public static Action<PathFinder, Polygon, IntPoint, IntPoint> CalculatedPath = null;
 		private static string lastOutlineString = "";
 		private static bool saveBadPathToDisk = false;
+		public string Name { get; private set; }
 
-		public PathFinder(Polygons outlinePolygons, long avoidInset, IntRect? stayInsideBounds = null, bool useInsideCache = true)
+		public PathFinder(Polygons outlinePolygons,
+			long avoidInset,
+			IntRect? stayInsideBounds = null,
+			bool useInsideCache = true,
+			string name = "")
 		{
+			this.Name = name;
 			if (outlinePolygons.Count == 0)
 			{
 				return;
@@ -217,7 +223,7 @@ namespace MatterHackers.Pathfinding
 				OutlineData.Polygons.MovePointInsideBoundary(testPosition,
 					out endPolyPointPosition,
 					OutlineData.EdgeQuadTrees,
-					OutlineData.PointQuadTrees,
+					OutlineData.PointKDTrees,
 					OutlineData.PointIsInside);
 
 				if (endPolyPointPosition.pointIndex != -1)
@@ -450,7 +456,7 @@ namespace MatterHackers.Pathfinding
 		private IntPointNode GetWayPointInside(IntPoint position, out IntPointNode waypointAtPosition)
 		{
 			waypointAtPosition = null;
-			OutlineData.Polygons.MovePointInsideBoundary(position, out (int polyIndex, int pointIndex, IntPoint position) foundPolyPointPosition, OutlineData.EdgeQuadTrees, OutlineData.PointQuadTrees, OutlineData.PointIsInside);
+			OutlineData.Polygons.MovePointInsideBoundary(position, out (int polyIndex, int pointIndex, IntPoint position) foundPolyPointPosition, OutlineData.EdgeQuadTrees, OutlineData.PointKDTrees, OutlineData.PointIsInside);
 			if (foundPolyPointPosition.polyIndex == -1)
 			{
 				// The point is already inside
@@ -601,7 +607,7 @@ namespace MatterHackers.Pathfinding
 		private bool ValidPoint(PathingData outlineData, IntPoint position)
 		{
 			long movedDist = 0;
-			OutlineData.Polygons.MovePointInsideBoundary(position, out (int polyIndex, int pointIndex, IntPoint position) movedPosition, OutlineData.EdgeQuadTrees, OutlineData.PointQuadTrees, OutlineData.PointIsInside);
+			OutlineData.Polygons.MovePointInsideBoundary(position, out (int polyIndex, int pointIndex, IntPoint position) movedPosition, OutlineData.EdgeQuadTrees, OutlineData.PointKDTrees, OutlineData.PointIsInside);
 			if (movedPosition.polyIndex != -1)
 			{
 				movedDist = (position - movedPosition.position).Length();

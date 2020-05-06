@@ -20,21 +20,21 @@
 //OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //SOFTWARE.
 
-using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using MSClipperLib;
 
 namespace MatterHackers.QuadTree
 {
 	public class Branch<T>
 	{
 		public List<Leaf<T>> Leaves = new List<Leaf<T>>();
-		internal static Stack<List<Leaf<T>>> tempPool = new Stack<List<Leaf<T>>>();
+		internal static ConcurrentStack<List<Leaf<T>>> tempPool = new ConcurrentStack<List<Leaf<T>>>();
 
 		internal Branch<T> Parent;
 		internal bool Split;
 		internal QuadTree<T> Tree;
+
 		public Branch<T>[] Branches { get; private set; } = new Branch<T>[4];
 		public Quad[] Quads { get; private set; } = new Quad[4];
 		public Quad Bounds { get; private set; }
@@ -103,7 +103,12 @@ namespace MatterHackers.QuadTree
 					if (Quads[0].MinX + 2 < Quads[0].MaxX
 						&& Quads[0].MinY + 2 < Quads[0].MaxY)
 					{
-						var temp = tempPool.Count > 0 ? tempPool.Pop() : new List<Leaf<T>>();
+						List<Leaf<T>> temp;
+						if (!tempPool.TryPop(out temp))
+						{
+							temp = new List<Leaf<T>>();
+						}
+
 						temp.AddRange(Leaves);
 						Leaves.Clear();
 						Split = true;
@@ -111,6 +116,7 @@ namespace MatterHackers.QuadTree
 						{
 							Insert(temp[i]);
 						}
+
 						temp.Clear();
 						tempPool.Push(temp);
 					}

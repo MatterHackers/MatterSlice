@@ -1,28 +1,27 @@
-﻿//The MIT License(MIT)
+﻿// The MIT License(MIT)
 
-//Copyright(c) 2015 ChevyRay, 2017 Lars Brubaker
+// Copyright(c) 2015 ChevyRay, 2017 Lars Brubaker
 
-//Permission is hereby granted, free of charge, to any person obtaining a copy
-//of this software and associated documentation files (the "Software"), to deal
-//in the Software without restriction, including without limitation the rights
-//to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-//copies of the Software, and to permit persons to whom the Software is
-//furnished to do so, subject to the following conditions:
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 
-//The above copyright notice and this permission notice shall be included in all
-//copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
 
-//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-//AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-//SOFTWARE.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
-using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using MSClipperLib;
 
 namespace MatterHackers.QuadTree
 {
@@ -33,8 +32,8 @@ namespace MatterHackers.QuadTree
 	/// </summary>
 	public class QuadTree<T>
 	{
-		internal static Stack<Branch<T>> branchPool = new Stack<Branch<T>>();
-		internal static Stack<Leaf<T>> leafPool = new Stack<Leaf<T>>();
+		internal static ConcurrentStack<Branch<T>> branchPool = new ConcurrentStack<Branch<T>>();
+		internal static ConcurrentStack<Leaf<T>> leafPool = new ConcurrentStack<Leaf<T>>();
 
 		private Dictionary<T, Leaf<T>> leafLookup = new Dictionary<T, Leaf<T>>();
 		internal int splitCount;
@@ -42,7 +41,7 @@ namespace MatterHackers.QuadTree
 		public List<T> QueryResults { get; private set; } = new List<T>();
 
 		/// <summary>
-		/// Creates a new QuadTree.
+		/// Initializes a new instance of the <see cref="QuadTree{T}"/> class.
 		/// </summary>
 		/// <param name="splitCount">How many leaves a branch can hold before it splits into sub-branches.</param>
 		/// <param name="region">The region that your quadtree occupies, all inserted quads should fit into this.</param>
@@ -53,7 +52,7 @@ namespace MatterHackers.QuadTree
 		}
 
 		/// <summary>
-		/// Creates a new QuadTree.
+		/// Initializes a new instance of the <see cref="QuadTree{T}"/> class.
 		/// </summary>
 		/// <param name="splitCount">How many leaves a branch can hold before it splits into sub-branches.</param>
 		/// <param name="region">The region that your quadtree occupies, all inserted quads should fit into this.</param>
@@ -63,7 +62,7 @@ namespace MatterHackers.QuadTree
 		}
 
 		/// <summary>
-		/// Creates a new QuadTree.
+		/// Initializes a new instance of the <see cref="QuadTree{T}"/> class.
 		/// </summary>
 		/// <param name="splitCount">How many leaves a branch can hold before it splits into sub-branches.</param>
 		/// <param name="minX">X position of the region.</param>
@@ -83,9 +82,9 @@ namespace MatterHackers.QuadTree
 		/// </summary>
 		public static void ClearPools()
 		{
-			branchPool = new Stack<Branch<T>>();
-			leafPool = new Stack<Leaf<T>>();
-			Branch<T>.tempPool = new Stack<List<Leaf<T>>>();
+			branchPool = new ConcurrentStack<Branch<T>>();
+			leafPool = new ConcurrentStack<Leaf<T>>();
+			Branch<T>.tempPool = new ConcurrentStack<List<Leaf<T>>>();
 		}
 
 		/// <summary>
@@ -102,6 +101,7 @@ namespace MatterHackers.QuadTree
 		/// <summary>
 		/// Count how many branches are in the QuadTree.
 		/// </summary>
+		/// <returns>Number of branches</returns>
 		public int CountBranches()
 		{
 			int count = 0;
@@ -112,9 +112,7 @@ namespace MatterHackers.QuadTree
 		/// <summary>
 		/// Find all other values whose areas are overlapping the specified value.
 		/// </summary>
-		/// <returns>True if any collisions were found.</returns>
 		/// <param name="value">The value to check collisions against.</param>
-		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
 		public void FindCollisions(T value)
 		{
 			QueryResults.Clear();
@@ -123,7 +121,7 @@ namespace MatterHackers.QuadTree
 			{
 				var branch = leaf.ContainingBranch;
 
-				//Add the leaf's siblings (prevent it from colliding with itself)
+				// Add the leaf's siblings (prevent it from colliding with itself)
 				if (branch.Leaves.Count > 0)
 				{
 					for (int i = 0; i < branch.Leaves.Count; ++i)
@@ -135,7 +133,7 @@ namespace MatterHackers.QuadTree
 					}
 				}
 
-				//Add the branch's children
+				// Add the branch's children
 				if (branch.Split)
 				{
 					for (int i = 0; i < 4; ++i)
@@ -147,7 +145,7 @@ namespace MatterHackers.QuadTree
 					}
 				}
 
-				//Add all leaves back to the root
+				// Add all leaves back to the root
 				branch = branch.Parent;
 				while (branch != null)
 				{
@@ -161,6 +159,7 @@ namespace MatterHackers.QuadTree
 							}
 						}
 					}
+
 					branch = branch.Parent;
 				}
 			}
@@ -179,6 +178,7 @@ namespace MatterHackers.QuadTree
 				leaf = CreateLeaf(value, ref quad);
 				leafLookup.Add(value, leaf);
 			}
+
 			Root.Insert(leaf);
 		}
 
@@ -196,10 +196,10 @@ namespace MatterHackers.QuadTree
 		/// Insert a new leaf node into the QuadTree.
 		/// </summary>
 		/// <param name="value">The leaf value.</param>
-		/// <param name="x">X position of the leaf.</param>
-		/// <param name="y">Y position of the leaf.</param>
-		/// <param name="width">Width of the leaf.</param>
-		/// <param name="height">Height of the leaf.</param>
+		/// <param name="minX">The minimum value to find for x.</param>
+		/// <param name="minY">The minimum value to find for y.</param>
+		/// <param name="maxX">The maximum value to find for x.</param>
+		/// <param name="maxY">The maximum value to find for y.</param>
 		public void Insert(T value, long minX, long minY, long maxX, long maxY)
 		{
 			var quad = new Quad(minX, minY, maxX, maxY);
@@ -209,9 +209,7 @@ namespace MatterHackers.QuadTree
 		/// <summary>
 		/// Find all values contained in the specified area.
 		/// </summary>
-		/// <returns>True if any values were found.</returns>
 		/// <param name="quad">The area to search.</param>
-		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
 		public void SearchArea(Quad quad)
 		{
 			QueryResults.Clear();
@@ -221,10 +219,8 @@ namespace MatterHackers.QuadTree
 		/// <summary>
 		/// Find all values overlapping the specified point.
 		/// </summary>
-		/// <returns>True if any values were found.</returns>
 		/// <param name="x">The x coordinate.</param>
 		/// <param name="y">The y coordinate.</param>
-		/// <param name="values">A list to populate with the results. If null, this function will create the list for you.</param>
 		public void SearchPoint(long x, long y)
 		{
 			QueryResults.Clear();
@@ -233,7 +229,12 @@ namespace MatterHackers.QuadTree
 
 		internal static Branch<T> CreateBranch(QuadTree<T> tree, Branch<T> parent, ref Quad quad)
 		{
-			var branch = branchPool.Count > 0 ? branchPool.Pop() : new Branch<T>(quad);
+			Branch<T> branch;
+			if (!branchPool.TryPop(out branch))
+			{
+				branch = new Branch<T>(quad);
+			}
+
 			branch.Tree = tree;
 			branch.Parent = parent;
 			branch.Split = false;
@@ -248,7 +249,12 @@ namespace MatterHackers.QuadTree
 
 		private static Leaf<T> CreateLeaf(T value, ref Quad quad)
 		{
-			var leaf = leafPool.Count > 0 ? leafPool.Pop() : new Leaf<T>();
+			Leaf<T> leaf;
+			if (!leafPool.TryPop(out leaf))
+			{
+				leaf = new Leaf<T>();
+			}
+
 			leaf.Value = value;
 			leaf.Quad = quad;
 			return leaf;
