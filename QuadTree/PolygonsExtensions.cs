@@ -30,7 +30,7 @@ either expressed or implied, of the FreeBSD Project.
 using System;
 using System.Collections.Generic;
 using MSClipperLib;
-using Supercluster.KDTree;
+using KdTree;
 
 namespace MatterHackers.QuadTree
 {
@@ -55,9 +55,9 @@ namespace MatterHackers.QuadTree
 			}
 		}
 
-		public static List<KDTree<long, int>> ConditionalKDTrees(this Polygons inPolygons)
+		public static List<KdTree<long, int>> ConditionalKDTrees(this Polygons inPolygons)
 		{
-			var kdTRees = new List<KDTree<long, int>>();
+			var kdTRees = new List<KdTree<long, int>>();
 
 			for (int i = 0; i < inPolygons.Count; i++)
 			{
@@ -86,7 +86,7 @@ namespace MatterHackers.QuadTree
 			return bestIntersection;
 		}
 
-		public static Tuple<int, int> FindPoint(this Polygons polygons, IntPoint position, List<KDTree<long, int>> pointKDTrees = null)
+		public static Tuple<int, int> FindPoint(this Polygons polygons, IntPoint position, List<KdTree<long, int>> pointKDTrees = null)
 		{
 			if (pointKDTrees != null)
 			{
@@ -317,7 +317,7 @@ namespace MatterHackers.QuadTree
 			IntPoint startPosition,
 			out (int polyIndex, int pointIndex, IntPoint position) polyPointPosition,
 			List<QuadTree<int>> edgeQuadTrees = null,
-			List<KDTree<long, int>> pointKDTrees = null,
+			List<KdTree<long, int>> pointKDTrees = null,
 			Func<IntPoint, InsideState> fastInsideCheck = null)
 		{
 			var bestPolyPointPosition = (0, 0, startPosition);
@@ -391,7 +391,7 @@ namespace MatterHackers.QuadTree
 		public enum InsideState { Inside, Outside, Unknown }
 		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint, 
 			List<QuadTree<int>> edgeQuadTrees = null,
-			List<KDTree<long, int>> pointKDTrees = null,
+			List<KdTree<long, int>> pointKDTrees = null,
 			Func<IntPoint, InsideState> fastInsideCheck = null)
 		{
 			if (polygons.TouchingEdge(testPoint, edgeQuadTrees))

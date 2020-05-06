@@ -37,7 +37,7 @@ using MatterHackers.Agg.Transform;
 using MatterHackers.Agg.VertexSource;
 using MatterHackers.QuadTree;
 using MSClipperLib;
-using Supercluster.KDTree;
+using KdTree;
 using static System.Math;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
@@ -112,7 +112,7 @@ namespace MatterHackers.Pathfinding
 
 		public ImageBuffer DistanceFromOutside { get; private set; }
 
-		public List<KDTree<long, int>> PointKDTrees { get; }
+		public List<KdTree<long, int>> PointKDTrees { get; }
 
 		public Polygons Polygons { get; }
 

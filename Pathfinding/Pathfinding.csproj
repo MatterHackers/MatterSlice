@@ -14,8 +14,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="KdTree" Version="1.4.1" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="Supercluster.KDTree" Version="1.0.4" />
   </ItemGroup>
 
   <ItemGroup>
