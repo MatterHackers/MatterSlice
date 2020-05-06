@@ -335,5 +335,40 @@ namespace MatterHackers.MatterSlice.Tests
 			double.TryParse(returnString, NumberStyles.Number, CultureInfo.InvariantCulture, out returnVal);
 			return returnVal;
 		}
+
+		internal static void CheckPolysAreSimilar(string aGCodeFile, string bGCodeFile)
+		{
+			var aLoadedGcode = TestUtilities.LoadGCodeFile(aGCodeFile);
+			var bLoadedGCode = TestUtilities.LoadGCodeFile(bGCodeFile);
+			var aLayerCount = TestUtilities.CountLayers(aLoadedGcode);
+			Assert.AreEqual(aLayerCount, TestUtilities.CountLayers(bLoadedGCode));
+			for (int layerIndex = 0; layerIndex < aLayerCount; layerIndex++)
+			{
+				var aLayerGCode = TestUtilities.GetGCodeForLayer(aLoadedGcode, layerIndex);
+				var bLayerGCode = TestUtilities.GetGCodeForLayer(bLoadedGCode, layerIndex);
+				var aPolys = TestUtilities.GetExtrusionPolygons(aLayerGCode);
+				var bPolys = TestUtilities.GetExtrusionPolygons(bLayerGCode);
+				// Assert.AreEqual(aPolys.Count, bPolys.Count);
+				if (aPolys.Count > 0)
+				{
+					var aPoly = aPolys[0];
+					var bPoly = bPolys[0];
+					for (int aPointIndex = 0; aPointIndex < aPoly.Count; aPointIndex++)
+					{
+						var found = false;
+						for (int bPointIndex = 0; bPointIndex < bPoly.Count; bPointIndex++)
+						{
+							if ((aPoly[aPointIndex] - bPoly[bPointIndex]).Length() < 10)
+							{
+								found = true;
+								break;
+							}
+						}
+
+						Assert.IsTrue(found);
+					}
+				}
+			}
+		}
 	}
 }

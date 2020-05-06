@@ -30,13 +30,14 @@ either expressed or implied, of the FreeBSD Project.
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using MatterHackers.QuadTree;
 using MSClipperLib;
 using NUnit.Framework;
 
 namespace MatterHackers.MatterSlice.Tests
 {
-	[TestFixture, Category("MatterSlice.SlicerLayerTests")]
+	[TestFixture, Category("MatterSlice.SlicerLayerTests"), Apartment(ApartmentState.STA)]
 	public class SlicerLayerTests
 	{
 		[Test]
@@ -306,13 +307,7 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 
 			// load both gcode files and check that they are the same
-			var manifoldGCodeContent = File.ReadAllLines(manifoldGCode);
-			var nonManifoldGCodeContent = File.ReadAllLines(nonManifoldGCode);
-			Assert.AreEqual(manifoldGCodeContent.Length, nonManifoldGCodeContent.Length);
-			for (int i = 0; i < Math.Min(manifoldGCodeContent.Length, nonManifoldGCodeContent.Length); i++)
-			{
-				Assert.AreEqual(manifoldGCodeContent[i], nonManifoldGCodeContent[i]);
-			}
+			TestUtilities.CheckPolysAreSimilar(manifoldGCode, nonManifoldGCode);
 		}
 
 		private static void LayersHaveCorrectPolygonCount(string[] segmentsToCheck, int expectedCount = 1)
