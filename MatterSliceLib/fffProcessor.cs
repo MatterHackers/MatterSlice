@@ -915,7 +915,11 @@ namespace MatterHackers.MatterSlice
 
 			for (int i = loopsPerExtruder - 1; i >= 0; i--)
 			{
-				gcodeLayer.QueuePolygonByOptimizer(slicingData.Skirt[loopIndex + i], layerPathFinder, skirtConfig, layerIndex);
+				var index = loopIndex + i;
+				if (index < slicingData.Skirt.Count)
+				{
+					gcodeLayer.QueuePolygonByOptimizer(slicingData.Skirt[index], layerPathFinder, skirtConfig, layerIndex);
+				}
 			}
 		}
 
