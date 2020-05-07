@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using MatterHackers.Pathfinding;
 using MatterHackers.QuadTree;
 using MSClipperLib;
-using Supercluster.KDTree;
+using KdTree;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -64,7 +64,7 @@ namespace MatterHackers.MatterSlice
 	{
 		private readonly ConfigSettings config;
 
-		public List<(Polygon polygon, KDTree<long, int> tree)> Data { get; private set; } = new List<(Polygon polygon, KDTree<long, int> tree)>();
+		public List<(Polygon polygon, KdTree<long, int> tree)> Data { get; private set; } = new List<(Polygon polygon, KdTree<long, int> tree)>();
 
 		public PathOrderOptimizer(ConfigSettings config)
 		{
@@ -210,7 +210,7 @@ namespace MatterHackers.MatterSlice
 			return bestResult;
 		}
 
-		private int FindClosestPoint((Polygon polygon, KDTree<long, int> kdTree) data,
+		private int FindClosestPoint((Polygon polygon, KdTree<long, int> kdTree) data,
 			IntPoint currentPosition,
 			bool doSeamHiding,
 			bool canTravelForwardOrBackward,
