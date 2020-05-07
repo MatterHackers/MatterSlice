@@ -37,7 +37,11 @@ using NUnit.Framework;
 
 namespace MatterHackers.MatterSlice.Tests
 {
+#if __ANDROID__
+	[TestFixture, Category("MatterSlice.SlicerLayerTests")]
+#else
 	[TestFixture, Category("MatterSlice.SlicerLayerTests"), Apartment(ApartmentState.STA)]
+#endif
 	public class SlicerLayerTests
 	{
 		[Test]
