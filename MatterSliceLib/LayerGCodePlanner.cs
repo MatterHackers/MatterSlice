@@ -61,7 +61,10 @@ namespace MatterHackers.MatterSlice
 			travelConfig = new GCodePathConfig("travelConfig", "travel");
 			travelConfig.SetData(travelSpeed, 0);
 
-			LastPosition = gcode.GetPositionXY();
+			if (gcode.PositionXyHasBeenSet)
+			{
+				LastPosition_um = gcode.PositionXy_um;
+			}
 			forceRetraction = false;
 			currentExtruderIndex = gcode.GetExtruderIndex();
 			this.retractionMinimumDistance_um = retractionMinimumDistance_um;
@@ -75,7 +78,24 @@ namespace MatterHackers.MatterSlice
 			set => gcodeExport.CurrentZ_um = value;
 		}
 
-		public IntPoint LastPosition { get; private set; }
+		private IntPoint _lastPosition_um = new IntPoint(long.MinValue, long.MinValue);
+		public IntPoint LastPosition_um
+		{
+			get
+			{
+				if (_lastPosition_um.X == long.MinValue || _lastPosition_um.Y == long.MinValue)
+				{
+					// last position has not yet been set, it should not be used
+					return default(IntPoint);
+				}
+
+				return _lastPosition_um;
+			}
+
+			set => _lastPosition_um = value;
+		}
+
+		private bool LastPositionSet => _lastPosition_um.X != long.MinValue;
 
 		public static GCodePath TrimGCodePathEnd(GCodePath inPath, long targetDistance)
 		{
@@ -88,7 +108,7 @@ namespace MatterHackers.MatterSlice
 
 		public (double fixedTime, double variableTime, double totalTime) GetLayerTimes()
 		{
-			IntPoint lastPosition = gcodeExport.GetPosition();
+			IntPoint lastPosition = gcodeExport.PositionXy_um;
 			double fixedTime = 0.0;
 			double variableTime = 0.0;
 
@@ -181,7 +201,7 @@ namespace MatterHackers.MatterSlice
 		private void QueueExtrusionMove(IntPoint destination, GCodePathConfig config)
 		{
 			GetLatestPathWithConfig(config).Polygon.Add(new IntPoint(destination, CurrentZ));
-			LastPosition = destination;
+			LastPosition_um = destination;
 
 			// ValidatePaths();
 		}
@@ -191,8 +211,9 @@ namespace MatterHackers.MatterSlice
 			IntPoint currentPosition = polygon[startIndex];
 
 			if (!config.Spiralize
-				&& (LastPosition.X != currentPosition.X
-				|| LastPosition.Y != currentPosition.Y))
+				&& LastPositionSet
+				&& (LastPosition_um.X != currentPosition.X
+				|| LastPosition_um.Y != currentPosition.Y))
 			{
 				QueueTravel(currentPosition, pathFinder);
 			}
@@ -322,23 +343,31 @@ namespace MatterHackers.MatterSlice
 				return false;
 			}
 
-			var orderOptimizer = new PathOrderOptimizer(config);
-			orderOptimizer.AddPolygons(polygons);
-
-			orderOptimizer.Optimize(LastPosition, pathFinder, layerIndex, true, pathConfig);
-
-			foreach (var order in orderOptimizer.Order)
+			// If we have never moved yet, we don't know where to move from, so go to our next spot exactly.
+			if (!LastPositionSet)
 			{
-				// The order optimizer should already have created all the right moves
-				// so pass a null for the path finder (don't re-plan them).
-				if (order.IsExtrude)
+				QueuePolygons(polygons, pathFinder, pathConfig);
+			}
+			else
+			{
+				var orderOptimizer = new PathOrderOptimizer(config);
+				orderOptimizer.AddPolygons(polygons);
+
+				orderOptimizer.Optimize(LastPosition_um, pathFinder, layerIndex, true, pathConfig);
+
+				foreach (var order in orderOptimizer.Order)
 				{
-					QueuePolygon(orderOptimizer.Data[order.PolyIndex].polygon, pathFinder, order.PointIndex, pathConfig);
-					// QueueExtrusionPolygon(orderOptimizer.Polygons[order.PolyIndex], order.PointIndex, pathConfig);
-				}
-				else
-				{
-					QueueTravel(orderOptimizer.Data[order.PolyIndex].polygon);
+					// The order optimizer should already have created all the right moves
+					// so pass a null for the path finder (don't re-plan them).
+					if (order.IsExtrude)
+					{
+						QueuePolygon(orderOptimizer.Data[order.PolyIndex].polygon, pathFinder, order.PointIndex, pathConfig);
+						// QueueExtrusionPolygon(orderOptimizer.Polygons[order.PolyIndex], order.PointIndex, pathConfig);
+					}
+					else
+					{
+						QueueTravel(orderOptimizer.Data[order.PolyIndex].polygon);
+					}
 				}
 			}
 
@@ -353,7 +382,7 @@ namespace MatterHackers.MatterSlice
 
 			if (pathFinder != null)
 			{
-				pathFinder.CreatePathInsideBoundary(LastPosition, positionToMoveTo, pathPolygon, true, gcodeExport.LayerIndex);
+				pathFinder.CreatePathInsideBoundary(LastPosition_um, positionToMoveTo, pathPolygon, true, gcodeExport.LayerIndex);
 			}
 
 			if (pathPolygon.Count == 0)
@@ -375,7 +404,7 @@ namespace MatterHackers.MatterSlice
 				forceRetraction = false;
 			}
 
-			IntPoint lastPathPosition = LastPosition;
+			IntPoint lastPathPosition = LastPosition_um;
 			long lineLength_um = 0;
 
 			// we can stay inside so move within the boundary
@@ -397,7 +426,7 @@ namespace MatterHackers.MatterSlice
 			}
 
 
-			LastPosition = lastPathPosition;
+			LastPosition_um = lastPathPosition;
 
 			// ValidatePaths();
 		}
@@ -436,7 +465,7 @@ namespace MatterHackers.MatterSlice
 
 					if (path.Config.LineWidth_um == 0)
 					{
-						var lengthToStart = (gcodeExport.GetPosition() - path.Polygon[0]).Length();
+						var lengthToStart = (gcodeExport.PositionXy_um - path.Polygon[0]).Length();
 						var lengthOfMove = lengthToStart + path.Polygon.PolygonLength();
 						timeOfMove = lengthOfMove / 1000.0 / path.Speed;
 					}
@@ -457,7 +486,7 @@ namespace MatterHackers.MatterSlice
 
 				if (path.Polygon.Count == 1
 					&& path.Config != travelConfig
-					&& (gcodeExport.GetPositionXY() - path.Polygon[0]).ShorterThen(path.Config.LineWidth_um * 2))
+					&& (gcodeExport.PositionXy_um - path.Polygon[0]).ShorterThen(path.Config.LineWidth_um * 2))
 				{
 					// Check for lots of small moves and combine them into one large line
 					IntPoint nextPosition = path.Polygon[0];
@@ -475,12 +504,12 @@ namespace MatterHackers.MatterSlice
 
 					if (i > pathIndex + 2)
 					{
-						nextPosition = gcodeExport.GetPosition();
+						nextPosition = gcodeExport.PositionXy_um;
 						for (int x = pathIndex; x < i - 1; x += 2)
 						{
 							long oldLen = (nextPosition - paths[x].Polygon[0]).Length();
 							IntPoint newPoint = (paths[x].Polygon[0] + paths[x + 1].Polygon[0]) / 2;
-							long newLen = (gcodeExport.GetPosition() - newPoint).Length();
+							long newLen = (gcodeExport.PositionXy_um - newPoint).Length();
 							if (newLen > 0)
 							{
 								gcodeExport.WriteMove(newPoint, path.Speed, (int)(path.Config.LineWidth_um * oldLen / newLen));
@@ -519,7 +548,7 @@ namespace MatterHackers.MatterSlice
 					// If we need to spiralize then raise the head slowly by 1 layer as this path progresses.
 					double totalLength = 0;
 					long z = gcodeExport.GetPositionZ();
-					IntPoint currentPosition = gcodeExport.GetPositionXY();
+					IntPoint currentPosition = gcodeExport.PositionXy_um;
 					for (int pointIndex = 0; pointIndex < path.Polygon.Count; pointIndex++)
 					{
 						IntPoint nextPosition = path.Polygon[pointIndex];
@@ -528,7 +557,7 @@ namespace MatterHackers.MatterSlice
 					}
 
 					double length = 0.0;
-					currentPosition = gcodeExport.GetPositionXY();
+					currentPosition = gcodeExport.PositionXy_um;
 					for (int i = 0; i < path.Polygon.Count; i++)
 					{
 						IntPoint nextPosition = path.Polygon[i];
@@ -541,7 +570,7 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					var loopStart = gcodeExport.GetPosition();
+					var loopStart = gcodeExport.PositionXy_um;
 					int pointCount = path.Polygon.Count;
 
 					bool outerPerimeter = path.Config.GCodeComment == "WALL-OUTER";

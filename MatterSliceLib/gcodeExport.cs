@@ -30,7 +30,26 @@ namespace MatterHackers.MatterSlice
 	{
 		public int CurrentFanSpeed { get; private set; }
 
-		private IntPoint currentPosition_um;
+		private IntPoint _positionXy_um = new IntPoint(long.MinValue, long.MinValue);
+
+		public IntPoint PositionXy_um
+		{
+			get
+			{
+				if (_positionXy_um.X == long.MinValue || _positionXy_um.Y == long.MinValue)
+				{
+					// last position has not yet been set, it should not be used
+					return default(IntPoint);
+				}
+
+				return _positionXy_um;
+			}
+
+			set => _positionXy_um = value;
+		}
+
+		public bool PositionXyHasBeenSet => _positionXy_um.X != long.MinValue;
+
 		private double currentSpeed;
 		private TimeEstimateCalculator estimateCalculator = new TimeEstimateCalculator();
 		private int extruderIndex;
@@ -121,19 +140,9 @@ namespace MatterHackers.MatterSlice
 			return gcodeFileStream.BaseStream.Length;
 		}
 
-		public IntPoint GetPosition()
-		{
-			return currentPosition_um;
-		}
-
-		public IntPoint GetPositionXY()
-		{
-			return new IntPoint(currentPosition_um.X, currentPosition_um.Y);
-		}
-
 		public long GetPositionZ()
 		{
-			return currentPosition_um.Z;
+			return PositionXy_um.Z;
 		}
 
 		public double GetTotalFilamentUsed(int extruderIndexToGet)
@@ -212,8 +221,8 @@ namespace MatterHackers.MatterSlice
 				gcodeFileStream.Write("G1 E{0:0.####} F{1} ; retract\n", extrusionAmount_mm - config.RetractionOnExtruderSwitch, config.RetractionSpeed * 60);
 			}
 
-			var beforeX = this.currentPosition_um.X / 1000.0;
-			var beforeY = this.currentPosition_um.Y / 1000.0;
+			var beforeX = this.PositionXy_um.X / 1000.0;
+			var beforeY = this.PositionXy_um.Y / 1000.0;
 
 			currentSpeed = config.RetractionSpeed;
 
@@ -284,7 +293,7 @@ namespace MatterHackers.MatterSlice
 		{
 			StringBuilder lineToWrite = new StringBuilder();
 
-			if (currentPosition_um == movePosition_um)
+			if (PositionXy_um == movePosition_um)
 			{
 				return;
 			}
@@ -292,12 +301,12 @@ namespace MatterHackers.MatterSlice
 			// Normal E handling.
 			if (lineWidth_um != 0)
 			{
-				IntPoint diff = movePosition_um - GetPosition();
+				IntPoint diff = movePosition_um - this.PositionXy_um;
 				if (isRetracted)
 				{
 					if (config.RetractionZHop > 0)
 					{
-						double zWritePosition = (double)currentPosition_um.Z / 1000;
+						double zWritePosition = (double)PositionXy_um.Z / 1000;
 						lineToWrite.Append("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
 					}
 
@@ -311,12 +320,15 @@ namespace MatterHackers.MatterSlice
 					lineToWrite.Append("G1 F{0} E{1:0.#####}\n".FormatWith(config.RetractionSpeed * 60, extrusionAmount_mm));
 
 					currentSpeed = config.RetractionSpeed;
-					estimateCalculator.plan(new TimeEstimateCalculator.Position(
-						currentPosition_um.X / 1000.0,
-						currentPosition_um.Y / 1000.0,
-						currentPosition_um.Z / 1000.0,
-						extrusionAmount_mm),
-						currentSpeed);
+					if (this.PositionXyHasBeenSet)
+					{
+						estimateCalculator.plan(new TimeEstimateCalculator.Position(
+							PositionXy_um.X / 1000.0,
+							PositionXy_um.Y / 1000.0,
+							PositionXy_um.Z / 1000.0,
+							extrusionAmount_mm),
+							currentSpeed);
+					}
 
 					isRetracted = false;
 				}
@@ -339,7 +351,7 @@ namespace MatterHackers.MatterSlice
 			double yWritePosition = (double)movePosition_um.Y / 1000.0;
 			lineToWrite.Append(" X{0:0.###} Y{1:0.###}".FormatWith(xWritePosition, yWritePosition));
 
-			if (movePosition_um.Z != currentPosition_um.Z)
+			if (movePosition_um.Z != PositionXy_um.Z)
 			{
 				double zWritePosition = movePosition_um.Z / 1000.0;
 				if (lineWidth_um == 0
@@ -364,8 +376,8 @@ namespace MatterHackers.MatterSlice
 				gcodeFileStream.Write(lineAsString);
 			}
 
-			currentPosition_um = movePosition_um;
-			estimateCalculator.plan(new TimeEstimateCalculator.Position(currentPosition_um.X / 1000.0, currentPosition_um.Y / 1000.0, currentPosition_um.Z / 1000.0, extrusionAmount_mm), speed);
+			PositionXy_um = movePosition_um;
+			estimateCalculator.plan(new TimeEstimateCalculator.Position(PositionXy_um.X / 1000.0, PositionXy_um.Y / 1000.0, PositionXy_um.Z / 1000.0, extrusionAmount_mm), speed);
 		}
 
 		public void WriteRetraction(double timeForNextMove, bool forceRetraction)
@@ -378,14 +390,14 @@ namespace MatterHackers.MatterSlice
 			{
 				gcodeFileStream.Write("G1 F{0} E{1:0.#####}\n".FormatWith(config.RetractionSpeed * 60, extrusionAmount_mm - config.RetractionOnTravel));
 				currentSpeed = config.RetractionSpeed;
-				var timePosition = new TimeEstimateCalculator.Position((double)currentPosition_um.X / 1000.0,
-					currentPosition_um.Y / 1000.0,
-					(double)currentPosition_um.Z / 1000.0, extrusionAmount_mm - config.RetractionOnTravel);
+				var timePosition = new TimeEstimateCalculator.Position((double)PositionXy_um.X / 1000.0,
+					PositionXy_um.Y / 1000.0,
+					(double)PositionXy_um.Z / 1000.0, extrusionAmount_mm - config.RetractionOnTravel);
 				estimateCalculator.plan(timePosition, currentSpeed);
 
 				if (config.RetractionZHop > 0)
 				{
-					double zWritePosition = currentPosition_um.Z / 1000.0 + config.RetractionZHop;
+					double zWritePosition = PositionXy_um.Z / 1000.0 + config.RetractionZHop;
 					gcodeFileStream.Write("G1 Z{0:0.###}\n".FormatWith(zWritePosition));
 				}
 

@@ -399,7 +399,7 @@ namespace MatterHackers.MatterSlice
 				gcodeExport.ResetExtrusionValue();
 				gcodeExport.WriteRetraction(0, false);
 				gcodeExport.CurrentZ_um = maxObjectHeight + 5000;
-				gcodeExport.WriteMove(gcodeExport.GetPosition(), config.TravelSpeed, 0);
+				gcodeExport.WriteMove(gcodeExport.PositionXy_um, config.TravelSpeed, 0);
 				gcodeExport.WriteMove(new IntPoint(slicingData.modelMin.X, slicingData.modelMin.Y, gcodeExport.CurrentZ_um), config.TravelSpeed, 0);
 			}
 
@@ -1145,7 +1145,7 @@ namespace MatterHackers.MatterSlice
 									if (!config.ContinuousSpiralOuterPerimeter
 										&& insetIndex == island.InsetToolPaths.Count - 1)
 									{
-										var closestInsetStart = FindBestPoint(insetsForThisIsland[0], layerGcodePlanner.LastPosition, layerIndex);
+										var closestInsetStart = FindBestPoint(insetsForThisIsland[0], layerGcodePlanner.LastPosition_um, layerIndex);
 										if (closestInsetStart.X != long.MinValue)
 										{
 											(int polyIndex, int pointIndex, IntPoint position) found = (-1, -1, closestInsetStart);
@@ -1182,15 +1182,15 @@ namespace MatterHackers.MatterSlice
 									if (insetIndex == 0)
 									{
 										// If we are on the outside perimeter move in before we travel (so we don't retract on the outside)
-										(int polyIndex, int pointIndex, IntPoint position) found2 = (-1, -1, layerGcodePlanner.LastPosition);
+										(int polyIndex, int pointIndex, IntPoint position) found2 = (-1, -1, layerGcodePlanner.LastPosition_um);
 										var distFromLastPoint = double.PositiveInfinity;
 										for (int findInsetIndex = island.InsetToolPaths.Count - 1; findInsetIndex >= 1; findInsetIndex--)
 										{
-											found2 = island.InsetToolPaths[findInsetIndex].FindClosestPoint(layerGcodePlanner.LastPosition);
+											found2 = island.InsetToolPaths[findInsetIndex].FindClosestPoint(layerGcodePlanner.LastPosition_um);
 											if (found2.polyIndex != -1
 												&& found2.pointIndex != -1)
 											{
-												distFromLastPoint = (found2.position - layerGcodePlanner.LastPosition).Length();
+												distFromLastPoint = (found2.position - layerGcodePlanner.LastPosition_um).Length();
 												if (distFromLastPoint < config.MinimumTravelToCauseRetraction_um)
 												{
 													break;
@@ -1315,7 +1315,7 @@ namespace MatterHackers.MatterSlice
 				// If we are already in the island we are going to, don't go there, or there is only one island.
 				if ((layer.Islands.Count == 1 && config.ExtruderCount == 1)
 					|| layer.PathFinder?.OutlineData?.Polygons.Count < 3
-					|| island.PathFinder?.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition, island.PathFinder.OutlineData.EdgeQuadTrees, island.PathFinder.OutlineData.PointKDTrees) == true)
+					|| island.PathFinder?.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition_um, island.PathFinder.OutlineData.EdgeQuadTrees, island.PathFinder.OutlineData.PointKDTrees) == true)
 				{
 					islandCurrentlyInside = island;
 					return;
@@ -1327,7 +1327,7 @@ namespace MatterHackers.MatterSlice
 					layerGcodePlanner.ForceRetract();
 				}
 
-				var (polyIndex, pointIndex, position) = island.IslandOutline.FindClosestPoint(layerGcodePlanner.LastPosition);
+				var (polyIndex, pointIndex, position) = island.IslandOutline.FindClosestPoint(layerGcodePlanner.LastPosition_um);
 				IntPoint closestNextIslandPoint = island.IslandOutline[polyIndex][pointIndex];
 
 				PathFinder pathFinder = null;
@@ -1348,14 +1348,14 @@ namespace MatterHackers.MatterSlice
 				}
 
 				// how far are we going to move
-				var delta = closestNextIslandPoint - layerGcodePlanner.LastPosition;
+				var delta = closestNextIslandPoint - layerGcodePlanner.LastPosition_um;
 				var moveDistance = delta.Length();
 				if (layer.PathFinder != null && moveDistance > layer.PathFinder.InsetAmount)
 				{
 					// make sure we are not planning moves for the move away from the island
 					pathFinder = null;
 					// move away from our current island as much as the inset amount to avoid planning around where we are
-					var awayFromIslandPosition = layerGcodePlanner.LastPosition + delta.Normal(layer.PathFinder.InsetAmount);
+					var awayFromIslandPosition = layerGcodePlanner.LastPosition_um + delta.Normal(layer.PathFinder.InsetAmount);
 					layerGcodePlanner.QueueTravel(awayFromIslandPosition, null);
 
 					// let's move to this island avoiding running into any other islands
@@ -1409,10 +1409,10 @@ namespace MatterHackers.MatterSlice
 			for (int polygonIndex = 0; polygonIndex < insetsToConsider.Count; polygonIndex++)
 			{
 				Polygon currentPolygon = insetsToConsider[polygonIndex];
-				int bestPoint = currentPolygon.FindClosestPositionIndex(gcodeLayer.LastPosition);
+				int bestPoint = currentPolygon.FindClosestPositionIndex(gcodeLayer.LastPosition_um);
 				if (bestPoint > -1)
 				{
-					long distance = (currentPolygon[bestPoint] - gcodeLayer.LastPosition).Length();
+					long distance = (currentPolygon[bestPoint] - gcodeLayer.LastPosition_um).Length();
 					if (distance < maxDist_um)
 					{
 						maxDist_um = distance;
