@@ -136,6 +136,4 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 	}
-
-;
 }

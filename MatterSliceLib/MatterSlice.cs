@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
 using System.Collections.Generic;
+using MatterHackers.Agg;
 using MatterHackers.VectorMath;
 
 namespace MatterHackers.MatterSlice
@@ -81,7 +82,10 @@ namespace MatterHackers.MatterSlice
 
 			if (!Canceled)
 			{
-				processor.DoProcessing();
+				using (new QuickTimer2("DoProcessing"))
+				{
+					processor.DoProcessing();
+				}
 			}
 
 			if (!Canceled)
@@ -203,7 +207,10 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					processor.LoadStlFile(args[argn]);
+					using (new QuickTimer2("LoadStlFile"))
+					{
+						processor.LoadStlFile(args[argn]);
+					}
 				}
 			}
 

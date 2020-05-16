@@ -208,7 +208,6 @@ namespace MatterHackers.MatterSlice
 			}
 
 			Agg.Parallel.For(0, optimizedMeshCollection.OptimizedMeshes.Count, (index) =>
-			// foreach (var optimizedMesh in optimizedMeshCollection.OptimizedMeshes)
 			{
 				var optimizedMesh = optimizedMeshCollection.OptimizedMeshes[index];
 				var extruderData = new ExtruderData(optimizedMesh, config);
@@ -823,7 +822,6 @@ namespace MatterHackers.MatterSlice
 				using (new QuickTimer2("GenerateInsets"))
 				{
 					Agg.Parallel.For(startIndex, endIndex, (layerIndex) =>
-					// for (int layerIndex = startIndex; layerIndex <= endIndex; layerIndex++)
 					{
 						SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 
@@ -1021,14 +1019,14 @@ namespace MatterHackers.MatterSlice
 
 			var bottomFillIslandPolygons = new List<Polygons>();
 
-			for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.Order.Count; islandOrderIndex++)
+			for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.OptimizedPaths.Count; islandOrderIndex++)
 			{
 				if (config.ContinuousSpiralOuterPerimeter && islandOrderIndex > 0)
 				{
 					continue;
 				}
 
-				LayerIsland island = layer.Islands[islandOrderOptimizer.Order[islandOrderIndex].PolyIndex];
+				LayerIsland island = layer.Islands[islandOrderOptimizer.OptimizedPaths[islandOrderIndex].PolyIndex];
 
 				if (config.AvoidCrossingPerimeters)
 				{
@@ -1472,9 +1470,9 @@ namespace MatterHackers.MatterSlice
 
 				islandOrderOptimizer.Optimize(default(IntPoint), layer.PathFinder, layerIndex, false);
 
-				for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.Order.Count; islandOrderIndex++)
+				for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.OptimizedPaths.Count; islandOrderIndex++)
 				{
-					LayerIsland island = layer.Islands[islandOrderOptimizer.Order[islandOrderIndex].PolyIndex];
+					LayerIsland island = layer.Islands[islandOrderOptimizer.OptimizedPaths[islandOrderIndex].PolyIndex];
 
 					var bottomFillPolygons = new Polygons();
 					CalculateInfillData(slicingData, extruderIndex, layerIndex, island, bottomFillPolygons);

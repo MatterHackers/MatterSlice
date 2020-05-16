@@ -355,18 +355,27 @@ namespace MatterHackers.MatterSlice
 
 				orderOptimizer.Optimize(LastPosition_um, pathFinder, layerIndex, true, pathConfig);
 
-				foreach (var order in orderOptimizer.Order)
+				foreach (var optimizedPath in orderOptimizer.OptimizedPaths)
 				{
+					var polygon = orderOptimizer.Data[optimizedPath.PolyIndex].polygon;
+
 					// The order optimizer should already have created all the right moves
 					// so pass a null for the path finder (don't re-plan them).
-					if (order.IsExtrude)
+					if (optimizedPath.IsExtrude)
 					{
-						QueuePolygon(orderOptimizer.Data[order.PolyIndex].polygon, pathFinder, order.PointIndex, pathConfig);
+						QueuePolygon(polygon, pathFinder, optimizedPath.PointIndex, pathConfig);
 						// QueueExtrusionPolygon(orderOptimizer.Polygons[order.PolyIndex], order.PointIndex, pathConfig);
 					}
 					else
 					{
-						QueueTravel(orderOptimizer.Data[order.PolyIndex].polygon);
+						if (polygon.Count == 0)
+						{
+							QueueTravel(polygon[0], pathFinder);
+						}
+						else
+						{
+							QueueTravel(polygon);
+						}
 					}
 				}
 			}
@@ -393,7 +402,7 @@ namespace MatterHackers.MatterSlice
 			QueueTravel(pathPolygon, forceUniquePath);
 		}
 
-		public void QueueTravel(Polygon pathPolygon, bool forceUniquePath = false)
+		private void QueueTravel(Polygon pathPolygon, bool forceUniquePath = false)
 		{
 			GCodePath path = GetLatestPathWithConfig(travelConfig, forceUniquePath || !canAppendTravel);
 			canAppendTravel = !forceUniquePath;
