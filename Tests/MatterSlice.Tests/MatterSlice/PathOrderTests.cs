@@ -76,27 +76,27 @@ namespace MatterHackers.MatterSlice.Tests
 
 				// starting at low far right
 				pPathOrderOptimizer.Optimize(new IntPoint(20, 0), null, 0, false, null);
-				Assert.AreEqual(2, pPathOrderOptimizer.Order.Count);
-				Assert.AreEqual(0, pPathOrderOptimizer.Order[0].PolyIndex);
-				Assert.AreEqual(3, pPathOrderOptimizer.Order[0].PointIndex);
-				Assert.AreEqual(1, pPathOrderOptimizer.Order[1].PolyIndex);
-				Assert.AreEqual(0, pPathOrderOptimizer.Order[1].PointIndex);
+				Assert.AreEqual(2, pPathOrderOptimizer.OptimizedPaths.Count);
+				Assert.AreEqual(0, pPathOrderOptimizer.OptimizedPaths[0].PolyIndex);
+				Assert.AreEqual(3, pPathOrderOptimizer.OptimizedPaths[0].PointIndex);
+				Assert.AreEqual(1, pPathOrderOptimizer.OptimizedPaths[1].PolyIndex);
+				Assert.AreEqual(0, pPathOrderOptimizer.OptimizedPaths[1].PointIndex);
 
 				// starting at high far right
 				pPathOrderOptimizer.Optimize(new IntPoint(20, 20), null, 0, false, null);
-				Assert.AreEqual(2, pPathOrderOptimizer.Order.Count);
-				Assert.AreEqual(0, pPathOrderOptimizer.Order[0].PolyIndex);
-				Assert.AreEqual(2, pPathOrderOptimizer.Order[0].PointIndex);
-				Assert.AreEqual(1, pPathOrderOptimizer.Order[1].PolyIndex);
-				Assert.AreEqual(1, pPathOrderOptimizer.Order[1].PointIndex);
+				Assert.AreEqual(2, pPathOrderOptimizer.OptimizedPaths.Count);
+				Assert.AreEqual(0, pPathOrderOptimizer.OptimizedPaths[0].PolyIndex);
+				Assert.AreEqual(2, pPathOrderOptimizer.OptimizedPaths[0].PointIndex);
+				Assert.AreEqual(1, pPathOrderOptimizer.OptimizedPaths[1].PolyIndex);
+				Assert.AreEqual(1, pPathOrderOptimizer.OptimizedPaths[1].PointIndex);
 
 				// starting at high far left
 				pPathOrderOptimizer.Optimize(new IntPoint(-20, 20), null, 0, false, null);
-				Assert.AreEqual(2, pPathOrderOptimizer.Order.Count);
-				Assert.AreEqual(1, pPathOrderOptimizer.Order[0].PolyIndex);
-				Assert.AreEqual(2, pPathOrderOptimizer.Order[0].PointIndex);
-				Assert.AreEqual(0, pPathOrderOptimizer.Order[1].PolyIndex);
-				Assert.AreEqual(1, pPathOrderOptimizer.Order[1].PointIndex);
+				Assert.AreEqual(2, pPathOrderOptimizer.OptimizedPaths.Count);
+				Assert.AreEqual(1, pPathOrderOptimizer.OptimizedPaths[0].PolyIndex);
+				Assert.AreEqual(2, pPathOrderOptimizer.OptimizedPaths[0].PointIndex);
+				Assert.AreEqual(0, pPathOrderOptimizer.OptimizedPaths[1].PolyIndex);
+				Assert.AreEqual(1, pPathOrderOptimizer.OptimizedPaths[1].PointIndex);
 			}
 
 			// test that single lines connect correctly
@@ -108,15 +108,15 @@ namespace MatterHackers.MatterSlice.Tests
 
 				// starting at low far right
 				pPathOrderOptimizer.Optimize(new IntPoint(0, 0), null, 0, false, null);
-				Assert.AreEqual(4, pPathOrderOptimizer.Order.Count);
-				Assert.AreEqual(0, pPathOrderOptimizer.Order[0].PolyIndex);
-				Assert.AreEqual(1, pPathOrderOptimizer.Order[1].PolyIndex);
-				Assert.AreEqual(2, pPathOrderOptimizer.Order[2].PolyIndex);
-				Assert.AreEqual(3, pPathOrderOptimizer.Order[3].PolyIndex);
-				Assert.AreEqual(0, pPathOrderOptimizer.Order[0].PointIndex);
-				Assert.AreEqual(1, pPathOrderOptimizer.Order[1].PointIndex);
-				Assert.AreEqual(0, pPathOrderOptimizer.Order[0].PointIndex);
-				Assert.AreEqual(1, pPathOrderOptimizer.Order[1].PointIndex);
+				Assert.AreEqual(4, pPathOrderOptimizer.OptimizedPaths.Count);
+				Assert.AreEqual(0, pPathOrderOptimizer.OptimizedPaths[0].PolyIndex);
+				Assert.AreEqual(1, pPathOrderOptimizer.OptimizedPaths[1].PolyIndex);
+				Assert.AreEqual(2, pPathOrderOptimizer.OptimizedPaths[2].PolyIndex);
+				Assert.AreEqual(3, pPathOrderOptimizer.OptimizedPaths[3].PolyIndex);
+				Assert.AreEqual(0, pPathOrderOptimizer.OptimizedPaths[0].PointIndex);
+				Assert.AreEqual(1, pPathOrderOptimizer.OptimizedPaths[1].PointIndex);
+				Assert.AreEqual(0, pPathOrderOptimizer.OptimizedPaths[0].PointIndex);
+				Assert.AreEqual(1, pPathOrderOptimizer.OptimizedPaths[1].PointIndex);
 			}
 		}
 

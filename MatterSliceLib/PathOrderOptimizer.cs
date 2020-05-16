@@ -31,7 +31,7 @@ using Polygons = System.Collections.Generic.List<System.Collections.Generic.List
 
 namespace MatterHackers.MatterSlice
 {
-	public class PolyAndPoint
+	public class OptimizedPath
 	{
 		public int PointIndex { get; set; }
 
@@ -41,11 +41,11 @@ namespace MatterHackers.MatterSlice
 
 		public bool FoundPath { get; } = false;
 
-		public PolyAndPoint()
+		public OptimizedPath()
 		{
 		}
 
-		public PolyAndPoint(int poly, int point, bool isExtrude, bool foundPath)
+		public OptimizedPath(int poly, int point, bool isExtrude, bool foundPath)
 		{
 			this.PolyIndex = poly;
 			this.PointIndex = point;
@@ -71,7 +71,7 @@ namespace MatterHackers.MatterSlice
 			this.config = config;
 		}
 
-		public List<PolyAndPoint> Order { get; private set; } = new List<PolyAndPoint>();
+		public List<OptimizedPath> OptimizedPaths { get; private set; } = new List<OptimizedPath>();
 
 		public void AddPolygon(Polygon polygon)
 		{
@@ -93,7 +93,7 @@ namespace MatterHackers.MatterSlice
 		{
 			pathFinder = null;
 
-			this.Order.Clear();
+			this.OptimizedPaths.Clear();
 
 			bool doSeamHiding = pathConfig != null && pathConfig.DoSeamHiding && !pathConfig.Spiralize;
 			bool canTravelForwardOrBackward = pathConfig != null && !pathConfig.ClosedLoop;
@@ -164,14 +164,14 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				Order.Add(closestPolyPoint);
+				OptimizedPaths.Add(closestPolyPoint);
 				completedPolygons.Add(closestPolyPoint.PolyIndex);
 
 				currentPosition = endPosition;
 			}
 		}
 
-		private PolyAndPoint FindClosestPolyAndPoint(IntPoint currentPosition,
+		private OptimizedPath FindClosestPolyAndPoint(IntPoint currentPosition,
 			HashSet<int> compleatedPolygons,
 			bool doSeamHiding,
 			int layerIndex,
@@ -181,7 +181,7 @@ namespace MatterHackers.MatterSlice
 		{
 			endPosition = currentPosition;
 			var bestDistSquared = double.MaxValue;
-			var bestResult = new PolyAndPoint();
+			var bestResult = new OptimizedPath();
 			for (int i = 0; i < Data.Count; i++)
 			{
 				if (compleatedPolygons.Contains(i))
@@ -203,7 +203,7 @@ namespace MatterHackers.MatterSlice
 				{
 					bestDistSquared = distanceSquared;
 					endPosition = polyEndPosition;
-					bestResult = new PolyAndPoint(i, pointIndex, true, false);
+					bestResult = new OptimizedPath(i, pointIndex, true, false);
 				}
 			}
 
