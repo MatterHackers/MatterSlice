@@ -208,14 +208,21 @@ namespace MatterHackers.MatterSlice
 
 		private void QueuePolygon(Polygon polygon, PathFinder pathFinder, int startIndex, GCodePathConfig config)
 		{
-			IntPoint currentPosition = polygon[startIndex];
+			IntPoint firstPolygonPosition = polygon[startIndex];
 
 			if (!config.Spiralize
 				&& LastPositionSet
-				&& (LastPosition_um.X != currentPosition.X
-				|| LastPosition_um.Y != currentPosition.Y))
+				&& (LastPosition_um.X != firstPolygonPosition.X
+				|| LastPosition_um.Y != firstPolygonPosition.Y))
 			{
-				QueueTravel(currentPosition, pathFinder);
+				QueueTravel(firstPolygonPosition, pathFinder);
+			}
+
+			if (!LastPositionSet)
+			{
+				var firstPosition = new Polygon() { firstPolygonPosition };
+
+				QueueTravel(firstPosition, true);
 			}
 
 			QueueExtrusionPolygon(polygon, startIndex, config);
