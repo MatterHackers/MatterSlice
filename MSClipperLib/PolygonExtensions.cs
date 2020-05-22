@@ -397,20 +397,25 @@ namespace MSClipperLib
 					});
 				}
 
-				// if we have a very shallow turn (the outer edge of a circle)
-				if (shallowTurn)
+				// This is resulting in less quality generally. If we can isolate the specifics of when and how
+				// it improves things we can re-enable it for those cases.
+				if (false)
 				{
-					// stager 3 places so the seam is more together but not a line
-					int seemShift = layerIndex % 3;
-					if (!outsideEdge) // we are on the inside of a circular hole (or similar)
+					// if we have a very shallow turn (the outer edge of a circle)
+					if (shallowTurn)
 					{
-						// stager up to 5 to make the seam have less surface
-						seemShift = layerIndex % 5;
-					}
+						// stager 3 places so the seam is more together but not a line
+						int seemShift = layerIndex % 3;
+						if (!outsideEdge) // we are on the inside of a circular hole (or similar)
+						{
+							// stager up to 5 to make the seam have less surface
+							seemShift = layerIndex % 5;
+						}
 
-					if(this.Count > seemShift)
-					{
-						return this[this.Count - seemShift - 1].turnIndex;
+						if (this.Count > seemShift)
+						{
+							return this[this.Count - seemShift - 1].turnIndex;
+						}
 					}
 				}
 
