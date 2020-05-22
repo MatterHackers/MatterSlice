@@ -580,6 +580,32 @@ namespace MatterHackers.MatterSlice.Tests
 			Assert.AreEqual(51, TestUtilities.CountLayers(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.05, .2))));
 		}
 
+		[Test]
+		public void SingleLayerCreated()
+		{
+			string point3mmStlFile = TestUtilities.GetStlPath("Point3mm");
+			string point3mmGCodeFile = TestUtilities.GetTempGCodePath("Point3mm.gcode");
+
+			ConfigSettings config = new ConfigSettings();
+			config.FirstLayerThickness = .25;
+			config.LayerThickness = .25;
+			config.NumberOfSkirtLoops = 0;
+			FffProcessor processor = new FffProcessor(config);
+			processor.SetTargetFile(point3mmGCodeFile);
+			processor.LoadStlFile(point3mmStlFile);
+			// slice and save it
+			processor.DoProcessing();
+			processor.Finalize();
+
+			var loadedGCode = TestUtilities.LoadGCodeFile(point3mmGCodeFile);
+			var layers = TestUtilities.CountLayers(loadedGCode);
+			Assert.AreEqual(1, layers);
+			var totalExtrusions = TestUtilities.GetExtrusionPolygons(loadedGCode);
+			Assert.Greater(totalExtrusions.Count, 0);
+			Assert.Greater(totalExtrusions[0].PolygonLength(), 100);
+		}
+
+
 		public void DoHas2WallRingsAllTheWayUp(string fileName, int expectedLayerCount, bool checkRadius = false)
 		{
 			string stlFile = TestUtilities.GetStlPath(fileName);

@@ -810,7 +810,7 @@ namespace MatterHackers.MatterSlice
 
 				// now bias more in to help multi threading
 				// and clamp to the number there are to make sure we can do it
-				endIndex = Math.Min(endIndex, slicingData.Extruders[extruderIndex].Layers.Count - 1);
+				endIndex = Math.Min(endIndex, slicingData.Extruders[extruderIndex].Layers.Count);
 
 				// free up the insets from the previous layer
 				if (startIndex > config.NumberOfBottomLayers + 1)
@@ -832,8 +832,8 @@ namespace MatterHackers.MatterSlice
 							int insetCount = config.NumberOfPerimeters;
 							if (config.ContinuousSpiralOuterPerimeter && (int)layerIndex < config.NumberOfBottomLayers && layerIndex % 2 == 1)
 							{
-							// Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
-							insetCount += 1;
+								// Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
+								insetCount += 1;
 							}
 
 							if (layerIndex == 0)
