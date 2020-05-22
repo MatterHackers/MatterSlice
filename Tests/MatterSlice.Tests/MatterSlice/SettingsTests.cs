@@ -601,8 +601,13 @@ namespace MatterHackers.MatterSlice.Tests
 			var layers = TestUtilities.CountLayers(loadedGCode);
 			Assert.AreEqual(1, layers);
 			var totalExtrusions = TestUtilities.GetExtrusionPolygons(loadedGCode);
+#if __ANDROID__
+			Assert.IsTrue(totalExtrusions.Count > 0);
+			Assert.IsTrue(totalExtrusions[0].PolygonLength() > 100);
+#else
 			Assert.Greater(totalExtrusions.Count, 0);
 			Assert.Greater(totalExtrusions[0].PolygonLength(), 100);
+#endif
 		}
 
 
