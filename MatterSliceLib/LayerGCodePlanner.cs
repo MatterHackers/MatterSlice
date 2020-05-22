@@ -388,10 +388,26 @@ namespace MatterHackers.MatterSlice
 		public void QueueTravel(IntPoint positionToMoveTo, PathFinder pathFinder, bool forceUniquePath = false)
 		{
 			var pathPolygon = new Polygon();
+			bool foundPath = true;
 
 			if (pathFinder != null)
 			{
-				pathFinder.CreatePathInsideBoundary(LastPosition_um, positionToMoveTo, pathPolygon, true, gcodeExport.LayerIndex);
+				if (!pathFinder.CreatePathInsideBoundary(LastPosition_um, positionToMoveTo, pathPolygon, true, gcodeExport.LayerIndex))
+				{
+					// can't get there without crossing a boundary
+					forceRetraction = true;
+				}
+				else // we have a path check if it increases the distance mare than is allowed
+				{
+					var avoidDistance = pathPolygon.PolygonLength();
+					var directDistance = (positionToMoveTo - LastPosition_um).Length();
+					if (avoidDistance > config.MinimumTravelToCauseRetraction_um
+						&& avoidDistance > directDistance * config.AvoidCrossingMaxRatio)
+					{
+						pathPolygon.Clear();
+						forceRetraction = true;
+					}
+				}
 			}
 
 			if (pathPolygon.Count == 0)
