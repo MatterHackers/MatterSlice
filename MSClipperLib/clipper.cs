@@ -360,33 +360,34 @@ namespace MSClipperLib
 		public cInt X;
 		public cInt Y;
 		public cInt Width;
+		public cInt Speed;
 #if use_xyz
     public cInt Z;
     
     public IntPoint(cInt x, cInt y, cInt z = 0)
     {
-      this.X = x; this.Y = y; this.Z = z; this.Width = 0;
+      this.X = x; this.Y = y; this.Z = z; this.Width = 0; Speed = 0;
     }
     
     public IntPoint(double x, double y, double z = 0)
     {
-      this.X = (cInt)x; this.Y = (cInt)y; this.Z = (cInt)z; this.Width = 0;
-    }
+      this.X = (cInt)x; this.Y = (cInt)y; this.Z = (cInt)z; this.Width = 0; Speed = 0;
+	}
 
-		public IntPoint(IntPoint inPoint, double z = 0)
-		{
-			this.X = inPoint.X; this.Y = inPoint.Y; this.Z = (cInt)z; this.Width = inPoint.Width;
-		}
+	public IntPoint(IntPoint inPoint, double z = 0)
+	{
+		this.X = inPoint.X; this.Y = inPoint.Y; this.Z = (cInt)z; this.Width = inPoint.Width; this.Speed = inPoint.Speed;
+	}
 
 	public IntPoint(DoublePoint dp)
     {
-      this.X = (cInt)dp.X; this.Y = (cInt)dp.Y; this.Z = 0; this.Width = 0;
-		}
+      this.X = (cInt)dp.X; this.Y = (cInt)dp.Y; this.Z = 0; this.Width = 0; Speed = 0;
+	}
 
     public IntPoint(IntPoint pt)
     {
-      this.X = pt.X; this.Y = pt.Y; this.Z = pt.Z; this.Width = pt.Width;
-		}
+      this.X = pt.X; this.Y = pt.Y; this.Z = pt.Z; this.Width = pt.Width; Speed = 0;
+	}
 #else
 		public IntPoint(cInt X, cInt Y)
 		{
@@ -406,14 +407,15 @@ namespace MSClipperLib
 		/////////////////////////////////////////////////// start added for MatterSlice ///////////////////////////////////////////////////
 		public override string ToString()
 		{
-			return string.Format("x:{0}, y:{1}, z:{2}, width:{3}", X, Y, Z, Width);
+			return string.Format("x:{0}, y:{1}, z:{2}, width:{3}, speed:{4}", X, Y, Z, Width, Speed);
 		}
 
 		public static IntPoint operator +(IntPoint p0, IntPoint p1)
 		{
 			return new IntPoint(p0.X + p1.X, p0.Y + p1.Y, p0.Z + p1.Z)
 			{
-				Width = p0.Width
+				Width = p0.Width,
+				Speed = p0.Speed
 			};
 		}
 
@@ -421,7 +423,8 @@ namespace MSClipperLib
 		{
 			return new IntPoint(p0.X - p1.X, p0.Y - p1.Y, p0.Z - p1.Z)
 			{
-				Width = p0.Width
+				Width = p0.Width,
+				Speed = p0.Speed
 			};
 		}
 
@@ -429,7 +432,8 @@ namespace MSClipperLib
 		{
 			return new IntPoint(p0.X * i, p0.Y * i, p0.Z * i)
 			{
-				Width = p0.Width
+				Width = p0.Width,
+				Speed = p0.Speed
 			};
 		}
 
@@ -437,7 +441,8 @@ namespace MSClipperLib
 		{
 			return new IntPoint(p0.X / i, p0.Y / i, p0.Z / i)
 			{
-				Width = p0.Width
+				Width = p0.Width,
+				Speed = p0.Speed
 			};
 		}
 
@@ -1184,8 +1189,9 @@ namespace MSClipperLib
 			//adjoining lower edge. [Helpful in the ProcessHorizontal() method.]
 			Swap(ref e.Top.X, ref e.Bot.X);
 #if use_xyz
-      Swap(ref e.Top.Z, ref e.Bot.Z);
+			Swap(ref e.Top.Z, ref e.Bot.Z);
 			Swap(ref e.Top.Width, ref e.Bot.Width);
+			Swap(ref e.Top.Speed, ref e.Bot.Speed);
 #endif
 		}
 		//------------------------------------------------------------------------------
@@ -1290,6 +1296,7 @@ namespace MSClipperLib
 	{
 		pt.Z = bot1.Z;
 		pt.Width = bot1.Width;
+		pt.Speed = Math.Max(bot1.Speed, Math.Max(top1.Speed, Math.Max(bot2.Speed, top2.Speed)));
 	}
 
 	//------------------------------------------------------------------------------

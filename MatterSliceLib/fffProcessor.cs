@@ -1048,7 +1048,16 @@ namespace MatterHackers.MatterSlice
 
 				var bottomFillPolygons = new Polygons();
 
-				CalculateInfillData(slicingData, extruderIndex, layerIndex, island, bottomFillPolygons, fillPolygons, firstTopFillPolygons, topFillPolygons, bridgePolygons);
+				CalculateInfillData(slicingData,
+					extruderIndex,
+					layerIndex,
+					island,
+					bottomFillPolygons,
+					fillPolygons,
+					firstTopFillPolygons,
+					topFillPolygons,
+					bridgePolygons);
+
 				bottomFillIslandPolygons.Add(bottomFillPolygons);
 
 				int fanBeforeBridgePolygons = gcodeExport.CurrentFanSpeed;
@@ -1626,7 +1635,15 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private void CalculateInfillData(LayerDataStorage slicingData, int extruderIndex, int layerIndex, LayerIsland part, Polygons bottomFillLines, Polygons fillPolygons = null, Polygons firstTopFillPolygons = null, Polygons topFillPolygons = null, Polygons bridgePolygons = null)
+		private void CalculateInfillData(LayerDataStorage slicingData,
+			int extruderIndex,
+			int layerIndex,
+			LayerIsland part,
+			Polygons bottomFillLines,
+			Polygons fillPolygons = null,
+			Polygons firstTopFillPolygons = null,
+			Polygons topFillPolygons = null,
+			Polygons bridgePolygons = null)
 		{
 			double alternatingInfillAngle = config.InfillStartingAngle;
 			if ((layerIndex % 2) == 0)
@@ -1655,15 +1672,9 @@ namespace MatterHackers.MatterSlice
 							// TODO: Make this code handle very complex pathing between different sizes or layouts of support under the island to fill.
 							Infill.GenerateLinePaths(bottomFillIsland, bridgePolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, bridgeAngle);
 						}
-						else
+						else // we still need to extrude at bridging speed
 						{
-							/*
-							foreach(var line in bottomFillIsland)
-							{
-								bottomFillLines.Add(line);
-							} */
-
-							Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, alternatingInfillAngle);
+							Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, alternatingInfillAngle, 0, config.BridgeSpeed);
 						}
 					}
 				}

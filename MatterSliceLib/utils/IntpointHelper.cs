@@ -65,12 +65,20 @@ namespace MatterHackers.MatterSlice
 
 		public IntPoint apply(IntPoint p)
 		{
-			return new IntPoint(p.X * matrix[0] + p.Y * matrix[1], p.X * matrix[2] + p.Y * matrix[3]);
+			return new IntPoint(p.X * matrix[0] + p.Y * matrix[1], p.X * matrix[2] + p.Y * matrix[3])
+			{
+				Width = p.Width,
+				Speed = p.Speed
+			};
 		}
 
 		public IntPoint unapply(IntPoint p)
 		{
-			return new IntPoint(p.X * matrix[0] + p.Y * matrix[2], p.X * matrix[1] + p.Y * matrix[3]);
+			return new IntPoint(p.X * matrix[0] + p.Y * matrix[2], p.X * matrix[1] + p.Y * matrix[3])
+			{
+				Width = p.Width,
+				Speed = p.Speed
+			};
 		}
 	}
 
@@ -83,7 +91,11 @@ namespace MatterHackers.MatterSlice
 			return new IntPoint(
 				left.Y * right.Z - left.Z * right.Y,
 				left.Z * right.X - left.X * right.Z,
-				left.X * right.Y - left.Y * right.X);
+				left.X * right.Y - left.Y * right.X)
+			{
+				Width = left.Width,
+				Speed = left.Speed
+			};
 		}
 
 		public static long CrossXy(this IntPoint left, IntPoint right)
@@ -131,7 +143,8 @@ namespace MatterHackers.MatterSlice
 			{
 				return new IntPoint(len, 0)
 				{
-					Width = thisPoint.Width
+					Width = thisPoint.Width,
+					Speed = thisPoint.Speed,
 				};
 			}
 
@@ -148,7 +161,11 @@ namespace MatterHackers.MatterSlice
 			long _len = thisPoint.Length();
 			if (_len < 1)
 			{
-				return new IntPoint(len, 0);
+				return new IntPoint(len, 0)
+				{
+					Width = thisPoint.Width,
+					Speed = thisPoint.Speed
+				};
 			}
 
 			return thisPoint * len / _len;

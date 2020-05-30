@@ -556,7 +556,13 @@ namespace MatterHackers.MatterSlice
 							lineWidth_um = paths[i - 1].Polygon[0].Width;
 						}
 
-						gcodeExport.WriteMove(paths[i - 1].Polygon[0], path.Speed, lineWidth_um);
+						var lineSpeed = path.Speed;
+						if (paths[i - 1].Polygon[0].Speed != 0)
+						{
+							lineSpeed = paths[i - 1].Polygon[0].Speed;
+						}
+
+						gcodeExport.WriteMove(paths[i - 1].Polygon[0], lineSpeed, lineWidth_um);
 						pathIndex = i - 1;
 						continue;
 					}
@@ -629,7 +635,13 @@ namespace MatterHackers.MatterSlice
 							lineWidth_um = path.Polygon[i].Width;
 						}
 
-						gcodeExport.WriteMove(path.Polygon[i], path.Speed, lineWidth_um);
+						var lineSpeed = path.Speed;
+						if (path.Polygon[i].Speed != 0)
+						{
+							lineSpeed = path.Polygon[i].Speed;
+						}
+
+						gcodeExport.WriteMove(path.Polygon[i], lineSpeed, lineWidth_um);
 					}
 
 					if (trimmed)

@@ -86,6 +86,7 @@ namespace MSClipperLib
 			output.Y = (long)(Round(thisPoint.Y * cos + thisPoint.X * sin));
 			output.Z = thisPoint.Z;
 			output.Width = thisPoint.Width;
+			output.Speed = thisPoint.Speed;
 
 			return output;
 		}
@@ -116,7 +117,8 @@ namespace MSClipperLib
 		{
 			return new IntPoint(-thisPoint.Y, thisPoint.X)
 			{
-				Width = thisPoint.Width
+				Width = thisPoint.Width,
+				Speed = thisPoint.Speed
 			};
 		}
 
@@ -129,7 +131,8 @@ namespace MSClipperLib
 		{
 			return new IntPoint(thisPoint.Y, -thisPoint.X)
 			{
-				Width = thisPoint.Width
+				Width = thisPoint.Width,
+				Speed = thisPoint.Speed
 			};
 		}
 
