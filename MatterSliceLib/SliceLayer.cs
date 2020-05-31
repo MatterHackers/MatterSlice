@@ -126,14 +126,16 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public bool BridgeAngle(Polygons areaGoingOnTop, out double bridgeAngle, string debugName = "")
+		public bool BridgeAngle(Polygons areaGoingOnTop, out double bridgeAngle, Polygons bridgeAreas, string debugName = "")
 		{
 			SliceLayer layerToRestOn = this;
 			bridgeAngle = -1;
 			Aabb boundaryBox = new Aabb(areaGoingOnTop);
 			// To detect if we have a bridge, first calculate the intersection of the current layer with the previous layer.
 			// This gives us the islands that the layer rests on.
-			Polygons islandsToRestOn = new Polygons();
+
+			var islandsToRestOn = new Polygons();
+
 			foreach (LayerIsland islandToRestOn in layerToRestOn.Islands)
 			{
 				if (!boundaryBox.Hit(islandToRestOn.BoundingBox))
@@ -142,6 +144,11 @@ namespace MatterHackers.MatterSlice
 				}
 
 				islandsToRestOn.AddRange(areaGoingOnTop.CreateIntersection(islandToRestOn.IslandOutline));
+			}
+
+			if (bridgeAreas != null)
+			{
+				bridgeAreas.AddRange(areaGoingOnTop.CreateDifference(layerToRestOn.AllOutlines));
 			}
 
 			if (OUTPUT_DEBUG_DATA)

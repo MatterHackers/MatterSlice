@@ -866,7 +866,12 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private void QueuePerimeterWithMergeOverlaps(Polygon perimeterToCheckForMerge, PathFinder pathFinder, int layerIndex, LayerGCodePlanner gcodeLayer, GCodePathConfig config)
+		private void QueuePerimeterWithMergeOverlaps(Polygon perimeterToCheckForMerge,
+			PathFinder pathFinder,
+			int layerIndex,
+			LayerGCodePlanner gcodeLayer,
+			GCodePathConfig config,
+			Polygons bridgeAreas)
 		{
 			Polygons pathsWithOverlapsRemoved = null;
 			bool pathHadOverlaps = false;
@@ -882,12 +887,12 @@ namespace MatterHackers.MatterSlice
 			{
 				bool oldClosedLoop = config.ClosedLoop;
 				config.ClosedLoop = false;
-				QueuePolygonsConsideringSupport(layerIndex, pathFinder, gcodeLayer, pathsWithOverlapsRemoved, config, SupportWriteType.UnsupportedAreas);
+				QueuePolygonsConsideringSupport(layerIndex, pathFinder, gcodeLayer, pathsWithOverlapsRemoved, config, SupportWriteType.UnsupportedAreas, bridgeAreas);
 				config.ClosedLoop = oldClosedLoop;
 			}
 			else
 			{
-				QueuePolygonsConsideringSupport(layerIndex, pathFinder, gcodeLayer, new Polygons() { perimeterToCheckForMerge }, config, SupportWriteType.UnsupportedAreas);
+				QueuePolygonsConsideringSupport(layerIndex, pathFinder, gcodeLayer, new Polygons() { perimeterToCheckForMerge }, config, SupportWriteType.UnsupportedAreas, bridgeAreas);
 			}
 		}
 
@@ -1045,6 +1050,7 @@ namespace MatterHackers.MatterSlice
 				var topFillPolygons = new Polygons();
 				var firstTopFillPolygons = new Polygons();
 				var bridgePolygons = new Polygons();
+				var bridgeAreas = new Polygons();
 
 				var bottomFillPolygons = new Polygons();
 
@@ -1056,7 +1062,8 @@ namespace MatterHackers.MatterSlice
 					fillPolygons,
 					firstTopFillPolygons,
 					topFillPolygons,
-					bridgePolygons);
+					bridgePolygons,
+					bridgeAreas);
 
 				bottomFillIslandPolygons.Add(bottomFillPolygons);
 
@@ -1089,12 +1096,10 @@ namespace MatterHackers.MatterSlice
 						insetsForThisIsland.Add(polygons);
 					}
 
-					GCodePathConfig overrideConfig = null;
 					if (bridgePolygons.Count > 0)
 					{
 						// turn it on for bridge (or keep it on)
 						layerGcodePlanner.QueueFanCommand(config.BridgeFanSpeedPercent, bridgeConfig);
-						overrideConfig = bridgeConfig;
 					}
 
 					// If we are on the very first layer we always start with the outside so that we can stick to the bed better.
@@ -1116,13 +1121,13 @@ namespace MatterHackers.MatterSlice
 								bool limitDistance = false;
 								if (island.InsetToolPaths.Count > 0)
 								{
-									QueueClosestInset(insetsForThisIsland[0], island.PathFinder, limitDistance, overrideConfig == null ? inset0Config : overrideConfig, layerIndex, layerGcodePlanner);
+									QueueClosestInset(insetsForThisIsland[0], island.PathFinder, limitDistance, inset0Config, layerIndex, layerGcodePlanner, bridgeAreas);
 								}
 
 								// Move to the closest inset 1 and print it
 								for (int insetIndex = 1; insetIndex < island.InsetToolPaths.Count; insetIndex++)
 								{
-									limitDistance = QueueClosestInset(insetsForThisIsland[insetIndex], island.PathFinder, limitDistance, overrideConfig == null ? insetXConfig : overrideConfig, layerIndex, layerGcodePlanner);
+									limitDistance = QueueClosestInset(insetsForThisIsland[insetIndex], island.PathFinder, limitDistance, insetXConfig, layerIndex, layerGcodePlanner, bridgeAreas);
 								}
 
 								insetCount = CountInsetsToPrint(insetsForThisIsland);
@@ -1182,9 +1187,10 @@ namespace MatterHackers.MatterSlice
 										insetsForThisIsland[insetIndex],
 										island.PathFinder,
 										limitDistance,
-										overrideConfig == null ? (insetIndex == 0 ? inset0Config : insetXConfig) : overrideConfig,
+										insetIndex == 0 ? inset0Config : insetXConfig,
 										layerIndex,
-										layerGcodePlanner);
+										layerGcodePlanner,
+										bridgeAreas);
 
 									if (insetIndex == 0)
 									{
@@ -1401,7 +1407,13 @@ namespace MatterHackers.MatterSlice
 			return polyPointPosition;
 		}
 
-		private bool QueueClosestInset(Polygons insetsToConsider, PathFinder islandPathFinder, bool limitDistance, GCodePathConfig pathConfig, int layerIndex, LayerGCodePlanner gcodeLayer)
+		private bool QueueClosestInset(Polygons insetsToConsider,
+			PathFinder islandPathFinder,
+			bool limitDistance,
+			GCodePathConfig pathConfig,
+			int layerIndex,
+			LayerGCodePlanner gcodeLayer,
+			Polygons bridgeAreas)
 		{
 			// This is the furthest away we will accept a new starting point
 			long maxDist_um = long.MaxValue;
@@ -1433,11 +1445,11 @@ namespace MatterHackers.MatterSlice
 				if (config.MergeOverlappingLines
 					&& pathConfig != inset0Config) // we do not merge the outer perimeter
 				{
-					QueuePerimeterWithMergeOverlaps(insetsToConsider[polygonPrintedIndex], islandPathFinder, layerIndex, gcodeLayer, pathConfig);
+					QueuePerimeterWithMergeOverlaps(insetsToConsider[polygonPrintedIndex], islandPathFinder, layerIndex, gcodeLayer, pathConfig, bridgeAreas);
 				}
 				else
 				{
-					QueuePolygonsConsideringSupport(layerIndex, islandPathFinder, gcodeLayer, new Polygons() { insetsToConsider[polygonPrintedIndex] }, pathConfig, SupportWriteType.UnsupportedAreas);
+					QueuePolygonsConsideringSupport(layerIndex, islandPathFinder, gcodeLayer, new Polygons() { insetsToConsider[polygonPrintedIndex] }, pathConfig, SupportWriteType.UnsupportedAreas, bridgeAreas);
 				}
 
 				insetsToConsider.RemoveAt(polygonPrintedIndex);
@@ -1550,7 +1562,13 @@ namespace MatterHackers.MatterSlice
 		/// <param name="fillConfig"></param>
 		/// <param name="supportWriteType"></param>
 		/// <returns></returns>
-		private bool QueuePolygonsConsideringSupport(int layerIndex, PathFinder pathFinder, LayerGCodePlanner gcodeLayer, Polygons polygonsToWrite, GCodePathConfig fillConfig, SupportWriteType supportWriteType)
+		private bool QueuePolygonsConsideringSupport(int layerIndex,
+			PathFinder pathFinder,
+			LayerGCodePlanner gcodeLayer,
+			Polygons polygonsToWrite,
+			GCodePathConfig fillConfig,
+			SupportWriteType supportWriteType,
+			Polygons bridgeAreas = null)
 		{
 			bool polygonsWereOutput = false;
 
@@ -1569,7 +1587,22 @@ namespace MatterHackers.MatterSlice
 						Polygons polysToWriteAtAirGapHeight = new Polygons();
 
 						GetSegmentsConsideringSupport(polygonsToWrite, supportOutlines, polysToWriteAtNormalHeight, polysToWriteAtAirGapHeight, false, fillConfig.ClosedLoop);
-						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtNormalHeight, pathFinder, fillConfig, layerIndex);
+
+						if (bridgeAreas != null
+							&& bridgeAreas.Count > 0)
+						{
+							// We have some bridging happening trim our outlines against this and slow down the one that are
+							// crossing the bridge areas.
+							var polygonsWithBridgeSlowdowns = ChangeSpeedOverBridgedAreas(polygonsToWrite, bridgeAreas, fillConfig.ClosedLoop);
+							bool oldValue = fillConfig.ClosedLoop;
+							fillConfig.ClosedLoop = false;
+							polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsWithBridgeSlowdowns, pathFinder, fillConfig, layerIndex);
+							fillConfig.ClosedLoop = oldValue;
+						}
+						else // there is no bridging so we do not need to slow anything down to cross gaps
+						{
+							polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtNormalHeight, pathFinder, fillConfig, layerIndex);
+						}
 					}
 					else
 					{
@@ -1596,7 +1629,21 @@ namespace MatterHackers.MatterSlice
 			}
 			else if (supportWriteType == SupportWriteType.UnsupportedAreas)
 			{
-				polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, pathFinder, fillConfig, layerIndex);
+				if (bridgeAreas != null
+					&& bridgeAreas.Count > 0)
+				{
+					// We have some bridging happening trim our outlines against this and slow down the one that are
+					// crossing the bridge areas.
+					var polygonsWithBridgeSlowdowns = ChangeSpeedOverBridgedAreas(polygonsToWrite, bridgeAreas, fillConfig.ClosedLoop);
+					bool oldValue = fillConfig.ClosedLoop;
+					fillConfig.ClosedLoop = false;
+					polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsWithBridgeSlowdowns, pathFinder, fillConfig, layerIndex);
+					fillConfig.ClosedLoop = oldValue;
+				}
+				else // there is no bridging so we do not need to slow anything down to cross gaps
+				{
+					polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, pathFinder, fillConfig, layerIndex);
+				}
 			}
 
 			return polygonsWereOutput;
@@ -1635,6 +1682,44 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		private Polygons ChangeSpeedOverBridgedAreas(Polygons polygonsToWrite,
+			Polygons bridgedAreas,
+			bool closedLoop)
+		{
+			var polygonsWithBridgeSlowdowns = new Polygons();
+			// make an expanded area to constrain our segments to
+			Polygons bridgeAreaIncludingPerimeters = bridgedAreas.Offset((config.NumberOfPerimeters + 1) * config.ExtrusionWidth_um);
+
+			Polygons polygonsToWriteAsLines = PolygonsHelper.ConvertToLines(polygonsToWrite, closedLoop);
+
+			Polygons polygonsIntersectSupport = bridgeAreaIncludingPerimeters.CreateLineIntersections(polygonsToWriteAsLines);
+			// write the bottoms that are not sitting on supported areas
+			if (polygonsIntersectSupport.Count == 0)
+			{
+				// these lines do not intersect the bridge area
+				polygonsWithBridgeSlowdowns.AddRange(polygonsToWriteAsLines);
+			}
+			else
+			{
+				var polysToSolw = bridgeAreaIncludingPerimeters.CreateLineIntersections(polygonsToWriteAsLines);
+				foreach (var polyToSolw in polysToSolw)
+				{
+					for (int i = 0; i < polyToSolw.Count; i++)
+					{
+						polyToSolw[i] = new IntPoint(polyToSolw[i])
+						{
+							Speed = config.BridgeSpeed
+						};
+					}
+				}
+
+				polygonsWithBridgeSlowdowns.AddRange(polysToSolw);
+				polygonsWithBridgeSlowdowns.AddRange(bridgeAreaIncludingPerimeters.CreateLineDifference(polygonsToWriteAsLines));
+			}
+
+			return polygonsWithBridgeSlowdowns;
+		}
+
 		private void CalculateInfillData(LayerDataStorage slicingData,
 			int extruderIndex,
 			int layerIndex,
@@ -1643,7 +1728,8 @@ namespace MatterHackers.MatterSlice
 			Polygons fillPolygons = null,
 			Polygons firstTopFillPolygons = null,
 			Polygons topFillPolygons = null,
-			Polygons bridgePolygons = null)
+			Polygons bridgePolygons = null,
+			Polygons bridgeAreas = null)
 		{
 			double alternatingInfillAngle = config.InfillStartingAngle;
 			if ((layerIndex % 2) == 0)
@@ -1665,9 +1751,9 @@ namespace MatterHackers.MatterSlice
 					{
 						SliceLayer previousLayer = slicingData.Extruders[extruderIndex].Layers[layerIndex - 1];
 
-						double bridgeAngle = 0;
+						double bridgeAngle;
 						if (bridgePolygons != null
-							&& previousLayer.BridgeAngle(bottomFillIsland, out bridgeAngle))
+							&& previousLayer.BridgeAngle(bottomFillIsland, out bridgeAngle, bridgeAreas))
 						{
 							// TODO: Make this code handle very complex pathing between different sizes or layouts of support under the island to fill.
 							Infill.GenerateLinePaths(bottomFillIsland, bridgePolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, bridgeAngle);
