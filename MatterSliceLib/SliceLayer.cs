@@ -126,14 +126,16 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public bool BridgeAngle(Polygons areaAboveToFill, out double bridgeAngle, string debugName = "")
+		public bool BridgeAngle(Polygons areaGoingOnTop, out double bridgeAngle, Polygons bridgeAreas, string debugName = "")
 		{
 			SliceLayer layerToRestOn = this;
 			bridgeAngle = -1;
-			Aabb boundaryBox = new Aabb(areaAboveToFill);
+			Aabb boundaryBox = new Aabb(areaGoingOnTop);
 			// To detect if we have a bridge, first calculate the intersection of the current layer with the previous layer.
 			// This gives us the islands that the layer rests on.
-			Polygons islandsToRestOn = new Polygons();
+
+			var islandsToRestOn = new Polygons();
+
 			foreach (LayerIsland islandToRestOn in layerToRestOn.Islands)
 			{
 				if (!boundaryBox.Hit(islandToRestOn.BoundingBox))
@@ -141,24 +143,17 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				islandsToRestOn.AddRange(areaAboveToFill.CreateIntersection(islandToRestOn.IslandOutline));
+				islandsToRestOn.AddRange(areaGoingOnTop.CreateIntersection(islandToRestOn.IslandOutline));
+			}
+
+			if (bridgeAreas != null)
+			{
+				bridgeAreas.AddRange(areaGoingOnTop.CreateDifference(layerToRestOn.AllOutlines));
 			}
 
 			if (OUTPUT_DEBUG_DATA)
 			{
-				string outlineString = areaAboveToFill.WriteToString();
-				string islandOutlineString = "";
-				foreach (LayerIsland prevLayerIsland in layerToRestOn.Islands)
-				{
-					foreach (Polygon islandOutline in prevLayerIsland.IslandOutline)
-					{
-						islandOutlineString += islandOutline.WriteToString();
-					}
-
-					islandOutlineString += "|";
-				}
-
-				string islandsString = islandsToRestOn.WriteToString();
+				WriteDebugData(areaGoingOnTop, layerToRestOn, islandsToRestOn);
 			}
 
 			if (islandsToRestOn.Count > 5 || islandsToRestOn.Count < 1)
@@ -168,7 +163,7 @@ namespace MatterHackers.MatterSlice
 
 			if (islandsToRestOn.Count == 1)
 			{
-				return GetSingleIslandAngle(areaAboveToFill, islandsToRestOn[0], out bridgeAngle, debugName);
+				return GetSingleIslandAngle(areaGoingOnTop, islandsToRestOn[0], out bridgeAngle, debugName);
 			}
 
 			// Find the 2 largest islands that we rest on.
@@ -219,6 +214,23 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return true;
+		}
+
+		private static void WriteDebugData(Polygons areaAboveToFill, SliceLayer layerToRestOn, Polygons islandsToRestOn)
+		{
+			string outlineString = areaAboveToFill.WriteToString();
+			string islandOutlineString = "";
+			foreach (LayerIsland prevLayerIsland in layerToRestOn.Islands)
+			{
+				foreach (Polygon islandOutline in prevLayerIsland.IslandOutline)
+				{
+					islandOutlineString += islandOutline.WriteToString();
+				}
+
+				islandOutlineString += "|";
+			}
+
+			string islandsString = islandsToRestOn.WriteToString();
 		}
 
 		public void CreateIslandData()

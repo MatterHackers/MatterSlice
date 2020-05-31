@@ -195,7 +195,13 @@ namespace MatterHackers.MatterSlice
 			GenerateLinePaths(partOutline, fillPolygons, linespacing_um, config.InfillExtendIntoPerimeter_um, fillAngle);
 		}
 
-		public static void GenerateLinePaths(Polygons polygonToInfill, Polygons infillLinesToPrint, long lineSpacing_um, long infillExtendIntoPerimeter_um, double rotation, long rotationOffset = 0)
+		public static void GenerateLinePaths(Polygons polygonToInfill,
+			Polygons infillLinesToPrint,
+			long lineSpacing_um,
+			long infillExtendIntoPerimeter_um,
+			double rotation,
+			long rotationOffset = 0,
+			int speed = 0)
 		{
 			if (polygonToInfill.Count > 0)
 			{
@@ -216,8 +222,14 @@ namespace MatterHackers.MatterSlice
 					for (int lineIndex = 0; lineIndex < xLineCount; lineIndex++)
 					{
 						Polygon line = new Polygon();
-						line.Add(new IntPoint(firstX + lineIndex * lineSpacing_um, boundary.min.Y));
-						line.Add(new IntPoint(firstX + lineIndex * lineSpacing_um, boundary.max.Y));
+						line.Add(new IntPoint(firstX + lineIndex * lineSpacing_um, boundary.min.Y)
+						{
+							Speed = speed
+						});
+						line.Add(new IntPoint(firstX + lineIndex * lineSpacing_um, boundary.max.Y)
+						{
+							Speed = speed
+						});
 						unclippedPattern.Add(line);
 					}
 
