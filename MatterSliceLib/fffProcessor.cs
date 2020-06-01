@@ -1753,7 +1753,7 @@ namespace MatterHackers.MatterSlice
 
 						double bridgeAngle;
 						if (bridgePolygons != null
-							&& previousLayer.BridgeAngle(bottomFillIsland, out bridgeAngle, bridgeAreas))
+							&& previousLayer.BridgeAngle(bottomFillIsland, config.NumberOfPerimeters * config.ExtrusionWidth_um, out bridgeAngle, bridgeAreas))
 						{
 							// TODO: Make this code handle very complex pathing between different sizes or layouts of support under the island to fill.
 							Infill.GenerateLinePaths(bottomFillIsland, bridgePolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, bridgeAngle);
