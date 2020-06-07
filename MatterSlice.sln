@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28010.2016
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MatterSlice", "MatterSlice.csproj", "{B0AED568-8796-42B9-BAA9-EBC796134E78}"
 EndProject
@@ -23,16 +23,20 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "agg-sharp", "agg-sharp", "{
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MatterSliceLib", "MatterSliceLib\MatterSliceLib.csproj", "{1E97A60A-0B80-404E-B600-F17953DDF152}"
 EndProject
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Typography.GlyphLayout", "..\agg-sharp\Typography.GlyphLayout\Typography.GlyphLayout.shproj", "{D8861CF8-C506-472B-8A57-632BD6CA6496}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Typography", "Typography", "{62F6AA6F-4252-43BB-B78D-C0B6418B74E6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Typography.One", "..\agg-sharp\Typography.One\Typography.One.csproj", "{D666AC28-47EE-4A63-97F0-25068EC73158}"
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Typography.GlyphLayout", "..\agg-sharp\Typography\Typography.GlyphLayout\Typography.GlyphLayout.shproj", "{D8861CF8-C506-472B-8A57-632BD6CA6496}"
 EndProject
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Typography.OpenFont", "..\agg-sharp\Typography.OpenFont\Typography.OpenFont.shproj", "{235A071B-8D06-40AE-A5C5-B1CE59715EE9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Typography.One", "..\agg-sharp\Typography\Typography.One\Typography.One.csproj", "{EE6B966C-5103-4D15-9F1C-A3ADE818FDE7}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Typography.OpenFont", "..\agg-sharp\Typography\Typography.OpenFont\Typography.OpenFont.shproj", "{235A071B-8D06-40AE-A5C5-B1CE59715EE9}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		..\agg-sharp\Typography.OpenFont\Typography.OpenFont.projitems*{235a071b-8d06-40ae-a5c5-b1ce59715ee9}*SharedItemsImports = 13
-		..\agg-sharp\Typography.GlyphLayout\Typography.GlyphLayout.projitems*{d8861cf8-c506-472b-8a57-632bd6ca6496}*SharedItemsImports = 13
+		..\agg-sharp\Typography\Typography.OpenFont\Typography.OpenFont.projitems*{235a071b-8d06-40ae-a5c5-b1ce59715ee9}*SharedItemsImports = 13
+		..\agg-sharp\Typography\Typography.GlyphLayout\Typography.GlyphLayout.projitems*{d8861cf8-c506-472b-8a57-632bd6ca6496}*SharedItemsImports = 13
+		..\agg-sharp\Typography\Typography.GlyphLayout\Typography.GlyphLayout.projitems*{ee6b966c-5103-4d15-9f1c-a3ade818fde7}*SharedItemsImports = 5
+		..\agg-sharp\Typography\Typography.OpenFont\Typography.OpenFont.projitems*{ee6b966c-5103-4d15-9f1c-a3ade818fde7}*SharedItemsImports = 5
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -75,10 +79,10 @@ Global
 		{1E97A60A-0B80-404E-B600-F17953DDF152}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E97A60A-0B80-404E-B600-F17953DDF152}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E97A60A-0B80-404E-B600-F17953DDF152}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D666AC28-47EE-4A63-97F0-25068EC73158}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D666AC28-47EE-4A63-97F0-25068EC73158}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D666AC28-47EE-4A63-97F0-25068EC73158}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D666AC28-47EE-4A63-97F0-25068EC73158}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE6B966C-5103-4D15-9F1C-A3ADE818FDE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE6B966C-5103-4D15-9F1C-A3ADE818FDE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE6B966C-5103-4D15-9F1C-A3ADE818FDE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE6B966C-5103-4D15-9F1C-A3ADE818FDE7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -87,9 +91,10 @@ Global
 		{A010B27A-68F7-421E-ABE2-F81FA19166C4} = {E72B2FD4-AF23-435B-B4E7-C7DDE1E7D761}
 		{FB8F4604-4604-4E73-8325-2CAEE3441DCB} = {E72B2FD4-AF23-435B-B4E7-C7DDE1E7D761}
 		{C76A51AE-CB07-486B-9AF7-2A7628BC1587} = {E72B2FD4-AF23-435B-B4E7-C7DDE1E7D761}
-		{D8861CF8-C506-472B-8A57-632BD6CA6496} = {E72B2FD4-AF23-435B-B4E7-C7DDE1E7D761}
-		{D666AC28-47EE-4A63-97F0-25068EC73158} = {E72B2FD4-AF23-435B-B4E7-C7DDE1E7D761}
-		{235A071B-8D06-40AE-A5C5-B1CE59715EE9} = {E72B2FD4-AF23-435B-B4E7-C7DDE1E7D761}
+		{62F6AA6F-4252-43BB-B78D-C0B6418B74E6} = {E72B2FD4-AF23-435B-B4E7-C7DDE1E7D761}
+		{D8861CF8-C506-472B-8A57-632BD6CA6496} = {62F6AA6F-4252-43BB-B78D-C0B6418B74E6}
+		{EE6B966C-5103-4D15-9F1C-A3ADE818FDE7} = {62F6AA6F-4252-43BB-B78D-C0B6418B74E6}
+		{235A071B-8D06-40AE-A5C5-B1CE59715EE9} = {62F6AA6F-4252-43BB-B78D-C0B6418B74E6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9705340F-54DD-4DDA-BC83-B9EE3EA6F9BD}

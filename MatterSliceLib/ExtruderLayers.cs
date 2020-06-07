@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using MatterHackers.QuadTree;
 using MSClipperLib;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
@@ -51,6 +52,15 @@ namespace MatterHackers.MatterSlice
 			return this.Layers[layerIndex].Islands.Count > 0;
 		}
 
+		private Polygons UnionClosedPaths(Polygons polys)
+		{
+			var result = new Polygons();
+			var c = new Clipper();
+			c.AddPaths(polys, PolyType.ptSubject, true);
+			c.Execute(ClipType.ctUnion, result, PolyFillType.pftNonZero, PolyFillType.pftNonZero);
+			return result;
+		}
+
 		/// <summary>
 		/// Construct a new instance based on layers from an existing ExtruderData.
 		/// </summary>
@@ -68,10 +78,14 @@ namespace MatterHackers.MatterSlice
 
 				var meshProcessingLayer = extruderData.layers[layerIndex];
 
+				// merge all the polygons together
+				var allOutlines = UnionClosedPaths(meshProcessingLayer.PolygonList);
+				allOutlines = allOutlines.GetCorrectedWinding();
+
 				this.Layers.Add(new SliceLayer()
 				{
 					LayerZ = meshProcessingLayer.Z,
-					AllOutlines = meshProcessingLayer.PolygonList.GetCorrectedWinding()
+					AllOutlines = allOutlines
 				});
 			}
 		}
