@@ -164,7 +164,6 @@ namespace MatterHackers.MatterSlice
 						});
 
 						meshesToProcess.RemoveAt(meshesToProcess.Count - 2);
-
 					}
 
 					if (numberOfOpens == 0)

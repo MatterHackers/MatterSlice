@@ -233,7 +233,7 @@ namespace MatterHackers.MatterSlice
 				slicingData.Extruders.Add(null);
 			}
 
-			Agg.Parallel.For(0, extruderDataLayers.Count, (index) =>
+			for (int index = 0; index < extruderDataLayers.Count; index++)
 			{
 				var extruderLayer = new ExtruderLayers(extruderDataLayers[index], config.outputOnlyFirstLayer);
 				slicingData.Extruders[index] = extruderLayer;
@@ -246,7 +246,7 @@ namespace MatterHackers.MatterSlice
 						sliceLayer.LayerZ += config.RaftBaseThickness_um + config.RaftInterfaceThicknes_um;
 					}
 				}
-			});
+			}
 
 			// make the path finding data include all the layer info
 
@@ -821,7 +821,7 @@ namespace MatterHackers.MatterSlice
 
 				using (new QuickTimer2("GenerateInsets"))
 				{
-					Agg.Parallel.For(startIndex, endIndex, (layerIndex) =>
+					for (int layerIndex = startIndex; layerIndex < endIndex; layerIndex++)
 					{
 						SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
 
@@ -845,7 +845,7 @@ namespace MatterHackers.MatterSlice
 								layer.GenerateInsets(config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, insetCount, config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter, config.AvoidCrossingPerimeters);
 							}
 						}
-					});
+					}
 				}
 
 				using (new QuickTimer2("GenerateTopAndBottoms"))

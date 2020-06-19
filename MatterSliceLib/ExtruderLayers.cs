@@ -105,8 +105,7 @@ namespace MatterHackers.MatterSlice
 			ExtruderLayers extruder = this;
 			SliceLayer layer = extruder.Layers[layerIndex];
 
-			Agg.Parallel.For(0, layer.Islands.Count, (islandIndex) =>
-			// for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
+			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 			{
 				LayerIsland island = layer.Islands[islandIndex];
 				if (island.InsetToolPaths.Count == 0)
@@ -185,23 +184,21 @@ namespace MatterHackers.MatterSlice
 
 						int upStart = layerIndex + 2;
 
-						Agg.Parallel.For(upStart, upEnd, (layerToTest) =>
-						// for (int layerToTest = upStart; layerToTest < upEnd; layerToTest++)
+						for (int layerToTest = upStart; layerToTest < upEnd; layerToTest++)
 						{
 							regionsThatWillBeSparse = IntersectWithPolygons(extruder.Layers[layerToTest].Islands, island.BoundingBox, regionsThatWillBeSparse);
 							regionsThatWillBeSparse = Clipper.CleanPolygons(regionsThatWillBeSparse, cleanDistance_um);
-						});
+						}
 
 						// find all the solid infill bottom layers
 						int downStart = Math.Max(0, layerIndex - 1);
 						int downEnd = Math.Max(0, layerIndex - downLayerCount);
 
-						Agg.Parallel.For(downStart, downEnd, (layerToTest) =>
-						// for (int layerToTest = downStart; layerToTest >= downEnd; layerToTest--)
+						for (int layerToTest = downStart; layerToTest >= downEnd; layerToTest--)
 						{
 							regionsThatWillBeSparse = IntersectWithPolygons(extruder.Layers[layerToTest].Islands, island.BoundingBox, regionsThatWillBeSparse);
 							regionsThatWillBeSparse = Clipper.CleanPolygons(regionsThatWillBeSparse, cleanDistance_um);
-						});
+						}
 
 						solidInfillPaths = solidInfillPaths.CreateDifference(regionsThatWillBeSparse);
 						solidInfillPaths.RemoveSmallAreas(extrusionWidth_um);
@@ -249,7 +246,7 @@ namespace MatterHackers.MatterSlice
 
 					island.SolidInfillPaths = solidInfillPaths;
 				}
-			});
+			}
 		}
 
 		static HashSet<int> layersSeen = new HashSet<int>();
@@ -257,8 +254,7 @@ namespace MatterHackers.MatterSlice
 
 		public static void InitializeLayerPathing(ConfigSettings config, Polygons extraPathingConsideration, List<ExtruderLayers> extruders)
 		{
-			Agg.Parallel.For(0, extruders[0].Layers.Count, (layerIndex) =>
-			// for (int layerIndex = 0; layerIndex < extruders[0].Layers.Count; layerIndex++)
+			for (int layerIndex = 0; layerIndex < extruders[0].Layers.Count; layerIndex++)
 			{
 				if (MatterSlice.Canceled)
 				{
@@ -299,7 +295,7 @@ namespace MatterHackers.MatterSlice
 						extruders[extruderIndex].Layers[layerIndex].PathFinder = pathFinder;
 					}
 				}
-			});
+			}
 		}
 
 		public bool OnlyHasBottom(int layerToCheck)
