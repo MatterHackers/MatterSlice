@@ -45,8 +45,8 @@
     <PackageReference Include="NUnit3TestAdapter" Version="3.12.0" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MatterSlice\CreateTopAndBottomsTests.cs" />
     <None Include="MatterSlice\OutputTests.cs" />
+    <Compile Include="MatterSlice\CreateToAndBottomTests.cs" />
     <Compile Include="MatterSlice\OutputTestsGenerator.cs" />
     <Compile Include="MatterSlice\PathFinderTests.cs" />
     <Compile Include="MatterSlice\BridgeTests.cs" />

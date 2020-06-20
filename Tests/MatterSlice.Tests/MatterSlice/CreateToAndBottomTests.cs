@@ -30,11 +30,10 @@ either expressed or implied, of the FreeBSD Project.
 using System.Collections.Generic;
 using MSClipperLib;
 using NUnit.Framework;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice.Tests
 {
-	using Polygons = List<List<IntPoint>>;
-
 	[TestFixture, Category("MatterSlice")]
 	public class CreateToAndBottomTests
 	{
@@ -97,6 +96,7 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					Assert.IsTrue(extruder.OnlyHasInfill(i));
 				}
+
 				Assert.IsTrue(extruder.OnlyHasFirstTop(7));
 				Assert.IsTrue(extruder.OnlyHasSolidInfill(8));
 				Assert.IsTrue(extruder.OnlyHasTop(9));
@@ -114,10 +114,12 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					Assert.IsTrue(extruder.OnlyHasSolidInfill(i));
 				}
+
 				for (int i = 3; i < 9; i++)
 				{
 					Assert.IsTrue(extruder.OnlyHasInfill(i));
 				}
+
 				Assert.IsTrue(extruder.OnlyHasTop(9));
 			}
 
@@ -133,10 +135,12 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					Assert.IsTrue(extruder.OnlyHasSolidInfill(i));
 				}
+
 				for (int i = 3; i < 7; i++)
 				{
 					Assert.IsTrue(extruder.OnlyHasInfill(i));
 				}
+
 				Assert.IsTrue(extruder.OnlyHasFirstTop(7));
 				Assert.IsTrue(extruder.OnlyHasSolidInfill(8));
 				Assert.IsTrue(extruder.OnlyHasTop(9));
@@ -145,16 +149,47 @@ namespace MatterHackers.MatterSlice.Tests
 
 		private static ExtruderLayers CreateLayerData(Polygons inset0Outline, int numLayers)
 		{
-			ExtruderLayers layerData = new ExtruderLayers();
-			layerData.Layers = new List<SliceLayer>();
+			var layerData = new ExtruderLayers
+			{
+				Layers = new List<SliceLayer>()
+			};
 			for (int i = 0; i < numLayers; i++)
 			{
-				SliceLayer layer = new SliceLayer();
-				layer.Islands = new List<LayerIsland>();
-				LayerIsland part = new LayerIsland();
-				part.InsetToolPaths = new List<Polygons>();
+				var layer = new SliceLayer
+				{
+					Islands = new List<LayerIsland>()
+				};
+				var part = new LayerIsland
+				{
+					InsetToolPaths = new List<Polygons>()
+				};
 				part.InsetToolPaths.Add(inset0Outline);
 				part.BoundingBox = new Aabb(inset0Outline);
+				layer.Islands.Add(part);
+				layerData.Layers.Add(layer);
+			}
+
+			return layerData;
+		}
+
+		private static ExtruderLayers CreateLayerData(List<Polygons> polygonLayers)
+		{
+			var layerData = new ExtruderLayers
+			{
+				Layers = new List<SliceLayer>()
+			};
+			foreach (var polygonLayer in polygonLayers)
+			{
+				var layer = new SliceLayer
+				{
+					Islands = new List<LayerIsland>()
+				};
+				var part = new LayerIsland
+				{
+					InsetToolPaths = new List<Polygons>()
+				};
+				part.InsetToolPaths.Add(polygonLayer);
+				part.BoundingBox = new Aabb(polygonLayer);
 				layer.Islands.Add(part);
 				layerData.Layers.Add(layer);
 			}
