@@ -587,11 +587,11 @@ namespace MatterHackers.MatterSlice
 
 						if (layerIndex == 0)
 						{
-							QueueExtruderLayerToGCode(slicingData, layerPlanner, extruderIndex, layerIndex, config.FirstLayerExtrusionWidth_um, z);
+							QueueExtruderLayerToGCode(slicingData, layerPlanner, extruderIndex, layerIndex, config.FirstLayerExtrusionWidth_um);
 						}
 						else
 						{
-							QueueExtruderLayerToGCode(slicingData, layerPlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um, z);
+							QueueExtruderLayerToGCode(slicingData, layerPlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um);
 						}
 
 						if (slicingData.Support != null)
@@ -973,8 +973,7 @@ namespace MatterHackers.MatterSlice
 			LayerGCodePlanner layerGcodePlanner,
 			int extruderIndex,
 			int layerIndex,
-			long extrusionWidth_um,
-			long currentZ_um)
+			long extrusionWidth_um)
 		{
 			if (extruderIndex > slicingData.Extruders.Count - 1)
 			{
