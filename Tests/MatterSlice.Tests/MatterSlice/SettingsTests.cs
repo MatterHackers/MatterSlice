@@ -27,16 +27,14 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
-using System.Collections.Generic;
+using System;
+using System.IO;
 using MSClipperLib;
 using NUnit.Framework;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice.Tests
 {
-	using System;
-	using System.IO;
-	using Polygons = List<List<IntPoint>>;
-
 	[TestFixture, Category("MatterSlice")]
 	public class SliceSettingsTests
 	{
@@ -49,12 +47,12 @@ namespace MatterHackers.MatterSlice.Tests
 			string box20MmStlFile = TestUtilities.GetStlPath("20mm-box");
 			string boxGCodeFile = TestUtilities.GetTempGCodePath("20mm-box-perimeter.gcode");
 
-			ConfigSettings config = new ConfigSettings();
+			var config = new ConfigSettings();
 			config.NumberOfPerimeters = 3;
 			config.InfillPercent = 0;
 			config.NumberOfTopLayers = 0;
 			config.NumberOfBottomLayers = 0;
-			FffProcessor processor = new FffProcessor(config);
+			var processor = new FffProcessor(config);
 			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);
 			// slice and save it
@@ -63,7 +61,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			string[] gcode = TestUtilities.LoadGCodeFile(boxGCodeFile);
 
-			MovementInfo movement = new MovementInfo();
+			var movement = default(MovementInfo);
 			{
 				// check layer 1
 				string[] layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
@@ -107,7 +105,7 @@ namespace MatterHackers.MatterSlice.Tests
 			// Load and validate generated GCode
 			string[] gcode = TestUtilities.LoadGCodeFile(gcodePath);
 
-			var movement = new MovementInfo();
+			var movement = default(MovementInfo);
 
 			// check layer 1
 			var layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
@@ -141,7 +139,7 @@ namespace MatterHackers.MatterSlice.Tests
 			// Load and validate generated GCode
 			string[] gcode = TestUtilities.LoadGCodeFile(gcodePath);
 
-			var movement = new MovementInfo();
+			var movement = default(MovementInfo);
 
 			// check layer 1
 			var layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
@@ -175,7 +173,7 @@ namespace MatterHackers.MatterSlice.Tests
 			// Load and validate generated GCode
 			string[] gcode = TestUtilities.LoadGCodeFile(gcodePath);
 
-			var movement = new MovementInfo();
+			var movement = default(MovementInfo);
 
 			// check layer 1
 			var layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
@@ -194,13 +192,13 @@ namespace MatterHackers.MatterSlice.Tests
 			string box20MmStlFile = TestUtilities.GetStlPath("20mm-box");
 			string boxGCodeFile = TestUtilities.GetTempGCodePath("20mm-box-perimeter.gcode");
 
-			ConfigSettings config = new ConfigSettings();
+			var config = new ConfigSettings();
 			config.NumberOfPerimeters = 3;
 			config.OutsidePerimetersFirst = true;
 			config.InfillPercent = 0;
 			config.NumberOfTopLayers = 0;
 			config.NumberOfBottomLayers = 0;
-			FffProcessor processor = new FffProcessor(config);
+			var processor = new FffProcessor(config);
 			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);
 			// slice and save it
@@ -209,7 +207,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			string[] gcode = TestUtilities.LoadGCodeFile(boxGCodeFile);
 
-			MovementInfo movement = new MovementInfo();
+			var movement = default(MovementInfo);
 			{
 				// check layer 1
 				string[] layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
@@ -240,13 +238,13 @@ namespace MatterHackers.MatterSlice.Tests
 			string thinAttachStlFile = TestUtilities.GetStlPath("Thin Attach");
 			string thinAttachGCodeFile = TestUtilities.GetTempGCodePath("Thin Attach.gcode");
 
-			ConfigSettings config = new ConfigSettings();
+			var config = new ConfigSettings();
 			config.NumberOfPerimeters = 2;
 			config.InfillPercent = 0;
 			config.NumberOfTopLayers = 0;
 			config.FirstLayerExtrusionWidth = .4;
 			config.NumberOfBottomLayers = 0;
-			FffProcessor processor = new FffProcessor(config);
+			var processor = new FffProcessor(config);
 			processor.SetTargetFile(thinAttachGCodeFile);
 			processor.LoadStlFile(thinAttachStlFile);
 			// slice and save it
@@ -263,7 +261,7 @@ namespace MatterHackers.MatterSlice.Tests
 			// | |      | ____  |      | |
 			// | |______| |   | |______| |
 			// |__________|   |__________|
-			MovementInfo movement = new MovementInfo();
+			var movement = default(MovementInfo);
 			{
 				// check layer 1
 				string[] layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
@@ -305,7 +303,7 @@ namespace MatterHackers.MatterSlice.Tests
 			// check that default is support printed with extruder 0
 			string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_retract_.gcode");
 
-			ConfigSettings config = new ConfigSettings();
+			var config = new ConfigSettings();
 			if (settingsIniFile == "")
 			{
 				config.MinimumTravelToCauseRetraction = 2;
@@ -321,7 +319,7 @@ namespace MatterHackers.MatterSlice.Tests
 			// this is what we detect
 			config.RetractionZHop = 5;
 
-			FffProcessor processor = new FffProcessor(config);
+			var processor = new FffProcessor(config);
 			processor.SetTargetFile(gcodeToCreate);
 			processor.LoadStlFile(stlToLoad);
 			// slice and save it
@@ -331,8 +329,8 @@ namespace MatterHackers.MatterSlice.Tests
 			string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
 			int layerCount = TestUtilities.CountLayers(gcodeContents);
 			bool firstPosition = true;
-			MovementInfo lastMovement = new MovementInfo();
-			MovementInfo lastExtrusion = new MovementInfo();
+			var lastMovement = default(MovementInfo);
+			var lastExtrusion = default(MovementInfo);
 			bool lastMoveIsExtrusion = true;
 			for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
 			{
@@ -389,8 +387,8 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_0_.gcode");
 
-				ConfigSettings config = new ConfigSettings();
-				FffProcessor processor = new FffProcessor(config);
+				var config = new ConfigSettings();
+				var processor = new FffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
 				// slice and save it
@@ -406,12 +404,12 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_1b_.gcode");
 
-				ConfigSettings config = new ConfigSettings();
+				var config = new ConfigSettings();
 				config.ExtruderCount = 1;
 				config.SupportExtruder = 1; // from a 0 based index
 				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
-				FffProcessor processor = new FffProcessor(config);
+				var processor = new FffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
 				processor.LoadStlFile(supportToLoad);
@@ -428,12 +426,12 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_1b_.gcode");
 
-				ConfigSettings config = new ConfigSettings();
+				var config = new ConfigSettings();
 				config.SupportExtruder = 1;
 				config.ExtruderCount = 2;
 				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
-				FffProcessor processor = new FffProcessor(config);
+				var processor = new FffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
 				// we have to have a mesh for every extruder
@@ -452,12 +450,12 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_1i_.gcode");
 
-				ConfigSettings config = new ConfigSettings();
+				var config = new ConfigSettings();
 				config.ExtruderCount = 1;
 				config.SupportInterfaceExtruder = 1;
 				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
-				FffProcessor processor = new FffProcessor(config);
+				var processor = new FffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
 				processor.LoadStlFile(supportToLoad);
@@ -474,12 +472,12 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_1i_.gcode");
 
-				ConfigSettings config = new ConfigSettings();
+				var config = new ConfigSettings();
 				config.ExtruderCount = 2;
 				config.SupportInterfaceExtruder = 1;
 				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
-				FffProcessor processor = new FffProcessor(config);
+				var processor = new FffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
 				// we have to have a mesh for every extruder
@@ -499,13 +497,13 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_1b2i_.gcode");
 
-				ConfigSettings config = new ConfigSettings();
+				var config = new ConfigSettings();
 				config.ExtruderCount = 1;
 				config.SupportExtruder = 1;
 				config.SupportInterfaceExtruder = 2;
 				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
-				FffProcessor processor = new FffProcessor(config);
+				var processor = new FffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
 				processor.LoadStlFile(supportToLoad);
@@ -522,13 +520,13 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_1b2i_.gcode");
 
-				ConfigSettings config = new ConfigSettings();
+				var config = new ConfigSettings();
 				config.ExtruderCount = 2;
 				config.SupportExtruder = 1;
 				config.SupportInterfaceExtruder = 2;
 				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
-				FffProcessor processor = new FffProcessor(config);
+				var processor = new FffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
 				// we have to have a mesh for every extruder
@@ -547,13 +545,13 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				string gcodeToCreate = TestUtilities.GetTempGCodePath(baseFileName + "_1b2i_.gcode");
 
-				ConfigSettings config = new ConfigSettings();
+				var config = new ConfigSettings();
 				config.ExtruderCount = 3;
 				config.SupportExtruder = 1;
 				config.SupportInterfaceExtruder = 2;
 				// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
-				FffProcessor processor = new FffProcessor(config);
+				var processor = new FffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
 				processor.LoadStlFile(stlToLoad);
 				// we have to have a mesh for every extruder
@@ -586,11 +584,11 @@ namespace MatterHackers.MatterSlice.Tests
 			string point3mmStlFile = TestUtilities.GetStlPath("Point3mm");
 			string point3mmGCodeFile = TestUtilities.GetTempGCodePath("Point3mm.gcode");
 
-			ConfigSettings config = new ConfigSettings();
+			var config = new ConfigSettings();
 			config.FirstLayerThickness = .25;
 			config.LayerThickness = .25;
 			config.NumberOfSkirtLoops = 0;
-			FffProcessor processor = new FffProcessor(config);
+			var processor = new FffProcessor(config);
 			processor.SetTargetFile(point3mmGCodeFile);
 			processor.LoadStlFile(point3mmStlFile);
 			// slice and save it
@@ -610,20 +608,19 @@ namespace MatterHackers.MatterSlice.Tests
 #endif
 		}
 
-
 		public void DoHas2WallRingsAllTheWayUp(string fileName, int expectedLayerCount, bool checkRadius = false)
 		{
 			string stlFile = TestUtilities.GetStlPath(fileName);
 			string gCodeFile = TestUtilities.GetTempGCodePath(fileName + ".gcode");
 
-			ConfigSettings config = new ConfigSettings();
+			var config = new ConfigSettings();
 			config.InfillPercent = 0;
 			config.NumberOfPerimeters = 1;
 			config.FirstLayerExtrusionWidth = .2;
 			config.LayerThickness = .2;
 			config.NumberOfBottomLayers = 0;
 			config.NumberOfTopLayers = 0;
-			FffProcessor processor = new FffProcessor(config);
+			var processor = new FffProcessor(config);
 			processor.SetTargetFile(gCodeFile);
 			processor.LoadStlFile(stlFile);
 			// slice and save it
@@ -635,7 +632,7 @@ namespace MatterHackers.MatterSlice.Tests
 			int layerCount = TestUtilities.CountLayers(gcodeLines);
 			Assert.IsTrue(layerCount == expectedLayerCount);
 
-			MovementInfo movement = new MovementInfo();
+			var movement = default(MovementInfo);
 			for (int i = 0; i < layerCount - 5; i++)
 			{
 				string[] layerInfo = TestUtilities.GetGCodeForLayer(gcodeLines, i);
@@ -687,7 +684,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			string outputGCodeFileName = TestUtilities.GetTempGCodePath("DualPartMoves");
 
-			ConfigSettings config = new ConfigSettings();
+			var config = new ConfigSettings();
 			config.ExtruderCount = 2;
 			config.FirstLayerThickness = .2;
 			config.LayerThickness = .2;
@@ -717,7 +714,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			bool hadMoveLessThan85 = false;
 
-			MovementInfo lastMovement = new MovementInfo();
+			var lastMovement = default(MovementInfo);
 			for (int i = 0; i < layerCount - 3; i++)
 			{
 				string[] layerInfo = TestUtilities.GetGCodeForLayer(gCodeContent, i);
@@ -740,6 +737,7 @@ namespace MatterHackers.MatterSlice.Tests
 							Assert.IsTrue(movement.position.x > 85 && movement.position.y > 10, "Moves don't go to 0");
 						}
 					}
+
 					lastMovement = movement;
 				}
 			}
@@ -759,7 +757,7 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void ExportGCodeWithRaft()
 		{
-			//test that file has raft
+			// test that file has raft
 			Assert.IsTrue(TestUtilities.CheckForRaft(TestUtilities.LoadGCodeFile(CreateGCodeWithRaft(true))) == true);
 			Assert.IsTrue(TestUtilities.CheckForRaft(TestUtilities.LoadGCodeFile(CreateGcodeWithoutRaft(false))) == false);
 		}
@@ -794,10 +792,10 @@ namespace MatterHackers.MatterSlice.Tests
 			string risingLayersStlFile = TestUtilities.GetStlPath(stlFile);
 			string risingLayersGCodeFileName = TestUtilities.GetTempGCodePath(gcodeFile);
 
-			ConfigSettings config = new ConfigSettings();
+			var config = new ConfigSettings();
 			config.FirstLayerThickness = .2;
 			config.LayerThickness = .2;
-			FffProcessor processor = new FffProcessor(config);
+			var processor = new FffProcessor(config);
 			processor.SetTargetFile(risingLayersGCodeFileName);
 			processor.LoadStlFile(risingLayersStlFile);
 			// slice and save it
@@ -810,7 +808,7 @@ namespace MatterHackers.MatterSlice.Tests
 			int layerCount = TestUtilities.CountLayers(risingLayersGCodeContent);
 			Assert.IsTrue(layerCount == 50);
 
-			MovementInfo startingPosition = new MovementInfo();
+			var startingPosition = default(MovementInfo);
 			for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
 			{
 				string[] layerInfo = TestUtilities.GetGCodeForLayer(risingLayersGCodeContent, layerIndex);
@@ -873,7 +871,7 @@ namespace MatterHackers.MatterSlice.Tests
 				string[] layerInfo = TestUtilities.GetGCodeForLayer(cylinderGCodeContent, i);
 
 				// check that all layers move up continuously
-				MovementInfo lastMovement = new MovementInfo();
+				var lastMovement = default(MovementInfo);
 				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo))
 				{
 #if __ANDROID__
@@ -887,7 +885,7 @@ namespace MatterHackers.MatterSlice.Tests
 				double radiusForLayer = 5.0 + (20.0 - 5.0) / layerCount * i;
 
 				bool first = true;
-				lastMovement = new MovementInfo();
+				lastMovement = default(MovementInfo);
 				// check that all moves are on the outside of the cylinder (not crossing to a new point)
 				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo))
 				{
@@ -895,7 +893,7 @@ namespace MatterHackers.MatterSlice.Tests
 					{
 						Assert.IsTrue((movement.position - lastMovement.position).Length < 2);
 
-						Vector3 xyOnly = new Vector3(movement.position.x, movement.position.y, 0);
+						var xyOnly = new Vector3(movement.position.x, movement.position.y, 0);
 						Assert.AreEqual(radiusForLayer, xyOnly.Length, .3);
 					}
 
@@ -910,7 +908,7 @@ namespace MatterHackers.MatterSlice.Tests
 			string cylinderStlFile = TestUtilities.GetStlPath(stlFile);
 			string cylinderGCodeFileName = TestUtilities.GetTempGCodePath(gcodeFile);
 
-			ConfigSettings config = new ConfigSettings();
+			var config = new ConfigSettings();
 			config.FirstLayerThickness = .2;
 			config.LayerThickness = .2;
 			if (enableThinWalls)
@@ -918,9 +916,10 @@ namespace MatterHackers.MatterSlice.Tests
 				config.ExpandThinWalls = true;
 				config.FillThinGaps = true;
 			}
+
 			config.NumberOfBottomLayers = 0;
 			config.ContinuousSpiralOuterPerimeter = true;
-			FffProcessor processor = new FffProcessor(config);
+			var processor = new FffProcessor(config);
 			processor.SetTargetFile(cylinderGCodeFileName);
 			processor.LoadStlFile(cylinderStlFile);
 			// slice and save it
@@ -938,7 +937,7 @@ namespace MatterHackers.MatterSlice.Tests
 				string[] layerInfo = TestUtilities.GetGCodeForLayer(cylinderGCodeContent, i);
 
 				// check that all layers move up continuously
-				MovementInfo lastMovement = new MovementInfo();
+				var lastMovement = default(MovementInfo);
 				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo))
 				{
 					Assert.IsTrue(movement.position.z > lastMovement.position.z);
@@ -947,7 +946,7 @@ namespace MatterHackers.MatterSlice.Tests
 				}
 
 				bool first = true;
-				lastMovement = new MovementInfo();
+				lastMovement = default(MovementInfo);
 				// check that all moves are on the outside of the cylinder (not crossing to a new point)
 				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo))
 				{
@@ -955,7 +954,7 @@ namespace MatterHackers.MatterSlice.Tests
 					{
 						Assert.IsTrue((movement.position - lastMovement.position).Length < 2);
 
-						Vector3 xyOnly = new Vector3(movement.position.x, movement.position.y, 0);
+						var xyOnly = new Vector3(movement.position.x, movement.position.y, 0);
 						Assert.AreEqual(9.8, xyOnly.Length, .3);
 					}
 
@@ -970,10 +969,10 @@ namespace MatterHackers.MatterSlice.Tests
 			string box20MmStlFile = TestUtilities.GetStlPath("20mm-box");
 			string boxGCodeFile = TestUtilities.GetTempGCodePath("20mm-box-f{0}_o{1}.gcode".FormatWith(firstLayerHeight, otherLayerHeight));
 
-			ConfigSettings config = new ConfigSettings();
+			var config = new ConfigSettings();
 			config.FirstLayerThickness = firstLayerHeight;
 			config.LayerThickness = otherLayerHeight;
-			FffProcessor processor = new FffProcessor(config);
+			var processor = new FffProcessor(config);
 			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);
 			// slice and save it
@@ -988,9 +987,9 @@ namespace MatterHackers.MatterSlice.Tests
 			string box20MmStlFile = TestUtilities.GetStlPath("20mm-box");
 			string boxGCodeFile = TestUtilities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
 
-			ConfigSettings config = new ConfigSettings();
+			var config = new ConfigSettings();
 			config.EnableRaft = hasRaft;
-			FffProcessor processor = new FffProcessor(config);
+			var processor = new FffProcessor(config);
 			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);
 			// slice and save it
@@ -1005,9 +1004,9 @@ namespace MatterHackers.MatterSlice.Tests
 			string box20MmStlFile = TestUtilities.GetStlPath("20mm-box");
 			string boxGCodeFile = TestUtilities.GetTempGCodePath("20mm-box-f{0}.gcode".FormatWith(hasRaft));
 
-			ConfigSettings config = new ConfigSettings();
+			var config = new ConfigSettings();
 			config.EnableRaft = hasRaft;
-			FffProcessor processor = new FffProcessor(config);
+			var processor = new FffProcessor(config);
 			processor.SetTargetFile(boxGCodeFile);
 			processor.LoadStlFile(box20MmStlFile);
 			// slice and save it
