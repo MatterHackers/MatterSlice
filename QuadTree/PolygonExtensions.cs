@@ -548,9 +548,9 @@ namespace MatterHackers.QuadTree
 							polySegments[firstSegmentIndex].End = segmentEnd;
 							polySegments[firstSegmentIndex].End.Width = width;
 
-							markedAltered[firstSegmentIndex] = Altered.merged;
+							markedAltered[firstSegmentIndex] = Altered.Merged;
 							// mark this segment for removal
-							markedAltered[checkSegmentIndex] = Altered.remove;
+							markedAltered[checkSegmentIndex] = Altered.Remove;
 							// We only expect to find one match for each segment, so move on to the next segment
 							break;
 						}
@@ -561,7 +561,7 @@ namespace MatterHackers.QuadTree
 			// remove the marked segments
 			for (int segmentIndex = segmentCount - 1; segmentIndex >= 0; segmentIndex--)
 			{
-				if (markedAltered[segmentIndex] == Altered.remove)
+				if (markedAltered[segmentIndex] == Altered.Remove)
 				{
 					polySegments.RemoveAt(segmentIndex);
 				}

@@ -29,17 +29,19 @@ either expressed or implied, of the FreeBSD Project.
 
 using System;
 using System.Collections.Generic;
-using MSClipperLib;
 using KdTree;
+using MSClipperLib;
+using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.QuadTree
 {
-	using Polygon = List<IntPoint>;
-	using Polygons = List<List<IntPoint>>;
-
 	[Flags]
 	internal enum Altered
-	{ remove = 1, merged = 2 };
+	{
+		Remove = 1,
+		Merged = 2
+	}
 
 	public static class QTPolygonsExtensions
 	{
@@ -47,7 +49,7 @@ namespace MatterHackers.QuadTree
 		{
 			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
 			{
-				var polyCrossings = new List<Tuple<int, IntPoint>>();
+				_ = new List<Tuple<int, IntPoint>>();
 				foreach (var crossing in polygons[polyIndex].FindCrossingPoints(start, end, edgeQuadTrees == null ? null : edgeQuadTrees[polyIndex]))
 				{
 					yield return (polyIndex, crossing.pointIndex, crossing.position);
@@ -72,7 +74,7 @@ namespace MatterHackers.QuadTree
 			Intersection bestIntersection = Intersection.None;
 			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
 			{
-				var result = polygons[polyIndex].FindIntersection(start, end, edgeQuadTrees == null ? null : edgeQuadTrees[polyIndex]);
+				var result = polygons[polyIndex].FindIntersection(start, end, edgeQuadTrees?[polyIndex]);
 				if (result == Intersection.Intersect)
 				{
 					return Intersection.Intersect;
@@ -117,12 +119,12 @@ namespace MatterHackers.QuadTree
 		/// <summary>
 		/// Create the list of polygon segments (not closed) that represent the parts of the source polygons that are close (almost touching).
 		/// </summary>
-		/// <param name="polygons"></param>
+		/// <param name="polygons">The polygons to search for thin lines</param>
 		/// <param name="overlapMergeAmount">If edges under consideration, are this distance or less apart (but greater than minimumRequiredWidth) they will generate edges</param>
 		/// <param name="minimumRequiredWidth">If the distance between edges is less this they will not be generated. This lets us avoid considering very thin lines.</param>
 		/// <param name="onlyMergeLines">The output segments that are calculated</param>
 		/// <param name="pathIsClosed">Is the source path closed (does not contain the last edge but assumes it).</param>
-		/// <returns></returns>
+		/// <returns>If thin lines were detected</returns>
 		public static bool FindThinLines(this Polygons polygons, long overlapMergeAmount, long minimumRequiredWidth, out Polygons onlyMergeLines, bool pathIsClosed = true)
 		{
 			polygons = Clipper.CleanPolygons(polygons, overlapMergeAmount / 8);
@@ -172,9 +174,9 @@ namespace MatterHackers.QuadTree
 									polySegments[firstSegmentIndex].End = (polySegments[firstSegmentIndex].End + polySegments[checkSegmentIndex].Start) / 2; // the end
 									polySegments[firstSegmentIndex].End.Width = width;
 
-									markedAltered[firstSegmentIndex] = Altered.merged;
+									markedAltered[firstSegmentIndex] = Altered.Merged;
 									// mark this segment for removal
-									markedAltered[checkSegmentIndex] = Altered.remove;
+									markedAltered[checkSegmentIndex] = Altered.Remove;
 									// We only expect to find one match for each segment, so move on to the next segment
 									break;
 								}
@@ -188,7 +190,7 @@ namespace MatterHackers.QuadTree
 			for (int segmentIndex = segmentCount - 1; segmentIndex >= 0; segmentIndex--)
 			{
 				// remove every segment that has not been merged
-				if (markedAltered[segmentIndex] != Altered.merged)
+				if (markedAltered[segmentIndex] != Altered.Merged)
 				{
 					polySegments.RemoveAt(segmentIndex);
 				}
@@ -203,7 +205,6 @@ namespace MatterHackers.QuadTree
 			{
 				// add the start point
 				currentPolygon.Add(polySegments[segmentIndex].Start);
-
 
 				// if the next segment is not connected to this one
 				if (segmentIndex < polySegments.Count - 1
@@ -269,6 +270,7 @@ namespace MatterHackers.QuadTree
 			{
 				center /= count;
 			}
+
 			return center;
 		}
 
@@ -282,6 +284,7 @@ namespace MatterHackers.QuadTree
 				{
 					accumulatedSplits = QTPolygonExtensions.MakeCloseSegmentsMergable(accumulatedSplits, polygonsToSplit[j], distanceNeedingAdd, pathsAreClosed);
 				}
+
 				splitPolygons.Add(accumulatedSplits);
 			}
 
@@ -300,11 +303,11 @@ namespace MatterHackers.QuadTree
 					var closestToPoly = boundaryPolygons[polygonIndex].FindClosestPoint(position, considerPoint);
 					if (closestToPoly.index != -1)
 					{
-						long length = (closestToPoly.Item2 - position).Length();
+						long length = (closestToPoly.position - position).Length();
 						if (length < bestDist)
 						{
 							bestDist = length;
-							polyPointPosition = (polygonIndex, closestToPoly.Item1, closestToPoly.Item2);
+							polyPointPosition = (polygonIndex, closestToPoly.index, closestToPoly.position);
 						}
 					}
 				}
@@ -330,7 +333,6 @@ namespace MatterHackers.QuadTree
 			}
 
 			long bestDist = long.MaxValue;
-			var bestMoveDelta = default(IntPoint);
 			for (int polygonIndex = 0; polygonIndex < boundaryPolygons.Count; polygonIndex++)
 			{
 				var boundaryPolygon = boundaryPolygons[polygonIndex];
@@ -376,20 +378,24 @@ namespace MatterHackers.QuadTree
 
 								bestDist = Math.Abs(distToBoundarySegment);
 								bestPolyPointPosition = (polygonIndex, pointIndex, pointAlongCurrentSegment);
-								bestMoveDelta = segmentLeft;
 							}
 						}
 					}
-
-					segmentStart = segmentEnd;
 				}
 			}
 
 			polyPointPosition = bestPolyPointPosition;
 		}
 
-		public enum InsideState { Inside, Outside, Unknown }
-		public static bool PointIsInside(this Polygons polygons, IntPoint testPoint, 
+		public enum InsideState
+		{
+			Inside,
+			Outside,
+			Unknown
+		}
+
+		public static bool PointIsInside(this Polygons polygons,
+			IntPoint testPoint,
 			List<QuadTree<int>> edgeQuadTrees = null,
 			List<KdTree<long, int>> pointKDTrees = null,
 			Func<IntPoint, InsideState> fastInsideCheck = null)
@@ -398,7 +404,6 @@ namespace MatterHackers.QuadTree
 			{
 				return true;
 			}
-
 
 			int insideCount = 0;
 			for (int i = 0; i < polygons.Count; i++)
@@ -413,20 +418,21 @@ namespace MatterHackers.QuadTree
 						case InsideState.Outside:
 							return false;
 						case InsideState.Unknown:
-							if(polygon.PointIsInside(testPoint, pointKDTrees == null ? null : pointKDTrees[i]) != 0)
+							if (polygon.PointIsInside(testPoint, pointKDTrees?[i]) != 0)
 							{
 								insideCount++;
 							}
+
 							break;
 					}
 				}
-				else if (polygon.PointIsInside(testPoint, pointKDTrees == null ? null : pointKDTrees[i]) != 0)
+				else if (polygon.PointIsInside(testPoint, pointKDTrees?[i]) != 0)
 				{
 					insideCount++;
 				}
 			}
 
-			return (insideCount % 2 == 1);
+			return insideCount % 2 == 1;
 		}
 
 		public static IEnumerable<(int polyIndex, int pointIndex, IntPoint position)> SkipSame(this IEnumerable<(int polyIndex, int pointIndex, IntPoint position)> source)
@@ -434,12 +440,13 @@ namespace MatterHackers.QuadTree
 			var lastItem = (-1, -1, new IntPoint(long.MaxValue, long.MaxValue));
 			foreach (var item in source)
 			{
-				if (item.Item1 != -1)
+				if (item.polyIndex != -1)
 				{
-					if (item.Item3 != lastItem.Item3)
+					if (item.position != lastItem.Item3)
 					{
 						yield return item;
 					}
+
 					lastItem = item;
 				}
 			}
@@ -449,7 +456,7 @@ namespace MatterHackers.QuadTree
 		{
 			for (int i = 0; i < polygons.Count; i++)
 			{
-				if (polygons[i].TouchingEdge(testPosition, edgeQuadTrees == null ? null : edgeQuadTrees[i]))
+				if (polygons[i].TouchingEdge(testPosition, edgeQuadTrees?[i]))
 				{
 					return true;
 				}
