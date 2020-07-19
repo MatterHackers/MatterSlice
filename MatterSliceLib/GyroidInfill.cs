@@ -1,43 +1,39 @@
-﻿using MatterHackers.MatterSlice;
-using MatterHackers.QuadTree;
-using MSClipperLib;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using MatterHackers.QuadTree;
+using MSClipperLib;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
-namespace MatterSliceLib
+namespace MatterHackers.MatterSlice
 {
-    public static class GyroidPolygonsExtensions
+	public static class GyroidPolygonsExtensions
     {
         public static void AddLine(this Polygons polygons, IntPoint start, IntPoint end)
         {
-            polygons[polygons.Count - 1].Add(start);
-            polygons[polygons.Count - 1].Add(end);
+            polygons.Add(new Polygon() { start, end });
         }
     }
 
-    public class GyroidInfill
+    public static class GyroidInfill
     {
 #if true
-        Polygon outline = new Polygon();
-
-        public void generateTotalGyroidInfill(Polygons result_lines,
-            bool zig_zaggify,
-            long outline_offset,
-            long infill_line_width,
-            long line_distance,
+        public static void Generate(ConfigSettings config,
             Polygons in_outline,
-            long z)
+            Polygons result_lines,
+            bool zig_zaggify,
+            int layerIndex)
         {
             // generate infill based on the gyroid equation: sin_x * cos_y + sin_y * cos_z + sin_z * cos_x = 0
             // kudos to the author of the Slic3r implementation equation code, the equation code here is based on that
-            Polygons outline = in_outline.Offset(outline_offset);
+            Polygons outline = in_outline.Offset(config.ExtrusionWidth_um / 2);
             var aabb = outline.GetBounds();
 
-            int pitch = (int)(line_distance * 2.41); // this produces similar density to the "line" infill pattern
+            var linespacing_um = (int)(config.ExtrusionWidth_um / (config.InfillPercent / 100));
+            var z = layerIndex * config.LayerThickness_um;
+
+            int pitch = (int)(linespacing_um * 2.41); // this produces similar density to the "line" infill pattern
             int num_steps = 4;
             int step = pitch / num_steps;
             while (step > 500 && num_steps < 16)
@@ -50,12 +46,12 @@ namespace MatterSliceLib
             double z_rads = 2 * Math.PI * z / pitch;
             double cos_z = Math.Cos(z_rads);
             double sin_z = Math.Sin(z_rads);
-            List<double> odd_line_coords = new List<double>();
-            List<double> even_line_coords = new List<double>();
-            Polygons result = new Polygons();
-            Polygons chains = new Polygons(2); // [start_points[], end_points[]]
-            List<int>[] connected_to = new List<int>[2] { new List<int>(), new List<int>() }; // [chain_indices[], chain_indices[]]
-            List<int> line_numbers = new List<int>(); // which row/column line a chain is part of
+            var odd_line_coords = new List<double>();
+            var even_line_coords = new List<double>();
+            var result = new Polygons();
+            var chains = new Polygon[] { new Polygon(), new Polygon() }; // [start_points[], end_points[]]
+            var connected_to = new List<int>[] { new List<int>(), new List<int>() }; // [chain_indices[], chain_indices[]]
+            var line_numbers = new List<int>(); // which row/column line a chain is part of
             if (Math.Abs(sin_z) <= Math.Abs(cos_z))
             {
                 // "vertical" lines
@@ -82,12 +78,12 @@ namespace MatterSliceLib
                     IntPoint last = default;
                     bool last_inside = false;
                     int chain_end_index = 0;
-                    List<IntPoint> chain_end = new List<IntPoint>();
+                    var chain_end = new IntPoint[2];
                     for (long y = (long)((Math.Floor(aabb.minY / (double)pitch) - 1) * pitch); y <= aabb.maxY + pitch; y += pitch)
                     {
                         for (int i = 0; i < num_coords; ++i)
                         {
-                            IntPoint current = new IntPoint(x + (((num_columns & 1) == 1) ? odd_line_coords[i] : even_line_coords[i]) / 2 + pitch, y + (long)(i * step));
+                            var current = new IntPoint(x + (((num_columns & 1) == 1) ? odd_line_coords[i] : even_line_coords[i]) / 2 + pitch, y + (long)(i * step));
                             bool current_inside = outline.PointIsInside(current);
                             if (!is_first_point)
                             {
@@ -99,7 +95,7 @@ namespace MatterSliceLib
                                 else if (last_inside != current_inside)
                                 {
                                     // line hits the boundary, add the part that's inside the boundary
-                                    Polygons line = new Polygons();
+                                    var line = new Polygons();
                                     line.AddLine(last, current);
                                     line = outline.CreateLineIntersections(line);
                                     if (line.Count > 0)
@@ -175,12 +171,12 @@ namespace MatterSliceLib
                     IntPoint last = default;
                     bool last_inside = false;
                     int chain_end_index = 0;
-                    Polygon chain_end = new Polygon();
+                    var chain_end = new IntPoint[2];
                     for (long x = (long)((Math.Floor(aabb.minX / (double)pitch) - 1) * pitch); x <= aabb.maxX + pitch; x += pitch)
                     {
                         for (int i = 0; i < num_coords; ++i)
                         {
-                            IntPoint current = new IntPoint(x + (long)(i * step), y + (((num_rows & 1) == 1) ? odd_line_coords[i] : even_line_coords[i]) / 2);
+                            var current = new IntPoint(x + (long)(i * step), y + (((num_rows & 1) == 1) ? odd_line_coords[i] : even_line_coords[i]) / 2);
                             bool current_inside = outline.PointIsInside(current);
                             if (!is_first_point)
                             {
@@ -192,7 +188,7 @@ namespace MatterSliceLib
                                 else if (last_inside != current_inside)
                                 {
                                     // line hits the boundary, add the part that's inside the boundary
-                                    Polygons line = new Polygons();
+                                    var line = new Polygons();
                                     line.AddLine(last, current);
                                     line = outline.CreateLineIntersections(line);
                                     if (line.Count > 0)
@@ -256,12 +252,12 @@ namespace MatterSliceLib
 
                 foreach (var outline_poly in outline)
                 {
-                    Polygon connector_points = new Polygon(); // the points that make up a connector line
+                    var connector_points = new Polygon(); // the points that make up a connector line
 
                     // we need to remember the first chain processed and the path to it from the first outline point
                     // so that later we can possibly connect to it from the last chain processed
                     int first_chain_chain_index = int.MaxValue;
-                    Polygon path_to_first_chain = new Polygon();
+                    var path_to_first_chain = new Polygon();
 
                     bool drawing = false; // true when a connector line is being (potentially) created
 
@@ -277,8 +273,8 @@ namespace MatterSliceLib
                     {
                         var op0 = outline_poly[outline_point_index];
                         var op1 = outline_poly[(outline_point_index + 1) % outline_poly.Count()];
-                        List<int> points_on_outline_chain_index = new List<int>();
-                        List<int> points_on_outline_point_index = new List<int>();
+                        var points_on_outline_chain_index = new List<int>();
+                        var points_on_outline_point_index = new List<int>();
 
                         // collect the chain ends that meet this segment of the outline
                         for (int chain_index = 0; chain_index < chains[0].Count; ++chain_index)
@@ -287,7 +283,7 @@ namespace MatterSliceLib
                             {
                                 // don't include chain ends that are close to the segment but are beyond the segment ends
                                 int beyond = 0;
-                                if (getDist2FromLineSegment(op0, chains[point_index][chain_index], op1, ref beyond) < 10
+                                if (GetDist2FromLineSegment(op0, chains[point_index][chain_index], op1, ref beyond) < 10
                                     && beyond != 0)
                                 {
                                     points_on_outline_point_index.Add(point_index);
@@ -365,6 +361,7 @@ namespace MatterSliceLib
                                     {
                                         result.AddLine(connector_points[pi - 1], connector_points[pi]);
                                     }
+
                                     drawing = false;
                                     connector_points.Clear();
                                     // remember the connection
@@ -419,6 +416,7 @@ namespace MatterSliceLib
                         {
                             result.AddLine(connector_points[pi - 1], connector_points[pi]);
                         }
+
                         // output the connector line segments from the first point in the outline to the first chain
                         for (int pi = 1; pi < path_to_first_chain.Count; ++pi)
                         {
@@ -433,7 +431,7 @@ namespace MatterSliceLib
                 }
             }
 
-            result_lines = result;
+            result_lines.AddRange(result);
         }
 #endif
 
@@ -446,7 +444,7 @@ namespace MatterSliceLib
          * param c the second point on the line segment
          * param b_is_beyond_ac optional output parameter: whether b is closest to the line segment (0), to a (-1) or b (1)
          * */
-        long getDist2FromLineSegment(IntPoint a, IntPoint b, IntPoint c, ref int b_is_beyond_ac)
+        private static long GetDist2FromLineSegment(IntPoint a, IntPoint b, IntPoint c, ref int b_is_beyond_ac)
         {
             /* 
             *     a,
