@@ -1813,6 +1813,10 @@ namespace MatterHackers.MatterSlice
 							Infill.GenerateTriangleInfill(config, part.SparseInfillPaths, fillPolygons, config.InfillStartingAngle);
 							break;
 
+						case ConfigConstants.INFILL_TYPE.GYROID:
+							GyroidInfill.Generate(config, part.SparseInfillPaths, fillPolygons, true, layerIndex);
+							break;
+
 						case ConfigConstants.INFILL_TYPE.HEXAGON:
 							Infill.GenerateHexagonInfill(config, part.SparseInfillPaths, fillPolygons, config.InfillStartingAngle, layerIndex);
 							break;

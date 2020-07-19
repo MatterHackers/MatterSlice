@@ -163,6 +163,7 @@ namespace MatterHackers.MatterSlice
                     odd_line_coords.Add(odd_y_rads / Math.PI * pitch);
                     even_line_coords.Add(even_y_rads / Math.PI * pitch);
                 }
+
                 int num_coords = odd_line_coords.Count;
                 int num_rows = 0;
                 for (long y = (long)((Math.Floor(aabb.minY / (double)pitch) - 1) * pitch); y <= aabb.maxY + pitch / 2; y += pitch / 2)
