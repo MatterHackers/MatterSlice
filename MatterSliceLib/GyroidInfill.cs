@@ -1,16 +1,27 @@
-﻿using MatterHackers.QuadTree;
+﻿using MatterHackers.MatterSlice;
+using MatterHackers.QuadTree;
 using MSClipperLib;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterSliceLib
 {
+    public static class GyroidPolygonsExtensions
+    {
+        public static void AddLine(this Polygons polygons, IntPoint start, IntPoint end)
+        {
+            polygons[polygons.Count - 1].Add(start);
+            polygons[polygons.Count - 1].Add(end);
+        }
+    }
+
     public class GyroidInfill
     {
-#if false
+#if true
         Polygon outline = new Polygon();
 
         public void generateTotalGyroidInfill(Polygons result_lines,
@@ -18,12 +29,12 @@ namespace MatterSliceLib
             long outline_offset,
             long infill_line_width,
             long line_distance,
-            Polygon in_outline,
+            Polygons in_outline,
             long z)
         {
             // generate infill based on the gyroid equation: sin_x * cos_y + sin_y * cos_z + sin_z * cos_x = 0
             // kudos to the author of the Slic3r implementation equation code, the equation code here is based on that
-            Polygon outline = in_outline.Offset(outline_offset);
+            Polygons outline = in_outline.Offset(outline_offset);
             var aabb = outline.GetBounds();
 
             int pitch = (int)(line_distance * 2.41); // this produces similar density to the "line" infill pattern
@@ -42,8 +53,8 @@ namespace MatterSliceLib
             List<double> odd_line_coords = new List<double>();
             List<double> even_line_coords = new List<double>();
             Polygons result = new Polygons();
-            List<IntPoint> chains = new List<IntPoint>(2); // [start_points[], end_points[]]
-            List<int> connected_to = new List<int>(); // [chain_indices[], chain_indices[]]
+            Polygons chains = new Polygons(2); // [start_points[], end_points[]]
+            List<int>[] connected_to = new List<int>[2] { new List<int>(), new List<int>() }; // [chain_indices[], chain_indices[]]
             List<int> line_numbers = new List<int>(); // which row/column line a chain is part of
             if (Math.Abs(sin_z) <= Math.Abs(cos_z))
             {
@@ -68,7 +79,7 @@ namespace MatterSliceLib
                 for (long x = (long)((Math.Floor(aabb.minX / (double)pitch) - 2.25) * pitch); x <= aabb.maxX + pitch / 2; x += pitch / 2)
                 {
                     bool is_first_point = true;
-                    IntPoint last;
+                    IntPoint last = default;
                     bool last_inside = false;
                     int chain_end_index = 0;
                     List<IntPoint> chain_end = new List<IntPoint>();
@@ -77,24 +88,24 @@ namespace MatterSliceLib
                         for (int i = 0; i < num_coords; ++i)
                         {
                             IntPoint current = new IntPoint(x + (((num_columns & 1) == 1) ? odd_line_coords[i] : even_line_coords[i]) / 2 + pitch, y + (long)(i * step));
-                            bool current_inside = outline.PointIsInside(current) == 1;
+                            bool current_inside = outline.PointIsInside(current);
                             if (!is_first_point)
                             {
                                 if (last_inside && current_inside)
                                 {
                                     // line doesn't hit the boundary, add the whole line
-                                    result.addLine(last, current);
+                                    result.AddLine(last, current);
                                 }
                                 else if (last_inside != current_inside)
                                 {
                                     // line hits the boundary, add the part that's inside the boundary
-                                    Polygons line;
-                                    line.addLine(last, current);
-                                    line = outline.intersectionPolyLines(line);
+                                    Polygons line = new Polygons();
+                                    line.AddLine(last, current);
+                                    line = outline.CreateLineIntersections(line);
                                     if (line.Count > 0)
                                     {
                                         // some of the line is inside the boundary
-                                        result.addLine(line[0][0], line[0][1]);
+                                        result.AddLine(line[0][0], line[0][1]);
                                         if (zig_zaggify)
                                         {
                                             chain_end[chain_end_index] = line[0][(line[0][0] != last && line[0][0] != current) ? 0 : 1];
@@ -103,8 +114,8 @@ namespace MatterSliceLib
                                                 chains[0].Add(chain_end[0]);
                                                 chains[1].Add(chain_end[1]);
                                                 chain_end_index = 0;
-                                                connected_to[0].Add(std::numeric_limits<int>::max());
-                                                connected_to[1].Add(std::numeric_limits<int>::max());
+                                                connected_to[0].Add(int.MaxValue);
+                                                connected_to[1].Add(int.MaxValue);
                                                 line_numbers.Add(num_columns);
                                             }
                                         }
@@ -115,14 +126,14 @@ namespace MatterSliceLib
                                         // is the chain end
                                         if (zig_zaggify)
                                         {
-                                            chain_end[chain_end_index] = (last_inside) ? last : current;
+                                            chain_end[chain_end_index] = last_inside ? last : current;
                                             if (++chain_end_index == 2)
                                             {
                                                 chains[0].Add(chain_end[0]);
                                                 chains[1].Add(chain_end[1]);
                                                 chain_end_index = 0;
-                                                connected_to[0].Add(std::numeric_limits<int>::max());
-                                                connected_to[1].Add(std::numeric_limits<int>::max());
+                                                connected_to[0].Add(int.MaxValue);
+                                                connected_to[1].Add(int.MaxValue);
                                                 line_numbers.Add(num_columns);
                                             }
                                         }
@@ -161,7 +172,7 @@ namespace MatterSliceLib
                 for (long y = (long)((Math.Floor(aabb.minY / (double)pitch) - 1) * pitch); y <= aabb.maxY + pitch / 2; y += pitch / 2)
                 {
                     bool is_first_point = true;
-                    IntPoint last;
+                    IntPoint last = default;
                     bool last_inside = false;
                     int chain_end_index = 0;
                     Polygon chain_end = new Polygon();
@@ -170,24 +181,24 @@ namespace MatterSliceLib
                         for (int i = 0; i < num_coords; ++i)
                         {
                             IntPoint current = new IntPoint(x + (long)(i * step), y + (((num_rows & 1) == 1) ? odd_line_coords[i] : even_line_coords[i]) / 2);
-                            bool current_inside = outline.inside(current, true);
+                            bool current_inside = outline.PointIsInside(current);
                             if (!is_first_point)
                             {
                                 if (last_inside && current_inside)
                                 {
                                     // line doesn't hit the boundary, add the whole line
-                                    result.addLine(last, current);
+                                    result.AddLine(last, current);
                                 }
                                 else if (last_inside != current_inside)
                                 {
                                     // line hits the boundary, add the part that's inside the boundary
-                                    Polygons line;
-                                    line.addLine(last, current);
-                                    line = outline.intersectionPolyLines(line);
+                                    Polygons line = new Polygons();
+                                    line.AddLine(last, current);
+                                    line = outline.CreateLineIntersections(line);
                                     if (line.Count > 0)
                                     {
                                         // some of the line is inside the boundary
-                                        result.addLine(line[0][0], line[0][1]);
+                                        result.AddLine(line[0][0], line[0][1]);
                                         if (zig_zaggify)
                                         {
                                             chain_end[chain_end_index] = line[0][(line[0][0] != last && line[0][0] != current) ? 0 : 1];
@@ -196,8 +207,8 @@ namespace MatterSliceLib
                                                 chains[0].Add(chain_end[0]);
                                                 chains[1].Add(chain_end[1]);
                                                 chain_end_index = 0;
-                                                connected_to[0].Add(std::numeric_limits<int>::max());
-                                                connected_to[1].Add(std::numeric_limits<int>::max());
+                                                connected_to[0].Add(int.MaxValue);
+                                                connected_to[1].Add(int.MaxValue);
                                                 line_numbers.Add(num_rows);
                                             }
                                         }
@@ -214,8 +225,8 @@ namespace MatterSliceLib
                                                 chains[0].Add(chain_end[0]);
                                                 chains[1].Add(chain_end[1]);
                                                 chain_end_index = 0;
-                                                connected_to[0].Add(std::numeric_limits<int>::max());
-                                                connected_to[1].Add(std::numeric_limits<int>::max());
+                                                connected_to[0].Add(int.MaxValue);
+                                                connected_to[1].Add(int.MaxValue);
                                                 line_numbers.Add(num_rows);
                                             }
                                         }
@@ -235,39 +246,39 @@ namespace MatterSliceLib
 
             if (zig_zaggify && chains[0].Count > 0)
             {
-                // zig-zaggification consists of joining alternate chain ends to make a chain of chains
+                // zig-zag connecting consists of joining alternate chain ends to make a chain of chains
                 // the basic algorithm is that we follow the infill area boundary and as we progress we are either drawing a connector or not
                 // whenever we come across the end of a chain we toggle the connector drawing state
                 // things are made more complicated by the fact that we want to avoid generating loops and so we need to keep track
-                // of the indentity of the first chain in a connected sequence
+                // of the identity of the first chain in a connected sequence
 
                 int chain_ends_remaining = chains[0].Count * 2;
 
-                for (ConstPolygonRef outline_poly : outline)
+                foreach (var outline_poly in outline)
                 {
-                    List<Point> connector_points; // the points that make up a connector line
+                    Polygon connector_points = new Polygon(); // the points that make up a connector line
 
                     // we need to remember the first chain processed and the path to it from the first outline point
                     // so that later we can possibly connect to it from the last chain processed
-                    int first_chain_chain_index = std::numeric_limits<int>::max();
-                    List<Point> path_to_first_chain;
+                    int first_chain_chain_index = int.MaxValue;
+                    Polygon path_to_first_chain = new Polygon();
 
                     bool drawing = false; // true when a connector line is being (potentially) created
 
                     // keep track of the chain+point that a connector line started at
-                    int connector_start_chain_index = std::numeric_limits<int>::max();
-                    int connector_start_point_index = std::numeric_limits<int>::max();
+                    int connector_start_chain_index = int.MaxValue;
+                    int connector_start_point_index = int.MaxValue;
 
-                    Point cur_point; // current point of interest - either an outline point or a chain end
+                    IntPoint cur_point = default; // current point of interest - either an outline point or a chain end
 
                     // go round all of the region's outline and find the chain ends that meet it
                     // quit the loop early if we have seen all the chain ends and are not currently drawing a connector
                     for (int outline_point_index = 0; (chain_ends_remaining > 0 || drawing) && outline_point_index < outline_poly.Count; ++outline_point_index)
                     {
-                        Point op0 = outline_poly[outline_point_index];
-                        Point op1 = outline_poly[(outline_point_index + 1) % outline_poly.Count];
-                        List<int> points_on_outline_chain_index;
-                        List<int> points_on_outline_point_index;
+                        var op0 = outline_poly[outline_point_index];
+                        var op1 = outline_poly[(outline_point_index + 1) % outline_poly.Count()];
+                        List<int> points_on_outline_chain_index = new List<int>();
+                        List<int> points_on_outline_point_index = new List<int>();
 
                         // collect the chain ends that meet this segment of the outline
                         for (int chain_index = 0; chain_index < chains[0].Count; ++chain_index)
@@ -275,8 +286,9 @@ namespace MatterSliceLib
                             for (int point_index = 0; point_index < 2; ++point_index)
                             {
                                 // don't include chain ends that are close to the segment but are beyond the segment ends
-                                short beyond = 0;
-                                if (LinearAlg2D::getDist2FromLineSegment(op0, chains[point_index][chain_index], op1, &beyond) < 10 && !beyond)
+                                int beyond = 0;
+                                if (getDist2FromLineSegment(op0, chains[point_index][chain_index], op1, ref beyond) < 10
+                                    && beyond != 0)
                                 {
                                     points_on_outline_point_index.Add(point_index);
                                     points_on_outline_chain_index.Add(chain_index);
@@ -284,11 +296,11 @@ namespace MatterSliceLib
                             }
                         }
 
-                        if (outline_point_index == 0 || vSize2(op0 - cur_point) > 100)
+                        if (outline_point_index == 0 || (op0 - cur_point).Length() > 100)
                         {
                             // this is either the first outline point or it is another outline point that is not too close to cur_point
 
-                            if (first_chain_chain_index == std::numeric_limits<int>::max())
+                            if (first_chain_chain_index == int.MaxValue)
                             {
                                 // include the outline point in the path to the first chain
                                 path_to_first_chain.Add(op0);
@@ -307,30 +319,34 @@ namespace MatterSliceLib
                         {
                             // find the nearest chain end to the current point
                             int nearest_point_index = 0;
-                            float nearest_point_dist2 = std::numeric_limits<float>::infinity();
+                            var nearest_point_dist_squared = double.MaxValue;
                             for (int pi = 0; pi < points_on_outline_chain_index.Count; ++pi)
                             {
-                                float dist2 = vSize2f(chains[points_on_outline_point_index[pi]][points_on_outline_chain_index[pi]] - cur_point);
-                                if (dist2 < nearest_point_dist2)
+                                var first = chains[points_on_outline_point_index[pi]][points_on_outline_chain_index[pi]];
+                                var dist_squared = (first - cur_point).LengthSquared();
+                                if (dist_squared < nearest_point_dist_squared)
                                 {
-                                    nearest_point_dist2 = dist2;
+                                    nearest_point_dist_squared = dist_squared;
                                     nearest_point_index = pi;
                                 }
                             }
+
                             int point_index = points_on_outline_point_index[nearest_point_index];
                             int chain_index = points_on_outline_chain_index[nearest_point_index];
 
                             // make the chain end the current point and add it to the connector line
                             cur_point = chains[point_index][chain_index];
 
-                            if (drawing && connector_points.Count > 0 && vSize2(cur_point - connector_points.back()) < 100)
+                            if (drawing && connector_points.Count > 0
+                                && (cur_point - connector_points.Last()).Length() < 100)
                             {
                                 // this chain end will be too close to the last connector point so throw away the last connector point
-                                connector_points.pop_back();
+                                connector_points.RemoveAt(connector_points.Count - 1);
                             }
+
                             connector_points.Add(cur_point);
 
-                            if (first_chain_chain_index == std::numeric_limits<int>::max())
+                            if (first_chain_chain_index == int.MaxValue)
                             {
                                 // this is the first chain to be processed, remember it
                                 first_chain_chain_index = chain_index;
@@ -347,10 +363,10 @@ namespace MatterSliceLib
                                 {
                                     for (int pi = 1; pi < connector_points.Count; ++pi)
                                     {
-                                        result.addLine(connector_points[pi - 1], connector_points[pi]);
+                                        result.AddLine(connector_points[pi - 1], connector_points[pi]);
                                     }
                                     drawing = false;
-                                    connector_points.clear();
+                                    connector_points.Clear();
                                     // remember the connection
                                     connected_to[point_index][chain_index] = connector_start_chain_index;
                                     connected_to[connector_start_point_index][connector_start_chain_index] = chain_index;
@@ -358,7 +374,7 @@ namespace MatterSliceLib
                                 else
                                 {
                                     // start a new connector from the current location
-                                    connector_points.clear();
+                                    connector_points.Clear();
                                     connector_points.Add(cur_point);
 
                                     // remember the chain+point that the connector started from
@@ -373,7 +389,7 @@ namespace MatterSliceLib
 
                                 // if this connector is the first to be created or we are not connecting chains from the same row/column,
                                 // remember the chain+point that this connector is starting from
-                                if (connector_start_chain_index == std::numeric_limits<int>::max() || line_numbers[chain_index] != line_numbers[connector_start_chain_index])
+                                if (connector_start_chain_index == int.MaxValue || line_numbers[chain_index] != line_numbers[connector_start_chain_index])
                                 {
                                     connector_start_chain_index = chain_index;
                                     connector_start_point_index = point_index;
@@ -381,8 +397,8 @@ namespace MatterSliceLib
                             }
 
                             // done with this chain end
-                            points_on_outline_chain_index.erase(points_on_outline_chain_index.begin() + nearest_point_index);
-                            points_on_outline_point_index.erase(points_on_outline_point_index.begin() + nearest_point_index);
+                            points_on_outline_chain_index.RemoveAt(points_on_outline_chain_index[0] + nearest_point_index);
+                            points_on_outline_point_index.RemoveAt(points_on_outline_point_index[0] + nearest_point_index);
 
                             // decrement total amount of work to do
                             --chain_ends_remaining;
@@ -392,7 +408,7 @@ namespace MatterSliceLib
                     // we have now visited all the points in the outline, if a connector was (potentially) being drawn
                     // check whether the first chain is already connected to the last chain and, if not, draw the
                     // connector between
-                    if (drawing && first_chain_chain_index != std::numeric_limits<int>::max()
+                    if (drawing && first_chain_chain_index != int.MaxValue
                         && first_chain_chain_index != connector_start_chain_index
                         && connected_to[0][first_chain_chain_index] != connector_start_chain_index
                         && connected_to[1][first_chain_chain_index] != connector_start_chain_index)
@@ -401,12 +417,12 @@ namespace MatterSliceLib
                         connector_points.Add(outline_poly[0]);
                         for (int pi = 1; pi < connector_points.Count; ++pi)
                         {
-                            result.addLine(connector_points[pi - 1], connector_points[pi]);
+                            result.AddLine(connector_points[pi - 1], connector_points[pi]);
                         }
                         // output the connector line segments from the first point in the outline to the first chain
                         for (int pi = 1; pi < path_to_first_chain.Count; ++pi)
                         {
-                            result.addLine(path_to_first_chain[pi - 1], path_to_first_chain[pi]);
+                            result.AddLine(path_to_first_chain[pi - 1], path_to_first_chain[pi]);
                         }
                     }
 
@@ -420,5 +436,71 @@ namespace MatterSliceLib
             result_lines = result;
         }
 #endif
+
+        /*
+         * Get the squared distance from point b to a line *segment* from a to c.
+         *
+         * In case b is on a or c, b_is_beyond_ac should become 0.
+         * param a the first point of the line segment
+         * param b the point to measure the distance from
+         * param c the second point on the line segment
+         * param b_is_beyond_ac optional output parameter: whether b is closest to the line segment (0), to a (-1) or b (1)
+         * */
+        long getDist2FromLineSegment(IntPoint a, IntPoint b, IntPoint c, ref int b_is_beyond_ac)
+        {
+            /* 
+            *     a,
+            *     /|
+            *    / |
+            * b,/__|, x
+            *   \  |
+            *    \ |
+            *     \|
+            *      'c
+            * 
+            * x = b projected on ac
+            * ax = ab dot ac / vSize(ac)
+            * xb = ab - ax
+            * error = vSize(xb)
+            */
+            IntPoint ac = c - a;
+            long ac_size = ac.Length();
+
+            IntPoint ab = b - a;
+            if (ac_size == 0)
+            {
+                long ab_dist2 = ab.LengthSquared();
+                if (ab_dist2 == 0 && b_is_beyond_ac != 0)
+                {
+                    b_is_beyond_ac = 0; // a is on b is on c
+                }
+
+                // otherwise variable b_is_beyond_ac remains its value; it doesn't make sense to choose between -1 and 1
+                return ab_dist2;
+            }
+
+            long projected_x = ab.Dot(ac);
+            long ax_size = projected_x / ac_size;
+
+            if (ax_size < 0)
+            {
+                // b is 'before' segment ac
+                b_is_beyond_ac = -1;
+                return ab.LengthSquared();
+            }
+
+            if (ax_size > ac_size)
+            {
+                // b is 'after' segment ac
+                b_is_beyond_ac = 1;
+                return (b - c).LengthSquared();
+            }
+
+            b_is_beyond_ac = 0;
+            IntPoint ax = ac * ax_size / ac_size;
+            IntPoint bx = ab - ax;
+            return bx.LengthSquared();
+            // return vSize2(ab) - ax_size*ax_size; // less accurate
+        }
     }
 }
