@@ -41,6 +41,7 @@ namespace MatterHackers.MatterSlice
 			TRIANGLES,
 			HEXAGON,
 			CONCENTRIC,
+			GYROID,
 		}
 
 		/**
