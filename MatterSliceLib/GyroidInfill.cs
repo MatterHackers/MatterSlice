@@ -74,7 +74,7 @@ namespace MatterHackers.MatterSlice
 				for (long x = (long)((Math.Floor(aabb.minX / (double)pitch) - 2.25) * pitch); x <= aabb.maxX + pitch / 2; x += pitch / 2)
 				{
 					bool is_first_point = true;
-					IntPoint last = default;
+					IntPoint last = default(IntPoint);
 					bool last_inside = false;
 					int chain_end_index = 0;
 					var chain_end = new IntPoint[2];
@@ -173,7 +173,7 @@ namespace MatterHackers.MatterSlice
 				for (long y = (long)((Math.Floor(aabb.minY / (double)pitch) - 1) * pitch); y <= aabb.maxY + pitch / 2; y += pitch / 2)
 				{
 					bool is_first_point = true;
-					IntPoint last = default;
+					IntPoint last = default(IntPoint);
 					bool last_inside = false;
 					int chain_end_index = 0;
 					var chain_end = new IntPoint[2];
@@ -274,7 +274,7 @@ namespace MatterHackers.MatterSlice
 					int connector_start_chain_index = int.MaxValue;
 					int connector_start_point_index = int.MaxValue;
 
-					IntPoint cur_point = default; // current point of interest - either an outline point or a chain end
+					IntPoint cur_point = default(IntPoint); // current point of interest - either an outline point or a chain end
 
 					// go round all of the region's outline and find the chain ends that meet it
 					// quit the loop early if we have seen all the chain ends and are not currently drawing a connector
