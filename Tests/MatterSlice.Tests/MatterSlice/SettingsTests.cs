@@ -749,6 +749,50 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void DualMaterialNoRetraction()
+		{
+			DualMaterialNoRetraction(0);
+			DualMaterialNoRetraction(1);
+		}
+
+		public void DualMaterialNoRetraction(int material)
+		{
+			string shortCubeName = "CubePoint2High";
+			string shortCube = TestUtilities.GetStlPath(shortCubeName);
+
+			string outputGCodeFileName = TestUtilities.GetTempGCodePath($"CubeNoRetractions{material}");
+
+			var config = new ConfigSettings();
+			config.ExtruderCount = 2;
+			config.FirstLayerThickness = .2;
+			config.LayerThickness = .2;
+
+			var processor = new FffProcessor(config);
+			processor.SetTargetFile(outputGCodeFileName);
+			for (int i = 0; i < material; i++)
+			{
+				string skipExtruder = TestUtilities.GetStlPath("TooSmallToPrint");
+
+				processor.LoadStlFile(skipExtruder);
+			}
+
+			processor.LoadStlFile(shortCube);
+			// slice and save it
+			processor.DoProcessing();
+			processor.Finalize();
+
+			string[] gCodeContent = TestUtilities.LoadGCodeFile(outputGCodeFileName);
+
+			// test layer count
+			int layerCount = TestUtilities.CountLayers(gCodeContent);
+			Assert.AreEqual(1, layerCount);
+
+			int retractions = TestUtilities.CountRetractions(gCodeContent);
+			Assert.AreEqual(1, retractions, $"Material {material} should have no retractions");
+		}
+
+
+		[Test]
 		public void EachLayersHeigherThanLast()
 		{
 			CheckLayersIncrement("cone", "spiralCone.gcode");

@@ -52,13 +52,20 @@ namespace MatterHackers.MatterSlice
 
 		private double currentSpeed;
 		private TimeEstimateCalculator estimateCalculator = new TimeEstimateCalculator();
-		private int extruderIndex;
+
+		private int extruderIndex { get; set; }
+
 		private bool[] extruderHaseBeenRetracted = new bool[ConfigConstants.MAX_EXTRUDERS];
-		private double extrusionAmount_mm;
+
+		private double extrusionAmount_mm { get; set; }
+
 		private double extrusionAmountAtPreviousRetraction_mm;
+
 		private double extrusionPerMm;
 		private StreamWriter gcodeFileStream;
-		private bool isRetracted;
+
+		private bool isRetracted { get; set; }
+
 		private string layerChangeCode;
 		private ConfigSettings config;
 		private double[] totalFilament_mm = new double[ConfigConstants.MAX_EXTRUDERS];

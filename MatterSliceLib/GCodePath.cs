@@ -71,8 +71,19 @@ namespace MatterHackers.MatterSlice
 
 		public Polygon Polygon { get; set; } = new Polygon();
 
-		public RetractType Retract { get; set; } = RetractType.None;
+		private RetractType _retract = RetractType.None;
 
+		public RetractType Retract
+		{
+			get => _retract;
+			set
+			{
+				if (value != _retract)
+				{
+					_retract = value;
+				}
+			}
+		}
 		public double Speed { get; internal set; }
 
 		public long Length(bool pathIsClosed)

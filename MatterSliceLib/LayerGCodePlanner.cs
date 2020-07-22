@@ -65,6 +65,7 @@ namespace MatterHackers.MatterSlice
 			{
 				LastPosition_um = gcode.PositionXy_um;
 			}
+
 			forceRetraction = false;
 			currentExtruderIndex = gcode.GetExtruderIndex();
 			this.retractionMinimumDistance_um = retractionMinimumDistance_um;
