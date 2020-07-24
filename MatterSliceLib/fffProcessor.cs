@@ -928,7 +928,14 @@ namespace MatterHackers.MatterSlice
 
 		private HashSet<int> ExtrudersUsedInLayer0(ConfigSettings config, LayerDataStorage slicingData)
 		{
-			var layer0Extruders = slicingData.Extruders.Where(e => e.UsedInLayer(0)).Select((e, index) => index);
+			var layer0Extruders = new List<int>();
+			for (int i = 0; i < slicingData.Extruders.Count; i++)
+			{
+				if (slicingData.Extruders[i].UsedInLayer(0))
+				{
+					layer0Extruders.Add(i);
+				}
+			}
 
 			var usedExtruders = new HashSet<int>(layer0Extruders);
 
