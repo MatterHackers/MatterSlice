@@ -19,7 +19,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System.Collections.Generic;
 using MSClipperLib;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
 
@@ -84,6 +83,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 		}
+
 		public double Speed { get; internal set; }
 
 		public long Length(bool pathIsClosed)

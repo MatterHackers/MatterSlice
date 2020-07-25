@@ -118,6 +118,8 @@ namespace MatterHackers.MatterSlice
 
 		public int LayerIndex { get; set; } = 0;
 
+		private bool ExtrusionHasBeenWriten { get; set; }
+
 		public void Close()
 		{
 			gcodeFileStream.Close();
@@ -221,15 +223,13 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			// first do any tool change retract
-			if (config.RetractionOnExtruderSwitch != 0)
+			// first do any tool change retract, but only if there has been any extrusion
+			if (config.RetractionOnExtruderSwitch != 0
+				&& ExtrusionHasBeenWriten)
 			{
 				extruderHaseBeenRetracted[extruderIndex] = true;
 				gcodeFileStream.Write("G1 E{0:0.####} F{1} ; retract\n", extrusionAmount_mm - config.RetractionOnExtruderSwitch, config.RetractionSpeed * 60);
 			}
-
-			var beforeX = this.PositionXy_um.X / 1000.0;
-			var beforeY = this.PositionXy_um.Y / 1000.0;
 
 			currentSpeed = config.RetractionSpeed;
 
@@ -373,6 +373,7 @@ namespace MatterHackers.MatterSlice
 			if (lineWidth_um != 0)
 			{
 				lineToWrite.Append(" E{0:0.#####}".FormatWith(extrusionAmount_mm));
+				ExtrusionHasBeenWriten = true;
 			}
 
 			lineToWrite.Append("\n");
