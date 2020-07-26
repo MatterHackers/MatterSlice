@@ -39,7 +39,7 @@ namespace MSClipperLib
 	{
 		public static Polygon CreateFromString(string polygonString)
 		{
-			Polygon output = new Polygon();
+			var output = new Polygon();
 			string[] intPointData = polygonString.Split(',');
 			int increment = 2;
 			if (polygonString.Contains("width"))
@@ -50,7 +50,7 @@ namespace MSClipperLib
 			{
 				string elementX = intPointData[i];
 				string elementY = intPointData[i + 1];
-				IntPoint nextIntPoint = new IntPoint(int.Parse(elementX.Substring(elementX.IndexOf(':') + 1)), int.Parse(elementY.Substring(3)));
+				var nextIntPoint = new IntPoint(int.Parse(elementX.Substring(elementX.IndexOf(':') + 1)), int.Parse(elementY.Substring(3)));
 				output.Add(nextIntPoint);
 			}
 
@@ -67,10 +67,11 @@ namespace MSClipperLib
 		/// This will find the largest turn in a given models. It prefers concave turns to convex turns.
 		/// If turn amount is the same bias towards the smallest y position.
 		/// </summary>
-		/// <param name="inputPolygon"></param>
+		/// <param name="inputPolygon">The polygon to analyze</param>
 		/// <param name="considerAsSameY">Range to treat y positions as the same value.</param>
-		/// <returns></returns>
-		public static IntPoint FindGreatestTurnPosition(this Polygon inputPolygon, long considerAsSameY, int layerIndex, IntPoint? startPosition = null)
+		/// <param name="startPosition">If two or more angles are similar, choose the one close to the start</param>
+		/// <returns>The position that has the largest turn angle</returns>
+		public static IntPoint FindGreatestTurnPosition(this Polygon inputPolygon, long considerAsSameY, IntPoint? startPosition = null)
 		{
 			Polygon currentPolygon = Clipper.CleanPolygon(inputPolygon, considerAsSameY / 8);
 
@@ -81,10 +82,10 @@ namespace MSClipperLib
 			}
 
 			double totalTurns = 0;
-			CandidateGroup positiveGroup = new CandidateGroup(DegreesToRadians(35));
-			CandidateGroup negativeGroup = new CandidateGroup(DegreesToRadians(10));
+			var positiveGroup = new CandidateGroup(DegreesToRadians(35));
+			var negativeGroup = new CandidateGroup(DegreesToRadians(10));
 
-			IntPoint currentFurthestBack = new IntPoint(long.MaxValue, long.MinValue);
+			var currentFurthestBack = new IntPoint(long.MaxValue, long.MinValue);
 			int furthestBackIndex = 0;
 
 			double minTurnToChoose = DegreesToRadians(1);
@@ -147,14 +148,14 @@ namespace MSClipperLib
 						|| Math.Abs(negativeGroup[0].turnAmount) < Math.PI / 8))
 				{
 					// return the positive rather than the negative turn
-					return currentPolygon[positiveGroup.GetBestIndex(layerIndex, startPosition)];
+					return currentPolygon[positiveGroup.GetBestIndex(startPosition)];
 				}
 
-				return currentPolygon[negativeGroup.GetBestIndex(layerIndex, startPosition)];
+				return currentPolygon[negativeGroup.GetBestIndex(startPosition)];
 			}
 			else if (positiveGroup.Count > 0)
 			{
-				return currentPolygon[positiveGroup.GetBestIndex(layerIndex, startPosition)];
+				return currentPolygon[positiveGroup.GetBestIndex(startPosition)];
 			}
 			else
 			{
@@ -170,8 +171,10 @@ namespace MSClipperLib
 				return new IntRect(0, 0, 0, 0);
 			}
 
-			IntRect result = new IntRect();
-			result.minX = inPolygon[0].X;
+			var result = new IntRect
+			{
+				minX = inPolygon[0].X
+			};
 			result.maxX = result.minX;
 			result.minY = inPolygon[0].Y;
 			result.maxY = result.minY;
@@ -263,7 +266,7 @@ namespace MSClipperLib
 
 		public static IntPoint GetPositionAllongPath(this Polygon polygon, double ratioAlongPath, bool isClosed = true)
 		{
-			IntPoint position = new IntPoint();
+			var position = new IntPoint();
 			var totalLength = polygon.PolygonLength(isClosed);
 			var distanceToGoal = (long)(totalLength * ratioAlongPath + .5);
 			long length = 0;
@@ -339,7 +342,7 @@ namespace MSClipperLib
 
 		public class CandidateGroup : List<CandidatePoint>
 		{
-			private double sameTurn;
+			private readonly double sameTurn;
 
 			public CandidateGroup(double sameTurn)
 			{
@@ -347,11 +350,11 @@ namespace MSClipperLib
 			}
 
 			/// <summary>
-			/// Get the best turn for this polygon. If there are multiple turns that are all just as good choose one with a bias for layer index.
+			/// Get the best turn for this polygon.
 			/// </summary>
-			/// <param name="layerIndex"></param>
+			/// <param name="startPosition">If two or more points are similar, choose the one closest to start</param>
 			/// <returns></returns>
-			public int GetBestIndex(int layerIndex, IntPoint? startPosition)
+			public int GetBestIndex(IntPoint? startPosition)
 			{
 				bool shallowTurn = Math.Abs(this[this.Count - 1].turnAmount) < .3;
 				bool outsideEdge = this[this.Count - 1].turnAmount > 0;
@@ -395,28 +398,6 @@ namespace MSClipperLib
 						var distToB = (b.position - startPosition.Value).LengthSquared();
 						return distToB.CompareTo(distToA);
 					});
-				}
-
-				// This is resulting in less quality generally. If we can isolate the specifics of when and how
-				// it improves things we can re-enable it for those cases.
-				if (false)
-				{
-					// if we have a very shallow turn (the outer edge of a circle)
-					if (shallowTurn)
-					{
-						// stager 3 places so the seam is more together but not a line
-						int seemShift = layerIndex % 3;
-						if (!outsideEdge) // we are on the inside of a circular hole (or similar)
-						{
-							// stager up to 5 to make the seam have less surface
-							seemShift = layerIndex % 5;
-						}
-
-						if (this.Count > seemShift)
-						{
-							return this[this.Count - seemShift - 1].turnIndex;
-						}
-					}
 				}
 
 				return this[this.Count - 1].turnIndex;

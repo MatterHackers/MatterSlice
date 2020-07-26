@@ -19,13 +19,11 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System.Collections.Generic;
+using KdTree;
 using MatterHackers.Pathfinding;
 using MatterHackers.QuadTree;
 using MSClipperLib;
-using KdTree;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
@@ -241,7 +239,7 @@ namespace MatterHackers.MatterSlice
 			{
 				if (doSeamHiding)
 				{
-					bestPoint = data.polygon.FindGreatestTurnIndex(currentPosition, layerIndex, lineWidth_um, data.kdTree);
+					bestPoint = data.polygon.FindGreatestTurnIndex(currentPosition, lineWidth_um, data.kdTree);
 				}
 				else
 				{

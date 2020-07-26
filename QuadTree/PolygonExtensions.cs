@@ -107,13 +107,15 @@ namespace MatterHackers.QuadTree
 		/// <summary>
 		/// This will find the largest turn in a given models. It prefers concave turns to convex turns.
 		/// </summary>
-		/// <param name="inputPolygon"></param>
+		/// <param name="inputPolygon">The polygon to analyze</param>
+		/// <param name="startPosition">If two points have similar turn angles choose the one closer to the start</param>
 		/// <param name="lineWidth"></param>
+		/// <param name="pointKDTree"></param>
 		/// <returns></returns>
-		public static int FindGreatestTurnIndex(this Polygon inputPolygon, IntPoint? startPosition = null, int layerIndex = 0, long lineWidth = 3, KdTree<long, int> pointKDTree = null)
+		public static int FindGreatestTurnIndex(this Polygon inputPolygon, IntPoint? startPosition = null, long lineWidth = 3, KdTree<long, int> pointKDTree = null)
 		{
 			// get the best position on a cleaned polygon
-			IntPoint bestPosition = inputPolygon.FindGreatestTurnPosition(lineWidth, layerIndex, startPosition);
+			IntPoint bestPosition = inputPolygon.FindGreatestTurnPosition(lineWidth, startPosition);
 			// because FindGreatestTurnPosition cleans the polygon we need to see what the cleaned position is closest to on the actual polygon
 			return inputPolygon.FindClosestPositionIndex(bestPosition, pointKDTree);
 		}
@@ -154,7 +156,6 @@ namespace MatterHackers.QuadTree
 			}
 		}
 
-
 		public static KdTree<long, int> ConditionalKDTree(this Polygon polygon)
 		{
 			// if there are not enough points it is much faster to just iterate the array
@@ -177,14 +178,21 @@ namespace MatterHackers.QuadTree
 			public LongMath() { }
 
 			public override long MinValue => long.MinValue;
+
 			public override long MaxValue => long.MaxValue;
+
 			public override long Zero => 0;
+
 			public override long NegativeInfinity => long.MinValue;
+
 			public override long PositiveInfinity => long.MaxValue;
 
 			public override long Add(long a, long b) => a + b;
+
 			public override bool AreEqual(long a, long b) => a.Equals(b);
+
 			public override int Compare(long a, long b) => a.CompareTo(b);
+
 			public override long DistanceSquaredBetweenPoints(long[] a, long[] b)
 			{
 				long dist = 0;
@@ -195,21 +203,19 @@ namespace MatterHackers.QuadTree
 
 				return dist;
 			}
+
 			public override long Multiply(long a, long b) => a * b;
+
 			public override long Subtract(long a, long b) => a - b;
 		}
 
 		public static IEnumerable<(int pointIndex, IntPoint position)> FindCrossingPoints(this Polygon polygon, IntPoint start, IntPoint end, QuadTree<int> edgeQuadTree = null)
 		{
-			IntPoint segmentDelta = end - start;
-			long segmentLength = segmentDelta.Length();
 			var edgeIterator = new PolygonEdgeIterator(polygon, 1, edgeQuadTree);
 			foreach (var i in edgeIterator.GetTouching(new Quad(start, end)))
 			{
 				IntPoint edgeStart = polygon[i];
 				IntPoint edgeEnd = polygon[(i + 1) % polygon.Count];
-				IntPoint intersection = new IntPoint();
-
 				if (OnSegment(edgeStart, start, edgeEnd))
 				{
 					yield return (i, start);
@@ -219,9 +225,8 @@ namespace MatterHackers.QuadTree
 					yield return (i, end);
 				}
 				else if (DoIntersect(start, end, edgeStart, edgeEnd)
-					&& CalcIntersection(start, end, edgeStart, edgeEnd, out intersection))
+					&& CalcIntersection(start, end, edgeStart, edgeEnd, out IntPoint intersection))
 				{
-					IntPoint pointRelStart = intersection - start;
 					yield return (i, intersection);
 				}
 			}
@@ -235,9 +240,10 @@ namespace MatterHackers.QuadTree
 		/// <summary>
 		/// Trim an amount off the end of the polygon
 		/// </summary>
-		/// <param name="inPolygon"></param>
-		/// <param name="amountToTrim"></param>
-		/// <returns></returns>
+		/// <param name="inPolygon">The polygon to trim</param>
+		/// <param name="amountToTrim">The distance to trim in polygon units</param>
+		/// <param name="isClosed">Does the last point connect back to the first</param>
+		/// <returns>A new polygon that has had the end trimmed</returns>
 		public static Polygon TrimEnd(this Polygon inPolygon, long amountToTrim, bool isClosed = false)
 		{
 			return inPolygon.CutToLength(inPolygon.PolygonLength(isClosed) - amountToTrim);
