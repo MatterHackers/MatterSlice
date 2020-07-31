@@ -1026,7 +1026,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			islandOrderOptimizer.Optimize(default(IntPoint), layer.PathFinder, layerIndex, false);
+			islandOrderOptimizer.Optimize(layerGcodePlanner.LastPosition_um, layer.PathFinder, layerIndex, false);
 
 			var bottomFillIslandPolygons = new List<Polygons>();
 
@@ -1495,7 +1495,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				islandOrderOptimizer.Optimize(default(IntPoint), layer.PathFinder, layerIndex, false);
+				islandOrderOptimizer.Optimize(layerGcodePlanner.LastPosition_um, layer.PathFinder, layerIndex, false);
 
 				for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.OptimizedPaths.Count; islandOrderIndex++)
 				{
