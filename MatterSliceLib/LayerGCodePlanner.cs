@@ -35,7 +35,7 @@ namespace MatterHackers.MatterSlice
 	// It also keeps track of the print time estimate for this planning so speed adjustments can be made for the minimum-layer-time.
 	public class LayerGCodePlanner
 	{
-		private int currentExtruderIndex;
+		private int CurrentExtruderIndex { get; set; }
 
 		private bool forceRetraction;
 
@@ -65,8 +65,9 @@ namespace MatterHackers.MatterSlice
 			{
 				LastPosition_um = gcode.PositionXy_um;
 			}
+
 			forceRetraction = false;
-			currentExtruderIndex = gcode.GetExtruderIndex();
+			CurrentExtruderIndex = gcode.GetExtruderIndex();
 			this.retractionMinimumDistance_um = retractionMinimumDistance_um;
 
 			this.perimeterStartEndOverlapRatio = Math.Max(0, Math.Min(1, perimeterStartEndOverlap));
@@ -195,7 +196,7 @@ namespace MatterHackers.MatterSlice
 
 		public int GetExtruder()
 		{
-			return currentExtruderIndex;
+			return CurrentExtruderIndex;
 		}
 
 		private void QueueExtrusionMove(IntPoint destination, GCodePathConfig config)
@@ -465,7 +466,7 @@ namespace MatterHackers.MatterSlice
 
 		public bool ToolChangeRequired(int extruder)
 		{
-			if (extruder == currentExtruderIndex)
+			if (extruder == CurrentExtruderIndex)
 			{
 				return false;
 			}
@@ -475,7 +476,7 @@ namespace MatterHackers.MatterSlice
 
 		public void SetExtruder(int extruder)
 		{
-			currentExtruderIndex = extruder;
+			CurrentExtruderIndex = extruder;
 		}
 
 		public void WriteQueuedGCode(long layerThickness_um)
@@ -690,7 +691,7 @@ namespace MatterHackers.MatterSlice
 			var path = new GCodePath
 			{
 				Retract = RetractType.None,
-				ExtruderIndex = currentExtruderIndex,
+				ExtruderIndex = CurrentExtruderIndex,
 				Done = false,
 				Config = config
 			};

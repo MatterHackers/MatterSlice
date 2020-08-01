@@ -29,6 +29,8 @@ namespace MatterHackers.MatterSlice
 			Polygons outline = in_outline.Offset(config.ExtrusionWidth_um / 2);
 			var aabb = outline.GetBounds();
 
+			var accelerator = new Pathfinding.PathingData(outline, config.ExtrusionWidth_um * 3, true);
+
 			var linespacing_um = (int)(config.ExtrusionWidth_um / (config.InfillPercent / 100));
 			var z = layerIndex * config.LayerThickness_um;
 
@@ -83,7 +85,7 @@ namespace MatterHackers.MatterSlice
 						for (int i = 0; i < num_coords; ++i)
 						{
 							var current = new IntPoint(x + (((num_columns & 1) == 1) ? odd_line_coords[i] : even_line_coords[i]) / 2 + pitch, y + (long)(i * step));
-							bool current_inside = outline.PointIsInside(current);
+							bool current_inside = accelerator.PointIsInside(current) == QTPolygonsExtensions.InsideState.Inside;
 							if (!is_first_point)
 							{
 								if (last_inside && current_inside)
@@ -182,7 +184,7 @@ namespace MatterHackers.MatterSlice
 						for (int i = 0; i < num_coords; ++i)
 						{
 							var current = new IntPoint(x + (long)(i * step), y + (((num_rows & 1) == 1) ? odd_line_coords[i] : even_line_coords[i]) / 2);
-							bool current_inside = outline.PointIsInside(current);
+							bool current_inside = accelerator.PointIsInside(current) == QTPolygonsExtensions.InsideState.Inside;
 							if (!is_first_point)
 							{
 								if (last_inside && current_inside)

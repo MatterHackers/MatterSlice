@@ -928,7 +928,14 @@ namespace MatterHackers.MatterSlice
 
 		private HashSet<int> ExtrudersUsedInLayer0(ConfigSettings config, LayerDataStorage slicingData)
 		{
-			var layer0Extruders = slicingData.Extruders.Where(e => e.UsedInLayer(0)).Select((e, index) => index);
+			var layer0Extruders = new List<int>();
+			for (int i = 0; i < slicingData.Extruders.Count; i++)
+			{
+				if (slicingData.Extruders[i].UsedInLayer(0))
+				{
+					layer0Extruders.Add(i);
+				}
+			}
 
 			var usedExtruders = new HashSet<int>(layer0Extruders);
 
@@ -1019,7 +1026,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			islandOrderOptimizer.Optimize(default(IntPoint), layer.PathFinder, layerIndex, false);
+			islandOrderOptimizer.Optimize(layerGcodePlanner.LastPosition_um, layer.PathFinder, layerIndex, false);
 
 			var bottomFillIslandPolygons = new List<Polygons>();
 
@@ -1391,7 +1398,7 @@ namespace MatterHackers.MatterSlice
 			long bestDist = long.MaxValue;
 			for (int polygonIndex = 0; polygonIndex < boundaryPolygons.Count; polygonIndex++)
 			{
-				IntPoint closestToPoly = boundaryPolygons[polygonIndex].FindGreatestTurnPosition(config.ExtrusionWidth_um, layerIndex, position);
+				IntPoint closestToPoly = boundaryPolygons[polygonIndex].FindGreatestTurnPosition(config.ExtrusionWidth_um, position);
 				if (closestToPoly != null)
 				{
 					long length = (closestToPoly - position).Length();
@@ -1488,7 +1495,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				islandOrderOptimizer.Optimize(default(IntPoint), layer.PathFinder, layerIndex, false);
+				islandOrderOptimizer.Optimize(layerGcodePlanner.LastPosition_um, layer.PathFinder, layerIndex, false);
 
 				for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.OptimizedPaths.Count; islandOrderIndex++)
 				{
