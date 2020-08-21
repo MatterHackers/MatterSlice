@@ -233,10 +233,22 @@ namespace MatterHackers.MatterSlice
 		{
 			if (config.ClosedLoop)
 			{
-				for (int positionIndex = 1; positionIndex < polygon.Count; positionIndex++)
+				// always make sure we render CCW
+				if (polygon.GetWindingDirection() == 1 || polygon.Count <= 2)
 				{
-					IntPoint destination = polygon[(startIndex + positionIndex) % polygon.Count];
-					QueueExtrusionMove(destination, config);
+					for (int positionIndex = 1; positionIndex < polygon.Count; positionIndex++)
+					{
+						IntPoint destination = polygon[(startIndex + positionIndex) % polygon.Count];
+						QueueExtrusionMove(destination, config);
+					}
+				}
+				else
+				{
+					for (int positionIndex = polygon.Count - 1; positionIndex >= 1; positionIndex--)
+					{
+						IntPoint destination = polygon[(startIndex + positionIndex) % polygon.Count];
+						QueueExtrusionMove(destination, config);
+					}
 				}
 
 				// We need to actually close the polygon so go back to the first point

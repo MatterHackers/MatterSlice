@@ -1073,7 +1073,7 @@ namespace MatterHackers.MatterSlice
 
 				bottomFillIslandPolygons.Add(bottomFillPolygons);
 
-				int fanBeforeBridgePolygons = gcodeExport.CurrentFanSpeed;
+				int fanSpeedAtLayerStart = gcodeExport.LastWrittenFanSpeed;
 
 				if (config.NumberOfPerimeters > 0)
 				{
@@ -1296,7 +1296,7 @@ namespace MatterHackers.MatterSlice
 				{
 					QueuePolygonsConsideringSupport(layerIndex, null, layerGcodePlanner, bridgePolygons, bridgeConfig, SupportWriteType.UnsupportedAreas);
 					// Set it back to what it was
-					layerGcodePlanner.QueueFanCommand(fanBeforeBridgePolygons, fillConfig);
+					layerGcodePlanner.QueueFanCommand(fanSpeedAtLayerStart, fillConfig);
 				}
 
 				// Put all of these segments into a list that can be queued together and still preserve their individual config settings.
@@ -1320,12 +1320,11 @@ namespace MatterHackers.MatterSlice
 				QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, bottomFillPolygons, bottomFillConfig, SupportWriteType.UnsupportedAreas);
 				if (firstTopFillPolygons.Count > 0)
 				{
-					int fanSpeedPercent = gcodeExport.CurrentFanSpeed;
 					// turn it on for bridge (or keep it on)
-					layerGcodePlanner.QueueFanCommand(Math.Max(fanSpeedPercent, config.BridgeFanSpeedPercent), bridgeConfig);
+					layerGcodePlanner.QueueFanCommand(Math.Max(fanSpeedAtLayerStart, config.BridgeFanSpeedPercent), bridgeConfig);
 					layerGcodePlanner.QueuePolygonsByOptimizer(firstTopFillPolygons, island.PathFinder, firstTopFillConfig, layerIndex);
 					// Set it back to what it was
-					layerGcodePlanner.QueueFanCommand(fanSpeedPercent, fillConfig);
+					layerGcodePlanner.QueueFanCommand(fanSpeedAtLayerStart, fillConfig);
 				}
 
 				layerGcodePlanner.QueuePolygonsByOptimizer(topFillPolygons, island.PathFinder, topFillConfig, layerIndex);

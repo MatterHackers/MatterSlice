@@ -28,7 +28,11 @@ namespace MatterHackers.MatterSlice
 {
 	public class GCodeExport
 	{
-		public int CurrentFanSpeed { get; private set; }
+		/// <summary>
+		/// Gets last written fan speed. NOTE: This is not updated until queued
+		/// code is written. Cannot be used to track fan speed while queuing commands.
+		/// </summary>
+		public int LastWrittenFanSpeed { get; private set; }
 
 		public int CurrentAcceleration { get; private set; }
 
@@ -101,7 +105,7 @@ namespace MatterHackers.MatterSlice
 			extrusionPerMm = 0;
 			extrusionAmountAtPreviousRetraction_mm = -1;
 			extruderIndex = 0;
-			CurrentFanSpeed = -1;
+			LastWrittenFanSpeed = -1;
 
 			layerPrintTime = 0.0;
 			for (int e = 0; e < ConfigConstants.MAX_EXTRUDERS; e++)
@@ -273,7 +277,7 @@ namespace MatterHackers.MatterSlice
 		/// <param name="speed"></param>
 		public void WriteFanCommand(int speed)
 		{
-			if (CurrentFanSpeed == speed)
+			if (LastWrittenFanSpeed == speed)
 			{
 				return;
 			}
@@ -290,7 +294,7 @@ namespace MatterHackers.MatterSlice
 				gcodeFileStream.Write("M107\n");
 			}
 
-			CurrentFanSpeed = speed;
+			LastWrittenFanSpeed = speed;
 		}
 
 		public void WriteAccelerationCommand(int acceleration)
@@ -304,7 +308,7 @@ namespace MatterHackers.MatterSlice
 			// Exhaust the buffer before changing the acceleration
 			gcodeFileStream.Write($"M204 S{acceleration}\n");
 
-			CurrentFanSpeed = acceleration;
+			LastWrittenFanSpeed = acceleration;
 		}
 
 		public void WriteLine(string line)
