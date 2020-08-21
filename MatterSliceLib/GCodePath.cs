@@ -68,6 +68,8 @@ namespace MatterHackers.MatterSlice
 
 		public int FanPercent { get; set; } = -1;
 
+		public int Acceleration { get; set; }
+
 		public Polygon Polygon { get; set; } = new Polygon();
 
 		private RetractType _retract = RetractType.None;

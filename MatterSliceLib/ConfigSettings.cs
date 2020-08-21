@@ -171,7 +171,11 @@ namespace MatterHackers.MatterSlice
 		public ConfigConstants.INFILL_TYPE InfillType { get; set; }
 
 		[SettingDescription("The speed of all perimeters but the outside one. mm/s.")]
-		public int InsidePerimetersSpeed { get; set; }
+		public int InsidePerimetersSpeed { get; set; } = 50;
+
+		public int PerimeterAcceleration { get; set; } = 0;
+
+		public int DefaultAcceleration { get; set; } = 0;
 
 		public string LayerChangeCode { get; set; } = "; LAYER:[layer_num]";
 
@@ -644,6 +648,7 @@ namespace MatterHackers.MatterSlice
 			OutsidePerimeterSpeed = 50;
 			OutsidePerimeterExtrusionWidth = ExtrusionWidth;
 			InsidePerimetersSpeed = 50;
+			PerimeterAcceleration = 0;
 			TravelSpeed = 200;
 			FirstLayerToAllowFan = 2;
 			SkirtDistanceFromObject = 6;
