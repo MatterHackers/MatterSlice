@@ -331,9 +331,9 @@ namespace MatterHackers.MatterSlice
 			queuedFanSpeeds.Add(path);
 		}
 
-		public void QueueAccelerationCommand(int acceleration)
+		public void QueueAccelerationCommand(int acceleration, GCodePathConfig config)
 		{
-			var path = GetNewPath(null);
+			var path = GetNewPath(config);
 			path.Acceleration = acceleration;
 		}
 

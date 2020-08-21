@@ -1110,7 +1110,7 @@ namespace MatterHackers.MatterSlice
 
 					if (config.PerimeterAcceleration > 0)
 					{
-						layerGcodePlanner.QueueAccelerationCommand(config.PerimeterAcceleration);
+						layerGcodePlanner.QueueAccelerationCommand(config.PerimeterAcceleration, insetXConfig);
 					}
 
 					// If we are on the very first layer we always start with the outside so that we can stick to the bed better.
@@ -1286,7 +1286,7 @@ namespace MatterHackers.MatterSlice
 
 					if (config.DefaultAcceleration > 0)
 					{
-						layerGcodePlanner.QueueAccelerationCommand(config.DefaultAcceleration);
+						layerGcodePlanner.QueueAccelerationCommand(config.DefaultAcceleration, fillConfig);
 					}
 				}
 
