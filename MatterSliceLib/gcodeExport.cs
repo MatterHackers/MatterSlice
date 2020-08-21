@@ -30,6 +30,8 @@ namespace MatterHackers.MatterSlice
 	{
 		public int CurrentFanSpeed { get; private set; }
 
+		public int CurrentAcceleration { get; private set; }
+
 		private IntPoint _positionXy_um = new IntPoint(long.MinValue, long.MinValue);
 
 		public IntPoint PositionXy_um
@@ -289,6 +291,20 @@ namespace MatterHackers.MatterSlice
 			}
 
 			CurrentFanSpeed = speed;
+		}
+
+		public void WriteAccelerationCommand(int acceleration)
+		{
+			if (CurrentAcceleration == acceleration
+				|| acceleration <= 0)
+			{
+				return;
+			}
+
+			// Exhaust the buffer before changing the acceleration
+			gcodeFileStream.Write($"M204 S{acceleration}\n");
+
+			CurrentFanSpeed = acceleration;
 		}
 
 		public void WriteLine(string line)

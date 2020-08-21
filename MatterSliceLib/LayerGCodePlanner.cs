@@ -331,6 +331,12 @@ namespace MatterHackers.MatterSlice
 			queuedFanSpeeds.Add(path);
 		}
 
+		public void QueueAccelerationCommand(int acceleration)
+		{
+			var path = GetNewPath(null);
+			path.Acceleration = acceleration;
+		}
+
 		public void QueuePolygons(Polygons polygons, PathFinder pathFinder, GCodePathConfig config)
 		{
 			foreach (var polygon in polygons)
@@ -515,6 +521,11 @@ namespace MatterHackers.MatterSlice
 				if (path.FanPercent != -1)
 				{
 					gcodeExport.WriteFanCommand(path.FanPercent);
+				}
+
+				if (path.Acceleration > 0)
+				{
+					gcodeExport.WriteAccelerationCommand(path.Acceleration);
 				}
 
 				if (path.Polygon.Count == 1
