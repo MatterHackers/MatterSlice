@@ -58,7 +58,7 @@ namespace MatterHackers.MatterSlice
 			this.config = config;
 
 			this.gcodeExport = gcode;
-			travelConfig = new GCodePathConfig("travelConfig", "travel");
+			travelConfig = new GCodePathConfig("travelConfig", "travel", config.DefaultAcceleration);
 			travelConfig.SetData(travelSpeed, 0);
 
 			if (gcode.PositionXyHasBeenSet)
@@ -343,12 +343,6 @@ namespace MatterHackers.MatterSlice
 			queuedFanSpeeds.Add(path);
 		}
 
-		public void QueueAccelerationCommand(int acceleration, GCodePathConfig config)
-		{
-			var path = GetNewPath(config);
-			path.Acceleration = acceleration;
-		}
-
 		public void QueuePolygons(Polygons polygons, PathFinder pathFinder, GCodePathConfig config)
 		{
 			foreach (var polygon in polygons)
@@ -535,9 +529,9 @@ namespace MatterHackers.MatterSlice
 					gcodeExport.WriteFanCommand(path.FanPercent);
 				}
 
-				if (path.Acceleration > 0)
+				if (path.Config.Acceleration > 0)
 				{
-					gcodeExport.WriteAccelerationCommand(path.Acceleration);
+					gcodeExport.WriteAccelerationCommand(path.Config.Acceleration);
 				}
 
 				if (path.Polygon.Count == 1
@@ -716,7 +710,7 @@ namespace MatterHackers.MatterSlice
 				Retract = RetractType.None,
 				ExtruderIndex = CurrentExtruderIndex,
 				Done = false,
-				Config = config
+				Config = config,
 			};
 
 			paths.Add(path);

@@ -443,18 +443,18 @@ namespace MatterHackers.MatterSlice
 			// keep the raft generation code inside of raft
 			slicingData.WriteRaftGCodeIfRequired(gcodeExport, config);
 
-			skirtConfig = new GCodePathConfig("skirtConfig", "SKIRT");
-			inset0Config = new GCodePathConfig("inset0Config", "WALL-OUTER") { DoSeamHiding = true };
-			insetXConfig = new GCodePathConfig("insetXConfig", "WALL-INNER");
-			fillConfig = new GCodePathConfig("fillConfig", "FILL") { ClosedLoop = false };
-			topFillConfig = new GCodePathConfig("topFillConfig", "TOP-FILL") { ClosedLoop = false };
-			firstTopFillConfig = new GCodePathConfig("firstTopFillConfig", "FIRST-TOP-Fill") { ClosedLoop = false };
-			bottomFillConfig = new GCodePathConfig("bottomFillConfig", "BOTTOM-FILL") { ClosedLoop = false };
-			airGappedBottomInsetConfig = new GCodePathConfig("airGappedBottomInsetConfig", "AIR-GAP-INSET");
-			airGappedBottomConfig = new GCodePathConfig("airGappedBottomConfig", "AIR-GAP") { ClosedLoop = false };
-			bridgeConfig = new GCodePathConfig("bridgeConfig", "BRIDGE");
-			supportNormalConfig = new GCodePathConfig("supportNormalConfig", "SUPPORT");
-			supportInterfaceConfig = new GCodePathConfig("supportInterfaceConfig", "SUPPORT-INTERFACE");
+			skirtConfig = new GCodePathConfig("skirtConfig", "SKIRT", config.DefaultAcceleration);
+			inset0Config = new GCodePathConfig("inset0Config", "WALL-OUTER", config.PerimeterAcceleration) { DoSeamHiding = true };
+			insetXConfig = new GCodePathConfig("insetXConfig", "WALL-INNER", config.PerimeterAcceleration);
+			fillConfig = new GCodePathConfig("fillConfig", "FILL", config.DefaultAcceleration) { ClosedLoop = false };
+			topFillConfig = new GCodePathConfig("topFillConfig", "TOP-FILL", config.DefaultAcceleration) { ClosedLoop = false };
+			firstTopFillConfig = new GCodePathConfig("firstTopFillConfig", "FIRST-TOP-Fill", config.DefaultAcceleration) { ClosedLoop = false };
+			bottomFillConfig = new GCodePathConfig("bottomFillConfig", "BOTTOM-FILL", config.DefaultAcceleration) { ClosedLoop = false };
+			airGappedBottomInsetConfig = new GCodePathConfig("airGappedBottomInsetConfig", "AIR-GAP-INSET", config.DefaultAcceleration);
+			airGappedBottomConfig = new GCodePathConfig("airGappedBottomConfig", "AIR-GAP", config.DefaultAcceleration) { ClosedLoop = false };
+			bridgeConfig = new GCodePathConfig("bridgeConfig", "BRIDGE", config.DefaultAcceleration);
+			supportNormalConfig = new GCodePathConfig("supportNormalConfig", "SUPPORT", config.DefaultAcceleration);
+			supportInterfaceConfig = new GCodePathConfig("supportInterfaceConfig", "SUPPORT-INTERFACE", config.DefaultAcceleration);
 
 			using (new QuickTimer2("All Layers"))
 			{
@@ -1108,11 +1108,6 @@ namespace MatterHackers.MatterSlice
 						layerGcodePlanner.QueueFanCommand(config.BridgeFanSpeedPercent, bridgeConfig);
 					}
 
-					if (config.PerimeterAcceleration > 0)
-					{
-						layerGcodePlanner.QueueAccelerationCommand(config.PerimeterAcceleration, insetXConfig);
-					}
-
 					// If we are on the very first layer we always start with the outside so that we can stick to the bed better.
 					if (config.OutsidePerimetersFirst || layerIndex == 0 || inset0Config.Spiralize)
 					{
@@ -1282,11 +1277,6 @@ namespace MatterHackers.MatterSlice
 
 							fillPolygons.AddRange(thinLines);
 						}
-					}
-
-					if (config.DefaultAcceleration > 0)
-					{
-						layerGcodePlanner.QueueAccelerationCommand(config.DefaultAcceleration, fillConfig);
 					}
 				}
 
