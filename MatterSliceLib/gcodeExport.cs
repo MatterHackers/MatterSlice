@@ -308,7 +308,7 @@ namespace MatterHackers.MatterSlice
 			// Exhaust the buffer before changing the acceleration
 			gcodeFileStream.Write($"M204 S{acceleration}\n");
 
-			LastWrittenFanSpeed = acceleration;
+			CurrentAcceleration = acceleration;
 		}
 
 		public void WriteLine(string line)

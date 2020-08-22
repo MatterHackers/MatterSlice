@@ -26,23 +26,26 @@ namespace MatterHackers.MatterSlice
 	/// </summary>
 	public class GCodePathConfig
 	{
-		public GCodePathConfig(string configName, string gcodeComment)
+		public GCodePathConfig(string configName, string gcodeComment, int acceleration)
 		{
 			this.Name = configName;
 			this.GCodeComment = gcodeComment;
+			this.Acceleration = acceleration;
 		}
 
 		public bool ClosedLoop { get; set; } = true;
 
 		public bool DoSeamHiding { get; set; }
 
-		public string GCodeComment { get; set; }
+		public string GCodeComment { get; private set; }
 
-		public long LineWidth_um { get; set; }
+		public long LineWidth_um { get; private set; }
 
-		public string Name { get; set; }
+		public string Name { get; private set; }
 
 		public double Speed { get; private set; }
+
+		public int Acceleration { get; private set; }
 
 		public bool Spiralize { get; set; }
 
@@ -59,7 +62,7 @@ namespace MatterHackers.MatterSlice
 
 		public GCodePathConfig Clone(string newConfigName, string newGCodeComment)
 		{
-			return new GCodePathConfig(newConfigName, newGCodeComment)
+			return new GCodePathConfig(newConfigName, newGCodeComment, this.Acceleration)
 			{
 				ClosedLoop = this.ClosedLoop,
 				DoSeamHiding = this.DoSeamHiding,

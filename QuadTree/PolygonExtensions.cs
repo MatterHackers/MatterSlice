@@ -65,7 +65,7 @@ namespace MatterHackers.QuadTree
 
 		public static IntPoint Center(this Polygon polygon)
 		{
-			IntPoint center = new IntPoint();
+			var center = new IntPoint();
 			for (int positionIndex = 0; positionIndex < polygon.Count; positionIndex++)
 			{
 				center += polygon[positionIndex];
@@ -460,7 +460,7 @@ namespace MatterHackers.QuadTree
 				}
 			}
 
-			Polygon segmentedPolygon = new Polygon(segments.Count);
+			var segmentedPolygon = new Polygon(segments.Count);
 
 			foreach (var segment in segments)
 			{
@@ -478,6 +478,7 @@ namespace MatterHackers.QuadTree
 
 		public static bool MergePerimeterOverlaps(this Polygon perimeter, long overlapMergeAmount_um, out Polygons separatedPolygons, bool pathIsClosed = true)
 		{
+			// if the path is wound CW
 			separatedPolygons = new Polygons();
 
 			long cleanDistance_um = overlapMergeAmount_um / 40;
@@ -489,6 +490,7 @@ namespace MatterHackers.QuadTree
 			{
 				return false;
 			}
+
 			bool pathWasOptimized = false;
 
 			for (int i = 0; i < perimeter.Count; i++)
@@ -504,7 +506,7 @@ namespace MatterHackers.QuadTree
 			// make a copy that has every point duplicated (so that we have them as segments).
 			List<Segment> polySegments = Segment.ConvertToSegments(perimeter, pathIsClosed);
 
-			Altered[] markedAltered = new Altered[polySegments.Count];
+			var markedAltered = new Altered[polySegments.Count];
 
 			var minimumLengthToCreateSquared = overlapMergeAmount_um / 10;
 			minimumLengthToCreateSquared *= minimumLengthToCreateSquared;
@@ -542,7 +544,7 @@ namespace MatterHackers.QuadTree
 							var segmentStart = (polySegments[firstSegmentIndex].Start + polySegments[checkSegmentIndex].End) / 2;
 							var segmentEnd = (polySegments[firstSegmentIndex].End + polySegments[checkSegmentIndex].Start) / 2;
 
-							if((segmentStart - segmentEnd).LengthSquared() < minimumLengthToCreateSquared)
+							if ((segmentStart - segmentEnd).LengthSquared() < minimumLengthToCreateSquared)
 							{
 								continue;
 							}
@@ -574,7 +576,7 @@ namespace MatterHackers.QuadTree
 			}
 
 			// go through the polySegments and create a new polygon for every connected set of segments
-			Polygon currentPolygon = new Polygon();
+			var currentPolygon = new Polygon();
 			separatedPolygons.Add(currentPolygon);
 			// put in the first point
 			for (int segmentIndex = 0; segmentIndex < polySegments.Count; segmentIndex++)
@@ -597,6 +599,12 @@ namespace MatterHackers.QuadTree
 
 			// add the end point
 			currentPolygon.Add(polySegments[polySegments.Count - 1].End);
+
+			if (pathWasOptimized
+				&& Math.Abs(perimeter.PolygonLength() - separatedPolygons.PolygonLength(false)) < overlapMergeAmount_um * 2)
+			{
+				return false;
+			}
 
 			return pathWasOptimized;
 		}
