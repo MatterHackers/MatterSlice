@@ -21,4 +21,8 @@
     <Folder Include="Properties\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\agg-sharp\VectorMath\VectorMath.csproj" />
+  </ItemGroup>
+
 </Project>

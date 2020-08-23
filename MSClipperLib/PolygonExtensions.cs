@@ -31,6 +31,7 @@ using System.Collections.Generic;
 
 namespace MSClipperLib
 {
+	using MatterHackers.VectorMath;
 	using System;
 	using System.Linq;
 	using Polygon = List<IntPoint>;
@@ -65,102 +66,77 @@ namespace MSClipperLib
 
 		/// <summary>
 		/// This will find the largest turn in a given models. It prefers concave turns to convex turns.
-		/// If turn amount is the same bias towards the smallest y position.
+		/// If turn amount is the same, bias towards the smallest y position.
 		/// </summary>
 		/// <param name="inputPolygon">The polygon to analyze</param>
 		/// <param name="considerAsSameY">Range to treat y positions as the same value.</param>
 		/// <param name="startPosition">If two or more angles are similar, choose the one close to the start</param>
 		/// <returns>The position that has the largest turn angle</returns>
-		public static IntPoint FindGreatestTurnPosition(this Polygon inputPolygon, long considerAsSameY, IntPoint? startPosition = null)
+		public static IntPoint FindGreatestTurnPosition(this Polygon inputPolygon,
+			long extrusionWidth_um,
+			IntPoint? startPosition = null)
 		{
-			Polygon currentPolygon = Clipper.CleanPolygon(inputPolygon, considerAsSameY / 8);
+			var count = inputPolygon.Count;
+			var polygon2 = inputPolygon.Select(i => new Vector2(i.X, i.Y)).ToList();
+			var localOffset = new List<(int index, double delta)>(count);
 
-			// collect & bucket options and then choose the closest
-			if (currentPolygon.Count == 0)
-			{
-				return inputPolygon[0];
-			}
-
-			double totalTurns = 0;
-			var positiveGroup = new CandidateGroup(DegreesToRadians(35));
-			var negativeGroup = new CandidateGroup(DegreesToRadians(10));
+			var positiveGroup = new CandidateGroup(extrusionWidth_um / 2);
+			var negativeGroup = new CandidateGroup(extrusionWidth_um / 2);
 
 			var currentFurthestBack = new IntPoint(long.MaxValue, long.MinValue);
 			int furthestBackIndex = 0;
 
-			double minTurnToChoose = DegreesToRadians(1);
-			long minSegmentLengthToConsiderSquared = 50 * 50;
+			var neighborhood = extrusionWidth_um * 4;
 
-			int pointCount = currentPolygon.Count;
-			for (int pointIndex = 0; pointIndex < pointCount; pointIndex++)
+			for (var i = 0; i < count; i++)
 			{
-				int prevIndex = ((pointIndex + pointCount - 1) % pointCount);
-				int nextIndex = ((pointIndex + 1) % pointCount);
-				IntPoint prevPoint = currentPolygon[prevIndex];
-				IntPoint currentPoint = currentPolygon[pointIndex];
-				IntPoint nextPoint = currentPolygon[nextIndex];
+				var position = polygon2[i];
+				var prevPosition = polygon2[(count + i - 1) % count];
+				var nextPosition = polygon2[(count + i + 1) % count];
+				var angle = position.GetTurnAmount(prevPosition, nextPosition);
+				var lengthToPoint = polygon2.LengthTo(i);
+
+				var leftPosition = polygon2.GetPositionAt(lengthToPoint - neighborhood);
+				var rightPosition = polygon2.GetPositionAt(lengthToPoint + neighborhood);
+				var nearAngle = position.GetTurnAmount(leftPosition, rightPosition);
+				var directionNormal = (rightPosition - leftPosition).GetNormal().GetPerpendicularRight();
+				var delta = Vector2.Dot(directionNormal, position - leftPosition);
+
+				var currentPoint = inputPolygon[i];
+				if (delta < -extrusionWidth_um)
+				{
+					negativeGroup.ConditionalAdd(new CandidatePoint(delta, i, currentPoint));
+				}
+				else if(delta > extrusionWidth_um)
+				{
+					positiveGroup.ConditionalAdd(new CandidatePoint(delta, i, currentPoint));
+				}
 
 				if (currentPoint.Y >= currentFurthestBack.Y)
 				{
 					if (currentPoint.Y > currentFurthestBack.Y
 						|| currentPoint.X < currentFurthestBack.X)
 					{
-						furthestBackIndex = pointIndex;
+						furthestBackIndex = i;
 						currentFurthestBack = currentPoint;
 					}
 				}
 
-				long lengthPrevToCurSquared = (prevPoint - currentPoint).LengthSquared();
-				long lengthCurToNextSquared = (nextPoint - currentPoint).LengthSquared();
-				bool distanceLongeEnough = lengthCurToNextSquared > minSegmentLengthToConsiderSquared && lengthPrevToCurSquared > minSegmentLengthToConsiderSquared;
-
-				double turnAmount = currentPoint.GetTurnAmount(prevPoint, nextPoint);
-
-				totalTurns += turnAmount;
-
-				if (turnAmount < 0)
-				{
-					// threshold angles, don't pick angles that are too shallow
-					// threshold line lengths, don't pick big angles hiding in TINY lines
-					if (Math.Abs(turnAmount) > minTurnToChoose
-						&& distanceLongeEnough)
-					{
-						negativeGroup.ConditionalAdd(new CandidatePoint(turnAmount, pointIndex, currentPoint));
-					}
-				}
-				else
-				{
-					if (Math.Abs(turnAmount) > minTurnToChoose
-						&& distanceLongeEnough)
-					{
-						positiveGroup.ConditionalAdd(new CandidatePoint(turnAmount, pointIndex, currentPoint));
-					}
-				}
+				localOffset.Add((i, delta));
 			}
 
 			if (negativeGroup.Count > 0)
 			{
-				if (positiveGroup.Count > 0
-					// the negative group is a small turn and the positive group is a big turn
-					&& ((Math.Abs(negativeGroup[0].turnAmount) < Math.PI / 4
-							&& Math.Abs(positiveGroup[0].turnAmount) > Math.PI / 4)
-						// the negative turn amount is very small
-						|| Math.Abs(negativeGroup[0].turnAmount) < Math.PI / 8))
-				{
-					// return the positive rather than the negative turn
-					return currentPolygon[positiveGroup.GetBestIndex(startPosition)];
-				}
-
-				return currentPolygon[negativeGroup.GetBestIndex(startPosition)];
+				return inputPolygon[negativeGroup.GetBestIndex(startPosition)];
 			}
 			else if (positiveGroup.Count > 0)
 			{
-				return currentPolygon[positiveGroup.GetBestIndex(startPosition)];
+				return inputPolygon[positiveGroup.GetBestIndex(startPosition)];
 			}
 			else
 			{
 				// If can't find good candidate go with vertex most in a single direction
-				return currentPolygon[furthestBackIndex];
+				return inputPolygon[furthestBackIndex];
 			}
 		}
 
@@ -287,6 +263,7 @@ namespace MSClipperLib
 						var delteFromCurrent = (nextPoint - currentPoint) * distanceAlongThisSegment / segmentLength;
 						return currentPoint + delteFromCurrent;
 					}
+					position = nextPoint;
 					length += segmentLength;
 					currentPoint = nextPoint;
 				}
@@ -329,24 +306,24 @@ namespace MSClipperLib
 		public struct CandidatePoint
 		{
 			internal IntPoint position;
-			internal double turnAmount;
+			internal double neighborDelta;
 			internal int turnIndex;
 
-			internal CandidatePoint(double turnAmount, int turnIndex, IntPoint position)
+			internal CandidatePoint(double neighborDelta, int turnIndex, IntPoint position)
 			{
 				this.turnIndex = turnIndex;
-				this.turnAmount = turnAmount;
+				this.neighborDelta = neighborDelta;
 				this.position = position;
 			}
 		}
 
 		public class CandidateGroup : List<CandidatePoint>
 		{
-			private readonly double sameTurn;
+			private readonly double sameDelta;
 
-			public CandidateGroup(double sameTurn)
+			public CandidateGroup(double sameDelta)
 			{
-				this.sameTurn = sameTurn;
+				this.sameDelta = sameDelta;
 			}
 
 			/// <summary>
@@ -356,8 +333,8 @@ namespace MSClipperLib
 			/// <returns></returns>
 			public int GetBestIndex(IntPoint? startPosition)
 			{
-				bool shallowTurn = Math.Abs(this[this.Count - 1].turnAmount) < .3;
-				bool outsideEdge = this[this.Count - 1].turnAmount > 0;
+				bool shallowTurn = Math.Abs(this[this.Count - 1].neighborDelta) < .3;
+				bool outsideEdge = this[this.Count - 1].neighborDelta > 0;
 
 				if (shallowTurn || startPosition == null)
 				{
@@ -405,13 +382,13 @@ namespace MSClipperLib
 
 			public void ConditionalAdd(CandidatePoint point)
 			{
-				if(Math.Abs(point.turnAmount) > Math.PI/2)
+				if(Math.Abs(point.neighborDelta) > Math.PI/2)
 				{
 					// we keep everything bigger than 90 degrees
 					// remove all points that are worse than 90 degree
 					for (int i = Count - 1; i >= 0; i--)
 					{
-						if (Math.Abs(this[i].turnAmount)  < Math.PI / 2)
+						if (Math.Abs(this[i].neighborDelta)  < Math.PI / 2)
 						{
 							RemoveAt(i);
 						}
@@ -429,13 +406,13 @@ namespace MSClipperLib
 				// If this is better than our worst point
 				// or it is within sameTurn of our best point
 				if (Count == 0
-					|| Math.Abs(point.turnAmount) >= Math.Abs(this[Count - 1].turnAmount)
-					|| Math.Abs(point.turnAmount) >= Math.Abs(this[0].turnAmount) - sameTurn)
+					|| Math.Abs(point.neighborDelta) >= Math.Abs(this[Count - 1].neighborDelta)
+					|| Math.Abs(point.neighborDelta) >= Math.Abs(this[0].neighborDelta) - sameDelta)
 				{
 					// remove all points that are worse than the new one
 					for (int i = Count - 1; i >= 0; i--)
 					{
-						if (Math.Abs(this[i].turnAmount) + sameTurn < Math.Abs(point.turnAmount))
+						if (Math.Abs(this[i].neighborDelta) + sameDelta < Math.Abs(point.neighborDelta))
 						{
 							RemoveAt(i);
 						}
@@ -449,7 +426,7 @@ namespace MSClipperLib
 					{
 						for (int i = 0; i < Count; i++)
 						{
-							if (Math.Abs(point.turnAmount) >= Math.Abs(this[i].turnAmount))
+							if (Math.Abs(point.neighborDelta) >= Math.Abs(this[i].neighborDelta))
 							{
 								// insert it sorted
 								Insert(i, point);
