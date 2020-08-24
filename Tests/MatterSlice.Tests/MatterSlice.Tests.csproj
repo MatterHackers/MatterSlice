@@ -61,6 +61,18 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\MatterControl.Winforms\MatterControl.Winforms.csproj">
+      <Project>{d6dc2669-7b1f-40fe-89bf-45d4c94473e3}</Project>
+      <Name>MatterControl.Winforms</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\agg-sharp\agg\Agg.csproj">
+      <Project>{657DBC6D-C3EA-4398-A3FA-DDB73C14F71B}</Project>
+      <Name>Agg</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\agg-sharp\VectorMath\VectorMath.csproj">
+      <Project>{D3E41B4E-BFBB-44CA-94C8-95C00F754FDD}</Project>
+      <Name>VectorMath</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\MatterSliceLib\MatterSliceLib.csproj">
       <Project>{7f077116-2923-4a77-87cc-ec3be7eb8bc3}</Project>
       <Name>MatterSliceLib</Name>

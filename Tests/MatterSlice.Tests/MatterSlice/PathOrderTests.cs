@@ -29,12 +29,20 @@ either expressed or implied, of the FreeBSD Project.
 
 using System;
 using System.Collections.Generic;
+using MatterHackers.Agg;
+using MatterHackers.Agg.Image;
+using MatterHackers.Agg.Platform;
+using MatterHackers.Agg.Transform;
+using MatterHackers.Agg.VertexSource;
+using MatterHackers.Pathfinding;
+using MatterHackers.QuadTree;
 using MSClipperLib;
 using NUnit.Framework;
-using MatterHackers.QuadTree;
 
 namespace MatterHackers.MatterSlice.Tests
 {
+	using Polygon = List<IntPoint>;
+
 	[TestFixture, Category("MatterSlice.PathOrderTests")]
 	public class PathOrderTests
 	{
@@ -118,6 +126,54 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.AreEqual(0, pPathOrderOptimizer.OptimizedPaths[0].PointIndex);
 				Assert.AreEqual(1, pPathOrderOptimizer.OptimizedPaths[1].PointIndex);
 			}
+		}
+
+		public static (Graphics2D graphics, Affine transform) ImageWithPolygonOutline(Polygon polygon, int width)
+		{
+			var polygonBounds = polygon.GetBounds();
+
+			var height = (int)Math.Round((double)width / polygonBounds.Width() * polygonBounds.Height());
+
+			var image = new ImageBuffer(width + 4, height + 4);
+
+			// Set the transform to image space
+			var polygonsToImageTransform = Affine.NewIdentity();
+			// move it to 0, 0
+			polygonsToImageTransform *= Affine.NewTranslation(-polygonBounds.minX, -polygonBounds.minY);
+			// scale to fit cache
+			polygonsToImageTransform *= Affine.NewScaling(width / (double)polygonBounds.Width(), height / (double)polygonBounds.Height());
+			// and move it in 2 pixels
+			polygonsToImageTransform *= Affine.NewTranslation(2, 2);
+
+			// and render the polygon to the image
+			var graphics = image.NewGraphics2D();
+			graphics.Clear(Color.White);
+			var vertices = PathingData.CreatePathStorage(new List<Polygon>() { polygon });
+			graphics.Render(new VertexSourceApplyTransform(new Stroke(vertices, 100), polygonsToImageTransform), Color.Black);
+			return (graphics, polygonsToImageTransform);
+		}
+
+		public static void SavePolygonToImage(Polygon polygon, string fileName, int width, Action<Graphics2D, Affine> render)
+		{
+			var graphicsAndTransform = ImageWithPolygonOutline(polygon, width);
+			render?.Invoke(graphicsAndTransform.graphics, graphicsAndTransform.transform);
+			AggContext.ImageIO.SaveImageData(fileName, graphicsAndTransform.graphics.DestImage);
+		}
+
+		[Test]
+		public void SeemOnPolygon()
+		{
+			return;
+			var polygon1String = "x:-9.85, y:-11.85,x:-9.64, y:-11.82,x:-9.16, y:-11.62,x:-8.9, y:-11.53,x:-8.17, y:-11.51,x:-7.89, y:-11.46,x:-7.7, y:-11.38,x:-7.48, y:-11.2,x:-7.27, y:-11.07,x:-7.04, y:-11.02,x:-1.18, y:-10.97,x:6.86, y:-11.01,x:7.13, y:-11.03,x:7.37, y:-11.11,x:7.66, y:-11.35,x:7.85, y:-11.45,x:8.08, y:-11.5,x:8.91, y:-11.53,x:9.17, y:-11.62,x:9.64, y:-11.82,x:9.85, y:-11.85,x:10, y:-11.82,x:10.15, y:-11.74,x:10.25, y:-11.66,x:10.31, y:-11.56,x:10.62, y:-10.95,x:10.79, y:-10.75,x:12.01, y:-9.86,x:12.48, y:-9.43,x:12.91, y:-8.97,x:13.29, y:-8.49,x:13.6, y:-8.03,x:13.92, y:-7.45,x:14.24, y:-6.75,x:14.44, y:-6.14,x:14.6, y:-5.49,x:14.71, y:-4.84,x:14.76, y:-4.18,x:14.76, y:-3.61,x:14.71, y:-2.94,x:14.58, y:-2.19,x:14.4, y:-1.53,x:14.16, y:-0.88,x:13.88, y:-0.26,x:13.46, y:0.44,x:13.05, y:1,x:12.62, y:1.49,x:12.14, y:1.94,x:11.63, y:2.35,x:11.08, y:2.71,x:10.5, y:3.03,x:9.89, y:3.29,x:9.18, y:3.54,x:9.04, y:3.78,x:8.76, y:4.2,x:8.36, y:4.44,x:7.79, y:4.7,x:7.2, y:4.9,x:6.68, y:5.01,x:6.16, y:5.05,x:-5.99, y:5.06,x:-6.39, y:5.04,x:-6.84, y:4.98,x:-7.21, y:4.9,x:-7.66, y:4.75,x:-8.09, y:4.57,x:-8.75, y:4.2,x:-8.87, y:4.04,x:-9.17, y:3.53,x:-9.5, y:3.43,x:-10.2, y:3.16,x:-10.79, y:2.88,x:-11.35, y:2.54,x:-11.89, y:2.15,x:-12.38, y:1.72,x:-12.84, y:1.24,x:-13.23, y:0.76,x:-13.57, y:0.26,x:-13.9, y:-0.32,x:-14.2, y:-0.98,x:-14.42, y:-1.61,x:-14.59, y:-2.27,x:-14.7, y:-2.93,x:-14.75, y:-3.61,x:-14.75, y:-4.18,x:-14.7, y:-4.84,x:-14.57, y:-5.61,x:-14.4, y:-6.26,x:-14.16, y:-6.91,x:-13.86, y:-7.55,x:-13.5, y:-8.18,x:-13.11, y:-8.71,x:-12.69, y:-9.21,x:-12.24, y:-9.65,x:-11.75, y:-10.06,x:-10.78, y:-10.76,x:-10.6, y:-10.96,x:-10.32, y:-11.55,|";
+			var polygon1 = CLPolygonsExtensions.CreateFromString(polygon1String, 1000)[0];
+			var index = polygon1.FindGreatestTurnIndex(400, default(IntPoint));
+			SavePolygonToImage(polygon1, "C:\\temp\\polygon.jpg", 640, (g, t) =>
+			{
+				var circle = new Ellipse(polygon1[0].X, polygon1[0].Y, 2, 2);
+				g.Render(new VertexSourceApplyTransform(new Stroke(circle, 1000), t), Color.Blue);
+				circle = new Ellipse(polygon1[index].X, polygon1[index].Y, 2, 2);
+				g.Render(new VertexSourceApplyTransform(new Stroke(circle, 1000), t), Color.Red);
+			});
 		}
 
 		[Test]
@@ -226,7 +282,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |0______|3
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(100, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
-				Assert.IsTrue(bestPoint == 0); // this is an inside perimeter so we place the seem to the front
+				Assert.IsTrue(bestPoint == 1); // this is an inside perimeter so we place the seem to the front
 			}
 
 			// find the right point wound cw
@@ -238,7 +294,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |3______|2
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(100, 0), new IntPoint(0, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
-				Assert.IsTrue(bestPoint == 3);
+				Assert.IsTrue(bestPoint == 0);
 			}
 
 			// find the right point wound ccw
@@ -251,7 +307,7 @@ namespace MatterHackers.MatterSlice.Tests
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(1000, 0), new IntPoint(900, 500), new IntPoint(1000, 1000), new IntPoint(0, 1000) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				// 2 is too shallow to have the seem
-				Assert.IsTrue(bestPoint == 4);
+				Assert.IsTrue(bestPoint == 2);
 			}
 
 			// ccw shallow
@@ -264,7 +320,7 @@ namespace MatterHackers.MatterSlice.Tests
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(0, 0), new IntPoint(100, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				// 0 is too shallow to have the seem
-				Assert.IsTrue(bestPoint == 2);
+				Assert.IsTrue(bestPoint == 0);
 			}
 
 			// ccw
@@ -289,7 +345,7 @@ namespace MatterHackers.MatterSlice.Tests
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(10, 50), new IntPoint(0, 0), new IntPoint(100, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				// 3 is too shallow to have the seem
-				Assert.IsTrue(bestPoint == 2);
+				Assert.IsTrue(bestPoint == 3);
 			}
 
 			// ccw
@@ -314,7 +370,7 @@ namespace MatterHackers.MatterSlice.Tests
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(950, 500), new IntPoint(1000, 1000), new IntPoint(0, 1000), new IntPoint(100, 500), new IntPoint(0, 0), new IntPoint(1000, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				// 2 is too shallow to have the seem
-				Assert.IsTrue(bestPoint == 2);
+				Assert.IsTrue(bestPoint == 3);
 			}
 
 			// ccw
@@ -339,7 +395,7 @@ namespace MatterHackers.MatterSlice.Tests
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(10, 50), new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				// 0 is too shallow
-				Assert.IsTrue(bestPoint == 5);
+				Assert.IsTrue(bestPoint == 0);
 			}
 
 			// ccw
@@ -363,7 +419,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |0______\4
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50), new IntPoint(100, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
-				Assert.IsTrue(bestPoint == 0); // everything over 90 degrees is treated the same so the front left is the best
+				Assert.IsTrue(bestPoint == 1); // everything over 90 degrees is treated the same so the front left is the best
 			}
 
 			// find the right point wound cw
@@ -375,7 +431,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |1______\0
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(100, 0), new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
-				Assert.IsTrue(bestPoint == 0);
+				Assert.IsTrue(bestPoint == 2);
 			}
 
 			// cw
@@ -390,7 +446,7 @@ namespace MatterHackers.MatterSlice.Tests
 					new IntPoint(90, 50), new IntPoint(100, 0), new IntPoint(0, 0), new IntPoint(10, 50), new IntPoint(0, 100), new IntPoint(100, 100)
 				};
 				int bestPoint = testPoints.FindGreatestTurnIndex();
-				Assert.IsTrue(bestPoint == 2);
+				Assert.IsTrue(bestPoint == 4);
 			}
 
 			// cw
@@ -405,7 +461,7 @@ namespace MatterHackers.MatterSlice.Tests
 					new IntPoint(10, 50), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50), new IntPoint(100, 0), new IntPoint(0, 0),
 				};
 				int bestPoint = testPoints.FindGreatestTurnIndex();
-				Assert.IsTrue(bestPoint == 5);
+				Assert.IsTrue(bestPoint == 1);
 			}
 		}
 	}
