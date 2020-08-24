@@ -104,7 +104,7 @@ namespace MSClipperLib
 				var delta = Vector2.Dot(directionNormal, position - leftPosition);
 
 				var currentPoint = inputPolygon[i];
-				if (delta < -extrusionWidth_um)
+				if (delta < -extrusionWidth_um / 2)
 				{
 					negativeGroup.ConditionalAdd(new CandidatePoint(delta, i, currentPoint));
 				}

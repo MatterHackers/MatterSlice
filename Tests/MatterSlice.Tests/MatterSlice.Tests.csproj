@@ -61,6 +61,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\MatterControl.Winforms\MatterControl.Winforms.csproj">
+      <Project>{d6dc2669-7b1f-40fe-89bf-45d4c94473e3}</Project>
+      <Name>MatterControl.Winforms</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\agg-sharp\agg\Agg.csproj">
       <Project>{657DBC6D-C3EA-4398-A3FA-DDB73C14F71B}</Project>
       <Name>Agg</Name>
