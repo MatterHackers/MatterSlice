@@ -38,7 +38,7 @@ namespace MSClipperLib
 
 	public static class CLPolygonExtensions
 	{
-		public static Polygon CreateFromString(string polygonString)
+		public static Polygon CreateFromString(string polygonString, double scale = 1)
 		{
 			var output = new Polygon();
 			string[] intPointData = polygonString.Split(',');
@@ -51,7 +51,8 @@ namespace MSClipperLib
 			{
 				string elementX = intPointData[i];
 				string elementY = intPointData[i + 1];
-				var nextIntPoint = new IntPoint(int.Parse(elementX.Substring(elementX.IndexOf(':') + 1)), int.Parse(elementY.Substring(3)));
+				var nextIntPoint = new IntPoint(double.Parse(elementX.Substring(elementX.IndexOf(':') + 1)) * scale,
+					double.Parse(elementY.Substring(3)) * scale);
 				output.Add(nextIntPoint);
 			}
 
@@ -72,8 +73,8 @@ namespace MSClipperLib
 		/// <param name="considerAsSameY">Range to treat y positions as the same value.</param>
 		/// <param name="startPosition">If two or more angles are similar, choose the one close to the start</param>
 		/// <returns>The position that has the largest turn angle</returns>
-		public static IntPoint FindGreatestTurnPosition(this Polygon inputPolygon,
-			long extrusionWidth_um,
+		public static int FindGreatestTurnIndex(this Polygon inputPolygon,
+			long extrusionWidth_um = 3,
 			IntPoint? startPosition = null)
 		{
 			var count = inputPolygon.Count;
@@ -107,7 +108,7 @@ namespace MSClipperLib
 				{
 					negativeGroup.ConditionalAdd(new CandidatePoint(delta, i, currentPoint));
 				}
-				else if(delta > extrusionWidth_um)
+				else if(delta > extrusionWidth_um * 2)
 				{
 					positiveGroup.ConditionalAdd(new CandidatePoint(delta, i, currentPoint));
 				}
@@ -127,16 +128,16 @@ namespace MSClipperLib
 
 			if (negativeGroup.Count > 0)
 			{
-				return inputPolygon[negativeGroup.GetBestIndex(startPosition)];
+				return negativeGroup.GetBestIndex(startPosition);
 			}
 			else if (positiveGroup.Count > 0)
 			{
-				return inputPolygon[positiveGroup.GetBestIndex(startPosition)];
+				return positiveGroup.GetBestIndex(startPosition);
 			}
 			else
 			{
 				// If can't find good candidate go with vertex most in a single direction
-				return inputPolygon[furthestBackIndex];
+				return furthestBackIndex;
 			}
 		}
 
@@ -333,39 +334,22 @@ namespace MSClipperLib
 			/// <returns></returns>
 			public int GetBestIndex(IntPoint? startPosition)
 			{
-				bool shallowTurn = Math.Abs(this[this.Count - 1].neighborDelta) < .3;
 				bool outsideEdge = this[this.Count - 1].neighborDelta > 0;
 
-				if (shallowTurn || startPosition == null)
+				if (startPosition == null)
 				{
-					if (outsideEdge) // sort to the back
+					// sort to the back
+					this.Sort((a, b) =>
 					{
-						this.Sort((a, b) =>
+						if (a.position.Y == b.position.Y)
 						{
-							if (a.position.Y == b.position.Y)
-							{
-								return b.position.X.CompareTo(a.position.X);
-							}
-							else
-							{
-								return a.position.Y.CompareTo(b.position.Y);
-							}
-						});
-					}
-					else // sort to the front
-					{
-						this.Sort((a, b) =>
+							return b.position.X.CompareTo(a.position.X);
+						}
+						else
 						{
-							if (a.position.Y == b.position.Y)
-							{
-								return b.position.X.CompareTo(a.position.X);
-							}
-							else
-							{
-								return b.position.Y.CompareTo(a.position.Y);
-							}
-						});
-					}
+							return a.position.Y.CompareTo(b.position.Y);
+						}
+					});
 				}
 				else // sort them by distance from start
 				{
@@ -382,27 +366,6 @@ namespace MSClipperLib
 
 			public void ConditionalAdd(CandidatePoint point)
 			{
-				if(Math.Abs(point.neighborDelta) > Math.PI/2)
-				{
-					// we keep everything bigger than 90 degrees
-					// remove all points that are worse than 90 degree
-					for (int i = Count - 1; i >= 0; i--)
-					{
-						if (Math.Abs(this[i].neighborDelta)  < Math.PI / 2)
-						{
-							RemoveAt(i);
-						}
-						else
-						{
-							break;
-						}
-					}
-
-					// and add this point
-					Add(point);
-					return;
-				}
-
 				// If this is better than our worst point
 				// or it is within sameTurn of our best point
 				if (Count == 0

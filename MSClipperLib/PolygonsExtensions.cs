@@ -36,13 +36,13 @@ namespace MSClipperLib
 
 	public static class CLPolygonsExtensions
 	{
-		public static Polygons CreateFromString(string polygonsPackedString)
+		public static Polygons CreateFromString(string polygonsPackedString, double scale = 1)
 		{
 			Polygons output = new Polygons();
 			string[] polygons = polygonsPackedString.Split('|');
 			foreach (string polygonString in polygons)
 			{
-				Polygon nextPoly = CLPolygonExtensions.CreateFromString(polygonString);
+				Polygon nextPoly = CLPolygonExtensions.CreateFromString(polygonString, scale);
 				if (nextPoly.Count > 0)
 				{
 					output.Add(nextPoly);

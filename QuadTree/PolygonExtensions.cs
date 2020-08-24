@@ -104,22 +104,6 @@ namespace MatterHackers.QuadTree
 			return polyPointPosition;
 		}
 
-		/// <summary>
-		/// This will find the largest turn in a given models. It prefers concave turns to convex turns.
-		/// </summary>
-		/// <param name="inputPolygon">The polygon to analyze</param>
-		/// <param name="startPosition">If two points have similar turn angles choose the one closer to the start</param>
-		/// <param name="lineWidth"></param>
-		/// <param name="pointKDTree"></param>
-		/// <returns></returns>
-		public static int FindGreatestTurnIndex(this Polygon inputPolygon, IntPoint? startPosition = null, long lineWidth = 3, KdTree<long, int> pointKDTree = null)
-		{
-			// get the best position on a cleaned polygon
-			IntPoint bestPosition = inputPolygon.FindGreatestTurnPosition(lineWidth, startPosition);
-			// because FindGreatestTurnPosition cleans the polygon we need to see what the cleaned position is closest to on the actual polygon
-			return inputPolygon.FindClosestPositionIndex(bestPosition, pointKDTree);
-		}
-
 		public static int FindClosestPositionIndex(this Polygon polygon, IntPoint position, KdTree<long, int> pointKDTree = null)
 		{
 			if (pointKDTree != null)

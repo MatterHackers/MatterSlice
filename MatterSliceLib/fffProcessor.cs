@@ -1397,7 +1397,8 @@ namespace MatterHackers.MatterSlice
 			long bestDist = long.MaxValue;
 			for (int polygonIndex = 0; polygonIndex < boundaryPolygons.Count; polygonIndex++)
 			{
-				IntPoint closestToPoly = boundaryPolygons[polygonIndex].FindGreatestTurnPosition(config.ExtrusionWidth_um, position);
+				var closestIndex = boundaryPolygons[polygonIndex].FindGreatestTurnIndex(config.ExtrusionWidth_um, position);
+				IntPoint closestToPoly = boundaryPolygons[polygonIndex][closestIndex];
 				if (closestToPoly != null)
 				{
 					long length = (closestToPoly - position).Length();

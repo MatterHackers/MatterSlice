@@ -239,7 +239,7 @@ namespace MatterHackers.MatterSlice
 			{
 				if (doSeamHiding)
 				{
-					bestPoint = data.polygon.FindGreatestTurnIndex(currentPosition, lineWidth_um, data.kdTree);
+					bestPoint = data.polygon.FindGreatestTurnIndex(lineWidth_um, currentPosition);
 				}
 				else
 				{
