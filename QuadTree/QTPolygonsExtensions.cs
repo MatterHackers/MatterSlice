@@ -212,6 +212,12 @@ namespace MatterHackers.QuadTree
 				{
 					// add the end point
 					currentPolygon.Add(polySegments[segmentIndex].End);
+					// check if the polygon we are adding is big enough
+					if (currentPolygon.PolygonLength() <= overlapMergeAmount * 2)
+					{
+						// remove it as it is too small
+						onlyMergeLines.RemoveAt(onlyMergeLines.Count - 1);
+					}
 
 					// create a new polygon
 					currentPolygon = new Polygon();
@@ -223,12 +229,19 @@ namespace MatterHackers.QuadTree
 			if (polySegments.Count > 0)
 			{
 				currentPolygon.Add(polySegments[polySegments.Count - 1].End);
+
+				// now check if it is long enough
+				if (currentPolygon.PolygonLength() <= overlapMergeAmount * 2)
+				{
+					// remove it as it is too small
+					onlyMergeLines.RemoveAt(onlyMergeLines.Count - 1);
+				}
 			}
 
 			long cleanDistance = overlapMergeAmount / 40;
 			Clipper.CleanPolygons(onlyMergeLines, cleanDistance);
 
-			return pathHasMergeLines;
+			return pathHasMergeLines && onlyMergeLines.Count > 0;
 		}
 
 		public static List<QuadTree<int>> GetEdgeQuadTrees(this Polygons polygons, int splitCount = 5, long expandDist = 1)
