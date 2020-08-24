@@ -307,7 +307,7 @@ namespace MatterHackers.MatterSlice.Tests
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(1000, 0), new IntPoint(900, 500), new IntPoint(1000, 1000), new IntPoint(0, 1000) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				// 2 is too shallow to have the seem
-				Assert.IsTrue(bestPoint == 4);
+				Assert.IsTrue(bestPoint == 2);
 			}
 
 			// ccw shallow
@@ -320,7 +320,7 @@ namespace MatterHackers.MatterSlice.Tests
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(0, 0), new IntPoint(100, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				// 0 is too shallow to have the seem
-				Assert.IsTrue(bestPoint == 2);
+				Assert.IsTrue(bestPoint == 0);
 			}
 
 			// ccw
@@ -345,7 +345,7 @@ namespace MatterHackers.MatterSlice.Tests
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(10, 50), new IntPoint(0, 0), new IntPoint(100, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				// 3 is too shallow to have the seem
-				Assert.IsTrue(bestPoint == 2);
+				Assert.IsTrue(bestPoint == 3);
 			}
 
 			// ccw
@@ -370,7 +370,7 @@ namespace MatterHackers.MatterSlice.Tests
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(950, 500), new IntPoint(1000, 1000), new IntPoint(0, 1000), new IntPoint(100, 500), new IntPoint(0, 0), new IntPoint(1000, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				// 2 is too shallow to have the seem
-				Assert.IsTrue(bestPoint == 2);
+				Assert.IsTrue(bestPoint == 3);
 			}
 
 			// ccw
@@ -395,7 +395,7 @@ namespace MatterHackers.MatterSlice.Tests
 				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(10, 50), new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				// 0 is too shallow
-				Assert.IsTrue(bestPoint == 5);
+				Assert.IsTrue(bestPoint == 0);
 			}
 
 			// ccw
