@@ -1236,8 +1236,7 @@ namespace MatterHackers.MatterSlice
 					{
 						for (int perimeter = 0; perimeter < config.NumberOfPerimeters; perimeter++)
 						{
-							Polygons thinLines = null;
-							if (island.IslandOutline.Offset(-extrusionWidth_um * (1 + perimeter)).FindThinLines(extrusionWidth_um + 2, extrusionWidth_um / 10, out thinLines, true))
+							if (island.IslandOutline.Offset(-extrusionWidth_um * (1 + perimeter)).FindThinLines(extrusionWidth_um + 2, extrusionWidth_um / 10, out Polygons thinLines, true))
 							{
 								thinGapPolygons.AddRange(thinLines);
 							}
@@ -1246,10 +1245,9 @@ namespace MatterHackers.MatterSlice
 
 					if (config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter)
 					{
-						Polygons thinLines = null;
 						// Collect all of the lines up to one third the extrusion diameter
 						// string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(island.IslandOutline);
-						if (island.IslandOutline.FindThinLines(extrusionWidth_um + 2, extrusionWidth_um / 3, out thinLines, true))
+						if (island.IslandOutline.FindThinLines(extrusionWidth_um + 2, extrusionWidth_um / 3, out Polygons thinLines, true))
 						{
 							for (int polyIndex = thinLines.Count - 1; polyIndex >= 0; polyIndex--)
 							{
@@ -1757,9 +1755,8 @@ namespace MatterHackers.MatterSlice
 					{
 						SliceLayer previousLayer = slicingData.Extruders[extruderIndex].Layers[layerIndex - 1];
 
-						double bridgeAngle;
 						if (bridgePolygons != null
-							&& previousLayer.BridgeAngle(bottomFillIsland, config.NumberOfPerimeters * config.ExtrusionWidth_um, out bridgeAngle, bridgeAreas))
+							&& previousLayer.BridgeAngle(bottomFillIsland, config.NumberOfPerimeters * config.ExtrusionWidth_um, out double bridgeAngle, bridgeAreas))
 						{
 							// TODO: Make this code handle very complex pathing between different sizes or layouts of support under the island to fill.
 							Infill.GenerateLinePaths(bottomFillIsland, bridgePolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, bridgeAngle);
