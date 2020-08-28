@@ -449,7 +449,9 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			result_lines.AddRange(result);
+			var result2 = outline.CreateLineIntersections(result);
+
+			result_lines.AddRange(result2);
 		}
 
 		/*
