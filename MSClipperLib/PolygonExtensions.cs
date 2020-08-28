@@ -79,8 +79,8 @@ namespace MSClipperLib
 		{
 			var count = inputPolygon.Count;
 
-			var positiveGroup = new CandidateGroup(extrusionWidth_um / 2);
-			var negativeGroup = new CandidateGroup(extrusionWidth_um / 2);
+			var positiveGroup = new CandidateGroup(extrusionWidth_um);
+			var negativeGroup = new CandidateGroup(extrusionWidth_um / 4);
 
 			// look for relatively big concave turns
 			DiscoverAndAddTurns(inputPolygon,
@@ -98,6 +98,7 @@ namespace MSClipperLib
 
 				if (positiveGroup.Count == 0)
 				{
+					negativeGroup.SameDelta = extrusionWidth_um / 16;
 					// look for small concave turns
 					DiscoverAndAddTurns(inputPolygon,
 						extrusionWidth_um,
@@ -347,11 +348,11 @@ namespace MSClipperLib
 
 		public class CandidateGroup : List<CandidatePoint>
 		{
-			private readonly double sameDelta;
+			public double SameDelta { get; set; }
 
 			public CandidateGroup(double sameDelta)
 			{
-				this.sameDelta = sameDelta;
+				this.SameDelta = sameDelta;
 			}
 
 			/// <summary>
@@ -397,12 +398,12 @@ namespace MSClipperLib
 				// or it is within sameTurn of our best point
 				if (Count == 0
 					|| Math.Abs(point.neighborDelta) >= Math.Abs(this[Count - 1].neighborDelta)
-					|| Math.Abs(point.neighborDelta) >= Math.Abs(this[0].neighborDelta) - sameDelta)
+					|| Math.Abs(point.neighborDelta) >= Math.Abs(this[0].neighborDelta) - SameDelta)
 				{
 					// remove all points that are worse than the new one
 					for (int i = Count - 1; i >= 0; i--)
 					{
-						if (Math.Abs(this[i].neighborDelta) + sameDelta < Math.Abs(point.neighborDelta))
+						if (Math.Abs(this[i].neighborDelta) + SameDelta < Math.Abs(point.neighborDelta))
 						{
 							RemoveAt(i);
 						}

@@ -181,59 +181,59 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			// coincident points return 0 angle
 			{
-				IntPoint p1 = new IntPoint(10, 0);
-				IntPoint p2 = new IntPoint(0, 0);
-				IntPoint p3 = new IntPoint(0, 0);
+				var p1 = new IntPoint(10, 0);
+				var p2 = new IntPoint(0, 0);
+				var p3 = new IntPoint(0, 0);
 				Assert.IsTrue(p2.GetTurnAmount(p1, p3) == 0);
 			}
 
 			// no turn returns a 0 angle
 			{
-				IntPoint p1 = new IntPoint(10, 0);
-				IntPoint p2 = new IntPoint(0, 0);
-				IntPoint p3 = new IntPoint(-10, 0);
+				var p1 = new IntPoint(10, 0);
+				var p2 = new IntPoint(0, 0);
+				var p3 = new IntPoint(-10, 0);
 				Assert.IsTrue(p2.GetTurnAmount(p1, p3) == 0);
 			}
 
 			// 90 turn works
 			{
-				IntPoint p1 = new IntPoint(0, 0);
-				IntPoint p2 = new IntPoint(10, 0);
-				IntPoint p3 = new IntPoint(10, 10);
+				var p1 = new IntPoint(0, 0);
+				var p2 = new IntPoint(10, 0);
+				var p3 = new IntPoint(10, 10);
 				Assert.AreEqual(p2.GetTurnAmount(p1, p3), Math.PI / 2, .001);
 
-				IntPoint p4 = new IntPoint(0, 10);
-				IntPoint p5 = new IntPoint(0, 0);
-				IntPoint p6 = new IntPoint(10, 0);
+				var p4 = new IntPoint(0, 10);
+				var p5 = new IntPoint(0, 0);
+				var p6 = new IntPoint(10, 0);
 				Assert.AreEqual(p5.GetTurnAmount(p4, p6), Math.PI / 2, .001);
 			}
 
 			// -90 turn works
 			{
-				IntPoint p1 = new IntPoint(0, 0);
-				IntPoint p2 = new IntPoint(10, 0);
-				IntPoint p3 = new IntPoint(10, -10);
+				var p1 = new IntPoint(0, 0);
+				var p2 = new IntPoint(10, 0);
+				var p3 = new IntPoint(10, -10);
 				Assert.AreEqual(p2.GetTurnAmount(p1, p3), -Math.PI / 2, .001);
 			}
 
 			// 45 turn works
 			{
-				IntPoint p1 = new IntPoint(0, 0);
-				IntPoint p2 = new IntPoint(10, 0);
-				IntPoint p3 = new IntPoint(15, 5);
+				var p1 = new IntPoint(0, 0);
+				var p2 = new IntPoint(10, 0);
+				var p3 = new IntPoint(15, 5);
 				Assert.AreEqual(Math.PI / 4, p2.GetTurnAmount(p1, p3), .001);
 
-				IntPoint p4 = new IntPoint(0, 0);
-				IntPoint p5 = new IntPoint(-10, 0);
-				IntPoint p6 = new IntPoint(-15, -5);
+				var p4 = new IntPoint(0, 0);
+				var p5 = new IntPoint(-10, 0);
+				var p6 = new IntPoint(-15, -5);
 				Assert.AreEqual(Math.PI / 4, p5.GetTurnAmount(p4, p6), .001);
 			}
 
 			// -45 turn works
 			{
-				IntPoint p1 = new IntPoint(0, 0);
-				IntPoint p2 = new IntPoint(10, 0);
-				IntPoint p3 = new IntPoint(15, -5);
+				var p1 = new IntPoint(0, 0);
+				var p2 = new IntPoint(10, 0);
+				var p3 = new IntPoint(15, -5);
 				Assert.AreEqual(-Math.PI / 4, p2.GetTurnAmount(p1, p3), .001);
 			}
 
@@ -244,7 +244,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |      /2
 				// |      \
 				// |0______\1
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(70, 50), new IntPoint(100, 100), new IntPoint(0, 100) };
+				var testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(70, 50), new IntPoint(100, 100), new IntPoint(0, 100) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				Assert.IsTrue(bestPoint == 2);
 			}
@@ -256,9 +256,21 @@ namespace MatterHackers.MatterSlice.Tests
 				// |       |
 				// |       |
 				// |0______|1
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(100, 100), new IntPoint(0, 100) };
+				var testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(100, 100), new IntPoint(0, 100) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				Assert.IsTrue(bestPoint == 3);
+			}
+
+			// find closest greatest ccw
+			{
+				// 3________2
+				// |       |
+				// |       |
+				// |       |
+				// |0______|1
+				var testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(100, 100), new IntPoint(0, 100) };
+				int bestPoint = testPoints.FindGreatestTurnIndex(startPosition: new IntPoint(110, 110));
+				Assert.IsTrue(bestPoint == 2);
 			}
 
 			// find the right point wound ccw
@@ -268,7 +280,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |       |
 				// |       |
 				// |2______|3
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(0, 0), new IntPoint(100, 0) };
+				var testPoints = new List<IntPoint> { new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(0, 0), new IntPoint(100, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				Assert.IsTrue(bestPoint == 1);
 			}
@@ -280,7 +292,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |       |
 				// |       |
 				// |0______|3
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(100, 0) };
+				var testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(100, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				Assert.IsTrue(bestPoint == 1); // this is an inside perimeter so we place the seem to the front
 			}
@@ -292,7 +304,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |       |
 				// |       |
 				// |3______|2
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(100, 0), new IntPoint(0, 0) };
+				var testPoints = new List<IntPoint> { new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(100, 0), new IntPoint(0, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				Assert.IsTrue(bestPoint == 0);
 			}
@@ -304,7 +316,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |      /2
 				// |      \
 				// |0______\1
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(1000, 0), new IntPoint(900, 500), new IntPoint(1000, 1000), new IntPoint(0, 1000) };
+				var testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(1000, 0), new IntPoint(900, 500), new IntPoint(1000, 1000), new IntPoint(0, 1000) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				// 2 is too shallow to have the seem
 				Assert.IsTrue(bestPoint == 2);
@@ -317,7 +329,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |      /0
 				// |      \
 				// |3______\4
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(0, 0), new IntPoint(100, 0) };
+				var testPoints = new List<IntPoint> { new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(0, 0), new IntPoint(100, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				// 0 is too shallow to have the seem
 				Assert.IsTrue(bestPoint == 0);
@@ -330,7 +342,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// |      /0
 				// |      \
 				// |3______\4
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(90, 50), new IntPoint(200, 100), new IntPoint(0, 100), new IntPoint(0, 0), new IntPoint(200, 0) };
+				var testPoints = new List<IntPoint> { new IntPoint(90, 50), new IntPoint(200, 100), new IntPoint(0, 100), new IntPoint(0, 0), new IntPoint(200, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				Assert.IsTrue(bestPoint == 0);
 			}
@@ -342,10 +354,10 @@ namespace MatterHackers.MatterSlice.Tests
 				//   \3   /0
 				//   /    \
 				//  /4_____\5
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(10, 50), new IntPoint(0, 0), new IntPoint(100, 0) };
+				var testPoints = new List<IntPoint> { new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(10, 50), new IntPoint(0, 0), new IntPoint(100, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				// 3 is too shallow to have the seem
-				Assert.IsTrue(bestPoint == 3);
+				Assert.IsTrue(bestPoint == 0);
 			}
 
 			// ccw
@@ -355,7 +367,20 @@ namespace MatterHackers.MatterSlice.Tests
 				//   \3   /0
 				//   /    \
 				//  /4_____\5
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(55, 50), new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(45, 50), new IntPoint(0, 0), new IntPoint(100, 0) };
+				var testPoints = new List<IntPoint> { new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(10, 50), new IntPoint(0, 0), new IntPoint(100, 0) };
+				int bestPoint = testPoints.FindGreatestTurnIndex(startPosition: new IntPoint(95, 50));
+				// 3 is too shallow to have the seem
+				Assert.IsTrue(bestPoint == 0);
+			}
+
+			// ccw
+			{
+				// 2________1
+				//  \      /
+				//   \3   /0
+				//   /    \
+				//  /4_____\5
+				var testPoints = new List<IntPoint> { new IntPoint(55, 50), new IntPoint(100, 100), new IntPoint(0, 100), new IntPoint(45, 50), new IntPoint(0, 0), new IntPoint(100, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				Assert.IsTrue(bestPoint == 3);
 			}
@@ -367,7 +392,7 @@ namespace MatterHackers.MatterSlice.Tests
 				//   \3   /0 less angle
 				//   /    \
 				//  /4_____\5
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(950, 500), new IntPoint(1000, 1000), new IntPoint(0, 1000), new IntPoint(100, 500), new IntPoint(0, 0), new IntPoint(1000, 0) };
+				var testPoints = new List<IntPoint> { new IntPoint(950, 500), new IntPoint(1000, 1000), new IntPoint(0, 1000), new IntPoint(100, 500), new IntPoint(0, 0), new IntPoint(1000, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				// 2 is too shallow to have the seem
 				Assert.IsTrue(bestPoint == 3);
@@ -380,7 +405,7 @@ namespace MatterHackers.MatterSlice.Tests
 				//   \3   /0 more angle
 				//   /    \
 				//  /4_____\5
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(550, 500), new IntPoint(1000, 1000), new IntPoint(0, 1000), new IntPoint(100, 500), new IntPoint(0, 0), new IntPoint(1000, 0) };
+				var testPoints = new List<IntPoint> { new IntPoint(550, 500), new IntPoint(1000, 1000), new IntPoint(0, 1000), new IntPoint(100, 500), new IntPoint(0, 0), new IntPoint(1000, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				Assert.IsTrue(bestPoint == 0);
 			}
@@ -392,10 +417,10 @@ namespace MatterHackers.MatterSlice.Tests
 				//   \0   /3
 				//   /    \
 				//  /1_____\2
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(10, 50), new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), };
+				var testPoints = new List<IntPoint> { new IntPoint(10, 50), new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(90, 50), new IntPoint(100, 100), new IntPoint(0, 100), };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
 				// 0 is too shallow
-				Assert.IsTrue(bestPoint == 0);
+				Assert.IsTrue(bestPoint == 3);
 			}
 
 			// ccw
@@ -405,9 +430,9 @@ namespace MatterHackers.MatterSlice.Tests
 				//   \0   /3
 				//   /    \
 				//  /1_____\2
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(45, 50), new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(55, 50), new IntPoint(100, 100), new IntPoint(0, 100), };
+				var testPoints = new List<IntPoint> { new IntPoint(45, 50), new IntPoint(0, 0), new IntPoint(100, 0), new IntPoint(55, 50), new IntPoint(100, 100), new IntPoint(0, 100), };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
-				Assert.IsTrue(bestPoint == 0);
+				Assert.IsTrue(bestPoint == 3);
 			}
 
 			// find the right point wound cw (inside hole loops)
@@ -417,9 +442,9 @@ namespace MatterHackers.MatterSlice.Tests
 				// |      /3
 				// |      \
 				// |0______\4
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50), new IntPoint(100, 0) };
+				var testPoints = new List<IntPoint> { new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50), new IntPoint(100, 0) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
-				Assert.IsTrue(bestPoint == 1); // everything over 90 degrees is treated the same so the front left is the best
+				Assert.IsTrue(bestPoint == 4); // everything over 90 degrees is treated the same so the front left is the best
 			}
 
 			// find the right point wound cw
@@ -429,9 +454,9 @@ namespace MatterHackers.MatterSlice.Tests
 				// |      /4
 				// |      \
 				// |1______\0
-				List<IntPoint> testPoints = new List<IntPoint> { new IntPoint(100, 0), new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50) };
+				var testPoints = new List<IntPoint> { new IntPoint(100, 0), new IntPoint(0, 0), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50) };
 				int bestPoint = testPoints.FindGreatestTurnIndex();
-				Assert.IsTrue(bestPoint == 2);
+				Assert.IsTrue(bestPoint == 0);
 			}
 
 			// cw
@@ -441,7 +466,7 @@ namespace MatterHackers.MatterSlice.Tests
 				//   \3   /0
 				//   /    \
 				//  /2_____\1
-				List<IntPoint> testPoints = new List<IntPoint>
+				var testPoints = new List<IntPoint>
 				{
 					new IntPoint(90, 50), new IntPoint(100, 0), new IntPoint(0, 0), new IntPoint(10, 50), new IntPoint(0, 100), new IntPoint(100, 100)
 				};
@@ -456,12 +481,12 @@ namespace MatterHackers.MatterSlice.Tests
 				//   \0   /3
 				//   /    \
 				//  /5_____\4
-				List<IntPoint> testPoints = new List<IntPoint>
+				var testPoints = new List<IntPoint>
 				{
 					new IntPoint(10, 50), new IntPoint(0, 100), new IntPoint(100, 100), new IntPoint(90, 50), new IntPoint(100, 0), new IntPoint(0, 0),
 				};
 				int bestPoint = testPoints.FindGreatestTurnIndex();
-				Assert.IsTrue(bestPoint == 1);
+				Assert.IsTrue(bestPoint == 4);
 			}
 		}
 	}
