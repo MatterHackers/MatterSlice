@@ -78,17 +78,75 @@ namespace MSClipperLib
 			IntPoint? startPosition = null)
 		{
 			var count = inputPolygon.Count;
+
+			var positiveGroup = new CandidateGroup(extrusionWidth_um);
+			var negativeGroup = new CandidateGroup(extrusionWidth_um / 4);
+
+			// look for relatively big concave turns
+			DiscoverAndAddTurns(inputPolygon,
+				extrusionWidth_um * 4,
+				negativeGroup,
+				delta => delta < -extrusionWidth_um / 2);
+
+			if (negativeGroup.Count == 0)
+			{
+				// look for relatively big convex turns
+				DiscoverAndAddTurns(inputPolygon,
+					extrusionWidth_um * 4,
+					positiveGroup,
+					delta => delta > extrusionWidth_um * 2);
+
+				if (positiveGroup.Count == 0)
+				{
+					negativeGroup.SameDelta = extrusionWidth_um / 16;
+					// look for small concave turns
+					DiscoverAndAddTurns(inputPolygon,
+						extrusionWidth_um,
+						negativeGroup,
+						delta => delta < -extrusionWidth_um / 8);
+				}
+			}
+
+			if (negativeGroup.Count > 0)
+			{
+				return negativeGroup.GetBestIndex(startPosition);
+			}
+			else if (positiveGroup.Count > 0)
+			{
+				return positiveGroup.GetBestIndex(startPosition);
+			}
+			else
+			{
+				var currentFurthestBack = new IntPoint(long.MaxValue, long.MinValue);
+				int furthestBackIndex = 0;
+				// get the furthest back index
+				for (var i = 0; i < count; i++)
+				{
+					var currentPoint = inputPolygon[i];
+
+					if (currentPoint.Y >= currentFurthestBack.Y)
+					{
+						if (currentPoint.Y > currentFurthestBack.Y
+							|| currentPoint.X < currentFurthestBack.X)
+						{
+							furthestBackIndex = i;
+							currentFurthestBack = currentPoint;
+						}
+					}
+				}
+
+				// If can't find good candidate go with vertex most in a single direction
+				return furthestBackIndex;
+			}
+		}
+
+		private static void DiscoverAndAddTurns(Polygon inputPolygon,
+			long neighborhood,
+			CandidateGroup candidateGroup,
+			Func<double, bool> validDelta)
+		{
 			var polygon2 = inputPolygon.Select(i => new Vector2(i.X, i.Y)).ToList();
-			var localOffset = new List<(int index, double delta)>(count);
-
-			var positiveGroup = new CandidateGroup(extrusionWidth_um / 2);
-			var negativeGroup = new CandidateGroup(extrusionWidth_um / 2);
-
-			var currentFurthestBack = new IntPoint(long.MaxValue, long.MinValue);
-			int furthestBackIndex = 0;
-
-			var neighborhood = extrusionWidth_um * 4;
-
+			var count = inputPolygon.Count;
 			for (var i = 0; i < count; i++)
 			{
 				var position = polygon2[i];
@@ -104,40 +162,10 @@ namespace MSClipperLib
 				var delta = Vector2.Dot(directionNormal, position - leftPosition);
 
 				var currentPoint = inputPolygon[i];
-				if (delta < -extrusionWidth_um / 2)
+				if (validDelta(delta))
 				{
-					negativeGroup.ConditionalAdd(new CandidatePoint(delta, i, currentPoint));
+					candidateGroup.ConditionalAdd(new CandidatePoint(delta, i, currentPoint));
 				}
-				else if(delta > extrusionWidth_um * 2)
-				{
-					positiveGroup.ConditionalAdd(new CandidatePoint(delta, i, currentPoint));
-				}
-
-				if (currentPoint.Y >= currentFurthestBack.Y)
-				{
-					if (currentPoint.Y > currentFurthestBack.Y
-						|| currentPoint.X < currentFurthestBack.X)
-					{
-						furthestBackIndex = i;
-						currentFurthestBack = currentPoint;
-					}
-				}
-
-				localOffset.Add((i, delta));
-			}
-
-			if (negativeGroup.Count > 0)
-			{
-				return negativeGroup.GetBestIndex(startPosition);
-			}
-			else if (positiveGroup.Count > 0)
-			{
-				return positiveGroup.GetBestIndex(startPosition);
-			}
-			else
-			{
-				// If can't find good candidate go with vertex most in a single direction
-				return furthestBackIndex;
 			}
 		}
 
@@ -320,11 +348,11 @@ namespace MSClipperLib
 
 		public class CandidateGroup : List<CandidatePoint>
 		{
-			private readonly double sameDelta;
+			public double SameDelta { get; set; }
 
 			public CandidateGroup(double sameDelta)
 			{
-				this.sameDelta = sameDelta;
+				this.SameDelta = sameDelta;
 			}
 
 			/// <summary>
@@ -370,12 +398,12 @@ namespace MSClipperLib
 				// or it is within sameTurn of our best point
 				if (Count == 0
 					|| Math.Abs(point.neighborDelta) >= Math.Abs(this[Count - 1].neighborDelta)
-					|| Math.Abs(point.neighborDelta) >= Math.Abs(this[0].neighborDelta) - sameDelta)
+					|| Math.Abs(point.neighborDelta) >= Math.Abs(this[0].neighborDelta) - SameDelta)
 				{
 					// remove all points that are worse than the new one
 					for (int i = Count - 1; i >= 0; i--)
 					{
-						if (Math.Abs(this[i].neighborDelta) + sameDelta < Math.Abs(point.neighborDelta))
+						if (Math.Abs(this[i].neighborDelta) + SameDelta < Math.Abs(point.neighborDelta))
 						{
 							RemoveAt(i);
 						}
