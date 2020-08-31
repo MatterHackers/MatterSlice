@@ -32,7 +32,7 @@ namespace MatterHackers.MatterSlice
 	public class ConfigConstants
 	{
 		public const int MAX_EXTRUDERS = 4;
-		public const string VERSION = "2.20.8";
+		public const string VERSION = "2.20.9";
 
 		public enum INFILL_TYPE
 		{
