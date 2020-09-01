@@ -104,18 +104,18 @@ namespace MatterHackers.QuadTree
 			return polyPointPosition;
 		}
 
-		public static int FindClosestPositionIndex(this Polygon polygon, IntPoint position, KdTree<long, int> pointKDTree = null)
+		public static int FindClosestPositionIndex(this Polygon polygon, IntPoint position, INearestNeighbours<int> nearestNeighbours = null)
 		{
-			if (pointKDTree != null)
+			if (nearestNeighbours != null)
 			{
 				int bestPointIndex = -1;
 				double closestDist = double.MaxValue;
-				foreach (var item in pointKDTree.GetNearestNeighbours(new long[] { position.X, position.Y }, 1))
+				foreach (var item in nearestNeighbours.GetNearestNeighbours(position, 1))
 				{
-					double dist = (polygon[item.Value] - position).LengthSquared();
+					double dist = (polygon[item] - position).LengthSquared();
 					if (dist < closestDist)
 					{
-						bestPointIndex = item.Value;
+						bestPointIndex = item;
 						closestDist = dist;
 					}
 				}
@@ -140,7 +140,27 @@ namespace MatterHackers.QuadTree
 			}
 		}
 
-		public static KdTree<long, int> ConditionalKDTree(this Polygon polygon)
+		public class KdTreeNeighbours : KdTree<long, int>, INearestNeighbours<int>
+		{
+			public KdTreeNeighbours(Polygon polygon)
+				: base(2, new LongMath())
+			{
+				for (int i = 0; i < polygon.Count; i++)
+				{
+					this.Add(new long[] { polygon[i].X, polygon[i].Y }, i);
+				}
+			}
+
+			public IEnumerable<int> GetNearestNeighbours(IntPoint position, int count)
+			{
+				foreach (var item in this.GetNearestNeighbours(new long[] { position.X, position.Y }, 1))
+				{
+					yield return item.Value;
+				}
+			}
+		}
+
+		public static INearestNeighbours<int> ConditionalKDTree(this Polygon polygon)
 		{
 			// if there are not enough points it is much faster to just iterate the array
 			if (polygon.Count < 8)
@@ -148,13 +168,7 @@ namespace MatterHackers.QuadTree
 				return null;
 			}
 
-			var kdTree = new KdTree<long, int>(2, new LongMath());
-			for (int i = 0; i < polygon.Count; i++)
-			{
-				kdTree.Add(new long[] { polygon[i].X, polygon[i].Y }, i);
-			}
-
-			return kdTree;
+			return new KdTreeNeighbours(polygon);
 		}
 
 		public class LongMath : TypeMath<long>
@@ -327,15 +341,15 @@ namespace MatterHackers.QuadTree
 		/// <param name="polygon"></param>
 		/// <param name="position"></param>
 		/// <returns></returns>
-		public static int FindPoint(this Polygon polygon, IntPoint position, KdTree<long, int> pointKDTree = null)
+		public static int FindPoint(this Polygon polygon, IntPoint position, INearestNeighbours<int> nearestNeighbours = null)
 		{
-			if (pointKDTree != null)
+			if (nearestNeighbours != null)
 			{
-				foreach (var index in pointKDTree.GetNearestNeighbours(new long[] { position.X, position.Y }, 1))
+				foreach (var index in nearestNeighbours.GetNearestNeighbours(position, 1))
 				{
-					if (position == polygon[index.Value])
+					if (position == polygon[index])
 					{
-						return index.Value;
+						return index;
 					}
 				}
 			}
@@ -645,9 +659,9 @@ namespace MatterHackers.QuadTree
 		}
 
 		//returns 0 if false, +1 if true, -1 if pt ON polygon boundary
-		public static int PointIsInside(this Polygon polygon, IntPoint testPoint, KdTree<long, int> pointKDTree = null)
+		public static int PointIsInside(this Polygon polygon, IntPoint testPoint, INearestNeighbours<int> nearestNeighbours = null)
 		{
-			if (polygon.FindPoint(testPoint, pointKDTree) != -1)
+			if (polygon.FindPoint(testPoint, nearestNeighbours) != -1)
 			{
 				return -1;
 			}

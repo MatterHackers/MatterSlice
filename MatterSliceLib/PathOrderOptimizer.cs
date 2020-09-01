@@ -62,7 +62,7 @@ namespace MatterHackers.MatterSlice
 	{
 		private readonly ConfigSettings config;
 
-		public List<(Polygon polygon, KdTree<long, int> tree)> Data { get; private set; } = new List<(Polygon polygon, KdTree<long, int> tree)>();
+		public List<(Polygon polygon, INearestNeighbours<int> tree)> Data { get; private set; } = new List<(Polygon polygon, INearestNeighbours<int> tree)>();
 
 		public PathOrderOptimizer(ConfigSettings config)
 		{
@@ -208,7 +208,7 @@ namespace MatterHackers.MatterSlice
 			return bestResult;
 		}
 
-		private int FindClosestPoint((Polygon polygon, KdTree<long, int> kdTree) data,
+		private int FindClosestPoint((Polygon polygon, INearestNeighbours<int> nearestNeighbours) data,
 			IntPoint currentPosition,
 			bool doSeamHiding,
 			bool canTravelForwardOrBackward,
@@ -243,7 +243,7 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					bestPoint = data.polygon.FindClosestPositionIndex(currentPosition, data.kdTree);
+					bestPoint = data.polygon.FindClosestPositionIndex(currentPosition, data.nearestNeighbours);
 				}
 
 				bestDistSquared = (data.polygon[bestPoint] - currentPosition).LengthSquared();
