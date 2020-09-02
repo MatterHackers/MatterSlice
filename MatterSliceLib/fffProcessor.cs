@@ -1331,7 +1331,7 @@ namespace MatterHackers.MatterSlice
 				// If we are already in the island we are going to, don't go there, or there is only one island.
 				if ((layer.Islands.Count == 1 && config.ExtruderCount == 1)
 					|| layer.PathFinder?.OutlineData?.Polygons.Count < 3
-					|| island.PathFinder?.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition_um, island.PathFinder.OutlineData.EdgeQuadTrees, island.PathFinder.OutlineData.PointKDTrees) == true)
+					|| island.PathFinder?.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition_um, island.PathFinder.OutlineData.EdgeQuadTrees, island.PathFinder.OutlineData.NearestNeighboursList) == true)
 				{
 					islandCurrentlyInside = island;
 					return;

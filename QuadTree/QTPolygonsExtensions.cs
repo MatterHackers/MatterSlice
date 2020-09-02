@@ -57,9 +57,9 @@ namespace MatterHackers.QuadTree
 			}
 		}
 
-		public static List<KdTree<long, int>> ConditionalKDTrees(this Polygons inPolygons)
+		public static List<INearestNeighbours<int>> ConditionalKDTrees(this Polygons inPolygons)
 		{
-			var kdTRees = new List<KdTree<long, int>>();
+			var kdTRees = new List<INearestNeighbours<int>>();
 
 			for (int i = 0; i < inPolygons.Count; i++)
 			{
@@ -88,13 +88,13 @@ namespace MatterHackers.QuadTree
 			return bestIntersection;
 		}
 
-		public static Tuple<int, int> FindPoint(this Polygons polygons, IntPoint position, List<KdTree<long, int>> pointKDTrees = null)
+		public static Tuple<int, int> FindPoint(this Polygons polygons, IntPoint position, List<INearestNeighbours<int>> nearestNeighbours = null)
 		{
-			if (pointKDTrees != null)
+			if (nearestNeighbours != null)
 			{
 				for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
 				{
-					var pointIndex = polygons[polyIndex].FindPoint(position, pointKDTrees[polyIndex]);
+					var pointIndex = polygons[polyIndex].FindPoint(position, nearestNeighbours[polyIndex]);
 					if (pointIndex != -1)
 					{
 						return new Tuple<int, int>(polyIndex, pointIndex);
@@ -333,12 +333,12 @@ namespace MatterHackers.QuadTree
 			IntPoint startPosition,
 			out (int polyIndex, int pointIndex, IntPoint position) polyPointPosition,
 			List<QuadTree<int>> edgeQuadTrees = null,
-			List<KdTree<long, int>> pointKDTrees = null,
+			List<INearestNeighbours<int>> nearestNeighbours = null,
 			Func<IntPoint, InsideState> fastInsideCheck = null)
 		{
 			var bestPolyPointPosition = (0, 0, startPosition);
 
-			if (boundaryPolygons.PointIsInside(startPosition, edgeQuadTrees, pointKDTrees, fastInsideCheck))
+			if (boundaryPolygons.PointIsInside(startPosition, edgeQuadTrees, nearestNeighbours, fastInsideCheck))
 			{
 				// already inside
 				polyPointPosition = (-1, -1, default(IntPoint));
@@ -410,7 +410,7 @@ namespace MatterHackers.QuadTree
 		public static bool PointIsInside(this Polygons polygons,
 			IntPoint testPoint,
 			List<QuadTree<int>> edgeQuadTrees = null,
-			List<KdTree<long, int>> pointKDTrees = null,
+			List<INearestNeighbours<int>> pointKDTrees = null,
 			Func<IntPoint, InsideState> fastInsideCheck = null)
 		{
 			if (polygons.TouchingEdge(testPoint, edgeQuadTrees))
