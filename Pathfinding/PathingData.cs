@@ -62,7 +62,7 @@ namespace MatterHackers.Pathfinding
 			SetGoodUnitsPerPixel(unitsPerPixel);
 
 			EdgeQuadTrees = Polygons.GetEdgeQuadTrees();
-			NearestNeighboursList = Polygons.ConditionalKDTrees();
+			NearestNeighboursList = Polygons.GetNearestNeighbourAccelerator();
 
 			foreach (var polygon in Polygons)
 			{

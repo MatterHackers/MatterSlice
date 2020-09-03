@@ -41,8 +41,8 @@ namespace MatterHackers.QuadTree
 		{
 			if (useQuadTree)
 			{
-				IntRect bounds = new IntRect();
-				List<Quad> quads = new List<Quad>(polySegments.Count);
+				var bounds = default(IntRect);
+				var quads = new List<Quad>(polySegments.Count);
 				for (int i = 0; i < polySegments.Count; i++)
 				{
 					var quad = new Quad(polySegments[i].Left - overlapAmount,
@@ -113,6 +113,7 @@ namespace MatterHackers.QuadTree
 		}
 
 		public long OverlapAmount { get; private set; }
+
 		public List<IntPoint> SourcePoints { get; private set; }
 
 		/// <summary>
@@ -125,7 +126,7 @@ namespace MatterHackers.QuadTree
 			if (tree != null)
 			{
 				tree.SearchArea(touchingBounds);
-				foreach(var i in tree.QueryResults)
+				foreach (var i in tree.QueryResults)
 				{
 					yield return i;
 				}

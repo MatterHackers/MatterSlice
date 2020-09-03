@@ -57,16 +57,43 @@ namespace MatterHackers.QuadTree
 			}
 		}
 
-		public static List<INearestNeighbours<int>> ConditionalKDTrees(this Polygons inPolygons)
+		internal class PolygonGroups : INearestNeighbours<(int polygonIndex, int pointIndex)>
 		{
-			var kdTRees = new List<INearestNeighbours<int>>();
+			private QuadTree<int> quadTree;
+			private List<INearestNeighbours<int>> polygonSearch = new List<INearestNeighbours<int>>();
 
-			for (int i = 0; i < inPolygons.Count; i++)
+			internal PolygonGroups(Polygons inPolygons)
 			{
-				kdTRees.Add(inPolygons[i].ConditionalKDTree());
+				var expandDist = 1;
+				var allBounds = inPolygons.GetBounds();
+				allBounds.Inflate(expandDist);
+				quadTree = new QuadTree<int>(5, allBounds.minX, allBounds.minY, allBounds.maxX, allBounds.maxY);
+				for (int i = 0; i < inPolygons.Count; i++)
+				{
+					var polygon = inPolygons[i];
+					var bounds = polygon.GetBounds();
+
+					quadTree.Insert(i, new Quad(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY));
+
+					polygonSearch.Add(polygon.GetNearestNeighbourAccelerator());
+				}
 			}
 
-			return kdTRees;
+			public IEnumerable<(int polygonIndex, int pointIndex)> GetNearestNeighbour(IntPoint position)
+			{
+				quadTree.SearchPoint(position.X, position.Y);
+				foreach (var index in quadTree.QueryResults)
+				{
+					polygonSearch[index].GetNearestNeighbour(position);
+				}
+
+				throw new NotImplementedException();
+			}
+		}
+
+		public static INearestNeighbours<(int polygonIndex, int pointIndex)> GetNearestNeighbourAccelerator(this Polygons inPolygons)
+		{
+			return new PolygonGroups(inPolygons);
 		}
 
 		public static Intersection FindIntersection(this Polygons polygons, IntPoint start, IntPoint end, List<QuadTree<int>> edgeQuadTrees = null)
@@ -250,17 +277,6 @@ namespace MatterHackers.QuadTree
 			foreach (var polygon in polygons)
 			{
 				quadTrees.Add(polygon.GetEdgeQuadTree(splitCount, expandDist));
-			}
-
-			return quadTrees;
-		}
-
-		public static List<QuadTree<int>> GetPointQuadTrees(this Polygons polygons, int splitCount = 5, long expandDist = 1)
-		{
-			var quadTrees = new List<QuadTree<int>>();
-			foreach (var polygon in polygons)
-			{
-				quadTrees.Add(polygon.GetPointQuadTree(splitCount, expandDist));
 			}
 
 			return quadTrees;

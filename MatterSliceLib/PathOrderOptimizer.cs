@@ -75,7 +75,7 @@ namespace MatterHackers.MatterSlice
 		{
 			if (polygon.Count > 0)
 			{
-				this.Data.Add((polygon, polygon.ConditionalKDTree()));
+				this.Data.Add((polygon, polygon.GetNearestNeighbourAccelerator()));
 			}
 		}
 
