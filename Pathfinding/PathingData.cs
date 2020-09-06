@@ -112,7 +112,7 @@ namespace MatterHackers.Pathfinding
 
 		public ImageBuffer DistanceFromOutside { get; private set; }
 
-		public List<INearestNeighbours<int>> NearestNeighboursList { get; }
+		public INearestNeighbours<(int polygonIndex, int pointIndex)> NearestNeighboursList { get; }
 
 		public Polygons Polygons { get; }
 

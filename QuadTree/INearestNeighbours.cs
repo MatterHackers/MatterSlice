@@ -27,6 +27,6 @@ namespace MatterHackers.QuadTree
 {
 	public interface INearestNeighbours<T>
 	{
-		IEnumerable<T> GetNearestNeighbour(IntPoint position);
+		T GetNearestNeighbour(IntPoint position);
 	}
 }

@@ -79,7 +79,7 @@ namespace MatterHackers.QuadTree
 				}
 			}
 
-			public IEnumerable<(int polygonIndex, int pointIndex)> GetNearestNeighbour(IntPoint position)
+			public (int polygonIndex, int pointIndex) GetNearestNeighbour(IntPoint position)
 			{
 				quadTree.SearchPoint(position.X, position.Y);
 				foreach (var index in quadTree.QueryResults)
@@ -349,7 +349,7 @@ namespace MatterHackers.QuadTree
 			IntPoint startPosition,
 			out (int polyIndex, int pointIndex, IntPoint position) polyPointPosition,
 			List<QuadTree<int>> edgeQuadTrees = null,
-			List<INearestNeighbours<int>> nearestNeighbours = null,
+			INearestNeighbours<(int polygonIndex, int pointIndex)> nearestNeighbours = null,
 			Func<IntPoint, InsideState> fastInsideCheck = null)
 		{
 			var bestPolyPointPosition = (0, 0, startPosition);
@@ -424,14 +424,23 @@ namespace MatterHackers.QuadTree
 		}
 
 		public static bool PointIsInside(this Polygons polygons,
-			IntPoint testPoint,
+			IntPoint position,
 			List<QuadTree<int>> edgeQuadTrees = null,
-			List<INearestNeighbours<int>> pointKDTrees = null,
+			INearestNeighbours<(int polygonIndex, int pointIndex)> nearestNeighbours = null,
 			Func<IntPoint, InsideState> fastInsideCheck = null)
 		{
-			if (polygons.TouchingEdge(testPoint, edgeQuadTrees))
+			if (polygons.TouchingEdge(position, edgeQuadTrees))
 			{
 				return true;
+			}
+
+			if (nearestNeighbours != null)
+			{
+				var index = nearestNeighbours.GetNearestNeighbour(position);
+				if (index.pointIndex != -1 && position == polygons[index.polygonIndex][index.pointIndex])
+				{
+					return true;
+				}
 			}
 
 			int insideCount = 0;
@@ -440,14 +449,14 @@ namespace MatterHackers.QuadTree
 				var polygon = polygons[i];
 				if (fastInsideCheck != null)
 				{
-					switch (fastInsideCheck(testPoint))
+					switch (fastInsideCheck(position))
 					{
 						case InsideState.Inside:
 							return true;
 						case InsideState.Outside:
 							return false;
 						case InsideState.Unknown:
-							if (polygon.PointIsInside(testPoint, pointKDTrees?[i]) != 0)
+							if (polygon.PointIsInside(position) != 0)
 							{
 								insideCount++;
 							}
@@ -455,7 +464,7 @@ namespace MatterHackers.QuadTree
 							break;
 					}
 				}
-				else if (polygon.PointIsInside(testPoint, pointKDTrees?[i]) != 0)
+				else if (polygon.PointIsInside(position) != 0)
 				{
 					insideCount++;
 				}
