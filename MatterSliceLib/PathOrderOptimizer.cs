@@ -187,7 +187,8 @@ namespace MatterHackers.MatterSlice
 			endPosition = currentPosition;
 			var bestDistSquared = double.MaxValue;
 			var bestResult = new OptimizedPath();
-			foreach (var i in polygonAccelerator.IterateClosest(currentPosition))
+			// foreach (var i in polygonAccelerator.IterateClosest(currentPosition))
+			for (int i = 0; i < Polygons.Count; i++)
 			{
 				if (compleatedPolygons.Contains(i))
 				{
@@ -211,7 +212,7 @@ namespace MatterHackers.MatterSlice
 					endPosition = polyEndPosition;
 					bestResult = new OptimizedPath(i, pointIndex, true, false);
 
-					if (bestDistSquared < 100000)
+					if (bestDistSquared < 1000000)
 					{
 						break;
 					}
