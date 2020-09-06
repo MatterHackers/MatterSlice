@@ -84,10 +84,10 @@ namespace MatterHackers.QuadTree
 				quadTree.SearchPoint(position.X, position.Y);
 				foreach (var index in quadTree.QueryResults)
 				{
-					polygonSearch[index].GetNearestNeighbour(position);
+					polygonSearch[index]?.GetNearestNeighbour(position);
 				}
 
-				throw new NotImplementedException();
+				return (-1, -1);
 			}
 		}
 
@@ -269,6 +269,23 @@ namespace MatterHackers.QuadTree
 			Clipper.CleanPolygons(onlyMergeLines, cleanDistance);
 
 			return pathHasMergeLines && onlyMergeLines.Count > 0;
+		}
+
+		public static QuadTree<int> GetQuadTree(this Polygons polygons, int splitCount = 5)
+		{
+			var expandDist = 1;
+			var allBounds = polygons.GetBounds();
+			allBounds.Inflate(expandDist);
+			var quadTree = new QuadTree<int>(5, allBounds.minX, allBounds.minY, allBounds.maxX, allBounds.maxY);
+			for (int i = 0; i < polygons.Count; i++)
+			{
+				var polygon = polygons[i];
+				var bounds = polygon.GetBounds();
+
+				quadTree.Insert(i, new Quad(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY));
+			}
+
+			return quadTree;
 		}
 
 		public static List<QuadTree<int>> GetEdgeQuadTrees(this Polygons polygons, int splitCount = 5, long expandDist = 1)

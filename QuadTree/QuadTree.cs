@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using MSClipperLib;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
@@ -162,6 +164,32 @@ namespace MatterHackers.QuadTree
 
 					branch = branch.Parent;
 				}
+			}
+		}
+
+		public IEnumerable<T> IterateClosest(IntPoint position)
+		{
+			// search close to the position
+			QueryResults.Clear();
+			Root.SearchQuad(new Quad(position, 1000), QueryResults);
+			foreach (var index in QueryResults)
+			{
+				yield return index;
+			}
+
+			QueryResults.Clear();
+			Root.SearchQuad(new Quad(position, 10000), QueryResults);
+			foreach (var index in QueryResults)
+			{
+				yield return index;
+			}
+
+			// search everything
+			QueryResults.Clear();
+			Root.SearchQuad(this.Root.Bounds, QueryResults);
+			foreach (var index in QueryResults)
+			{
+				yield return index;
 			}
 		}
 
