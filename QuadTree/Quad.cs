@@ -1,24 +1,24 @@
-﻿//The MIT License(MIT)
+﻿// The MIT License(MIT)
 
-//Copyright(c) 2015 ChevyRay, 2017 Lars Brubaker
+// Copyright(c) 2015 ChevyRay, 2017 Lars Brubaker
 
-//Permission is hereby granted, free of charge, to any person obtaining a copy
-//of this software and associated documentation files (the "Software"), to deal
-//in the Software without restriction, including without limitation the rights
-//to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-//copies of the Software, and to permit persons to whom the Software is
-//furnished to do so, subject to the following conditions:
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
 
-//The above copyright notice and this permission notice shall be included in all
-//copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
 
-//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-//AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-//OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-//SOFTWARE.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 using System;
 using MSClipperLib;
@@ -47,6 +47,7 @@ namespace MatterHackers.QuadTree
 		}
 
 		/// <summary>
+		/// Initializes a new instance of the <see cref="Quad"/> struct.
 		/// Construct a new Quad.
 		/// </summary>
 		/// <param name="minX">Minimum x.</param>
@@ -62,8 +63,11 @@ namespace MatterHackers.QuadTree
 		}
 
 		public long MaxX { get; private set; }
+
 		public long MaxY { get; private set; }
+
 		public long MinX { get; private set; }
+
 		public long MinY { get; private set; }
 
 		/// <summary>
@@ -80,6 +84,11 @@ namespace MatterHackers.QuadTree
 			}
 
 			return false;
+		}
+
+		public bool Contains(IntPoint position)
+		{
+			return this.Contains(position.X, position.Y);
 		}
 
 		/// <summary>
@@ -127,6 +136,61 @@ namespace MatterHackers.QuadTree
 			MinY = minY;
 			MaxX = maxX;
 			MaxY = maxY;
+		}
+
+		public double DistanceFrom(IntPoint position)
+		{
+			if (position.X < MinX)
+			{
+				if (position.Y < MinY)
+				{
+					// find distance to lower left point
+					return (new IntPoint(MinX, MinY) - position).Length();
+				}
+				else if (position.Y > MaxY)
+				{
+					// find distance to upper left point
+					return (new IntPoint(MinX, MaxY) - position).Length();
+				}
+				else
+				{
+					// distance from left edge
+					return MinX - position.X;
+				}
+			}
+			else if (position.X > MaxX)
+			{
+				if (position.Y < MinY)
+				{
+					// find distance to lower right point
+					return (new IntPoint(MaxX, MinY) - position).Length();
+				}
+				else if (position.Y > MaxY)
+				{
+					// find distance to upper right point
+					return (new IntPoint(MaxX, MaxY) - position).Length();
+				}
+				else
+				{
+					// distance from right edge
+					return position.X - MaxX;
+				}
+			}
+			else if (position.Y < MinY)
+			{
+				// within x so distance form bottom
+				return MinY - position.Y;
+			}
+			else if (position.Y > MaxY)
+			{
+				// within x so distance form top
+				return position.Y - MaxY;
+			}
+			else
+			{
+				// inside
+				return 0;
+			}
 		}
 	}
 }

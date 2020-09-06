@@ -167,29 +167,46 @@ namespace MatterHackers.QuadTree
 			}
 		}
 
-		public IEnumerable<T> IterateClosest(IntPoint position)
+		public IEnumerable<(T, double distance)> IterateClosest(IntPoint position)
 		{
-			// search close to the position
-			QueryResults.Clear();
-			Root.SearchQuad(new Quad(position, 1000), QueryResults);
-			foreach (var index in QueryResults)
+			List<(T item, double distance)> GetSet(Quad quad)
 			{
-				yield return index;
+				// search close to the position
+				QueryResults.Clear();
+				Root.SearchQuad(quad, QueryResults);
+
+				var resultWithDistance = new List<(T item, double distance)>(QueryResults.Count);
+				foreach (var index in QueryResults)
+				{
+					var leaf = leafLookup[index];
+					resultWithDistance.Add((index, leaf.Quad.DistanceFrom(position)));
+				}
+
+				// sort on distance
+				resultWithDistance.Sort((a, b) => a.distance.CompareTo(b.distance));
+
+				return resultWithDistance;
 			}
 
-			QueryResults.Clear();
-			Root.SearchQuad(new Quad(position, 10000), QueryResults);
-			foreach (var index in QueryResults)
+			// expanded 1mm
+			var set = GetSet(new Quad(position, 1000));
+			foreach (var result in set)
 			{
-				yield return index;
+				yield return (result.item, result.distance);
 			}
 
-			// search everything
-			QueryResults.Clear();
-			Root.SearchQuad(this.Root.Bounds, QueryResults);
-			foreach (var index in QueryResults)
+			// expanded 10mm
+			set = GetSet(new Quad(position, 10000));
+			foreach (var result in set)
 			{
-				yield return index;
+				yield return (result.item, result.distance);
+			}
+
+			// everything
+			set = GetSet(Root.Bounds);
+			foreach (var result in set)
+			{
+				yield return (result.item, result.distance);
 			}
 		}
 

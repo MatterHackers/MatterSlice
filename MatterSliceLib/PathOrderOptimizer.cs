@@ -187,17 +187,18 @@ namespace MatterHackers.MatterSlice
 			endPosition = currentPosition;
 			var bestDistSquared = double.MaxValue;
 			var bestResult = new OptimizedPath();
-			// foreach (var i in polygonAccelerator.IterateClosest(currentPosition))
-			for (int i = 0; i < Polygons.Count; i++)
+			foreach (var indexDistance in polygonAccelerator.IterateClosest(currentPosition))
+			// for (int i = 0; i < Polygons.Count; i++)
 			{
-				if (compleatedPolygons.Contains(i))
+				var index = indexDistance.Item1;
+				if (compleatedPolygons.Contains(index))
 				{
 					// skip this polygon it has been processed
 					continue;
 				}
 
-				int pointIndex = FindClosestPoint(Polygons[i],
-					Accelerator[i],
+				int pointIndex = FindClosestPoint(Polygons[index],
+					Accelerator[index],
 					currentPosition,
 					doSeamHiding,
 					canTravelForwardOrBackward,
@@ -210,12 +211,17 @@ namespace MatterHackers.MatterSlice
 				{
 					bestDistSquared = distanceSquared;
 					endPosition = polyEndPosition;
-					bestResult = new OptimizedPath(i, pointIndex, true, false);
+					bestResult = new OptimizedPath(index, pointIndex, true, false);
 
-					if (bestDistSquared < 1000000)
+					if (bestDistSquared == 0)
 					{
 						break;
 					}
+				}
+
+				if (bestDistSquared < indexDistance.distance * indexDistance.distance)
+				{
+					break;
 				}
 			}
 
