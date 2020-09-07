@@ -62,7 +62,7 @@ namespace MatterHackers.Pathfinding
 			SetGoodUnitsPerPixel(unitsPerPixel);
 
 			EdgeQuadTrees = Polygons.GetEdgeQuadTrees();
-			NearestNeighboursList = Polygons.ConditionalKDTrees();
+			NearestNeighboursList = Polygons.GetNearestNeighbourAccelerator();
 
 			foreach (var polygon in Polygons)
 			{
@@ -112,7 +112,7 @@ namespace MatterHackers.Pathfinding
 
 		public ImageBuffer DistanceFromOutside { get; private set; }
 
-		public List<INearestNeighbours<int>> NearestNeighboursList { get; }
+		public INearestNeighbours<(int polygonIndex, int pointIndex)> NearestNeighboursList { get; }
 
 		public Polygons Polygons { get; }
 

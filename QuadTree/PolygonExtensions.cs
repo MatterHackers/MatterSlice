@@ -108,19 +108,7 @@ namespace MatterHackers.QuadTree
 		{
 			if (nearestNeighbours != null)
 			{
-				int bestPointIndex = -1;
-				double closestDist = double.MaxValue;
-				foreach (var item in nearestNeighbours.GetNearestNeighbours(position, 1))
-				{
-					double dist = (polygon[item] - position).LengthSquared();
-					if (dist < closestDist)
-					{
-						bestPointIndex = item;
-						closestDist = dist;
-					}
-				}
-
-				return bestPointIndex;
+				return nearestNeighbours.GetNearestNeighbour(position);
 			}
 			else
 			{
@@ -151,16 +139,18 @@ namespace MatterHackers.QuadTree
 				}
 			}
 
-			public IEnumerable<int> GetNearestNeighbours(IntPoint position, int count)
+			public int GetNearestNeighbour(IntPoint position)
 			{
 				foreach (var item in this.GetNearestNeighbours(new long[] { position.X, position.Y }, 1))
 				{
-					yield return item.Value;
+					return item.Value;
 				}
+
+				return -1;
 			}
 		}
 
-		public static INearestNeighbours<int> ConditionalKDTree(this Polygon polygon)
+		public static INearestNeighbours<int> GetNearestNeighbourAccelerator(this Polygon polygon)
 		{
 			// if there are not enough points it is much faster to just iterate the array
 			if (polygon.Count < 8)
@@ -345,12 +335,10 @@ namespace MatterHackers.QuadTree
 		{
 			if (nearestNeighbours != null)
 			{
-				foreach (var index in nearestNeighbours.GetNearestNeighbours(position, 1))
+				var index = nearestNeighbours.GetNearestNeighbour(position);
+				if (position == polygon[index])
 				{
-					if (position == polygon[index])
-					{
-						return index;
-					}
+					return index;
 				}
 			}
 			else

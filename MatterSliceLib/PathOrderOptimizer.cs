@@ -33,7 +33,7 @@ namespace MatterHackers.MatterSlice
 	{
 		public int PointIndex { get; set; }
 
-		public int PolyIndex { get; set; }
+		public int PolyIndex { get; set; } = -1;
 
 		public bool IsExtrude { get; set; } = true;
 
@@ -62,7 +62,9 @@ namespace MatterHackers.MatterSlice
 	{
 		private readonly ConfigSettings config;
 
-		public List<(Polygon polygon, INearestNeighbours<int> tree)> Data { get; private set; } = new List<(Polygon polygon, INearestNeighbours<int> tree)>();
+		public List<INearestNeighbours<int>> Accelerator { get; private set; } = new List<INearestNeighbours<int>>();
+
+		public Polygons Polygons { get; private set; } = new Polygons();
 
 		public PathOrderOptimizer(ConfigSettings config)
 		{
@@ -75,7 +77,8 @@ namespace MatterHackers.MatterSlice
 		{
 			if (polygon.Count > 0)
 			{
-				this.Data.Add((polygon, polygon.ConditionalKDTree()));
+				this.Polygons.Add(polygon);
+				this.Accelerator.Add(polygon.GetNearestNeighbourAccelerator());
 			}
 		}
 
@@ -99,10 +102,13 @@ namespace MatterHackers.MatterSlice
 
 			var completedPolygons = new HashSet<int>();
 
+			var polygonAccelerator = Polygons.GetQuadTree();
+
 			IntPoint currentPosition = startPosition;
-			while (completedPolygons.Count < Data.Count)
+			while (completedPolygons.Count < Polygons.Count)
 			{
 				var closestPolyPoint = FindClosestPolyAndPoint(currentPosition,
+					polygonAccelerator,
 					completedPolygons,
 					doSeamHiding,
 					layerIndex,
@@ -128,6 +134,7 @@ namespace MatterHackers.MatterSlice
 							// try to find a closer place to go to by looking at the center of the returned path
 							var center = pathPolygon.GetPositionAllongPath(.5, pathConfig != null ? pathConfig.ClosedLoop : false);
 							var midPolyPoint = FindClosestPolyAndPoint(center,
+								polygonAccelerator,
 								completedPolygons,
 								doSeamHiding,
 								layerIndex,
@@ -162,6 +169,12 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
+				if (closestPolyPoint.PolyIndex == -1)
+				{
+					// could not find any next point
+					break;
+				}
+
 				OptimizedPaths.Add(closestPolyPoint);
 				completedPolygons.Add(closestPolyPoint.PolyIndex);
 
@@ -170,6 +183,7 @@ namespace MatterHackers.MatterSlice
 		}
 
 		private OptimizedPath FindClosestPolyAndPoint(IntPoint currentPosition,
+			QuadTree<int> polygonAccelerator,
 			HashSet<int> compleatedPolygons,
 			bool doSeamHiding,
 			int layerIndex,
@@ -180,15 +194,17 @@ namespace MatterHackers.MatterSlice
 			endPosition = currentPosition;
 			var bestDistSquared = double.MaxValue;
 			var bestResult = new OptimizedPath();
-			for (int i = 0; i < Data.Count; i++)
+			foreach (var indexDistance in polygonAccelerator.IterateClosest(currentPosition, () => bestDistSquared))
 			{
-				if (compleatedPolygons.Contains(i))
+				var index = indexDistance.Item1;
+				if (compleatedPolygons.Contains(index))
 				{
 					// skip this polygon it has been processed
 					continue;
 				}
 
-				int pointIndex = FindClosestPoint(Data[i],
+				int pointIndex = FindClosestPoint(Polygons[index],
+					Accelerator[index],
 					currentPosition,
 					doSeamHiding,
 					canTravelForwardOrBackward,
@@ -201,14 +217,15 @@ namespace MatterHackers.MatterSlice
 				{
 					bestDistSquared = distanceSquared;
 					endPosition = polyEndPosition;
-					bestResult = new OptimizedPath(i, pointIndex, true, false);
+					bestResult = new OptimizedPath(index, pointIndex, true, false);
 				}
 			}
 
 			return bestResult;
 		}
 
-		private int FindClosestPoint((Polygon polygon, INearestNeighbours<int> nearestNeighbours) data,
+		private int FindClosestPoint(Polygon polygon,
+			INearestNeighbours<int> accelerator,
 			IntPoint currentPosition,
 			bool doSeamHiding,
 			bool canTravelForwardOrBackward,
@@ -218,37 +235,37 @@ namespace MatterHackers.MatterSlice
 			out IntPoint endPosition)
 		{
 			int bestPoint;
-			if (canTravelForwardOrBackward || data.polygon.Count == 2)
+			if (canTravelForwardOrBackward || polygon.Count == 2)
 			{
-				int endIndex = data.polygon.Count - 1;
+				int endIndex = polygon.Count - 1;
 
-				bestDistSquared = (data.polygon[0] - currentPosition).LengthSquared();
+				bestDistSquared = (polygon[0] - currentPosition).LengthSquared();
 				bestPoint = 0;
-				endPosition = data.polygon[endIndex];
+				endPosition = polygon[endIndex];
 
 				// check if the end is better
-				double distSquared = (data.polygon[endIndex] - currentPosition).LengthSquared();
+				double distSquared = (polygon[endIndex] - currentPosition).LengthSquared();
 				if (distSquared < bestDistSquared)
 				{
 					bestDistSquared = distSquared;
 					bestPoint = endIndex;
-					endPosition = data.polygon[0];
+					endPosition = polygon[0];
 				}
 			}
 			else
 			{
 				if (doSeamHiding)
 				{
-					bestPoint = data.polygon.FindGreatestTurnIndex(lineWidth_um, currentPosition);
+					bestPoint = polygon.FindGreatestTurnIndex(lineWidth_um, currentPosition);
 				}
 				else
 				{
-					bestPoint = data.polygon.FindClosestPositionIndex(currentPosition, data.nearestNeighbours);
+					bestPoint = polygon.FindClosestPositionIndex(currentPosition, accelerator);
 				}
 
-				bestDistSquared = (data.polygon[bestPoint] - currentPosition).LengthSquared();
+				bestDistSquared = (polygon[bestPoint] - currentPosition).LengthSquared();
 
-				endPosition = data.polygon[bestPoint];
+				endPosition = polygon[bestPoint];
 			}
 
 			return bestPoint;

@@ -57,16 +57,43 @@ namespace MatterHackers.QuadTree
 			}
 		}
 
-		public static List<INearestNeighbours<int>> ConditionalKDTrees(this Polygons inPolygons)
+		internal class PolygonGroups : INearestNeighbours<(int polygonIndex, int pointIndex)>
 		{
-			var kdTRees = new List<INearestNeighbours<int>>();
+			private QuadTree<int> quadTree;
+			private List<INearestNeighbours<int>> polygonSearch = new List<INearestNeighbours<int>>();
 
-			for (int i = 0; i < inPolygons.Count; i++)
+			internal PolygonGroups(Polygons inPolygons)
 			{
-				kdTRees.Add(inPolygons[i].ConditionalKDTree());
+				var expandDist = 1;
+				var allBounds = inPolygons.GetBounds();
+				allBounds.Inflate(expandDist);
+				quadTree = new QuadTree<int>(5, allBounds.minX, allBounds.minY, allBounds.maxX, allBounds.maxY);
+				for (int i = 0; i < inPolygons.Count; i++)
+				{
+					var polygon = inPolygons[i];
+					var bounds = polygon.GetBounds();
+
+					quadTree.Insert(i, new Quad(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY));
+
+					polygonSearch.Add(polygon.GetNearestNeighbourAccelerator());
+				}
 			}
 
-			return kdTRees;
+			public (int polygonIndex, int pointIndex) GetNearestNeighbour(IntPoint position)
+			{
+				quadTree.SearchPoint(position.X, position.Y);
+				foreach (var index in quadTree.QueryResults)
+				{
+					polygonSearch[index]?.GetNearestNeighbour(position);
+				}
+
+				return (-1, -1);
+			}
+		}
+
+		public static INearestNeighbours<(int polygonIndex, int pointIndex)> GetNearestNeighbourAccelerator(this Polygons inPolygons)
+		{
+			return new PolygonGroups(inPolygons);
 		}
 
 		public static Intersection FindIntersection(this Polygons polygons, IntPoint start, IntPoint end, List<QuadTree<int>> edgeQuadTrees = null)
@@ -244,23 +271,29 @@ namespace MatterHackers.QuadTree
 			return pathHasMergeLines && onlyMergeLines.Count > 0;
 		}
 
+		public static QuadTree<int> GetQuadTree(this Polygons polygons, int splitCount = 5)
+		{
+			var expandDist = 1;
+			var allBounds = polygons.GetBounds();
+			allBounds.Inflate(expandDist);
+			var quadTree = new QuadTree<int>(5, allBounds.minX, allBounds.minY, allBounds.maxX, allBounds.maxY);
+			for (int i = 0; i < polygons.Count; i++)
+			{
+				var polygon = polygons[i];
+				var bounds = polygon.GetBounds();
+
+				quadTree.Insert(i, new Quad(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY));
+			}
+
+			return quadTree;
+		}
+
 		public static List<QuadTree<int>> GetEdgeQuadTrees(this Polygons polygons, int splitCount = 5, long expandDist = 1)
 		{
 			var quadTrees = new List<QuadTree<int>>();
 			foreach (var polygon in polygons)
 			{
 				quadTrees.Add(polygon.GetEdgeQuadTree(splitCount, expandDist));
-			}
-
-			return quadTrees;
-		}
-
-		public static List<QuadTree<int>> GetPointQuadTrees(this Polygons polygons, int splitCount = 5, long expandDist = 1)
-		{
-			var quadTrees = new List<QuadTree<int>>();
-			foreach (var polygon in polygons)
-			{
-				quadTrees.Add(polygon.GetPointQuadTree(splitCount, expandDist));
 			}
 
 			return quadTrees;
@@ -289,11 +322,17 @@ namespace MatterHackers.QuadTree
 
 		public static Polygons MakeCloseSegmentsMergable(this Polygons polygonsToSplit, long distanceNeedingAdd, bool pathsAreClosed = true)
 		{
+			var polygonAccelerator = polygonsToSplit.GetQuadTree();
 			var splitPolygons = new Polygons();
 			for (int i = 0; i < polygonsToSplit.Count; i++)
 			{
 				Polygon accumulatedSplits = polygonsToSplit[i];
-				for (int j = 0; j < polygonsToSplit.Count; j++)
+
+				var bounds = accumulatedSplits.GetBounds();
+				bounds.Inflate(distanceNeedingAdd);
+				polygonAccelerator.SearchArea(new Quad(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY));
+
+				foreach (var j in polygonAccelerator.QueryResults)
 				{
 					accumulatedSplits = QTPolygonExtensions.MakeCloseSegmentsMergable(accumulatedSplits, polygonsToSplit[j], distanceNeedingAdd, pathsAreClosed);
 				}
@@ -333,7 +372,7 @@ namespace MatterHackers.QuadTree
 			IntPoint startPosition,
 			out (int polyIndex, int pointIndex, IntPoint position) polyPointPosition,
 			List<QuadTree<int>> edgeQuadTrees = null,
-			List<INearestNeighbours<int>> nearestNeighbours = null,
+			INearestNeighbours<(int polygonIndex, int pointIndex)> nearestNeighbours = null,
 			Func<IntPoint, InsideState> fastInsideCheck = null)
 		{
 			var bestPolyPointPosition = (0, 0, startPosition);
@@ -408,14 +447,23 @@ namespace MatterHackers.QuadTree
 		}
 
 		public static bool PointIsInside(this Polygons polygons,
-			IntPoint testPoint,
+			IntPoint position,
 			List<QuadTree<int>> edgeQuadTrees = null,
-			List<INearestNeighbours<int>> pointKDTrees = null,
+			INearestNeighbours<(int polygonIndex, int pointIndex)> nearestNeighbours = null,
 			Func<IntPoint, InsideState> fastInsideCheck = null)
 		{
-			if (polygons.TouchingEdge(testPoint, edgeQuadTrees))
+			if (polygons.TouchingEdge(position, edgeQuadTrees))
 			{
 				return true;
+			}
+
+			if (nearestNeighbours != null)
+			{
+				var index = nearestNeighbours.GetNearestNeighbour(position);
+				if (index.pointIndex != -1 && position == polygons[index.polygonIndex][index.pointIndex])
+				{
+					return true;
+				}
 			}
 
 			int insideCount = 0;
@@ -424,14 +472,14 @@ namespace MatterHackers.QuadTree
 				var polygon = polygons[i];
 				if (fastInsideCheck != null)
 				{
-					switch (fastInsideCheck(testPoint))
+					switch (fastInsideCheck(position))
 					{
 						case InsideState.Inside:
 							return true;
 						case InsideState.Outside:
 							return false;
 						case InsideState.Unknown:
-							if (polygon.PointIsInside(testPoint, pointKDTrees?[i]) != 0)
+							if (polygon.PointIsInside(position) != 0)
 							{
 								insideCount++;
 							}
@@ -439,7 +487,7 @@ namespace MatterHackers.QuadTree
 							break;
 					}
 				}
-				else if (polygon.PointIsInside(testPoint, pointKDTrees?[i]) != 0)
+				else if (polygon.PointIsInside(position) != 0)
 				{
 					insideCount++;
 				}

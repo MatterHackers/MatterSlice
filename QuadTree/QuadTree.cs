@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using MSClipperLib;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
@@ -161,6 +163,62 @@ namespace MatterHackers.QuadTree
 					}
 
 					branch = branch.Parent;
+				}
+			}
+		}
+
+		public IEnumerable<(T, double distance)> IterateClosest(IntPoint position, Func<double> closestPointSquared)
+		{
+			List<(T item, double distance)> GetSet(Quad quad)
+			{
+				// search close to the position
+				QueryResults.Clear();
+				Root.SearchQuad(quad, QueryResults);
+
+				var resultWithDistance = new List<(T item, double distance)>(QueryResults.Count);
+				foreach (var index in QueryResults)
+				{
+					var leaf = leafLookup[index];
+					resultWithDistance.Add((index, leaf.Quad.DistanceFrom(position)));
+				}
+
+				// sort on distance
+				resultWithDistance.Sort((a, b) => a.distance.CompareTo(b.distance));
+
+				return resultWithDistance;
+			}
+
+			var i = 0;
+			// expanded 1mm
+			var set = GetSet(new Quad(position, 1000));
+			for (; i < set.Count; i++)
+			{
+				yield return (set[i].item, set[i].distance);
+				if (closestPointSquared() < set[i].distance * set[i].distance)
+				{
+					yield break;
+				}
+			}
+
+			// expanded 10mm
+			set = GetSet(new Quad(position, 10000));
+			for (; i < set.Count; i++)
+			{
+				yield return (set[i].item, set[i].distance);
+				if (closestPointSquared() < set[i].distance * set[i].distance)
+				{
+					yield break;
+				}
+			}
+
+			// everything
+			set = GetSet(Root.Bounds);
+			for (; i < set.Count; i++)
+			{
+				yield return (set[i].item, set[i].distance);
+				if (closestPointSquared() < set[i].distance * set[i].distance)
+				{
+					yield break;
 				}
 			}
 		}

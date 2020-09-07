@@ -257,6 +257,7 @@ namespace MatterHackers.Pathfinding
 					nodeToRemove.Links.Remove(link);
 					otherNode.Links.Remove(link);
 				}
+
 				Nodes.Remove(nodeToRemove);
 			}
 		}
