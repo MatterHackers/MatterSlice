@@ -33,7 +33,7 @@ namespace MatterHackers.MatterSlice
 	{
 		public int PointIndex { get; set; }
 
-		public int PolyIndex { get; set; }
+		public int PolyIndex { get; set; } = -1;
 
 		public bool IsExtrude { get; set; } = true;
 
@@ -166,6 +166,12 @@ namespace MatterHackers.MatterSlice
 						//completedPolygons.Add(Polygons.Count);
 						//Polygons.Add(pathPolygon);
 					}
+				}
+
+				if (closestPolyPoint.PolyIndex == -1)
+				{
+					// could not find any next point
+					break;
 				}
 
 				OptimizedPaths.Add(closestPolyPoint);
