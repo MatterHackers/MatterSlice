@@ -1442,6 +1442,10 @@ namespace MatterHackers.MatterSlice
 						polygonPrintedIndex = polygonIndex;
 					}
 				}
+				else
+				{
+					insetsThatHaveBeenPrinted.Add(currentPolygon);
+				}
 			}
 
 			if (polygonPrintedIndex > -1)
