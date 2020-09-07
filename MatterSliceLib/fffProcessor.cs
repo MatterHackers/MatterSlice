@@ -1385,11 +1385,14 @@ namespace MatterHackers.MatterSlice
 		{
 			IntPoint polyPointPosition = new IntPoint(long.MinValue, long.MinValue);
 
+			var accelerator = boundaryPolygons.GetQuadTree();
+
 			long bestDist = long.MaxValue;
-			for (int polygonIndex = 0; polygonIndex < boundaryPolygons.Count; polygonIndex++)
+			foreach (var polygonIndex in accelerator.IterateClosest(position, () => bestDist))
+			//for (int polygonIndex = 0; polygonIndex < boundaryPolygons.Count; polygonIndex++)
 			{
-				var closestIndex = boundaryPolygons[polygonIndex].FindGreatestTurnIndex(config.ExtrusionWidth_um, position);
-				IntPoint closestToPoly = boundaryPolygons[polygonIndex][closestIndex];
+				var closestIndex = boundaryPolygons[polygonIndex.Item1].FindGreatestTurnIndex(config.ExtrusionWidth_um, position);
+				IntPoint closestToPoly = boundaryPolygons[polygonIndex.Item1][closestIndex];
 				if (closestToPoly != null)
 				{
 					long length = (closestToPoly - position).Length();
@@ -1397,7 +1400,6 @@ namespace MatterHackers.MatterSlice
 					{
 						bestDist = length;
 						polyPointPosition = closestToPoly;
-						// break;
 					}
 				}
 			}
@@ -1461,7 +1463,7 @@ namespace MatterHackers.MatterSlice
 				}
 
 				insetsThatHaveBeenPrinted.Add(insetsToConsider[polygonPrintedIndex]);
-				return true;
+				return false;
 			}
 
 			// Return the original limitDistance value if we didn't match a polygon

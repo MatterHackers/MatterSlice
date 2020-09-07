@@ -63,6 +63,7 @@ namespace MatterHackers.MatterSlice
 		private readonly ConfigSettings config;
 
 		public List<INearestNeighbours<int>> Accelerator { get; private set; } = new List<INearestNeighbours<int>>();
+
 		public Polygons Polygons { get; private set; } = new Polygons();
 
 		public PathOrderOptimizer(ConfigSettings config)

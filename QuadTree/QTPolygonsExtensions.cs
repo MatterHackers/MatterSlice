@@ -322,11 +322,17 @@ namespace MatterHackers.QuadTree
 
 		public static Polygons MakeCloseSegmentsMergable(this Polygons polygonsToSplit, long distanceNeedingAdd, bool pathsAreClosed = true)
 		{
+			var polygonAccelerator = polygonsToSplit.GetQuadTree();
 			var splitPolygons = new Polygons();
 			for (int i = 0; i < polygonsToSplit.Count; i++)
 			{
 				Polygon accumulatedSplits = polygonsToSplit[i];
-				for (int j = 0; j < polygonsToSplit.Count; j++)
+
+				var bounds = accumulatedSplits.GetBounds();
+				bounds.Inflate(distanceNeedingAdd);
+				polygonAccelerator.SearchArea(new Quad(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY));
+
+				foreach (var j in polygonAccelerator.QueryResults)
 				{
 					accumulatedSplits = QTPolygonExtensions.MakeCloseSegmentsMergable(accumulatedSplits, polygonsToSplit[j], distanceNeedingAdd, pathsAreClosed);
 				}
