@@ -167,7 +167,7 @@ namespace MatterHackers.QuadTree
 			}
 		}
 
-		public IEnumerable<(T, double distance)> IterateClosest(IntPoint position)
+		public IEnumerable<(T, double distance)> IterateClosest(IntPoint position, Func<double> closestPointSquared)
 		{
 			List<(T item, double distance)> GetSet(Quad quad)
 			{
@@ -188,25 +188,38 @@ namespace MatterHackers.QuadTree
 				return resultWithDistance;
 			}
 
+			var i = 0;
 			// expanded 1mm
 			var set = GetSet(new Quad(position, 1000));
-			foreach (var result in set)
+			for (; i < set.Count; i++)
 			{
-				yield return (result.item, result.distance);
+				yield return (set[i].item, set[i].distance);
+				if (closestPointSquared() < set[i].distance * set[i].distance)
+				{
+					yield break;
+				}
 			}
 
 			// expanded 10mm
 			set = GetSet(new Quad(position, 10000));
-			foreach (var result in set)
+			for (; i < set.Count; i++)
 			{
-				yield return (result.item, result.distance);
+				yield return (set[i].item, set[i].distance);
+				if (closestPointSquared() < set[i].distance * set[i].distance)
+				{
+					yield break;
+				}
 			}
 
 			// everything
 			set = GetSet(Root.Bounds);
-			foreach (var result in set)
+			for (; i < set.Count; i++)
 			{
-				yield return (result.item, result.distance);
+				yield return (set[i].item, set[i].distance);
+				if (closestPointSquared() < set[i].distance * set[i].distance)
+				{
+					yield break;
+				}
 			}
 		}
 
