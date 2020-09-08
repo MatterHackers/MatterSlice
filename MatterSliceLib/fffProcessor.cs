@@ -1389,17 +1389,19 @@ namespace MatterHackers.MatterSlice
 
 			long bestDist = long.MaxValue;
 			foreach (var polygonIndex in accelerator.IterateClosest(position, () => bestDist))
-			//for (int polygonIndex = 0; polygonIndex < boundaryPolygons.Count; polygonIndex++)
 			{
-				var closestIndex = boundaryPolygons[polygonIndex.Item1].FindGreatestTurnIndex(config.ExtrusionWidth_um, position);
-				IntPoint closestToPoly = boundaryPolygons[polygonIndex.Item1][closestIndex];
-				if (closestToPoly != null)
+				if (boundaryPolygons[polygonIndex.Item1] != null)
 				{
-					long length = (closestToPoly - position).Length();
-					if (length < bestDist)
+					var closestIndex = boundaryPolygons[polygonIndex.Item1].FindGreatestTurnIndex(config.ExtrusionWidth_um, position);
+					IntPoint closestToPoly = boundaryPolygons[polygonIndex.Item1][closestIndex];
+					if (closestToPoly != null)
 					{
-						bestDist = length;
-						polyPointPosition = closestToPoly;
+						long length = (closestToPoly - position).Length();
+						if (length < bestDist)
+						{
+							bestDist = length;
+							polyPointPosition = closestToPoly;
+						}
 					}
 				}
 			}
