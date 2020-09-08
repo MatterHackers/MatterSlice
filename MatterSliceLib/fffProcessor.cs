@@ -1390,7 +1390,8 @@ namespace MatterHackers.MatterSlice
 			long bestDist = long.MaxValue;
 			foreach (var polygonIndex in accelerator.IterateClosest(position, () => bestDist))
 			{
-				if (boundaryPolygons[polygonIndex.Item1] != null)
+				if (boundaryPolygons[polygonIndex.Item1] != null
+					&& boundaryPolygons[polygonIndex.Item1].Count > 0)
 				{
 					var closestIndex = boundaryPolygons[polygonIndex.Item1].FindGreatestTurnIndex(config.ExtrusionWidth_um, position);
 					IntPoint closestToPoly = boundaryPolygons[polygonIndex.Item1][closestIndex];
