@@ -1040,6 +1040,12 @@ namespace MatterHackers.MatterSlice
 				LayerIsland island = layer.Islands[islandOrderOptimizer.OptimizedPaths[islandOrderIndex].PolyIndex];
 				var insetToolPaths = island.InsetToolPaths;
 
+				var insetAccelerators = new List<QuadTree<int>>();
+				foreach (var inset in insetToolPaths)
+				{
+					insetAccelerators.Add(inset.GetQuadTree());
+				}
+
 				if (config.AvoidCrossingPerimeters)
 				{
 					MoveToIsland(layerGcodePlanner, layer, island);
@@ -1111,6 +1117,7 @@ namespace MatterHackers.MatterSlice
 								if (insetToolPaths.Count > 0)
 								{
 									QueueClosestInset(insetToolPaths[0],
+										insetAccelerators[0],
 										insetsThatHaveBeenPrinted,
 										island.PathFinder,
 										limitDistance,
@@ -1124,6 +1131,7 @@ namespace MatterHackers.MatterSlice
 								for (int insetIndex = 1; insetIndex < insetToolPaths.Count; insetIndex++)
 								{
 									limitDistance = QueueClosestInset(insetToolPaths[insetIndex],
+										insetAccelerators[insetIndex],
 										insetsThatHaveBeenPrinted,
 										island.PathFinder,
 										limitDistance,
@@ -1158,7 +1166,7 @@ namespace MatterHackers.MatterSlice
 									if (!config.ContinuousSpiralOuterPerimeter
 										&& insetIndex == insetToolPaths.Count - 1)
 									{
-										var closestInsetStart = FindBestPoint(insetToolPaths[0], layerGcodePlanner.LastPosition_um, layerIndex);
+										var closestInsetStart = FindBestPoint(insetToolPaths[0], insetAccelerators[0], layerGcodePlanner.LastPosition_um, layerIndex);
 										if (closestInsetStart.X != long.MinValue)
 										{
 											(int polyIndex, int pointIndex, IntPoint position) found = (-1, -1, closestInsetStart);
@@ -1185,6 +1193,7 @@ namespace MatterHackers.MatterSlice
 									}
 
 									limitDistance = QueueClosestInset(insetToolPaths[insetIndex],
+										insetAccelerators[insetIndex],
 										insetsThatHaveBeenPrinted,
 										island.PathFinder,
 										limitDistance,
@@ -1381,11 +1390,9 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public IntPoint FindBestPoint(Polygons boundaryPolygons, IntPoint position, int layerIndex)
+		public IntPoint FindBestPoint(Polygons boundaryPolygons, QuadTree<int> accelerator, IntPoint position, int layerIndex)
 		{
 			IntPoint polyPointPosition = new IntPoint(long.MinValue, long.MinValue);
-
-			var accelerator = boundaryPolygons.GetQuadTree();
 
 			long bestDist = long.MaxValue;
 			foreach (var polygonIndex in accelerator.IterateClosest(position, () => bestDist))
@@ -1411,6 +1418,7 @@ namespace MatterHackers.MatterSlice
 		}
 
 		private bool QueueClosestInset(Polygons insetsToConsider,
+			QuadTree<int> accelerator,
 			HashSet<Polygon> insetsThatHaveBeenPrinted,
 			PathFinder islandPathFinder,
 			bool limitDistance,
@@ -1429,9 +1437,10 @@ namespace MatterHackers.MatterSlice
 
 			int polygonPrintedIndex = -1;
 
-			for (int polygonIndex = 0; polygonIndex < insetsToConsider.Count; polygonIndex++)
+			//for (int polygonIndex = 0; polygonIndex < insetsToConsider.Count; polygonIndex++)
+			foreach (var closest in accelerator.IterateClosest(gcodeLayer.LastPosition_um, () => maxDist_um))
 			{
-				Polygon currentPolygon = insetsToConsider[polygonIndex];
+				Polygon currentPolygon = insetsToConsider[closest.Item1];
 				if (insetsThatHaveBeenPrinted.Contains(currentPolygon))
 				{
 					continue;
@@ -1444,7 +1453,7 @@ namespace MatterHackers.MatterSlice
 					if (distance < maxDist_um)
 					{
 						maxDist_um = distance;
-						polygonPrintedIndex = polygonIndex;
+						polygonPrintedIndex = closest.Item1;
 					}
 				}
 				else
