@@ -48,7 +48,7 @@ namespace MatterHackers.QuadTree
 		public static IEnumerable<(int polyIndex, int pointIndex, IntPoint position)> FindCrossingPoints(this Polygons polygons,
 			IntPoint start,
 			IntPoint end,
-			QuadTree<(int polyIndex, QuadTree<int> quadTree)> edgeQuadTrees = null)
+			QuadTree<(int polyIndex, QuadTree<int> quadTree)> edgeQuadTrees)
 		{
 			edgeQuadTrees.SearchArea(new Quad(start, end));
 			foreach (var item in edgeQuadTrees.QueryResults)
@@ -534,13 +534,25 @@ namespace MatterHackers.QuadTree
 		public static bool TouchingEdge(this Polygons polygons, IntPoint testPosition,
 			QuadTree<(int polyIndex, QuadTree<int> quadTree)> edgeQuadTrees = null)
 		{
-			edgeQuadTrees.SearchArea(new Quad(testPosition));
-			foreach (var item in edgeQuadTrees.QueryResults)
-			// for (int i = 0; i < polygons.Count; i++)
+			if (edgeQuadTrees == null)
 			{
-				if (polygons[item.polyIndex].TouchingEdge(testPosition, item.quadTree))
+				for (int i = 0; i < polygons.Count; i++)
 				{
-					return true;
+					if (polygons[i].TouchingEdge(testPosition))
+					{
+						return true;
+					}
+				}
+			}
+			else
+			{
+				edgeQuadTrees.SearchArea(new Quad(testPosition));
+				foreach (var item in edgeQuadTrees.QueryResults)
+				{
+					if (polygons[item.polyIndex].TouchingEdge(testPosition, item.quadTree))
+					{
+						return true;
+					}
 				}
 			}
 
