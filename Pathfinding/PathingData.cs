@@ -43,10 +43,10 @@ using Polygons = System.Collections.Generic.List<System.Collections.Generic.List
 
 namespace MatterHackers.Pathfinding
 {
-    /// <summary>
-    /// This is to hold all the data that lets us switch between Boundary and Outline pathing.
-    /// </summary>
-    public class PathingData
+	/// <summary>
+	/// This is to hold all the data that lets us switch between Boundary and Outline pathing.
+	/// </summary>
+	public class PathingData
 	{
 		private Affine polygonsToImageTransform;
 		private double unitsPerPixel;
@@ -108,7 +108,7 @@ namespace MatterHackers.Pathfinding
 			this.unitsPerPixel = Max(1, unitsPerPixel);
 		}
 
-		public List<QuadTree<int>> EdgeQuadTrees { get; }
+		public QuadTree<(int polyIndex, QuadTree<int> quadTree)> EdgeQuadTrees { get; }
 
 		public ImageBuffer DistanceFromOutside { get; private set; }
 

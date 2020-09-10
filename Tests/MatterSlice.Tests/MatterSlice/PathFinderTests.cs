@@ -64,7 +64,10 @@ namespace MatterHackers.MatterSlice.Tests
 					Polygons insideBoundaryPolygons = CLPolygonsExtensions.CreateFromString(insidePartOutlineString);
 					IntPoint startPoint = new IntPoint(-10, 10);
 					IntPoint endPoint = new IntPoint(1010, 10);
-					var crossings = new List<(int polyIndex, int pointIndex, IntPoint position)>(insideBoundaryPolygons.FindCrossingPoints(startPoint, endPoint));
+					var crossings = new List<(int polyIndex, int pointIndex, IntPoint position)>(insideBoundaryPolygons.FindCrossingPoints(
+						startPoint,
+						endPoint,
+						insideBoundaryPolygons.GetEdgeQuadTrees()));
 					crossings.Sort(new PolygonAndPointDirectionSorter(startPoint, endPoint));
 				}
 
@@ -162,18 +165,20 @@ namespace MatterHackers.MatterSlice.Tests
 					IntPoint endPoint = new IntPoint(50, 5);
 					PathFinder testHarness = new PathFinder(boundaryPolygons, 0);
 
-					Assert.IsFalse(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(-1, 5)));
-					Assert.IsFalse(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(-1, 5), testHarness.OutlineData.EdgeQuadTrees));
-					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(1, 5)));
-					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(1, 5), testHarness.OutlineData.EdgeQuadTrees));
-					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(0, 5)));
-					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(0, 5), testHarness.OutlineData.EdgeQuadTrees));
-					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(40, 5)));
-					Assert.IsTrue(testHarness.OutlineData.Polygons.PointIsInside(new IntPoint(40, 5), testHarness.OutlineData.EdgeQuadTrees));
+					var poly = testHarness.OutlineData.Polygons;
+					var quadTree = poly.GetEdgeQuadTrees();
+					Assert.IsFalse(poly.PointIsInside(new IntPoint(-1, 5)));
+					Assert.IsFalse(poly.PointIsInside(new IntPoint(-1, 5), testHarness.OutlineData.EdgeQuadTrees));
+					Assert.IsTrue(poly.PointIsInside(new IntPoint(1, 5)));
+					Assert.IsTrue(poly.PointIsInside(new IntPoint(1, 5), testHarness.OutlineData.EdgeQuadTrees));
+					Assert.IsTrue(poly.PointIsInside(new IntPoint(0, 5)));
+					Assert.IsTrue(poly.PointIsInside(new IntPoint(0, 5), testHarness.OutlineData.EdgeQuadTrees));
+					Assert.IsTrue(poly.PointIsInside(new IntPoint(40, 5)));
+					Assert.IsTrue(poly.PointIsInside(new IntPoint(40, 5), testHarness.OutlineData.EdgeQuadTrees));
 
 					Polygon insidePath = new Polygon();
 					(int polyIndex, int pointIndex, IntPoint position) outPoint;
-					Assert.IsFalse(testHarness.OutlineData.Polygons.PointIsInside(startPoint));
+					Assert.IsFalse(poly.PointIsInside(startPoint));
 					Assert.IsFalse(testHarness.OutlineData.Polygons.PointIsInside(startPoint, testHarness.OutlineData.EdgeQuadTrees));
 
 					// validate some dependent functions

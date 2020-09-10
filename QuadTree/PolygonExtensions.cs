@@ -29,25 +29,30 @@ either expressed or implied, of the FreeBSD Project.
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using MSClipperLib;
 using KdTree;
 using KdTree.Math;
+using MSClipperLib;
+using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.QuadTree
 {
-	using Polygon = List<IntPoint>;
-	using Polygons = List<List<IntPoint>>;
-
-	public enum Intersection { None, Colinear, Intersect }
+	public enum Intersection
+	{
+		None,
+		Colinear,
+		Intersect
+	}
 
 	public static class QTPolygonExtensions
 	{
-		public static bool CalcIntersection(IntPoint a1, IntPoint a2,
-													  IntPoint b1, IntPoint b2,
-													  out IntPoint position)
+		public static bool CalcIntersection(IntPoint a1,
+			IntPoint a2,
+			IntPoint b1,
+			IntPoint b2,
+			out IntPoint position)
 		{
-			position = new IntPoint();
+			position = default(IntPoint);
 
 			long intersection_epsilon = 1;
 			long num = (a1.Y - b1.Y) * (b2.X - b1.X) - (a1.X - b1.X) * (b2.Y - b1.Y);
@@ -65,7 +70,7 @@ namespace MatterHackers.QuadTree
 
 		public static IntPoint Center(this Polygon polygon)
 		{
-			var center = new IntPoint();
+			var center = default(IntPoint);
 			for (int positionIndex = 0; positionIndex < polygon.Count; positionIndex++)
 			{
 				center += polygon[positionIndex];

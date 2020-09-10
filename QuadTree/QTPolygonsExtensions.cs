@@ -45,14 +45,20 @@ namespace MatterHackers.QuadTree
 
 	public static class QTPolygonsExtensions
 	{
-		public static IEnumerable<(int polyIndex, int pointIndex, IntPoint position)> FindCrossingPoints(this Polygons polygons, IntPoint start, IntPoint end, List<QuadTree<int>> edgeQuadTrees = null)
+		public static IEnumerable<(int polyIndex, int pointIndex, IntPoint position)> FindCrossingPoints(this Polygons polygons,
+			IntPoint start,
+			IntPoint end,
+			QuadTree<(int polyIndex, QuadTree<int> quadTree)> edgeQuadTrees)
 		{
-			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
+			edgeQuadTrees.SearchArea(new Quad(start, end));
+			foreach (var item in edgeQuadTrees.QueryResults)
+			// for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
 			{
-				_ = new List<Tuple<int, IntPoint>>();
-				foreach (var crossing in polygons[polyIndex].FindCrossingPoints(start, end, edgeQuadTrees == null ? null : edgeQuadTrees[polyIndex]))
+				foreach (var crossing in polygons[item.polyIndex].FindCrossingPoints(start,
+					end,
+					edgeQuadTrees == null ? null : item.quadTree))
 				{
-					yield return (polyIndex, crossing.pointIndex, crossing.position);
+					yield return (item.polyIndex, crossing.pointIndex, crossing.position);
 				}
 			}
 		}
@@ -96,12 +102,17 @@ namespace MatterHackers.QuadTree
 			return new PolygonGroups(inPolygons);
 		}
 
-		public static Intersection FindIntersection(this Polygons polygons, IntPoint start, IntPoint end, List<QuadTree<int>> edgeQuadTrees = null)
+		public static Intersection FindIntersection(this Polygons polygons,
+			IntPoint start,
+			IntPoint end,
+			QuadTree<(int polyIndex, QuadTree<int> quadTree)> edgeQuadTrees = null)
 		{
 			Intersection bestIntersection = Intersection.None;
-			for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
+			edgeQuadTrees.SearchArea(new Quad(start, end));
+			foreach (var item in edgeQuadTrees.QueryResults)
+			// for (int polyIndex = 0; polyIndex < polygons.Count; polyIndex++)
 			{
-				var result = polygons[polyIndex].FindIntersection(start, end, edgeQuadTrees?[polyIndex]);
+				var result = polygons[item.polyIndex].FindIntersection(start, end, item.quadTree);
 				if (result == Intersection.Intersect)
 				{
 					return Intersection.Intersect;
@@ -288,12 +299,19 @@ namespace MatterHackers.QuadTree
 			return quadTree;
 		}
 
-		public static List<QuadTree<int>> GetEdgeQuadTrees(this Polygons polygons, int splitCount = 5, long expandDist = 1)
+		public static QuadTree<(int polyIndex, QuadTree<int> quadTree)> GetEdgeQuadTrees(this Polygons polygons, int splitCount = 5, long expandDist = 1)
 		{
-			var quadTrees = new List<QuadTree<int>>();
-			foreach (var polygon in polygons)
+			var bounds = polygons.GetBounds();
+			bounds.Inflate(expandDist);
+			var quadTrees = new QuadTree<(int polyIndex, QuadTree<int> quadTree)>(5, new Quad(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY));
+			for (var i = 0; i < polygons.Count; i++)
 			{
-				quadTrees.Add(polygon.GetEdgeQuadTree(splitCount, expandDist));
+				var polygon = polygons[i];
+				var bounds2 = polygon.GetBounds();
+				bounds2.Inflate(expandDist);
+				var quad = new Quad(bounds2.minX, bounds2.minY, bounds2.maxX, bounds2.maxY);
+				quadTrees.Insert((i,
+					polygon.GetEdgeQuadTree(splitCount, expandDist)), quad);
 			}
 
 			return quadTrees;
@@ -371,7 +389,7 @@ namespace MatterHackers.QuadTree
 		public static void MovePointInsideBoundary(this Polygons boundaryPolygons,
 			IntPoint startPosition,
 			out (int polyIndex, int pointIndex, IntPoint position) polyPointPosition,
-			List<QuadTree<int>> edgeQuadTrees = null,
+			QuadTree<(int polyIndex, QuadTree<int> quadTree)> edgeQuadTrees = null,
 			INearestNeighbours<(int polygonIndex, int pointIndex)> nearestNeighbours = null,
 			Func<IntPoint, InsideState> fastInsideCheck = null)
 		{
@@ -448,7 +466,7 @@ namespace MatterHackers.QuadTree
 
 		public static bool PointIsInside(this Polygons polygons,
 			IntPoint position,
-			List<QuadTree<int>> edgeQuadTrees = null,
+			QuadTree<(int polyIndex, QuadTree<int> quadTree)> edgeQuadTrees = null,
 			INearestNeighbours<(int polygonIndex, int pointIndex)> nearestNeighbours = null,
 			Func<IntPoint, InsideState> fastInsideCheck = null)
 		{
@@ -513,13 +531,28 @@ namespace MatterHackers.QuadTree
 			}
 		}
 
-		public static bool TouchingEdge(this Polygons polygons, IntPoint testPosition, List<QuadTree<int>> edgeQuadTrees = null)
+		public static bool TouchingEdge(this Polygons polygons, IntPoint testPosition,
+			QuadTree<(int polyIndex, QuadTree<int> quadTree)> edgeQuadTrees = null)
 		{
-			for (int i = 0; i < polygons.Count; i++)
+			if (edgeQuadTrees == null)
 			{
-				if (polygons[i].TouchingEdge(testPosition, edgeQuadTrees?[i]))
+				for (int i = 0; i < polygons.Count; i++)
 				{
-					return true;
+					if (polygons[i].TouchingEdge(testPosition))
+					{
+						return true;
+					}
+				}
+			}
+			else
+			{
+				edgeQuadTrees.SearchArea(new Quad(testPosition));
+				foreach (var item in edgeQuadTrees.QueryResults)
+				{
+					if (polygons[item.polyIndex].TouchingEdge(testPosition, item.quadTree))
+					{
+						return true;
+					}
 				}
 			}
 
