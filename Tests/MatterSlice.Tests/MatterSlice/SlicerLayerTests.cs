@@ -27,13 +27,13 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using MatterHackers.QuadTree;
 using MSClipperLib;
 using NUnit.Framework;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice.Tests
 {
@@ -76,8 +76,8 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void AllPerimetersGoInPolgonDirection()
 		{
-			string thinWallsSTL = TestUtilities.GetStlPath("ThinWallsRect.stl");
-			string thinWallsGCode = TestUtilities.GetTempGCodePath("ThinWallsRect.stl");
+			string thinWallsSTL = TestUtilities.GetStlPath("ThinWallsRect");
+			string thinWallsGCode = TestUtilities.GetTempGCodePath("ThinWallsRect.gcode");
 
 			{
 				// load a model that is correctly manifold
@@ -101,6 +101,75 @@ namespace MatterHackers.MatterSlice.Tests
 						Assert.AreEqual(1, polygon.GetWindingDirection());
 					}
 				}
+			}
+		}
+
+		[Test]
+		public void ExpandThinWallsFindsWalls()
+		{
+			string thinWallsSTL = TestUtilities.GetStlPath("ThinWalls");
+			string thinWallsGCode = TestUtilities.GetTempGCodePath("ThinWalls.gcode");
+
+			{
+				// load a model that is correctly manifold
+				ConfigSettings config = new ConfigSettings();
+				config.FirstLayerThickness = .2;
+				config.LayerThickness = .2;
+				config.NumberOfSkirtLoops = 0;
+				config.InfillPercent = 0;
+				config.NumberOfTopLayers = 0;
+				config.NumberOfBottomLayers = 0;
+				config.NumberOfPerimeters = 1;
+				config.ExpandThinWalls = false;
+				FffProcessor processor = new FffProcessor(config);
+				processor.SetTargetFile(thinWallsGCode);
+				processor.LoadStlFile(thinWallsSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(thinWallsGCode);
+				int layerCount = TestUtilities.CountLayers(loadedGCode);
+				Assert.AreEqual(50, layerCount);
+
+				var layerPolygons = new List<Polygons>();
+				for (int i = 0; i < layerCount; i++)
+				{
+					layerPolygons.Add(TestUtilities.GetExtrusionPolygons(loadedGCode.GetGCodeForLayer(i)));
+				}
+		
+				Assert.AreEqual(6, layerPolygons[10].Count);
+			}
+
+			{
+				// load a model that is correctly manifold
+				ConfigSettings config = new ConfigSettings();
+				config.FirstLayerThickness = .2;
+				config.LayerThickness = .2;
+				config.NumberOfSkirtLoops = 0;
+				config.InfillPercent = 0;
+				config.NumberOfTopLayers = 0;
+				config.NumberOfBottomLayers = 0;
+				config.NumberOfPerimeters = 1;
+				config.ExpandThinWalls = true;
+				FffProcessor processor = new FffProcessor(config);
+				processor.SetTargetFile(thinWallsGCode);
+				processor.LoadStlFile(thinWallsSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(thinWallsGCode);
+				int layerCount = TestUtilities.CountLayers(loadedGCode);
+				Assert.AreEqual(50, layerCount);
+
+				var layerPolygons = new List<Polygons>();
+				for (int i = 0; i < layerCount; i++)
+				{
+					layerPolygons.Add(TestUtilities.GetExtrusionPolygons(loadedGCode.GetGCodeForLayer(i)));
+				}
+
+				Assert.AreEqual(6, layerPolygons[10].Count);
 			}
 		}
 
