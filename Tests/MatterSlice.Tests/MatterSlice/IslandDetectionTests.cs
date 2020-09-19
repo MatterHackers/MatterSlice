@@ -41,7 +41,7 @@ namespace MatterHackers.MatterSlice.Tests
 	public class IslandDetectionTests
 	{
 		[Test]
-		public void SingleLayerCreated()
+		public void CorrectIslandCount()
 		{
 			string engineStlFile = TestUtilities.GetStlPath("Engine-Benchmark");
 			string engineGCodeFile = TestUtilities.GetTempGCodePath("Engine-Benchmark.gcode");

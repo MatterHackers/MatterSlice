@@ -1011,28 +1011,20 @@ namespace MatterHackers.MatterSlice
 			var islandOrderOptimizer = new PathOrderOptimizer(config);
 			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 			{
-				if (config.ContinuousSpiralOuterPerimeter && islandIndex > 0)
+				if ((config.ContinuousSpiralOuterPerimeter
+					&& islandIndex > 0)
+					|| layer.Islands[islandIndex].InsetToolPaths.Count == 0)
 				{
 					continue;
 				}
 
-				if (config.ExpandThinWalls
-					&& !config.ContinuousSpiralOuterPerimeter)
+				if (config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter)
 				{
-					var firstWithCount = layer.Islands[islandIndex].IslandOutline.Where(p => p.Count > 0).First();
-					if (firstWithCount != null)
-					{
-						islandOrderOptimizer.AddPolygon(firstWithCount);
-					}
-					else
-					{
-						islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].InsetToolPaths[0][0]);
-					}
+					islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].IslandOutline[0], islandIndex);
 				}
-				else if (layer.Islands[islandIndex].InsetToolPaths.Count > 0)
+				else
 				{
-					// The first 0 is the outermost inset (the outside), the second 0 is the first polygon (good enough for ordering)
-					islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].InsetToolPaths[0][0]);
+					islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].InsetToolPaths[0][0], islandIndex);
 				}
 			}
 
@@ -1047,7 +1039,7 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				LayerIsland island = layer.Islands[islandOrderOptimizer.OptimizedPaths[islandOrderIndex].PolyIndex];
+				LayerIsland island = layer.Islands[islandOrderOptimizer.OptimizedPaths[islandOrderIndex].SourcePolyIndex];
 				var insetToolPaths = island.InsetToolPaths;
 
 				var insetAccelerators = new List<QuadTree<int>>();
@@ -1536,7 +1528,7 @@ namespace MatterHackers.MatterSlice
 				{
 					if (layer.Islands[islandIndex].InsetToolPaths.Count > 0)
 					{
-						islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].InsetToolPaths[0][0]);
+						islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].InsetToolPaths[0][0], islandIndex);
 					}
 				}
 
@@ -1544,7 +1536,7 @@ namespace MatterHackers.MatterSlice
 
 				for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.OptimizedPaths.Count; islandOrderIndex++)
 				{
-					LayerIsland island = layer.Islands[islandOrderOptimizer.OptimizedPaths[islandOrderIndex].PolyIndex];
+					LayerIsland island = layer.Islands[islandOrderOptimizer.OptimizedPaths[islandOrderIndex].SourcePolyIndex];
 
 					var bottomFillPolygons = new Polygons();
 					CalculateInfillData(slicingData, extruderIndex, layerIndex, island, bottomFillPolygons);

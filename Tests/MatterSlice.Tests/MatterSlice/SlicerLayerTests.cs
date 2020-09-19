@@ -137,7 +137,7 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					layerPolygons.Add(TestUtilities.GetExtrusionPolygons(loadedGCode.GetGCodeForLayer(i)));
 				}
-		
+
 				Assert.AreEqual(6, layerPolygons[10].Count);
 			}
 
@@ -169,7 +169,7 @@ namespace MatterHackers.MatterSlice.Tests
 					layerPolygons.Add(TestUtilities.GetExtrusionPolygons(loadedGCode.GetGCodeForLayer(i)));
 				}
 
-				Assert.AreEqual(6, layerPolygons[10].Count);
+				Assert.AreEqual(9, layerPolygons[10].Count);
 			}
 		}
 

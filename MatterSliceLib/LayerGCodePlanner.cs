@@ -377,7 +377,7 @@ namespace MatterHackers.MatterSlice
 
 				foreach (var optimizedPath in orderOptimizer.OptimizedPaths)
 				{
-					var polygon = orderOptimizer.Polygons[optimizedPath.PolyIndex];
+					var polygon = polygons[optimizedPath.SourcePolyIndex];
 
 					// The order optimizer should already have created all the right moves
 					// so pass a null for the path finder (don't re-plan them).

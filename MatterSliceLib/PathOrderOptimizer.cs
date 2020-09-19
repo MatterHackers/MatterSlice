@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 using System.Collections.Generic;
+using System.Linq;
 using KdTree;
 using MatterHackers.Pathfinding;
 using MatterHackers.QuadTree;
@@ -33,7 +34,7 @@ namespace MatterHackers.MatterSlice
 	{
 		public int PointIndex { get; set; }
 
-		public int PolyIndex { get; set; } = -1;
+		public int SourcePolyIndex { get; set; } = -1;
 
 		public bool IsExtrude { get; set; } = true;
 
@@ -45,7 +46,7 @@ namespace MatterHackers.MatterSlice
 
 		public OptimizedPath(int poly, int point, bool isExtrude, bool foundPath)
 		{
-			this.PolyIndex = poly;
+			this.SourcePolyIndex = poly;
 			this.PointIndex = point;
 			this.IsExtrude = isExtrude;
 			this.FoundPath = foundPath;
@@ -54,7 +55,7 @@ namespace MatterHackers.MatterSlice
 		public override string ToString()
 		{
 			var description = IsExtrude ? "extrude" : "travel";
-			return $"poly: {PolyIndex} point: {PointIndex} {description}";
+			return $"poly: {SourcePolyIndex} point: {PointIndex} {description}";
 		}
 	}
 
@@ -73,11 +74,14 @@ namespace MatterHackers.MatterSlice
 
 		public List<OptimizedPath> OptimizedPaths { get; private set; } = new List<OptimizedPath>();
 
-		public void AddPolygon(Polygon polygon)
+		public List<int> Indices { get; private set; }
+
+		public void AddPolygon(Polygon polygon, int polygonIndex)
 		{
 			if (polygon.Count > 0)
 			{
 				this.Polygons.Add(polygon);
+				this.Indices.Add(polygonIndex);
 				this.Accelerator.Add(polygon.GetNearestNeighbourAccelerator());
 			}
 		}
@@ -86,7 +90,7 @@ namespace MatterHackers.MatterSlice
 		{
 			for (int i = 0; i < polygons.Count; i++)
 			{
-				this.AddPolygon(polygons[i]);
+				this.AddPolygon(polygons[i], i);
 			}
 		}
 
@@ -169,14 +173,14 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				if (closestPolyPoint.PolyIndex == -1)
+				if (closestPolyPoint.SourcePolyIndex == -1)
 				{
 					// could not find any next point
 					break;
 				}
 
 				OptimizedPaths.Add(closestPolyPoint);
-				completedPolygons.Add(closestPolyPoint.PolyIndex);
+				completedPolygons.Add(closestPolyPoint.SourcePolyIndex);
 
 				currentPosition = endPosition;
 			}
@@ -194,14 +198,16 @@ namespace MatterHackers.MatterSlice
 			endPosition = currentPosition;
 			var bestDistSquared = double.MaxValue;
 			var bestResult = new OptimizedPath();
-			foreach (var indexDistance in polygonAccelerator.IterateClosest(currentPosition, () => bestDistSquared))
+			foreach (var indexAndDistance in polygonAccelerator.IterateClosest(currentPosition, () => bestDistSquared))
 			{
-				var index = indexDistance.Item1;
-				if (compleatedPolygons.Contains(index))
+				var index = indexAndDistance.Item1;
+				if (compleatedPolygons.Contains(Indices[index]))
 				{
 					// skip this polygon it has been processed
 					continue;
 				}
+
+				var list = compleatedPolygons.ToArray();
 
 				int pointIndex = FindClosestPoint(Polygons[index],
 					Accelerator[index],
@@ -217,7 +223,8 @@ namespace MatterHackers.MatterSlice
 				{
 					bestDistSquared = distanceSquared;
 					endPosition = polyEndPosition;
-					bestResult = new OptimizedPath(index, pointIndex, true, false);
+					// the actual lookup in the input data needs to map to the source indices
+					bestResult = new OptimizedPath(Indices[index], pointIndex, true, false);
 				}
 			}
 
