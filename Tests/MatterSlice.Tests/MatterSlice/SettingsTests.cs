@@ -407,7 +407,7 @@ namespace MatterHackers.MatterSlice.Tests
 				var config = new ConfigSettings();
 				config.ExtruderCount = 1;
 				config.SupportExtruder = 1; // from a 0 based index
-				// this is a hack, but it is the signaling mechanism for support
+											// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
 				var processor = new FffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);

@@ -130,7 +130,7 @@ namespace MatterHackers.MatterSlice.Tests
 			return retractions;
 		}
 
-		public static Polygons GetExtrusionPolygons(string[] gcode, long movementToIgnore = 0)
+		public static Polygons GetExtrusionPolygons(this string[] gcode, long movementToIgnore = 0)
 		{
 			MovementInfo movementInfo = new MovementInfo();
 			return GetExtrusionPolygons(gcode, ref movementInfo, movementToIgnore);
@@ -216,7 +216,7 @@ namespace MatterHackers.MatterSlice.Tests
 			return false;
 		}
 
-		public static string[] GetGCodeForLayer(string[] gcodeContents, int layerIndex)
+		public static string[] GetGCodeForLayer(this string[] gcodeContents, int layerIndex)
 		{
 			List<string> layerLines = new List<string>();
 			int currentLayer = -1;

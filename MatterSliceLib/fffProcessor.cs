@@ -198,7 +198,7 @@ namespace MatterHackers.MatterSlice
 		{
 			timeKeeper.Restart();
 #if false
-            optimizedModel.saveDebugSTL("debug_output.stl");
+			optimizedModel.saveDebugSTL("debug_output.stl");
 #endif
 
 			var extruderDataLayers = new List<ExtruderData>();
@@ -216,9 +216,9 @@ namespace MatterHackers.MatterSlice
 			});
 
 #if false
-            slicerList[0].DumpSegmentsToGcode("Volume 0 Segments.gcode");
-            slicerList[0].DumpPolygonsToGcode("Volume 0 Polygons.gcode");
-            //slicerList[0].DumpPolygonsToHTML("Volume 0 Polygons.html");
+			slicerList[0].DumpSegmentsToGcode("Volume 0 Segments.gcode");
+			slicerList[0].DumpPolygonsToGcode("Volume 0 Polygons.gcode");
+			// slicerList[0].DumpPolygonsToHTML("Volume 0 Polygons.html");
 #endif
 
 			LogOutput.Log("Sliced model: {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
@@ -1016,11 +1016,7 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				if (config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter)
-				{
-					islandOrderOptimizer.AddPolygon(layer.Islands[partIndex].IslandOutline[0]);
-				}
-				else if (layer.Islands[partIndex].InsetToolPaths.Count > 0)
+				if (layer.Islands[partIndex].InsetToolPaths.Count > 0)
 				{
 					islandOrderOptimizer.AddPolygon(layer.Islands[partIndex].InsetToolPaths[0][0]);
 				}
@@ -1111,7 +1107,9 @@ namespace MatterHackers.MatterSlice
 						}
 						else
 						{
-							while (insetsThatHaveBeenPrinted.Count < CountInsetsToPrint(insetToolPaths))
+							bool foundAnyPath = true;
+							while (insetsThatHaveBeenPrinted.Count < CountInsetsToPrint(insetToolPaths)
+								&& foundAnyPath)
 							{
 								bool limitDistance = false;
 								if (insetToolPaths.Count > 0)
@@ -1124,7 +1122,10 @@ namespace MatterHackers.MatterSlice
 										inset0Config,
 										layerIndex,
 										layerGcodePlanner,
-										bridgeAreas);
+										bridgeAreas,
+										out bool foundAPath);
+
+									foundAnyPath |= foundAPath;
 								}
 
 								// Move to the closest inset 1 and print it
@@ -1138,7 +1139,10 @@ namespace MatterHackers.MatterSlice
 										insetXConfig,
 										layerIndex,
 										layerGcodePlanner,
-										bridgeAreas);
+										bridgeAreas,
+										out bool foundAPath);
+
+									foundAnyPath |= foundAPath;
 								}
 							}
 						}
@@ -1155,8 +1159,12 @@ namespace MatterHackers.MatterSlice
 							layerGcodePlanner.QueueTravel(island.IslandOutline[0][0], null);
 						}
 
-						while (insetsThatHaveBeenPrinted.Count < insetCount2)
+						bool foundAnyPath = true;
+						while (insetsThatHaveBeenPrinted.Count < insetCount2
+							&& foundAnyPath)
 						{
+							// reset at start of search
+							foundAnyPath = false;
 							bool limitDistance = false;
 							if (insetToolPaths.Count > 0)
 							{
@@ -1200,7 +1208,10 @@ namespace MatterHackers.MatterSlice
 										insetIndex == 0 ? inset0Config : insetXConfig,
 										layerIndex,
 										layerGcodePlanner,
-										bridgeAreas);
+										bridgeAreas,
+										out bool foundAPath);
+
+									foundAnyPath |= foundAPath;
 
 									if (insetIndex == 0)
 									{
@@ -1425,7 +1436,8 @@ namespace MatterHackers.MatterSlice
 			GCodePathConfig pathConfig,
 			int layerIndex,
 			LayerGCodePlanner gcodeLayer,
-			Polygons bridgeAreas)
+			Polygons bridgeAreas,
+			out bool foundAPath)
 		{
 			// This is the furthest away we will accept a new starting point
 			long maxDist_um = long.MaxValue;
@@ -1437,7 +1449,7 @@ namespace MatterHackers.MatterSlice
 
 			int polygonPrintedIndex = -1;
 
-			//for (int polygonIndex = 0; polygonIndex < insetsToConsider.Count; polygonIndex++)
+			// for (int polygonIndex = 0; polygonIndex < insetsToConsider.Count; polygonIndex++)
 			foreach (var closest in accelerator.IterateClosest(gcodeLayer.LastPosition_um, () => maxDist_um))
 			{
 				Polygon currentPolygon = insetsToConsider[closest.Item1];
@@ -1475,9 +1487,11 @@ namespace MatterHackers.MatterSlice
 				}
 
 				insetsThatHaveBeenPrinted.Add(insetsToConsider[polygonPrintedIndex]);
+				foundAPath = maxDist_um != long.MaxValue;
 				return false;
 			}
 
+			foundAPath = maxDist_um != long.MaxValue;
 			// Return the original limitDistance value if we didn't match a polygon
 			return limitDistance;
 		}
