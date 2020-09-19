@@ -215,7 +215,7 @@ namespace MatterHackers.MatterSlice
 
 			if (!config.Spiralize
 				&& LastPositionSet
-				&& distance > config.LineWidth_um)
+				&& distance > config.LineWidth_um / 4)
 			{
 				QueueTravel(firstPolygonPosition, pathFinder);
 			}
