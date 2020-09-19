@@ -52,10 +52,10 @@ namespace MatterHackers.MatterSlice.Tests
 
 			{
 				// load a model that has 3 islands
-				ConfigSettings config = new ConfigSettings();
+				var config = new ConfigSettings();
 				// make sure no retractions are going to occur that are island crossing
 				config.MinimumTravelToCauseRetraction = 2000;
-				FffProcessor processor = new FffProcessor(config);
+				var processor = new FffProcessor(config);
 				processor.SetTargetFile(gCodeWithIslands);
 				processor.LoadStlFile(meshWithIslands);
 				// slice and save it
@@ -81,22 +81,29 @@ namespace MatterHackers.MatterSlice.Tests
 
 			{
 				// load a model that is correctly manifold
-				ConfigSettings config = new ConfigSettings();
+				var config = new ConfigSettings();
 				config.ExpandThinWalls = true;
-				FffProcessor processor = new FffProcessor(config);
+				config.MergeOverlappingLines = false;
+				var processor = new FffProcessor(config);
 				processor.SetTargetFile(thinWallsGCode);
 				processor.LoadStlFile(thinWallsSTL);
 				// slice and save it
 				processor.DoProcessing();
 				processor.Finalize();
 
-				string[] thinWallsGCodeContent = TestUtilities.LoadGCodeFile(thinWallsGCode);
-				int layerCount = TestUtilities.CountLayers(thinWallsGCodeContent);
-				for(int i= 2; i< layerCount-2; i++)
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(thinWallsGCode);
+				int layerCount = TestUtilities.CountLayers(loadedGCode);
+
+				var layerPolygons = new List<Polygons>();
+				for (int i = 0; i < layerCount; i++)
 				{
-					var layerGCode = TestUtilities.GetGCodeForLayer(thinWallsGCodeContent, i);
-					var polygons = TestUtilities.GetExtrusionPolygons(layerGCode, 1000);
-					foreach(var polygon in polygons)
+					layerPolygons.Add(TestUtilities.GetExtrusionPolygons(loadedGCode.GetGCodeForLayer(i)));
+				}
+
+				for (int i = 2; i < layerCount - 2; i++)
+				{
+					Assert.LessOrEqual(layerPolygons[i].Count, 4, "We should not have add more than the 4 sides");
+					foreach (var polygon in layerPolygons[i])
 					{
 						Assert.AreEqual(1, polygon.GetWindingDirection());
 					}
@@ -108,20 +115,23 @@ namespace MatterHackers.MatterSlice.Tests
 		public void ExpandThinWallsFindsWalls()
 		{
 			string thinWallsSTL = TestUtilities.GetStlPath("ThinWalls");
-			string thinWallsGCode = TestUtilities.GetTempGCodePath("ThinWalls.gcode");
 
+			// without expand thin walls
 			{
-				// load a model that is correctly manifold
-				ConfigSettings config = new ConfigSettings();
-				config.FirstLayerThickness = .2;
-				config.LayerThickness = .2;
-				config.NumberOfSkirtLoops = 0;
-				config.InfillPercent = 0;
-				config.NumberOfTopLayers = 0;
-				config.NumberOfBottomLayers = 0;
-				config.NumberOfPerimeters = 1;
-				config.ExpandThinWalls = false;
-				FffProcessor processor = new FffProcessor(config);
+				string thinWallsGCode = TestUtilities.GetTempGCodePath("ThinWalls1.gcode");
+				var config = new ConfigSettings
+				{
+					FirstLayerThickness = .2,
+					LayerThickness = .2,
+					NumberOfSkirtLoops = 0,
+					InfillPercent = 0,
+					NumberOfTopLayers = 0,
+					NumberOfBottomLayers = 0,
+					NumberOfPerimeters = 1,
+					ExpandThinWalls = false,
+					MergeOverlappingLines = false
+				};
+				var processor = new FffProcessor(config);
 				processor.SetTargetFile(thinWallsGCode);
 				processor.LoadStlFile(thinWallsSTL);
 				// slice and save it
@@ -141,9 +151,10 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.AreEqual(6, layerPolygons[10].Count);
 			}
 
+			// with expand thin walls
 			{
-				// load a model that is correctly manifold
-				ConfigSettings config = new ConfigSettings();
+				string thinWallsGCode = TestUtilities.GetTempGCodePath("ThinWalls2.gcode");
+				var config = new ConfigSettings();
 				config.FirstLayerThickness = .2;
 				config.LayerThickness = .2;
 				config.NumberOfSkirtLoops = 0;
@@ -152,7 +163,41 @@ namespace MatterHackers.MatterSlice.Tests
 				config.NumberOfBottomLayers = 0;
 				config.NumberOfPerimeters = 1;
 				config.ExpandThinWalls = true;
-				FffProcessor processor = new FffProcessor(config);
+				config.MergeOverlappingLines = false;
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(thinWallsGCode);
+				processor.LoadStlFile(thinWallsSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(thinWallsGCode);
+				int layerCount = TestUtilities.CountLayers(loadedGCode);
+				Assert.AreEqual(50, layerCount);
+
+				var layerPolygons = new List<Polygons>();
+				for (int i = 0; i < layerCount; i++)
+				{
+					layerPolygons.Add(TestUtilities.GetExtrusionPolygons(loadedGCode.GetGCodeForLayer(i)));
+				}
+
+				Assert.AreEqual(9, layerPolygons[10].Count);
+			}
+
+			// with expand thin walls and with merge overlapping lines
+			{
+				string thinWallsGCode = TestUtilities.GetTempGCodePath("ThinWalls3.gcode");
+				var config = new ConfigSettings();
+				config.FirstLayerThickness = .2;
+				config.LayerThickness = .2;
+				config.NumberOfSkirtLoops = 0;
+				config.InfillPercent = 0;
+				config.NumberOfTopLayers = 0;
+				config.NumberOfBottomLayers = 0;
+				config.NumberOfPerimeters = 1;
+				config.ExpandThinWalls = true;
+				config.MergeOverlappingLines = true;
+				var processor = new FffProcessor(config);
 				processor.SetTargetFile(thinWallsGCode);
 				processor.LoadStlFile(thinWallsSTL);
 				// slice and save it
@@ -281,7 +326,7 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void DumpSegmentsWorks()
 		{
-			List<SlicePerimeterSegment> testSegments = new List<SlicePerimeterSegment>();
+			var testSegments = new List<SlicePerimeterSegment>();
 			testSegments.Add(new SlicePerimeterSegment(new IntPoint(1, 2), new IntPoint(3, 4)));
 			testSegments.Add(new SlicePerimeterSegment(new IntPoint(4, 2), new IntPoint(5, 4)));
 			testSegments.Add(new SlicePerimeterSegment(new IntPoint(3, 2), new IntPoint(9, 4)));
@@ -297,7 +342,6 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.True(testSegments[i].end == outSegments[i].end);
 			}
 		}
-
 
 #if __ANDROID__
 		[TestFixtureSetUp]
@@ -359,8 +403,8 @@ namespace MatterHackers.MatterSlice.Tests
 
 			{
 				// load a model that is correctly manifold
-				ConfigSettings config = new ConfigSettings();
-				FffProcessor processor = new FffProcessor(config);
+				var config = new ConfigSettings();
+				var processor = new FffProcessor(config);
 				processor.SetTargetFile(manifoldGCode);
 				processor.LoadStlFile(manifoldFile);
 				// slice and save it
@@ -370,8 +414,8 @@ namespace MatterHackers.MatterSlice.Tests
 
 			{
 				// load a model that has some faces pointing the wrong way
-				ConfigSettings config = new ConfigSettings();
-				FffProcessor processor = new FffProcessor(config);
+				var config = new ConfigSettings();
+				var processor = new FffProcessor(config);
 				processor.SetTargetFile(nonManifoldGCode);
 				processor.LoadStlFile(nonManifoldFile);
 				// slice and save it
@@ -388,7 +432,7 @@ namespace MatterHackers.MatterSlice.Tests
 			foreach (string line in segmentsToCheck)
 			{
 				List<SlicePerimeterSegment> segmentsList = MeshProcessingLayer.CreateSegmentListFromString(line);
-				MeshProcessingLayer layer = new MeshProcessingLayer(1, line);
+				var layer = new MeshProcessingLayer(1, line);
 				layer.MakePolygons();
 
 				Assert.AreEqual(expectedCount, layer.PolygonList.Count, "Did not have the expected perimeter count.");

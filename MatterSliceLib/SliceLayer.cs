@@ -36,12 +36,13 @@ namespace MatterHackers.MatterSlice
 
 		public PathFinder PathFinder { get; set; }
 
-		public List<LayerIsland> Islands = null;
+		public List<LayerIsland> Islands { get; set; } = null;
 
 		public bool CreatedInsets { get; set; } = false;
 
-		public long LayerZ;
-		private static bool OUTPUT_DEBUG_DATA = false;
+		public long LayerZ { get; set; }
+
+		private static readonly bool outputDebugData = false;
 
 		public static bool GetSingleIslandAngle(Polygons outline, Polygon island, out double bridgeAngle, string debugName)
 		{
@@ -103,7 +104,7 @@ namespace MatterHackers.MatterSlice
 							{
 								bestAngle = Math.Atan2(sideDelta.Y, sideDelta.X) * 180 / Math.PI;
 								longestSide = lengthOfSide;
-								if (OUTPUT_DEBUG_DATA)
+								if (outputDebugData)
 								{
 									island.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, bestAngle));
 								}
@@ -130,7 +131,7 @@ namespace MatterHackers.MatterSlice
 		{
 			SliceLayer layerToRestOn = this;
 			bridgeAngle = -1;
-			Aabb boundaryBox = new Aabb(areaGoingOnTop);
+			var boundaryBox = new Aabb(areaGoingOnTop);
 			boundaryBox.Expand(perimeterExpandDistance);
 			// To detect if we have a bridge, first calculate the intersection of the current layer with the previous layer.
 			// This gives us the islands that the layer rests on.
@@ -152,7 +153,7 @@ namespace MatterHackers.MatterSlice
 				bridgeAreas.AddRange(areaGoingOnTop.CreateDifference(layerToRestOn.AllOutlines));
 			}
 
-			if (OUTPUT_DEBUG_DATA)
+			if (outputDebugData)
 			{
 				WriteDebugData(areaGoingOnTop, layerToRestOn, islandsToRestOn);
 			}
@@ -209,7 +210,7 @@ namespace MatterHackers.MatterSlice
 
 			bridgeAngle = Math.Atan2(center2.Y - center1.Y, center2.X - center1.X) / Math.PI * 180;
 			Range0To360(ref bridgeAngle);
-			if (OUTPUT_DEBUG_DATA)
+			if (outputDebugData)
 			{
 				islandsToRestOn.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, bridgeAngle));
 			}
@@ -219,7 +220,7 @@ namespace MatterHackers.MatterSlice
 
 		private static void WriteDebugData(Polygons areaAboveToFill, SliceLayer layerToRestOn, Polygons islandsToRestOn)
 		{
-			string outlineString = areaAboveToFill.WriteToString();
+			// string outlineString = areaAboveToFill.WriteToString();
 			string islandOutlineString = "";
 			foreach (LayerIsland prevLayerIsland in layerToRestOn.Islands)
 			{
@@ -231,7 +232,7 @@ namespace MatterHackers.MatterSlice
 				islandOutlineString += "|";
 			}
 
-			string islandsString = islandsToRestOn.WriteToString();
+			// string islandsString = islandsToRestOn.WriteToString();
 		}
 
 		public void CreateIslandData()

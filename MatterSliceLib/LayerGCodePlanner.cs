@@ -211,10 +211,11 @@ namespace MatterHackers.MatterSlice
 		{
 			IntPoint firstPolygonPosition = polygon[startIndex];
 
+			var distance = (firstPolygonPosition - LastPosition_um).Length();
+
 			if (!config.Spiralize
 				&& LastPositionSet
-				&& (LastPosition_um.X != firstPolygonPosition.X
-				|| LastPosition_um.Y != firstPolygonPosition.Y))
+				&& distance > config.LineWidth_um)
 			{
 				QueueTravel(firstPolygonPosition, pathFinder);
 			}
@@ -375,6 +376,17 @@ namespace MatterHackers.MatterSlice
 
 				orderOptimizer.Optimize(LastPosition_um, pathFinder, layerIndex, true, pathConfig);
 
+				// check if the polygon looks closed and if so that it is wound CCW
+				if (orderOptimizer.OptimizedPaths.Count > 2)
+				{
+					Polygon ccwPolygon = orderOptimizer.ConvertToCcwPolygon(polygons, pathConfig.LineWidth_um);
+					if (ccwPolygon != null)
+					{
+						QueuePolygon(ccwPolygon, null, 0, pathConfig);
+						return true;
+					}
+				}
+
 				foreach (var optimizedPath in orderOptimizer.OptimizedPaths)
 				{
 					var polygon = polygons[optimizedPath.SourcePolyIndex];
@@ -469,7 +481,6 @@ namespace MatterHackers.MatterSlice
 			{
 				path.Retract = RetractType.Requested;
 			}
-
 
 			LastPosition_um = lastPathPosition;
 

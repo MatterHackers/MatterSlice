@@ -1018,14 +1018,7 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				if (config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter)
-				{
-					islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].IslandOutline[0], islandIndex);
-				}
-				else
-				{
-					islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].InsetToolPaths[0][0], islandIndex);
-				}
+				islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].InsetToolPaths[0][0], islandIndex);
 			}
 
 			islandOrderOptimizer.Optimize(layerGcodePlanner.LastPosition_um, layer.PathFinder, layerIndex, false);
@@ -1156,14 +1149,6 @@ namespace MatterHackers.MatterSlice
 					else // This is so we can do overhangs better (the outside can stick a bit to the inside).
 					{
 						int insetCount2 = CountInsetsToPrint(insetToolPaths);
-						if (insetCount2 == 0
-							&& config.ExpandThinWalls
-							&& island.IslandOutline.Count > 0
-							&& island.IslandOutline[0].Count > 0)
-						{
-							// There are no insets but we should still try to go to the start position of the first perimeter if we are expanding thin walls
-							layerGcodePlanner.QueueTravel(island.IslandOutline[0][0], null);
-						}
 
 						bool foundAnyPath = true;
 						while (insetsThatHaveBeenPrinted.Count < insetCount2
@@ -1261,41 +1246,6 @@ namespace MatterHackers.MatterSlice
 							}
 						}
 					}
-
-					if (config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter)
-					{
-						// Collect all of the lines up to one third the extrusion diameter
-						// string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(island.IslandOutline);
-						if (island.IslandOutline.FindThinLines(extrusionWidth_um + 2, extrusionWidth_um / 3, out Polygons thinLines, true))
-						{
-							for (int polyIndex = thinLines.Count - 1; polyIndex >= 0; polyIndex--)
-							{
-								var polygon = thinLines[polyIndex];
-
-								// remove any disconnected short segments
-								if (polygon.Count == 2
-									&& (polygon[0] - polygon[1]).Length() < config.ExtrusionWidth_um / 4)
-								{
-									thinLines.RemoveAt(polyIndex);
-								}
-								else
-								{
-									for (int i = 0; i < polygon.Count; i++)
-									{
-										if (polygon[i].Width > 0)
-										{
-											polygon[i] = new IntPoint(polygon[i])
-											{
-												Width = extrusionWidth_um,
-											};
-										}
-									}
-								}
-							}
-
-							fillPolygons.AddRange(thinLines);
-						}
-					}
 				}
 
 				// Write the bridge polygons after the perimeter so they will have more to hold to while bridging the gaps.
@@ -1336,6 +1286,41 @@ namespace MatterHackers.MatterSlice
 				}
 
 				layerGcodePlanner.QueuePolygonsByOptimizer(topFillPolygons, island.PathFinder, topFillConfig, layerIndex);
+			}
+
+			if (config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter)
+			{
+				// Collect all of the lines up to one third the extrusion diameter
+				// string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(island.IslandOutline);
+				if (layer.AllOutlines.FindThinLines(extrusionWidth_um + 2, extrusionWidth_um / 3, out Polygons thinLines, true))
+				{
+					for (int polyIndex = thinLines.Count - 1; polyIndex >= 0; polyIndex--)
+					{
+						var polygon = thinLines[polyIndex];
+
+						// remove any disconnected short segments
+						if (polygon.Count == 2
+							&& (polygon[0] - polygon[1]).Length() < config.ExtrusionWidth_um / 4)
+						{
+							thinLines.RemoveAt(polyIndex);
+						}
+						else
+						{
+							for (int i = 0; i < polygon.Count; i++)
+							{
+								if (polygon[i].Width > 0)
+								{
+									polygon[i] = new IntPoint(polygon[i])
+									{
+										Width = extrusionWidth_um,
+									};
+								}
+							}
+						}
+					}
+
+					QueuePolygonsConsideringSupport(layerIndex, layer.PathFinder, layerGcodePlanner, thinLines, inset0Config, SupportWriteType.UnsupportedAreas);
+				}
 			}
 		}
 
@@ -1483,8 +1468,7 @@ namespace MatterHackers.MatterSlice
 
 			if (polygonPrintedIndex > -1)
 			{
-				if (config.MergeOverlappingLines
-					&& pathConfig != inset0Config) // we do not merge the outer perimeter
+				if (config.MergeOverlappingLines)
 				{
 					QueuePerimeterWithMergeOverlaps(insetsToConsider[polygonPrintedIndex], islandPathFinder, layerIndex, gcodeLayer, pathConfig, bridgeAreas);
 				}

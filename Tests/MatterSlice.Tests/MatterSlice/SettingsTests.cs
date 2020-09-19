@@ -633,7 +633,7 @@ namespace MatterHackers.MatterSlice.Tests
 			Assert.IsTrue(layerCount == expectedLayerCount);
 
 			var movement = default(MovementInfo);
-			for (int i = 0; i < layerCount - 5; i++)
+			for (int i = 0; i < layerCount - 10; i++)
 			{
 				string[] layerInfo = TestUtilities.GetGCodeForLayer(gcodeLines, i);
 

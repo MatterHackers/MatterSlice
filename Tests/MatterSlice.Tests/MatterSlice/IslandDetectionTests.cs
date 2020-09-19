@@ -54,7 +54,7 @@ namespace MatterHackers.MatterSlice.Tests
 			config.NumberOfTopLayers = 0;
 			config.NumberOfBottomLayers = 0;
 			config.NumberOfPerimeters = 1;
-			config.ExpandThinWalls = true;
+			config.MergeOverlappingLines = false;
 			var processor = new FffProcessor(config);
 			processor.SetTargetFile(engineGCodeFile);
 			processor.LoadStlFile(engineStlFile);

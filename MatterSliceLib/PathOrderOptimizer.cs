@@ -19,6 +19,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using KdTree;
@@ -74,7 +75,7 @@ namespace MatterHackers.MatterSlice
 
 		public List<OptimizedPath> OptimizedPaths { get; private set; } = new List<OptimizedPath>();
 
-		public List<int> Indices { get; private set; }
+		public List<int> Indices { get; private set; } = new List<int>();
 
 		public void AddPolygon(Polygon polygon, int polygonIndex)
 		{
@@ -276,6 +277,43 @@ namespace MatterHackers.MatterSlice
 			}
 
 			return bestPoint;
+		}
+
+		public Polygon ConvertToCcwPolygon(Polygons polygons, long lineWidth_um)
+		{
+			var connectedPolygon = new Polygon();
+
+			var lastPosition = polygons[OptimizedPaths[0].SourcePolyIndex][OptimizedPaths[0].PointIndex];
+			foreach (var optimizedPath in this.OptimizedPaths)
+			{
+				var polygon = polygons[optimizedPath.SourcePolyIndex];
+				var startIndex = optimizedPath.PointIndex;
+				var firstPosition = polygon[startIndex];
+				if ((lastPosition - firstPosition).Length() > lineWidth_um)
+				{
+					// the next point is too far from the last point, not a connected path
+					return null;
+				}
+
+				for (int positionIndex = 0; positionIndex < polygon.Count; positionIndex++)
+				{
+					var destination = polygon[(startIndex + positionIndex) % polygon.Count];
+					// don't add exactly the same point twice
+					if (connectedPolygon.Count == 0
+						|| destination != connectedPolygon[connectedPolygon.Count - 1])
+					{
+						connectedPolygon.Add(destination);
+						lastPosition = destination;
+					}
+				}
+			}
+
+			if (connectedPolygon.GetWindingDirection() == 2)
+			{
+				connectedPolygon.Reverse();
+			}
+
+			return connectedPolygon;
 		}
 	}
 }
