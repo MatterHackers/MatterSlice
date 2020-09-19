@@ -289,7 +289,8 @@ namespace MatterHackers.MatterSlice
 				var polygon = polygons[optimizedPath.SourcePolyIndex];
 				var startIndex = optimizedPath.PointIndex;
 				var firstPosition = polygon[startIndex];
-				if ((lastPosition - firstPosition).Length() > lineWidth_um / 4)
+				var length = (lastPosition - firstPosition).Length();
+				if (length > lineWidth_um / 2)
 				{
 					// the next point is too far from the last point, not a connected path
 					return null;
@@ -300,7 +301,7 @@ namespace MatterHackers.MatterSlice
 					var destination = polygon[(startIndex + positionIndex) % polygon.Count];
 					// don't add exactly the same point twice
 					if (connectedPolygon.Count == 0
-						|| destination != connectedPolygon[connectedPolygon.Count - 1])
+						|| destination != lastPosition)
 					{
 						connectedPolygon.Add(destination);
 						lastPosition = destination;
