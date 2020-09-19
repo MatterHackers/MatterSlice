@@ -198,7 +198,7 @@ namespace MatterHackers.MatterSlice
 		{
 			timeKeeper.Restart();
 #if false
-            optimizedModel.saveDebugSTL("debug_output.stl");
+			optimizedModel.saveDebugSTL("debug_output.stl");
 #endif
 
 			var extruderDataLayers = new List<ExtruderData>();
@@ -216,9 +216,9 @@ namespace MatterHackers.MatterSlice
 			});
 
 #if false
-            slicerList[0].DumpSegmentsToGcode("Volume 0 Segments.gcode");
-            slicerList[0].DumpPolygonsToGcode("Volume 0 Polygons.gcode");
-            //slicerList[0].DumpPolygonsToHTML("Volume 0 Polygons.html");
+			slicerList[0].DumpSegmentsToGcode("Volume 0 Segments.gcode");
+			slicerList[0].DumpPolygonsToGcode("Volume 0 Polygons.gcode");
+			// slicerList[0].DumpPolygonsToHTML("Volume 0 Polygons.html");
 #endif
 
 			LogOutput.Log("Sliced model: {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
@@ -1009,21 +1009,16 @@ namespace MatterHackers.MatterSlice
 			}
 
 			var islandOrderOptimizer = new PathOrderOptimizer(config);
-			for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
+			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 			{
-				if (config.ContinuousSpiralOuterPerimeter && partIndex > 0)
+				if ((config.ContinuousSpiralOuterPerimeter
+					&& islandIndex > 0)
+					|| layer.Islands[islandIndex].InsetToolPaths.Count == 0)
 				{
 					continue;
 				}
 
-				if (config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter)
-				{
-					islandOrderOptimizer.AddPolygon(layer.Islands[partIndex].IslandOutline[0]);
-				}
-				else if (layer.Islands[partIndex].InsetToolPaths.Count > 0)
-				{
-					islandOrderOptimizer.AddPolygon(layer.Islands[partIndex].InsetToolPaths[0][0]);
-				}
+				islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].InsetToolPaths[0][0], islandIndex);
 			}
 
 			islandOrderOptimizer.Optimize(layerGcodePlanner.LastPosition_um, layer.PathFinder, layerIndex, false);
@@ -1037,7 +1032,7 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				LayerIsland island = layer.Islands[islandOrderOptimizer.OptimizedPaths[islandOrderIndex].PolyIndex];
+				LayerIsland island = layer.Islands[islandOrderOptimizer.OptimizedPaths[islandOrderIndex].SourcePolyIndex];
 				var insetToolPaths = island.InsetToolPaths;
 
 				var insetAccelerators = new List<QuadTree<int>>();
@@ -1111,7 +1106,9 @@ namespace MatterHackers.MatterSlice
 						}
 						else
 						{
-							while (insetsThatHaveBeenPrinted.Count < CountInsetsToPrint(insetToolPaths))
+							bool foundAnyPath = true;
+							while (insetsThatHaveBeenPrinted.Count < CountInsetsToPrint(insetToolPaths)
+								&& foundAnyPath)
 							{
 								bool limitDistance = false;
 								if (insetToolPaths.Count > 0)
@@ -1124,7 +1121,10 @@ namespace MatterHackers.MatterSlice
 										inset0Config,
 										layerIndex,
 										layerGcodePlanner,
-										bridgeAreas);
+										bridgeAreas,
+										out bool foundAPath);
+
+									foundAnyPath |= foundAPath;
 								}
 
 								// Move to the closest inset 1 and print it
@@ -1138,7 +1138,10 @@ namespace MatterHackers.MatterSlice
 										insetXConfig,
 										layerIndex,
 										layerGcodePlanner,
-										bridgeAreas);
+										bridgeAreas,
+										out bool foundAPath);
+
+									foundAnyPath |= foundAPath;
 								}
 							}
 						}
@@ -1146,17 +1149,13 @@ namespace MatterHackers.MatterSlice
 					else // This is so we can do overhangs better (the outside can stick a bit to the inside).
 					{
 						int insetCount2 = CountInsetsToPrint(insetToolPaths);
-						if (insetCount2 == 0
-							&& config.ExpandThinWalls
-							&& island.IslandOutline.Count > 0
-							&& island.IslandOutline[0].Count > 0)
-						{
-							// There are no insets but we should still try to go to the start position of the first perimeter if we are expanding thin walls
-							layerGcodePlanner.QueueTravel(island.IslandOutline[0][0], null);
-						}
 
-						while (insetsThatHaveBeenPrinted.Count < insetCount2)
+						bool foundAnyPath = true;
+						while (insetsThatHaveBeenPrinted.Count < insetCount2
+							&& foundAnyPath)
 						{
+							// reset at start of search
+							foundAnyPath = false;
 							bool limitDistance = false;
 							if (insetToolPaths.Count > 0)
 							{
@@ -1200,7 +1199,10 @@ namespace MatterHackers.MatterSlice
 										insetIndex == 0 ? inset0Config : insetXConfig,
 										layerIndex,
 										layerGcodePlanner,
-										bridgeAreas);
+										bridgeAreas,
+										out bool foundAPath);
+
+									foundAnyPath |= foundAPath;
 
 									if (insetIndex == 0)
 									{
@@ -1233,7 +1235,7 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 
-					// Find the thin lines for this layer and add them to the queue
+					// Find the thin gaps for this layer and add them to the queue
 					if (config.FillThinGaps && !config.ContinuousSpiralOuterPerimeter)
 					{
 						for (int perimeter = 0; perimeter < config.NumberOfPerimeters; perimeter++)
@@ -1242,40 +1244,6 @@ namespace MatterHackers.MatterSlice
 							{
 								thinGapPolygons.AddRange(thinLines);
 							}
-						}
-					}
-
-					if (config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter)
-					{
-						// Collect all of the lines up to one third the extrusion diameter
-						// string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(island.IslandOutline);
-						if (island.IslandOutline.FindThinLines(extrusionWidth_um + 2, extrusionWidth_um / 3, out Polygons thinLines, true))
-						{
-							for (int polyIndex = thinLines.Count - 1; polyIndex >= 0; polyIndex--)
-							{
-								var polygon = thinLines[polyIndex];
-
-								if (polygon.Count == 2
-									&& (polygon[0] - polygon[1]).Length() < config.ExtrusionWidth_um / 4)
-								{
-									thinLines.RemoveAt(polyIndex);
-								}
-								else
-								{
-									for (int i = 0; i < polygon.Count; i++)
-									{
-										if (polygon[i].Width > 0)
-										{
-											polygon[i] = new IntPoint(polygon[i])
-											{
-												Width = extrusionWidth_um,
-											};
-										}
-									}
-								}
-							}
-
-							fillPolygons.AddRange(thinLines);
 						}
 					}
 				}
@@ -1318,6 +1286,41 @@ namespace MatterHackers.MatterSlice
 				}
 
 				layerGcodePlanner.QueuePolygonsByOptimizer(topFillPolygons, island.PathFinder, topFillConfig, layerIndex);
+			}
+
+			if (config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter)
+			{
+				// Collect all of the lines up to one third the extrusion diameter
+				// string perimeterString = Newtonsoft.Json.JsonConvert.SerializeObject(island.IslandOutline);
+				if (layer.AllOutlines.FindThinLines(extrusionWidth_um + 2, extrusionWidth_um / 3, out Polygons thinLines, true))
+				{
+					for (int polyIndex = thinLines.Count - 1; polyIndex >= 0; polyIndex--)
+					{
+						var polygon = thinLines[polyIndex];
+
+						// remove any disconnected short segments
+						if (polygon.Count == 2
+							&& (polygon[0] - polygon[1]).Length() < config.ExtrusionWidth_um / 4)
+						{
+							thinLines.RemoveAt(polyIndex);
+						}
+						else
+						{
+							for (int i = 0; i < polygon.Count; i++)
+							{
+								if (polygon[i].Width > 0)
+								{
+									polygon[i] = new IntPoint(polygon[i])
+									{
+										Width = extrusionWidth_um,
+									};
+								}
+							}
+						}
+					}
+
+					QueuePolygonsConsideringSupport(layerIndex, layer.PathFinder, layerGcodePlanner, thinLines, inset0Config, SupportWriteType.UnsupportedAreas);
+				}
 			}
 		}
 
@@ -1425,7 +1428,8 @@ namespace MatterHackers.MatterSlice
 			GCodePathConfig pathConfig,
 			int layerIndex,
 			LayerGCodePlanner gcodeLayer,
-			Polygons bridgeAreas)
+			Polygons bridgeAreas,
+			out bool foundAPath)
 		{
 			// This is the furthest away we will accept a new starting point
 			long maxDist_um = long.MaxValue;
@@ -1437,7 +1441,7 @@ namespace MatterHackers.MatterSlice
 
 			int polygonPrintedIndex = -1;
 
-			//for (int polygonIndex = 0; polygonIndex < insetsToConsider.Count; polygonIndex++)
+			// for (int polygonIndex = 0; polygonIndex < insetsToConsider.Count; polygonIndex++)
 			foreach (var closest in accelerator.IterateClosest(gcodeLayer.LastPosition_um, () => maxDist_um))
 			{
 				Polygon currentPolygon = insetsToConsider[closest.Item1];
@@ -1464,8 +1468,7 @@ namespace MatterHackers.MatterSlice
 
 			if (polygonPrintedIndex > -1)
 			{
-				if (config.MergeOverlappingLines
-					&& pathConfig != inset0Config) // we do not merge the outer perimeter
+				if (config.MergeOverlappingLines)
 				{
 					QueuePerimeterWithMergeOverlaps(insetsToConsider[polygonPrintedIndex], islandPathFinder, layerIndex, gcodeLayer, pathConfig, bridgeAreas);
 				}
@@ -1475,9 +1478,11 @@ namespace MatterHackers.MatterSlice
 				}
 
 				insetsThatHaveBeenPrinted.Add(insetsToConsider[polygonPrintedIndex]);
+				foundAPath = maxDist_um != long.MaxValue;
 				return false;
 			}
 
+			foundAPath = maxDist_um != long.MaxValue;
 			// Return the original limitDistance value if we didn't match a polygon
 			return limitDistance;
 		}
@@ -1507,7 +1512,7 @@ namespace MatterHackers.MatterSlice
 				{
 					if (layer.Islands[islandIndex].InsetToolPaths.Count > 0)
 					{
-						islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].InsetToolPaths[0][0]);
+						islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].InsetToolPaths[0][0], islandIndex);
 					}
 				}
 
@@ -1515,7 +1520,7 @@ namespace MatterHackers.MatterSlice
 
 				for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.OptimizedPaths.Count; islandOrderIndex++)
 				{
-					LayerIsland island = layer.Islands[islandOrderOptimizer.OptimizedPaths[islandOrderIndex].PolyIndex];
+					LayerIsland island = layer.Islands[islandOrderOptimizer.OptimizedPaths[islandOrderIndex].SourcePolyIndex];
 
 					var bottomFillPolygons = new Polygons();
 					CalculateInfillData(slicingData, extruderIndex, layerIndex, island, bottomFillPolygons);

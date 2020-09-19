@@ -407,7 +407,7 @@ namespace MatterHackers.MatterSlice.Tests
 				var config = new ConfigSettings();
 				config.ExtruderCount = 1;
 				config.SupportExtruder = 1; // from a 0 based index
-				// this is a hack, but it is the signaling mechanism for support
+											// this is a hack, but it is the signaling mechanism for support
 				config.BooleanOperations = "S";
 				var processor = new FffProcessor(config);
 				processor.SetTargetFile(gcodeToCreate);
@@ -633,7 +633,7 @@ namespace MatterHackers.MatterSlice.Tests
 			Assert.IsTrue(layerCount == expectedLayerCount);
 
 			var movement = default(MovementInfo);
-			for (int i = 0; i < layerCount - 5; i++)
+			for (int i = 0; i < layerCount - 10; i++)
 			{
 				string[] layerInfo = TestUtilities.GetGCodeForLayer(gcodeLines, i);
 
