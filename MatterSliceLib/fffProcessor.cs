@@ -1009,16 +1009,30 @@ namespace MatterHackers.MatterSlice
 			}
 
 			var islandOrderOptimizer = new PathOrderOptimizer(config);
-			for (int partIndex = 0; partIndex < layer.Islands.Count; partIndex++)
+			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 			{
-				if (config.ContinuousSpiralOuterPerimeter && partIndex > 0)
+				if (config.ContinuousSpiralOuterPerimeter && islandIndex > 0)
 				{
 					continue;
 				}
 
-				if (layer.Islands[partIndex].InsetToolPaths.Count > 0)
+				if (config.ExpandThinWalls
+					&& !config.ContinuousSpiralOuterPerimeter)
 				{
-					islandOrderOptimizer.AddPolygon(layer.Islands[partIndex].InsetToolPaths[0][0]);
+					var firstWithCount = layer.Islands[islandIndex].IslandOutline.Where(p => p.Count > 0).First();
+					if (firstWithCount != null)
+					{
+						islandOrderOptimizer.AddPolygon(firstWithCount);
+					}
+					else
+					{
+						islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].InsetToolPaths[0][0]);
+					}
+				}
+				else if (layer.Islands[islandIndex].InsetToolPaths.Count > 0)
+				{
+					// The first 0 is the outermost inset (the outside), the second 0 is the first polygon (good enough for ordering)
+					islandOrderOptimizer.AddPolygon(layer.Islands[islandIndex].InsetToolPaths[0][0]);
 				}
 			}
 
@@ -1244,7 +1258,7 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 
-					// Find the thin lines for this layer and add them to the queue
+					// Find the thin gaps for this layer and add them to the queue
 					if (config.FillThinGaps && !config.ContinuousSpiralOuterPerimeter)
 					{
 						for (int perimeter = 0; perimeter < config.NumberOfPerimeters; perimeter++)
@@ -1266,6 +1280,7 @@ namespace MatterHackers.MatterSlice
 							{
 								var polygon = thinLines[polyIndex];
 
+								// remove any disconnected short segments
 								if (polygon.Count == 2
 									&& (polygon[0] - polygon[1]).Length() < config.ExtrusionWidth_um / 4)
 								{

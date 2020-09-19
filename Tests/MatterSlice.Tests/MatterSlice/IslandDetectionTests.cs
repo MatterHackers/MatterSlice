@@ -43,8 +43,8 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void SingleLayerCreated()
 		{
-			string point3mmStlFile = TestUtilities.GetStlPath("Engine-Benchmark");
-			string point3mmGCodeFile = TestUtilities.GetTempGCodePath("Engine-Benchmark.gcode");
+			string engineStlFile = TestUtilities.GetStlPath("Engine-Benchmark");
+			string engineGCodeFile = TestUtilities.GetTempGCodePath("Engine-Benchmark.gcode");
 
 			var config = new ConfigSettings();
 			config.FirstLayerThickness = .2;
@@ -56,13 +56,13 @@ namespace MatterHackers.MatterSlice.Tests
 			config.NumberOfPerimeters = 1;
 			config.ExpandThinWalls = true;
 			var processor = new FffProcessor(config);
-			processor.SetTargetFile(point3mmGCodeFile);
-			processor.LoadStlFile(point3mmStlFile);
+			processor.SetTargetFile(engineGCodeFile);
+			processor.LoadStlFile(engineStlFile);
 			// slice and save it
 			processor.DoProcessing();
 			processor.Finalize();
 
-			var loadedGCode = TestUtilities.LoadGCodeFile(point3mmGCodeFile);
+			var loadedGCode = TestUtilities.LoadGCodeFile(engineGCodeFile);
 			var layers = TestUtilities.CountLayers(loadedGCode);
 			Assert.AreEqual(195, layers);
 
