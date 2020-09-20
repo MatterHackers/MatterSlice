@@ -57,14 +57,14 @@ namespace MatterHackers.MatterSlice
 		public OptimizedMesh(SimpleMesh simpleMesh, OptimizedMeshCollection containingCollection)
 		{
 			this.containingCollection = containingCollection;
-			vertices.Capacity = simpleMesh.faceTriangles.Count * 3;
-			facesTriangle.Capacity = simpleMesh.faceTriangles.Count;
+			vertices.Capacity = simpleMesh.FaceTriangles.Count * 3;
+			facesTriangle.Capacity = simpleMesh.FaceTriangles.Count;
 
 			Dictionary<long, List<int>> indexMap = new Dictionary<long, List<int>>();
 
 			Stopwatch t = new Stopwatch();
 			t.Start();
-			for (int faceIndex = 0; faceIndex < simpleMesh.faceTriangles.Count; faceIndex++)
+			for (int faceIndex = 0; faceIndex < simpleMesh.FaceTriangles.Count; faceIndex++)
 			{
 				if (MatterSlice.Canceled)
 				{
@@ -74,12 +74,12 @@ namespace MatterHackers.MatterSlice
 				OptimizedFace optimizedFace = new OptimizedFace();
 				if ((faceIndex % 1000 == 0) && t.Elapsed.TotalSeconds > 2)
 				{
-					LogOutput.logProgress("optimized", faceIndex + 1, simpleMesh.faceTriangles.Count);
+					LogOutput.logProgress("optimized", faceIndex + 1, simpleMesh.FaceTriangles.Count);
 				}
 
 				for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
 				{
-					IntPoint p = simpleMesh.faceTriangles[faceIndex].vertices[vertexIndex];
+					IntPoint p = simpleMesh.FaceTriangles[faceIndex].Vertices[vertexIndex];
 					long hash = (int)(((p.X + MELD_DIST / 2) / MELD_DIST) ^ (((p.Y + MELD_DIST / 2) / MELD_DIST) << 20) ^ (((p.Z + MELD_DIST / 2) / MELD_DIST) << 40));
 					int idx = 0;
 					bool add = true;
