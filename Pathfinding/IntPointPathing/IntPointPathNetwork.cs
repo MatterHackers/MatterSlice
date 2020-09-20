@@ -40,7 +40,7 @@ namespace MatterHackers.Pathfinding
 			AddPolygon(data);
 		}
 
-		public List<IntPointNode> Nodes { get; private set; } = new List<IntPointNode>();
+		public Dictionary<int, IntPointNode> Nodes { get; private set; } = new Dictionary<int, IntPointNode>();
 
 		public IntPointNode AddNode(IntPoint newPosition, IntPoint linkToA, IntPoint linkToB, float costMultiplier = 1)
 		{
@@ -67,8 +67,8 @@ namespace MatterHackers.Pathfinding
 
 		public IntPointNode AddNode(IntPoint newPosition, float costMultiplier = 1)
 		{
-			var newNode = new IntPointNode(newPosition);
-			Nodes.Add(newNode);
+			var newNode = new IntPointNode(newPosition, Nodes.Count);
+			Nodes.Add(Nodes.Count, newNode);
 			return newNode;
 		}
 
@@ -99,9 +99,9 @@ namespace MatterHackers.Pathfinding
 			// add all the points of the polygon
 			for (int i = 0; i < polygon.Count; i++)
 			{
-				IntPointNode node = new IntPointNode(polygon[i]);
+				IntPointNode node = new IntPointNode(polygon[i], Nodes.Count);
 				node.CostMultiplier = costMultiplier;
-				Nodes.Add(node);
+				Nodes.Add(Nodes.Count, node);
 			}
 
 			// add all the links to the new nodes we added
@@ -131,9 +131,9 @@ namespace MatterHackers.Pathfinding
 		{
 			foreach (var node in Nodes)
 			{
-				if ((node.Position - position).LengthSquared() <= minDist * minDist)
+				if ((node.Value.Position - position).LengthSquared() <= minDist * minDist)
 				{
-					return node;
+					return node.Value;
 				}
 			}
 
@@ -258,14 +258,15 @@ namespace MatterHackers.Pathfinding
 					otherNode.Links.Remove(link);
 				}
 
-				Nodes.Remove(nodeToRemove);
+				Nodes.Remove(nodeToRemove.Index);
 			}
 		}
 
 		public void Reset()
 		{
-			foreach (IPathNode node in Nodes)
+			foreach (var kvp in Nodes)
 			{
+				var node = kvp.Value;
 				node.IsGoalNode = false;
 				node.IsStartNode = false;
 				node.DistanceToGoal = 0f;
