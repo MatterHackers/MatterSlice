@@ -30,7 +30,7 @@ either expressed or implied, of the FreeBSD Project.
 using System;
 using System.Collections.Generic;
 using System.IO;
-using MatterHackers.Agg.VertexSource;
+using System.Linq;
 using MatterHackers.QuadTree;
 using MSClipperLib;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
@@ -555,12 +555,20 @@ namespace MatterHackers.Pathfinding
 
 		private void OptimizePathPoints(Polygon pathThatIsInside)
 		{
-			for (int startIndex = 0; startIndex < pathThatIsInside.Count - 2; startIndex++)
+			var testPoints = new List<int>();
+			for (int i = pathThatIsInside.Count - 2; i >= 1; i--)
 			{
-				var startPosition = pathThatIsInside[startIndex];
-				for (int endIndex = pathThatIsInside.Count - 1; endIndex > startIndex + 1; endIndex--)
+				testPoints.Add(i);
+			}
+
+			bool removedSomething;
+			do
+			{
+				removedSomething = false;
+				foreach (var testIndex in testPoints)
 				{
-					var endPosition = pathThatIsInside[endIndex];
+					var startPosition = pathThatIsInside[testIndex - 1];
+					var endPosition = pathThatIsInside[testIndex + 1];
 
 					var crossings = new List<(int polyIndex, int pointIndex, IntPoint position)>(OutlineData.Polygons.FindCrossingPoints(startPosition, endPosition, OutlineData.EdgeQuadTrees));
 
@@ -578,16 +586,18 @@ namespace MatterHackers.Pathfinding
 					if (!isCrossingEdge
 						&& OutlineData.PointIsInside((startPosition + endPosition) / 2) == QTPolygonsExtensions.InsideState.Inside)
 					{
-						// remove A+1 - B-1
-						for (int removeIndex = endIndex - 1; removeIndex > startIndex; removeIndex--)
-						{
-							pathThatIsInside.RemoveAt(removeIndex);
-						}
-
-						endIndex = pathThatIsInside.Count - 1;
+						pathThatIsInside.RemoveAt(testIndex);
+						removedSomething = true;
 					}
 				}
+
+				testPoints.Clear();
+				for (int i = pathThatIsInside.Count - 2; i >= 1; i--)
+				{
+					testPoints.Add(i);
+				}
 			}
+			while (removedSomething);
 		}
 
 		private bool SegmentIsAllInside(IntPointNode lastAddedNode, IntPointNode crossingNode)

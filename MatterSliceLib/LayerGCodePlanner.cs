@@ -547,7 +547,7 @@ namespace MatterHackers.MatterSlice
 
 				if (path.Polygon.Count == 1
 					&& path.Config != travelConfig
-					&& (gcodeExport.PositionXy_um - path.Polygon[0]).ShorterThen(path.Config.LineWidth_um * 2))
+					&& (gcodeExport.PositionXy_um - path.Polygon[0]).ShorterThen(path.Config.LineWidth_um))
 				{
 					// Check for lots of small moves and combine them into one large line
 					IntPoint nextPosition = path.Polygon[0];
