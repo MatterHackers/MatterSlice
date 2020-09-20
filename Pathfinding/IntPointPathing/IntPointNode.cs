@@ -42,26 +42,33 @@ namespace MatterHackers.Pathfinding
 
 	public class IntPointNode : IPathNode
 	{
-		#region IPathNode Members
-
-		public IntPointNode(long pX, long pY)
+		public IntPointNode(long pX, long pY, int index)
+			: this(new IntPoint(pX, pY), index)
 		{
-			Position = new IntPoint(pX, pY);
 		}
 
-		public IntPointNode(IntPoint intPoint)
+		public IntPointNode(IntPoint intPoint, int index)
 		{
+			this.Index = index;
 			Position = intPoint;
 		}
 
 		public float CostMultiplier { get; set; } = 1;
+
 		public float DistanceToGoal { get; set; }
+
 		public bool IsGoalNode { get; set; }
+
 		public bool IsStartNode { get; set; }
+
 		public PathLink LinkLeadingHere { get; set; }
+
 		public List<PathLink> Links { get; private set; } = new List<PathLink>();
+
 		public float PathCostHere { get; set; }
+		public int Index { get; }
 		public IntPoint Position { get; private set; }
+
 		public bool Visited { get; set; }
 
 		public void AddLink(PathLink pLink)
@@ -90,10 +97,6 @@ namespace MatterHackers.Pathfinding
 			Links.Remove(pLink);
 		}
 
-		#endregion IPathNode Members
-
-		#region IPoint Members
-
 		public virtual float DistanceTo(Pathfinding.IPoint pPoint)
 		{
 			if (pPoint is IntPointNode)
@@ -111,10 +114,6 @@ namespace MatterHackers.Pathfinding
 		{
 			return (int)Position.X + (int)(Position.Y * 1000);
 		}
-
-		#endregion IPoint Members
-
-		#region IComparable Members
 
 		public int CompareTo(object obj)
 		{
@@ -135,8 +134,6 @@ namespace MatterHackers.Pathfinding
 				return -1;
 			}
 		}
-
-		#endregion IComparable Members
 
 		public virtual long GetUniqueID()
 		{

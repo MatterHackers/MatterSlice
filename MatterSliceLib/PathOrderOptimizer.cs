@@ -97,7 +97,7 @@ namespace MatterHackers.MatterSlice
 
 		public void Optimize(IntPoint startPosition, PathFinder pathFinder, int layerIndex, bool addMovePolys, GCodePathConfig pathConfig = null)
 		{
-			pathFinder = null;
+			// pathFinder = null;
 
 			this.OptimizedPaths.Clear();
 
@@ -124,53 +124,46 @@ namespace MatterHackers.MatterSlice
 				// if we have a path finder check if we have actually found the shortest path
 				if (pathFinder != null)
 				{
-					var foundPath = false;
 					var pathPolygon = new Polygon();
 					// path find the start and end that we found to find out how far it is
 					if (pathFinder.CreatePathInsideBoundary(currentPosition, endPosition, pathPolygon, true, layerIndex))
 					{
-						foundPath = true;
 						var pathLength = pathPolygon.PolygonLength();
 						var directLength = (endPosition - currentPosition).Length();
 
-						if (pathLength > config.MinimumTravelToCauseRetraction_um
-							&& pathLength > 2 * directLength)
-						{
-							// try to find a closer place to go to by looking at the center of the returned path
-							var center = pathPolygon.GetPositionAllongPath(.5, pathConfig != null ? pathConfig.ClosedLoop : false);
-							var midPolyPoint = FindClosestPolyAndPoint(center,
-								polygonAccelerator,
-								completedPolygons,
-								doSeamHiding,
-								layerIndex,
-								pathConfig != null ? pathConfig.LineWidth_um : 0,
-								canTravelForwardOrBackward,
-								out IntPoint midEndPosition);
+						var center = pathPolygon.GetPositionAllongPath(.5, pathConfig != null ? pathConfig.ClosedLoop : false);
 
-							var centerPathPolygon = new Polygon();
-							if (pathFinder.CreatePathInsideBoundary(currentPosition, midEndPosition, pathPolygon, true, layerIndex))
+						var tryAgain = false;
+						do
+						{
+							tryAgain = false;
+							if (pathLength > config.MinimumTravelToCauseRetraction_um / 10)
+							//	&& pathLength > directLength * config.AvoidCrossingMaxRatio)
 							{
-								var midPathLength = pathPolygon.PolygonLength();
-								if (midPathLength < pathLength)
+								// try to find a closer place to go to by looking at the center of the returned path
+								var midPolyPoint = FindClosestPolyAndPoint(center,
+									polygonAccelerator,
+									completedPolygons,
+									doSeamHiding,
+									layerIndex,
+									pathConfig != null ? pathConfig.LineWidth_um : 0,
+									canTravelForwardOrBackward,
+									out IntPoint midEndPosition);
+
+								if (pathFinder.CreatePathInsideBoundary(currentPosition, midEndPosition, pathPolygon, true, layerIndex))
 								{
-									closestPolyPoint = midPolyPoint;
-									endPosition = midEndPosition;
-									pathPolygon = centerPathPolygon;
+									var midPathLength = pathPolygon.PolygonLength();
+									if (midPathLength < pathLength)
+									{
+										closestPolyPoint = midPolyPoint;
+										endPosition = midEndPosition;
+										pathLength = midPathLength;
+										center = pathPolygon.GetPositionAllongPath(.5, pathConfig != null ? pathConfig.ClosedLoop : false);
+										tryAgain = true;
+									}
 								}
 							}
-						}
-					}
-					else // can't find a path
-					{
-						foundPath = false;
-					}
-
-					if (addMovePolys)
-					{
-						// add in the move
-						//Order.Add(new PolyAndPoint(Polygons.Count, 0, false, foundPath));
-						//completedPolygons.Add(Polygons.Count);
-						//Polygons.Add(pathPolygon);
+						} while (tryAgain);
 					}
 				}
 

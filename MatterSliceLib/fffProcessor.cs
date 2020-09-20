@@ -1319,7 +1319,13 @@ namespace MatterHackers.MatterSlice
 						}
 					}
 
-					QueuePolygonsConsideringSupport(layerIndex, layer.PathFinder, layerGcodePlanner, thinLines, inset0Config, SupportWriteType.UnsupportedAreas);
+					var pathFinder = new PathFinder(layer.AllOutlines,
+						inset0Config.LineWidth_um * 3 / 2,
+						null,
+						config.AvoidCrossingPerimeters,
+						$"layer {layerIndex}");
+
+					QueuePolygonsConsideringSupport(layerIndex, pathFinder, layerGcodePlanner, thinLines, inset0Config, SupportWriteType.UnsupportedAreas);
 				}
 			}
 		}
