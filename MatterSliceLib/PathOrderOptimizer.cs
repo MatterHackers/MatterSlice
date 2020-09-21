@@ -137,8 +137,8 @@ namespace MatterHackers.MatterSlice
 						do
 						{
 							tryAgain = false;
-							if (pathLength > config.MinimumTravelToCauseRetraction_um / 10)
-							//	&& pathLength > directLength * config.AvoidCrossingMaxRatio)
+							if (pathLength > config.MinimumTravelToCauseRetraction_um / 10
+								&& pathLength > directLength * 2)
 							{
 								// try to find a closer place to go to by looking at the center of the returned path
 								var midPolyPoint = FindClosestPolyAndPoint(center,
