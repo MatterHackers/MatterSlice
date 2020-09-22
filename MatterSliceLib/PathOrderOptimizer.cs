@@ -124,7 +124,8 @@ namespace MatterHackers.MatterSlice
 				// if we have a path finder check if we have actually found the shortest path
 				if (pathFinder != null
 					&& closestPolyPoint.SourcePolyIndex != -1
-					&& closestPolyPoint.PointIndex != -1)
+					&& closestPolyPoint.PointIndex != -1
+					&& closestPolyPoint.FoundPath)
 				{
 					// the position that we are going to move to to begin the next polygon (the other side of the endPosition)
 					var nextStartPosition = Polygons[closestPolyPoint.SourcePolyIndex][closestPolyPoint.PointIndex];
@@ -155,7 +156,8 @@ namespace MatterHackers.MatterSlice
 									out IntPoint midEndPosition);
 
 								if (midPolyPoint.SourcePolyIndex != -1
-									&& midPolyPoint.PointIndex != -1)
+									&& midPolyPoint.PointIndex != -1
+									&& closestPolyPoint.FoundPath)
 								{
 
 									var midStartPosition = Polygons[midPolyPoint.SourcePolyIndex][midPolyPoint.PointIndex];
