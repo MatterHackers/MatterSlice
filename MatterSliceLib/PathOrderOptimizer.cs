@@ -122,14 +122,18 @@ namespace MatterHackers.MatterSlice
 					out IntPoint endPosition);
 
 				// if we have a path finder check if we have actually found the shortest path
-				if (pathFinder != null)
+				if (pathFinder != null
+					&& closestPolyPoint.SourcePolyIndex != -1
+					&& closestPolyPoint.PointIndex != -1)
 				{
+					// the position that we are going to move to to begin the next polygon (the other side of the endPosition)
+					var nextStartPosition = Polygons[closestPolyPoint.SourcePolyIndex][closestPolyPoint.PointIndex];
 					var pathPolygon = new Polygon();
 					// path find the start and end that we found to find out how far it is
-					if (pathFinder.CreatePathInsideBoundary(currentPosition, endPosition, pathPolygon, true, layerIndex))
+					if (pathFinder.CreatePathInsideBoundary(currentPosition, nextStartPosition, pathPolygon, true, layerIndex))
 					{
 						var pathLength = pathPolygon.PolygonLength();
-						var directLength = (endPosition - currentPosition).Length();
+						var directLength = (nextStartPosition - currentPosition).Length();
 
 						var center = pathPolygon.GetPositionAllongPath(.5, pathConfig != null ? pathConfig.ClosedLoop : false);
 
@@ -150,16 +154,23 @@ namespace MatterHackers.MatterSlice
 									canTravelForwardOrBackward,
 									out IntPoint midEndPosition);
 
-								if (pathFinder.CreatePathInsideBoundary(currentPosition, midEndPosition, pathPolygon, true, layerIndex))
+								if (midPolyPoint.SourcePolyIndex != -1
+									&& midPolyPoint.PointIndex != -1)
 								{
-									var midPathLength = pathPolygon.PolygonLength();
-									if (midPathLength < pathLength)
+
+									var midStartPosition = Polygons[midPolyPoint.SourcePolyIndex][midPolyPoint.PointIndex];
+
+									if (pathFinder.CreatePathInsideBoundary(currentPosition, midStartPosition, pathPolygon, true, layerIndex))
 									{
-										closestPolyPoint = midPolyPoint;
-										endPosition = midEndPosition;
-										pathLength = midPathLength;
-										center = pathPolygon.GetPositionAllongPath(.5, pathConfig != null ? pathConfig.ClosedLoop : false);
-										tryAgain = true;
+										var midPathLength = pathPolygon.PolygonLength();
+										if (midPathLength < pathLength)
+										{
+											closestPolyPoint = midPolyPoint;
+											endPosition = midEndPosition;
+											pathLength = midPathLength;
+											center = pathPolygon.GetPositionAllongPath(.5, pathConfig != null ? pathConfig.ClosedLoop : false);
+											tryAgain = true;
+										}
 									}
 								}
 							}

@@ -29,6 +29,7 @@ either expressed or implied, of the FreeBSD Project.
 
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using MatterHackers.QuadTree;
 using MSClipperLib;
@@ -107,6 +108,47 @@ namespace MatterHackers.MatterSlice.Tests
 					{
 						Assert.AreEqual(1, polygon.GetWindingDirection());
 					}
+				}
+			}
+		}
+
+		[Test]
+		public void SupportConnectedOptimaly()
+		{
+			string thinWallsSTL = TestUtilities.GetStlPath("two disks");
+			string thinWallsGCode = TestUtilities.GetTempGCodePath("two disks.gcode");
+
+			{
+				// load a model that is correctly manifold
+				var config = new ConfigSettings();
+				config.GenerateSupport = true;
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(thinWallsGCode);
+				processor.LoadStlFile(thinWallsSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(thinWallsGCode);
+				int layerCount = TestUtilities.CountLayers(loadedGCode);
+
+				for (int i = 0; i < layerCount; i++)
+				{
+					var layer = loadedGCode.GetGCodeForLayer(i).Movements().ToList();
+
+					int longMoveCount = 0;
+					for (var j = 1; j < layer.Count - 2; j++)
+					{
+						var start = layer[j - 1];
+						var end = layer[j];
+						if (end.extrusion - start.extrusion == 0
+							&& (end.position - start.position).Length > 5)
+						{
+							longMoveCount++;
+						}
+					}
+
+					Assert.LessOrEqual(longMoveCount, 6);
 				}
 			}
 		}

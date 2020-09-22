@@ -174,6 +174,7 @@ namespace MatterHackers.MatterSlice.Tests
 							// starting a new extrusion
 							foundPolygons.Add(new Polygon());
 						}
+
 						foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
 							(long)(currentMovement.position.x * 1000),
 							(long)(currentMovement.position.y * 1000),
@@ -266,13 +267,14 @@ namespace MatterHackers.MatterSlice.Tests
 			return File.ReadAllLines(gcodeFile);
 		}
 
-		public static IEnumerable<MovementInfo> Movements(string[] gcodeContents, Nullable<MovementInfo> startingMovement = null, bool onlyG1s = false)
+		public static IEnumerable<MovementInfo> Movements(this string[] gcodeContents, Nullable<MovementInfo> startingMovement = null, bool onlyG1s = false)
 		{
-			MovementInfo currentPosition = new MovementInfo();
+			MovementInfo currentPosition = default(MovementInfo);
 			if (startingMovement != null)
 			{
 				currentPosition = startingMovement.Value;
 			}
+
 			foreach (string inLine in gcodeContents)
 			{
 				string line = inLine;
