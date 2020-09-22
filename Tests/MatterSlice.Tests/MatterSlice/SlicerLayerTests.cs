@@ -148,7 +148,7 @@ namespace MatterHackers.MatterSlice.Tests
 						}
 					}
 
-					Assert.LessOrEqual(longMoveCount, 5);
+					Assert.LessOrEqual(longMoveCount, 6);
 				}
 			}
 		}
