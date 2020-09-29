@@ -163,6 +163,7 @@ namespace MatterHackers.MatterSlice.Tests
 				var config = new ConfigSettings();
 				config.ExpandThinWalls = true;
 				config.NumberOfPerimeters = 1;
+				config.AvoidCrossingPerimeters = false;
 				var processor = new FffProcessor(config);
 				processor.SetTargetFile(infillGCode);
 				processor.LoadStlFile(infillSTL);
@@ -171,12 +172,11 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.Finalize();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
-				int layerCount = TestUtilities.CountLayers(loadedGCode);
 
 				for (int i = 0; i < 100; i++)
 				{
 					var movements = loadedGCode.GetGCodeForLayer(i).Movements().ToList();
-					Assert.GreaterOrEqual(movements.Count, 100);
+					Assert.GreaterOrEqual(movements.Count, 100, $"Layer {i} should have more than 100 extrusions.");
 				}
 			}
 		}
