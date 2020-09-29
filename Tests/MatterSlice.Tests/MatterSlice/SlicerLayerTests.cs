@@ -134,13 +134,13 @@ namespace MatterHackers.MatterSlice.Tests
 
 				for (int i = 0; i < layerCount; i++)
 				{
-					var layer = loadedGCode.GetGCodeForLayer(i).Movements().ToList();
+					var movements = loadedGCode.GetGCodeForLayer(i).Movements().ToList();
 
 					int longMoveCount = 0;
-					for (var j = 1; j < layer.Count - 2; j++)
+					for (var j = 1; j < movements.Count - 2; j++)
 					{
-						var start = layer[j - 1];
-						var end = layer[j];
+						var start = movements[j - 1];
+						var end = movements[j];
 						if (end.extrusion - start.extrusion == 0
 							&& (end.position - start.position).Length > 5)
 						{
@@ -149,6 +149,34 @@ namespace MatterHackers.MatterSlice.Tests
 					}
 
 					Assert.LessOrEqual(longMoveCount, 6);
+				}
+			}
+		}
+
+		[Test]
+		public void CreatingInfill()
+		{
+			string infillSTL = TestUtilities.GetStlPath("has_infill");
+			string infillGCode = TestUtilities.GetTempGCodePath("has_infill.gcode");
+			{
+				// load a model that is correctly manifold
+				var config = new ConfigSettings();
+				config.ExpandThinWalls = true;
+				config.NumberOfPerimeters = 1;
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(infillGCode);
+				processor.LoadStlFile(infillSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
+				int layerCount = TestUtilities.CountLayers(loadedGCode);
+
+				for (int i = 0; i < 100; i++)
+				{
+					var movements = loadedGCode.GetGCodeForLayer(i).Movements().ToList();
+					Assert.GreaterOrEqual(movements.Count, 100);
 				}
 			}
 		}
