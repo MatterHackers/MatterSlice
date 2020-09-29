@@ -110,7 +110,7 @@ namespace MatterHackers.MatterSlice
 				LayerIsland island = layer.Islands[islandIndex];
 				if (island.InsetToolPaths.Count == 0)
 				{
-					return;
+					continue;
 				}
 
 				// this is the entire extrusion width to make sure we are outside of the extrusion line
