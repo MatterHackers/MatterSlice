@@ -197,9 +197,9 @@ namespace MatterHackers.MatterSlice
 		public int MinimumPrintingSpeed { get; set; }
 
 		[SettingDescription("The minimum travel distance that will require a retraction")]
-		public double MinimumTravelToCauseRetraction { get; set; } = 5;
+		public double MinimumTravelToCauseRetraction { get; set; } = 10;
 
-		public double MinimumTravelToCauseAvoidRetraction { get; set; } = 20;
+		public double MinimumTravelToCauseAvoidRetraction { get; set; } = 10;
 
 		public long MinimumTravelToCauseRetraction_um
 		{
