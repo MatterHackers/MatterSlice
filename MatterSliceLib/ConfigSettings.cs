@@ -32,7 +32,7 @@ namespace MatterHackers.MatterSlice
 	public class ConfigConstants
 	{
 		public const int MAX_EXTRUDERS = 4;
-		public const string VERSION = "2.20.9";
+		public const string VERSION = "2.20.10";
 
 		public enum INFILL_TYPE
 		{
@@ -197,9 +197,22 @@ namespace MatterHackers.MatterSlice
 		public int MinimumPrintingSpeed { get; set; }
 
 		[SettingDescription("The minimum travel distance that will require a retraction")]
-		public double MinimumTravelToCauseRetraction { get; set; }
+		public double MinimumTravelToCauseRetraction { get; set; } = 5;
 
-		public long MinimumTravelToCauseRetraction_um => (long)(MinimumTravelToCauseRetraction * 1000);
+		public double MinimumTravelToCauseAvoidRetraction { get; set; } = 20;
+
+		public long MinimumTravelToCauseRetraction_um
+		{
+			get
+			{
+				if (AvoidCrossingPerimeters)
+				{
+					return (long)(MinimumTravelToCauseAvoidRetraction * 1000);
+				}
+
+				return (long)(MinimumTravelToCauseRetraction * 1000);
+			}
+		}
 
 		// object transform
 		public Matrix4X4 ModelMatrix { get; set; } = Matrix4X4.Identity;
@@ -679,7 +692,6 @@ namespace MatterHackers.MatterSlice
 			RetractionSpeed = 45;
 			RetractionOnExtruderSwitch = 14.5;
 			UnretractExtraOnExtruderSwitch = 0;
-			MinimumTravelToCauseRetraction = 10;
 			MinimumExtrusionBeforeRetraction = 0;
 			WipeShieldDistanceFromObject = 0;
 			AvoidCrossingPerimeters = true;
