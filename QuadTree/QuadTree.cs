@@ -188,10 +188,9 @@ namespace MatterHackers.QuadTree
 				return resultWithDistance;
 			}
 
-			var i = 0;
 			// expanded 1mm
 			var set = GetSet(new Quad(position, 1000));
-			for (; i < set.Count; i++)
+			for (var i =0; i < set.Count; i++)
 			{
 				yield return (set[i].item, set[i].distance);
 				if (closestPointSquared() < set[i].distance * set[i].distance)
@@ -202,7 +201,7 @@ namespace MatterHackers.QuadTree
 
 			// expanded 10mm
 			set = GetSet(new Quad(position, 10000));
-			for (; i < set.Count; i++)
+			for (var i = 0; i < set.Count; i++)
 			{
 				yield return (set[i].item, set[i].distance);
 				if (closestPointSquared() < set[i].distance * set[i].distance)
@@ -212,8 +211,8 @@ namespace MatterHackers.QuadTree
 			}
 
 			// everything
-			set = GetSet(Root.Bounds);
-			for (; i < set.Count; i++)
+			set = GetSet(new Quad(position, 10000000));
+			for (var i = 0; i < set.Count; i++)
 			{
 				yield return (set[i].item, set[i].distance);
 				if (closestPointSquared() < set[i].distance * set[i].distance)

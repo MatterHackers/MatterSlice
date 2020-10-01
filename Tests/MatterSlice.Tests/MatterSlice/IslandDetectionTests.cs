@@ -78,5 +78,68 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.AreEqual(13, layerPolygons[i].Count);
 			}
 		}
+
+		[Test]
+		public void CorrectIslandCount2()
+		{
+			void Test(bool merge, bool walls)
+			{
+				string engineStlFile = TestUtilities.GetStlPath("all_layers");
+				string engineGCodeFile = TestUtilities.GetTempGCodePath("all_layers.gcode");
+
+				var config = new ConfigSettings();
+				config.FirstLayerThickness = .2;
+				config.LayerThickness = .2;
+				config.NumberOfSkirtLoops = 0;
+				config.InfillPercent = 0;
+				config.NumberOfTopLayers = 0;
+				config.NumberOfBottomLayers = 0;
+				config.NumberOfPerimeters = 1;
+				config.MergeOverlappingLines = merge;
+				config.ExpandThinWalls = walls;
+				config.FillThinGaps = false;
+				config.AvoidCrossingPerimeters = false;
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(engineGCodeFile);
+				processor.LoadStlFile(engineStlFile);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				var loadedGCode = TestUtilities.LoadGCodeFile(engineGCodeFile);
+				var layers = TestUtilities.CountLayers(loadedGCode);
+				Assert.AreEqual(45, layers);
+
+				var expectedIslands = new int[]
+				{
+				7, 7, 7, 5, 5, // 0 - 4
+				5, 5, 5, 5, 5, // 5 - 9
+				5, 5, 5, 5, 5, // 10 - 14
+				5, 5, 5, 5, 5,
+				5, 5, 5, 5, 5,
+				5, 4, 4, 4, 4,
+				4, 4, 4, 4, 4,
+				4, 4, 4, 4, 4,
+				4, 4, 4, 4, 4,
+				};
+
+				var layerPolygons = new List<Polygons>();
+				for (int i = 0; i < layers; i++)
+				{
+					layerPolygons.Add(TestUtilities.GetExtrusionPolygons(loadedGCode.GetGCodeForLayer(i)));
+				}
+
+				Assert.AreEqual(45, layerPolygons.Count);
+				for (int i = 1; i < layers; i++)
+				{
+					Assert.AreEqual(expectedIslands[i], layerPolygons[i].Count);
+				}
+			}
+
+			Test(false, false);
+			Test(false, true);
+			Test(true, false);
+			Test(true, true);
+		}
 	}
 }

@@ -112,10 +112,10 @@ namespace MatterHackers.QuadTree
 		/// </summary>
 		public bool Intersects(Quad other)
 		{
-			if (MinX < other.MaxX
-				&& MinY < other.MaxY
-				&& MaxX > other.MinX
-				&& MaxY > other.MinY)
+			if (MinX <= other.MaxX
+				&& MinY <= other.MaxY
+				&& MaxX >= other.MinX
+				&& MaxY >= other.MinY)
 			{
 				return true;
 			}
