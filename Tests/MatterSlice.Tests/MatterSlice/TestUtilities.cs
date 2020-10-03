@@ -34,20 +34,20 @@ using System.IO;
 using System.Text.RegularExpressions;
 using MSClipperLib;
 using NUnit.Framework;
+using MatterHackers.VectorMath;
+using System.Linq;
+using System.Reflection;
+using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
+using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice.Tests
 {
-	using System.Linq;
-	using System.Reflection;
-	using Polygon = List<IntPoint>;
-	using Polygons = List<List<IntPoint>>;
-
 	public struct MovementInfo
 	{
 		public string line;
 		public double extrusion;
 		public double feedRate;
-		public Vector3 position;
+		public MatterHackers.MatterSlice.Vector3 position;
 	}
 
 	public static class TestUtilities
@@ -85,7 +85,7 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		public static int CountLayers(string[] gcodeContents)
+		public static int LayerCount(this string[] gcodeContents)
 		{
 			int layers = 0;
 			int layerCount = 0;
@@ -161,6 +161,12 @@ namespace MatterHackers.MatterSlice.Tests
 					}
 					else
 					{
+						// we are switching so add in the point to the last extrude
+						foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
+							(long)(currentMovement.position.x * 1000),
+							(long)(currentMovement.position.y * 1000),
+							(long)(currentMovement.position.z * 1000)));
+
 						extruding = false;
 						movementAmount = 0;
 					}
@@ -361,8 +367,8 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			var aLoadedGcode = TestUtilities.LoadGCodeFile(aGCodeFile);
 			var bLoadedGCode = TestUtilities.LoadGCodeFile(bGCodeFile);
-			var aLayerCount = TestUtilities.CountLayers(aLoadedGcode);
-			Assert.AreEqual(aLayerCount, TestUtilities.CountLayers(bLoadedGCode));
+			var aLayerCount = TestUtilities.LayerCount(aLoadedGcode);
+			Assert.AreEqual(aLayerCount, TestUtilities.LayerCount(bLoadedGCode));
 			for (int layerIndex = 0; layerIndex < aLayerCount; layerIndex++)
 			{
 				var aLayerGCode = TestUtilities.GetGCodeForLayer(aLoadedGcode, layerIndex);
@@ -399,7 +405,7 @@ namespace MatterHackers.MatterSlice.Tests
 		/// <returns>A list of all the polygons by layer</returns>
 		public static List<Polygons> GetAllExtrusionPolygons(this string[] loadedGCode)
 		{
-			var layerCount = TestUtilities.CountLayers(loadedGCode);
+			var layerCount = TestUtilities.LayerCount(loadedGCode);
 
 			var layerPolygons = new List<Polygons>(layerCount);
 			for (int i = 0; i < layerCount; i++)
@@ -408,6 +414,37 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 
 			return layerPolygons;
+		}
+
+		/// <summary>
+		/// Get the count of every extrusion at a given angle
+		/// </summary>
+		/// <param name="islands">The polygons to consider</param>
+		/// <returns>A list of the angle and the count of lines at that angle</returns>
+		public static Dictionary<double, int> GetLineAngles(Polygons polygons)
+		{
+			var angleCount = new Dictionary<double, int>();
+
+			foreach (var polygon in polygons)
+			{
+				for (int i = 0; i < polygon.Count - 1; i++)
+				{
+					var start = new Vector2(polygon[i].X, polygon[i].Y);
+					var end = new Vector2(polygon[i + 1].X, polygon[i + 1].Y);
+					var angle1 = (int)((end - start).GetAngle0To2PI() * 360 / (2 * Math.PI));
+					var angle2 = (int)((start - end).GetAngle0To2PI() * 360 / (2 * Math.PI));
+					var angle = Math.Min(angle1, angle2);
+					var count = 0;
+					if (angleCount.ContainsKey(angle))
+					{
+						count = angleCount[angle];
+					}
+
+					angleCount[angle] = count + 1;
+				}
+			}
+
+			return angleCount;
 		}
 	}
 }

@@ -28,6 +28,7 @@ either expressed or implied, of the FreeBSD Project.
 */
 
 using System.Collections.Generic;
+using System.Linq;
 using MSClipperLib;
 using NUnit.Framework;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
@@ -156,6 +157,13 @@ namespace MatterHackers.MatterSlice.Tests
 				_ = GetAngleForData(islandToFillString, layerSupportingIslandString, "mendel 90 fan duct");
 				// Assert.AreEqual(bridgeAngle, 0, .1);
 			}
+
+			{
+				string islandToFillString = "x:0.33, y:-11.81,x:1.19, y:-11.3,x:9.42, y:-6.36,x:10.28, y:-5.84,x:-0.33, y:11.82,x:-10.27, y:5.84,|";
+				string layerSupportingIslandString = "x:-0.88, y:9.62,x:8.9, y:-6.66,x:10.28, y:-5.84,x:-0.33, y:11.82,x:-10.27, y:5.84,x:0.33, y:-11.81,x:1.71, y:-10.99,x:-8.08, y:5.29,|";
+				double bridgeAngle = GetAngleForData(islandToFillString, layerSupportingIslandString, "rounded left open u");
+				Assert.AreEqual(bridgeAngle, 31, .1);
+			}
 		}
 
 		private static double GetAngleForData(string islandToFillString, string layerSupportingIslandString, string debugName)
@@ -176,6 +184,33 @@ namespace MatterHackers.MatterSlice.Tests
 			_ = prevLayer.BridgeAngle(islandToFill, 0, out double bridgeAngle, null, debugName);
 
 			return bridgeAngle;
+		}
+
+		[Test]
+		public void AnglesInPrintedParts()
+		{
+			// without expand thin walls
+			{
+				var loadedGCode = TestUtilities.SliceAndGetGCode("Bridge Test - CoveredU 30 Degrees", (config) =>
+				{
+					config.FirstLayerThickness = .2;
+					config.LayerThickness = .2;
+					config.NumberOfSkirtLoops = 0;
+					config.InfillPercent = 0;
+					config.NumberOfPerimeters = 1;
+					config.ExpandThinWalls = false;
+					config.MergeOverlappingLines = false;
+				});
+
+				Assert.AreEqual(55, loadedGCode.LayerCount());
+
+				var layerPolygons = TestUtilities.GetAllExtrusionPolygons(loadedGCode);
+
+				var mostCommon = TestUtilities.GetLineAngles(layerPolygons[45]).OrderBy(i => i.Value).Last();
+				var angle = mostCommon.Key;
+
+				Assert.AreEqual(30, angle, "Should have generated a bridge at 30 degrees");
+			}
 		}
 	}
 }

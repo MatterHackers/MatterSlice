@@ -30,6 +30,7 @@ either expressed or implied, of the FreeBSD Project.
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using MSClipperLib;
 using NUnit.Framework;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
@@ -63,7 +64,7 @@ namespace MatterHackers.MatterSlice.Tests
 			processor.Finalize();
 
 			var loadedGCode = TestUtilities.LoadGCodeFile(engineGCodeFile);
-			var layers = TestUtilities.CountLayers(loadedGCode);
+			var layers = TestUtilities.LayerCount(loadedGCode);
 			Assert.AreEqual(195, layers);
 
 			var layerPolygons = TestUtilities.GetAllExtrusionPolygons(loadedGCode);
@@ -71,7 +72,7 @@ namespace MatterHackers.MatterSlice.Tests
 			Assert.AreEqual(17, layerPolygons[32].Count);
 			for (int i = 33; i < 44; i++)
 			{
-				Assert.AreEqual(13, layerPolygons[i].Count);
+				Assert.AreEqual(13, layerPolygons[i].Where(p => p.Count > 2).Count());
 			}
 		}
 
@@ -103,7 +104,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.Finalize();
 
 				var loadedGCode = TestUtilities.LoadGCodeFile(engineGCodeFile);
-				var layers = TestUtilities.CountLayers(loadedGCode);
+				var layers = TestUtilities.LayerCount(loadedGCode);
 				Assert.AreEqual(45, layers);
 
 				var expectedIslands = new int[]
@@ -121,10 +122,10 @@ namespace MatterHackers.MatterSlice.Tests
 
 				var layerPolygons = TestUtilities.GetAllExtrusionPolygons(loadedGCode);
 
-				Assert.AreEqual(45, layerPolygons.Count);
+				Assert.AreEqual(45, layerPolygons.Where(i => i.Count > 2).Count());
 				for (int i = 1; i < layers; i++)
 				{
-					Assert.AreEqual(expectedIslands[i], layerPolygons[i].Count);
+					Assert.AreEqual(expectedIslands[i], layerPolygons[i].Where(p => p.Count > 2).Count());
 				}
 			}
 

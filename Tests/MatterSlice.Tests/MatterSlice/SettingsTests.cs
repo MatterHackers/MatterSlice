@@ -29,6 +29,7 @@ either expressed or implied, of the FreeBSD Project.
 
 using System;
 using System.IO;
+using System.Linq;
 using MSClipperLib;
 using NUnit.Framework;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
@@ -110,12 +111,12 @@ namespace MatterHackers.MatterSlice.Tests
 			// check layer 1
 			var layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
 			var layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
-			Assert.AreEqual(4, layer1Polygons.Count);
+			Assert.AreEqual(4, layer1Polygons.Where(i => i.Count > 2).Count());
 
 			// check layer 2
 			var layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
 			var layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
-			Assert.AreEqual(4, layer2Polygons.Count);
+			Assert.AreEqual(4, layer2Polygons.Where(i => i.Count > 2).Count());
 		}
 
 		[Test]
@@ -144,12 +145,12 @@ namespace MatterHackers.MatterSlice.Tests
 			// check layer 1
 			var layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
 			var layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
-			Assert.AreEqual(4, layer1Polygons.Count);
+			Assert.AreEqual(4, layer1Polygons.Where(i => i.Count > 2).Count());
 
 			// check layer 2
 			var layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
 			var layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
-			Assert.AreEqual(4, layer2Polygons.Count);
+			Assert.AreEqual(4, layer2Polygons.Where(i => i.Count > 2).Count());
 		}
 
 		[Test]
@@ -178,12 +179,12 @@ namespace MatterHackers.MatterSlice.Tests
 			// check layer 1
 			var layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
 			var layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
-			Assert.AreEqual(4, layer1Polygons.Count);
+			Assert.AreEqual(4, layer1Polygons.Where(i => i.Count > 2).Count());
 
 			// check layer 2
 			var layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
 			var layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
-			Assert.AreEqual(4, layer2Polygons.Count);
+			Assert.AreEqual(4, layer2Polygons.Where(i => i.Count > 2).Count());
 		}
 
 		[Test]
@@ -327,7 +328,7 @@ namespace MatterHackers.MatterSlice.Tests
 			processor.Finalize();
 
 			string[] gcodeContents = TestUtilities.LoadGCodeFile(gcodeToCreate);
-			int layerCount = TestUtilities.CountLayers(gcodeContents);
+			int layerCount = TestUtilities.LayerCount(gcodeContents);
 			bool firstPosition = true;
 			var lastMovement = default(MovementInfo);
 			var lastExtrusion = default(MovementInfo);
@@ -572,10 +573,10 @@ namespace MatterHackers.MatterSlice.Tests
 		public void CorrectNumberOfLayersForLayerHeights()
 		{
 			// test .1 layer height
-			Assert.AreEqual(100, TestUtilities.CountLayers(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.1, .1))));
-			Assert.AreEqual(99, TestUtilities.CountLayers(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .1))));
-			Assert.AreEqual(50, TestUtilities.CountLayers(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2))));
-			Assert.AreEqual(51, TestUtilities.CountLayers(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.05, .2))));
+			Assert.AreEqual(100, TestUtilities.LayerCount(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.1, .1))));
+			Assert.AreEqual(99, TestUtilities.LayerCount(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .1))));
+			Assert.AreEqual(50, TestUtilities.LayerCount(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.2, .2))));
+			Assert.AreEqual(51, TestUtilities.LayerCount(TestUtilities.LoadGCodeFile(CreateGCodeForLayerHeights(.05, .2))));
 		}
 
 		[Test]
@@ -596,7 +597,7 @@ namespace MatterHackers.MatterSlice.Tests
 			processor.Finalize();
 
 			var loadedGCode = TestUtilities.LoadGCodeFile(point3mmGCodeFile);
-			var layers = TestUtilities.CountLayers(loadedGCode);
+			var layers = TestUtilities.LayerCount(loadedGCode);
 			Assert.AreEqual(1, layers);
 			var totalExtrusions = TestUtilities.GetExtrusionPolygonsForLayer(loadedGCode);
 #if __ANDROID__
@@ -629,7 +630,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			string[] gcodeLines = TestUtilities.LoadGCodeFile(gCodeFile);
 
-			int layerCount = TestUtilities.CountLayers(gcodeLines);
+			int layerCount = TestUtilities.LayerCount(gcodeLines);
 			Assert.IsTrue(layerCount == expectedLayerCount);
 
 			var movement = default(MovementInfo);
@@ -709,7 +710,7 @@ namespace MatterHackers.MatterSlice.Tests
 			string[] gCodeContent = TestUtilities.LoadGCodeFile(outputGCodeFileName);
 
 			// test .1 layer height
-			int layerCount = TestUtilities.CountLayers(gCodeContent);
+			int layerCount = TestUtilities.LayerCount(gCodeContent);
 			Assert.IsTrue(layerCount == 50);
 
 			bool hadMoveLessThan85 = false;
@@ -784,7 +785,7 @@ namespace MatterHackers.MatterSlice.Tests
 			string[] gCodeContent = TestUtilities.LoadGCodeFile(outputGCodeFileName);
 
 			// test layer count
-			int layerCount = TestUtilities.CountLayers(gCodeContent);
+			int layerCount = TestUtilities.LayerCount(gCodeContent);
 			Assert.AreEqual(1, layerCount);
 
 			int retractions = TestUtilities.CountRetractions(gCodeContent);
@@ -849,7 +850,7 @@ namespace MatterHackers.MatterSlice.Tests
 			string[] risingLayersGCodeContent = TestUtilities.LoadGCodeFile(risingLayersGCodeFileName);
 
 			// test .1 layer height
-			int layerCount = TestUtilities.CountLayers(risingLayersGCodeContent);
+			int layerCount = TestUtilities.LayerCount(risingLayersGCodeContent);
 			Assert.IsTrue(layerCount == 50);
 
 			var startingPosition = default(MovementInfo);
@@ -907,7 +908,7 @@ namespace MatterHackers.MatterSlice.Tests
 			string[] cylinderGCodeContent = TestUtilities.LoadGCodeFile(cylinderGCodeFileName);
 
 			// test .1 layer height
-			int layerCount = TestUtilities.CountLayers(cylinderGCodeContent);
+			int layerCount = TestUtilities.LayerCount(cylinderGCodeContent);
 			Assert.AreEqual(50, layerCount, "SpiralCone should have 50 layers");
 
 			for (int i = 2; i < layerCount - 3; i++)
@@ -973,7 +974,7 @@ namespace MatterHackers.MatterSlice.Tests
 			string[] cylinderGCodeContent = TestUtilities.LoadGCodeFile(cylinderGCodeFileName);
 
 			// test .1 layer height
-			int layerCount = TestUtilities.CountLayers(cylinderGCodeContent);
+			int layerCount = TestUtilities.LayerCount(cylinderGCodeContent);
 			Assert.IsTrue(layerCount == expectedLayers);
 
 			for (int i = 2; i < layerCount - 3; i++)
