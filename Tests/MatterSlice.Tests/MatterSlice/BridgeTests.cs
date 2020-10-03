@@ -209,7 +209,7 @@ namespace MatterHackers.MatterSlice.Tests
 				var mostCommon = TestUtilities.GetLineAngles(layerPolygons[45]).OrderBy(i => i.Value).Last();
 				var angle = mostCommon.Key;
 
-				Assert.AreEqual(30, angle, "Should have generated a bridge at 30 degrees");
+				Assert.AreEqual(120, angle, "Should have generated a bridge at 30 degrees");
 			}
 		}
 	}
