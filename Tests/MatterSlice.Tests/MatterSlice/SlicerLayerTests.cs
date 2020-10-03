@@ -64,7 +64,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.Finalize();
 
 				string[] gcodeContents = TestUtilities.LoadGCodeFile(gCodeWithIslands);
-				int numLayers = TestUtilities.CountLayers(gcodeContents);
+				int numLayers = TestUtilities.LayerCount(gcodeContents);
 				for (int i = 1; i < numLayers - 1; i++)
 				{
 					string[] layer = TestUtilities.GetGCodeForLayer(gcodeContents, i);
@@ -93,13 +93,9 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.Finalize();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(thinWallsGCode);
-				int layerCount = TestUtilities.CountLayers(loadedGCode);
+				int layerCount = TestUtilities.LayerCount(loadedGCode);
 
-				var layerPolygons = new List<Polygons>();
-				for (int i = 0; i < layerCount; i++)
-				{
-					layerPolygons.Add(TestUtilities.GetExtrusionPolygons(loadedGCode.GetGCodeForLayer(i)));
-				}
+				var layerPolygons = loadedGCode.GetAllExtrusionPolygons();
 
 				for (int i = 2; i < layerCount - 2; i++)
 				{
@@ -130,7 +126,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.Finalize();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(thinWallsGCode);
-				int layerCount = TestUtilities.CountLayers(loadedGCode);
+				int layerCount = TestUtilities.LayerCount(loadedGCode);
 
 				for (int i = 0; i < layerCount; i++)
 				{
@@ -209,16 +205,12 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.Finalize();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(thinWallsGCode);
-				int layerCount = TestUtilities.CountLayers(loadedGCode);
+				int layerCount = TestUtilities.LayerCount(loadedGCode);
 				Assert.AreEqual(50, layerCount);
 
-				var layerPolygons = new List<Polygons>();
-				for (int i = 0; i < layerCount; i++)
-				{
-					layerPolygons.Add(TestUtilities.GetExtrusionPolygons(loadedGCode.GetGCodeForLayer(i)));
-				}
+				var layerPolygons = loadedGCode.GetAllExtrusionPolygons();
 
-				Assert.AreEqual(6, layerPolygons[10].Count);
+				Assert.AreEqual(6, layerPolygons[10].Where(i => i.Count > 2).Count());
 			}
 
 			// with expand thin walls
@@ -242,16 +234,12 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.Finalize();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(thinWallsGCode);
-				int layerCount = TestUtilities.CountLayers(loadedGCode);
+				int layerCount = TestUtilities.LayerCount(loadedGCode);
 				Assert.AreEqual(50, layerCount);
 
-				var layerPolygons = new List<Polygons>();
-				for (int i = 0; i < layerCount; i++)
-				{
-					layerPolygons.Add(TestUtilities.GetExtrusionPolygons(loadedGCode.GetGCodeForLayer(i)));
-				}
+				var layerPolygons = loadedGCode.GetAllExtrusionPolygons();
 
-				Assert.AreEqual(9, layerPolygons[10].Count);
+				Assert.AreEqual(10, layerPolygons[10].Count);
 			}
 
 			// with expand thin walls and with merge overlapping lines
@@ -275,16 +263,12 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.Finalize();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(thinWallsGCode);
-				int layerCount = TestUtilities.CountLayers(loadedGCode);
+				int layerCount = TestUtilities.LayerCount(loadedGCode);
 				Assert.AreEqual(50, layerCount);
 
-				var layerPolygons = new List<Polygons>();
-				for (int i = 0; i < layerCount; i++)
-				{
-					layerPolygons.Add(TestUtilities.GetExtrusionPolygons(loadedGCode.GetGCodeForLayer(i)));
-				}
+				var layerPolygons = loadedGCode.GetAllExtrusionPolygons();
 
-				Assert.AreEqual(9, layerPolygons[10].Count);
+				Assert.AreEqual(10, layerPolygons[10].Count);
 			}
 		}
 

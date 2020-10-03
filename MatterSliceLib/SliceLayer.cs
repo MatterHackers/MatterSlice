@@ -145,7 +145,7 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				islandsToRestOn.AddRange(areaGoingOnTop.Offset(perimeterExpandDistance).CreateIntersection(islandToRestOn.IslandOutline));
+				islandsToRestOn.AddRange(areaGoingOnTop.CreateIntersection(islandToRestOn.IslandOutline));
 			}
 
 			if (bridgeAreas != null)
