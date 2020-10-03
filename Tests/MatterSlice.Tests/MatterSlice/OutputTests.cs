@@ -884,8 +884,5 @@ namespace MatterHackers.MatterSlice.Tests
 				settings.ZOffset = .1; // Default(0.0)
 			});
 		}
-
-
-
 	}
 }

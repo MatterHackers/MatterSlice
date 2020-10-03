@@ -65,7 +65,7 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				// check layer 1
 				string[] layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
-				Polygons layer1Polygons = TestUtilities.GetExtrusionPolygons(layer1Info, ref movement);
+				Polygons layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
 				// make sure there are 3
 				Assert.IsTrue(layer1Polygons.Count == 3);
 				// make sure they are in the right order (first layer is outside in)
@@ -75,7 +75,7 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				// check layer 2
 				string[] layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
-				Polygons layer2Polygons = TestUtilities.GetExtrusionPolygons(layer2Info, ref movement);
+				Polygons layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
 
 				// make sure there are 3
 				Assert.IsTrue(layer2Polygons.Count == 3);
@@ -109,12 +109,12 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// check layer 1
 			var layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
-			var layer1Polygons = TestUtilities.GetExtrusionPolygons(layer1Info, ref movement);
+			var layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
 			Assert.AreEqual(4, layer1Polygons.Count);
 
 			// check layer 2
 			var layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
-			var layer2Polygons = TestUtilities.GetExtrusionPolygons(layer2Info, ref movement);
+			var layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
 			Assert.AreEqual(4, layer2Polygons.Count);
 		}
 
@@ -143,12 +143,12 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// check layer 1
 			var layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
-			var layer1Polygons = TestUtilities.GetExtrusionPolygons(layer1Info, ref movement);
+			var layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
 			Assert.AreEqual(4, layer1Polygons.Count);
 
 			// check layer 2
 			var layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
-			var layer2Polygons = TestUtilities.GetExtrusionPolygons(layer2Info, ref movement);
+			var layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
 			Assert.AreEqual(4, layer2Polygons.Count);
 		}
 
@@ -177,12 +177,12 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// check layer 1
 			var layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
-			var layer1Polygons = TestUtilities.GetExtrusionPolygons(layer1Info, ref movement);
+			var layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
 			Assert.AreEqual(4, layer1Polygons.Count);
 
 			// check layer 2
 			var layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
-			var layer2Polygons = TestUtilities.GetExtrusionPolygons(layer2Info, ref movement);
+			var layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
 			Assert.AreEqual(4, layer2Polygons.Count);
 		}
 
@@ -211,7 +211,7 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				// check layer 1
 				string[] layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
-				Polygons layer1Polygons = TestUtilities.GetExtrusionPolygons(layer1Info, ref movement);
+				Polygons layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
 				// make sure there are 3
 				Assert.IsTrue(layer1Polygons.Count == 3);
 				// make sure they are in the right order (first layer is outside in)
@@ -221,7 +221,7 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				// check layer 2
 				string[] layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
-				Polygons layer2Polygons = TestUtilities.GetExtrusionPolygons(layer2Info, ref movement);
+				Polygons layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
 
 				// make sure there are 3
 				Assert.IsTrue(layer2Polygons.Count == 3);
@@ -265,7 +265,7 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				// check layer 1
 				string[] layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
-				Polygons layer1Polygons = TestUtilities.GetExtrusionPolygons(layer1Info, ref movement);
+				Polygons layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
 				// make sure there are 5
 				Assert.IsTrue(layer1Polygons.Count == 3);
 				// make sure they are in the right order (two inner polygons print first)
@@ -276,7 +276,7 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				// check layer 2
 				string[] layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
-				Polygons layer2Polygons = TestUtilities.GetExtrusionPolygons(layer2Info, ref movement);
+				Polygons layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
 
 				// make sure there are 3
 				Assert.IsTrue(layer2Polygons.Count == 3);
@@ -598,7 +598,7 @@ namespace MatterHackers.MatterSlice.Tests
 			var loadedGCode = TestUtilities.LoadGCodeFile(point3mmGCodeFile);
 			var layers = TestUtilities.CountLayers(loadedGCode);
 			Assert.AreEqual(1, layers);
-			var totalExtrusions = TestUtilities.GetExtrusionPolygons(loadedGCode);
+			var totalExtrusions = TestUtilities.GetExtrusionPolygonsForLayer(loadedGCode);
 #if __ANDROID__
 			Assert.IsTrue(totalExtrusions.Count > 0);
 			Assert.IsTrue(totalExtrusions[0].PolygonLength() > 100);
@@ -639,7 +639,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				if (i > 0)
 				{
-					Polygons layerPolygons = TestUtilities.GetExtrusionPolygons(layerInfo, ref movement);
+					Polygons layerPolygons = TestUtilities.GetExtrusionPolygonsForLayer(layerInfo, ref movement);
 
 					Assert.IsTrue(layerPolygons.Count == 2);
 
@@ -663,7 +663,7 @@ namespace MatterHackers.MatterSlice.Tests
 				}
 				else
 				{
-					TestUtilities.GetExtrusionPolygons(layerInfo, ref movement);
+					TestUtilities.GetExtrusionPolygonsForLayer(layerInfo, ref movement);
 				}
 			}
 		}

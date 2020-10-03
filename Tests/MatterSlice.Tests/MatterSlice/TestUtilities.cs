@@ -130,22 +130,22 @@ namespace MatterHackers.MatterSlice.Tests
 			return retractions;
 		}
 
-		public static Polygons GetExtrusionPolygons(this string[] gcode, long movementToIgnore = 0)
+		public static Polygons GetExtrusionPolygonsForLayer(this string[] layerGCode, long movementToIgnore = 0)
 		{
-			MovementInfo movementInfo = new MovementInfo();
-			return GetExtrusionPolygons(gcode, ref movementInfo, movementToIgnore);
+			var movementInfo = default(MovementInfo);
+			return GetExtrusionPolygonsForLayer(layerGCode, ref movementInfo, movementToIgnore);
 		}
 
-		public static Polygons GetExtrusionPolygons(string[] gcode, ref MovementInfo movementInfo, long movementToIgnore = 0)
+		public static Polygons GetExtrusionPolygonsForLayer(this string[] layerGCode, ref MovementInfo movementInfo, long movementToIgnore = 0)
 		{
-			Polygons foundPolygons = new Polygons();
+			var foundPolygons = new Polygons();
 
 			bool extruding = false;
 			// check that all moves are on the outside of the cylinder (not crossing to a new point)
 			int movementCount = 0;
 			double movementAmount = double.MaxValue/2; // always add a new extrusion the first time
 			MovementInfo lastMovement = movementInfo;
-			foreach (MovementInfo currentMovement in TestUtilities.Movements(gcode, lastMovement))
+			foreach (MovementInfo currentMovement in TestUtilities.Movements(layerGCode, lastMovement))
 			{
 				bool isExtrude = currentMovement.extrusion != lastMovement.extrusion;
 
@@ -219,7 +219,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 		public static string[] GetGCodeForLayer(this string[] gcodeContents, int layerIndex)
 		{
-			List<string> layerLines = new List<string>();
+			var layerLines = new List<string>();
 			int currentLayer = -1;
 			foreach (string line in gcodeContents)
 			{
@@ -262,6 +262,25 @@ namespace MatterHackers.MatterSlice.Tests
 			return fullPath;
 		}
 
+		public static string[] SliceAndGetGCode(string stlName, Action<ConfigSettings> action = null)
+		{
+			string thinWallsSTL = TestUtilities.GetStlPath($"{stlName}.stl");
+			string thinWallsGCode = TestUtilities.GetTempGCodePath($"{stlName}.gcode");
+
+			var config = new ConfigSettings();
+
+			action?.Invoke(config);
+
+			var processor = new FffProcessor(config);
+			processor.SetTargetFile(thinWallsGCode);
+			processor.LoadStlFile(thinWallsSTL);
+			// slice and save it
+			processor.DoProcessing();
+			processor.Finalize();
+
+			return TestUtilities.LoadGCodeFile(thinWallsGCode);
+		}
+
 		public static string[] LoadGCodeFile(string gcodeFile)
 		{
 			return File.ReadAllLines(gcodeFile);
@@ -269,7 +288,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 		public static IEnumerable<MovementInfo> Movements(this string[] gcodeContents, Nullable<MovementInfo> startingMovement = null, bool onlyG1s = false)
 		{
-			MovementInfo currentPosition = default(MovementInfo);
+			var currentPosition = default(MovementInfo);
 			if (startingMovement != null)
 			{
 				currentPosition = startingMovement.Value;
@@ -348,8 +367,8 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				var aLayerGCode = TestUtilities.GetGCodeForLayer(aLoadedGcode, layerIndex);
 				var bLayerGCode = TestUtilities.GetGCodeForLayer(bLoadedGCode, layerIndex);
-				var aPolys = TestUtilities.GetExtrusionPolygons(aLayerGCode);
-				var bPolys = TestUtilities.GetExtrusionPolygons(bLayerGCode);
+				var aPolys = TestUtilities.GetExtrusionPolygonsForLayer(aLayerGCode);
+				var bPolys = TestUtilities.GetExtrusionPolygonsForLayer(bLayerGCode);
 				// Assert.AreEqual(aPolys.Count, bPolys.Count);
 				if (aPolys.Count > 0)
 				{
@@ -371,6 +390,24 @@ namespace MatterHackers.MatterSlice.Tests
 					}
 				}
 			}
+		}
+
+		/// <summary>
+		/// Get the extrusion polygons for every layer
+		/// </summary>
+		/// <param name="loadedGCode">The source gcode separated by line</param>
+		/// <returns>A list of all the polygons by layer</returns>
+		public static List<Polygons> GetAllExtrusionPolygons(this string[] loadedGCode)
+		{
+			var layerCount = TestUtilities.CountLayers(loadedGCode);
+
+			var layerPolygons = new List<Polygons>(layerCount);
+			for (int i = 0; i < layerCount; i++)
+			{
+				layerPolygons.Add(TestUtilities.GetExtrusionPolygonsForLayer(loadedGCode.GetGCodeForLayer(i)));
+			}
+
+			return layerPolygons;
 		}
 	}
 }

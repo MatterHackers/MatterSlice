@@ -66,11 +66,7 @@ namespace MatterHackers.MatterSlice.Tests
 			var layers = TestUtilities.CountLayers(loadedGCode);
 			Assert.AreEqual(195, layers);
 
-			var layerPolygons = new List<Polygons>();
-			for (int i = 0; i < layers; i++)
-			{
-				layerPolygons.Add(TestUtilities.GetExtrusionPolygons(loadedGCode.GetGCodeForLayer(i)));
-			}
+			var layerPolygons = TestUtilities.GetAllExtrusionPolygons(loadedGCode);
 
 			Assert.AreEqual(17, layerPolygons[32].Count);
 			for (int i = 33; i < 44; i++)
@@ -112,22 +108,18 @@ namespace MatterHackers.MatterSlice.Tests
 
 				var expectedIslands = new int[]
 				{
-				7, 7, 7, 5, 5, // 0 - 4
-				5, 5, 5, 5, 5, // 5 - 9
-				5, 5, 5, 5, 5, // 10 - 14
-				5, 5, 5, 5, 5,
-				5, 5, 5, 5, 5,
-				5, 4, 4, 4, 4,
-				4, 4, 4, 4, 4,
-				4, 4, 4, 4, 4,
-				4, 4, 4, 4, 4,
+					7, 7, 7, 5, 5, // 0 - 4
+					5, 5, 5, 5, 5, // 5 - 9
+					5, 5, 5, 5, 5, // 10 - 14
+					5, 5, 5, 5, 5,
+					5, 5, 5, 5, 5,
+					5, 4, 4, 4, 4,
+					4, 4, 4, 4, 4,
+					4, 4, 4, 4, 4,
+					4, 4, 4, 4, 4,
 				};
 
-				var layerPolygons = new List<Polygons>();
-				for (int i = 0; i < layers; i++)
-				{
-					layerPolygons.Add(TestUtilities.GetExtrusionPolygons(loadedGCode.GetGCodeForLayer(i)));
-				}
+				var layerPolygons = TestUtilities.GetAllExtrusionPolygons(loadedGCode);
 
 				Assert.AreEqual(45, layerPolygons.Count);
 				for (int i = 1; i < layers; i++)
