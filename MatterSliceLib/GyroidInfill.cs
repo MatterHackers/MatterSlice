@@ -26,7 +26,8 @@ namespace MatterHackers.MatterSlice
 		{
 			// generate infill based on the gyroid equation: sin_x * cos_y + sin_y * cos_z + sin_z * cos_x = 0
 			// kudos to the author of the Slic3r implementation equation code, the equation code here is based on that
-			Polygons outline = in_outline.Offset(config.ExtrusionWidth_um / 2);
+			Polygons clipOutline = in_outline.Offset(config.ExtrusionWidth_um / 2);
+			Polygons outline = in_outline.Offset(config.ExtrusionWidth_um * 4);
 			var aabb = outline.GetBounds();
 
 			var accelerator = new Pathfinding.PathingData(outline, config.ExtrusionWidth_um * 3, true);
@@ -449,7 +450,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			var result2 = outline.CreateLineIntersections(result);
+			var result2 = clipOutline.CreateLineIntersections(result);
 
 			result_lines.AddRange(result2);
 		}
