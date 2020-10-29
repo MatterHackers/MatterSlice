@@ -413,10 +413,13 @@ namespace MatterHackers.MatterSlice
 
 				switch (property.PropertyType.Name)
 				{
+					//Potentially need to add more PropertyType.Name
+					case "Int64":
 					case "Int32":
 					case "Double":
 					case "Boolean":
 					case "FMatrix3x3":
+					case "Matrix4X4":
 						// all these setting just output correctly with ToString() so we don't have to do anything special.
 						lines.Add("{0}={1}{2}".FormatWith(name, value, fieldDescription));
 						break;
