@@ -195,7 +195,7 @@ namespace MatterHackers.MatterSlice
 
 		private OptimizedPath FindClosestPolyAndPoint(IntPoint currentPosition,
 			QuadTree<int> polygonAccelerator,
-			HashSet<int> compleatedPolygons,
+			HashSet<int> completedPolygons,
 			bool doSeamHiding,
 			int layerIndex,
 			long lineWidth_um,
@@ -208,13 +208,13 @@ namespace MatterHackers.MatterSlice
 			foreach (var indexAndDistance in polygonAccelerator.IterateClosest(currentPosition, () => bestDistSquared))
 			{
 				var index = indexAndDistance.Item1;
-				if (compleatedPolygons.Contains(Indices[index]))
+				if (completedPolygons.Contains(Indices[index]))
 				{
 					// skip this polygon it has been processed
 					continue;
 				}
 
-				var list = compleatedPolygons.ToArray();
+				var list = completedPolygons.ToArray();
 
 				int pointIndex = FindClosestPoint(Polygons[index],
 					Accelerator[index],
