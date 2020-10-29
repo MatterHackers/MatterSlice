@@ -413,7 +413,7 @@ namespace MatterHackers.MatterSlice
 
 				switch (property.PropertyType.Name)
 				{
-					//Potentially need to add more PropertyType.Names
+					//Potentially need to add more PropertyType.Name
 					case "Int64":
 					case "Int32":
 					case "Double":
