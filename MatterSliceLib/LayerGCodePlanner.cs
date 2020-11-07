@@ -80,6 +80,7 @@ namespace MatterHackers.MatterSlice
 		}
 
 		private IntPoint _lastPosition_um = new IntPoint(long.MinValue, long.MinValue);
+
 		public IntPoint LastPosition_um
 		{
 			get
@@ -96,7 +97,7 @@ namespace MatterHackers.MatterSlice
 			set => _lastPosition_um = value;
 		}
 
-		private bool LastPositionSet => _lastPosition_um.X != long.MinValue;
+		public bool LastPositionSet => _lastPosition_um.X != long.MinValue;
 
 		public static GCodePath TrimGCodePathEnd(GCodePath inPath, long targetDistance)
 		{
@@ -367,47 +368,53 @@ namespace MatterHackers.MatterSlice
 			// If we have never moved yet, we don't know where to move from, so go to our next spot exactly.
 			if (!LastPositionSet)
 			{
-				QueuePolygons(polygons, pathFinder, pathConfig);
-			}
-			else
-			{
-				var orderOptimizer = new PathOrderOptimizer(config);
-				orderOptimizer.AddPolygons(polygons);
-
-				orderOptimizer.Optimize(LastPosition_um, pathFinder, layerIndex, true, pathConfig);
-
-				// check if the polygon looks closed and if so that it is wound CCW
-				if (orderOptimizer.OptimizedPaths.Count > 2)
+				foreach (var polygon in polygons)
 				{
-					Polygon ccwPolygon = orderOptimizer.ConvertToCcwPolygon(polygons, pathConfig.LineWidth_um);
-					if (ccwPolygon != null)
+					if (polygon.Count > 0)
 					{
-						QueuePolygon(ccwPolygon, null, 0, pathConfig);
-						return true;
+						// go to the first position of the first polygon
+						LastPosition_um = polygon[0];
+						break;
 					}
 				}
+			}
 
-				foreach (var optimizedPath in orderOptimizer.OptimizedPaths)
+			var orderOptimizer = new PathOrderOptimizer(config);
+			orderOptimizer.AddPolygons(polygons);
+
+			orderOptimizer.Optimize(LastPosition_um, pathFinder, layerIndex, true, pathConfig);
+
+			// check if the polygon looks closed and if so that it is wound CCW
+			if (orderOptimizer.OptimizedPaths.Count > 2)
+			{
+				Polygon ccwPolygon = orderOptimizer.ConvertToCcwPolygon(polygons, pathConfig.LineWidth_um);
+				if (ccwPolygon != null)
 				{
-					var polygon = polygons[optimizedPath.SourcePolyIndex];
+					QueuePolygon(ccwPolygon, null, 0, pathConfig);
+					return true;
+				}
+			}
 
-					// The order optimizer should already have created all the right moves
-					// so pass a null for the path finder (don't re-plan them).
-					if (optimizedPath.IsExtrude)
+			foreach (var optimizedPath in orderOptimizer.OptimizedPaths)
+			{
+				var polygon = polygons[optimizedPath.SourcePolyIndex];
+
+				// The order optimizer should already have created all the right moves
+				// so pass a null for the path finder (don't re-plan them).
+				if (optimizedPath.IsExtrude)
+				{
+					QueuePolygon(polygon, pathFinder, optimizedPath.PointIndex, pathConfig);
+					// QueueExtrusionPolygon(orderOptimizer.Polygons[order.PolyIndex], order.PointIndex, pathConfig);
+				}
+				else
+				{
+					if (polygon.Count == 0)
 					{
-						QueuePolygon(polygon, pathFinder, optimizedPath.PointIndex, pathConfig);
-						// QueueExtrusionPolygon(orderOptimizer.Polygons[order.PolyIndex], order.PointIndex, pathConfig);
+						QueueTravel(polygon[0], pathFinder);
 					}
 					else
 					{
-						if (polygon.Count == 0)
-						{
-							QueueTravel(polygon[0], pathFinder);
-						}
-						else
-						{
-							QueueTravel(polygon);
-						}
+						QueueTravel(polygon);
 					}
 				}
 			}
