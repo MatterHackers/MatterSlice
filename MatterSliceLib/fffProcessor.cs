@@ -968,7 +968,32 @@ namespace MatterHackers.MatterSlice
 
 		private void QueueBrimsToGCode(LayerDataStorage slicingData, PathFinder layerPathFinder, LayerGCodePlanner gcodeLayer, int layerIndex, int extruderIndex)
 		{
-			gcodeLayer.QueuePolygonsByOptimizer(slicingData.Brims, layerPathFinder, skirtConfig, layerIndex);
+			if (!gcodeLayer.LastPositionSet)
+			{
+				var maxPoint = new IntPoint(long.MinValue, long.MinValue);
+				foreach (var polygon in slicingData.Brims)
+				{
+					foreach (var point in polygon)
+					{
+						if (point.X >= maxPoint.X)
+						{
+							if (point.X > maxPoint.X)
+							{
+								maxPoint = point;
+							}
+							else if (point.Y > maxPoint.Y)
+							{
+								maxPoint = point;
+							}
+						}
+					}
+				}
+
+				// before we start the brim make sure we are printing from the outside in
+				gcodeLayer.LastPosition_um = maxPoint;
+			}
+
+			gcodeLayer.QueuePolygonsByOptimizer(slicingData.Brims, null, skirtConfig, layerIndex);
 		}
 
 		private LayerIsland islandCurrentlyInside = null;
