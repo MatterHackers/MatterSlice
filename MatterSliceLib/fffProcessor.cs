@@ -791,7 +791,7 @@ namespace MatterHackers.MatterSlice
 					// we don't print a brim if we have a raft
 					if (!havePrintedBrims)
 					{
-						QueueBrimsToGCode(slicingData, layerPathFinder, layerGcodePlanner, layerIndex, extruderIndex);
+						QueueBrimsToGCode(slicingData, layerGcodePlanner, layerIndex);
 						havePrintedBrims = true;
 					}
 				}
@@ -966,7 +966,7 @@ namespace MatterHackers.MatterSlice
 			return usedExtruders;
 		}
 
-		private void QueueBrimsToGCode(LayerDataStorage slicingData, PathFinder layerPathFinder, LayerGCodePlanner gcodeLayer, int layerIndex, int extruderIndex)
+		private void QueueBrimsToGCode(LayerDataStorage slicingData, LayerGCodePlanner gcodeLayer, int layerIndex)
 		{
 			if (!gcodeLayer.LastPositionSet)
 			{
@@ -990,7 +990,7 @@ namespace MatterHackers.MatterSlice
 				}
 
 				// before we start the brim make sure we are printing from the outside in
-				gcodeLayer.LastPosition_um = maxPoint;
+				gcodeLayer.QueueTravel(maxPoint, null);
 			}
 
 			gcodeLayer.QueuePolygonsByOptimizer(slicingData.Brims, null, skirtConfig, layerIndex);

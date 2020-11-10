@@ -19,10 +19,8 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using KdTree;
 using MatterHackers.Pathfinding;
 using MatterHackers.QuadTree;
 using MSClipperLib;
@@ -159,7 +157,6 @@ namespace MatterHackers.MatterSlice
 									&& midPolyPoint.PointIndex != -1
 									&& closestPolyPoint.FoundPath)
 								{
-
 									var midStartPosition = Polygons[midPolyPoint.SourcePolyIndex][midPolyPoint.PointIndex];
 
 									if (pathFinder.CreatePathInsideBoundary(currentPosition, midStartPosition, pathPolygon, true, layerIndex))
@@ -176,7 +173,8 @@ namespace MatterHackers.MatterSlice
 									}
 								}
 							}
-						} while (tryAgain);
+						}
+						while (tryAgain);
 					}
 				}
 
