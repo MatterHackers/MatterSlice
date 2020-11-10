@@ -373,7 +373,7 @@ namespace MatterHackers.MatterSlice
 					if (polygon.Count > 0)
 					{
 						// go to the first position of the first polygon
-						LastPosition_um = polygon[0];
+						QueueTravel(polygon[0], pathFinder);
 						break;
 					}
 				}
