@@ -989,8 +989,12 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				// before we start the brim make sure we are printing from the outside in
-				gcodeLayer.QueueTravel(maxPoint, null);
+				if (maxPoint.X > long.MinValue
+					&& maxPoint.Y > long.MinValue)
+				{
+					// before we start the brim make sure we are printing from the outside in
+					gcodeLayer.QueueTravel(maxPoint, null);
+				}
 			}
 
 			gcodeLayer.QueuePolygonsByOptimizer(slicingData.Brims, null, skirtConfig, layerIndex);
