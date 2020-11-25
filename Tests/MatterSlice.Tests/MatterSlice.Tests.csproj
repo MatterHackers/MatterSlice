@@ -70,6 +70,10 @@
       <Project>{657DBC6D-C3EA-4398-A3FA-DDB73C14F71B}</Project>
       <Name>Agg</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\agg-sharp\DataConverters2D\DataConverters2D.csproj">
+      <Project>{94838988-523c-4b11-ad82-8b9b76f23a31}</Project>
+      <Name>DataConverters2D</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\agg-sharp\VectorMath\VectorMath.csproj">
       <Project>{D3E41B4E-BFBB-44CA-94C8-95C00F754FDD}</Project>
       <Name>VectorMath</Name>
