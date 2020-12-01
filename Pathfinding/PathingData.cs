@@ -306,7 +306,7 @@ namespace MatterHackers.Pathfinding
 			// var image32 = new ImageBuffer(DistanceFromOutside.Width, DistanceFromOutside.Height);
 			// image32.NewGraphics2D().Render(DistanceFromOutside, 0, 0);
 
-			// Agg.Platform.AggContext.ImageIO.SaveImageData("c:\\temp\\DistanceFromOutside.png", image32);
+			// Agg.Platform.ImageIO.SaveImageData("c:\\temp\\DistanceFromOutside.png", image32);
 		}
 
 		private void CalculateDistance(ImageBuffer image)
