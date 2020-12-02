@@ -112,7 +112,11 @@ namespace MatterHackers.MatterSlice
 
 		public long ExtrusionWidth_um => (long)(ExtrusionWidth * 1000);
 
+		[SettingDescription("The min fan speed based on layer time.")]
 		public int FanSpeedMinPercent { get; set; }
+
+		[SettingDescription("The min fan speed allowed regardless of layer time.")]
+		public int FanSpeedMinPercentAbsolute { get; set; } = 0;
 
 		public int MinFanSpeedLayerTime { get; set; }
 
