@@ -303,6 +303,8 @@ namespace MatterHackers.MatterSlice
 				return 0;
 			}
 
+			var speedPercent = 0;
+
 			var minFanSpeedLayerTime = Math.Max(config.MinFanSpeedLayerTime, config.MaxFanSpeedLayerTime);
 			// check if the layer time is slow enough that we need to turn the fan on
 			if (this.LayerTime < minFanSpeedLayerTime)
@@ -310,7 +312,7 @@ namespace MatterHackers.MatterSlice
 				if (config.MaxFanSpeedLayerTime >= minFanSpeedLayerTime)
 				{
 					// the max always comes on first so just return the max speed
-					return config.FanSpeedMaxPercent;
+					speedPercent = config.FanSpeedMaxPercent;
 				}
 
 				// figure out how much to turn it on
@@ -323,12 +325,10 @@ namespace MatterHackers.MatterSlice
 					ratioToMaxSpeed = Math.Min(1, amountSmallerThanMin / timeToMax);
 				}
 
-				return config.FanSpeedMinPercent + (int)(ratioToMaxSpeed * (config.FanSpeedMaxPercent - config.FanSpeedMinPercent));
+				speedPercent = config.FanSpeedMinPercent + (int)(ratioToMaxSpeed * (config.FanSpeedMaxPercent - config.FanSpeedMinPercent));
 			}
-			else // we are going to slow turn the fan off
-			{
-				return 0;
-			}
+
+			return Math.Max(config.FanSpeedMinPercentAbsolute, speedPercent);
 		}
 
 		// We need to keep track of all the fan speeds we have queue so that we can set
