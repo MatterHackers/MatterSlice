@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="KdTree" Version="1.4.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,6 +29,10 @@
     <ProjectReference Include="..\..\agg-sharp\VectorMath\VectorMath.csproj" />
     <ProjectReference Include="..\MSClipperLib\MSClipperLib.csproj" />
     <ProjectReference Include="..\QuadTree\QuadTree.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="StyleCop.Analyzers" Version="1.1.118" />
   </ItemGroup>
 
 </Project>
