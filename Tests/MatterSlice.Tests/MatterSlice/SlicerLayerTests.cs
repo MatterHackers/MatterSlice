@@ -99,7 +99,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				for (int i = 2; i < layerCount - 2; i++)
 				{
-					Assert.LessOrEqual(layerPolygons[i].Count, 4, "We should not have add more than the 4 sides");
+					Assert.LessOrEqual(layerPolygons[i].Count, 4, "We should not have added more than the 4 sides");
 					foreach (var polygon in layerPolygons[i])
 					{
 						Assert.AreEqual(1, polygon.GetWindingDirection());
@@ -173,6 +173,42 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					var movements = loadedGCode.GetGCodeForLayer(i).Movements().ToList();
 					Assert.GreaterOrEqual(movements.Count, 100, $"Layer {i} should have more than 100 extrusions.");
+				}
+			}
+		}
+
+		[Test]
+		public void ThinRingHasNoCrossingSegments()
+		{
+			string infillSTL = TestUtilities.GetStlPath("thin_ring");
+			string infillGCode = TestUtilities.GetTempGCodePath("thin_ring.gcode");
+			{
+				// load a model that is correctly manifold
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "thin_ring_config.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(infillGCode);
+				processor.LoadStlFile(infillSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
+
+				var layers = loadedGCode.GetAllExtrusionPolygons();
+				for (int i = 0; i < 15; i++)
+				{
+					var polys = layers[i];
+					foreach (var poly in polys)
+					{
+						for (int j = 0; j < poly.Count - 1; j++)
+						{
+							var next = j + 1;
+							var length = (poly[j] - poly[next]).Length();
+							Assert.Less(length, 6000, $"Segment length was: {length}, should be smaller.");
+						}
+					}
 				}
 			}
 		}
