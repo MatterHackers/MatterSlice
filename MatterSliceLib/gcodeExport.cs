@@ -376,6 +376,12 @@ namespace MatterHackers.MatterSlice
 
 			double xWritePosition = (double)movePosition_um.X / 1000.0;
 			double yWritePosition = (double)movePosition_um.Y / 1000.0;
+#if DEBUG
+			if (xWritePosition == 0 && yWritePosition == 0)
+			{
+				throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
+			}
+#endif
 			lineToWrite.Append(" X{0:0.###} Y{1:0.###}".FormatWith(xWritePosition, yWritePosition));
 
 			if (movePosition_um.Z != PositionXy_um.Z)

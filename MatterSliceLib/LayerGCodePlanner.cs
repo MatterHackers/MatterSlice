@@ -94,7 +94,16 @@ namespace MatterHackers.MatterSlice
 				return _lastPosition_um;
 			}
 
-			set => _lastPosition_um = value;
+			set
+			{
+#if DEBUG
+				if (value.X == 0 && value.Y == 0)
+				{
+					throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
+				}
+#endif
+				_lastPosition_um = value;
+			}
 		}
 
 		public bool LastPositionSet => _lastPosition_um.X != long.MinValue;
@@ -203,6 +212,12 @@ namespace MatterHackers.MatterSlice
 		private void QueueExtrusionMove(IntPoint destination, GCodePathConfig config)
 		{
 			GetLatestPathWithConfig(config).Polygon.Add(new IntPoint(destination, CurrentZ));
+#if DEBUG
+			if (destination.X == 0 && destination.Y == 0)
+			{
+				throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
+			}
+#endif
 			LastPosition_um = destination;
 
 			// ValidatePaths();
@@ -447,6 +462,17 @@ namespace MatterHackers.MatterSlice
 						forceRetraction = true;
 					}
 				}
+
+				if (!LastPositionSet)
+				{
+					// remove the first point of the polygon as it is going to 0, 0
+					if (pathPolygon.Count > 0
+						&& pathPolygon[0].X == 0
+						&& pathPolygon[0].Y == 0)
+					{
+						pathPolygon.RemoveAt(0);
+					}
+				}
 			}
 
 			if (pathPolygon.Count == 0)
@@ -459,6 +485,15 @@ namespace MatterHackers.MatterSlice
 
 		private void QueueTravel(Polygon pathPolygon, bool forceUniquePath = false)
 		{
+#if DEBUG
+			foreach (var point in pathPolygon)
+			{
+				if (point.X == 0 && point.Y == 0)
+				{
+					throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
+				}
+			}
+#endif
 			GCodePath path = GetLatestPathWithConfig(travelConfig, forceUniquePath || !canAppendTravel);
 			canAppendTravel = !forceUniquePath;
 
