@@ -313,6 +313,12 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
+			if (connectedPolygon.GetWindingDirection() == -1)
+			{
+				// reverse it
+				connectedPolygon.Reverse();
+			}
+
 			return connectedPolygon;
 		}
 	}

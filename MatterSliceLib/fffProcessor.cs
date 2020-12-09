@@ -1354,7 +1354,9 @@ namespace MatterHackers.MatterSlice
 						config.AvoidCrossingPerimeters,
 						$"layer {layerIndex}");
 
+					inset0Config.ClosedLoop = false;
 					QueuePolygonsConsideringSupport(layerIndex, pathFinder, layerGcodePlanner, thinLines, inset0Config, SupportWriteType.UnsupportedAreas);
+					inset0Config.ClosedLoop = true;
 				}
 			}
 		}
