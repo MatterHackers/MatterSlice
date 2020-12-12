@@ -102,6 +102,8 @@ namespace MatterHackers.MatterSlice
 				{
 					throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
 				}
+
+				CheckPosition(value);
 #endif
 				_lastPosition_um = value;
 			}
@@ -217,6 +219,12 @@ namespace MatterHackers.MatterSlice
 			if (destination.X == 0 && destination.Y == 0)
 			{
 				throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
+			}
+
+			if (CheckPosition(destination))
+
+			{
+				int a = 0;
 			}
 #endif
 			LastPosition_um = destination;
@@ -507,6 +515,12 @@ namespace MatterHackers.MatterSlice
 				{
 					throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
 				}
+
+				if (CheckPosition(point))
+
+				{
+					int a = 0;
+				}
 			}
 #endif
 			GCodePath path = GetLatestPathWithConfig(travelConfig, forceUniquePath || !canAppendTravel);
@@ -544,6 +558,33 @@ namespace MatterHackers.MatterSlice
 			LastPosition_um = lastPathPosition;
 
 			// ValidatePaths();
+		}
+
+		private bool CheckPosition(IntPoint point)
+		{
+			var x = 133 * 1000;
+			var y = 150 * 1000;
+			var z = 20 * 1000;
+			var error = 3 * 1000;
+
+			if(point.X < x + error
+				&& point.X > x - error
+				&& point.Y < y + error
+				&& point.Y > y - error
+				&& point.Z < z + error
+				&& point.Z > z - error)
+			{
+				return true;
+			}
+
+			if (point.X < 100000
+				&& point.Y < 100000
+				&& point.Z > 20000)
+			{
+				return true;
+			}
+
+			return false;
 		}
 
 		public bool ToolChangeRequired(int extruder)

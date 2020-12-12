@@ -352,6 +352,42 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void CheckForExcesiveTravels()
+		{
+			string badTravelSTL = TestUtilities.GetStlPath("bad_travel");
+			string badTravelGCode = TestUtilities.GetTempGCodePath("bad_travel.gcode");
+			{
+				// load a model that is (or was) having many erroneous travels
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "bad_travel_settings.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(badTravelGCode);
+				processor.LoadStlFile(badTravelSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(badTravelGCode);
+
+				var layers = loadedGCode.GetAllExtrusionPolygons();
+				for (int i = 0; i < layers.Count; i++)
+				{
+					var polys = layers[i];
+					foreach (var poly in polys)
+					{
+						for (int j = 0; j < poly.Count - 1; j++)
+						{
+							var next = j + 1;
+							var length = (poly[j] - poly[next]).Length();
+							Assert.Less(length, 6000, $"Segment length was: {length}, should be smaller.");
+						}
+					}
+				}
+			}
+		}
+
+		[Test]
 		public void ExpandThinWallsFindsWalls()
 		{
 			string thinWallsSTL = TestUtilities.GetStlPath("ThinWalls");
