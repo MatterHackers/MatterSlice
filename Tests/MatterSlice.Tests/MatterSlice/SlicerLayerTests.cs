@@ -370,18 +370,20 @@ namespace MatterHackers.MatterSlice.Tests
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(badTravelGCode);
 
-				var layers = loadedGCode.GetAllExtrusionPolygons();
+				// the radius of the loop we ore planning around
+				// var stlRadius = 127;
+				var layers = loadedGCode.GetAllTravelPolygons();
 				for (int i = 0; i < layers.Count; i++)
 				{
 					var polys = layers[i];
-					foreach (var poly in polys)
+					// skip the first move (the one getting to the part)
+					for (int j = 1; j < polys.Count; j++)
 					{
-						for (int j = 0; j < poly.Count - 1; j++)
-						{
-							var next = j + 1;
-							var length = (poly[j] - poly[next]).Length();
-							Assert.Less(length, 6000, $"Segment length was: {length}, should be smaller.");
-						}
+						var poly = polys[j];
+						var startToEnd = (poly[poly.Count - 1] - poly[0]).Length();
+						var length = poly.PolygonLength();
+						var ratio = length / (double)startToEnd;
+						Assert.Less(ratio, 3, $"No travel should be more than 2x the direct distance, was: {ratio}");
 					}
 				}
 			}

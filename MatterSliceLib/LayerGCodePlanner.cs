@@ -221,15 +221,9 @@ namespace MatterHackers.MatterSlice
 				throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
 			}
 
-			if (CheckPosition(destination))
-
-			{
-				int a = 0;
-			}
+			CheckPosition(destination);
 #endif
 			LastPosition_um = destination;
-
-			// ValidatePaths();
 		}
 
 		private void QueuePolygon(Polygon polygon, PathFinder pathFinder, int startIndex, GCodePathConfig config)
@@ -516,8 +510,10 @@ namespace MatterHackers.MatterSlice
 					throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
 				}
 
-				if (CheckPosition(point))
-
+				var startToEnd = (pathPolygon[pathPolygon.Count - 1] - pathPolygon[0]).Length();
+				var length = pathPolygon.PolygonLength();
+				var ratio = length / (double)startToEnd;
+				if (ratio > 3)
 				{
 					int a = 0;
 				}
@@ -556,30 +552,21 @@ namespace MatterHackers.MatterSlice
 			}
 
 			LastPosition_um = lastPathPosition;
-
-			// ValidatePaths();
 		}
 
 		private bool CheckPosition(IntPoint point)
 		{
-			var x = 133 * 1000;
-			var y = 150 * 1000;
-			var z = 20 * 1000;
-			var error = 3 * 1000;
+			var x = 32.594 * 1000;
+			var y = 54.439 * 1000;
+			var z = .85 * 1000;
+			var error = .1 * 1000;
 
 			if(point.X < x + error
-				&& point.X > x - error
+				&& point.X > x - error /*
 				&& point.Y < y + error
 				&& point.Y > y - error
 				&& point.Z < z + error
-				&& point.Z > z - error)
-			{
-				return true;
-			}
-
-			if (point.X < 100000
-				&& point.Y < 100000
-				&& point.Z > 20000)
+				&& point.Z > z - error */)
 			{
 				return true;
 			}

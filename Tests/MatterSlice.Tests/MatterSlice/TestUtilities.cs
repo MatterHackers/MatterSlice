@@ -136,6 +136,12 @@ namespace MatterHackers.MatterSlice.Tests
 			return GetExtrusionPolygonsForLayer(layerGCode, ref movementInfo, movementToIgnore);
 		}
 
+		public static Polygons GetTravelPolygonsForLayer(this string[] layerGCode)
+		{
+			var movementInfo = default(MovementInfo);
+			return GetTravelPolygonsForLayer(layerGCode, ref movementInfo);
+		}
+
 		public static Polygons GetExtrusionPolygonsForLayer(this string[] layerGCode, ref MovementInfo movementInfo, long movementToIgnore = 0)
 		{
 			var foundPolygons = new Polygons();
@@ -151,22 +157,15 @@ namespace MatterHackers.MatterSlice.Tests
 
 				if (extruding)
 				{
-					if (isExtrude)
-					{
-						// add to the extrusion
-						foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
-							(long)(currentMovement.position.x * 1000),
-							(long)(currentMovement.position.y * 1000),
-							(long)(currentMovement.position.z * 1000)));
-					}
-					else
+					// add to the extrusion
+					foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
+						(long)(currentMovement.position.x * 1000),
+						(long)(currentMovement.position.y * 1000),
+						(long)(currentMovement.position.z * 1000)));
+
+					if (!isExtrude)
 					{
 						// we are switching so add in the point to the last extrude
-						foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
-							(long)(currentMovement.position.x * 1000),
-							(long)(currentMovement.position.y * 1000),
-							(long)(currentMovement.position.z * 1000)));
-
 						extruding = false;
 						movementAmount = 0;
 					}
@@ -200,6 +199,61 @@ namespace MatterHackers.MatterSlice.Tests
 			for (int i = foundPolygons.Count - 1; i >= 0; i--)
 			{
 				if (foundPolygons[i].Count == 1)
+				{
+					foundPolygons.RemoveAt(i);
+				}
+			}
+
+			movementInfo = lastMovement;
+			return foundPolygons;
+		}
+
+		public static Polygons GetTravelPolygonsForLayer(this string[] layerGCode, ref MovementInfo movementInfo)
+		{
+			var foundPolygons = new Polygons();
+
+			bool traveling = false;
+			MovementInfo lastMovement = movementInfo;
+			foreach (MovementInfo currentMovement in TestUtilities.Movements(layerGCode, lastMovement))
+			{
+				bool isTravel = currentMovement.extrusion == lastMovement.extrusion;
+
+				if (traveling)
+				{
+					if (isTravel)
+					{
+						// add to the travel
+						foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
+							(long)(currentMovement.position.x * 1000),
+							(long)(currentMovement.position.y * 1000),
+							(long)(currentMovement.position.z * 1000)));
+					}
+					else
+					{
+						traveling = false;
+					}
+				}
+				else // not traveling
+				{
+					if (isTravel)
+					{
+						// starting a new travel
+						foundPolygons.Add(new Polygon());
+
+						foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
+							(long)(currentMovement.position.x * 1000),
+							(long)(currentMovement.position.y * 1000),
+							(long)(currentMovement.position.z * 1000)));
+						traveling = true;
+					}
+				}
+
+				lastMovement = currentMovement;
+			}
+
+			for (int i = foundPolygons.Count - 1; i >= 0; i--)
+			{
+				if (foundPolygons[i].PolygonLength() == 0)
 				{
 					foundPolygons.RemoveAt(i);
 				}
@@ -411,6 +465,24 @@ namespace MatterHackers.MatterSlice.Tests
 			for (int i = 0; i < layerCount; i++)
 			{
 				layerPolygons.Add(TestUtilities.GetExtrusionPolygonsForLayer(loadedGCode.GetGCodeForLayer(i)));
+			}
+
+			return layerPolygons;
+		}
+
+		/// <summary>
+		/// Get the travel polygons for every layer
+		/// </summary>
+		/// <param name="loadedGCode">The source gcode separated by line</param>
+		/// <returns>A list of all the polygons by layer</returns>
+		public static List<Polygons> GetAllTravelPolygons(this string[] loadedGCode)
+		{
+			var layerCount = TestUtilities.LayerCount(loadedGCode);
+
+			var layerPolygons = new List<Polygons>(layerCount);
+			for (int i = 0; i < layerCount; i++)
+			{
+				layerPolygons.Add(TestUtilities.GetTravelPolygonsForLayer(loadedGCode.GetGCodeForLayer(i)));
 			}
 
 			return layerPolygons;
