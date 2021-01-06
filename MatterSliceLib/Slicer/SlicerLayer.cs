@@ -27,25 +27,6 @@ using Polygons = System.Collections.Generic.List<System.Collections.Generic.List
 
 namespace MatterHackers.MatterSlice
 {
-	public class ClosePolygonResult
-	{
-		// The result of trying to find a point on a closed polygon line. This gives back the point index, the polygon index, and the point of the connection.
-		// The line on which the point lays is between pointIdx-1 and pointIdx
-		public IntPoint intersectionPoint;
-
-		public int pointIdx;
-		public int polygonIdx;
-	}
-
-	public class GapCloserResult
-	{
-		public bool AtoB;
-		public long len;
-		public int pointIndexA;
-		public int pointIndexB;
-		public int polygonIndex;
-	}
-
 	public class MeshProcessingLayer
 	{
 		public Polygons PolygonList = new Polygons();
@@ -54,7 +35,7 @@ namespace MatterHackers.MatterSlice
 		private static readonly bool runLookupTest = false;
 		private Polygons openPolygonList = new Polygons();
 		private Dictionary<long, List<int>> startIndexes = new Dictionary<long, List<int>>();
-		private long z;
+		private readonly long z;
 
 		public MeshProcessingLayer(long z)
 		{
@@ -71,13 +52,13 @@ namespace MatterHackers.MatterSlice
 
 		public static List<SlicePerimeterSegment> CreateSegmentListFromString(string segmentListData)
 		{
-			List<SlicePerimeterSegment> output = new List<SlicePerimeterSegment>();
+			var output = new List<SlicePerimeterSegment>();
 			string[] segmentData = segmentListData.Split('|');
 			foreach (string segment in segmentData)
 			{
 				if (segment != "")
 				{
-					List<IntPoint> outPoints = new Polygon();
+					var outPoints = new Polygon();
 					string[] points = segment.Split('&');
 					foreach (string point in points)
 					{
@@ -151,7 +132,7 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				Polygon poly = new Polygon();
+				var poly = new Polygon();
 				// We start by adding the start, as we will add ends from now on.
 				IntPoint polygonStartPosition = SegmentList[startingSegmentIndex].start;
 				poly.Add(polygonStartPosition);
@@ -229,7 +210,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			SortedIntPoint startSorter = new SortedIntPoint();
+			var startSorter = new SortedIntPoint();
 			for (int i = 0; i < openPolygonList.Count; i++)
 			{
 				startSorter.Add(i, openPolygonList[i][0]);
@@ -237,7 +218,7 @@ namespace MatterHackers.MatterSlice
 
 			startSorter.Sort();
 
-			SortedIntPoint endSorter = new SortedIntPoint();
+			var endSorter = new SortedIntPoint();
 			for (int i = 0; i < openPolygonList.Count; i++)
 			{
 				endSorter.Add(i, openPolygonList[i][openPolygonList[i].Count - 1]);
@@ -261,8 +242,7 @@ namespace MatterHackers.MatterSlice
 
 					var aEndPosition = openPolygonList[polygonAIndex][openPolygonList[polygonAIndex].Count - 1];
 					// find the closestStartFromEnd
-					double distanceToStartSqrd;
-					int bStartIndex = startSorter.FindClosetIndex(aEndPosition, out distanceToStartSqrd);
+					int bStartIndex = startSorter.FindClosetIndex(aEndPosition, out double distanceToStartSqrd);
 					if (distanceToStartSqrd < bestScore)
 					{
 						bestScore = distanceToStartSqrd;
@@ -278,8 +258,7 @@ namespace MatterHackers.MatterSlice
 					}
 
 					// find the closestStartFromStart
-					double distanceToEndSqrd;
-					int bEndIndex = endSorter.FindClosetIndex(aEndPosition, out distanceToEndSqrd, polygonAIndex);
+					int bEndIndex = endSorter.FindClosetIndex(aEndPosition, out double distanceToEndSqrd, polygonAIndex);
 					if (distanceToEndSqrd < bestScore)
 					{
 						bestScore = distanceToEndSqrd;
@@ -398,104 +377,6 @@ namespace MatterHackers.MatterSlice
 
 				startIndexes[positionKey].Add(startingSegmentIndex);
 			}
-		}
-
-		private GapCloserResult FindPolygonGapCloser(IntPoint ip0, IntPoint ip1)
-		{
-			GapCloserResult ret = new GapCloserResult();
-			ClosePolygonResult c1 = FindPolygonPointClosestTo(ip0);
-			ClosePolygonResult c2 = FindPolygonPointClosestTo(ip1);
-			if (c1.polygonIdx < 0 || c1.polygonIdx != c2.polygonIdx)
-			{
-				ret.len = -1;
-				return ret;
-			}
-
-			ret.polygonIndex = c1.polygonIdx;
-			ret.pointIndexA = c1.pointIdx;
-			ret.pointIndexB = c2.pointIdx;
-			ret.AtoB = true;
-
-			if (ret.pointIndexA == ret.pointIndexB)
-			{
-				// Connection points are on the same line segment.
-				ret.len = (ip0 - ip1).Length();
-			}
-			else
-			{
-				// Find out if we have should go from A to B or the other way around.
-				IntPoint p0 = PolygonList[ret.polygonIndex][ret.pointIndexA];
-				long lenA = (p0 - ip0).Length();
-				for (int i = ret.pointIndexA; i != ret.pointIndexB; i = (i + 1) % PolygonList[ret.polygonIndex].Count)
-				{
-					IntPoint p1 = PolygonList[ret.polygonIndex][i];
-					lenA += (p0 - p1).Length();
-					p0 = p1;
-				}
-
-				lenA += (p0 - ip1).Length();
-
-				p0 = PolygonList[ret.polygonIndex][ret.pointIndexB];
-				long lenB = (p0 - ip1).Length();
-				for (int i = ret.pointIndexB; i != ret.pointIndexA; i = (i + 1) % PolygonList[ret.polygonIndex].Count)
-				{
-					IntPoint p1 = PolygonList[ret.polygonIndex][i];
-					lenB += (p0 - p1).Length();
-					p0 = p1;
-				}
-
-				lenB += (p0 - ip0).Length();
-
-				if (lenA < lenB)
-				{
-					ret.AtoB = true;
-					ret.len = lenA;
-				}
-				else
-				{
-					ret.AtoB = false;
-					ret.len = lenB;
-				}
-			}
-
-			return ret;
-		}
-
-		private ClosePolygonResult FindPolygonPointClosestTo(IntPoint input)
-		{
-			ClosePolygonResult ret = new ClosePolygonResult();
-			for (int n = 0; n < PolygonList.Count; n++)
-			{
-				IntPoint p0 = PolygonList[n][PolygonList[n].Count - 1];
-				for (int i = 0; i < PolygonList[n].Count; i++)
-				{
-					IntPoint p1 = PolygonList[n][i];
-
-					// Q = A + Normal( B - A ) * ((( B - A ) dot ( P - A )) / VSize( A - B ));
-					IntPoint pDiff = p1 - p0;
-					long lineLength = pDiff.Length();
-					if (lineLength > 1)
-					{
-						long distOnLine = pDiff.Dot(input - p0) / lineLength;
-						if (distOnLine >= 0 && distOnLine <= lineLength)
-						{
-							IntPoint q = p0 + pDiff * distOnLine / lineLength;
-							if ((q - input).ShorterThen(100))
-							{
-								ret.intersectionPoint = q;
-								ret.polygonIdx = n;
-								ret.pointIdx = i;
-								return ret;
-							}
-						}
-					}
-
-					p0 = p1;
-				}
-			}
-
-			ret.polygonIdx = -1;
-			return ret;
 		}
 
 		private long GetPositionKey(IntPoint intPoint)
