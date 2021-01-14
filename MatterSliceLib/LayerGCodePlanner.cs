@@ -96,6 +96,7 @@ namespace MatterHackers.MatterSlice
 
 			set
 			{
+				value.Z = 0;
 #if DEBUG
 				if (value.X == 0 && value.Y == 0)
 				{

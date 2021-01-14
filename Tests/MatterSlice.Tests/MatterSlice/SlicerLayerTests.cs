@@ -214,6 +214,35 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void NoLayerChangeRetractions()
+		{
+			string infillSTL = TestUtilities.GetStlPath("no_layer_change_retractions");
+			string infillGCode = TestUtilities.GetTempGCodePath("no_layer_change_retractions.gcode");
+			{
+				// load a model that is correctly manifold
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "no_retractions_config.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(infillGCode);
+				processor.LoadStlFile(infillSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] gcodeContents = TestUtilities.LoadGCodeFile(infillGCode);
+
+				int numLayers = TestUtilities.LayerCount(gcodeContents);
+				for (int i = 1; i < numLayers - 2; i++)
+				{
+					string[] layer = TestUtilities.GetGCodeForLayer(gcodeContents, i);
+					int totalRetractions = TestUtilities.CountRetractions(layer);
+					Assert.IsTrue(totalRetractions == 0);
+				}
+			}
+		}
+
+		[Test]
 		public void ExpandThinWallsFindsWalls()
 		{
 			string thinWallsSTL = TestUtilities.GetStlPath("ThinWalls");
@@ -275,7 +304,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				var layerPolygons = loadedGCode.GetAllExtrusionPolygons();
 
-				Assert.AreEqual(10, layerPolygons[10].Count);
+				Assert.AreEqual(9, layerPolygons[10].Count);
 			}
 
 			// with expand thin walls and with merge overlapping lines
@@ -304,7 +333,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				var layerPolygons = loadedGCode.GetAllExtrusionPolygons();
 
-				Assert.AreEqual(10, layerPolygons[10].Count);
+				Assert.AreEqual(9, layerPolygons[10].Count);
 			}
 		}
 

@@ -1076,7 +1076,8 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					if (config.RetractWhenChangingIslands)
+					if (config.RetractWhenChangingIslands
+						&& !InsideIsland(island, layerGcodePlanner))
 					{
 						layerGcodePlanner.ForceRetract();
 					}
@@ -1361,6 +1362,11 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		private bool InsideIsland(LayerIsland island, LayerGCodePlanner layerGcodePlanner)
+		{
+			return island.PathFinder?.OutlineData.Polygons.PointIsInside(layerGcodePlanner.LastPosition_um, island.PathFinder.OutlineData.EdgeQuadTrees, island.PathFinder.OutlineData.NearestNeighboursList) == true;
+		}
+
 		private void MoveToIsland(LayerGCodePlanner layerGcodePlanner, SliceLayer layer, LayerIsland island)
 		{
 			if (config.ContinuousSpiralOuterPerimeter)
@@ -1380,7 +1386,8 @@ namespace MatterHackers.MatterSlice
 				}
 
 				// retract if we need to
-				if (config.RetractWhenChangingIslands)
+				if (config.RetractWhenChangingIslands
+					&& !InsideIsland(island, layerGcodePlanner))
 				{
 					layerGcodePlanner.ForceRetract();
 				}
@@ -1583,7 +1590,8 @@ namespace MatterHackers.MatterSlice
 						ChangeExtruderIfRequired(slicingData, layerPathFinder, layerIndex, layerGcodePlanner, extruderIndex, true);
 
 						if (!config.AvoidCrossingPerimeters
-							&& config.RetractWhenChangingIslands)
+							&& config.RetractWhenChangingIslands
+							&& !InsideIsland(island, layerGcodePlanner))
 						{
 							layerGcodePlanner.ForceRetract();
 						}
