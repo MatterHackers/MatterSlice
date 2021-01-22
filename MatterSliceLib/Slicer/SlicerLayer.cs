@@ -355,6 +355,12 @@ namespace MatterHackers.MatterSlice
 			// Finally optimize all the polygons. Every point removed saves time in the long run.
 			double minimumDistanceToCreateNewPosition = 10;
 			PolygonList = Clipper.CleanPolygons(PolygonList, minimumDistanceToCreateNewPosition);
+
+			if (PolygonList.Count > 1)
+			{
+				// union all the paths together
+				PolygonList = new Polygons() { PolygonList[0] }.CreateUnion(PolygonList.GetRange(1, PolygonList.Count - 1));
+			}
 		}
 
 		public void ReleaseMemory()
