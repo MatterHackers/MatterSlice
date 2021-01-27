@@ -228,7 +228,17 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The number of loops to draw around islands.")]
 		public int NumberOfBrimLoops { get; set; }
 
-		public int NumberOfPerimeters { get; set; }
+		public int NumberOfPerimeters { get; set; } = 2;
+
+		public int GetNumberOfPerimeters()
+		{
+			if (ContinuousSpiralOuterPerimeter)
+			{
+				return 1;
+			}
+
+			return NumberOfPerimeters;
+		}
 
 		[SettingDescription("The number of loops to draw around the convex hull")]
 		public int NumberOfSkirtLoops { get; set; }
