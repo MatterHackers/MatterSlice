@@ -829,7 +829,7 @@ namespace MatterHackers.MatterSlice
 							&& !layer.CreatedInsets)
 						{
 							layer.CreatedInsets = true;
-							int insetCount = config.NumberOfPerimeters;
+							int insetCount = config.GetNumberOfPerimeters();
 							if (config.ContinuousSpiralOuterPerimeter && (int)layerIndex < config.NumberOfBottomLayers && layerIndex % 2 == 1)
 							{
 								// Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
@@ -1107,7 +1107,7 @@ namespace MatterHackers.MatterSlice
 
 				int fanSpeedAtLayerStart = gcodeExport.LastWrittenFanSpeed;
 
-				if (config.NumberOfPerimeters > 0)
+				if (config.GetNumberOfPerimeters() > 0)
 				{
 					if (config.ContinuousSpiralOuterPerimeter
 						&& layerIndex >= config.NumberOfBottomLayers)
@@ -1268,7 +1268,7 @@ namespace MatterHackers.MatterSlice
 					// Find the thin gaps for this layer and add them to the queue
 					if (config.FillThinGaps && !config.ContinuousSpiralOuterPerimeter)
 					{
-						for (int perimeter = 0; perimeter < config.NumberOfPerimeters; perimeter++)
+						for (int perimeter = 0; perimeter < config.GetNumberOfPerimeters(); perimeter++)
 						{
 							if (island.IslandOutline.Offset(-extrusionWidth_um * (1 + perimeter)).FindThinLines(extrusionWidth_um + 2, extrusionWidth_um / 10, out Polygons thinLines, true))
 							{
@@ -1760,7 +1760,7 @@ namespace MatterHackers.MatterSlice
 		{
 			var polygonsWithBridgeSlowdowns = new Polygons();
 			// make an expanded area to constrain our segments to
-			Polygons bridgeAreaIncludingPerimeters = bridgedAreas.Offset((config.NumberOfPerimeters + 1) * config.ExtrusionWidth_um);
+			Polygons bridgeAreaIncludingPerimeters = bridgedAreas.Offset((config.GetNumberOfPerimeters() + 1) * config.ExtrusionWidth_um);
 
 			Polygons polygonsToWriteAsLines = PolygonsHelper.ConvertToLines(polygonsToWrite, closedLoop);
 
@@ -1824,7 +1824,7 @@ namespace MatterHackers.MatterSlice
 						SliceLayer previousLayer = slicingData.Extruders[extruderIndex].Layers[layerIndex - 1];
 
 						if (bridgePolygons != null
-							&& previousLayer.BridgeAngle(bottomFillIsland, config.NumberOfPerimeters * config.ExtrusionWidth_um, out double bridgeAngle, bridgeAreas))
+							&& previousLayer.BridgeAngle(bottomFillIsland, config.GetNumberOfPerimeters() * config.ExtrusionWidth_um, out double bridgeAngle, bridgeAreas))
 						{
 							// TODO: Make this code handle very complex pathing between different sizes or layouts of support under the island to fill.
 							Infill.GenerateLinePaths(bottomFillIsland, bridgePolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, bridgeAngle);

@@ -279,7 +279,7 @@ namespace MatterHackers.MatterSlice
 				{
 					var outlinePolygons = new Polygons();
 
-					for (int i = 0; i < config.NumberOfPerimeters; i++)
+					for (int i = 0; i < config.GetNumberOfPerimeters(); i++)
 					{
 						var insets = this.WipeLayer(layerIndex).Offset(i * -fillConfig.LineWidth_um);
 						foreach (var inset in insets)
@@ -297,7 +297,7 @@ namespace MatterHackers.MatterSlice
 
 					Infill.GenerateTriangleInfill(
 						config,
-						this.WipeLayer(layerIndex).Offset(config.NumberOfPerimeters * -fillConfig.LineWidth_um),
+						this.WipeLayer(layerIndex).Offset(config.GetNumberOfPerimeters() * -fillConfig.LineWidth_um),
 						fillPolygons,
 						config.InfillStartingAngle);
 
