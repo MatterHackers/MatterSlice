@@ -344,7 +344,7 @@ namespace MatterHackers.MatterSlice
 
 			timeKeeper.Restart();
 
-			slicingData.CreateWipeTower(totalLayers, config, wipeTowerOutlines);
+			slicingData.CreateWipeTower(config, wipeTowerOutlines);
 
 			int extrudersUsedInLayer0 = this.ExtrudersUsedInLayer0(config, slicingData).Count();
 
