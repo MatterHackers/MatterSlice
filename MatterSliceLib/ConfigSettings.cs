@@ -391,6 +391,8 @@ namespace MatterHackers.MatterSlice
 
 		public long WipeShieldDistanceFromShapes_um => (long)(WipeShieldDistanceFromObject * 1000);
 
+		public double WipeTowerPerimetersPerExtruder { get; set; } = 6;
+
 		[SettingDescription("Unlike the wipe shield this is a square of size*size in the lower left corner for wiping during extruder changing.")]
 		public double WipeTowerSize { get; set; }
 

@@ -130,7 +130,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public void CreateWipeTower(int totalLayers, ConfigSettings config, ExtruderLayers wipeTowerLayers)
+		public void CreateWipeTower(ConfigSettings config, ExtruderLayers wipeTowerLayers)
 		{
 			if (wipeTowerLayers != null
 				&& wipeTowerLayers.Layers.Count > 0
@@ -238,13 +238,12 @@ namespace MatterHackers.MatterSlice
 				return false;
 			}
 
-			// TODO: if layer index == 0 do all the loops from the outside-in, in order (no lines should be in the wipe tower)
+			// If layer index == 0 do all the loops from the outside-in, in order (no lines should be in the wipe tower)
 			if (layerIndex == 0 && !config.EnableRaft)
 			{
 				CheckNoExtruderPrimed(config);
 
 				long insetPerLoop = fillConfig.LineWidth_um;
-				int maxPrimingLoops = MaxPrimingLoops(config);
 
 				Polygons outlineForExtruder = this.WipeLayer(layerIndex);
 
@@ -272,52 +271,18 @@ namespace MatterHackers.MatterSlice
 			}
 			else
 			{
-				bool allowPartialInfill = false;
-				// check if there was a change, if not partial fill the wipe tower
-				if (primesThisLayer == 0
-					&& allowPartialInfill)
+				// print all of the extruder loops that have not already been printed
+				int maxPrimingLoops = MaxPrimingLoops(config);
+
+				for (int primeLoop = primesThisLayer; primeLoop < maxPrimingLoops; primeLoop++)
 				{
-					var outlinePolygons = new Polygons();
-
-					for (int i = 0; i < config.GetNumberOfPerimeters(); i++)
-					{
-						var insets = this.WipeLayer(layerIndex).Offset(i * -fillConfig.LineWidth_um);
-						foreach (var inset in insets)
-						{
-							outlinePolygons.Add(inset);
-							// Add the first point back onto the polygon
-							outlinePolygons.Last().Add(outlinePolygons.Last()[0]);
-						}
-					}
-
-					layerGcodePlanner.QueuePolygons(outlinePolygons, null, fillConfig);
-
-					// print sparse infill on the wipe tower
-					var fillPolygons = new Polygons();
-
-					Infill.GenerateTriangleInfill(
-						config,
-						this.WipeLayer(layerIndex).Offset(config.GetNumberOfPerimeters() * -fillConfig.LineWidth_um),
-						fillPolygons,
-						config.InfillStartingAngle);
-
-					layerGcodePlanner.QueuePolygonsByOptimizer(fillPolygons, null, fillConfig, layerIndex);
+					// write the loops for this extruder, but don't change to it. We are just filling the prime tower.
+					PrimeOnWipeTower(layerIndex, layerGcodePlanner, pathFinder, fillConfig, config, false);
 				}
-				else
-				{
-					// print all of the extruder loops that have not already been printed
-					int maxPrimingLoops = MaxPrimingLoops(config);
-
-					for (int primeLoop = primesThisLayer; primeLoop < maxPrimingLoops; primeLoop++)
-					{
-						// write the loops for this extruder, but don't change to it. We are just filling the prime tower.
-						PrimeOnWipeTower(layerIndex, layerGcodePlanner, pathFinder, fillConfig, config, false);
-					}
-				}
-
-				// clear the history of printer extruders for the next layer
-				primesThisLayer = 0;
 			}
+
+			// clear the history of printer extruders for the next layer
+			primesThisLayer = 0;
 
 			return true;
 		}
@@ -412,8 +377,10 @@ namespace MatterHackers.MatterSlice
 
 			Polygons outlineForExtruder = partOutline.Offset(-extrusionWidth_um * extruderIndex);
 
+			var loopsPrinted = 0;
 			long insetPerLoop = extrusionWidth_um * maxPrimingLoops;
-			while (outlineForExtruder.Count > 0)
+			while (outlineForExtruder.Count > 0
+				&& loopsPrinted < config.WipeTowerPerimetersPerExtruder)
 			{
 				for (int polygonIndex = 0; polygonIndex < outlineForExtruder.Count; polygonIndex++)
 				{
@@ -423,6 +390,7 @@ namespace MatterHackers.MatterSlice
 				}
 
 				outlineForExtruder = outlineForExtruder.Offset(-insetPerLoop);
+				loopsPrinted++;
 			}
 
 			outputfillPolygons.Reverse();
