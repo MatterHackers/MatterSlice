@@ -214,6 +214,45 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void SupportTowerHasCorrectRetractions()
+		{
+			string infillSTLA = TestUtilities.GetStlPath("dice_body");
+			string infillSTLB = TestUtilities.GetStlPath("dice_numbers");
+			string infillGCode = TestUtilities.GetTempGCodePath("dice_dual.gcode");
+			{
+				// load a model that is correctly manifold
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "thin_ring_config.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(infillGCode);
+				processor.LoadStlFile(infillSTLA);
+				processor.LoadStlFile(infillSTLB);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
+
+				Assert.IsTrue(loadedGCode.Contains("T1; switch extruder"));
+				Assert.IsTrue(loadedGCode.Contains("T0; switch extruder"));
+
+				var layers = loadedGCode.GetAllExtrusionPolygons();
+				for (int i = 0; i < layers.Count; i++)
+				{
+					var polys = layers[i];
+					foreach (var poly in polys)
+					{
+						for (int j = 0; j < poly.Count - 1; j++)
+						{
+							int a = 0;
+						}
+					}
+				}
+			}
+		}
+
+		[Test]
 		public void NoLayerChangeRetractions()
 		{
 			string infillSTL = TestUtilities.GetStlPath("no_layer_change_retractions");
