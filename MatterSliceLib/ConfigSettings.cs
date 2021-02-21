@@ -277,6 +277,8 @@ namespace MatterHackers.MatterSlice
 		public long RaftExtraDistanceAroundPart_um => (long)(RaftExtraDistanceAroundPart * 1000);
 
 		public int RaftExtruder { get; set; }
+	
+		public int BrimExtruder { get; set; }
 
 		public long RaftInterfaceExtrusionWidth_um => ExtrusionWidth_um * 350 / 400;
 
@@ -701,6 +703,7 @@ namespace MatterHackers.MatterSlice
 			SupportType = ConfigConstants.SUPPORT_TYPE.GRID;
 			GenerateSupportPerimeter = true;
 			RaftExtruder = -1;
+			BrimExtruder = -1;
 			SupportLineSpacing = ExtrusionWidth * 5;
 			SupportExtruder = -1;
 			SupportXYDistanceFromObject = .7;
