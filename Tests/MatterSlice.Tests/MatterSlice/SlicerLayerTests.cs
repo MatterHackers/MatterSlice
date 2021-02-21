@@ -197,7 +197,7 @@ namespace MatterHackers.MatterSlice.Tests
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
 
 				var layers = loadedGCode.GetAllExtrusionPolygons();
-				for (int i = 0; i < 15; i++)
+				for (int i = 1; i < 15; i++)
 				{
 					var polys = layers[i];
 					foreach (var poly in polys)
@@ -206,7 +206,7 @@ namespace MatterHackers.MatterSlice.Tests
 						{
 							var next = j + 1;
 							var length = (poly[j] - poly[next]).Length();
-							Assert.Less(length, 6000, $"Segment length was: {length}, should be smaller.");
+							Assert.Less(length, 3000, $"Segment length was: {length}, should be smaller.");
 						}
 					}
 				}
@@ -234,8 +234,8 @@ namespace MatterHackers.MatterSlice.Tests
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
 
-				Assert.IsTrue(loadedGCode.Contains("T1; switch extruder"));
-				Assert.IsTrue(loadedGCode.Contains("T0; switch extruder"));
+				Assert.IsTrue(loadedGCode.Contains("T1 ; switch extruder"));
+				Assert.IsTrue(loadedGCode.Contains("T0 ; switch extruder"));
 
 				var layers = loadedGCode.GetAllExtrusionPolygons();
 				for (int i = 0; i < layers.Count; i++)
