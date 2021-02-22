@@ -267,7 +267,7 @@ namespace MatterHackers.MatterSlice
 				}
 
 				// turn off the planner for the wipe tower
-				layerGcodePlanner.QueuePolygons(fillPolygons, null, fillConfig);
+				layerGcodePlanner.QueueWipeTowerPolygons(fillPolygons, fillConfig);
 			}
 			else
 			{
@@ -433,7 +433,7 @@ namespace MatterHackers.MatterSlice
 				layerGcodePlanner.QueueTravel(WipeCenter_um, pathFinder);
 
 				// print the wipe tower with no planning
-				layerGcodePlanner.QueuePolygons(fillPolygons, null, fillConfig);
+				layerGcodePlanner.QueueWipeTowerPolygons(fillPolygons, fillConfig);
 
 				if (airGapped)
 				{

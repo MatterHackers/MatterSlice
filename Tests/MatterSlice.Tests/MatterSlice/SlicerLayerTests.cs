@@ -27,6 +27,7 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -187,6 +188,7 @@ namespace MatterHackers.MatterSlice.Tests
 				var config = new ConfigSettings();
 				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "thin_ring_config.ini");
 				config.ReadSettings(settingsPath);
+				config.SkirtDistanceFromObject = 7.5;
 				var processor = new FffProcessor(config);
 				processor.SetTargetFile(infillGCode);
 				processor.LoadStlFile(infillSTL);
@@ -196,18 +198,35 @@ namespace MatterHackers.MatterSlice.Tests
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
 
-				var layers = loadedGCode.GetAllExtrusionPolygons();
-				for (int i = 1; i < 15; i++)
+				double LongestMove(Polygons polys)
 				{
-					var polys = layers[i];
+					double longest = 0;
 					foreach (var poly in polys)
 					{
 						for (int j = 0; j < poly.Count - 1; j++)
 						{
 							var next = j + 1;
 							var length = (poly[j] - poly[next]).Length();
-							Assert.Less(length, 3000, $"Segment length was: {length}, should be smaller.");
+							longest = Math.Max(longest, length);
 						}
+					}
+
+					return longest;
+				}
+
+				var layers = loadedGCode.GetAllExtrusionPolygons();
+				for (int i = 0; i < 15; i++)
+				{
+					if (i == 0)
+					{
+						// on the first layer we are looking for a single move that is the right length from the skirt to the part
+						var longest = LongestMove(layers[i]);
+						Assert.AreEqual(config.SkirtDistance_um + config.ExtrusionWidth_um, longest, 50, "The skirt must be the correct distance from the outside of the part");
+					}
+					else // check that there are no 
+					{
+						var longest = LongestMove(layers[i]);
+						Assert.Less(longest, 3000, $"Segment length was: {longest}, should be smaller.");
 					}
 				}
 			}
