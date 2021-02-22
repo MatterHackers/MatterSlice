@@ -438,6 +438,8 @@ namespace MatterHackers.MatterSlice
 				// print the wipe tower with no planning
 				layerGcodePlanner.QueueWipeTowerPolygons(fillPolygons, fillConfig);
 
+				layerGcodePlanner.ForceRetract();
+
 				if (airGapped)
 				{
 					// don't print the wipe tower with air gap height
