@@ -963,6 +963,12 @@ namespace MatterHackers.MatterSlice
 				usedExtruders.Add(config.RaftExtruder);
 			}
 
+			if (slicingData.Brims.Any()
+				&& slicingData.Brims[0].Any())
+			{
+				usedExtruders.Add(config.BrimExtruder);
+			}
+
 			return usedExtruders;
 		}
 
@@ -996,6 +1002,13 @@ namespace MatterHackers.MatterSlice
 					gcodeLayer.QueueTravel(maxPoint, null);
 				}
 			}
+
+			if (config.BrimExtruder >= 0)
+			{
+				// if we have a specified brim extruder use it
+				gcodeLayer.SetExtruder(config.BrimExtruder);
+			}
+
 
 			gcodeLayer.QueuePolygonsByOptimizer(slicingData.Brims, null, skirtConfig, layerIndex);
 		}

@@ -197,7 +197,7 @@ namespace MatterHackers.MatterSlice.Tests
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
 
 				var layers = loadedGCode.GetAllExtrusionPolygons();
-				for (int i = 0; i < 15; i++)
+				for (int i = 1; i < 15; i++)
 				{
 					var polys = layers[i];
 					foreach (var poly in polys)
@@ -206,7 +206,46 @@ namespace MatterHackers.MatterSlice.Tests
 						{
 							var next = j + 1;
 							var length = (poly[j] - poly[next]).Length();
-							Assert.Less(length, 6000, $"Segment length was: {length}, should be smaller.");
+							Assert.Less(length, 3000, $"Segment length was: {length}, should be smaller.");
+						}
+					}
+				}
+			}
+		}
+
+		[Test]
+		public void SupportTowerHasCorrectRetractions()
+		{
+			string infillSTLA = TestUtilities.GetStlPath("dice_body");
+			string infillSTLB = TestUtilities.GetStlPath("dice_numbers");
+			string infillGCode = TestUtilities.GetTempGCodePath("dice_dual.gcode");
+			{
+				// load a model that is correctly manifold
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "thin_ring_config.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(infillGCode);
+				processor.LoadStlFile(infillSTLA);
+				processor.LoadStlFile(infillSTLB);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
+
+				Assert.IsTrue(loadedGCode.Contains("T1 ; switch extruder"));
+				Assert.IsTrue(loadedGCode.Contains("T0 ; switch extruder"));
+
+				var layers = loadedGCode.GetAllExtrusionPolygons();
+				for (int i = 0; i < layers.Count; i++)
+				{
+					var polys = layers[i];
+					foreach (var poly in polys)
+					{
+						for (int j = 0; j < poly.Count - 1; j++)
+						{
+							int a = 0;
 						}
 					}
 				}

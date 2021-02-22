@@ -352,7 +352,7 @@ namespace MatterHackers.MatterSlice
 				// Create skirt loops from the ConvexHull
 				for (int skirtLoop = 0; skirtLoop < numberOfLoops; skirtLoop++)
 				{
-					long offsetDistance = distance_um + extrusionWidth_um * (skirtLoop - 1) - extrusionWidth_um / 2;
+					long offsetDistance = distance_um + extrusionWidth_um * (skirtLoop + 1) - extrusionWidth_um / 2;
 
 					this.Skirt.AddAll(convexHull.Offset(offsetDistance));
 
