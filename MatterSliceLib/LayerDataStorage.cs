@@ -432,6 +432,9 @@ namespace MatterHackers.MatterSlice
 				// move over to the wipe tower with the layer planner in place
 				layerGcodePlanner.QueueTravel(WipeCenter_um, pathFinder);
 
+				// extrude a tiny amount of material so as to trigger the un-retract while in the center of the tower
+				layerGcodePlanner.QueueWipeTowerPolygons(new Polygons() { new Polygon() { WipeCenter_um, WipeCenter_um+new IntPoint(1000,0) } }, fillConfig);
+
 				// print the wipe tower with no planning
 				layerGcodePlanner.QueueWipeTowerPolygons(fillPolygons, fillConfig);
 
