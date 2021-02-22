@@ -361,11 +361,16 @@ namespace MatterHackers.MatterSlice
 			queuedFanSpeeds.Add(path);
 		}
 
-		public void QueuePolygons(Polygons polygons, PathFinder pathFinder, GCodePathConfig config)
+		Random wipeTowerRandom = new Random();
+		public void QueueWipeTowerPolygons(Polygons polygons, GCodePathConfig config)
 		{
+			// find a random point in the start polygon
+			int randIndex = wipeTowerRandom.Next(polygons[0].Count);
+
 			foreach (var polygon in polygons)
 			{
-				QueuePolygon(polygon, pathFinder, 0, config);
+				int startIndex = polygon.FindClosestPositionIndex(polygons[0][randIndex]);
+				QueuePolygon(polygon, null, startIndex, config);
 			}
 		}
 
