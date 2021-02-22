@@ -364,8 +364,12 @@ namespace MatterHackers.MatterSlice
 		Random wipeTowerRandom = new Random();
 		public void QueueWipeTowerPolygons(Polygons polygons, GCodePathConfig config)
 		{
-			// find a random point in the start polygon
-			int randIndex = wipeTowerRandom.Next(polygons[0].Count);
+			var randIndex = 0;
+			if (polygons.Count > 0 && polygons[0].Count > 0)
+			{
+				// find a random point in the start polygon
+				randIndex = wipeTowerRandom.Next(polygons[0].Count);
+			}
 
 			foreach (var polygon in polygons)
 			{
