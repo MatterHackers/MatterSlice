@@ -371,11 +371,16 @@ namespace MatterHackers.MatterSlice
 				randIndex = wipeTowerRandom.Next(polygons[0].Count);
 			}
 
+			var oldValue = config.ClosedLoop;
+			config.ClosedLoop = true;
+
 			foreach (var polygon in polygons)
 			{
 				int startIndex = polygon.FindClosestPositionIndex(polygons[0][randIndex]);
 				QueuePolygon(polygon, null, startIndex, config);
 			}
+
+			config.ClosedLoop = oldValue;
 		}
 
 		public bool QueuePolygonByOptimizer(Polygon polygon, PathFinder pathFinder, GCodePathConfig pathConfig, int layerIndex)

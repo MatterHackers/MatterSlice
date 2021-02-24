@@ -720,8 +720,6 @@ namespace MatterHackers.MatterSlice
 				// make sure that any moves we make while doing wiping are planned around the parts on the bed
 				if (config.AvoidCrossingPerimeters)
 				{
-					// we can alway use extruder 0 as all layer PathFinders are the same object
-					SliceLayer layer = slicingData.Extruders[0].Layers[layerIndex];
 					// and forget that we are in any island
 					islandCurrentlyInside = null;
 				}
