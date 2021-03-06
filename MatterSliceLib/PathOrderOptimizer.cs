@@ -212,8 +212,6 @@ namespace MatterHackers.MatterSlice
 					continue;
 				}
 
-				var list = completedPolygons.ToArray();
-
 				int pointIndex = FindClosestPoint(Polygons[index],
 					Accelerator[index],
 					currentPosition,
