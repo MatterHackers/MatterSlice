@@ -145,6 +145,20 @@ namespace MatterHackers.MatterSlice
 			return Clipper.OpenPathsFromPolyTree(clippedLines);
 		}
 
+		public static Polygons CreateLineIntersections(this Polygons areaToIntersect, Polygon line)
+		{
+			Clipper clipper = new Clipper();
+
+			clipper.AddPath(line, PolyType.ptSubject, false);
+			clipper.AddPaths(areaToIntersect, PolyType.ptClip, true);
+
+			PolyTree clippedLines = new PolyTree();
+
+			clipper.Execute(ClipType.ctIntersection, clippedLines);
+
+			return Clipper.OpenPathsFromPolyTree(clippedLines);
+		}
+
 		public static Polygons CreateUnion(this Polygons polygons, Polygons other)
 		{
 			Clipper clipper = new Clipper();

@@ -10,9 +10,14 @@ namespace MatterHackers.MatterSlice
 {
 	public static class GyroidPolygonsExtensions
 	{
-		public static void AddLine(this Polygons polygons, IntPoint start, IntPoint end)
+		public static void AddLine(this Polygons polygons, Polygons clipOutline, IntPoint start, IntPoint end)
 		{
-			polygons.Add(new Polygon() { start, end });
+			var poly = new Polygon() { start, end };
+			var clippedPoly = clipOutline.CreateLineIntersections(poly);
+			if (clippedPoly.Count > 0)
+			{
+				polygons.AddRange(clippedPoly);
+			}
 		}
 	}
 
@@ -78,74 +83,17 @@ namespace MatterHackers.MatterSlice
 				{
 					bool is_first_point = true;
 					IntPoint last = default(IntPoint);
-					bool last_inside = false;
-					int chain_end_index = 0;
-					var chain_end = new IntPoint[2];
 					for (long y = (long)((Math.Floor(aabb.minY / (double)pitch) - 1) * pitch); y <= aabb.maxY + pitch; y += pitch)
 					{
 						for (int i = 0; i < num_coords; ++i)
 						{
 							var current = new IntPoint(x + (((num_columns & 1) == 1) ? odd_line_coords[i] : even_line_coords[i]) / 2 + pitch, y + (long)(i * step));
-							bool current_inside = accelerator.PointIsInside(current) == QTPolygonsExtensions.InsideState.Inside;
 							if (!is_first_point)
 							{
-								if (last_inside && current_inside)
-								{
-									// line doesn't hit the boundary, add the whole line
-									result.AddLine(last, current);
-								}
-								else if (last_inside != current_inside)
-								{
-									// line hits the boundary, add the part that's inside the boundary
-									var line = new Polygons();
-									line.AddLine(last, current);
-									line = outline.CreateLineIntersections(line);
-									if (line.Count > 0)
-									{
-										// some of the line is inside the boundary
-										result.AddLine(line[0][0], line[0][1]);
-
-										var end = line[0][(line[0][0] != last && line[0][0] != current) ? 0 : 1];
-										var lineNumber = num_columns;
-										if (zigZag)
-										{
-											chain_end[chain_end_index] = end;
-											if (++chain_end_index == 2)
-											{
-												chains[0].Add(chain_end[0]);
-												chains[1].Add(chain_end[1]);
-												chain_end_index = 0;
-												connected_to[0].Add(int.MaxValue);
-												connected_to[1].Add(int.MaxValue);
-												line_numbers.Add(lineNumber);
-											}
-										}
-									}
-									else
-									{
-										// none of the line is inside the boundary so the point that's actually on the boundary
-										// is the chain end
-										var end = last_inside ? last : current;
-										var lineNumber = num_columns;
-										if (zigZag)
-										{
-											chain_end[chain_end_index] = end;
-											if (++chain_end_index == 2)
-											{
-												chains[0].Add(chain_end[0]);
-												chains[1].Add(chain_end[1]);
-												chain_end_index = 0;
-												connected_to[0].Add(int.MaxValue);
-												connected_to[1].Add(int.MaxValue);
-												line_numbers.Add(lineNumber);
-											}
-										}
-									}
-								}
+								result.AddLine(clipOutline, last, current);
 							}
 
 							last = current;
-							last_inside = current_inside;
 							is_first_point = false;
 						}
 					}
@@ -177,7 +125,6 @@ namespace MatterHackers.MatterSlice
 				{
 					bool is_first_point = true;
 					IntPoint last = default(IntPoint);
-					bool last_inside = false;
 					int chain_end_index = 0;
 					var chain_end = new IntPoint[2];
 					for (long x = (long)((Math.Floor(aabb.minX / (double)pitch) - 1) * pitch); x <= aabb.maxX + pitch; x += pitch)
@@ -185,65 +132,12 @@ namespace MatterHackers.MatterSlice
 						for (int i = 0; i < num_coords; ++i)
 						{
 							var current = new IntPoint(x + (long)(i * step), y + (((num_rows & 1) == 1) ? odd_line_coords[i] : even_line_coords[i]) / 2);
-							bool current_inside = accelerator.PointIsInside(current) == QTPolygonsExtensions.InsideState.Inside;
 							if (!is_first_point)
 							{
-								if (last_inside && current_inside)
-								{
-									// line doesn't hit the boundary, add the whole line
-									result.AddLine(last, current);
-								}
-								else if (last_inside != current_inside)
-								{
-									// line hits the boundary, add the part that's inside the boundary
-									var line = new Polygons();
-									line.AddLine(last, current);
-									line = outline.CreateLineIntersections(line);
-									if (line.Count > 0)
-									{
-										// some of the line is inside the boundary
-										result.AddLine(line[0][0], line[0][1]);
-										var end = line[0][(line[0][0] != last && line[0][0] != current) ? 0 : 1];
-										var lineNumber = num_rows;
-										if (zigZag)
-										{
-											chain_end[chain_end_index] = end;
-											if (++chain_end_index == 2)
-											{
-												chains[0].Add(chain_end[0]);
-												chains[1].Add(chain_end[1]);
-												chain_end_index = 0;
-												connected_to[0].Add(int.MaxValue);
-												connected_to[1].Add(int.MaxValue);
-												line_numbers.Add(lineNumber);
-											}
-										}
-									}
-									else
-									{
-										// none of the line is inside the boundary so the point that's actually on the boundary
-										// is the chain end
-										var end = (last_inside) ? last : current;
-										var lineNumber = num_rows;
-										if (zigZag)
-										{
-											chain_end[chain_end_index] = end;
-											if (++chain_end_index == 2)
-											{
-												chains[0].Add(chain_end[0]);
-												chains[1].Add(chain_end[1]);
-												chain_end_index = 0;
-												connected_to[0].Add(int.MaxValue);
-												connected_to[1].Add(int.MaxValue);
-												line_numbers.Add(lineNumber);
-											}
-										}
-									}
-								}
+								result.AddLine(clipOutline, last, current);
 							}
 
 							last = current;
-							last_inside = current_inside;
 							is_first_point = false;
 						}
 					}
@@ -371,7 +265,7 @@ namespace MatterHackers.MatterSlice
 								{
 									for (int pi = 1; pi < connector_points.Count; ++pi)
 									{
-										result.AddLine(connector_points[pi - 1], connector_points[pi]);
+										result.AddLine(clipOutline, connector_points[pi - 1], connector_points[pi]);
 									}
 
 									drawing = false;
@@ -433,13 +327,13 @@ namespace MatterHackers.MatterSlice
 						connector_points.Add(outline_poly[0]);
 						for (int pi = 1; pi < connector_points.Count; ++pi)
 						{
-							result.AddLine(connector_points[pi - 1], connector_points[pi]);
+							result.AddLine(clipOutline, connector_points[pi - 1], connector_points[pi]);
 						}
 
 						// output the connector line segments from the first point in the outline to the first chain
 						for (int pi = 1; pi < path_to_first_chain.Count; ++pi)
 						{
-							result.AddLine(path_to_first_chain[pi - 1], path_to_first_chain[pi]);
+							result.AddLine(clipOutline, path_to_first_chain[pi - 1], path_to_first_chain[pi]);
 						}
 					}
 
@@ -450,9 +344,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			var result2 = clipOutline.CreateLineIntersections(result);
-
-			result_lines.AddRange(result2);
+			result_lines.AddRange(result);
 		}
 
 		/*
