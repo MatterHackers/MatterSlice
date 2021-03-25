@@ -1095,7 +1095,6 @@ namespace MatterHackers.MatterSlice
 				}
 
 				var fillPolygons = new Polygons();
-				var thinGapPolygons = new Polygons();
 				var topFillPolygons = new Polygons();
 				var firstTopFillPolygons = new Polygons();
 				var bridgePolygons = new Polygons();
@@ -1279,6 +1278,8 @@ namespace MatterHackers.MatterSlice
 					// Find the thin gaps for this layer and add them to the queue
 					if (config.FillThinGaps && !config.ContinuousSpiralOuterPerimeter)
 					{
+						var thinGapPolygons = new Polygons();
+
 						for (int perimeter = 0; perimeter < config.GetNumberOfPerimeters(); perimeter++)
 						{
 							if (island.IslandOutline.Offset(-extrusionWidth_um * (1 + perimeter)).FindThinLines(extrusionWidth_um + 2, extrusionWidth_um / 10, out Polygons thinLines, true))
@@ -1286,6 +1287,9 @@ namespace MatterHackers.MatterSlice
 								thinGapPolygons.AddRange(thinLines);
 							}
 						}
+						
+						// add all fill polygons together so they can be optimized in one step
+						fillPolygons.AddRange(thinGapPolygons.ConvertToLines(false));
 					}
 				}
 
@@ -1300,7 +1304,6 @@ namespace MatterHackers.MatterSlice
 
 				// Put all of these segments into a list that can be queued together and still preserve their individual config settings.
 				// This makes the total amount of travel while printing infill much less.
-				fillPolygons.AddRange(thinGapPolygons);
 				if (topFillConfig.Speed == fillConfig.Speed)
 				{
 					fillPolygons.AddRange(topFillPolygons);

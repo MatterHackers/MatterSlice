@@ -233,6 +233,57 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void ThinRingHasNoCrossingSegments2()
+		{
+			string infillSTL = TestUtilities.GetStlPath("thin_gap_fill_ring");
+			string infillGCode = TestUtilities.GetTempGCodePath("thin_gap_fill_ring.gcode");
+			{
+				// load a model that is correctly manifold
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "thin_gap_fill.ini");
+				config.ReadSettings(settingsPath);
+				config.SkirtDistanceFromObject = 7.5;
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(infillGCode);
+				processor.LoadStlFile(infillSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
+
+				double LongestMove(Polygons polys)
+				{
+					double longest = 0;
+					var last = polys[0][0];
+					foreach (var poly in polys)
+					{
+						for (int j = 0; j < poly.Count; j++)
+						{
+							var length = (poly[j] - last).Length();
+							if (length > 3000)
+							{
+								int a = 0;
+							}
+							longest = Math.Max(longest, length);
+							last = poly[j];
+						}
+					}
+
+					return longest;
+				}
+
+				var layers = loadedGCode.GetAllExtrusionPolygons();
+				// start at 6 to skip the bottom layers (only care about the ring)
+				for (int i = 6; i < layers.Count - 1; i++)
+				{
+					var longest = LongestMove(layers[i]);
+					Assert.Less(longest, 3000, $"Segment length was: {longest}, should be smaller.");
+				}
+			}
+		}
+
+		[Test]
 		public void SupportTowerHasCorrectRetractions()
 		{
 			string infillSTLA = TestUtilities.GetStlPath("dice_body");
