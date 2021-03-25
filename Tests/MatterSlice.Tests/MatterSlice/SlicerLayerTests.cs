@@ -255,13 +255,18 @@ namespace MatterHackers.MatterSlice.Tests
 				double LongestMove(Polygons polys)
 				{
 					double longest = 0;
+					var last = polys[0][0];
 					foreach (var poly in polys)
 					{
-						for (int j = 0; j < poly.Count - 1; j++)
+						for (int j = 0; j < poly.Count; j++)
 						{
-							var next = j + 1;
-							var length = (poly[j] - poly[next]).Length();
+							var length = (poly[j] - last).Length();
+							if (length > 3000)
+							{
+								int a = 0;
+							}
 							longest = Math.Max(longest, length);
+							last = poly[j];
 						}
 					}
 

@@ -70,7 +70,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static Polygons ConvertToLines(Polygons polygons, bool closedLoop)
+		public static Polygons ConvertToLines(this Polygons polygons, bool closedLoop)
 		{
 			Polygons linePolygons = new Polygons();
 			foreach (Polygon polygon in polygons)
