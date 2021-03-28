@@ -49,6 +49,8 @@ namespace MatterHackers.MatterSlice
 
 		public bool Spiralize { get; set; }
 
+		public bool LiftOnTravel { get; internal set; }
+
 		/// <summary>
 		/// Set the data for a path config. This is used to define how different parts (infill, perimeters) are written to gcode.
 		/// </summary>

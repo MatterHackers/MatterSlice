@@ -262,7 +262,7 @@ namespace MatterHackers.MatterSlice
 				// set the path planner to avoid islands
 				if (this.HaveWipeTower(config, layerIndex))
 				{
-					layerGcodePlanner.QueueTravel(WipeCenter_um, pathFinder);
+					layerGcodePlanner.QueueTravel(WipeCenter_um, pathFinder, fillConfig);
 				}
 
 				// turn off the planner for the wipe tower
@@ -429,7 +429,7 @@ namespace MatterHackers.MatterSlice
 			if (fillPolygons.Count > 0)
 			{
 				// move over to the wipe tower with the layer planner in place
-				layerGcodePlanner.QueueTravel(WipeCenter_um, pathFinder);
+				layerGcodePlanner.QueueTravel(WipeCenter_um, pathFinder, fillConfig);
 
 				// extrude a tiny amount of material so as to trigger the un-retract while in the center of the tower
 				layerGcodePlanner.QueueWipeTowerPolygons(new Polygons() { new Polygon() { WipeCenter_um, WipeCenter_um + new IntPoint(config.ExtrusionWidth_um / 2, 0) } }, fillConfig);

@@ -234,14 +234,14 @@ namespace MatterHackers.MatterSlice
 				&& LastPositionSet
 				&& distance > config.LineWidth_um / 4)
 			{
-				QueueTravel(firstPolygonPosition, pathFinder);
+				QueueTravel(firstPolygonPosition, pathFinder, config);
 			}
 
 			if (!LastPositionSet)
 			{
 				var firstPosition = new Polygon() { firstPolygonPosition };
 
-				QueueTravel(firstPosition, true);
+				QueueTravel(firstPosition, config, true);
 			}
 
 			QueueExtrusionPolygon(polygon, startIndex, config);
@@ -403,7 +403,7 @@ namespace MatterHackers.MatterSlice
 					if (polygon.Count > 0)
 					{
 						// go to the first position of the first polygon
-						QueueTravel(polygon[0], pathFinder);
+						QueueTravel(polygon[0], pathFinder, pathConfig);
 						break;
 					}
 				}
@@ -440,11 +440,11 @@ namespace MatterHackers.MatterSlice
 				{
 					if (polygon.Count == 0)
 					{
-						QueueTravel(polygon[0], pathFinder);
+						QueueTravel(polygon[0], pathFinder, pathConfig);
 					}
 					else
 					{
-						QueueTravel(polygon);
+						QueueTravel(polygon, pathConfig);
 					}
 				}
 			}
@@ -454,7 +454,7 @@ namespace MatterHackers.MatterSlice
 
 		private bool canAppendTravel = true;
 
-		public void QueueTravel(IntPoint positionToMoveTo, PathFinder pathFinder, bool forceUniquePath = false)
+		public void QueueTravel(IntPoint positionToMoveTo, PathFinder pathFinder, GCodePathConfig extrusionConfig, bool forceUniquePath = false)
 		{
 			var pathPolygon = new Polygon();
 			bool foundPath = true;
@@ -495,10 +495,10 @@ namespace MatterHackers.MatterSlice
 				pathPolygon = new Polygon() { positionToMoveTo };
 			}
 
-			QueueTravel(pathPolygon, forceUniquePath);
+			QueueTravel(pathPolygon, extrusionConfig, forceUniquePath);
 		}
 
-		private void QueueTravel(Polygon pathPolygon, bool forceUniquePath = false)
+		private void QueueTravel(Polygon pathPolygon, GCodePathConfig extrusionConfig, bool forceUniquePath = false)
 		{
 #if DEBUG
 			foreach (var point in pathPolygon)
@@ -534,7 +534,9 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// If the internal move is very long (> retractionMinimumDistance_um), do a retraction
-			if (lineLength_um > retractionMinimumDistance_um)
+			if (lineLength_um > retractionMinimumDistance_um
+				|| (extrusionConfig.LiftOnTravel
+					&& lineLength_um > config.ExtrusionWidth_um * 3))
 			{
 				path.Retract = RetractType.Requested;
 			}
