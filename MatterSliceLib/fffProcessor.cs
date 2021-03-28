@@ -871,11 +871,9 @@ namespace MatterHackers.MatterSlice
 			GCodePathConfig config,
 			Polygons bridgeAreas)
 		{
-			Polygons pathsWithOverlapsRemoved = null;
-			bool pathHadOverlaps = false;
 			bool pathIsClosed = true;
 
-			pathHadOverlaps = perimetersToCheckForMerge.MergePerimeterOverlaps(config.LineWidth_um, out pathsWithOverlapsRemoved, pathIsClosed)
+			bool pathHadOverlaps = perimetersToCheckForMerge.MergePerimeterOverlaps(config.LineWidth_um, out Polygons pathsWithOverlapsRemoved, pathIsClosed)
 				&& pathsWithOverlapsRemoved.Count > 0;
 
 			if (pathHadOverlaps)
@@ -1431,7 +1429,6 @@ namespace MatterHackers.MatterSlice
 				if (layer.PathFinder != null && moveDistance > layer.PathFinder.InsetAmount)
 				{
 					// make sure we are not planning moves for the move away from the island
-					pathFinder = null;
 					// move away from our current island as much as the inset amount to avoid planning around where we are
 					var awayFromIslandPosition = layerGcodePlanner.LastPosition_um + delta.Normal(layer.PathFinder.InsetAmount);
 					layerGcodePlanner.QueueTravel(awayFromIslandPosition, null, fillConfig);

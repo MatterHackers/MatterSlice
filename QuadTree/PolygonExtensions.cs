@@ -458,7 +458,7 @@ namespace MatterHackers.QuadTree
 				segmentedPolygon.Add(segment.Start);
 			}
 
-			if (!pathIsClosed)
+			if (!pathIsClosed && segments.Count > 0)
 			{
 				// add the last point
 				segmentedPolygon.Add(segments[segments.Count - 1].End);
@@ -472,14 +472,14 @@ namespace MatterHackers.QuadTree
 			return MergePerimeterOverlaps(new Polygons { perimeter }, overlapMergeAmount_um, out separatedPolygons, pathIsClosed);
 		}
 		
-		public static bool MergePerimeterOverlaps(this Polygons perimeters, long overlapMergeAmount_um, out Polygons separatedPolygons, bool pathIsClosed = true)
+		public static bool MergePerimeterOverlaps(this Polygons perimetersIn, long overlapMergeAmount_um, out Polygons separatedPolygons, bool pathIsClosed = true)
 		{
 			// if the path is wound CW
 			separatedPolygons = new Polygons();
 
 			long cleanDistance_um = overlapMergeAmount_um / 40;
 
-			perimeters = Clipper.CleanPolygons(perimeters, cleanDistance_um);
+			var perimeters = Clipper.CleanPolygons(perimetersIn, cleanDistance_um);
 
 			if (perimeters.Count == 0)
 			{
@@ -488,6 +488,7 @@ namespace MatterHackers.QuadTree
 
 			bool pathWasOptimized = false;
 
+			// Set all the paths to have the width we are starting width (as we will be changing some of them)
 			foreach (var perimeter in perimeters)
 			{
 				for (int i = 0; i < perimeter.Count; i++)
@@ -506,7 +507,7 @@ namespace MatterHackers.QuadTree
 
 			var markedAltered = new Altered[polySegments.Count];
 
-			var minimumLengthToCreateSquared = overlapMergeAmount_um / 10;
+			var minimumLengthToCreateSquared = overlapMergeAmount_um;
 			minimumLengthToCreateSquared *= minimumLengthToCreateSquared;
 
 			var touchingEnumerator = new CloseSegmentsIterator(polySegments, overlapMergeAmount_um);

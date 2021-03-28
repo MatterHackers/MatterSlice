@@ -79,10 +79,10 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void CorrectIslandCount2()
 		{
-			void Test(bool merge, bool walls)
+			void Test(bool mergeOverlaps, bool expandWalls)
 			{
 				string engineStlFile = TestUtilities.GetStlPath("all_layers");
-				string engineGCodeFile = TestUtilities.GetTempGCodePath("all_layers.gcode");
+				string engineGCodeFile = TestUtilities.GetTempGCodePath($"all_layers - merge overlap {mergeOverlaps} - expand walls {expandWalls}.gcode");
 
 				var config = new ConfigSettings();
 				config.FirstLayerThickness = .2;
@@ -92,8 +92,8 @@ namespace MatterHackers.MatterSlice.Tests
 				config.NumberOfTopLayers = 0;
 				config.NumberOfBottomLayers = 0;
 				config.NumberOfPerimeters = 1;
-				config.MergeOverlappingLines = merge;
-				config.ExpandThinWalls = walls;
+				config.MergeOverlappingLines = mergeOverlaps;
+				config.ExpandThinWalls = expandWalls;
 				config.FillThinGaps = false;
 				config.AvoidCrossingPerimeters = false;
 				var processor = new FffProcessor(config);
