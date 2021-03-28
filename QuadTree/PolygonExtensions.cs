@@ -249,7 +249,7 @@ namespace MatterHackers.QuadTree
 		/// <param name="newLength"></param>
 		/// <returns></returns>
 		public static Polygon CutToLength(this Polygon inPolygon, long newLength, bool isClosed = false)
-		{ 
+		{
 			var polygon = new Polygon(inPolygon);
 
 			if (polygon.Count > 1)
@@ -469,33 +469,40 @@ namespace MatterHackers.QuadTree
 
 		public static bool MergePerimeterOverlaps(this Polygon perimeter, long overlapMergeAmount_um, out Polygons separatedPolygons, bool pathIsClosed = true)
 		{
+			return MergePerimeterOverlaps(new Polygons { perimeter }, overlapMergeAmount_um, out separatedPolygons, pathIsClosed);
+		}
+		
+		public static bool MergePerimeterOverlaps(this Polygons perimeters, long overlapMergeAmount_um, out Polygons separatedPolygons, bool pathIsClosed = true)
+		{
 			// if the path is wound CW
 			separatedPolygons = new Polygons();
 
 			long cleanDistance_um = overlapMergeAmount_um / 40;
 
-			Polygons cleanedPolygs = Clipper.CleanPolygons(new Polygons() { perimeter }, cleanDistance_um);
-			perimeter = cleanedPolygs[0];
+			perimeters = Clipper.CleanPolygons(perimeters, cleanDistance_um);
 
-			if (perimeter.Count == 0)
+			if (perimeters.Count == 0)
 			{
 				return false;
 			}
 
 			bool pathWasOptimized = false;
 
-			for (int i = 0; i < perimeter.Count; i++)
+			foreach (var perimeter in perimeters)
 			{
-				perimeter[i] = new IntPoint(perimeter[i])
+				for (int i = 0; i < perimeter.Count; i++)
 				{
-					Width = overlapMergeAmount_um
-				};
+					perimeter[i] = new IntPoint(perimeter[i])
+					{
+						Width = overlapMergeAmount_um
+					};
+				}
 			}
 
-			perimeter = QTPolygonExtensions.MakeCloseSegmentsMergable(perimeter, overlapMergeAmount_um * 3 / 4, pathIsClosed);
+			perimeters = perimeters.MakeCloseSegmentsMergable(overlapMergeAmount_um * 3 / 4, pathIsClosed);
 
 			// make a copy that has every point duplicated (so that we have them as segments).
-			List<Segment> polySegments = Segment.ConvertToSegments(perimeter, pathIsClosed);
+			List<Segment> polySegments = Segment.ConvertToSegments(perimeters, pathIsClosed);
 
 			var markedAltered = new Altered[polySegments.Count];
 
@@ -588,11 +595,14 @@ namespace MatterHackers.QuadTree
 				}
 			}
 
-			// add the end point
-			currentPolygon.Add(polySegments[polySegments.Count - 1].End);
+			if (polySegments.Count > 0)
+			{
+				// add the end point
+				currentPolygon.Add(polySegments[polySegments.Count - 1].End);
+			}
 
 			if (pathWasOptimized
-				&& Math.Abs(perimeter.PolygonLength() - separatedPolygons.PolygonLength(false)) < overlapMergeAmount_um * 2)
+				&& Math.Abs(perimeters.PolygonLength() - separatedPolygons.PolygonLength(false)) < overlapMergeAmount_um * 2)
 			{
 				return false;
 			}
