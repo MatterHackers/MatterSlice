@@ -137,6 +137,8 @@ namespace MatterHackers.MatterSlice
 			}
 
 			ExtruderLayers.InitializeLayerPathing(config, extraPathingConsideration, slicingData.Extruders);
+			LogOutput.Log("Generated Outlines: {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
+			timeKeeper.Reset();
 
 			if (MatterSlice.Canceled)
 			{

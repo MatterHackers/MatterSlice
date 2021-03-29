@@ -299,7 +299,8 @@ namespace MatterHackers.Pathfinding
 
 			// Now lets create an image that we can use to move points inside the outline
 			// First create an image that is fully set on all color values of the original image
-			DistanceFromOutside.DoThreshold(1);
+			// DistanceFromOutside.DoThreshold(1);
+			DoThreshold(DistanceFromOutside);
 
 			CalculateDistance(DistanceFromOutside);
 
@@ -307,6 +308,31 @@ namespace MatterHackers.Pathfinding
 			// image32.NewGraphics2D().Render(DistanceFromOutside, 0, 0);
 
 			// Agg.Platform.ImageIO.SaveImageData("c:\\temp\\DistanceFromOutside.png", image32);
+		}
+
+		private static void DoThreshold(ImageBuffer image)
+		{
+			int height = image.Height;
+			int width = image.Width;
+			byte[] buffer = image.GetBuffer();
+			//for (int y = 0; y < height; y++)
+			System.Threading.Tasks.Parallel.For(0, height, y =>
+			{
+				int offset = image.GetBufferOffsetY(y);
+
+				for (int x = 0; x < width; x++)
+				{
+					if (buffer[offset] > 1)
+					{
+						buffer[offset] = (byte)255;
+					}
+					else
+					{
+						buffer[offset] = (byte)0;
+					}
+					offset += 1;
+				}
+			});
 		}
 
 		private void CalculateDistance(ImageBuffer image)
@@ -321,7 +347,8 @@ namespace MatterHackers.Pathfinding
 				var yOffset = image.GetBufferOffsetY(y);
 				for (int x = 0; x < image.Width; x++)
 				{
-					if (buffer[yOffset + x] == 0)
+					var offset = yOffset + x;
+					if (buffer[offset] == 0)
 					{
 						// first pass and pixel was off, it remains a zero
 					}
@@ -330,19 +357,19 @@ namespace MatterHackers.Pathfinding
 						// pixel was on
 						// It is at most the sum of the lengths of the array
 						// away from a pixel that is off
-						buffer[yOffset + x] = (byte)maxDist;
+						buffer[offset] = (byte)maxDist;
 						// or one more than the pixel to the north
 						if (x > 0)
 						{
-							var value = Math.Min(buffer[yOffset + x], buffer[yOffset + x - 1] + 1);
-							buffer[yOffset + x] = (byte)value;
+							var value = Math.Min(buffer[offset], buffer[offset - 1] + 1);
+							buffer[offset] = (byte)value;
 						}
 
 						// or one more than the pixel to the west
 						if (y > 0)
 						{
-							var value = Math.Min(buffer[yOffset + x], buffer[yOffset - image.Width + x] + 1);
-							buffer[yOffset + x] = (byte)value;
+							var value = Math.Min(buffer[offset], buffer[offset - image.Width] + 1);
+							buffer[offset] = (byte)value;
 						}
 					}
 				}
@@ -355,19 +382,20 @@ namespace MatterHackers.Pathfinding
 				var yOffset = image.GetBufferOffsetY(y);
 				for (int x = image.Width - 1; x >= 0; x--)
 				{
+					var offset = yOffset + x;
 					// either what we had on the first pass
 					// or one more than the pixel to the south
 					if (x + 1 < image.Width)
 					{
-						var value = Math.Min(buffer[yOffset + x], buffer[yOffset + x + 1] + 1);
-						buffer[yOffset + x] = (byte)value;
+						var value = Math.Min(buffer[offset], buffer[offset + 1] + 1);
+						buffer[offset] = (byte)value;
 					}
 
 					// or one more than the pixel to the east
 					if (y + 1 < image.Height)
 					{
-						var value = Math.Min(buffer[yOffset + x], buffer[yOffset + image.Width + x] + 1);
-						buffer[yOffset + x] = (byte)value;
+						var value = Math.Min(buffer[offset], buffer[offset + image.Width] + 1);
+						buffer[offset] = (byte)value;
 					}
 				}
 			}
