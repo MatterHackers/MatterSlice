@@ -322,6 +322,27 @@ namespace MSClipperLib
 			return length;
 		}
 
+		public static double PolygonLengthSquared(this Polygon polygon, bool isClosed = true)
+		{
+			double length = 0;
+			if (polygon.Count > 1)
+			{
+				IntPoint previousPoint = polygon[0];
+				if (isClosed)
+				{
+					previousPoint = polygon[polygon.Count - 1];
+				}
+				for (int i = isClosed ? 0 : 1; i < polygon.Count; i++)
+				{
+					IntPoint currentPoint = polygon[i];
+					length += (previousPoint - currentPoint).LengthSquared();
+					previousPoint = currentPoint;
+				}
+			}
+
+			return length;
+		}
+
 		public static string WriteToString(this Polygon polygon)
 		{
 			string total = "";

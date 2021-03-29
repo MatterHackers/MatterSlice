@@ -19,7 +19,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using MSClipperLib;
@@ -176,6 +175,29 @@ namespace MatterHackers.MatterSlice
 		public static void Reverse(this Polygon polygon)
 		{
 			polygon.Reverse();
+		}
+
+		public static Polygons ConvertToLines(this Polygon polygon, bool closedLoop, long minLengthRequired = 0)
+		{
+			var linePolygons = new Polygons();
+
+			if (minLengthRequired == 0 || polygon.PolygonLengthSquared() > minLengthRequired * minLengthRequired)
+			{
+				if (polygon.Count > 2)
+				{
+					int endIndex = closedLoop ? polygon.Count : polygon.Count - 1;
+					for (int vertexIndex = 0; vertexIndex < endIndex; vertexIndex++)
+					{
+						linePolygons.Add(new Polygon() { polygon[vertexIndex], polygon[(vertexIndex + 1) % polygon.Count] });
+					}
+				}
+				else
+				{
+					linePolygons.Add(polygon);
+				}
+			}
+
+			return linePolygons;
 		}
 
 		public static void SaveToGCode(this Polygon polygon, string filename)
