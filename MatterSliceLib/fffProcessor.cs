@@ -881,7 +881,13 @@ namespace MatterHackers.MatterSlice
 
 			if (pathHadOverlaps)
 			{
-				fillPolygons.AddRange(pathsWithOverlapsRemoved.ConvertToLines(false, config.LineWidth_um));
+				QueuePolygonsConsideringSupport(layerIndex,
+					pathFinder,
+					gcodeLayer,
+					pathsWithOverlapsRemoved.ConvertToLines(false, config.LineWidth_um),
+					config,
+					SupportWriteType.UnsupportedAreas,
+					bridgeAreas);
 			}
 			else
 			{
