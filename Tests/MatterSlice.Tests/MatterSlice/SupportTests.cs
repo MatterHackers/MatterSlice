@@ -90,7 +90,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				var outputs = CreateLayerData(config, partOutlines, supportOutlines);
 				ExtruderLayers layerData = outputs.Item1;
-				NewSupport supportGenerator = outputs.Item2;
+				SupportLayers supportGenerator = outputs.Item2;
 
 				// check the all part outlines
 				{
@@ -163,7 +163,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				var outputs = CreateLayerData(config, partOutlines, supportOutlines);
 				ExtruderLayers layerData = outputs.Item1;
-				NewSupport supportGenerator = outputs.Item2;
+				SupportLayers supportGenerator = outputs.Item2;
 
 				Polygons cubeOutlineResults = CLPolygonsExtensions.CreateFromString("x:200, y:200,x:9800, y:200,x:9800, y:9800,x:200, y:9800,|");
 				Polygons cubeInfillResults = CLPolygonsExtensions.CreateFromString("x:0, y:0,x:10000, y:0,x:10000, y:10000,x:0, y:10000,|");
@@ -242,7 +242,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				var outputs = CreateLayerData(config, partOutlines, supportOutlines);
 				ExtruderLayers layerData = outputs.Item1;
-				NewSupport supportGenerator = outputs.Item2;
+				SupportLayers supportGenerator = outputs.Item2;
 
 				// check the all part outlines
 				{
@@ -281,7 +281,7 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		private static (ExtruderLayers, NewSupport) CreateLayerData(ConfigSettings config,
+		private static (ExtruderLayers, SupportLayers) CreateLayerData(ConfigSettings config,
 			List<Polygons> totalLayerOutlines, 
 			List<Polygons> supportOutlines)
 		{
@@ -303,7 +303,7 @@ namespace MatterHackers.MatterSlice.Tests
 				}
 			}
 
-			var newSupport = new NewSupport(config, new List<ExtruderLayers>() { layerData }, supportData);
+			var newSupport = new SupportLayers(config, new List<ExtruderLayers>() { layerData }, supportData);
 			return (layerData, newSupport);
 		}
 
