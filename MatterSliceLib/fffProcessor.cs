@@ -614,7 +614,7 @@ namespace MatterHackers.MatterSlice
 									ChangeExtruderIfRequired(slicingData, layerPathFinder, layerIndex, layerPlanner, extruderIndex, true);
 								}
 
-								slicingData.Support.QueueAirGappedBottomLayer(config, layerPlanner, layerIndex, airGappedBottomConfig);
+								slicingData.Support.QueueAirGappedBottomLayer(config, layerPlanner, layerIndex, airGappedBottomConfig, layerPathFinder);
 								extrudedAirGappedSupport = true;
 							}
 						}
