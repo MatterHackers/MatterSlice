@@ -27,11 +27,11 @@ using Polygons = System.Collections.Generic.List<System.Collections.Generic.List
 
 namespace MatterHackers.MatterSlice
 {
-	public class NewSupport
+	public class SupportLayers
 	{
 		private static double cleanDistance_um = 10;
 
-		public NewSupport(ConfigSettings config, List<ExtruderLayers> extruders, ExtruderLayers userGeneratedSupport)
+		public SupportLayers(ConfigSettings config, List<ExtruderLayers> extruders, ExtruderLayers userGeneratedSupport)
 		{
 			cleanDistance_um = config.ExtrusionWidth_um / 10;
 			// create starting support outlines
@@ -167,7 +167,7 @@ namespace MatterHackers.MatterSlice
 		{
 			int numLayers = inputPolys.Count;
 
-			Polygons accumulatedLayers = new Polygons();
+			var accumulatedLayers = new Polygons();
 			for (int layerIndex = 0; layerIndex < numLayers; layerIndex++)
 			{
 				accumulatedLayers = accumulatedLayers.CreateUnion(allPartOutlines[layerIndex]);
@@ -274,7 +274,7 @@ namespace MatterHackers.MatterSlice
 				}
 
 				Polygons infillOutline = supportIsland.Offset(infillOffset);
-				Polygons islandInfillLines = new Polygons();
+				var islandInfillLines = new Polygons();
 				switch (config.SupportType)
 				{
 					case ConfigConstants.SUPPORT_TYPE.GRID:
@@ -290,7 +290,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public bool QueueInterfaceSupportLayer(ConfigSettings config, LayerGCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportInterfaceConfig)
+		public bool QueueInterfaceSupportLayer(ConfigSettings config, LayerGCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportInterfaceConfig, PathFinder pathFinder)
 		{
 			// interface
 			bool outputPaths = false;
@@ -301,12 +301,6 @@ namespace MatterHackers.MatterSlice
 
 				foreach (Polygons interfaceIsland in interfaceIslands)
 				{
-					PathFinder pathFinder = null;
-					if (config.AvoidCrossingPerimeters)
-					{
-						pathFinder = new PathFinder(interfaceIsland, -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters, name: "interface");
-					}
-
 					// force a retract if changing islands
 					if (config.RetractWhenChangingIslands)
 					{
@@ -326,7 +320,7 @@ namespace MatterHackers.MatterSlice
 						infillOffset = config.ExtrusionWidth_um * -2 + config.InfillExtendIntoPerimeter_um;
 					}
 
-					Polygons supportLines = new Polygons();
+					var supportLines = new Polygons();
 					Infill.GenerateLineInfill(config, interfaceIsland.Offset(infillOffset), supportLines, config.InfillStartingAngle + 90, config.ExtrusionWidth_um);
 					if (gcodeLayer.QueuePolygonsByOptimizer(supportLines, pathFinder, supportInterfaceConfig, 0))
 					{
@@ -338,17 +332,15 @@ namespace MatterHackers.MatterSlice
 			return outputPaths;
 		}
 
-		public bool QueueNormalSupportLayer(ConfigSettings config, LayerGCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig)
+		public bool QueueNormalSupportLayer(ConfigSettings config, LayerGCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, PathFinder pathFinder)
 		{
 			// normal support
 			Polygons currentSupportOutlines = SparseSupportOutlines[layerIndex];
 			List<Polygons> supportIslands = currentSupportOutlines.ProcessIntoSeparateIslands();
 
-			List<PathFinder> pathFinders = new List<PathFinder>();
-			List<Polygons> infillOutlines = new List<Polygons>();
+			var infillOutlines = new List<Polygons>();
 			for (int i = 0; i < supportIslands.Count; i++)
 			{
-				pathFinders.Add(null);
 				infillOutlines.Add(null);
 			}
 
@@ -357,11 +349,6 @@ namespace MatterHackers.MatterSlice
 				var infillOffset = -config.ExtrusionWidth_um + config.InfillExtendIntoPerimeter_um;
 				var supportIsland = supportIslands[index];
 				infillOutlines[index] = supportIsland.Offset(infillOffset);
-
-				if (config.AvoidCrossingPerimeters)
-				{
-					pathFinders[index] = new PathFinder(infillOutlines[index], -config.ExtrusionWidth_um / 2, useInsideCache: config.AvoidCrossingPerimeters, name: "normal support");
-				}
 			});
 
 			bool outputPaths = false;
@@ -378,13 +365,13 @@ namespace MatterHackers.MatterSlice
 				// make a border if layer 0
 				if (config.GenerateSupportPerimeter || layerIndex == 0)
 				{
-					if (gcodeLayer.QueuePolygonsByOptimizer(supportIsland.Offset(-config.ExtrusionWidth_um / 2), pathFinders[i], supportNormalConfig, 0))
+					if (gcodeLayer.QueuePolygonsByOptimizer(supportIsland.Offset(-config.ExtrusionWidth_um / 2), pathFinder, supportNormalConfig, 0))
 					{
 						outputPaths = true;
 					}
 				}
 
-				Polygons islandInfillLines = new Polygons();
+				var islandInfillLines = new Polygons();
 				if (layerIndex == 0)
 				{
 					// on the first layer print this as solid
@@ -404,7 +391,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				if (gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, pathFinders[i], supportNormalConfig, 0))
+				if (gcodeLayer.QueuePolygonsByOptimizer(islandInfillLines, pathFinder, supportNormalConfig, 0))
 				{
 					outputPaths |= true;
 				}
@@ -484,7 +471,7 @@ namespace MatterHackers.MatterSlice
 
 		private static List<Polygons> CreateEmptyPolygons(int numLayers)
 		{
-			List<Polygons> polygonsList = new List<Polygons>();
+			var polygonsList = new List<Polygons>();
 			for (int i = 0; i < numLayers; i++)
 			{
 				polygonsList.Add(new Polygons());

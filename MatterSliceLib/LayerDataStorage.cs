@@ -44,7 +44,7 @@ namespace MatterHackers.MatterSlice
 
 		public Polygons Brims { get; private set; } = new Polygons();
 
-		public NewSupport Support = null;
+		public SupportLayers Support = null;
 
 		public List<Polygons> WipeShield { get; set; } = new List<Polygons>();
 

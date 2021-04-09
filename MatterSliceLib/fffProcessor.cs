@@ -145,19 +145,6 @@ namespace MatterHackers.MatterSlice
 				return;
 			}
 
-			// Stuff island data in for NewSupport and used by path optimizer in WriteGCode below
-			if (supportOutlines != null)
-			{
-				foreach (var extruder in slicingData.Extruders)
-				{
-					for (var i = 0; i < extruder.Layers.Count; i++)
-					{
-						var layer = extruder.Layers[i];
-						layer.Islands.Add(supportIslands[i]);
-					}
-				}
-			}
-
 			WriteGCode(slicingData);
 			if (MatterSlice.Canceled)
 			{
@@ -256,9 +243,6 @@ namespace MatterHackers.MatterSlice
 			timeKeeper.Restart();
 		}
 
-		private ExtruderLayers supportOutlines = null;
-		private List<LayerIsland> supportIslands = null;
-
 		private void ProcessSliceData(LayerDataStorage slicingData)
 		{
 			if (config.ContinuousSpiralOuterPerimeter)
@@ -305,27 +289,11 @@ namespace MatterHackers.MatterSlice
 			{
 				LogOutput.Log("Generating supports\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 				timeKeeper.Restart();
-				slicingData.Support = new NewSupport(config, slicingData.Extruders, supportOutlines);
+				slicingData.Support = new SupportLayers(config, slicingData.Extruders, supportOutlines);
 				LogOutput.Log("Generated supports: {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			}
 
 			slicingData.CreateIslandData();
-
-			supportIslands = new List<LayerIsland>();
-
-			if (supportOutlines != null)
-			{
-				foreach (var region in supportOutlines.Layers)
-				{
-					foreach (Polygons island in region.AllOutlines.ProcessIntoSeparateIslands())
-					{
-						supportIslands.Add(new LayerIsland(island)
-						{
-							PathFinder = new PathFinder(island, config.ExtrusionWidth_um * 3 / 2, useInsideCache: config.AvoidCrossingPerimeters, name: "support island"),
-						});
-					}
-				}
-			}
 
 			int totalLayers = slicingData.Extruders[0].Layers.Count;
 			if (config.outputOnlyFirstLayer)
@@ -600,17 +568,12 @@ namespace MatterHackers.MatterSlice
 						{
 							bool movedToIsland = false;
 
-							if (layerIndex < supportIslands.Count)
-							{
-								SliceLayer layer = slicingData.Extruders[extruderIndex].Layers[layerIndex];
-								MoveToIsland(layerPlanner, layer, supportIslands[layerIndex]);
-								movedToIsland = true;
-							}
+							layerPathFinder = slicingData.Extruders[extruderIndex].Layers[layerIndex].PathFinder;
 
 							if ((supportExturderIndex2 <= 0 && extruderIndex == 0)
 								|| supportExturderIndex2 == extruderIndex)
 							{
-								if (slicingData.Support.QueueNormalSupportLayer(config, layerPlanner, layerIndex, supportNormalConfig))
+								if (slicingData.Support.QueueNormalSupportLayer(config, layerPlanner, layerIndex, supportNormalConfig, layerPathFinder))
 								{
 									// we move out of the island so we aren't in it.
 									islandCurrentlyInside = null;
@@ -620,7 +583,7 @@ namespace MatterHackers.MatterSlice
 							if ((interfaceExturderIndex <= 0 && extruderIndex == 0)
 								|| interfaceExturderIndex == extruderIndex)
 							{
-								if (slicingData.Support.QueueInterfaceSupportLayer(config, layerPlanner, layerIndex, supportInterfaceConfig))
+								if (slicingData.Support.QueueInterfaceSupportLayer(config, layerPlanner, layerIndex, supportInterfaceConfig, layerPathFinder))
 								{
 									// we move out of the island so we aren't in it.
 									islandCurrentlyInside = null;
