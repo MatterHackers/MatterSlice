@@ -102,6 +102,8 @@ namespace MatterHackers.MatterSlice
 				{
 					throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
 				}
+
+				CheckPosition(value);
 #endif
 				_lastPosition_um = value;
 			}
@@ -218,10 +220,10 @@ namespace MatterHackers.MatterSlice
 			{
 				throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
 			}
+
+			CheckPosition(destination);
 #endif
 			LastPosition_um = destination;
-
-			// ValidatePaths();
 		}
 
 		private void QueuePolygon(Polygon polygon, PathFinder pathFinder, int startIndex, GCodePathConfig config)
@@ -507,6 +509,14 @@ namespace MatterHackers.MatterSlice
 				{
 					throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
 				}
+
+				var startToEnd = (pathPolygon[pathPolygon.Count - 1] - pathPolygon[0]).Length();
+				var length = pathPolygon.PolygonLength();
+				var ratio = length / (double)startToEnd;
+				if (ratio > 3)
+				{
+					int a = 0;
+				}
 			}
 #endif
 			GCodePath path = GetLatestPathWithConfig(travelConfig, forceUniquePath || !canAppendTravel);
@@ -542,8 +552,26 @@ namespace MatterHackers.MatterSlice
 			}
 
 			LastPosition_um = lastPathPosition;
+		}
 
-			// ValidatePaths();
+		private bool CheckPosition(IntPoint point)
+		{
+			var x = 32.594 * 1000;
+			var y = 54.439 * 1000;
+			var z = .85 * 1000;
+			var error = .1 * 1000;
+
+			if(point.X < x + error
+				&& point.X > x - error /*
+				&& point.Y < y + error
+				&& point.Y > y - error
+				&& point.Z < z + error
+				&& point.Z > z - error */)
+			{
+				return true;
+			}
+
+			return false;
 		}
 
 		public bool ToolChangeRequired(int extruder)

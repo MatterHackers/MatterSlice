@@ -376,6 +376,7 @@ namespace MatterHackers.MatterSlice
 
 			double xWritePosition = (double)movePosition_um.X / 1000.0;
 			double yWritePosition = (double)movePosition_um.Y / 1000.0;
+
 #if DEBUG
 			if (xWritePosition == 0 && yWritePosition == 0)
 			{

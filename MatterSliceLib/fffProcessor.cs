@@ -137,6 +137,8 @@ namespace MatterHackers.MatterSlice
 			}
 
 			ExtruderLayers.InitializeLayerPathing(config, extraPathingConsideration, slicingData.Extruders);
+			LogOutput.Log("Generated Outlines: {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
+			timeKeeper.Reset();
 
 			if (MatterSlice.Canceled)
 			{
@@ -879,7 +881,13 @@ namespace MatterHackers.MatterSlice
 
 			if (pathHadOverlaps)
 			{
-				fillPolygons.AddRange(pathsWithOverlapsRemoved.ConvertToLines(false, config.LineWidth_um));
+				QueuePolygonsConsideringSupport(layerIndex,
+					pathFinder,
+					gcodeLayer,
+					pathsWithOverlapsRemoved.ConvertToLines(false, config.LineWidth_um),
+					config,
+					SupportWriteType.UnsupportedAreas,
+					bridgeAreas);
 			}
 			else
 			{
