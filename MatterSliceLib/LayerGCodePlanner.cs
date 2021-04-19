@@ -98,7 +98,7 @@ namespace MatterHackers.MatterSlice
 			{
 				value.Z = 0;
 #if DEBUG
-				if (value.X == 0 && value.Y == 0)
+				if (value.X <= 1000 && value.Y <= 1000)
 				{
 					throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
 				}
@@ -216,7 +216,7 @@ namespace MatterHackers.MatterSlice
 		{
 			GetLatestPathWithConfig(config).Polygon.Add(new IntPoint(destination, CurrentZ));
 #if DEBUG
-			if (destination.X == 0 && destination.Y == 0)
+			if (destination.X <= 1000 && destination.Y <= 1000)
 			{
 				throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
 			}
@@ -505,7 +505,7 @@ namespace MatterHackers.MatterSlice
 #if DEBUG
 			foreach (var point in pathPolygon)
 			{
-				if (point.X == 0 && point.Y == 0)
+				if (point.X <= 1000 && point.Y <= 1000)
 				{
 					throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
 				}

@@ -261,11 +261,8 @@ namespace MatterHackers.MatterSlice
 				// make a border if layer 0
 				if (config.GenerateSupportPerimeter || layerIndex == 0)
 				{
-					var closedLoop = supportNormalConfig.ClosedLoop;
-					supportNormalConfig.ClosedLoop = true;
 					allSupport.AddRange(supportIsland.Offset(config.ExtrusionWidth_um / 2));
 					infillOffset = config.ExtrusionWidth_um * -2 + config.InfillExtendIntoPerimeter_um;
-					supportNormalConfig.ClosedLoop = closedLoop;
 				}
 
 				Polygons infillOutline = supportIsland.Offset(infillOffset);

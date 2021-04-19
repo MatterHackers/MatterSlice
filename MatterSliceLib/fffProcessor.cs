@@ -1398,7 +1398,9 @@ namespace MatterHackers.MatterSlice
 				// how far are we going to move
 				var delta = closestNextIslandPoint - layerGcodePlanner.LastPosition_um;
 				var moveDistance = delta.Length();
-				if (layer.PathFinder != null && moveDistance > layer.PathFinder.InsetAmount)
+				if (layer.PathFinder != null 
+					&& moveDistance > layer.PathFinder.InsetAmount
+					&& layerGcodePlanner.LastPositionSet)
 				{
 					// make sure we are not planning moves for the move away from the island
 					// move away from our current island as much as the inset amount to avoid planning around where we are
