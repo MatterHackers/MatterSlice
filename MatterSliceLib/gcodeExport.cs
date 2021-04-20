@@ -378,7 +378,7 @@ namespace MatterHackers.MatterSlice
 			double yWritePosition = (double)movePosition_um.Y / 1000.0;
 
 #if DEBUG
-			if (xWritePosition == 0 && yWritePosition == 0)
+			if (xWritePosition <= 1000 && yWritePosition <= 1000)
 			{
 				throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
 			}

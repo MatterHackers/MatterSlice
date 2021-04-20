@@ -390,6 +390,44 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void CheckForMoveToOrigin()
+		{
+			string testSTL = TestUtilities.GetStlPath("move_to_origin");
+			string moveToOriginGCode = TestUtilities.GetTempGCodePath("move_to_origin.gcode");
+			{
+				// load a model that is (or was) having many erroneous travels
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "move_to_origin_settings.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(moveToOriginGCode);
+				processor.LoadStlFile(testSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(moveToOriginGCode);
+
+				// the radius of the loop we ore planning around
+				// var stlRadius = 127;
+				var layers = loadedGCode.GetAllTravelPolygons();
+				for (int i = 0; i < layers.Count; i++)
+				{
+					var polys = layers[i];
+					// skip the first move (the one getting to the part)
+					foreach (var poly in polys)
+					{
+						foreach (var point in poly)
+						{
+							Assert.Greater(point.X, 1000, $"No travel should have an X less than 1000 (1 mm), was: {point.X}");
+							Assert.Greater(point.Y, 1000, $"No travel should have an Y less than 1000 (1 mm), was: {point.Y}");
+						}
+					}
+				}
+			}
+		}
+
+		[Test]
 		public void ExpandThinWallsFindsWalls()
 		{
 			string thinWallsSTL = TestUtilities.GetStlPath("ThinWalls");
