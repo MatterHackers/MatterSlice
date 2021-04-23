@@ -392,6 +392,7 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void CheckForMoveToOrigin()
 		{
+			LayerGCodePlanner.TestingDistanceFromOrigin = 1000;
 			string testSTL = TestUtilities.GetStlPath("move_to_origin");
 			string moveToOriginGCode = TestUtilities.GetTempGCodePath("move_to_origin.gcode");
 			{

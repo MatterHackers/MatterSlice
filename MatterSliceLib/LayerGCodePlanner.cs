@@ -98,7 +98,8 @@ namespace MatterHackers.MatterSlice
 			{
 				value.Z = 0;
 #if DEBUG
-				if (value.X <= 1000 && value.Y <= 1000)
+				if (value.X >= -TestingDistanceFromOrigin && value.X <= TestingDistanceFromOrigin
+					&& value.Y >= -TestingDistanceFromOrigin && value.Y <= TestingDistanceFromOrigin)
 				{
 					throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
 				}
@@ -212,11 +213,14 @@ namespace MatterHackers.MatterSlice
 			return CurrentExtruderIndex;
 		}
 
+		public static long TestingDistanceFromOrigin = 1;
+
 		private void QueueExtrusionMove(IntPoint destination, GCodePathConfig config)
 		{
 			GetLatestPathWithConfig(config).Polygon.Add(new IntPoint(destination, CurrentZ));
 #if DEBUG
-			if (destination.X <= 1000 && destination.Y <= 1000)
+			if (destination.X >= -TestingDistanceFromOrigin && destination.X <= TestingDistanceFromOrigin
+				&& destination.Y >= -TestingDistanceFromOrigin && destination.Y <= TestingDistanceFromOrigin)
 			{
 				throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
 			}
@@ -505,7 +509,8 @@ namespace MatterHackers.MatterSlice
 #if DEBUG
 			foreach (var point in pathPolygon)
 			{
-				if (point.X <= 1000 && point.Y <= 1000)
+				if (point.X >= -TestingDistanceFromOrigin && point.X <= TestingDistanceFromOrigin
+					&& point.Y >= -TestingDistanceFromOrigin && point.Y <= TestingDistanceFromOrigin)
 				{
 					throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
 				}
