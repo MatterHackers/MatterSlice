@@ -65,7 +65,7 @@ namespace MatterHackers.MatterSlice.Tests
 			var movement = default(MovementInfo);
 			{
 				// check layer 1
-				string[] layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
+				string[] layer1Info = TestUtilities.GetLayer(gcode, 1);
 				Polygons layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
 				// make sure there are 3
 				Assert.IsTrue(layer1Polygons.Count == 3);
@@ -75,7 +75,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			{
 				// check layer 2
-				string[] layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
+				string[] layer2Info = TestUtilities.GetLayer(gcode, 2);
 				Polygons layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
 
 				// make sure there are 3
@@ -109,12 +109,12 @@ namespace MatterHackers.MatterSlice.Tests
 			var movement = default(MovementInfo);
 
 			// check layer 1
-			var layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
+			var layer1Info = TestUtilities.GetLayer(gcode, 1);
 			var layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
 			Assert.AreEqual(4, layer1Polygons.Where(i => i.Count > 2).Count());
 
 			// check layer 2
-			var layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
+			var layer2Info = TestUtilities.GetLayer(gcode, 2);
 			var layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
 			Assert.AreEqual(4, layer2Polygons.Where(i => i.Count > 2).Count());
 		}
@@ -143,12 +143,12 @@ namespace MatterHackers.MatterSlice.Tests
 			var movement = default(MovementInfo);
 
 			// check layer 1
-			var layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
+			var layer1Info = TestUtilities.GetLayer(gcode, 1);
 			var layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
 			Assert.AreEqual(4, layer1Polygons.Where(i => i.Count > 2).Count());
 
 			// check layer 2
-			var layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
+			var layer2Info = TestUtilities.GetLayer(gcode, 2);
 			var layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
 			Assert.AreEqual(4, layer2Polygons.Where(i => i.Count > 2).Count());
 		}
@@ -177,12 +177,12 @@ namespace MatterHackers.MatterSlice.Tests
 			var movement = default(MovementInfo);
 
 			// check layer 1
-			var layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
+			var layer1Info = TestUtilities.GetLayer(gcode, 1);
 			var layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
 			Assert.AreEqual(4, layer1Polygons.Where(i => i.Count > 2).Count());
 
 			// check layer 2
-			var layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
+			var layer2Info = TestUtilities.GetLayer(gcode, 2);
 			var layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
 			Assert.AreEqual(4, layer2Polygons.Where(i => i.Count > 2).Count());
 		}
@@ -211,7 +211,7 @@ namespace MatterHackers.MatterSlice.Tests
 			var movement = default(MovementInfo);
 			{
 				// check layer 1
-				string[] layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
+				string[] layer1Info = TestUtilities.GetLayer(gcode, 1);
 				Polygons layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
 				// make sure there are 3
 				Assert.IsTrue(layer1Polygons.Count == 3);
@@ -221,7 +221,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			{
 				// check layer 2
-				string[] layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
+				string[] layer2Info = TestUtilities.GetLayer(gcode, 2);
 				Polygons layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
 
 				// make sure there are 3
@@ -265,7 +265,7 @@ namespace MatterHackers.MatterSlice.Tests
 			var movement = default(MovementInfo);
 			{
 				// check layer 1
-				string[] layer1Info = TestUtilities.GetGCodeForLayer(gcode, 1);
+				string[] layer1Info = TestUtilities.GetLayer(gcode, 1);
 				Polygons layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
 				// make sure there are 5
 				Assert.IsTrue(layer1Polygons.Count == 3);
@@ -276,7 +276,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			{
 				// check layer 2
-				string[] layer2Info = TestUtilities.GetGCodeForLayer(gcode, 2);
+				string[] layer2Info = TestUtilities.GetLayer(gcode, 2);
 				Polygons layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
 
 				// make sure there are 3
@@ -335,7 +335,7 @@ namespace MatterHackers.MatterSlice.Tests
 			bool lastMoveIsExtrusion = true;
 			for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
 			{
-				string[] layerGCode = TestUtilities.GetGCodeForLayer(gcodeContents, layerIndex);
+				string[] layerGCode = TestUtilities.GetLayer(gcodeContents, layerIndex);
 				int movementIndex = 0;
 				foreach (MovementInfo movement in TestUtilities.Movements(layerGCode, lastMovement))
 				{
@@ -636,7 +636,7 @@ namespace MatterHackers.MatterSlice.Tests
 			var movement = default(MovementInfo);
 			for (int i = 0; i < layerCount - 10; i++)
 			{
-				string[] layerInfo = TestUtilities.GetGCodeForLayer(gcodeLines, i);
+				string[] layerInfo = TestUtilities.GetLayer(gcodeLines, i);
 
 				if (i > 0)
 				{
@@ -718,7 +718,7 @@ namespace MatterHackers.MatterSlice.Tests
 			var lastMovement = default(MovementInfo);
 			for (int i = 0; i < layerCount - 3; i++)
 			{
-				string[] layerInfo = TestUtilities.GetGCodeForLayer(gCodeContent, i);
+				string[] layerInfo = TestUtilities.GetLayer(gCodeContent, i);
 
 				// check that all layers move up continuously
 				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo, lastMovement, onlyG1s: true))
@@ -856,7 +856,7 @@ namespace MatterHackers.MatterSlice.Tests
 			var startingPosition = default(MovementInfo);
 			for (int layerIndex = 0; layerIndex < layerCount; layerIndex++)
 			{
-				string[] layerInfo = TestUtilities.GetGCodeForLayer(risingLayersGCodeContent, layerIndex);
+				string[] layerInfo = TestUtilities.GetLayer(risingLayersGCodeContent, layerIndex);
 				int movementIndex = 0;
 				// check that all layers move up
 				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo, startingPosition))
@@ -913,7 +913,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			for (int i = 2; i < layerCount - 3; i++)
 			{
-				string[] layerInfo = TestUtilities.GetGCodeForLayer(cylinderGCodeContent, i);
+				string[] layerInfo = TestUtilities.GetLayer(cylinderGCodeContent, i);
 
 				// check that all layers move up continuously
 				var lastMovement = default(MovementInfo);
@@ -979,7 +979,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			for (int i = 2; i < layerCount - 3; i++)
 			{
-				string[] layerInfo = TestUtilities.GetGCodeForLayer(cylinderGCodeContent, i);
+				string[] layerInfo = TestUtilities.GetLayer(cylinderGCodeContent, i);
 
 				// check that all layers move up continuously
 				var lastMovement = default(MovementInfo);

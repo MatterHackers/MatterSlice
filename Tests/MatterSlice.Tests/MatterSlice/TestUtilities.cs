@@ -27,16 +27,16 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
+using MatterHackers.VectorMath;
+using MSClipperLib;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Text.RegularExpressions;
-using MSClipperLib;
-using NUnit.Framework;
-using MatterHackers.VectorMath;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
@@ -44,16 +44,21 @@ namespace MatterHackers.MatterSlice.Tests
 {
 	public struct MovementInfo
 	{
-		public string line;
 		public double extrusion;
+
 		public double feedRate;
-		public MatterHackers.MatterSlice.Vector3 position;
+
+		public string line;
+
+		public Vector3 position;
 	}
 
 	public static class TestUtilities
 	{
 		private static string matterSliceBaseDirectory = TestContext.CurrentContext.ResolveProjectPath(4);
+
 		private static Regex numberRegex = new Regex(@"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?");
+
 		private static string tempGCodePath = Path.Combine(matterSliceBaseDirectory, "GCode_Test");
 
 		public static bool CheckForRaft(string[] gcodefile)
@@ -85,61 +90,81 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		public static int LayerCount(this string[] gcodeContents)
-		{
-			int layers = 0;
-			int layerCount = 0;
-			foreach (string line in gcodeContents)
-			{
-				if (line.Contains("Layer count"))
-				{
-					layerCount = int.Parse(line.Split(':')[1]);
-				}
-
-				if (line.Contains("LAYER:"))
-				{
-					layers++;
-				}
-			}
-
-			if (layerCount != layers)
-			{
-				throw new Exception("The reported layers and counted layers should be the same.");
-			}
-
-			return layers;
-		}
-
 		public static int CountRetractions(string[] layer)
 		{
 			int retractions = 0;
 			foreach (string line in layer)
 			{
-				if (line.StartsWith("G1 "))
+				if (line.IsRetraction())
 				{
-					if (line.Contains("E")
-						&& !line.Contains("X")
-						&& !line.Contains("Y")
-						&& !line.Contains("Z"))
-					{
-						retractions++;
-					}
+					retractions++;
 				}
 			}
 
 			return retractions;
 		}
 
+		/// <summary>
+		/// Get the extrusion polygons for every layer
+		/// </summary>
+		/// <param name="loadedGCode">The source gcode separated by line</param>
+		/// <returns>A list of all the polygons by layer</returns>
+		public static List<Polygons> GetAllExtrusionPolygons(this string[] loadedGCode)
+		{
+			var layerCount = TestUtilities.LayerCount(loadedGCode);
+
+			var layerPolygons = new List<Polygons>(layerCount);
+			for (int i = 0; i < layerCount; i++)
+			{
+				layerPolygons.Add(TestUtilities.GetExtrusionPolygonsForLayer(loadedGCode.GetLayer(i)));
+			}
+
+			return layerPolygons;
+		}
+
+		public static List<string[]> GetAllLayers(this string[] loadedGCode)
+		{
+			var layerCount = TestUtilities.LayerCount(loadedGCode);
+
+			var gcodeLayers = new List<string[]>(layerCount);
+			for (int i = 0; i < layerCount; i++)
+			{
+				gcodeLayers.Add(loadedGCode.GetLayer(i));
+			}
+
+			return gcodeLayers;
+		}
+
+		/// <summary>
+		/// Get the travel polygons for every layer
+		/// </summary>
+		/// <param name="loadedGCode">The source gcode separated by line</param>
+		/// <returns>A list of all the polygons by layer</returns>
+		public static List<Polygons> GetAllTravelPolygons(this string[] loadedGCode)
+		{
+			var layerCount = TestUtilities.LayerCount(loadedGCode);
+
+			var layerPolygons = new List<Polygons>(layerCount);
+			for (int i = 0; i < layerCount; i++)
+			{
+				layerPolygons.Add(TestUtilities.GetTravelPolygonsForLayer(loadedGCode.GetLayer(i)));
+			}
+
+			return layerPolygons;
+		}
+
+		public static string GetControlGCodePath(string testName)
+		{
+			string directory = Path.Combine(matterSliceBaseDirectory, "GCode_Control");
+			Directory.CreateDirectory(directory);
+
+			return Path.Combine(directory, testName + ".gcode");
+		}
+
 		public static Polygons GetExtrusionPolygonsForLayer(this string[] layerGCode, long movementToIgnore = 0)
 		{
 			var movementInfo = default(MovementInfo);
 			return GetExtrusionPolygonsForLayer(layerGCode, ref movementInfo, movementToIgnore);
-		}
-
-		public static Polygons GetTravelPolygonsForLayer(this string[] layerGCode)
-		{
-			var movementInfo = default(MovementInfo);
-			return GetTravelPolygonsForLayer(layerGCode, ref movementInfo);
 		}
 
 		public static Polygons GetExtrusionPolygonsForLayer(this string[] layerGCode, ref MovementInfo movementInfo, long movementToIgnore = 0)
@@ -149,7 +174,7 @@ namespace MatterHackers.MatterSlice.Tests
 			bool extruding = false;
 			// check that all moves are on the outside of the cylinder (not crossing to a new point)
 			int movementCount = 0;
-			double movementAmount = double.MaxValue/2; // always add a new extrusion the first time
+			double movementAmount = double.MaxValue / 2; // always add a new extrusion the first time
 			MovementInfo lastMovement = movementInfo;
 			foreach (MovementInfo currentMovement in TestUtilities.Movements(layerGCode, lastMovement))
 			{
@@ -208,6 +233,94 @@ namespace MatterHackers.MatterSlice.Tests
 			return foundPolygons;
 		}
 
+		public static bool GetFirstNumberAfter(string stringToCheckAfter, string stringWithNumber, ref double readValue, int startIndex = 0)
+		{
+			int stringPos = stringWithNumber.IndexOf(stringToCheckAfter, startIndex);
+			if (stringPos != -1)
+			{
+				stringPos += stringToCheckAfter.Length;
+				readValue = GetNextNumber(stringWithNumber, ref stringPos);
+
+				return true;
+			}
+
+			return false;
+		}
+
+		public static string[] GetLayer(this string[] gcodeContents, int layerIndex)
+		{
+			var layerLines = new List<string>();
+			int currentLayer = -1;
+			foreach (string line in gcodeContents)
+			{
+				if (line.Contains("LAYER:"))
+				{
+					currentLayer++;
+					if (currentLayer > layerIndex)
+					{
+						break;
+					}
+				}
+
+				if (currentLayer == layerIndex)
+				{
+					layerLines.Add(line);
+				}
+			}
+
+			return layerLines.ToArray();
+		}
+
+		/// <summary>
+		/// Get the count of every extrusion at a given angle
+		/// </summary>
+		/// <param name="islands">The polygons to consider</param>
+		/// <returns>A list of the angle and the count of lines at that angle</returns>
+		public static Dictionary<double, int> GetLineAngles(Polygons polygons)
+		{
+			var angleCount = new Dictionary<double, int>();
+
+			foreach (var polygon in polygons)
+			{
+				for (int i = 0; i < polygon.Count - 1; i++)
+				{
+					var start = new Vector2(polygon[i].X, polygon[i].Y);
+					var end = new Vector2(polygon[i + 1].X, polygon[i + 1].Y);
+					var angle1 = (int)((end - start).GetAngle0To2PI() * 360 / (2 * Math.PI));
+					var angle2 = (int)((start - end).GetAngle0To2PI() * 360 / (2 * Math.PI));
+					var angle = Math.Min(angle1, angle2);
+					var count = 0;
+					if (angleCount.ContainsKey(angle))
+					{
+						count = angleCount[angle];
+					}
+
+					angleCount[angle] = count + 1;
+				}
+			}
+
+			return angleCount;
+		}
+
+		public static string GetStlPath(string file)
+		{
+			return Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "SampleSTLs", file), "stl");
+		}
+
+		public static string GetTempGCodePath(string file)
+		{
+			string fullPath = Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "Tests", "TestData", "Temp", file), "gcode");
+			// Make sure the output directory exists
+			Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+			return fullPath;
+		}
+
+		public static Polygons GetTravelPolygonsForLayer(this string[] layerGCode)
+		{
+			var movementInfo = default(MovementInfo);
+			return GetTravelPolygonsForLayer(layerGCode, ref movementInfo);
+		}
+
 		public static Polygons GetTravelPolygonsForLayer(this string[] layerGCode, ref MovementInfo movementInfo)
 		{
 			var foundPolygons = new Polygons();
@@ -263,87 +376,67 @@ namespace MatterHackers.MatterSlice.Tests
 			return foundPolygons;
 		}
 
-		public static bool GetFirstNumberAfter(string stringToCheckAfter, string stringWithNumber, ref double readValue, int startIndex = 0)
+		public static bool IsRetraction(this string line)
 		{
-			int stringPos = stringWithNumber.IndexOf(stringToCheckAfter, startIndex);
-			if (stringPos != -1)
+			if (line.StartsWith("G1 "))
 			{
-				stringPos += stringToCheckAfter.Length;
-				readValue = GetNextNumber(stringWithNumber, ref stringPos);
-
-				return true;
+				if (line.Contains("E")
+					&& !line.Contains("X")
+					&& !line.Contains("Y")
+					&& !line.Contains("Z"))
+				{
+					return true;
+				}
 			}
 
 			return false;
 		}
 
-		public static string[] GetGCodeForLayer(this string[] gcodeContents, int layerIndex)
+		public static int LayerCount(this string[] gcodeContents)
 		{
-			var layerLines = new List<string>();
-			int currentLayer = -1;
+			int layers = 0;
+			int layerCount = 0;
 			foreach (string line in gcodeContents)
 			{
-				if (line.Contains("LAYER:"))
+				if (line.Contains("Layer count"))
 				{
-					currentLayer++;
-					if(currentLayer > layerIndex)
-					{
-						break;
-					}
+					layerCount = int.Parse(line.Split(':')[1]);
 				}
 
-				if (currentLayer == layerIndex)
+				if (line.Contains("LAYER:"))
 				{
-					layerLines.Add(line);
+					layers++;
 				}
 			}
 
-			return layerLines.ToArray();
-		}
+			if (layerCount != layers)
+			{
+				throw new Exception("The reported layers and counted layers should be the same.");
+			}
 
-		public static string GetStlPath(string file)
-		{
-			return Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "SampleSTLs", file), "stl");
-		}
-
-		public static string GetControlGCodePath(string testName)
-		{
-			string directory = Path.Combine(matterSliceBaseDirectory, "GCode_Control");
-			Directory.CreateDirectory(directory);
-
-			return Path.Combine(directory, testName + ".gcode");
-		}
-
-		public static string GetTempGCodePath(string file)
-		{
-			string fullPath = Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "Tests", "TestData", "Temp", file), "gcode");
-			// Make sure the output directory exists
-			Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
-			return fullPath;
-		}
-
-		public static string[] SliceAndGetGCode(string stlName, Action<ConfigSettings> action = null)
-		{
-			string thinWallsSTL = TestUtilities.GetStlPath($"{stlName}.stl");
-			string thinWallsGCode = TestUtilities.GetTempGCodePath($"{stlName}.gcode");
-
-			var config = new ConfigSettings();
-
-			action?.Invoke(config);
-
-			var processor = new FffProcessor(config);
-			processor.SetTargetFile(thinWallsGCode);
-			processor.LoadStlFile(thinWallsSTL);
-			// slice and save it
-			processor.DoProcessing();
-			processor.Finalize();
-
-			return TestUtilities.LoadGCodeFile(thinWallsGCode);
+			return layers;
 		}
 
 		public static string[] LoadGCodeFile(string gcodeFile)
 		{
 			return File.ReadAllLines(gcodeFile);
+		}
+
+		public static int FindMoveIndex(this IEnumerable<MovementInfo> moves, Vector3 position)
+		{
+			var index = 0;
+			position /= 1000.0;
+			foreach (var move in moves)
+			{
+				if (move.position == position)
+				{
+					return index;
+				}
+
+				index++;
+			}
+
+			return -1;
 		}
 
 		public static IEnumerable<MovementInfo> Movements(this string[] gcodeContents, Nullable<MovementInfo> startingMovement = null, bool onlyG1s = false)
@@ -393,28 +486,23 @@ namespace MatterHackers.MatterSlice.Tests
 			return Path.GetFullPath(Path.Combine(allPathSteps.ToArray()));
 		}
 
-		internal static bool UsesExtruder(string[] gcodeContent, int extruderIndex)
+		public static string[] SliceAndGetGCode(string stlName, Action<ConfigSettings> action = null)
 		{
-			string startToCheckFor = "T{0}".FormatWith(extruderIndex);
-			foreach (string line in gcodeContent)
-			{
-				if (line.StartsWith(startToCheckFor))
-				{
-					return true;
-				}
-			}
+			string thinWallsSTL = TestUtilities.GetStlPath($"{stlName}.stl");
+			string thinWallsGCode = TestUtilities.GetTempGCodePath($"{stlName}.gcode");
 
-			return false;
-		}
+			var config = new ConfigSettings();
 
-		private static double GetNextNumber(String source, ref int startIndex)
-		{
-			Match numberMatch = numberRegex.Match(source, startIndex);
-			String returnString = numberMatch.Value;
-			startIndex = numberMatch.Index + numberMatch.Length;
-			double returnVal;
-			double.TryParse(returnString, NumberStyles.Number, CultureInfo.InvariantCulture, out returnVal);
-			return returnVal;
+			action?.Invoke(config);
+
+			var processor = new FffProcessor(config);
+			processor.SetTargetFile(thinWallsGCode);
+			processor.LoadStlFile(thinWallsSTL);
+			// slice and save it
+			processor.DoProcessing();
+			processor.Finalize();
+
+			return TestUtilities.LoadGCodeFile(thinWallsGCode);
 		}
 
 		internal static void CheckPolysAreSimilar(string aGCodeFile, string bGCodeFile)
@@ -425,8 +513,8 @@ namespace MatterHackers.MatterSlice.Tests
 			Assert.AreEqual(aLayerCount, TestUtilities.LayerCount(bLoadedGCode));
 			for (int layerIndex = 0; layerIndex < aLayerCount; layerIndex++)
 			{
-				var aLayerGCode = TestUtilities.GetGCodeForLayer(aLoadedGcode, layerIndex);
-				var bLayerGCode = TestUtilities.GetGCodeForLayer(bLoadedGCode, layerIndex);
+				var aLayerGCode = TestUtilities.GetLayer(aLoadedGcode, layerIndex);
+				var bLayerGCode = TestUtilities.GetLayer(bLoadedGCode, layerIndex);
 				var aPolys = TestUtilities.GetExtrusionPolygonsForLayer(aLayerGCode);
 				var bPolys = TestUtilities.GetExtrusionPolygonsForLayer(bLayerGCode);
 				// Assert.AreEqual(aPolys.Count, bPolys.Count);
@@ -452,71 +540,28 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		/// <summary>
-		/// Get the extrusion polygons for every layer
-		/// </summary>
-		/// <param name="loadedGCode">The source gcode separated by line</param>
-		/// <returns>A list of all the polygons by layer</returns>
-		public static List<Polygons> GetAllExtrusionPolygons(this string[] loadedGCode)
+		internal static bool UsesExtruder(string[] gcodeContent, int extruderIndex)
 		{
-			var layerCount = TestUtilities.LayerCount(loadedGCode);
-
-			var layerPolygons = new List<Polygons>(layerCount);
-			for (int i = 0; i < layerCount; i++)
+			string startToCheckFor = "T{0}".FormatWith(extruderIndex);
+			foreach (string line in gcodeContent)
 			{
-				layerPolygons.Add(TestUtilities.GetExtrusionPolygonsForLayer(loadedGCode.GetGCodeForLayer(i)));
-			}
-
-			return layerPolygons;
-		}
-
-		/// <summary>
-		/// Get the travel polygons for every layer
-		/// </summary>
-		/// <param name="loadedGCode">The source gcode separated by line</param>
-		/// <returns>A list of all the polygons by layer</returns>
-		public static List<Polygons> GetAllTravelPolygons(this string[] loadedGCode)
-		{
-			var layerCount = TestUtilities.LayerCount(loadedGCode);
-
-			var layerPolygons = new List<Polygons>(layerCount);
-			for (int i = 0; i < layerCount; i++)
-			{
-				layerPolygons.Add(TestUtilities.GetTravelPolygonsForLayer(loadedGCode.GetGCodeForLayer(i)));
-			}
-
-			return layerPolygons;
-		}
-
-		/// <summary>
-		/// Get the count of every extrusion at a given angle
-		/// </summary>
-		/// <param name="islands">The polygons to consider</param>
-		/// <returns>A list of the angle and the count of lines at that angle</returns>
-		public static Dictionary<double, int> GetLineAngles(Polygons polygons)
-		{
-			var angleCount = new Dictionary<double, int>();
-
-			foreach (var polygon in polygons)
-			{
-				for (int i = 0; i < polygon.Count - 1; i++)
+				if (line.StartsWith(startToCheckFor))
 				{
-					var start = new Vector2(polygon[i].X, polygon[i].Y);
-					var end = new Vector2(polygon[i + 1].X, polygon[i + 1].Y);
-					var angle1 = (int)((end - start).GetAngle0To2PI() * 360 / (2 * Math.PI));
-					var angle2 = (int)((start - end).GetAngle0To2PI() * 360 / (2 * Math.PI));
-					var angle = Math.Min(angle1, angle2);
-					var count = 0;
-					if (angleCount.ContainsKey(angle))
-					{
-						count = angleCount[angle];
-					}
-
-					angleCount[angle] = count + 1;
+					return true;
 				}
 			}
 
-			return angleCount;
+			return false;
+		}
+
+		private static double GetNextNumber(String source, ref int startIndex)
+		{
+			Match numberMatch = numberRegex.Match(source, startIndex);
+			String returnString = numberMatch.Value;
+			startIndex = numberMatch.Index + numberMatch.Length;
+			double returnVal;
+			double.TryParse(returnString, NumberStyles.Number, CultureInfo.InvariantCulture, out returnVal);
+			return returnVal;
 		}
 	}
 }
