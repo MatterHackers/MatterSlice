@@ -835,7 +835,7 @@ namespace MatterHackers.MatterSlice
 			LayerGCodePlanner gcodeLayer,
 			GCodePathConfig config,
 			Polygons bridgeAreas,
-			Polygons fillPolygons)
+			ref bool inPathHadOverlaps)
 		{
 			bool pathIsClosed = true;
 
@@ -851,6 +851,14 @@ namespace MatterHackers.MatterSlice
 					config,
 					SupportWriteType.UnsupportedAreas,
 					bridgeAreas);
+
+				inPathHadOverlaps = true;
+
+				return true;
+			}
+			else if (inPathHadOverlaps)
+			{
+				QueuePolygonsConsideringSupport(layerIndex, pathFinder, gcodeLayer, perimetersToCheckForMerge, config, SupportWriteType.UnsupportedAreas, bridgeAreas);
 
 				return true;
 			}
@@ -1120,6 +1128,7 @@ namespace MatterHackers.MatterSlice
 							}
 
 							bool foundAnyPath = true;
+							bool pathHadOverlaps = false;
 							while (insetsThatHaveBeenPrinted.Count < CountInsetsToPrint(insetToolPaths)
 								&& foundAnyPath)
 							{
@@ -1135,8 +1144,8 @@ namespace MatterHackers.MatterSlice
 										layerIndex,
 										layerGcodePlanner,
 										bridgeAreas,
-										fillPolygons,
-										out bool foundAPath);
+										out bool foundAPath,
+										ref pathHadOverlaps);
 
 									foundAnyPath |= foundAPath;
 								}
@@ -1153,8 +1162,8 @@ namespace MatterHackers.MatterSlice
 										layerIndex,
 										layerGcodePlanner,
 										bridgeAreas,
-										fillPolygons,
-										out bool foundAPath);
+										out bool foundAPath,
+										ref pathHadOverlaps);
 
 									foundAnyPath |= foundAPath;
 								}
@@ -1178,6 +1187,7 @@ namespace MatterHackers.MatterSlice
 							insetXConfig.LiftOnTravel = true;
 						}
 
+						bool pathHadOverlaps = false;
 						while (insetsThatHaveBeenPrinted.Count < insetCount2
 							&& foundAnyPath)
 						{
@@ -1228,8 +1238,8 @@ namespace MatterHackers.MatterSlice
 										layerIndex,
 										layerGcodePlanner,
 										bridgeAreas,
-										fillPolygons,
-										out bool foundAPath);
+										out bool foundAPath,
+										ref pathHadOverlaps);
 
 									foundAnyPath |= foundAPath;
 
@@ -1482,15 +1492,15 @@ namespace MatterHackers.MatterSlice
 			int layerIndex,
 			LayerGCodePlanner gcodeLayer,
 			Polygons bridgeAreas,
-			Polygons fillPolygons,
-			out bool foundAPath)
+			out bool foundAPath,
+			ref bool pathHadOverlaps)
 		{
 			foundAPath = false;
 
 			bool printPerimetersInOrder = !config.MergeOverlappingLines;
 			if (!printPerimetersInOrder)
 			{
-				if (QueuePerimeterWithMergeOverlaps(insetsToConsider, islandPathFinder, layerIndex, gcodeLayer, pathConfig, bridgeAreas, fillPolygons))
+				if (QueuePerimeterWithMergeOverlaps(insetsToConsider, islandPathFinder, layerIndex, gcodeLayer, pathConfig, bridgeAreas, ref pathHadOverlaps))
 				{
 					foreach (var path in insetsToConsider)
 					{
@@ -1499,8 +1509,10 @@ namespace MatterHackers.MatterSlice
 
 					foundAPath = true;
 				}
-
-				printPerimetersInOrder = true;
+				else
+				{
+					printPerimetersInOrder = true;
+				}
 			}
 			
 			if (printPerimetersInOrder)
