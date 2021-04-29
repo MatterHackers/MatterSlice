@@ -68,7 +68,7 @@ namespace MatterHackers.MatterSlice.Tests
 				int numLayers = TestUtilities.LayerCount(gcodeContents);
 				for (int i = 1; i < numLayers - 1; i++)
 				{
-					string[] layer = TestUtilities.GetGCodeForLayer(gcodeContents, i);
+					string[] layer = TestUtilities.GetLayer(gcodeContents, i);
 					int totalRetractions = TestUtilities.CountRetractions(layer);
 					Assert.IsTrue(totalRetractions == 4);
 				}
@@ -131,7 +131,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				for (int i = 0; i < layerCount; i++)
 				{
-					var movements = loadedGCode.GetGCodeForLayer(i).Movements().ToList();
+					var movements = loadedGCode.GetLayer(i).Movements().ToList();
 
 					int longMoveCount = 0;
 					for (var j = 1; j < movements.Count - 2; j++)
@@ -172,7 +172,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				for (int i = 0; i < 100; i++)
 				{
-					var movements = loadedGCode.GetGCodeForLayer(i).Movements().ToList();
+					var movements = loadedGCode.GetLayer(i).Movements().ToList();
 					Assert.GreaterOrEqual(movements.Count, 100, $"Layer {i} should have more than 100 extrusions.");
 				}
 			}
@@ -344,7 +344,7 @@ namespace MatterHackers.MatterSlice.Tests
 				int numLayers = TestUtilities.LayerCount(gcodeContents);
 				for (int i = 1; i < numLayers - 2; i++)
 				{
-					string[] layer = TestUtilities.GetGCodeForLayer(gcodeContents, i);
+					string[] layer = TestUtilities.GetLayer(gcodeContents, i);
 					int totalRetractions = TestUtilities.CountRetractions(layer);
 					Assert.IsTrue(totalRetractions == 0);
 				}
@@ -384,6 +384,65 @@ namespace MatterHackers.MatterSlice.Tests
 						var length = poly.PolygonLength();
 						var ratio = length / (double)startToEnd;
 						Assert.Less(ratio, 3, $"No travel should be more than 2x the direct distance, was: {ratio}");
+					}
+				}
+			}
+		}
+
+		[Test]
+		public void ValidatePerimetersOrderAndLiftOnTopLayer()
+		{
+			string twoHoleSTL = TestUtilities.GetStlPath("AvoidCrossing2Holes");
+			string validatePerimetersGCode = TestUtilities.GetTempGCodePath("validate_perimeters_and_top_layer.gcode");
+			{
+				// load a model that is (or was) having many erroneous travels
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "validate_perimeters_and_top_layer.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(validatePerimetersGCode);
+				processor.LoadStlFile(twoHoleSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(validatePerimetersGCode);
+
+				var layers = loadedGCode.GetAllLayers();
+
+				// validate that all perimeters render as groups
+				for (int i = 1; i < layers.Count - 1; i++)
+				{
+					var extrusions = TestUtilities.GetExtrusionPolygonsForLayer(layers[i]);
+					// remove retractions
+					extrusions.RemoveSmallAreas(1);
+					// expected number of loops
+					Assert.AreEqual(9, extrusions.Count);
+
+					// check that each set of polygons are part of the same perimeter group
+					Assert.IsTrue(extrusions[0].Count == extrusions[1].Count && extrusions[1].Count == extrusions[2].Count);
+					Assert.IsTrue(extrusions[3].Count == extrusions[4].Count && extrusions[4].Count == extrusions[5].Count);
+					Assert.IsTrue(Math.Abs(extrusions[6].Count - extrusions[7].Count) <= 1 && Math.Abs(extrusions[7].Count  - extrusions[8].Count) <= 1);
+				}
+
+				// validate that the top layer has no moves that are long that don't retract
+				{
+					var topLayerIndex = layers.Count - 1;
+					var topLayer = loadedGCode.GetLayer(topLayerIndex);
+
+					var topMovements = topLayer.Movements().ToList();
+					var lastMovement = default(MovementInfo);
+					var topTravels = topLayer.GetTravelPolygonsForLayer(ref lastMovement);
+					foreach (var travel in topTravels)
+					{
+						// if we go more than 2 mm
+						if (travel.PolygonLength() > 3000)
+						{
+							// find the instruction before
+							var moveIndex = topMovements.FindMoveIndex(new Vector3(travel[0]));
+							// we are going to move a lot, we need to retract
+							Assert.IsTrue(topMovements[moveIndex - 1].line.IsRetraction() || topMovements[moveIndex - 2].line.IsRetraction());
+						}
 					}
 				}
 			}
