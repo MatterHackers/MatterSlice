@@ -410,6 +410,21 @@ namespace MatterHackers.MatterSlice.Tests
 
 				var layers = loadedGCode.GetAllLayers();
 
+				// validate that all perimeters render as groups
+				for (int i = 1; i < layers.Count - 1; i++)
+				{
+					var extrusions = TestUtilities.GetExtrusionPolygonsForLayer(layers[i]);
+					// remove retractions
+					extrusions.RemoveSmallAreas(1);
+					// expected number of loops
+					Assert.AreEqual(9, extrusions.Count);
+
+					// check that each set of polygons are part of the same perimeter group
+					Assert.IsTrue(extrusions[0].Count == extrusions[1].Count && extrusions[1].Count == extrusions[2].Count);
+					Assert.IsTrue(extrusions[3].Count == extrusions[4].Count && extrusions[4].Count == extrusions[5].Count);
+					Assert.IsTrue(Math.Abs(extrusions[6].Count - extrusions[7].Count) <= 1 && Math.Abs(extrusions[7].Count  - extrusions[8].Count) <= 1);
+				}
+
 				// validate that the top layer has no moves that are long that don't retract
 				{
 					var topLayerIndex = layers.Count - 1;
@@ -420,21 +435,14 @@ namespace MatterHackers.MatterSlice.Tests
 					foreach (var travel in topTravels)
 					{
 						// if we go more than 2 mm
-						if (travel.PolygonLength() > 2000)
+						if (travel.PolygonLength() > 3000)
 						{
 							// find the instruction before
 							var moveIndex = topMovements.FindMoveIndex(new Vector3(travel[0]));
 							// we are going to move a lot, we need to retract
-							Assert.IsTrue(topMovements[moveIndex - 1].line.IsRetraction());
+							Assert.IsTrue(topMovements[moveIndex - 1].line.IsRetraction() || topMovements[moveIndex - 2].line.IsRetraction());
 						}
 					}
-				}
-
-				for (int i = 0; i < layers.Count; i++)
-				{
-					var polys = layers[i];
-					// skip the first move (the one getting to the part)
-					throw new NotImplementedException();
 				}
 			}
 		}

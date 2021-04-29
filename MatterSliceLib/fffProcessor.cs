@@ -829,7 +829,7 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private void QueuePerimeterWithMergeOverlaps(Polygons perimetersToCheckForMerge,
+		private bool QueuePerimeterWithMergeOverlaps(Polygons perimetersToCheckForMerge,
 			PathFinder pathFinder,
 			int layerIndex,
 			LayerGCodePlanner gcodeLayer,
@@ -851,11 +851,11 @@ namespace MatterHackers.MatterSlice
 					config,
 					SupportWriteType.UnsupportedAreas,
 					bridgeAreas);
+
+				return true;
 			}
-			else
-			{
-				QueuePolygonsConsideringSupport(layerIndex, pathFinder, gcodeLayer, perimetersToCheckForMerge, config, SupportWriteType.UnsupportedAreas, bridgeAreas);
-			}
+
+			return false;
 		}
 
 		private void QueueSkirtToGCode(LayerDataStorage slicingData, PathFinder layerPathFinder, LayerGCodePlanner gcodeLayer, int layerIndex, int extruderIndex)
@@ -1037,13 +1037,6 @@ namespace MatterHackers.MatterSlice
 				}
 
 				LayerIsland island = layer.Islands[islandOrderOptimizer.OptimizedPaths[islandOrderIndex].SourcePolyIndex];
-				var insetToolPaths = island.InsetToolPaths;
-
-				var insetAccelerators = new List<QuadTree<int>>();
-				foreach (var inset in insetToolPaths)
-				{
-					insetAccelerators.Add(inset.GetQuadTree());
-				}
 
 				if (config.AvoidCrossingPerimeters)
 				{
@@ -1097,6 +1090,14 @@ namespace MatterHackers.MatterSlice
 						layerGcodePlanner.QueueFanCommand(config.BridgeFanSpeedPercent, bridgeConfig);
 					}
 
+					var insetToolPaths = island.InsetToolPaths;
+
+					var insetAccelerators = new List<QuadTree<int>>();
+					foreach (var inset in insetToolPaths)
+					{
+						insetAccelerators.Add(inset.GetQuadTree());
+					}
+
 					// If we are on the very first layer we always start with the outside so that we can stick to the bed better.
 					if (config.OutsidePerimetersFirst || layerIndex == 0 || inset0Config.Spiralize)
 					{
@@ -1110,6 +1111,14 @@ namespace MatterHackers.MatterSlice
 						}
 						else
 						{
+							// if we are printing top layers and going to do z-lifting make sure we don't cross over the top layer while moving between islands
+							if (topFillPolygons.Count > 0
+								&& config.RetractionZHop > 0)
+							{
+								inset0Config.LiftOnTravel = true;
+								insetXConfig.LiftOnTravel = true;
+							}
+
 							bool foundAnyPath = true;
 							while (insetsThatHaveBeenPrinted.Count < CountInsetsToPrint(insetToolPaths)
 								&& foundAnyPath)
@@ -1150,6 +1159,10 @@ namespace MatterHackers.MatterSlice
 									foundAnyPath |= foundAPath;
 								}
 							}
+
+							// reset the retraction distance
+							inset0Config.LiftOnTravel = false;
+							insetXConfig.LiftOnTravel = false;
 						}
 					}
 					else // This is so we can do overhangs better (the outside can stick a bit to the inside).
@@ -1157,6 +1170,14 @@ namespace MatterHackers.MatterSlice
 						int insetCount2 = CountInsetsToPrint(insetToolPaths);
 
 						bool foundAnyPath = true;
+						// if we are printing top layers and going to do z-lifting make sure we don't cross over the top layer while moving between islands
+						if (topFillPolygons.Count > 0
+							&& config.RetractionZHop > 0)
+						{
+							inset0Config.LiftOnTravel = true;
+							insetXConfig.LiftOnTravel = true;
+						}
+
 						while (insetsThatHaveBeenPrinted.Count < insetCount2
 							&& foundAnyPath)
 						{
@@ -1241,6 +1262,10 @@ namespace MatterHackers.MatterSlice
 								}
 							}
 						}
+
+						// reset the retraction distance
+						inset0Config.LiftOnTravel = false;
+						insetXConfig.LiftOnTravel = false;
 					}
 
 					// Find the thin gaps for this layer and add them to the queue
@@ -1460,17 +1485,25 @@ namespace MatterHackers.MatterSlice
 			Polygons fillPolygons,
 			out bool foundAPath)
 		{
-			if (config.MergeOverlappingLines)
+			foundAPath = false;
+
+			bool printPerimetersInOrder = !config.MergeOverlappingLines;
+			if (!printPerimetersInOrder)
 			{
-				QueuePerimeterWithMergeOverlaps(insetsToConsider, islandPathFinder, layerIndex, gcodeLayer, pathConfig, bridgeAreas, fillPolygons);
-				foreach (var path in insetsToConsider)
+				if (QueuePerimeterWithMergeOverlaps(insetsToConsider, islandPathFinder, layerIndex, gcodeLayer, pathConfig, bridgeAreas, fillPolygons))
 				{
-					insetsThatHaveBeenPrinted.Add(path);
+					foreach (var path in insetsToConsider)
+					{
+						insetsThatHaveBeenPrinted.Add(path);
+					}
+
+					foundAPath = true;
 				}
 
-				foundAPath = true;
+				printPerimetersInOrder = true;
 			}
-			else
+			
+			if (printPerimetersInOrder)
 			{
 				// This is the furthest away we will accept a new starting point
 				long maxDist_um = long.MaxValue;

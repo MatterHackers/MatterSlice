@@ -51,6 +51,11 @@ namespace MatterHackers.MatterSlice.Tests
 		public string line;
 
 		public Vector3 position;
+
+		public override string ToString()
+		{
+			return $"{position} : {extrusion} : {line}";
+		}
 	}
 
 	public static class TestUtilities
