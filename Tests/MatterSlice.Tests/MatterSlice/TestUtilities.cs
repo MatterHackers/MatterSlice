@@ -150,9 +150,10 @@ namespace MatterHackers.MatterSlice.Tests
 			var layerCount = TestUtilities.LayerCount(loadedGCode);
 
 			var layerPolygons = new List<Polygons>(layerCount);
+			var lastMovement = default(MovementInfo);
 			for (int i = 0; i < layerCount; i++)
 			{
-				layerPolygons.Add(TestUtilities.GetTravelPolygonsForLayer(loadedGCode.GetLayer(i)));
+				layerPolygons.Add(TestUtilities.GetTravelPolygonsForLayer(loadedGCode.GetLayer(i), ref lastMovement));
 			}
 
 			return layerPolygons;
@@ -318,12 +319,6 @@ namespace MatterHackers.MatterSlice.Tests
 			// Make sure the output directory exists
 			Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
 			return fullPath;
-		}
-
-		public static Polygons GetTravelPolygonsForLayer(this string[] layerGCode)
-		{
-			var movementInfo = default(MovementInfo);
-			return GetTravelPolygonsForLayer(layerGCode, ref movementInfo);
 		}
 
 		public static Polygons GetTravelPolygonsForLayer(this string[] layerGCode, ref MovementInfo movementInfo)

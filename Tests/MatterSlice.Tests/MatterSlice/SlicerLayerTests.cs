@@ -431,7 +431,8 @@ namespace MatterHackers.MatterSlice.Tests
 					var topLayer = loadedGCode.GetLayer(topLayerIndex);
 
 					var topMovements = topLayer.Movements().ToList();
-					var topTravels = topLayer.GetTravelPolygonsForLayer();
+					var lastMovement = default(MovementInfo);
+					var topTravels = topLayer.GetTravelPolygonsForLayer(ref lastMovement);
 					foreach (var travel in topTravels)
 					{
 						// if we go more than 2 mm
