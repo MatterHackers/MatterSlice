@@ -449,6 +449,36 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void EliminateDoublePerimeter()
+		{
+			string twoHoleSTL = TestUtilities.GetStlPath("double_perimeter_error");
+			string validatePerimetersGCode = TestUtilities.GetTempGCodePath("double_perimeter_error.gcode");
+			{
+				// load a model that is (or was) having many erroneous travels
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "double_perimeter_error.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(validatePerimetersGCode);
+				processor.LoadStlFile(twoHoleSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(validatePerimetersGCode);
+
+				var layers = loadedGCode.GetAllLayers();
+
+				// validate that all perimeters render as groups
+				for (int i = 1; i < layers.Count; i++)
+				{
+					// this will check for overlapping segments
+					TestUtilities.GetExtrusionPolygonsForLayer(layers[i]);
+				}
+			}
+		}
+
+		[Test]
 		public void CheckForMoveToOrigin()
 		{
 			LayerGCodePlanner.TestingDistanceFromOrigin = 1000;

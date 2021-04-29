@@ -236,7 +236,55 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 
 			movementInfo = lastMovement;
+
+			Assert.IsFalse(HasOverlapingSegments(foundPolygons));
+
 			return foundPolygons;
+		}
+
+		public static bool HasOverlapingSegments(this Polygons polygons)
+		{
+			var foundSegments = new HashSet<(IntPoint p1, IntPoint p2)>();
+
+			foreach (var polygon in polygons)
+			{
+				var first = true;
+				var p1 = default(IntPoint);
+				var p2 = p1;
+				foreach (var point in polygon)
+				{
+					if (first)
+					{
+						p1 = point;
+						first = false;
+					}
+					else
+					{
+						p2 = point;
+						var minXYZ = p1;
+						var maxXYZ = p2;
+						// make sure min is less than max
+						if (minXYZ.X > maxXYZ.X
+							|| (minXYZ.X == maxXYZ.X && minXYZ.Y > maxXYZ.Y)
+							|| (minXYZ.X == maxXYZ.X && minXYZ.Y == maxXYZ.Y && minXYZ.Z > maxXYZ.Z))
+						{
+							minXYZ = p2;
+							maxXYZ = p1;
+						}
+
+						if (foundSegments.Contains((minXYZ, maxXYZ)))
+						{
+							return true;
+						}
+
+						foundSegments.Add((minXYZ, maxXYZ));
+
+						p1 = p2;
+					}
+				}
+			}
+
+			return false;
 		}
 
 		public static bool GetFirstNumberAfter(string stringToCheckAfter, string stringWithNumber, ref double readValue, int startIndex = 0)

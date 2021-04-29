@@ -3,7 +3,7 @@ This file is part of MatterSlice. A command line utility for
 generating 3D printing GCode.
 
 Copyright (C) 2013 David Braam
-Copyright (c) 2014, Lars Brubaker
+Copyright (c) 2021, Lars Brubaker
 
 MatterSlice is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
