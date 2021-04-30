@@ -173,7 +173,7 @@ namespace MatterHackers.MatterSlice.Tests
 			return GetExtrusionPolygonsForLayer(layerGCode, ref movementInfo, movementToIgnore);
 		}
 
-		public static Polygons GetExtrusionPolygonsForLayer(this string[] layerGCode, ref MovementInfo movementInfo, long movementToIgnore = 0)
+		public static Polygons GetExtrusionPolygonsForLayer(this string[] layerGCode, ref MovementInfo movementInfo, long movementToIgnore = 0, bool checkForOverlaps = true)
 		{
 			var foundPolygons = new Polygons();
 
@@ -237,7 +237,10 @@ namespace MatterHackers.MatterSlice.Tests
 
 			movementInfo = lastMovement;
 
-			Assert.IsFalse(HasOverlapingSegments(foundPolygons));
+			if (checkForOverlaps)
+			{
+				Assert.IsFalse(HasOverlapingSegments(foundPolygons));
+			}
 
 			return foundPolygons;
 		}
@@ -246,30 +249,30 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			var foundSegments = new HashSet<(IntPoint p1, IntPoint p2)>();
 
-			foreach (var polygon in polygons)
+			for (var polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
 			{
+				var polygon = polygons[polygonIndex];
 				var first = true;
-				var p1 = default(IntPoint);
-				var p2 = p1;
-				foreach (var point in polygon)
+				var prevPoint = default(IntPoint);
+				for (int pointIndex = 0; pointIndex < polygon.Count; pointIndex++)
 				{
+					var currentPoint = polygon[pointIndex];
 					if (first)
 					{
-						p1 = point;
+						prevPoint = currentPoint;
 						first = false;
 					}
 					else
 					{
-						p2 = point;
-						var minXYZ = p1;
-						var maxXYZ = p2;
+						var minXYZ = prevPoint;
+						var maxXYZ = currentPoint;
 						// make sure min is less than max
 						if (minXYZ.X > maxXYZ.X
 							|| (minXYZ.X == maxXYZ.X && minXYZ.Y > maxXYZ.Y)
 							|| (minXYZ.X == maxXYZ.X && minXYZ.Y == maxXYZ.Y && minXYZ.Z > maxXYZ.Z))
 						{
-							minXYZ = p2;
-							maxXYZ = p1;
+							minXYZ = currentPoint;
+							maxXYZ = prevPoint;
 						}
 
 						if (foundSegments.Contains((minXYZ, maxXYZ)))
@@ -279,7 +282,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 						foundSegments.Add((minXYZ, maxXYZ));
 
-						p1 = p2;
+						prevPoint = currentPoint;
 					}
 				}
 			}
