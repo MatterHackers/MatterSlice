@@ -110,12 +110,12 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// check layer 1
 			var layer1Info = TestUtilities.GetLayer(gcode, 1);
-			var layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
+			var layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement, false);
 			Assert.AreEqual(4, layer1Polygons.Where(i => i.Count > 2).Count());
 
 			// check layer 2
 			var layer2Info = TestUtilities.GetLayer(gcode, 2);
-			var layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
+			var layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement, false);
 			Assert.AreEqual(4, layer2Polygons.Where(i => i.Count > 2).Count());
 		}
 
@@ -144,12 +144,12 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// check layer 1
 			var layer1Info = TestUtilities.GetLayer(gcode, 1);
-			var layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
+			var layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement, false);
 			Assert.AreEqual(4, layer1Polygons.Where(i => i.Count > 2).Count());
 
 			// check layer 2
 			var layer2Info = TestUtilities.GetLayer(gcode, 2);
-			var layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
+			var layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement, false);
 			Assert.AreEqual(4, layer2Polygons.Where(i => i.Count > 2).Count());
 		}
 
@@ -178,12 +178,12 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// check layer 1
 			var layer1Info = TestUtilities.GetLayer(gcode, 1);
-			var layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
+			var layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement, false);
 			Assert.AreEqual(4, layer1Polygons.Where(i => i.Count > 2).Count());
 
 			// check layer 2
 			var layer2Info = TestUtilities.GetLayer(gcode, 2);
-			var layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
+			var layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement, false);
 			Assert.AreEqual(4, layer2Polygons.Where(i => i.Count > 2).Count());
 		}
 

@@ -204,11 +204,11 @@ namespace MatterHackers.MatterSlice.Tests
 					foreach (var poly in polys)
 					{
 						for (int j = 0; j < poly.Count - 1; j++)
-						{
+					{
 							var next = j + 1;
 							var length = (poly[j] - poly[next]).Length();
-							longest = Math.Max(longest, length);
-						}
+						longest = Math.Max(longest, length);
+					}
 					}
 
 					return longest;
