@@ -3,7 +3,7 @@ This file is part of MatterSlice. A command line utility for
 generating 3D printing GCode.
 
 Copyright (C) 2013 David Braam
-Copyright (c) 2014, Lars Brubaker
+Copyright (c) 2021, Lars Brubaker
 
 MatterSlice is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -834,8 +834,7 @@ namespace MatterHackers.MatterSlice
 			int layerIndex,
 			LayerGCodePlanner gcodeLayer,
 			GCodePathConfig config,
-			Polygons bridgeAreas,
-			ref bool inPathHadOverlaps)
+			Polygons bridgeAreas)
 		{
 			bool pathIsClosed = true;
 
@@ -851,14 +850,6 @@ namespace MatterHackers.MatterSlice
 					config,
 					SupportWriteType.UnsupportedAreas,
 					bridgeAreas);
-
-				inPathHadOverlaps = true;
-
-				return true;
-			}
-			else if (inPathHadOverlaps)
-			{
-				QueuePolygonsConsideringSupport(layerIndex, pathFinder, gcodeLayer, perimetersToCheckForMerge, config, SupportWriteType.UnsupportedAreas, bridgeAreas);
 
 				return true;
 			}
@@ -1128,7 +1119,6 @@ namespace MatterHackers.MatterSlice
 							}
 
 							bool foundAnyPath = true;
-							bool pathHadOverlaps = false;
 							while (insetsThatHaveBeenPrinted.Count < CountInsetsToPrint(insetToolPaths)
 								&& foundAnyPath)
 							{
@@ -1144,8 +1134,7 @@ namespace MatterHackers.MatterSlice
 										layerIndex,
 										layerGcodePlanner,
 										bridgeAreas,
-										out bool foundAPath,
-										ref pathHadOverlaps);
+										out bool foundAPath);
 
 									foundAnyPath |= foundAPath;
 								}
@@ -1162,8 +1151,7 @@ namespace MatterHackers.MatterSlice
 										layerIndex,
 										layerGcodePlanner,
 										bridgeAreas,
-										out bool foundAPath,
-										ref pathHadOverlaps);
+										out bool foundAPath);
 
 									foundAnyPath |= foundAPath;
 								}
@@ -1187,7 +1175,6 @@ namespace MatterHackers.MatterSlice
 							insetXConfig.LiftOnTravel = true;
 						}
 
-						bool pathHadOverlaps = false;
 						while (insetsThatHaveBeenPrinted.Count < insetCount2
 							&& foundAnyPath)
 						{
@@ -1238,8 +1225,7 @@ namespace MatterHackers.MatterSlice
 										layerIndex,
 										layerGcodePlanner,
 										bridgeAreas,
-										out bool foundAPath,
-										ref pathHadOverlaps);
+										out bool foundAPath);
 
 									foundAnyPath |= foundAPath;
 
@@ -1492,30 +1478,36 @@ namespace MatterHackers.MatterSlice
 			int layerIndex,
 			LayerGCodePlanner gcodeLayer,
 			Polygons bridgeAreas,
-			out bool foundAPath,
-			ref bool pathHadOverlaps)
+			out bool foundAPath)
 		{
 			foundAPath = false;
 
-			bool printPerimetersInOrder = !config.MergeOverlappingLines;
-			if (!printPerimetersInOrder)
+			var didMergeOverlappingLines = false;
+			if (config.MergeOverlappingLines)
 			{
-				if (QueuePerimeterWithMergeOverlaps(insetsToConsider, islandPathFinder, layerIndex, gcodeLayer, pathConfig, bridgeAreas, ref pathHadOverlaps))
+				var availableMergePolygons = new Polygons();
+				foreach (var polygon in insetsToConsider)
 				{
-					foreach (var path in insetsToConsider)
+					if (!insetsThatHaveBeenPrinted.Contains(polygon))
+					{
+						availableMergePolygons.Add(polygon);
+					}
+				}
+
+				if (availableMergePolygons.Count > 0
+					&& QueuePerimeterWithMergeOverlaps(availableMergePolygons, islandPathFinder, layerIndex, gcodeLayer, pathConfig, bridgeAreas))
+				{
+					foreach (var path in availableMergePolygons)
 					{
 						insetsThatHaveBeenPrinted.Add(path);
 					}
 
 					foundAPath = true;
-				}
-				else
-				{
-					printPerimetersInOrder = true;
+					didMergeOverlappingLines = true;
 				}
 			}
-			
-			if (printPerimetersInOrder)
+
+			if (!didMergeOverlappingLines) // there were no merged overlaps
 			{
 				// This is the furthest away we will accept a new starting point
 				long maxDist_um = long.MaxValue;
@@ -1560,7 +1552,7 @@ namespace MatterHackers.MatterSlice
 					foundAPath = maxDist_um != long.MaxValue;
 					return false;
 				}
-			
+
 				foundAPath = maxDist_um != long.MaxValue;
 			}
 

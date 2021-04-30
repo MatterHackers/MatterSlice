@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2014, Lars Brubaker
+Copyright (c) 2021, Lars Brubaker
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -204,11 +204,11 @@ namespace MatterHackers.MatterSlice.Tests
 					foreach (var poly in polys)
 					{
 						for (int j = 0; j < poly.Count - 1; j++)
-						{
+					{
 							var next = j + 1;
 							var length = (poly[j] - poly[next]).Length();
-							longest = Math.Max(longest, length);
-						}
+						longest = Math.Max(longest, length);
+					}
 					}
 
 					return longest;
@@ -444,6 +444,36 @@ namespace MatterHackers.MatterSlice.Tests
 							Assert.IsTrue(topMovements[moveIndex - 1].line.IsRetraction() || topMovements[moveIndex - 2].line.IsRetraction());
 						}
 					}
+				}
+			}
+		}
+
+		[Test]
+		public void EliminateDoublePerimeter()
+		{
+			string twoHoleSTL = TestUtilities.GetStlPath("double_perimeter_error");
+			string validatePerimetersGCode = TestUtilities.GetTempGCodePath("double_perimeter_error.gcode");
+			{
+				// load a model that is (or was) having many erroneous travels
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "double_perimeter_error.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(validatePerimetersGCode);
+				processor.LoadStlFile(twoHoleSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(validatePerimetersGCode);
+
+				var layers = loadedGCode.GetAllLayers();
+
+				// validate that all perimeters render as groups
+				for (int i = 1; i < layers.Count; i++)
+				{
+					// this will check for overlapping segments
+					TestUtilities.GetExtrusionPolygonsForLayer(layers[i]);
 				}
 			}
 		}

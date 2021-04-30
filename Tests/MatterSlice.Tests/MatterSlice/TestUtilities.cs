@@ -121,7 +121,7 @@ namespace MatterHackers.MatterSlice.Tests
 			var layerPolygons = new List<Polygons>(layerCount);
 			for (int i = 0; i < layerCount; i++)
 			{
-				layerPolygons.Add(TestUtilities.GetExtrusionPolygonsForLayer(loadedGCode.GetLayer(i)));
+				layerPolygons.Add(TestUtilities.GetExtrusionPolygonsForLayer(loadedGCode.GetLayer(i), false));
 			}
 
 			return layerPolygons;
@@ -167,18 +167,17 @@ namespace MatterHackers.MatterSlice.Tests
 			return Path.Combine(directory, testName + ".gcode");
 		}
 
-		public static Polygons GetExtrusionPolygonsForLayer(this string[] layerGCode, long movementToIgnore = 0)
+		public static Polygons GetExtrusionPolygonsForLayer(this string[] layerGCode, bool validateOverlaps = true)
 		{
 			var movementInfo = default(MovementInfo);
-			return GetExtrusionPolygonsForLayer(layerGCode, ref movementInfo, movementToIgnore);
+			return GetExtrusionPolygonsForLayer(layerGCode, ref movementInfo, validateOverlaps);
 		}
 
-		public static Polygons GetExtrusionPolygonsForLayer(this string[] layerGCode, ref MovementInfo movementInfo, long movementToIgnore = 0)
+		public static Polygons GetExtrusionPolygonsForLayer(this string[] layerGCode, ref MovementInfo movementInfo, bool validateOverlaps = true)
 		{
 			var foundPolygons = new Polygons();
 
 			bool extruding = false;
-			// check that all moves are on the outside of the cylinder (not crossing to a new point)
 			int movementCount = 0;
 			double movementAmount = double.MaxValue / 2; // always add a new extrusion the first time
 			MovementInfo lastMovement = movementInfo;
@@ -187,9 +186,9 @@ namespace MatterHackers.MatterSlice.Tests
 				bool isExtrude = currentMovement.extrusion != lastMovement.extrusion;
 
 				if (extruding)
-				{
-					// add to the extrusion
-					foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
+					{
+						// add to the extrusion
+						foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
 						(long)(currentMovement.position.x * 1000),
 						(long)(currentMovement.position.y * 1000),
 						(long)(currentMovement.position.z * 1000)));
@@ -205,7 +204,7 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					if (isExtrude)
 					{
-						if (movementAmount >= movementToIgnore)
+						if (movementAmount >= 0)
 						{
 							// starting a new extrusion
 							foundPolygons.Add(new Polygon());
@@ -236,7 +235,59 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 
 			movementInfo = lastMovement;
+
+			// validate that the polygons do not double extrude
+			if (validateOverlaps)
+			{
+				Assert.IsFalse(HasOverlapingSegments(foundPolygons));
+			}
+
 			return foundPolygons;
+		}
+
+		public static bool HasOverlapingSegments(this Polygons polygons)
+		{
+			var foundSegments = new HashSet<(IntPoint p1, IntPoint p2)>();
+
+			for (var polygonIndex = 0; polygonIndex < polygons.Count; polygonIndex++)
+			{
+				var polygon = polygons[polygonIndex];
+				var first = true;
+				var prevPoint = default(IntPoint);
+				for (int pointIndex = 0; pointIndex < polygon.Count; pointIndex++)
+				{
+					var currentPoint = polygon[pointIndex];
+					if (first)
+					{
+						prevPoint = currentPoint;
+						first = false;
+					}
+					else
+					{
+						var minXYZ = prevPoint;
+						var maxXYZ = currentPoint;
+						// make sure min is less than max
+						if (minXYZ.X > maxXYZ.X
+							|| (minXYZ.X == maxXYZ.X && minXYZ.Y > maxXYZ.Y)
+							|| (minXYZ.X == maxXYZ.X && minXYZ.Y == maxXYZ.Y && minXYZ.Z > maxXYZ.Z))
+						{
+							minXYZ = currentPoint;
+							maxXYZ = prevPoint;
+						}
+
+						if (foundSegments.Contains((minXYZ, maxXYZ)))
+						{
+							return true;
+						}
+
+						foundSegments.Add((minXYZ, maxXYZ));
+
+						prevPoint = currentPoint;
+					}
+				}
+			}
+
+			return false;
 		}
 
 		public static bool GetFirstNumberAfter(string stringToCheckAfter, string stringWithNumber, ref double readValue, int startIndex = 0)
@@ -515,8 +566,8 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				var aLayerGCode = TestUtilities.GetLayer(aLoadedGcode, layerIndex);
 				var bLayerGCode = TestUtilities.GetLayer(bLoadedGCode, layerIndex);
-				var aPolys = TestUtilities.GetExtrusionPolygonsForLayer(aLayerGCode);
-				var bPolys = TestUtilities.GetExtrusionPolygonsForLayer(bLayerGCode);
+				var aPolys = TestUtilities.GetExtrusionPolygonsForLayer(aLayerGCode, false);
+				var bPolys = TestUtilities.GetExtrusionPolygonsForLayer(bLayerGCode, false);
 				// Assert.AreEqual(aPolys.Count, bPolys.Count);
 				if (aPolys.Count > 0)
 				{
