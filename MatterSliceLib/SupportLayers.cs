@@ -247,9 +247,10 @@ namespace MatterHackers.MatterSlice
 			Polygons currentAirGappedBottoms = AirGappedBottomOutlines[layerIndex];
 			List<Polygons> supportIslands = currentAirGappedBottoms.ProcessIntoSeparateIslands();
 
-			Polygons allSupport = new Polygons();
 			foreach (Polygons supportIsland in supportIslands)
 			{
+				Polygons allSupport = new Polygons();
+				
 				// force a retract if changing islands
 				if (config.RetractWhenChangingIslands)
 				{
@@ -279,22 +280,25 @@ namespace MatterHackers.MatterSlice
 				}
 
 				allSupport.AddRange(islandInfillLines);
+			
+				gcodeLayer.QueuePolygonsByOptimizer(allSupport, pathFinder, supportNormalConfig, layerIndex);
 			}
-
-			gcodeLayer.QueuePolygonsByOptimizer(allSupport, pathFinder, supportNormalConfig, layerIndex);
 		}
 
 		public bool QueueInterfaceSupportLayer(ConfigSettings config, LayerGCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportInterfaceConfig, PathFinder pathFinder)
 		{
+			var foundSupport = false;
+			
 			// interface
 			Polygons interfaceOutlines = InterfaceLayers[layerIndex];
 			if (interfaceOutlines.Count > 0)
 			{
 				List<Polygons> interfaceIslands = interfaceOutlines.ProcessIntoSeparateIslands();
-				Polygons allSupport = new Polygons();
 
 				foreach (Polygons interfaceIsland in interfaceIslands)
 				{
+					Polygons allSupport = new Polygons();
+					
 					// force a retract if changing islands
 					if (config.RetractWhenChangingIslands)
 					{
@@ -312,23 +316,24 @@ namespace MatterHackers.MatterSlice
 					var supportLines = new Polygons();
 					Infill.GenerateLineInfill(config, interfaceIsland.Offset(infillOffset), supportLines, config.InfillStartingAngle + 90, config.ExtrusionWidth_um);
 					allSupport.AddRange(supportLines);
-				}
 
-				if (gcodeLayer.QueuePolygonsByOptimizer(allSupport, pathFinder, supportInterfaceConfig, 0))
-				{
-					return true;
+					if (gcodeLayer.QueuePolygonsByOptimizer(allSupport, pathFinder, supportInterfaceConfig, 0))
+					{
+						foundSupport = true;
+					}
 				}
 			}
 
-			return false;
+			return foundSupport;
 		}
 
 		public bool QueueNormalSupportLayer(ConfigSettings config, LayerGCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, PathFinder pathFinder)
 		{
+			var foundSupport = false;
+
 			// normal support
 			Polygons currentSupportOutlines = SparseSupportOutlines[layerIndex];
 			List<Polygons> supportIslands = currentSupportOutlines.ProcessIntoSeparateIslands();
-			Polygons allSupport = new Polygons();
 
 			var infillOutlines = new List<Polygons>();
 			for (int i = 0; i < supportIslands.Count; i++)
@@ -345,6 +350,8 @@ namespace MatterHackers.MatterSlice
 
 			for (int i = 0; i < supportIslands.Count; i++)
 			{
+				Polygons allSupport = new Polygons();
+				
 				var supportIsland = supportIslands[i];
 
 				// force a retract if changing islands
@@ -380,14 +387,14 @@ namespace MatterHackers.MatterSlice
 				}
 
 				allSupport.AddRange(islandInfillLines);
+
+				if (gcodeLayer.QueuePolygonsByOptimizer(allSupport, pathFinder, supportNormalConfig, 0))
+				{
+					foundSupport = true;
+				}
 			}
 
-			if (gcodeLayer.QueuePolygonsByOptimizer(allSupport, pathFinder, supportNormalConfig, 0))
-			{
-				return true;
-			}
-
-			return false;
+			return foundSupport;
 		}
 
 		private static List<Polygons> CalculateAllPartOutlines(ConfigSettings config, List<ExtruderLayers> Extruders)

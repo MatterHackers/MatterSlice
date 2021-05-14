@@ -221,7 +221,7 @@ namespace MatterHackers.MatterSlice.Tests
 					{
 						// on the first layer we are looking for a single move that is the right length from the skirt to the part
 						var longest = LongestMove(layers[i]);
-						Assert.AreEqual(config.SkirtDistance_um + config.ExtrusionWidth_um, longest, 50, "The skirt must be the correct distance from the outside of the part");
+						Assert.AreEqual(config.SkirtDistance_um + config.ExtrusionWidth_um, longest, 500, "The skirt must be the correct distance from the outside of the part");
 					}
 					else // check that there are no 
 					{
