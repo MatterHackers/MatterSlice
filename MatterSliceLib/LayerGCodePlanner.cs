@@ -426,7 +426,7 @@ namespace MatterHackers.MatterSlice
 				Polygon ccwPolygon = orderOptimizer.ConvertToCcwPolygon(polygons, pathConfig.LineWidth_um);
 				if (ccwPolygon != null)
 				{
-					QueuePolygon(ccwPolygon, null, 0, pathConfig);
+					QueuePolygon(ccwPolygon, pathFinder, 0, pathConfig);
 					return true;
 				}
 			}

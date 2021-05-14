@@ -221,7 +221,7 @@ namespace MatterHackers.MatterSlice.Tests
 					{
 						// on the first layer we are looking for a single move that is the right length from the skirt to the part
 						var longest = LongestMove(layers[i]);
-						Assert.AreEqual(config.SkirtDistance_um + config.ExtrusionWidth_um, longest, 50, "The skirt must be the correct distance from the outside of the part");
+						Assert.AreEqual(config.SkirtDistance_um + config.ExtrusionWidth_um, longest, 500, "The skirt must be the correct distance from the outside of the part");
 					}
 					else // check that there are no 
 					{
@@ -347,6 +347,52 @@ namespace MatterHackers.MatterSlice.Tests
 					string[] layer = TestUtilities.GetLayer(gcodeContents, i);
 					int totalRetractions = TestUtilities.CountRetractions(layer);
 					Assert.IsTrue(totalRetractions == 0);
+				}
+			}
+		}
+
+		[Test]
+		public void AvoidCrossingWithWhenSupportsCreated()
+		{
+			// validate the function
+			Assert.AreEqual(5, new Vector3(0, 0, 0).DistanceToSegment(new Vector3(5, 0, 0), new Vector3(25, 0, 0)));
+			Assert.AreEqual(5, new Vector3(30, 0, 0).DistanceToSegment(new Vector3(5, 0, 0), new Vector3(25, 0, 0)));
+			Assert.AreEqual(5, new Vector3(15, 5, 0).DistanceToSegment(new Vector3(5, 0, 0), new Vector3(25, 0, 0)));
+			Assert.AreEqual(5, new Vector3(17, -5, 0).DistanceToSegment(new Vector3(5, 0, 0), new Vector3(25, 0, 0)));
+
+			string infillSTL = TestUtilities.GetStlPath("Avoid Crossing With Support");
+			string infillGCode = TestUtilities.GetTempGCodePath("Avoid Crossing With Support.gcode");
+			{
+				// load a model that is correctly manifold
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "Avoid Crossing With Support.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(infillGCode);
+				processor.LoadStlFile(infillSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] gcodeContents = TestUtilities.LoadGCodeFile(infillGCode);
+
+				var layers = gcodeContents.GetAllTravelPolygons();
+				var checkCenter = new Vector3(100, 100, 0);
+				for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
+				{
+					var layer = layers[layerIndex];
+					for (int polygonIndex = 0; polygonIndex < layer.Count; polygonIndex++)
+					{
+						var polygon = layer[polygonIndex];
+						for (int i = 0; i < polygon.Count - 1; i++)
+						{
+							var start = new Vector3(polygon[i]) / 1000.0;
+							var end = new Vector3(polygon[i+1]) / 1000.0;
+							var distFromLine = checkCenter.DistanceToSegment(start, end);
+	                        // assert that no line gets closer than 5mm to 100,100 (this is a hole and should be avoided)
+							Assert.Greater(distFromLine, 5);
+						}
+					}
 				}
 			}
 		}
