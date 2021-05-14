@@ -42,6 +42,11 @@ namespace MatterHackers.MatterSlice
 			z = _z;
 		}
 
+		public override string ToString()
+		{
+			return $"{x},{y},{z}";
+		}
+
 		public Vector3(IntPoint v0)
 		{
 			this.x = v0.X;
@@ -85,6 +90,30 @@ namespace MatterHackers.MatterSlice
 		public static Vector3 operator /(Vector3 p, double d)
 		{
 			return new Vector3(p.x / d, p.y / d, p.z / d);
+		}
+
+		public void Normalize()
+		{
+			double length = this.Length;
+			if (length != 0)
+			{
+				double scale = 1.0 / this.Length;
+				x *= scale;
+				y *= scale;
+				z *= scale;
+			}
+		}
+
+		public Vector3 GetNormal()
+		{
+			var normal = this;
+			normal.Normalize();
+			return normal;
+		}
+
+		public Vector3 GetPerpendicular(Vector3 b)
+		{
+			return this.Cross(b);
 		}
 
 		public static Vector3 operator +(Vector3 left, Vector3 right)
@@ -133,34 +162,26 @@ namespace MatterHackers.MatterSlice
 			return x * x + y * y + z * z;
 		}
 
-		private double max()
+		public double DistanceToSegment(Vector3 start, Vector3 end, bool onlyWithinSegment = false)
 		{
-			if (x > y && x > z)
+			var delta = end - start;
+			var length = delta.Length;
+			var normal = delta.GetNormal();
+			var distanceFromStart = Vector3.Dot(normal, (this - start));
+			if (distanceFromStart >= 0 && distanceFromStart < length)
 			{
-				return x;
+				var perpendicular = normal.GetPerpendicular(new Vector3(0, 0, 1));
+				var distanceFromLine = Math.Abs(Vector3.Dot(this - start, perpendicular));
+				return distanceFromLine;
+			}
+			else if (onlyWithinSegment)
+			{
+				return double.PositiveInfinity;
 			}
 
-			if (y > z)
-			{
-				return y;
-			}
+			var distanceFromEnd = Vector3.Dot(normal, (this - end));
 
-			return z;
-		}
-
-		private bool testLength(double len)
-		{
-			return vSize2() <= len * len;
-		}
-
-		private double vSize()
-		{
-			return Math.Sqrt(vSize2());
-		}
-
-		private double vSize2()
-		{
-			return x * x + y * y + z * z;
+			return Math.Max(-distanceFromStart, distanceFromEnd);
 		}
 	}
 }
