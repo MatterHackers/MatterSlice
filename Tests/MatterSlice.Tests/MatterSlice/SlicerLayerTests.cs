@@ -360,9 +360,6 @@ namespace MatterHackers.MatterSlice.Tests
 			Assert.AreEqual(5, new Vector3(15, 5, 0).DistanceToSegment(new Vector3(5, 0, 0), new Vector3(25, 0, 0)));
 			Assert.AreEqual(5, new Vector3(17, -5, 0).DistanceToSegment(new Vector3(5, 0, 0), new Vector3(25, 0, 0)));
 
-			Assert.AreEqual(double.PositiveInfinity, new Vector3(0, 0, 0).DistanceToSegment(new Vector3(5, 0, 0), new Vector3(25, 0, 0), true));
-			Assert.AreEqual(double.PositiveInfinity, new Vector3(30, 0, 0).DistanceToSegment(new Vector3(5, 0, 0), new Vector3(25, 0, 0), true));
-
 			string infillSTL = TestUtilities.GetStlPath("Avoid Crossing With Support");
 			string infillGCode = TestUtilities.GetTempGCodePath("Avoid Crossing With Support.gcode");
 			{
@@ -391,7 +388,7 @@ namespace MatterHackers.MatterSlice.Tests
 						{
 							var start = new Vector3(polygon[i]) / 1000.0;
 							var end = new Vector3(polygon[i+1]) / 1000.0;
-							var distFromLine = checkCenter.DistanceToSegment(start, end, true);
+							var distFromLine = checkCenter.DistanceToSegment(start, end);
 	                        // assert that no line gets closer than 5mm to 100,100 (this is a hole and should be avoided)
 							Assert.Greater(distFromLine, 5);
 						}

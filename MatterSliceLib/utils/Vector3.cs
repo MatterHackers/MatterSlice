@@ -162,26 +162,27 @@ namespace MatterHackers.MatterSlice
 			return x * x + y * y + z * z;
 		}
 
-		public double DistanceToSegment(Vector3 start, Vector3 end, bool onlyWithinSegment = false)
+		public double DistanceToSegment(Vector3 start, Vector3 end)
 		{
-			var delta = end - start;
-			var length = delta.Length;
-			var normal = delta.GetNormal();
-			var distanceFromStart = Vector3.Dot(normal, (this - start));
-			if (distanceFromStart >= 0 && distanceFromStart < length)
+			var segmentDelta = end - start;
+			var segmentLength = segmentDelta.Length;
+			var segmentNormal = segmentDelta.GetNormal();
+			var deltaToStart = this - start;
+			var distanceFromStart = Vector3.Dot(segmentNormal, deltaToStart);
+			if (distanceFromStart >= 0 && distanceFromStart < segmentLength)
 			{
-				var perpendicular = normal.GetPerpendicular(new Vector3(0, 0, 1));
-				var distanceFromLine = Math.Abs(Vector3.Dot(this - start, perpendicular));
+				var perpendicular = segmentNormal.GetPerpendicular(new Vector3(0, 0, 1));
+				var distanceFromLine = Math.Abs(Vector3.Dot(deltaToStart, perpendicular));
 				return distanceFromLine;
 			}
-			else if (onlyWithinSegment)
+
+			if (distanceFromStart < 0)
 			{
-				return double.PositiveInfinity;
+				return deltaToStart.Length;
 			}
 
-			var distanceFromEnd = Vector3.Dot(normal, (this - end));
-
-			return Math.Max(-distanceFromStart, distanceFromEnd);
+			var deltaToEnd = this - end;
+			return deltaToEnd.Length;
 		}
 	}
 }
