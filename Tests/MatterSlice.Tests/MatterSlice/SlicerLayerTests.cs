@@ -233,6 +233,112 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void ThinGapsOnRosePetal()
+		{
+			string infillSTL = TestUtilities.GetStlPath("petal_holes");
+			string infillGCode = TestUtilities.GetTempGCodePath("petal_holes.gcode");
+			{
+				// load a model that was showing unwanted holes 
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "petal_holes.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(infillGCode);
+				processor.LoadStlFile(infillSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
+
+				double LongestMove(Polygons polys)
+				{
+					double longest = 0;
+					foreach (var poly in polys)
+					{
+						for (int j = 0; j < poly.Count - 1; j++)
+						{
+							var next = j + 1;
+							var length = (poly[j] - poly[next]).Length();
+							longest = Math.Max(longest, length);
+						}
+					}
+
+					return longest;
+				}
+
+				var layers = loadedGCode.GetAllExtrusionPolygons();
+				for (int i = 0; i < 15; i++)
+				{
+					if (i == 0)
+					{
+						// on the first layer we are looking for a single move that is the right length from the skirt to the part
+						var longest = LongestMove(layers[i]);
+						Assert.AreEqual(config.SkirtDistance_um + config.ExtrusionWidth_um, longest, 500, "The skirt must be the correct distance from the outside of the part");
+					}
+					else // check that there are no 
+					{
+						var longest = LongestMove(layers[i]);
+						Assert.Less(longest, 3000, $"Segment length was: {longest}, should be smaller.");
+					}
+				}
+			}
+		}
+
+		[Test]
+		public void LoopsOnRosePetal()
+		{
+			string infillSTL = TestUtilities.GetStlPath("petal_loops");
+			string infillGCode = TestUtilities.GetTempGCodePath("petal_loops.gcode");
+			{
+				// load a model that was showing unwanted holes 
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "petal_loops.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(infillGCode);
+				processor.LoadStlFile(infillSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
+
+				double LongestMove(Polygons polys)
+				{
+					double longest = 0;
+					foreach (var poly in polys)
+					{
+						for (int j = 0; j < poly.Count - 1; j++)
+						{
+							var next = j + 1;
+							var length = (poly[j] - poly[next]).Length();
+							longest = Math.Max(longest, length);
+						}
+					}
+
+					return longest;
+				}
+
+				var layers = loadedGCode.GetAllExtrusionPolygons();
+				for (int i = 0; i < 15; i++)
+				{
+					if (i == 0)
+					{
+						// on the first layer we are looking for a single move that is the right length from the skirt to the part
+						var longest = LongestMove(layers[i]);
+						Assert.AreEqual(config.SkirtDistance_um + config.ExtrusionWidth_um, longest, 500, "The skirt must be the correct distance from the outside of the part");
+					}
+					else // check that there are no 
+					{
+						var longest = LongestMove(layers[i]);
+						Assert.Less(longest, 3000, $"Segment length was: {longest}, should be smaller.");
+					}
+				}
+			}
+		}
+
+		[Test]
 		public void ThinRingHasNoCrossingSegments2()
 		{
 			string infillSTL = TestUtilities.GetStlPath("thin_gap_fill_ring");
