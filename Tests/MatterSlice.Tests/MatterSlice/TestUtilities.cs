@@ -181,6 +181,7 @@ namespace MatterHackers.MatterSlice.Tests
 			int movementCount = 0;
 			double movementAmount = double.MaxValue / 2; // always add a new extrusion the first time
 			MovementInfo lastMovement = movementInfo;
+			MovementInfo lastLastMovement = movementInfo;
 			foreach (MovementInfo currentMovement in TestUtilities.Movements(layerGCode, lastMovement))
 			{
 				bool isExtrude = currentMovement.extrusion != lastMovement.extrusion;
@@ -222,6 +223,7 @@ namespace MatterHackers.MatterSlice.Tests
 					}
 				}
 
+				lastLastMovement = lastMovement;
 				lastMovement = currentMovement;
 				movementCount++;
 			}
@@ -235,9 +237,9 @@ namespace MatterHackers.MatterSlice.Tests
 				else
 				{
 					foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
-						(long)(lastMovement.position.x * 1000),
-						(long)(lastMovement.position.y * 1000),
-						(long)(lastMovement.position.z * 1000)));
+						(long)(lastLastMovement.position.x * 1000),
+						(long)(lastLastMovement.position.y * 1000),
+						(long)(lastLastMovement.position.z * 1000)));
 				}
 			}
 
