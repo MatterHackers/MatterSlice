@@ -233,6 +233,50 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void ThinFeaturesFillAndCenter()
+		{
+			string infillSTL = TestUtilities.GetStlPath("thin_wall");
+			string infillGCode = TestUtilities.GetTempGCodePath("thin_wall.gcode");
+			{
+				// load a model that was showing unwanted holes 
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "thin_wall.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(infillGCode);
+				processor.LoadStlFile(infillSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
+
+				var layers = loadedGCode.GetAllExtrusionPolygons();
+				for (int i = 1; i < 163; i++)
+				{
+					var layer = layers[i];
+					Assert.AreEqual(1, layer.Count, "There is one polygon on every layer (up to 163)");
+					foreach (var poly in layer)
+					{
+						Assert.AreEqual(2, poly.Count, "Each polygon should only be a line");
+					}
+				}
+			}
+		}
+
+		private static void AllLayersHaveSinglExtrusionLine(string[] loadedGCode, int start)
+		{
+			var layers = loadedGCode.GetAllExtrusionPolygons();
+			for (int i = start; i < layers.Count; i++)
+			{
+				var layer = layers[i];
+				Assert.AreEqual(1, layer.Count, "Three should only be one polygon per layer");
+				var poly = layer[0];
+				Assert.AreNotEqual(poly[0], poly[poly.Count - 1], "The polygon should not wrap around (it is a line).");
+			}
+		}
+
+		[Test]
 		public void ThinGapsOnRosePetal()
 		{
 			string infillSTL = TestUtilities.GetStlPath("petal_holes");
@@ -251,37 +295,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
 
-				double LongestMove(Polygons polys)
-				{
-					double longest = 0;
-					foreach (var poly in polys)
-					{
-						for (int j = 0; j < poly.Count - 1; j++)
-						{
-							var next = j + 1;
-							var length = (poly[j] - poly[next]).Length();
-							longest = Math.Max(longest, length);
-						}
-					}
-
-					return longest;
-				}
-
-				var layers = loadedGCode.GetAllExtrusionPolygons();
-				for (int i = 0; i < 15; i++)
-				{
-					if (i == 0)
-					{
-						// on the first layer we are looking for a single move that is the right length from the skirt to the part
-						var longest = LongestMove(layers[i]);
-						Assert.AreEqual(config.SkirtDistance_um + config.ExtrusionWidth_um, longest, 500, "The skirt must be the correct distance from the outside of the part");
-					}
-					else // check that there are no 
-					{
-						var longest = LongestMove(layers[i]);
-						Assert.Less(longest, 3000, $"Segment length was: {longest}, should be smaller.");
-					}
-				}
+				AllLayersHaveSinglExtrusionLine(loadedGCode, 3);
 			}
 		}
 
@@ -304,37 +318,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
 
-				double LongestMove(Polygons polys)
-				{
-					double longest = 0;
-					foreach (var poly in polys)
-					{
-						for (int j = 0; j < poly.Count - 1; j++)
-						{
-							var next = j + 1;
-							var length = (poly[j] - poly[next]).Length();
-							longest = Math.Max(longest, length);
-						}
-					}
-
-					return longest;
-				}
-
-				var layers = loadedGCode.GetAllExtrusionPolygons();
-				for (int i = 0; i < 15; i++)
-				{
-					if (i == 0)
-					{
-						// on the first layer we are looking for a single move that is the right length from the skirt to the part
-						var longest = LongestMove(layers[i]);
-						Assert.AreEqual(config.SkirtDistance_um + config.ExtrusionWidth_um, longest, 500, "The skirt must be the correct distance from the outside of the part");
-					}
-					else // check that there are no 
-					{
-						var longest = LongestMove(layers[i]);
-						Assert.Less(longest, 3000, $"Segment length was: {longest}, should be smaller.");
-					}
-				}
+				AllLayersHaveSinglExtrusionLine(loadedGCode, 5);
 			}
 		}
 

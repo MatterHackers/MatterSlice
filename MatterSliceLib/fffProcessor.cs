@@ -843,6 +843,10 @@ namespace MatterHackers.MatterSlice
 
 			if (pathHadOverlaps)
 			{
+				var hide = config.DoSeamHiding;
+				var closed = config.ClosedLoop;
+				config.DoSeamHiding = false;
+				config.ClosedLoop = false;
 				QueuePolygonsConsideringSupport(layerIndex,
 					pathFinder,
 					gcodeLayer,
@@ -850,6 +854,8 @@ namespace MatterHackers.MatterSlice
 					config,
 					SupportWriteType.UnsupportedAreas,
 					bridgeAreas);
+				config.ClosedLoop = closed;
+				config.DoSeamHiding = hide;
 
 				return true;
 			}

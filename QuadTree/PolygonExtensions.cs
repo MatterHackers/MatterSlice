@@ -488,7 +488,7 @@ namespace MatterHackers.QuadTree
 
 			bool pathWasOptimized = false;
 
-			// Set all the paths to have the width we are starting width (as we will be changing some of them)
+			// Set all the paths to have the width we are starting with (as we will be changing some of them)
 			foreach (var perimeter in perimeters)
 			{
 				for (int i = 0; i < perimeter.Count; i++)
@@ -571,6 +571,17 @@ namespace MatterHackers.QuadTree
 				if (markedAltered[segmentIndex] == Altered.Remove)
 				{
 					polySegments.RemoveAt(segmentIndex);
+				}
+				else
+				{
+					var nextSegment = (segmentIndex + 1) % segmentCount;
+					var prevSegment = (segmentIndex + segmentCount - 1) % segmentCount;
+					if (markedAltered[nextSegment] != 0
+						&& markedAltered[prevSegment] != 0
+						&& (polySegments[segmentIndex].End - polySegments[segmentIndex].Start).Length() < overlapMergeAmount_um)
+					{
+						polySegments.RemoveAt(segmentIndex);
+					}
 				}
 			}
 
