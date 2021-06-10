@@ -29,6 +29,7 @@ either expressed or implied, of the FreeBSD Project.
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using KdTree;
 using KdTree.Math;
 using MSClipperLib;
@@ -480,6 +481,12 @@ namespace MatterHackers.QuadTree
 			long cleanDistance_um = overlapMergeAmount_um / 40;
 
 			var perimeters = Clipper.CleanPolygons(perimetersIn, cleanDistance_um);
+
+			if (perimeters.Count != perimetersIn.Count
+				|| perimeters.Any(p => p.Count == 0))
+			{
+				perimeters = Clipper.CleanPolygons(perimetersIn);
+			}
 
 			if (perimeters.Count == 0)
 			{

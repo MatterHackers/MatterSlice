@@ -258,7 +258,10 @@ namespace MatterHackers.MatterSlice.Tests
 					Assert.AreEqual(1, layer.Count, "There is one polygon on every layer (up to 163)");
 					foreach (var poly in layer)
 					{
+						var cleaned = Clipper.CleanPolygons(new Polygons() { poly }, 10);
 						Assert.AreEqual(2, poly.Count, "Each polygon should only be a line");
+						Assert.AreEqual(0, poly[0].X, "The points should be centered on 0");
+						Assert.AreEqual(0, poly[1].X, "The points should be centered on 0");
 					}
 				}
 			}

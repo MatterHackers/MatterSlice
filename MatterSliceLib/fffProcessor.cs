@@ -1022,7 +1022,10 @@ namespace MatterHackers.MatterSlice
 			{
 				if ((config.ContinuousSpiralOuterPerimeter
 					&& islandIndex > 0)
-					|| layer.Islands[islandIndex].InsetToolPaths.Count == 0)
+					|| layer.Islands[islandIndex].InsetToolPaths.Count == 0
+					|| (layer.Islands[islandIndex].InsetToolPaths.Count == 1
+						&& layer.Islands[islandIndex].InsetToolPaths[0].Count == 1
+						&& layer.Islands[islandIndex].InsetToolPaths[0][0].Count == 0))
 				{
 					continue;
 				}
