@@ -242,12 +242,15 @@ namespace MatterHackers.MatterSlice
 							select new LayerIsland(outline)).ToList();
 		}
 
-		public void GenerateInsets(long extrusionWidth_um, long outerExtrusionWidth_um, int insetCount, bool expandThinWalls, bool avoidCrossingPerimeters)
+		public void GenerateInsets(ConfigSettings config, long extrusionWidth_um, long outerExtrusionWidth_um, int insetCount)
 		{
+			var expandThinWalls = config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter;
+			var avoidCrossingPerimeters = config.AvoidCrossingPerimeters;
+
 			SliceLayer layer = this;
 			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 			{
-				layer.Islands[islandIndex].GenerateInsets(extrusionWidth_um, outerExtrusionWidth_um, insetCount, avoidCrossingPerimeters);
+				layer.Islands[islandIndex].GenerateInsets(config, extrusionWidth_um, outerExtrusionWidth_um, insetCount, avoidCrossingPerimeters);
 			}
 
 			if (!expandThinWalls)

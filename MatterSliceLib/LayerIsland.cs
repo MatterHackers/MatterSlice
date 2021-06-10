@@ -82,7 +82,7 @@ namespace MatterHackers.MatterSlice
 
 		public Polygons TopPaths { get; set; } = new Polygons();
 
-		public void GenerateInsets(long extrusionWidth_um, long outerExtrusionWidth_um, int insetCount, bool avoidCrossingPerimeters)
+		public void GenerateInsets(ConfigSettings config, long extrusionWidth_um, long outerExtrusionWidth_um, int insetCount, bool avoidCrossingPerimeters)
 		{
 			LayerIsland part = this;
 			part.BoundingBox.Calculate(part.IslandOutline);
@@ -111,7 +111,16 @@ namespace MatterHackers.MatterSlice
 
 					Polygons currentInset = part.IslandOutline.Offset(-currentOffset);
 					// make sure our polygon data is reasonable
-					currentInset = Clipper.CleanPolygons(currentInset, minimumDistanceToCreateNewPosition);
+					if (config.MergeOverlappingLines)
+					{
+						// be aggressive about maintaining small polygons
+						currentInset = Clipper.CleanPolygons(currentInset);
+					}
+					else
+					{
+						// clean the polygon to make it have less jaggies
+						currentInset = Clipper.CleanPolygons(currentInset, minimumDistanceToCreateNewPosition);
+					}
 
 					// check that we have actual paths
 					if (currentInset.Count > 0)

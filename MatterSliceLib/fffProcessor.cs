@@ -801,11 +801,11 @@ namespace MatterHackers.MatterSlice
 
 							if (layerIndex == 0)
 							{
-								layer.GenerateInsets(config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, insetCount, config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter, config.AvoidCrossingPerimeters);
+								layer.GenerateInsets(config, config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, insetCount);
 							}
 							else
 							{
-								layer.GenerateInsets(config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, insetCount, config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter, config.AvoidCrossingPerimeters);
+								layer.GenerateInsets(config, config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, insetCount);
 							}
 						}
 					}
@@ -843,6 +843,10 @@ namespace MatterHackers.MatterSlice
 
 			if (pathHadOverlaps)
 			{
+				var hide = config.DoSeamHiding;
+				var closed = config.ClosedLoop;
+				config.DoSeamHiding = false;
+				config.ClosedLoop = false;
 				QueuePolygonsConsideringSupport(layerIndex,
 					pathFinder,
 					gcodeLayer,
@@ -850,6 +854,8 @@ namespace MatterHackers.MatterSlice
 					config,
 					SupportWriteType.UnsupportedAreas,
 					bridgeAreas);
+				config.ClosedLoop = closed;
+				config.DoSeamHiding = hide;
 
 				return true;
 			}
@@ -1016,7 +1022,10 @@ namespace MatterHackers.MatterSlice
 			{
 				if ((config.ContinuousSpiralOuterPerimeter
 					&& islandIndex > 0)
-					|| layer.Islands[islandIndex].InsetToolPaths.Count == 0)
+					|| layer.Islands[islandIndex].InsetToolPaths.Count == 0
+					|| (layer.Islands[islandIndex].InsetToolPaths.Count == 1
+						&& layer.Islands[islandIndex].InsetToolPaths[0].Count == 1
+						&& layer.Islands[islandIndex].InsetToolPaths[0][0].Count == 0))
 				{
 					continue;
 				}

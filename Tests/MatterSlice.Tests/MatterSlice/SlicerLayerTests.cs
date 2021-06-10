@@ -201,14 +201,12 @@ namespace MatterHackers.MatterSlice.Tests
 				double LongestMove(Polygons polys)
 				{
 					double longest = 0;
-					foreach (var poly in polys)
+					for (int i = 0; i < polys.Count - 1; i++)
 					{
-						for (int j = 0; j < poly.Count - 1; j++)
-					{
-							var next = j + 1;
-							var length = (poly[j] - poly[next]).Length();
+						var poly = polys[i];
+						var next = polys[i + 1];
+						var length = (poly[poly.Count - 1] - next[0]).Length();
 						longest = Math.Max(longest, length);
-					}
 					}
 
 					return longest;
@@ -229,6 +227,99 @@ namespace MatterHackers.MatterSlice.Tests
 						Assert.Less(longest, 3000, $"Segment length was: {longest}, should be smaller.");
 					}
 				}
+			}
+		}
+
+		[Test, Ignore("WIP")]
+		public void ThinFeaturesFillAndCenter()
+		{
+			string infillSTL = TestUtilities.GetStlPath("thin_wall");
+			string infillGCode = TestUtilities.GetTempGCodePath("thin_wall.gcode");
+			{
+				// load a model that was showing unwanted holes 
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "thin_wall.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(infillGCode);
+				processor.LoadStlFile(infillSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
+
+				var layers = loadedGCode.GetAllExtrusionPolygons();
+				for (int i = 1; i < 163; i++)
+				{
+					var layer = layers[i];
+					Assert.AreEqual(1, layer.Count, "There is one polygon on every layer (up to 163)");
+					foreach (var poly in layer)
+					{
+						var cleaned = Clipper.CleanPolygons(new Polygons() { poly }, 10);
+						Assert.AreEqual(2, poly.Count, "Each polygon should only be a line");
+						Assert.AreEqual(0, poly[0].X, "The points should be centered on 0");
+						Assert.AreEqual(0, poly[1].X, "The points should be centered on 0");
+					}
+				}
+			}
+		}
+
+		private static void AllLayersHaveSinglExtrusionLine(string[] loadedGCode, int start)
+		{
+			var layers = loadedGCode.GetAllExtrusionPolygons();
+			for (int i = start; i < layers.Count; i++)
+			{
+				var layer = layers[i];
+				Assert.AreEqual(1, layer.Count, "Three should only be one polygon per layer");
+				var poly = layer[0];
+				Assert.AreNotEqual(poly[0], poly[poly.Count - 1], "The polygon should not wrap around (it is a line).");
+			}
+		}
+
+		[Test, Ignore("WIP")]
+		public void ThinGapsOnRosePetal()
+		{
+			string infillSTL = TestUtilities.GetStlPath("petal_holes");
+			string infillGCode = TestUtilities.GetTempGCodePath("petal_holes.gcode");
+			{
+				// load a model that was showing unwanted holes 
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "petal_holes.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(infillGCode);
+				processor.LoadStlFile(infillSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
+
+				AllLayersHaveSinglExtrusionLine(loadedGCode, 3);
+			}
+		}
+
+		[Test, Ignore("WIP")]
+		public void LoopsOnRosePetal()
+		{
+			string infillSTL = TestUtilities.GetStlPath("petal_loops");
+			string infillGCode = TestUtilities.GetTempGCodePath("petal_loops.gcode");
+			{
+				// load a model that was showing unwanted holes 
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "petal_loops.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(infillGCode);
+				processor.LoadStlFile(infillSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Finalize();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
+
+				AllLayersHaveSinglExtrusionLine(loadedGCode, 5);
 			}
 		}
 
@@ -625,7 +716,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				var layerPolygons = loadedGCode.GetAllExtrusionPolygons();
 
-				Assert.AreEqual(9, layerPolygons[10].Count);
+				Assert.AreEqual(10, layerPolygons[10].Count);
 			}
 
 			// with expand thin walls and with merge overlapping lines
@@ -654,7 +745,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				var layerPolygons = loadedGCode.GetAllExtrusionPolygons();
 
-				Assert.AreEqual(9, layerPolygons[10].Count);
+				Assert.AreEqual(10, layerPolygons[10].Count);
 			}
 		}
 
