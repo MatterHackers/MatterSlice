@@ -210,6 +210,11 @@ namespace MatterHackers.MatterSlice
 					else
 					{
 						layersA.AllOutlines = layersA.AllOutlines.CreateUnion(layersB.AllOutlines);
+						// remove tiny gaps between parts
+						// first grow the outlines so they will combine if very close together
+						layersA.AllOutlines = layersA.AllOutlines.Offset(20);
+						// then shrink them back down so they are the same size as when we started
+						layersA.AllOutlines = layersA.AllOutlines.Offset(-20);
 					}
 
 					break;
