@@ -75,7 +75,7 @@ namespace MSClipperLib
 		/// <returns>The position that has the largest turn angle</returns>
 		public static int FindGreatestTurnIndex(this Polygon inputPolygon,
 			long extrusionWidth_um = 3,
-			bool randomizeFlatSeams = false,
+			bool randomizeSeams = false,
 			IntPoint? startPosition = null)
 		{
 			var count = inputPolygon.Count;
@@ -118,7 +118,7 @@ namespace MSClipperLib
 			}
 			else // there is not really good candidate
 			{
-				if (randomizeFlatSeams)
+				if (randomizeSeams)
 				{
 					return rand.Next(inputPolygon.Count);
 				}

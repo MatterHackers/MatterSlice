@@ -1462,7 +1462,7 @@ namespace MatterHackers.MatterSlice
 					&& boundaryPolygons[polygonIndex.Item1].Count > 0)
 				{
 					var closestIndex = boundaryPolygons[polygonIndex.Item1].FindGreatestTurnIndex(config.ExtrusionWidth_um,
-						config.FlatSeamPlacement == ConfigConstants.FLAT_SEAM_PLACEMENT.RANDOMIZE,
+						config.SeamPlacement == ConfigConstants.SEAM_PLACEMENT.RANDOMIZE,
 						position);
 					IntPoint closestToPoly = boundaryPolygons[polygonIndex.Item1][closestIndex];
 					if (closestToPoly != null)
