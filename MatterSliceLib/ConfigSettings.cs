@@ -44,6 +44,12 @@ namespace MatterHackers.MatterSlice
 			GYROID,
 		}
 
+		public enum FLAT_SEAM_PLACEMENT
+		{
+			PLACE_IN_BACK,
+			RANDOMIZE
+		}
+
 		/**
 		 * * Type of support material.
 		 * * Grid is a X/Y grid with an outline, which is very strong, provides good support. But in some cases is hard to remove.
@@ -111,6 +117,8 @@ namespace MatterHackers.MatterSlice
 		public int ExtruderCount { get; set; } = 1;
 
 		public long ExtrusionWidth_um => (long)(ExtrusionWidth * 1000);
+
+		public ConfigConstants.FLAT_SEAM_PLACEMENT FlatSeamPlacement { get; set; }
 
 		[SettingDescription("The min fan speed based on layer time.")]
 		public int FanSpeedMinPercent { get; set; }
@@ -635,10 +643,12 @@ namespace MatterHackers.MatterSlice
 						case "SUPPORT_TYPE":
 						case "INFILL_TYPE":
 						case "OUTPUT_TYPE":
+						case "FLAT_SEAM_PLACEMENT":
 							try
 							{
 								valueToSetTo = valueToSetTo.Replace('|', ',');
-								property.SetValue(this, Enum.Parse(property.PropertyType, valueToSetTo));
+								valueToSetTo = valueToSetTo.Replace('_', ' ');
+								property.SetValue(this, Enum.Parse(property.PropertyType, valueToSetTo.ToUpper()));
 							}
 							catch (Exception)
 							{

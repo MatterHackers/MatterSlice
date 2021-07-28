@@ -75,6 +75,7 @@ namespace MSClipperLib
 		/// <returns>The position that has the largest turn angle</returns>
 		public static int FindGreatestTurnIndex(this Polygon inputPolygon,
 			long extrusionWidth_um = 3,
+			bool randomizeFlatSeams = false,
 			IntPoint? startPosition = null)
 		{
 			var count = inputPolygon.Count;
@@ -115,8 +116,13 @@ namespace MSClipperLib
 			{
 				return positiveGroup.GetBestIndex(startPosition);
 			}
-			else
+			else // there is not really good candidate
 			{
+				if (randomizeFlatSeams)
+				{
+					return rand.Next(inputPolygon.Count);
+				}
+
 				var currentFurthestBack = new IntPoint(long.MaxValue, long.MinValue);
 				int furthestBackIndex = 0;
 				// get the furthest back index
@@ -139,6 +145,8 @@ namespace MSClipperLib
 				return furthestBackIndex;
 			}
 		}
+
+		static Random rand = new Random(2012);
 
 		private static void DiscoverAndAddTurns(Polygon inputPolygon,
 			long neighborhood,
