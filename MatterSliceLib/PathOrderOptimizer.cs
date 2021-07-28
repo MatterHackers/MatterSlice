@@ -114,6 +114,7 @@ namespace MatterHackers.MatterSlice
 					polygonAccelerator,
 					completedPolygons,
 					doSeamHiding,
+					config.FlatSeamPlacement == ConfigConstants.FLAT_SEAM_PLACEMENT.RANDOMIZE,
 					layerIndex,
 					pathConfig != null ? pathConfig.LineWidth_um : 0,
 					canTravelForwardOrBackward,
@@ -148,6 +149,7 @@ namespace MatterHackers.MatterSlice
 									polygonAccelerator,
 									completedPolygons,
 									doSeamHiding,
+									config.FlatSeamPlacement == ConfigConstants.FLAT_SEAM_PLACEMENT.RANDOMIZE,
 									layerIndex,
 									pathConfig != null ? pathConfig.LineWidth_um : 0,
 									canTravelForwardOrBackward,
@@ -195,6 +197,7 @@ namespace MatterHackers.MatterSlice
 			QuadTree<int> polygonAccelerator,
 			HashSet<int> completedPolygons,
 			bool doSeamHiding,
+			bool randomizeFlatSeams,
 			int layerIndex,
 			long lineWidth_um,
 			bool canTravelForwardOrBackward,
@@ -216,6 +219,7 @@ namespace MatterHackers.MatterSlice
 					Accelerator[index],
 					currentPosition,
 					doSeamHiding,
+					randomizeFlatSeams,
 					canTravelForwardOrBackward,
 					layerIndex,
 					lineWidth_um,
@@ -238,6 +242,7 @@ namespace MatterHackers.MatterSlice
 			INearestNeighbours<int> accelerator,
 			IntPoint currentPosition,
 			bool doSeamHiding,
+			bool randomizeFlatSeams,
 			bool canTravelForwardOrBackward,
 			int layerIndex,
 			long lineWidth_um,
@@ -266,7 +271,7 @@ namespace MatterHackers.MatterSlice
 			{
 				if (doSeamHiding)
 				{
-					bestPoint = polygon.FindGreatestTurnIndex(lineWidth_um, currentPosition);
+					bestPoint = polygon.FindGreatestTurnIndex(lineWidth_um, randomizeFlatSeams, currentPosition);
 				}
 				else
 				{
