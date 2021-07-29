@@ -105,6 +105,27 @@ namespace MSClipperLib
 						extrusionWidth_um,
 						negativeGroup,
 						delta => delta < -extrusionWidth_um / 8);
+
+					// One last check for really small concave turns
+					if (negativeGroup.Count == 0)
+					{
+						negativeGroup.SameDelta = extrusionWidth_um / 16;
+						// look for small concave turns
+						DiscoverAndAddTurns(inputPolygon,
+							extrusionWidth_um * 2,
+							negativeGroup,
+							delta => delta < -extrusionWidth_um / 8);
+
+						if (negativeGroup.Count == 0)
+						{
+							negativeGroup.SameDelta = extrusionWidth_um / 16;
+							// look for small concave turns
+							DiscoverAndAddTurns(inputPolygon,
+								extrusionWidth_um * 3,
+								negativeGroup,
+								delta => delta < -extrusionWidth_um / 8);
+						}
+					}
 				}
 			}
 
