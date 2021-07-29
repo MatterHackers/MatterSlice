@@ -44,7 +44,7 @@ namespace MatterHackers.MatterSlice
 			GYROID,
 		}
 
-		public enum FLAT_SEAM_PLACEMENT
+		public enum SEAM_PLACEMENT
 		{
 			PLACE_IN_BACK,
 			RANDOMIZE
@@ -118,7 +118,7 @@ namespace MatterHackers.MatterSlice
 
 		public long ExtrusionWidth_um => (long)(ExtrusionWidth * 1000);
 
-		public ConfigConstants.FLAT_SEAM_PLACEMENT FlatSeamPlacement { get; set; }
+		public ConfigConstants.SEAM_PLACEMENT SeamPlacement { get; set; }
 
 		[SettingDescription("The min fan speed based on layer time.")]
 		public int FanSpeedMinPercent { get; set; }
@@ -643,11 +643,11 @@ namespace MatterHackers.MatterSlice
 						case "SUPPORT_TYPE":
 						case "INFILL_TYPE":
 						case "OUTPUT_TYPE":
-						case "FLAT_SEAM_PLACEMENT":
+						case "SEAM_PLACEMENT":
 							try
 							{
 								valueToSetTo = valueToSetTo.Replace('|', ',');
-								valueToSetTo = valueToSetTo.Replace('_', ' ');
+								valueToSetTo = valueToSetTo.Replace(' ', '_');
 								property.SetValue(this, Enum.Parse(property.PropertyType, valueToSetTo.ToUpper()));
 							}
 							catch (Exception)
