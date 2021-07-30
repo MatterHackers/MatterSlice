@@ -270,11 +270,11 @@ namespace MatterHackers.MatterSlice
 				var islandInfillLines = new Polygons();
 				switch (config.SupportType)
 				{
-					case ConfigConstants.SUPPORT_TYPE.GRID:
+					case SUPPORT_TYPE.GRID:
 						Infill.GenerateGridInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
 						break;
 
-					case ConfigConstants.SUPPORT_TYPE.LINES:
+					case SUPPORT_TYPE.LINES:
 						Infill.GenerateLineInfill(config, infillOutline, islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
 						break;
 				}
@@ -376,11 +376,11 @@ namespace MatterHackers.MatterSlice
 				{
 					switch (config.SupportType)
 					{
-						case ConfigConstants.SUPPORT_TYPE.GRID:
+						case SUPPORT_TYPE.GRID:
 							Infill.GenerateGridInfill(config, infillOutlines[i], islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
 							break;
 
-						case ConfigConstants.SUPPORT_TYPE.LINES:
+						case SUPPORT_TYPE.LINES:
 							Infill.GenerateLineInfill(config, infillOutlines[i], islandInfillLines, config.SupportInfillStartingAngle, config.SupportLineSpacing_um);
 							break;
 					}

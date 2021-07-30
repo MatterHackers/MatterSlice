@@ -96,7 +96,7 @@ namespace MatterHackers.MatterSlice.Tests
 				switch (propertyName)
 				{
 					case "InfillType":
-						propertyValue = ConfigConstants.INFILL_TYPE.HEXAGON;
+						propertyValue = INFILL_TYPE.HEXAGON;
 						break;
 
 					case "BooleanOperations":
@@ -106,7 +106,7 @@ namespace MatterHackers.MatterSlice.Tests
 						break;
 
 					case "SupportType":
-						propertyValue = ConfigConstants.SUPPORT_TYPE.GRID;
+						propertyValue = SUPPORT_TYPE.GRID;
 						break;
 				}
 

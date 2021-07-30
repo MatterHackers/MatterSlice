@@ -29,38 +29,29 @@ using MSClipperLib;
 
 namespace MatterHackers.MatterSlice
 {
+	public enum INFILL_TYPE
+	{
+		GRID,
+		LINES,
+		TRIANGLES,
+		HEXAGON,
+		CONCENTRIC,
+		GYROID,
+	}
+
+	 // Type of support material.
+	 // Grid is a X/Y grid with an outline, which is very strong, provides good support. But in some cases is hard to remove.
+	 // Lines give a row of lines which break off one at a time, making them easier to remove, but they do not support as good as the grid support.
+	public enum SUPPORT_TYPE
+	{
+		GRID,
+		LINES
+	}
+
 	public class ConfigConstants
 	{
 		public const int MAX_EXTRUDERS = 4;
 		public const string VERSION = "2.21.6";
-
-		public enum INFILL_TYPE
-		{
-			GRID,
-			LINES,
-			TRIANGLES,
-			HEXAGON,
-			CONCENTRIC,
-			GYROID,
-		}
-
-		public enum SEAM_PLACEMENT
-		{
-			PLACE_IN_BACK,
-			RANDOMIZE
-		}
-
-		/**
-		 * * Type of support material.
-		 * * Grid is a X/Y grid with an outline, which is very strong, provides good support. But in some cases is hard to remove.
-		 * * Lines give a row of lines which break off one at a time, making them easier to remove, but they do not support as good as the grid support.
-		 * */
-
-		public enum SUPPORT_TYPE
-		{
-			GRID,
-			LINES
-		}
 	}
 
 	// all the variables in this class will be saved and loaded from settings files
@@ -118,7 +109,7 @@ namespace MatterHackers.MatterSlice
 
 		public long ExtrusionWidth_um => (long)(ExtrusionWidth * 1000);
 
-		public ConfigConstants.SEAM_PLACEMENT SeamPlacement { get; set; }
+		public SEAM_PLACEMENT SeamPlacement { get; set; }
 
 		[SettingDescription("The min fan speed based on layer time.")]
 		public int FanSpeedMinPercent { get; set; }
@@ -180,7 +171,7 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The starting angle that infill lines will be drawn at (angle in x y).")]
 		public double InfillStartingAngle { get; set; } = 45;
 
-		public ConfigConstants.INFILL_TYPE InfillType { get; set; }
+		public INFILL_TYPE InfillType { get; set; }
 
 		[SettingDescription("The speed of all perimeters but the outside one. mm/s.")]
 		public int InsidePerimetersSpeed { get; set; } = 50;
@@ -374,7 +365,7 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The percent of support to generate.")]
 		public double SupportPercent { get; set; } = 50;
 
-		public ConfigConstants.SUPPORT_TYPE SupportType { get; set; }
+		public SUPPORT_TYPE SupportType { get; set; }
 
 		public long SupportXYDistance_um => (long)(SupportXYDistanceFromObject * 1000);
 
@@ -702,7 +693,7 @@ namespace MatterHackers.MatterSlice
 			InfillPercent = 20;
 			InfillExtendIntoPerimeter = .06;
 			InfillStartingAngle = 45;
-			InfillType = ConfigConstants.INFILL_TYPE.GRID;
+			InfillType = INFILL_TYPE.GRID;
 
 			// raft settings
 			EnableRaft = false;
@@ -710,7 +701,7 @@ namespace MatterHackers.MatterSlice
 			SupportAirGap = .3;
 			RaftExtraDistanceAroundPart = 5;
 
-			SupportType = ConfigConstants.SUPPORT_TYPE.GRID;
+			SupportType = SUPPORT_TYPE.GRID;
 			GenerateSupportPerimeter = true;
 			RaftExtruder = -1;
 			BrimExtruder = -1;
