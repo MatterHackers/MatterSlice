@@ -36,6 +36,13 @@ namespace MSClipperLib
 	using System.Linq;
 	using Polygon = List<IntPoint>;
 
+	public enum SEAM_PLACEMENT
+	{
+		FURTHEST_BACK,
+		CENTERED_IN_BACK,
+		RANDOMIZED
+	}
+
 	public static class CLPolygonExtensions
 	{
 		public static Polygon CreateFromString(string polygonString, double scale = 1)
@@ -75,7 +82,7 @@ namespace MSClipperLib
 		/// <returns>The position that has the largest turn angle</returns>
 		public static int FindGreatestTurnIndex(this Polygon inputPolygon,
 			long extrusionWidth_um = 3,
-			bool randomizeSeams = false,
+			SEAM_PLACEMENT seamPlacement = SEAM_PLACEMENT.FURTHEST_BACK,
 			IntPoint? startPosition = null)
 		{
 			var count = inputPolygon.Count;
@@ -106,6 +113,7 @@ namespace MSClipperLib
 						negativeGroup,
 						delta => delta < -extrusionWidth_um / 8);
 
+#if false // this code creates turns in places we don't want
 					// One last check for really small concave turns
 					if (negativeGroup.Count == 0)
 					{
@@ -126,6 +134,7 @@ namespace MSClipperLib
 								delta => delta < -extrusionWidth_um / 8);
 						}
 					}
+#endif
 				}
 			}
 
@@ -139,31 +148,63 @@ namespace MSClipperLib
 			}
 			else // there is not really good candidate
 			{
-				if (randomizeSeams)
+				switch (seamPlacement)
 				{
-					return rand.Next(inputPolygon.Count);
-				}
-
-				var currentFurthestBack = new IntPoint(long.MaxValue, long.MinValue);
-				int furthestBackIndex = 0;
-				// get the furthest back index
-				for (var i = 0; i < count; i++)
-				{
-					var currentPoint = inputPolygon[i];
-
-					if (currentPoint.Y >= currentFurthestBack.Y)
-					{
-						if (currentPoint.Y > currentFurthestBack.Y
-							|| currentPoint.X < currentFurthestBack.X)
+					case SEAM_PLACEMENT.CENTERED_IN_BACK:
+						// find the point that is most directly behind the center point of this path
+						var center = default(IntPoint);
+						foreach (var point in inputPolygon)
 						{
-							furthestBackIndex = i;
-							currentFurthestBack = currentPoint;
+							center += point;
 						}
-					}
-				}
 
-				// If can't find good candidate go with vertex most in a single direction
-				return furthestBackIndex;
+						center /= count;
+
+						// start with forward
+						var bestAngle = double.MaxValue;
+						int bestAngleIndexIndex = 0;
+						// get the furthest back index
+						for (var i = 0; i < count; i++)
+						{
+							var direction = inputPolygon[i] - center;
+							var angle = MathHelper.GetDeltaAngle(MathHelper.Range0ToTau(Math.Atan2(direction.Y, direction.X)), Math.PI * 1.5);
+
+							if (Math.Abs(angle) < bestAngle)
+							{
+								bestAngleIndexIndex = i;
+								bestAngle = angle;
+							}
+						}
+
+						// If can't find good candidate go with vertex most in a single direction
+						return bestAngleIndexIndex;
+
+					case SEAM_PLACEMENT.RANDOMIZED:
+						return rand.Next(inputPolygon.Count);
+
+					case SEAM_PLACEMENT.FURTHEST_BACK:
+					default:
+						var currentFurthestBack = new IntPoint(long.MaxValue, long.MinValue);
+						int furthestBackIndex = 0;
+						// get the furthest back index
+						for (var i = 0; i < count; i++)
+						{
+							var currentPoint = inputPolygon[i];
+
+							if (currentPoint.Y >= currentFurthestBack.Y)
+							{
+								if (currentPoint.Y > currentFurthestBack.Y
+									|| currentPoint.X < currentFurthestBack.X)
+								{
+									furthestBackIndex = i;
+									currentFurthestBack = currentPoint;
+								}
+							}
+						}
+
+						// If can't find good candidate go with vertex most in a single direction
+						return furthestBackIndex;
+				}
 			}
 		}
 

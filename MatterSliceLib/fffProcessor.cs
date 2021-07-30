@@ -1462,7 +1462,7 @@ namespace MatterHackers.MatterSlice
 					&& boundaryPolygons[polygonIndex.Item1].Count > 0)
 				{
 					var closestIndex = boundaryPolygons[polygonIndex.Item1].FindGreatestTurnIndex(config.ExtrusionWidth_um,
-						config.SeamPlacement == ConfigConstants.SEAM_PLACEMENT.RANDOMIZE,
+						config.SeamPlacement,
 						position);
 					IntPoint closestToPoly = boundaryPolygons[polygonIndex.Item1][closestIndex];
 					if (closestToPoly != null)
@@ -1913,27 +1913,27 @@ namespace MatterHackers.MatterSlice
 				{
 					switch (config.InfillType)
 					{
-						case ConfigConstants.INFILL_TYPE.LINES:
+						case INFILL_TYPE.LINES:
 							Infill.GenerateLineInfill(config, part.SparseInfillPaths, fillPolygons, alternatingInfillAngle);
 							break;
 
-						case ConfigConstants.INFILL_TYPE.GRID:
+						case INFILL_TYPE.GRID:
 							Infill.GenerateGridInfill(config, part.SparseInfillPaths, fillPolygons, config.InfillStartingAngle);
 							break;
 
-						case ConfigConstants.INFILL_TYPE.TRIANGLES:
+						case INFILL_TYPE.TRIANGLES:
 							Infill.GenerateTriangleInfill(config, part.SparseInfillPaths, fillPolygons, config.InfillStartingAngle);
 							break;
 
-						case ConfigConstants.INFILL_TYPE.GYROID:
+						case INFILL_TYPE.GYROID:
 							GyroidInfill.Generate(config, part.SparseInfillPaths, fillPolygons, true, layerIndex);
 							break;
 
-						case ConfigConstants.INFILL_TYPE.HEXAGON:
+						case INFILL_TYPE.HEXAGON:
 							Infill.GenerateHexagonInfill(config, part.SparseInfillPaths, fillPolygons, config.InfillStartingAngle, layerIndex);
 							break;
 
-						case ConfigConstants.INFILL_TYPE.CONCENTRIC:
+						case INFILL_TYPE.CONCENTRIC:
 							Infill.GenerateConcentricInfill(config, part.SparseInfillPaths, fillPolygons);
 							break;
 
