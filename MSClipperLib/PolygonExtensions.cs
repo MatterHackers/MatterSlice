@@ -161,18 +161,18 @@ namespace MSClipperLib
 						center /= count;
 
 						// start with forward
-						var bestAngle = double.MaxValue;
+						var bestDeltaAngle = double.MaxValue;
 						int bestAngleIndexIndex = 0;
 						// get the furthest back index
 						for (var i = 0; i < count; i++)
 						{
 							var direction = inputPolygon[i] - center;
-							var angle = MathHelper.GetDeltaAngle(MathHelper.Range0ToTau(Math.Atan2(direction.Y, direction.X)), Math.PI * 1.5);
+							var deltaAngle = MathHelper.GetDeltaAngle(MathHelper.Range0ToTau(Math.Atan2(direction.Y, direction.X)), Math.PI * .5);
 
-							if (Math.Abs(angle) < bestAngle)
+							if (Math.Abs(deltaAngle) < bestDeltaAngle)
 							{
 								bestAngleIndexIndex = i;
-								bestAngle = angle;
+								bestDeltaAngle = Math.Abs(deltaAngle);
 							}
 						}
 
