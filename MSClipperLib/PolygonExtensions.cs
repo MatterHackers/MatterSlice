@@ -40,11 +40,31 @@ namespace MSClipperLib
 	{
 		FURTHEST_BACK,
 		CENTERED_IN_BACK,
-		RANDOMIZED
+		RANDOMIZED,
+		CLOSEST
 	}
 
 	public static class CLPolygonExtensions
 	{
+		public static int FindClosestIndex(this Polygon polygon, IntPoint position)
+		{
+			var bestIndex = -1;
+
+			long bestDist = long.MaxValue;
+			for (int pointIndex = 0; pointIndex < polygon.Count; pointIndex++)
+			{
+				var point = polygon[pointIndex];
+				long length = (point - position).Length();
+				if (length < bestDist)
+				{
+					bestDist = length;
+					bestIndex = pointIndex;
+				}
+			}
+
+			return bestIndex;
+		}
+
 		public static Polygon CreateFromString(string polygonString, double scale = 1)
 		{
 			var output = new Polygon();
@@ -112,29 +132,6 @@ namespace MSClipperLib
 						extrusionWidth_um,
 						negativeGroup,
 						delta => delta < -extrusionWidth_um / 8);
-
-#if false // this code creates turns in places we don't want
-					// One last check for really small concave turns
-					if (negativeGroup.Count == 0)
-					{
-						negativeGroup.SameDelta = extrusionWidth_um / 16;
-						// look for small concave turns
-						DiscoverAndAddTurns(inputPolygon,
-							extrusionWidth_um * 2,
-							negativeGroup,
-							delta => delta < -extrusionWidth_um / 8);
-
-						if (negativeGroup.Count == 0)
-						{
-							negativeGroup.SameDelta = extrusionWidth_um / 16;
-							// look for small concave turns
-							DiscoverAndAddTurns(inputPolygon,
-								extrusionWidth_um * 3,
-								negativeGroup,
-								delta => delta < -extrusionWidth_um / 8);
-						}
-					}
-#endif
 				}
 			}
 
@@ -204,6 +201,13 @@ namespace MSClipperLib
 
 						// If can't find good candidate go with vertex most in a single direction
 						return furthestBackIndex;
+
+					case SEAM_PLACEMENT.CLOSEST:
+						if (startPosition != null)
+						{
+							return inputPolygon.FindClosestIndex(startPosition.Value);
+						}
+						return 0;
 				}
 			}
 		}

@@ -38,7 +38,6 @@ namespace MatterHackers.MatterSlice
 			EvenOdd,
 			UnionAll
 		}
-;
 
 		public static void AddAll(this Polygons polygons, Polygons other)
 		{
