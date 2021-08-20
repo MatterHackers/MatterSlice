@@ -270,7 +270,7 @@ namespace MatterHackers.QuadTree
 						{
 							IntPoint dir = (currentPoint - lastPoint) * newLength / segmentLength;
 
-							IntPoint clippedEndpoint = lastPoint + dir;
+							IntPoint clippedEndpoint = dir + lastPoint;
 
 							polygon[i] = clippedEndpoint;
 							return new Polygon(polygon.GetRange(0, i + 1));

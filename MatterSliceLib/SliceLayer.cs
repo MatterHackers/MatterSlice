@@ -210,6 +210,43 @@ namespace MatterHackers.MatterSlice
 
 			bridgeAngle = Math.Atan2(center2.Y - center1.Y, center2.X - center1.X) / Math.PI * 180;
 			Range0To360(ref bridgeAngle);
+
+			// if we are resting on 2 islands find the edge of the areaGoingOnTop that most closely matches our angle
+			if (islandsToRestOn.Count == 2 && areaGoingOnTop.Count == 1)
+			{
+				var bestEdgeDelta = 360.0;
+				var bestAngle = bridgeAngle;
+				var poly = areaGoingOnTop[0];
+				for (int startIndex=0; startIndex< poly.Count; startIndex++)
+				{
+					var endIndex = startIndex + 1;
+					if (endIndex == poly.Count)
+					{
+						endIndex = 0;
+					}
+					var start = poly[startIndex];
+					var end = poly[endIndex];
+					var delta = end - start;
+					var edgeAngle = Math.Atan2(delta.Y, delta.X) / Math.PI * 180;
+					Range0To360(ref edgeAngle);
+
+					var angleDelta = Math.Abs(bridgeAngle - edgeAngle);
+					if (angleDelta > 180)
+					{
+						angleDelta -= 180;
+					}
+
+					if (angleDelta < bestEdgeDelta)
+					{
+						bestEdgeDelta = angleDelta;
+						bestAngle = edgeAngle;
+					}
+				}
+
+				bridgeAngle = bestAngle;
+				return true;
+			}
+
 			if (outputDebugData)
 			{
 				islandsToRestOn.SaveToGCode("{0} - angle {1:0.}.gcode".FormatWith(debugName, bridgeAngle));
