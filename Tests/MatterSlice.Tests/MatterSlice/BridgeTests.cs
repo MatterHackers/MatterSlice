@@ -52,6 +52,19 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.AreEqual(bridgeAngle, 315, .01);
 			}
 
+			// Check that we can close a bent shape the right way
+			//        
+			//  |      |
+			//  |    __|
+			//  |    |
+			//  |    |
+			{
+				string islandToFillString = "x:1982, y:2229,x:6123, y:2229,x:6123, y:13387,x:-8281, y:13387,x:-8275, y:-16111,x:1988, y:-16111|";
+				string layerSupportingIslandString = "x:-8081, y:13387,x:-8281, y:13387,x:-8275, y:-16111,x:-8075, y:-16111,|x:1982, y:2229,x:6123, y:2229,x:6123, y:13387,x:5923, y:13387,x:5923, y:2429,x:1782, y:2429,x:1788, y:-16111,x:1988, y:-16111|";
+				double bridgeAngle = GetAngleForData(islandToFillString, layerSupportingIslandString, "long side");
+				Assert.AreEqual(bridgeAngle, 0, .01);
+			}
+
 			// Check that we can close a u shape the right way
 			//  ______
 			//  |    |
