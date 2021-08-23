@@ -242,6 +242,8 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("The number of loops to draw around the convex hull")]
 		public int NumberOfSkirtLoops { get; set; }
 
+		public int NumberOfBrimLayers { get; set; } = 1;
+
 		public int NumberOfTopLayers { get; set; }
 
 		[SettingDescription("Output only the first layer of the print.")]

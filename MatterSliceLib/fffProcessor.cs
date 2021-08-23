@@ -759,6 +759,10 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 			}
+			else if (layerIndex < config.NumberOfBrimLayers)
+			{
+				layerGcodePlanner.QueuePolygonsByOptimizer(slicingData.Brims, null, skirtConfig, layerIndex);
+			}
 		}
 
 		private void CreateRequiredInsets(ConfigSettings config, LayerDataStorage slicingData, int outputLayerIndex, int extruderIndex)
