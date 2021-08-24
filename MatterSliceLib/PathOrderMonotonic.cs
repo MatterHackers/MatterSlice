@@ -24,6 +24,7 @@ using Polygons = System.Collections.Generic.List<System.Collections.Generic.List
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
 using System.Collections.Generic;
 using System;
+using System.Numerics;
 
 namespace MatterHackers.MatterSlice
 {
@@ -32,21 +33,120 @@ namespace MatterHackers.MatterSlice
 		private IntPoint lastPosition;
 		private Polygons sorted;
         private List<bool> linePrinted;
-		private IntPoint perpendicular;
+		private Vector2 perpendicular;
+		private double lineWidth;
+
+        private Vector2 AsVector2(IntPoint intPoint)
+        {
+            return new Vector2(intPoint.X / 1000.0f, intPoint.Y / 1000.0f);
+        }
+
+        private bool LinesAreTouching(int indexA, int indexB)
+		{
+            var startA = AsVector2(sorted[indexA][0]);
+            var endA = AsVector2(sorted[indexA][1]);
+            var normal = Vector2.Normalize(endA - startA);
+
+            var startB = AsVector2(sorted[indexB][0]);
+            var endB = AsVector2(sorted[indexB][1]);
+            var deltaB = endB - startB;
+            if (Vector2.Dot(normal, deltaB) < 0)
+			{
+                // swap B
+                var hold = startB;
+                startB = endB;
+                endB = hold;
+			}
+
+            bool PointWithinLine(Vector2 point, Vector2 start, Vector2 end)
+            {
+                var lineDelta = end - start;
+                var lineLength = lineDelta.Length();
+                var lineNormal = Vector2.Normalize(lineDelta);
+
+                var pointDelta = point - start;
+                var pointLength = Vector2.Dot(lineNormal, pointDelta);
+                if (pointLength < 0)
+				{
+                    return false;
+				}
+
+                if (pointLength > lineLength)
+				{
+                    return false;
+				}
+
+                return true;
+            }
+
+            bool PointWithinA(Vector2 point)
+            {
+                return PointWithinLine(point, startA, endA);
+            }
+
+            bool PointWithinB(Vector2 point)
+            {
+                return PointWithinLine(point, startB, endB);
+            }
+
+            if (PointWithinA(startB)
+                || PointWithinA(endB)
+                || PointWithinB(startA)
+                || PointWithinB(endA))
+			{
+                var distance = Math.Abs(Vector2.Dot(perpendicular, startB - startA));
+                if (Math.Abs(distance - lineWidth) < 1)
+                {
+                    return true;
+                }
+			}
+
+            return false;
+		}
 
         private bool EverythingLeftHasBeenPrinted(int checkIndex)
-		{
+        {
             // check that there is no unprinted touching segment on the left (down the perpendicular) that needs to be printed
-            for (int i = 0; i < checkIndex; i++)
+            for (var i = checkIndex - 1; i >= 0; i--)
             {
                 // first check if there is an unprinted segment to the left
                 if (!linePrinted[i])
                 {
+                    var startA = AsVector2(sorted[checkIndex][0]);
+                    var startB = AsVector2(sorted[i][0]);
+                    var distance = Math.Abs(Vector2.Dot(perpendicular, startB - startA));
+                    if (Math.Abs(distance) > lineWidth * 2)
+                    {
+                        // the tested line is too far back to be touching so stop checking, we are good.
+                        return true;
+                    }
+
                     // check if that unprinted segment is touching this one
+                    if (LinesAreTouching(checkIndex, i))
+					{
+                        return false;
+					}
                 }
             }
 
             return true;
+        }
+
+        private int AdvanceToNextRightSegment(int lastIndex)
+        {
+            for (int i = lastIndex + 1; i < sorted.Count; i++)
+            {
+                if (!linePrinted[i] && LinesAreTouching(lastIndex, i))
+                {
+                    return i;
+                }
+                else
+				{
+                    int a = 0;
+				}
+            }
+
+            return sorted.Count;
         }
 
         private IEnumerable<int> NextIndex
@@ -57,15 +157,29 @@ namespace MatterHackers.MatterSlice
                 while (printedCount < linePrinted.Count)
                 {
                     var first = true;
-                    for (int i = 0; i < sorted.Count; i++)
+                    int i = 0;
+                    var leftError = false;
+                    while (i < sorted.Count)
                     {
                         if (!linePrinted[i]
-                            && (first || EverythingLeftHasBeenPrinted(i)))
+                            && (first || (leftError = EverythingLeftHasBeenPrinted(i))))
                         {
+                            first = false;
                             linePrinted[i] = true;
                             printedCount++;
                             yield return i;
+                            i = AdvanceToNextRightSegment(i);
                         }
+                        else if (leftError)
+						{
+                            // start over at the beginning and look for the next start point
+                            i = sorted.Count;
+						}
+                        else
+						{
+                            // move on to the next point
+                            i++;
+						}
                     }
                 }
             }
@@ -100,8 +214,9 @@ namespace MatterHackers.MatterSlice
         /// It is expected that all the polygons are set, are parallel and have exactly 2 points each
         /// </summary>
         /// <param name="polygons"></param>
-        public MonotonicSorter(Polygons polygons, GCodePathConfig pathConfig, IntPoint lastPosition)
+        public MonotonicSorter(Polygons polygons, IntPoint lastPosition, long lineWidth_um)
         {
+            this.lineWidth = lineWidth_um / 1000.0;
             if (polygons.Count > 0)
             {
                 this.lastPosition = lastPosition;
@@ -132,7 +247,9 @@ namespace MatterHackers.MatterSlice
                 }
 
                 // get the perpendicular
-                perpendicular = (polygons[maxIndex][1] - polygons[maxIndex][0]).GetPerpendicularLeft();
+                var perpendicularIntPoint = (polygons[maxIndex][1] - polygons[maxIndex][0]).GetPerpendicularLeft();
+
+                perpendicular = Vector2.Normalize(AsVector2(perpendicularIntPoint));
 
                 // find the point minimum point in this direction
                 var minDistance = double.MaxValue;
@@ -143,11 +260,11 @@ namespace MatterHackers.MatterSlice
 
                     // add the point with width
                     sorted.Add(new Polygon());
-                    sorted[i].Add(new IntPoint(polygon[0]) { Width = pathConfig.LineWidth_um });
-                    sorted[i].Add(new IntPoint(polygon[1]) { Width = pathConfig.LineWidth_um });
+                    sorted[i].Add(new IntPoint(polygon[0]) { Width = lineWidth_um });
+                    sorted[i].Add(new IntPoint(polygon[1]) { Width = lineWidth_um });
                     linePrinted.Add(false);
 
-                    var distance = perpendicular.Dot(polygon[0]);
+                    var distance = perpendicularIntPoint.Dot(polygon[0]);
                     if(distance < minDistance)
 					{
                         minDistance = distance;
@@ -158,7 +275,7 @@ namespace MatterHackers.MatterSlice
                 // sort the polygons based on the distance from the minimum
                 sorted.Sort((a, b) =>
                 {
-                    return perpendicular.Dot(a[0]).CompareTo(perpendicular.Dot(b[0]));
+                    return perpendicularIntPoint.Dot(a[0]).CompareTo(perpendicularIntPoint.Dot(b[0]));
 
                 });
 
@@ -169,7 +286,7 @@ namespace MatterHackers.MatterSlice
 				{
                     sorted.Reverse();
                     // and make sure we understand the positive direction
-                    perpendicular *= -1;
+                    perpendicularIntPoint *= -1;
 				}
             }
         }

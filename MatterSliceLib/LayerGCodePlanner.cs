@@ -391,7 +391,7 @@ namespace MatterHackers.MatterSlice
 
 		public void QueuePolygonsMonotonic(Polygons polygons, PathFinder pathFinder, GCodePathConfig pathConfig, int layerIndex)
 		{
-			var monotonicSorter = new MonotonicSorter(polygons, pathConfig, LastPosition_um);
+			var monotonicSorter = new MonotonicSorter(polygons, LastPosition_um, pathConfig.LineWidth_um);
 
 			foreach (var polygon in monotonicSorter.Ordered)
 			{
