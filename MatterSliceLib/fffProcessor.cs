@@ -1332,7 +1332,15 @@ namespace MatterHackers.MatterSlice
 					layerGcodePlanner.QueueFanCommand(fanSpeedAtLayerStart, fillConfig);
 				}
 
-				layerGcodePlanner.QueuePolygonsByOptimizer(topFillPolygons, island.PathFinder, topFillConfig, layerIndex);
+				var monotonic = true;
+				if (monotonic)
+				{
+					layerGcodePlanner.QueuePolygonsMonotonic(topFillPolygons, island.PathFinder, topFillConfig, layerIndex);
+				}
+				else
+				{
+					layerGcodePlanner.QueuePolygonsByOptimizer(topFillPolygons, island.PathFinder, topFillConfig, layerIndex);
+				}
 			}
 
 			if (config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter)
@@ -1885,7 +1893,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			// generate infill for the top layer
+			// generate infill for the top most layer
 			if (topFillPolygons != null)
 			{
 				foreach (Polygons outline in part.TopPaths.ProcessIntoSeparateIslands())
@@ -1895,7 +1903,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			// generate infill for the top layer
+			// generate infill for the top layers (but not the top most)
 			if (firstTopFillPolygons != null)
 			{
 				foreach (Polygons outline in part.FirstTopPaths.ProcessIntoSeparateIslands())
