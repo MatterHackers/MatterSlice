@@ -570,7 +570,7 @@ namespace MatterHackers.MatterSlice.Tests
 			processor.LoadStlFile(thinWallsSTL);
 			// slice and save it
 			processor.DoProcessing();
-			processor.Finalize();
+			processor.Dispose();
 
 			return TestUtilities.LoadGCodeFile(thinWallsGCode);
 		}

@@ -67,7 +67,8 @@ namespace MatterHackers.MatterSlice
 		private GCodePathConfig skirtConfig;
 		private GCodePathConfig inset0Config;
 		private GCodePathConfig insetXConfig;
-		private GCodePathConfig fillConfig;
+		private GCodePathConfig sparseFillConfig;
+		private GCodePathConfig solidFillConfig;
 		private GCodePathConfig topFillConfig;
 		private GCodePathConfig firstTopFillConfig;
 		private GCodePathConfig bottomFillConfig;
@@ -171,7 +172,7 @@ namespace MatterHackers.MatterSlice
 			return true;
 		}
 
-		public void Finalize()
+		public void Dispose()
 		{
 			if (!gcodeExport.IsOpened())
 			{
@@ -416,10 +417,11 @@ namespace MatterHackers.MatterSlice
 			skirtConfig = new GCodePathConfig("skirtConfig", "SKIRT", config.DefaultAcceleration);
 			inset0Config = new GCodePathConfig("inset0Config", "WALL-OUTER", config.PerimeterAcceleration) { DoSeamHiding = true };
 			insetXConfig = new GCodePathConfig("insetXConfig", "WALL-INNER", config.PerimeterAcceleration);
-			fillConfig = new GCodePathConfig("fillConfig", "FILL", config.DefaultAcceleration) { ClosedLoop = false };
+			sparseFillConfig = new GCodePathConfig("fillConfig", "FILL", config.DefaultAcceleration) { ClosedLoop = false };
+			solidFillConfig = new GCodePathConfig("fillConfig", "FILL", config.DefaultAcceleration) { ClosedLoop = false, LiftOnTravel = true };
 			topFillConfig = new GCodePathConfig("topFillConfig", "TOP-FILL", config.DefaultAcceleration) { ClosedLoop = false, LiftOnTravel = true };
 			firstTopFillConfig = new GCodePathConfig("firstTopFillConfig", "FIRST-TOP-Fill", config.DefaultAcceleration) { ClosedLoop = false };
-			bottomFillConfig = new GCodePathConfig("bottomFillConfig", "BOTTOM-FILL", config.DefaultAcceleration) { ClosedLoop = false };
+			bottomFillConfig = new GCodePathConfig("bottomFillConfig", "BOTTOM-FILL", config.DefaultAcceleration) { ClosedLoop = false, LiftOnTravel = true };
 			airGappedBottomInsetConfig = new GCodePathConfig("airGappedBottomInsetConfig", "AIR-GAP-INSET", config.DefaultAcceleration);
 			airGappedBottomConfig = new GCodePathConfig("airGappedBottomConfig", "AIR-GAP", config.DefaultAcceleration) { ClosedLoop = false };
 			bridgeConfig = new GCodePathConfig("bridgeConfig", "BRIDGE", config.DefaultAcceleration);
@@ -454,7 +456,8 @@ namespace MatterHackers.MatterSlice
 						inset0Config.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
 						insetXConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
 
-						fillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+						sparseFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
+						solidFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
 						topFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
 						firstTopFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerThickness_um);
 						bottomFillConfig.SetData(config.FirstLayerSpeed, config.FirstLayerExtrusionWidth_um);
@@ -471,7 +474,8 @@ namespace MatterHackers.MatterSlice
 						inset0Config.SetData(config.OutsidePerimeterSpeed, config.OutsideExtrusionWidth_um);
 						insetXConfig.SetData(config.InsidePerimetersSpeed, config.ExtrusionWidth_um);
 
-						fillConfig.SetData(config.InfillSpeed, config.ExtrusionWidth_um);
+						sparseFillConfig.SetData(config.InfillSpeed, config.ExtrusionWidth_um);
+						solidFillConfig.SetData(config.InfillSpeed, config.ExtrusionWidth_um);
 						topFillConfig.SetData(config.TopInfillSpeed, config.ExtrusionWidth_um);
 						firstTopFillConfig.SetData(config.BridgeSpeed, config.ExtrusionWidth_um);
 						bottomFillConfig.SetData(config.BottomInfillSpeed, config.ExtrusionWidth_um);
@@ -527,7 +531,7 @@ namespace MatterHackers.MatterSlice
 					}
 
 					// start out with the fan off for this layer (the minimum layer fan speed will be applied later as the gcode is output)
-					layerPlanner.QueueFanCommand(0, fillConfig);
+					layerPlanner.QueueFanCommand(0, sparseFillConfig);
 
 					// hold the current layer path finder
 					PathFinder layerPathFinder = null;
@@ -624,7 +628,7 @@ namespace MatterHackers.MatterSlice
 						gcodeExport.CurrentZ_um = z;
 					}
 
-					if (slicingData.EnsureWipeTowerIsSolid(layerIndex, layerPathFinder, layerPlanner, fillConfig, config))
+					if (slicingData.EnsureWipeTowerIsSolid(layerIndex, layerPathFinder, layerPlanner, sparseFillConfig, config))
 					{
 						islandCurrentlyInside = null;
 					}
@@ -705,7 +709,7 @@ namespace MatterHackers.MatterSlice
 						}
 
 						// make sure we path plan our way to the wipe tower before switching extruders
-						layerGcodePlanner.QueueTravel(slicingData.WipeCenter_um, pathFinder, fillConfig);
+						layerGcodePlanner.QueueTravel(slicingData.WipeCenter_um, pathFinder, sparseFillConfig);
 						islandCurrentlyInside = null;
 					}
 
@@ -714,7 +718,7 @@ namespace MatterHackers.MatterSlice
 
 					DoSkirtAndBrim(slicingData, layerPathFinder, layerIndex, layerGcodePlanner, extruderIndex, extruderUsedForSupport);
 
-					if (slicingData.PrimeOnWipeTower(layerIndex, layerGcodePlanner, layerPathFinder, fillConfig, config, airGapped))
+					if (slicingData.PrimeOnWipeTower(layerIndex, layerGcodePlanner, layerPathFinder, sparseFillConfig, config, airGapped))
 					{
 						islandCurrentlyInside = null;
 					}
@@ -758,6 +762,10 @@ namespace MatterHackers.MatterSlice
 						havePrintedBrims = true;
 					}
 				}
+			}
+			else if (layerIndex < config.NumberOfBrimLayers)
+			{
+				layerGcodePlanner.QueuePolygonsByOptimizer(slicingData.Brims, null, skirtConfig, layerIndex);
 			}
 		}
 
@@ -966,7 +974,7 @@ namespace MatterHackers.MatterSlice
 					&& maxPoint.Y > long.MinValue)
 				{
 					// before we start the brim make sure we are printing from the outside in
-					gcodeLayer.QueueTravel(maxPoint, null, fillConfig);
+					gcodeLayer.QueueTravel(maxPoint, null, sparseFillConfig);
 				}
 			}
 
@@ -1059,7 +1067,8 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				var fillPolygons = new Polygons();
+				var sparseFillPolygons = new Polygons();
+				var solidFillPolygons = new Polygons();
 				var topFillPolygons = new Polygons();
 				var firstTopFillPolygons = new Polygons();
 				var bridgePolygons = new Polygons();
@@ -1072,7 +1081,8 @@ namespace MatterHackers.MatterSlice
 					layerIndex,
 					island,
 					bottomFillPolygons,
-					fillPolygons,
+					sparseFillPolygons,
+					solidFillPolygons,
 					firstTopFillPolygons,
 					topFillPolygons,
 					bridgePolygons,
@@ -1106,6 +1116,13 @@ namespace MatterHackers.MatterSlice
 						insetAccelerators.Add(inset.GetQuadTree());
 					}
 
+					bool LayerHasSolidInfill()
+					{
+						return topFillPolygons.Count > 0
+							|| bottomFillPolygons.Count > 0
+							|| solidFillPolygons.Count > 0;
+					}
+
 					// If we are on the very first layer we always start with the outside so that we can stick to the bed better.
 					if (config.OutsidePerimetersFirst || layerIndex == 0 || inset0Config.Spiralize)
 					{
@@ -1120,8 +1137,7 @@ namespace MatterHackers.MatterSlice
 						else
 						{
 							// if we are printing top layers and going to do z-lifting make sure we don't cross over the top layer while moving between islands
-							if (topFillPolygons.Count > 0
-								&& config.RetractionZHop > 0)
+							if (config.RetractionZHop > 0 && LayerHasSolidInfill())
 							{
 								inset0Config.LiftOnTravel = true;
 								insetXConfig.LiftOnTravel = true;
@@ -1177,8 +1193,7 @@ namespace MatterHackers.MatterSlice
 
 						bool foundAnyPath = true;
 						// if we are printing top layers and going to do z-lifting make sure we don't cross over the top layer while moving between islands
-						if (topFillPolygons.Count > 0
-							&& config.RetractionZHop > 0)
+						if (config.RetractionZHop > 0 && LayerHasSolidInfill())
 						{
 							inset0Config.LiftOnTravel = true;
 							insetXConfig.LiftOnTravel = true;
@@ -1287,7 +1302,7 @@ namespace MatterHackers.MatterSlice
 						}
 						
 						// add all fill polygons together so they can be optimized in one step
-						fillPolygons.AddRange(thinGapPolygons.ConvertToLines(false));
+						sparseFillPolygons.AddRange(thinGapPolygons.ConvertToLines(false));
 					}
 				}
 
@@ -1297,38 +1312,60 @@ namespace MatterHackers.MatterSlice
 				{
 					QueuePolygonsConsideringSupport(layerIndex, null, layerGcodePlanner, bridgePolygons, bridgeConfig, SupportWriteType.UnsupportedAreas);
 					// Set it back to what it was
-					layerGcodePlanner.QueueFanCommand(fanSpeedAtLayerStart, fillConfig);
+					layerGcodePlanner.QueueFanCommand(fanSpeedAtLayerStart, sparseFillConfig);
 				}
 
 				// Put all of these segments into a list that can be queued together and still preserve their individual config settings.
 				// This makes the total amount of travel while printing infill much less.
-				if (topFillConfig.Speed == fillConfig.Speed
-					&& topFillConfig.LiftOnTravel == fillConfig.LiftOnTravel)
+				if (topFillConfig.Speed == solidFillConfig.Speed)
 				{
-					fillPolygons.AddRange(topFillPolygons);
+					solidFillPolygons.AddRange(topFillPolygons);
 					topFillPolygons.Clear();
 				}
 
-				if (bottomFillConfig.Speed == fillConfig.Speed
-					&& slicingData.Support == null)
+				if (bottomFillConfig.Speed == solidFillConfig.Speed)
 				{
-					fillPolygons.AddRange(bottomFillPolygons);
+					solidFillPolygons.AddRange(bottomFillPolygons);
 					bottomFillPolygons.Clear();
 				}
 
-				QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, fillPolygons, fillConfig, SupportWriteType.UnsupportedAreas);
+				// sparse fill
+				QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, sparseFillPolygons, sparseFillConfig, SupportWriteType.UnsupportedAreas);
 
-				QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, bottomFillPolygons, bottomFillConfig, SupportWriteType.UnsupportedAreas);
+				var monotonic = true;
+
+				if (monotonic)
+				{
+					// solid fill
+					layerGcodePlanner.QueuePolygonsMonotonic(solidFillPolygons, island.PathFinder, solidFillConfig, layerIndex);
+					// bottom layers
+					layerGcodePlanner.QueuePolygonsMonotonic(bottomFillPolygons, island.PathFinder, bottomFillConfig, layerIndex);
+				}
+				else
+				{
+					// solid fill
+					QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, solidFillPolygons, solidFillConfig, SupportWriteType.UnsupportedAreas);
+					// bottom layers
+					QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, bottomFillPolygons, bottomFillConfig, SupportWriteType.UnsupportedAreas);
+				}
+
 				if (firstTopFillPolygons.Count > 0)
 				{
 					// turn it on for bridge (or keep it on)
 					layerGcodePlanner.QueueFanCommand(Math.Max(fanSpeedAtLayerStart, config.BridgeFanSpeedPercent), bridgeConfig);
 					layerGcodePlanner.QueuePolygonsByOptimizer(firstTopFillPolygons, island.PathFinder, firstTopFillConfig, layerIndex);
 					// Set it back to what it was
-					layerGcodePlanner.QueueFanCommand(fanSpeedAtLayerStart, fillConfig);
+					layerGcodePlanner.QueueFanCommand(fanSpeedAtLayerStart, sparseFillConfig);
 				}
 
-				layerGcodePlanner.QueuePolygonsByOptimizer(topFillPolygons, island.PathFinder, topFillConfig, layerIndex);
+				if (monotonic)
+				{
+					layerGcodePlanner.QueuePolygonsMonotonic(topFillPolygons, island.PathFinder, topFillConfig, layerIndex);
+				}
+				else
+				{
+					layerGcodePlanner.QueuePolygonsByOptimizer(topFillPolygons, island.PathFinder, topFillConfig, layerIndex);
+				}
 			}
 
 			if (config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter)
@@ -1421,7 +1458,7 @@ namespace MatterHackers.MatterSlice
 						IntPoint closestLastIslandPoint = polygons[closestPointOnLastIsland.Item1][closestPointOnLastIsland.Item2];
 						// make sure we are planning within the last island we were using
 						pathFinder = islandCurrentlyInside.PathFinder;
-						layerGcodePlanner.QueueTravel(closestLastIslandPoint, pathFinder, fillConfig);
+						layerGcodePlanner.QueueTravel(closestLastIslandPoint, pathFinder, solidFillConfig);
 					}
 				}
 
@@ -1435,7 +1472,7 @@ namespace MatterHackers.MatterSlice
 					// make sure we are not planning moves for the move away from the island
 					// move away from our current island as much as the inset amount to avoid planning around where we are
 					var awayFromIslandPosition = layerGcodePlanner.LastPosition_um + delta.Normal(layer.PathFinder.InsetAmount);
-					layerGcodePlanner.QueueTravel(awayFromIslandPosition, null, fillConfig);
+					layerGcodePlanner.QueueTravel(awayFromIslandPosition, null, solidFillConfig);
 
 					// let's move to this island avoiding running into any other islands
 					pathFinder = layer.PathFinder;
@@ -1444,7 +1481,7 @@ namespace MatterHackers.MatterSlice
 				}
 
 				// go to the next point
-				layerGcodePlanner.QueueTravel(closestNextIslandPoint, pathFinder, fillConfig);
+				layerGcodePlanner.QueueTravel(closestNextIslandPoint, pathFinder, solidFillConfig);
 
 				// and remember that we are now in the new island
 				islandCurrentlyInside = island;
@@ -1764,7 +1801,7 @@ namespace MatterHackers.MatterSlice
 		private void GetSegmentsConsideringSupport(Polygons polygonsToWrite, Polygons supportOutlines, Polygons polysToWriteAtNormalHeight, Polygons polysToWriteAtAirGapHeight, bool forAirGap, bool closedLoop)
 		{
 			// make an expanded area to constrain our segments to
-			Polygons maxSupportOutlines = supportOutlines.Offset(fillConfig.LineWidth_um * 2 + config.SupportXYDistance_um);
+			Polygons maxSupportOutlines = supportOutlines.Offset(solidFillConfig.LineWidth_um * 2 + config.SupportXYDistance_um);
 
 			Polygons polygonsToWriteAsLines = PolygonsHelper.ConvertToLines(polygonsToWrite, closedLoop);
 
@@ -1837,7 +1874,8 @@ namespace MatterHackers.MatterSlice
 			int layerIndex,
 			LayerIsland part,
 			Polygons bottomFillLines,
-			Polygons fillPolygons = null,
+			Polygons sparseFillPolygons = null,
+			Polygons solidFillPolygons = null,
 			Polygons firstTopFillPolygons = null,
 			Polygons topFillPolygons = null,
 			Polygons bridgePolygons = null,
@@ -1881,7 +1919,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			// generate infill for the top layer
+			// generate infill for the top most layer
 			if (topFillPolygons != null)
 			{
 				foreach (Polygons outline in part.TopPaths.ProcessIntoSeparateIslands())
@@ -1891,7 +1929,7 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			// generate infill for the top layer
+			// generate infill for the top layers (but not the top most)
 			if (firstTopFillPolygons != null)
 			{
 				foreach (Polygons outline in part.FirstTopPaths.ProcessIntoSeparateIslands())
@@ -1901,40 +1939,44 @@ namespace MatterHackers.MatterSlice
 			}
 
 			// generate infill intermediate layers
-			if (fillPolygons != null)
+			if (solidFillPolygons != null)
 			{
 				foreach (Polygons outline in part.SolidInfillPaths.ProcessIntoSeparateIslands())
 				{
-					Infill.GenerateLinePaths(outline, fillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, alternatingInfillAngle);
+					Infill.GenerateLinePaths(outline, solidFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, alternatingInfillAngle);
 				}
+			}
 
+			// generate infill intermediate layers
+			if (sparseFillPolygons != null)
+			{
 				// generate the sparse infill for this part on this layer
 				if (config.InfillPercent > 0)
 				{
 					switch (config.InfillType)
 					{
 						case INFILL_TYPE.LINES:
-							Infill.GenerateLineInfill(config, part.SparseInfillPaths, fillPolygons, alternatingInfillAngle);
+							Infill.GenerateLineInfill(config, part.SparseInfillPaths, sparseFillPolygons, alternatingInfillAngle);
 							break;
 
 						case INFILL_TYPE.GRID:
-							Infill.GenerateGridInfill(config, part.SparseInfillPaths, fillPolygons, config.InfillStartingAngle);
+							Infill.GenerateGridInfill(config, part.SparseInfillPaths, sparseFillPolygons, config.InfillStartingAngle);
 							break;
 
 						case INFILL_TYPE.TRIANGLES:
-							Infill.GenerateTriangleInfill(config, part.SparseInfillPaths, fillPolygons, config.InfillStartingAngle);
+							Infill.GenerateTriangleInfill(config, part.SparseInfillPaths, sparseFillPolygons, config.InfillStartingAngle);
 							break;
 
 						case INFILL_TYPE.GYROID:
-							GyroidInfill.Generate(config, part.SparseInfillPaths, fillPolygons, true, layerIndex);
+							GyroidInfill.Generate(config, part.SparseInfillPaths, sparseFillPolygons, true, layerIndex);
 							break;
 
 						case INFILL_TYPE.HEXAGON:
-							Infill.GenerateHexagonInfill(config, part.SparseInfillPaths, fillPolygons, config.InfillStartingAngle, layerIndex);
+							Infill.GenerateHexagonInfill(config, part.SparseInfillPaths, sparseFillPolygons, config.InfillStartingAngle, layerIndex);
 							break;
 
 						case INFILL_TYPE.CONCENTRIC:
-							Infill.GenerateConcentricInfill(config, part.SparseInfillPaths, fillPolygons);
+							Infill.GenerateConcentricInfill(config, part.SparseInfillPaths, sparseFillPolygons);
 							break;
 
 						default:

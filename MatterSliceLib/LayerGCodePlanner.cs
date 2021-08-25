@@ -389,6 +389,32 @@ namespace MatterHackers.MatterSlice
 			config.ClosedLoop = oldValue;
 		}
 
+		public void QueuePolygonsMonotonic(Polygons polygons, PathFinder pathFinder, GCodePathConfig pathConfig, int layerIndex)
+		{
+			var monotonicSorter = new MonotonicSorter(polygons, LastPosition_um, pathConfig.LineWidth_um);
+
+			foreach (var polygon in monotonicSorter.Ordered)
+			{
+				// The order optimizer should already have created all the right moves
+				// so pass a null for the path finder (don't re-plan them).
+				if (polygon.Count > 0 && polygon[0].Width > 0)
+				{
+					QueuePolygon(polygon, pathFinder, 0, pathConfig);
+				}
+				else
+				{
+					if (polygon.Count == 0)
+					{
+						QueueTravel(polygon[0], pathFinder, pathConfig);
+					}
+					else
+					{
+						QueueTravel(polygon, pathConfig);
+					}
+				}
+			}
+		}
+
 		public bool QueuePolygonByOptimizer(Polygon polygon, PathFinder pathFinder, GCodePathConfig pathConfig, int layerIndex)
 		{
 			return QueuePolygonsByOptimizer(new Polygons() { polygon }, pathFinder, pathConfig, layerIndex);
@@ -551,7 +577,8 @@ namespace MatterHackers.MatterSlice
 			// If the internal move is very long (> retractionMinimumDistance_um), do a retraction
 			if (lineLength_um > retractionMinimumDistance_um
 				|| (extrusionConfig.LiftOnTravel
-					&& lineLength_um > config.ExtrusionWidth_um * 3))
+					&& config.RetractionZHop > 0
+					&& lineLength_um > config.ExtrusionWidth_um * 4))
 			{
 				path.Retract = RetractType.Requested;
 			}

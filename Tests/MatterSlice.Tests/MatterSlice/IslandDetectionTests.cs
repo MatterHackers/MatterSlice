@@ -56,7 +56,7 @@ namespace MatterHackers.MatterSlice.Tests
 			processor.LoadStlFile(engineStlFile);
 			// slice and save it
 			processor.DoProcessing();
-			processor.Finalize();
+			processor.Dispose();
 
 			var loadedGCode = TestUtilities.LoadGCodeFile(engineGCodeFile);
 			var layers = TestUtilities.LayerCount(loadedGCode);
@@ -96,7 +96,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(engineStlFile);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				var loadedGCode = TestUtilities.LoadGCodeFile(engineGCodeFile);
 				var layers = TestUtilities.LayerCount(loadedGCode);

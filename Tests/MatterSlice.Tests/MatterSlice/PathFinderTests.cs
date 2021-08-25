@@ -366,7 +366,7 @@ namespace MatterHackers.MatterSlice.Tests
 			processor.LoadStlFile(coinStlFile);
 			// slice and save it
 			processor.DoProcessing();
-			processor.Finalize();
+			processor.Dispose();
 
 			// with avoid off we should find a bad path
 			Assert.IsFalse(calledPathingCode);
@@ -397,7 +397,7 @@ namespace MatterHackers.MatterSlice.Tests
 			processor.LoadStlFile(coinStlFile);
 			// slice and save it
 			processor.DoProcessing();
-			processor.Finalize();
+			processor.Dispose();
 
 			// with avoid off we should find a bad path
 			Assert.IsFalse(foundBadPath);
