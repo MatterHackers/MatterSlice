@@ -24,7 +24,7 @@ using Polygons = System.Collections.Generic.List<System.Collections.Generic.List
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
 using System.Collections.Generic;
 using System;
-using System.Numerics;
+using MatterHackers.VectorMath;
 
 namespace MatterHackers.MatterSlice
 {
@@ -38,7 +38,7 @@ namespace MatterHackers.MatterSlice
 
         private Vector2 AsVector2(IntPoint intPoint)
         {
-            return new Vector2(intPoint.X / 1000.0f, intPoint.Y / 1000.0f);
+            return new Vector2(intPoint.X / 1000.0, intPoint.Y / 1000.0);
         }
 
         private bool LinesAreTouching(int indexA, int indexB)
@@ -61,7 +61,7 @@ namespace MatterHackers.MatterSlice
             bool PointWithinLine(Vector2 point, Vector2 start, Vector2 end)
             {
                 var lineDelta = end - start;
-                var lineLength = lineDelta.Length();
+                var lineLength = lineDelta.Length;
                 var lineNormal = Vector2.Normalize(lineDelta);
 
                 var pointDelta = point - start;

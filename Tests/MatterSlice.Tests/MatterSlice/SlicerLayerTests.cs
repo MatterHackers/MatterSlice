@@ -62,7 +62,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(meshWithIslands);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] gcodeContents = TestUtilities.LoadGCodeFile(gCodeWithIslands);
 				int numLayers = TestUtilities.LayerCount(gcodeContents);
@@ -91,7 +91,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(thinWallsSTL);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(thinWallsGCode);
 				int layerCount = TestUtilities.LayerCount(loadedGCode);
@@ -124,7 +124,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(thinWallsSTL);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(thinWallsGCode);
 				int layerCount = TestUtilities.LayerCount(loadedGCode);
@@ -166,7 +166,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(infillSTL);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
 
@@ -194,7 +194,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(infillSTL);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
 
@@ -245,7 +245,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(infillSTL);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
 
@@ -292,7 +292,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(infillSTL);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
 
@@ -315,7 +315,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(infillSTL);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
 
@@ -339,7 +339,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(infillSTL);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
 
@@ -391,7 +391,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(infillSTLB);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
 
@@ -428,7 +428,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(infillSTL);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] gcodeContents = TestUtilities.LoadGCodeFile(infillGCode);
 
@@ -463,7 +463,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(infillSTL);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] gcodeContents = TestUtilities.LoadGCodeFile(infillGCode);
 
@@ -503,7 +503,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(badTravelSTL);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(badTravelGCode);
 
@@ -541,7 +541,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(twoHoleSTL);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(validatePerimetersGCode);
 
@@ -600,7 +600,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(twoHoleSTL);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(validatePerimetersGCode);
 
@@ -631,7 +631,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(testSTL);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(moveToOriginGCode);
 
@@ -679,7 +679,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(thinWallsSTL);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(thinWallsGCode);
 				int layerCount = TestUtilities.LayerCount(loadedGCode);
@@ -708,7 +708,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(thinWallsSTL);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(thinWallsGCode);
 				int layerCount = TestUtilities.LayerCount(loadedGCode);
@@ -737,7 +737,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(thinWallsSTL);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(thinWallsGCode);
 				int layerCount = TestUtilities.LayerCount(loadedGCode);
@@ -940,7 +940,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(manifoldFile);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 			}
 
 			{
@@ -951,7 +951,7 @@ namespace MatterHackers.MatterSlice.Tests
 				processor.LoadStlFile(nonManifoldFile);
 				// slice and save it
 				processor.DoProcessing();
-				processor.Finalize();
+				processor.Dispose();
 			}
 
 			// load both gcode files and check that they are the same

@@ -577,7 +577,7 @@ namespace MatterHackers.MatterSlice
 			// If the internal move is very long (> retractionMinimumDistance_um), do a retraction
 			if (lineLength_um > retractionMinimumDistance_um
 				|| (extrusionConfig.LiftOnTravel
-					&& lineLength_um > config.ExtrusionWidth_um * 3))
+					&& lineLength_um > config.ExtrusionWidth_um * 4))
 			{
 				path.Retract = RetractType.Requested;
 			}

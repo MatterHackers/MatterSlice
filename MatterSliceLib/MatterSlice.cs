@@ -90,7 +90,7 @@ namespace MatterHackers.MatterSlice
 
 			if (!Canceled)
 			{
-				processor.Finalize();
+				processor.Dispose();
 			}
 
 			if (Canceled)
