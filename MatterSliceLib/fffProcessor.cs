@@ -1302,7 +1302,7 @@ namespace MatterHackers.MatterSlice
 						}
 						
 						// add all fill polygons together so they can be optimized in one step
-						solidFillPolygons.AddRange(thinGapPolygons.ConvertToLines(false));
+						sparseFillPolygons.AddRange(thinGapPolygons.ConvertToLines(false));
 					}
 				}
 

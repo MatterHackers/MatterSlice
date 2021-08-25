@@ -70,7 +70,15 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					string[] layer = TestUtilities.GetLayer(gcodeContents, i);
 					int totalRetractions = TestUtilities.CountRetractions(layer);
-					Assert.IsTrue(totalRetractions == 4);
+					if (i == 6)
+					{
+						// on this single layer there are 6 retractions
+						Assert.IsTrue(totalRetractions == 6);
+					}
+					else
+					{
+						Assert.IsTrue(totalRetractions == 4);
+					}
 				}
 			}
 		}
@@ -433,7 +441,7 @@ namespace MatterHackers.MatterSlice.Tests
 				string[] gcodeContents = TestUtilities.LoadGCodeFile(infillGCode);
 
 				int numLayers = TestUtilities.LayerCount(gcodeContents);
-				for (int i = 1; i < numLayers - 2; i++)
+				for (int i = 6; i < numLayers - 2; i++)
 				{
 					string[] layer = TestUtilities.GetLayer(gcodeContents, i);
 					int totalRetractions = TestUtilities.CountRetractions(layer);
@@ -578,7 +586,12 @@ namespace MatterHackers.MatterSlice.Tests
 							// find the instruction before
 							var moveIndex = topMovements.FindMoveIndex(new Vector3(travel[0]));
 							// we are going to move a lot, we need to retract
-							Assert.IsTrue(topMovements[moveIndex - 1].line.IsRetraction() || topMovements[moveIndex - 2].line.IsRetraction());
+							var hadRetraction = false;
+							for (int i = 1; i < 7; i++)
+							{
+								hadRetraction |= topMovements[moveIndex - i].line.IsRetraction();
+							}
+							Assert.IsTrue(hadRetraction);
 						}
 					}
 				}
