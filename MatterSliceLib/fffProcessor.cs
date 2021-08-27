@@ -1189,7 +1189,7 @@ namespace MatterHackers.MatterSlice
 					}
 					else // This is so we can do overhangs better (the outside can stick a bit to the inside).
 					{
-						int insetCount2 = CountInsetsToPrint(insetToolPaths);
+						int insetCount = CountInsetsToPrint(insetToolPaths);
 
 						bool foundAnyPath = true;
 						// if we are printing top layers and going to do z-lifting make sure we don't cross over the top layer while moving between islands
@@ -1199,7 +1199,7 @@ namespace MatterHackers.MatterSlice
 							insetXConfig.LiftOnTravel = true;
 						}
 
-						while (insetsThatHaveBeenPrinted.Count < insetCount2
+						while (insetsThatHaveBeenPrinted.Count < insetCount
 							&& foundAnyPath)
 						{
 							// reset at start of search

@@ -332,6 +332,33 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void RingLoopsSeamAligned()
+		{
+			string infillSTL = TestUtilities.GetStlPath("ring_loops");
+			string infillGCode = TestUtilities.GetTempGCodePath("ring_loops.gcode");
+			{
+				// load a model that was showing unaligned perimeters
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "ring_loops.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(infillGCode);
+				processor.LoadStlFile(infillSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Dispose();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
+
+				var extrusionLayers = TestUtilities.GetAllExtrusionPolygons(loadedGCode);
+				foreach(var extrusions in extrusionLayers)
+				{
+					Assert.AreEqual(4, extrusions.Count);
+				}
+			}
+		}
+
+		[Test]
 		public void ThinRingHasNoCrossingSegments2()
 		{
 			string infillSTL = TestUtilities.GetStlPath("thin_gap_fill_ring");
