@@ -104,7 +104,7 @@ namespace MatterHackers.MatterSlice.Tests
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(thinWallsGCode);
 				int layerCount = TestUtilities.LayerCount(loadedGCode);
 
-				var layerPolygons = loadedGCode.GetAllExtrusionPolygons();
+				var layerPolygons = loadedGCode.GetAllLayersExtrusionPolygons();
 
 				for (int i = 2; i < layerCount - 2; i++)
 				{
@@ -220,7 +220,7 @@ namespace MatterHackers.MatterSlice.Tests
 					return longest;
 				}
 
-				var layers = loadedGCode.GetAllExtrusionPolygons();
+				var layers = loadedGCode.GetAllLayersExtrusionPolygons();
 				for (int i = 0; i < 15; i++)
 				{
 					if (i == 0)
@@ -257,7 +257,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
 
-				var layers = loadedGCode.GetAllExtrusionPolygons();
+				var layers = loadedGCode.GetAllLayersExtrusionPolygons();
 				for (int i = 1; i < 163; i++)
 				{
 					var layer = layers[i];
@@ -275,7 +275,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 		private static void AllLayersHaveSinglExtrusionLine(string[] loadedGCode, int start)
 		{
-			var layers = loadedGCode.GetAllExtrusionPolygons();
+			var layers = loadedGCode.GetAllLayersExtrusionPolygons();
 			for (int i = start; i < layers.Count; i++)
 			{
 				var layer = layers[i];
@@ -350,10 +350,20 @@ namespace MatterHackers.MatterSlice.Tests
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
 
-				var extrusionLayers = TestUtilities.GetAllExtrusionPolygons(loadedGCode);
-				foreach(var extrusions in extrusionLayers)
+				var extrusionLayers = TestUtilities.GetAllLayersExtrusionPolygons(loadedGCode);
+				for (int i = 0; i < extrusionLayers.Count; i++)
 				{
+					var extrusions = extrusionLayers[i];
 					Assert.AreEqual(4, extrusions.Count);
+				}
+
+				var movementLayers = TestUtilities.GetAllLayersMovements(loadedGCode);
+				for (int i = 2; i < movementLayers.Count; i++)
+				{
+					foreach (var movement in movementLayers[i])
+					{
+						Assert.AreEqual((i + 1) * .25, movement.position.z);
+					}
 				}
 			}
 		}
@@ -399,7 +409,7 @@ namespace MatterHackers.MatterSlice.Tests
 					return longest;
 				}
 
-				var layers = loadedGCode.GetAllExtrusionPolygons();
+				var layers = loadedGCode.GetAllLayersExtrusionPolygons();
 				// start at 6 to skip the bottom layers (only care about the ring)
 				for (int i = 6; i < layers.Count - 1; i++)
 				{
@@ -433,7 +443,7 @@ namespace MatterHackers.MatterSlice.Tests
 				Assert.IsTrue(loadedGCode.Contains("T1 ; switch extruder"));
 				Assert.IsTrue(loadedGCode.Contains("T0 ; switch extruder"));
 
-				var layers = loadedGCode.GetAllExtrusionPolygons();
+				var layers = loadedGCode.GetAllLayersExtrusionPolygons();
 				for (int i = 0; i < layers.Count; i++)
 				{
 					var polys = layers[i];
@@ -725,7 +735,7 @@ namespace MatterHackers.MatterSlice.Tests
 				int layerCount = TestUtilities.LayerCount(loadedGCode);
 				Assert.AreEqual(50, layerCount);
 
-				var layerPolygons = loadedGCode.GetAllExtrusionPolygons();
+				var layerPolygons = loadedGCode.GetAllLayersExtrusionPolygons();
 
 				Assert.AreEqual(6, layerPolygons[10].Where(i => i.Count > 2).Count());
 			}
@@ -754,9 +764,9 @@ namespace MatterHackers.MatterSlice.Tests
 				int layerCount = TestUtilities.LayerCount(loadedGCode);
 				Assert.AreEqual(50, layerCount);
 
-				var layerPolygons = loadedGCode.GetAllExtrusionPolygons();
+				var layerPolygons = loadedGCode.GetAllLayersExtrusionPolygons();
 
-				Assert.AreEqual(10, layerPolygons[10].Count);
+				Assert.AreEqual(9, layerPolygons[10].Count);
 			}
 
 			// with expand thin walls and with merge overlapping lines
@@ -783,9 +793,9 @@ namespace MatterHackers.MatterSlice.Tests
 				int layerCount = TestUtilities.LayerCount(loadedGCode);
 				Assert.AreEqual(50, layerCount);
 
-				var layerPolygons = loadedGCode.GetAllExtrusionPolygons();
+				var layerPolygons = loadedGCode.GetAllLayersExtrusionPolygons();
 
-				Assert.AreEqual(10, layerPolygons[10].Count);
+				Assert.AreEqual(9, layerPolygons[10].Count);
 			}
 		}
 

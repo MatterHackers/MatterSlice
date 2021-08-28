@@ -217,7 +217,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				Assert.AreEqual(55, loadedGCode.LayerCount());
 
-				var layerPolygons = TestUtilities.GetAllExtrusionPolygons(loadedGCode);
+				var layerPolygons = TestUtilities.GetAllLayersExtrusionPolygons(loadedGCode);
 
 				var mostCommon = TestUtilities.GetLineAngles(layerPolygons[45]).OrderBy(i => i.Value).Last();
 				var angle = mostCommon.Key;

@@ -417,8 +417,6 @@ namespace MatterHackers.MatterSlice
 
 		public void WriteRetraction(double timeForNextMove, bool forceRetraction)
 		{
-			double initialSpeed = currentSpeed;
-
 			if (config.RetractionOnTravel > 0
 				&& !isRetracted
 				&& (forceRetraction || extrusionAmountAtPreviousRetraction_mm + config.MinimumExtrusionBeforeRetraction < extrusionAmount_mm))

@@ -1061,7 +1061,8 @@ namespace MatterHackers.MatterSlice
 				else
 				{
 					if (config.RetractWhenChangingIslands
-						&& !InsideIsland(island, layerGcodePlanner))
+						&& !InsideIsland(island, layerGcodePlanner)
+						&& islandOrderOptimizer.OptimizedPaths.Count > 1)
 					{
 						layerGcodePlanner.ForceRetract();
 					}

@@ -62,7 +62,7 @@ namespace MatterHackers.MatterSlice.Tests
 			var layers = TestUtilities.LayerCount(loadedGCode);
 			Assert.AreEqual(195, layers);
 
-			var layerPolygons = TestUtilities.GetAllExtrusionPolygons(loadedGCode);
+			var layerPolygons = TestUtilities.GetAllLayersExtrusionPolygons(loadedGCode);
 
 			Assert.AreEqual(17, layerPolygons[32].Count);
 			for (int i = 33; i < 44; i++)
@@ -115,7 +115,7 @@ namespace MatterHackers.MatterSlice.Tests
 					4, 4, 4, 4, 4,
 				};
 
-				var layerPolygons = TestUtilities.GetAllExtrusionPolygons(loadedGCode);
+				var layerPolygons = TestUtilities.GetAllLayersExtrusionPolygons(loadedGCode);
 
 				Assert.AreEqual(45, layerPolygons.Where(i => i.Count > 2).Count());
 				for (int i = 1; i < layers; i++)
