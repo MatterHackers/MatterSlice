@@ -709,7 +709,7 @@ namespace MatterHackers.MatterSlice
 						}
 
 						// make sure we path plan our way to the wipe tower before switching extruders
-						layerGcodePlanner.QueueTravel(slicingData.WipeCenter_um, pathFinder, sparseFillConfig);
+						layerGcodePlanner.QueueTravel(slicingData.WipeCenter_um, pathFinder, sparseFillConfig.LiftOnTravel);
 						islandCurrentlyInside = null;
 					}
 
@@ -974,7 +974,7 @@ namespace MatterHackers.MatterSlice
 					&& maxPoint.Y > long.MinValue)
 				{
 					// before we start the brim make sure we are printing from the outside in
-					gcodeLayer.QueueTravel(maxPoint, null, sparseFillConfig);
+					gcodeLayer.QueueTravel(maxPoint, null, sparseFillConfig.LiftOnTravel);
 				}
 			}
 
@@ -1192,12 +1192,20 @@ namespace MatterHackers.MatterSlice
 					{
 						int insetCount = CountInsetsToPrint(insetToolPaths);
 
+
 						bool foundAnyPath = true;
+						bool liftOnTravel = false;
 						// if we are printing top layers and going to do z-lifting make sure we don't cross over the top layer while moving between islands
 						if (config.RetractionZHop > 0 && LayerHasSolidInfill())
 						{
+							liftOnTravel = true;
 							inset0Config.LiftOnTravel = true;
 							insetXConfig.LiftOnTravel = true;
+						}
+
+						bool AvailableToPrint(Polygon polygon)
+						{
+							return !insetsThatHaveBeenPrinted.Contains(polygon);
 						}
 
 						while (insetsThatHaveBeenPrinted.Count < insetCount
@@ -1211,11 +1219,10 @@ namespace MatterHackers.MatterSlice
 								// Print the insets from inside to out (count - 1 to 0).
 								for (int insetIndex = insetToolPaths.Count - 1; insetIndex >= 0; insetIndex--)
 								{
-									var insetConfig = insetIndex == 0 ? inset0Config : insetXConfig;
 									if (!config.ContinuousSpiralOuterPerimeter
 										&& insetIndex == insetToolPaths.Count - 1)
 									{
-										var closestInsetStart = FindBestPoint(insetToolPaths[0], insetAccelerators[0], layerGcodePlanner.LastPosition_um, layerIndex);
+										var closestInsetStart = FindBestPoint(insetToolPaths[0], insetAccelerators[0], layerGcodePlanner.LastPosition_um, layerIndex, AvailableToPrint);
 										if (closestInsetStart.X != long.MinValue)
 										{
 											(int polyIndex, int pointIndex, IntPoint position) found = (-1, -1, closestInsetStart);
@@ -1232,11 +1239,11 @@ namespace MatterHackers.MatterSlice
 											if (found.polyIndex != -1
 												&& found.pointIndex != -1)
 											{
-												layerGcodePlanner.QueueTravel(found.position, island.PathFinder, insetConfig);
+												layerGcodePlanner.QueueTravel(found.position, island.PathFinder, liftOnTravel);
 											}
 											else
 											{
-												layerGcodePlanner.QueueTravel(closestInsetStart, island.PathFinder, insetConfig);
+												layerGcodePlanner.QueueTravel(closestInsetStart, island.PathFinder, liftOnTravel);
 											}
 										}
 									}
@@ -1277,7 +1284,7 @@ namespace MatterHackers.MatterSlice
 											&& found2.pointIndex != -1
 											&& distFromLastPoint < config.MinimumTravelToCauseRetraction_um)
 										{
-											layerGcodePlanner.QueueTravel(found2.position, island.PathFinder, insetConfig, forceUniquePath: true);
+											layerGcodePlanner.QueueTravel(found2.position, island.PathFinder, liftOnTravel, forceUniquePath: true);
 										}
 									}
 								}
@@ -1338,9 +1345,9 @@ namespace MatterHackers.MatterSlice
 				if (monotonic)
 				{
 					// solid fill
-					layerGcodePlanner.QueuePolygonsMonotonic(solidFillPolygons, island.PathFinder, solidFillConfig, layerIndex);
+					layerGcodePlanner.QueuePolygonsMonotonic(solidFillPolygons, island.PathFinder, solidFillConfig);
 					// bottom layers
-					layerGcodePlanner.QueuePolygonsMonotonic(bottomFillPolygons, island.PathFinder, bottomFillConfig, layerIndex);
+					layerGcodePlanner.QueuePolygonsMonotonic(bottomFillPolygons, island.PathFinder, bottomFillConfig);
 				}
 				else
 				{
@@ -1361,7 +1368,7 @@ namespace MatterHackers.MatterSlice
 
 				if (monotonic)
 				{
-					layerGcodePlanner.QueuePolygonsMonotonic(topFillPolygons, island.PathFinder, topFillConfig, layerIndex);
+					layerGcodePlanner.QueuePolygonsMonotonic(topFillPolygons, island.PathFinder, topFillConfig);
 				}
 				else
 				{
@@ -1459,7 +1466,7 @@ namespace MatterHackers.MatterSlice
 						IntPoint closestLastIslandPoint = polygons[closestPointOnLastIsland.Item1][closestPointOnLastIsland.Item2];
 						// make sure we are planning within the last island we were using
 						pathFinder = islandCurrentlyInside.PathFinder;
-						layerGcodePlanner.QueueTravel(closestLastIslandPoint, pathFinder, solidFillConfig);
+						layerGcodePlanner.QueueTravel(closestLastIslandPoint, pathFinder, solidFillConfig.LiftOnTravel);
 					}
 				}
 
@@ -1473,7 +1480,7 @@ namespace MatterHackers.MatterSlice
 					// make sure we are not planning moves for the move away from the island
 					// move away from our current island as much as the inset amount to avoid planning around where we are
 					var awayFromIslandPosition = layerGcodePlanner.LastPosition_um + delta.Normal(layer.PathFinder.InsetAmount);
-					layerGcodePlanner.QueueTravel(awayFromIslandPosition, null, solidFillConfig);
+					layerGcodePlanner.QueueTravel(awayFromIslandPosition, null, solidFillConfig.LiftOnTravel);
 
 					// let's move to this island avoiding running into any other islands
 					pathFinder = layer.PathFinder;
@@ -1482,21 +1489,22 @@ namespace MatterHackers.MatterSlice
 				}
 
 				// go to the next point
-				layerGcodePlanner.QueueTravel(closestNextIslandPoint, pathFinder, solidFillConfig);
+				layerGcodePlanner.QueueTravel(closestNextIslandPoint, pathFinder, solidFillConfig.LiftOnTravel);
 
 				// and remember that we are now in the new island
 				islandCurrentlyInside = island;
 			}
 		}
 
-		public IntPoint FindBestPoint(Polygons boundaryPolygons, QuadTree<int> accelerator, IntPoint position, int layerIndex)
+		public IntPoint FindBestPoint(Polygons boundaryPolygons, QuadTree<int> accelerator, IntPoint position, int layerIndex, Func<Polygon, bool> evaluatePolygon)
 		{
 			IntPoint polyPointPosition = new IntPoint(long.MinValue, long.MinValue);
 
 			long bestDist = long.MaxValue;
 			foreach (var polygonIndex in accelerator.IterateClosest(position, () => bestDist))
 			{
-				if (boundaryPolygons[polygonIndex.Item1] != null
+				if (evaluatePolygon(boundaryPolygons[polygonIndex.Item1])
+					&& boundaryPolygons[polygonIndex.Item1] != null
 					&& boundaryPolygons[polygonIndex.Item1].Count > 0)
 				{
 					var closestIndex = boundaryPolygons[polygonIndex.Item1].FindGreatestTurnIndex(config.ExtrusionWidth_um,
@@ -1585,6 +1593,10 @@ namespace MatterHackers.MatterSlice
 						{
 							maxDist_um = distance;
 							polygonPrintedIndex = closest.Item1;
+							if (distance == 0)
+							{
+								break;
+							}
 						}
 					}
 					else

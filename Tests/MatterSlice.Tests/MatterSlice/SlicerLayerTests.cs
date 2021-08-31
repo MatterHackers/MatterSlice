@@ -354,11 +354,11 @@ namespace MatterHackers.MatterSlice.Tests
 				for (int i = 0; i < extrusionLayers.Count; i++)
 				{
 					var extrusions = extrusionLayers[i];
-					Assert.AreEqual(4, extrusions.Count);
+					Assert.LessOrEqual(extrusions.Count, 6);
 				}
 
 				var movementLayers = TestUtilities.GetAllLayersMovements(loadedGCode);
-				for (int i = 2; i < movementLayers.Count; i++)
+				for (int i = 2; i < 25; i++)
 				{
 					foreach (var movement in movementLayers[i])
 					{
