@@ -361,7 +361,10 @@ namespace MatterHackers.QuadTree
 			return splitPolygons;
 		}
 
-		public static (int polyIndex, int pointIndex, IntPoint position) FindClosestPoint(this Polygons boundaryPolygons, IntPoint position, Func<int, Polygon, bool> considerPolygon = null, Func<int, IntPoint, bool> considerPoint = null)
+		public static (int polyIndex, int pointIndex, IntPoint position) FindClosestPoint(this Polygons boundaryPolygons,
+			IntPoint position,
+			Func<int, Polygon, bool> considerPolygon = null,
+			Func<int, IntPoint, bool> considerPoint = null)
 		{
 			var polyPointPosition = (-1, -1, default(IntPoint));
 

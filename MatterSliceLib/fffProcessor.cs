@@ -1216,13 +1216,24 @@ namespace MatterHackers.MatterSlice
 							bool limitDistance = false;
 							if (insetToolPaths.Count > 0)
 							{
+								var startingPerimeterSet = true;
+								var closestInsetStart = default(IntPoint);
+
 								// Print the insets from inside to out (count - 1 to 0).
 								for (int insetIndex = insetToolPaths.Count - 1; insetIndex >= 0; insetIndex--)
 								{
+									var nextToEdge = insetIndex == 1;
+									// If there are only 2 perimeters than there is one for both sides, so a single set
+									var farFromEdgeButSingleSet = insetIndex != 0 && insetToolPaths[insetIndex].Count <= 2;
+									// if we are not spiral and there is a single inset at our level or we are on the inset right next to the edge
 									if (!config.ContinuousSpiralOuterPerimeter
-										&& insetIndex == insetToolPaths.Count - 1)
+										&& (nextToEdge || farFromEdgeButSingleSet))
 									{
-										var closestInsetStart = FindBestPoint(insetToolPaths[0], insetAccelerators[0], layerGcodePlanner.LastPosition_um, layerIndex, AvailableToPrint);
+										if (startingPerimeterSet)
+										{
+											startingPerimeterSet = false;
+											closestInsetStart = FindBestPoint(insetToolPaths[0], insetAccelerators[0], layerGcodePlanner.LastPosition_um, layerIndex, AvailableToPrint);
+										}
 										if (closestInsetStart.X != long.MinValue)
 										{
 											(int polyIndex, int pointIndex, IntPoint position) found = (-1, -1, closestInsetStart);
@@ -1232,7 +1243,10 @@ namespace MatterHackers.MatterSlice
 												if (found.polyIndex != -1
 													&& found.pointIndex != -1)
 												{
-													break;
+													if (AvailableToPrint(insetToolPaths[findInsetIndex][found.polyIndex]))
+													{
+														break;
+													}
 												}
 											}
 
