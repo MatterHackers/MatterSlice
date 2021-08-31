@@ -114,17 +114,31 @@ namespace MatterHackers.MatterSlice.Tests
 		/// </summary>
 		/// <param name="loadedGCode">The source gcode separated by line</param>
 		/// <returns>A list of all the polygons by layer</returns>
-		public static List<Polygons> GetAllExtrusionPolygons(this string[] loadedGCode)
+		public static List<Polygons> GetAllLayersExtrusionPolygons(this string[] loadedGCode)
 		{
 			var layerCount = TestUtilities.LayerCount(loadedGCode);
 
 			var layerPolygons = new List<Polygons>(layerCount);
+			var movementInfo = default(MovementInfo);
 			for (int i = 0; i < layerCount; i++)
 			{
-				layerPolygons.Add(TestUtilities.GetExtrusionPolygonsForLayer(loadedGCode.GetLayer(i), false));
+				layerPolygons.Add(TestUtilities.GetExtrusionPolygonsForLayer(loadedGCode.GetLayer(i), ref movementInfo, false));
 			}
 
 			return layerPolygons;
+		}
+
+		public static List<IEnumerable<MovementInfo>> GetAllLayersMovements(this string[] loadedGCode)
+		{
+			var layerCount = TestUtilities.LayerCount(loadedGCode);
+
+			var layerMovements = new List<IEnumerable<MovementInfo>>(layerCount);
+			for (int i = 0; i < layerCount; i++)
+			{
+				layerMovements.Add(TestUtilities.Movements(loadedGCode.GetLayer(i)));
+			}
+
+			return layerMovements;
 		}
 
 		public static List<string[]> GetAllLayers(this string[] loadedGCode)
@@ -184,7 +198,9 @@ namespace MatterHackers.MatterSlice.Tests
 			MovementInfo lastLastMovement = movementInfo;
 			foreach (MovementInfo currentMovement in TestUtilities.Movements(layerGCode, lastMovement))
 			{
-				bool isExtrude = currentMovement.extrusion != lastMovement.extrusion;
+				bool isRetraction = currentMovement.extrusion != lastMovement.extrusion && (currentMovement.position == lastLastMovement.position);
+				bool isZLift = currentMovement.position.x == lastLastMovement.position.x && currentMovement.position.y == lastLastMovement.position.y && currentMovement.position.z != lastLastMovement.position.z;
+				bool isExtrude = !isRetraction && ! isZLift && currentMovement.extrusion != lastMovement.extrusion;
 
 				if (extruding)
 				{

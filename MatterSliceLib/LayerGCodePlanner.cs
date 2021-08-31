@@ -240,14 +240,14 @@ namespace MatterHackers.MatterSlice
 				&& LastPositionSet
 				&& distance > config.LineWidth_um / 4)
 			{
-				QueueTravel(firstPolygonPosition, pathFinder, config);
+				QueueTravel(firstPolygonPosition, pathFinder, config.LiftOnTravel);
 			}
 
 			if (!LastPositionSet)
 			{
 				var firstPosition = new Polygon() { firstPolygonPosition };
 
-				QueueTravel(firstPosition, config, true);
+				QueueTravel(firstPosition, config.LiftOnTravel, true);
 			}
 
 			QueueExtrusionPolygon(polygon, startIndex, config);
@@ -389,7 +389,7 @@ namespace MatterHackers.MatterSlice
 			config.ClosedLoop = oldValue;
 		}
 
-		public void QueuePolygonsMonotonic(Polygons polygons, PathFinder pathFinder, GCodePathConfig pathConfig, int layerIndex)
+		public void QueuePolygonsMonotonic(Polygons polygons, PathFinder pathFinder, GCodePathConfig pathConfig)
 		{
 			var monotonicSorter = new MonotonicSorter(polygons, LastPosition_um, pathConfig.LineWidth_um);
 
@@ -405,11 +405,11 @@ namespace MatterHackers.MatterSlice
 				{
 					if (polygon.Count == 0)
 					{
-						QueueTravel(polygon[0], pathFinder, pathConfig);
+						QueueTravel(polygon[0], pathFinder, pathConfig.LiftOnTravel);
 					}
 					else
 					{
-						QueueTravel(polygon, pathConfig);
+						QueueTravel(polygon, pathConfig.LiftOnTravel);
 					}
 				}
 			}
@@ -435,7 +435,7 @@ namespace MatterHackers.MatterSlice
 					if (polygon.Count > 0)
 					{
 						// go to the first position of the first polygon
-						QueueTravel(polygon[0], pathFinder, pathConfig);
+						QueueTravel(polygon[0], pathFinder, pathConfig.LiftOnTravel);
 						break;
 					}
 				}
@@ -472,11 +472,11 @@ namespace MatterHackers.MatterSlice
 				{
 					if (polygon.Count == 0)
 					{
-						QueueTravel(polygon[0], pathFinder, pathConfig);
+						QueueTravel(polygon[0], pathFinder, pathConfig.LiftOnTravel);
 					}
 					else
 					{
-						QueueTravel(polygon, pathConfig);
+						QueueTravel(polygon, pathConfig.LiftOnTravel);
 					}
 				}
 			}
@@ -486,10 +486,9 @@ namespace MatterHackers.MatterSlice
 
 		private bool canAppendTravel = true;
 
-		public void QueueTravel(IntPoint positionToMoveTo, PathFinder pathFinder, GCodePathConfig extrusionConfig, bool forceUniquePath = false)
+		public void QueueTravel(IntPoint positionToMoveTo, PathFinder pathFinder, bool forceZHop, bool forceUniquePath = false)
 		{
 			var pathPolygon = new Polygon();
-			bool foundPath = true;
 
 			if (pathFinder != null)
 			{
@@ -527,10 +526,10 @@ namespace MatterHackers.MatterSlice
 				pathPolygon = new Polygon() { positionToMoveTo };
 			}
 
-			QueueTravel(pathPolygon, extrusionConfig, forceUniquePath);
+			QueueTravel(pathPolygon, forceZHop, forceUniquePath);
 		}
 
-		private void QueueTravel(Polygon pathPolygon, GCodePathConfig extrusionConfig, bool forceUniquePath = false)
+		private void QueueTravel(Polygon pathPolygon, bool forceZHop, bool forceUniquePath = false)
 		{
 #if DEBUG
 			foreach (var point in pathPolygon)
@@ -576,7 +575,7 @@ namespace MatterHackers.MatterSlice
 
 			// If the internal move is very long (> retractionMinimumDistance_um), do a retraction
 			if (lineLength_um > retractionMinimumDistance_um
-				|| (extrusionConfig.LiftOnTravel
+				|| (forceZHop
 					&& config.RetractionZHop > 0
 					&& lineLength_um > config.ExtrusionWidth_um * 4))
 			{
