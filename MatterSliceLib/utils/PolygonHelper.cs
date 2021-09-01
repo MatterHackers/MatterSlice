@@ -46,6 +46,17 @@ namespace MatterHackers.MatterSlice
 			return new Polygon(GrahamScan.GetConvexHull(inPolygon));
 		}
 
+		public static void SetSpeed(this Polygon polygon, long speed)
+		{
+			for (int pointIndex = 0; pointIndex < polygon.Count; pointIndex++)
+			{
+				polygon[pointIndex] = new IntPoint(polygon[pointIndex])
+				{
+					Speed = speed
+				};
+			}
+		}
+
 		public static bool DescribesSameShape(this Polygon a, Polygon b)
 		{
 			if (a.Count != b.Count)

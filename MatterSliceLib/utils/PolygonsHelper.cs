@@ -169,6 +169,64 @@ namespace MatterHackers.MatterSlice
 			return deepCopy;
 		}
 
+		public static Polygons StitchPolygonsTogether(this Polygons polygonsToStitch)
+		{
+			var polysToAdd = new Polygons(polygonsToStitch);
+			var stitched = new Polygons();
+
+			while (polysToAdd.Count > 0)
+			{
+				var index = polysToAdd.Count - 1;
+				var polygon = new Polygon(polysToAdd[index]);
+				polysToAdd.RemoveAt(index);
+				stitched.Add(polygon);
+
+				bool didAdd;
+				do
+				{
+					didAdd = false;
+
+					// add any appropriate polygon to the end
+					for (int i = polysToAdd.Count - 1; i >= 0; i--)
+					{
+						var start = polygon[0];
+						var end = polygon[polygon.Count - 1];
+
+						var polyToCheck = polysToAdd[i];
+						var checkEndIndex = polyToCheck.Count - 1;
+						// Check if this polygon can be added to the one we are building
+						if (polyToCheck[0] == start || polyToCheck[checkEndIndex] == start)
+						{
+							if (polyToCheck[0] == start)
+							{
+								polyToCheck.Reverse();
+							}
+							polygon.InsertRange(0, polyToCheck);
+							didAdd = true;
+						}
+						else if (polyToCheck[0] == end || polyToCheck[checkEndIndex] == end)
+						{
+							if (polyToCheck[checkEndIndex] == end)
+							{
+								polyToCheck.Reverse();
+							}
+							polygon.AddRange(polyToCheck);
+							didAdd = true;
+						}
+
+						if (didAdd)
+						{
+							// remove this on and process again
+							polysToAdd.RemoveAt(i);
+							break;
+						}
+					}
+				} while (didAdd);
+			}
+
+			return stitched;
+		}
+		
 		public static Polygons GetCorrectedWinding(this Polygons polygonsToFix)
 		{
 			polygonsToFix = Clipper.CleanPolygons(polygonsToFix);
