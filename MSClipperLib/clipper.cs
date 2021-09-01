@@ -386,7 +386,7 @@ namespace MSClipperLib
 
     public IntPoint(IntPoint pt)
     {
-      this.X = pt.X; this.Y = pt.Y; this.Z = pt.Z; this.Width = pt.Width; Speed = 0;
+      this.X = pt.X; this.Y = pt.Y; this.Z = pt.Z; this.Width = pt.Width; Speed = pt.Speed;
 	}
 #else
 		public IntPoint(cInt X, cInt Y)

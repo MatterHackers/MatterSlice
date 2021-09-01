@@ -1043,8 +1043,6 @@ namespace MatterHackers.MatterSlice
 
 			islandOrderOptimizer.Optimize(layerGcodePlanner.LastPosition_um, layer.PathFinder, layerIndex, false);
 
-			var bottomFillIslandPolygons = new List<Polygons>();
-
 			for (int islandOrderIndex = 0; islandOrderIndex < islandOrderOptimizer.OptimizedPaths.Count; islandOrderIndex++)
 			{
 				if (config.ContinuousSpiralOuterPerimeter && islandOrderIndex > 0)
@@ -1088,8 +1086,6 @@ namespace MatterHackers.MatterSlice
 					topFillPolygons,
 					bridgePolygons,
 					bridgeAreas);
-
-				bottomFillIslandPolygons.Add(bottomFillPolygons);
 
 				int fanSpeedAtLayerStart = gcodeExport.LastWrittenFanSpeed;
 
@@ -1347,8 +1343,28 @@ namespace MatterHackers.MatterSlice
 
 				if (bottomFillConfig.Speed == solidFillConfig.Speed)
 				{
-					solidFillPolygons.AddRange(bottomFillPolygons);
-					bottomFillPolygons.Clear();
+					for (int i = bottomFillPolygons.Count - 1; i >= 0; i--)
+					{
+						if (bottomFillPolygons[i].PolygonLength() < config.TreatAsBridge_um)
+						{
+							solidFillPolygons.Add(bottomFillPolygons[i]);
+							bottomFillPolygons.RemoveAt(i);
+						}
+						else
+						{
+							bottomFillPolygons[i].SetSpeed(config.BridgeSpeed);
+						}
+					}
+				}
+				else
+				{
+					foreach (var polygon in bottomFillPolygons)
+					{
+						if (polygon.PolygonLength() > config.TreatAsBridge_um)
+						{
+							polygon.SetSpeed(config.BridgeSpeed);
+						}
+					}
 				}
 
 				// sparse fill
@@ -1767,7 +1783,7 @@ namespace MatterHackers.MatterSlice
 						if (bridgeAreas != null
 							&& bridgeAreas.Count > 0)
 						{
-							// We have some bridging happening trim our outlines against this and slow down the one that are
+							// We have some bridging happening trim our outlines against this and slow down the ones that are
 							// crossing the bridge areas.
 							var polygonsWithBridgeSlowdowns = ChangeSpeedOverBridgedAreas(polygonsToWrite, bridgeAreas, fillConfig.ClosedLoop);
 							bool oldValue = fillConfig.ClosedLoop;
@@ -1878,18 +1894,23 @@ namespace MatterHackers.MatterSlice
 			else
 			{
 				var polysToSolw = bridgeAreaIncludingPerimeters.CreateLineIntersections(polygonsToWriteAsLines);
-				foreach (var polyToSolw in polysToSolw)
+				var stitched = polysToSolw.StitchPolygonsTogether();
+				foreach (var polyToSolw in stitched)
 				{
-					for (int i = 0; i < polyToSolw.Count; i++)
+					var length = polyToSolw.PolygonLength(false);
+					if (length > config.TreatAsBridge_um)
 					{
-						polyToSolw[i] = new IntPoint(polyToSolw[i])
+						for (int i = 0; i < polyToSolw.Count; i++)
 						{
-							Speed = config.BridgeSpeed
-						};
+							polyToSolw[i] = new IntPoint(polyToSolw[i])
+							{
+								Speed = config.BridgeSpeed
+							};
+						}
 					}
 				}
 
-				polygonsWithBridgeSlowdowns.AddRange(polysToSolw);
+				polygonsWithBridgeSlowdowns.AddRange(stitched);
 				polygonsWithBridgeSlowdowns.AddRange(bridgeAreaIncludingPerimeters.CreateLineDifference(polygonsToWriteAsLines));
 			}
 

@@ -331,6 +331,37 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
+		void LoopsAreTouching(Polygons polygons)
+		{
+			for (int i = 0; i < polygons.Count; i++)
+			{
+				var startLoop = polygons[i];
+				if (startLoop.Count > 2)
+				{
+					var startPoint = startLoop[0];
+					var foundMachingLoop = false;
+					for (int j = 0; j < polygons.Count; j++)
+					{
+						var checkLoop = polygons[j];
+						if (j != i
+							&& checkLoop.Count > 2)
+						{
+							var distToCheckStart = (startPoint - checkLoop[0]).Length();
+							var distToCheckEnd = (startPoint - checkLoop[checkLoop.Count - 1]).Length();
+							if (distToCheckStart < 2000
+								|| distToCheckEnd < 2000)
+							{
+								foundMachingLoop = true;
+								break;
+							}
+						}
+					}
+
+					Assert.IsTrue(foundMachingLoop);
+				}
+			}
+		}
+
 		[Test]
 		public void RingLoopsSeamAligned()
 		{
@@ -355,6 +386,8 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					var extrusions = extrusionLayers[i];
 					Assert.LessOrEqual(extrusions.Count, 6);
+
+					LoopsAreTouching(extrusions);
 				}
 
 				var movementLayers = TestUtilities.GetAllLayersMovements(loadedGCode);
