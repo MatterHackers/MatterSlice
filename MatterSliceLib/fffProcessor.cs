@@ -1188,7 +1188,6 @@ namespace MatterHackers.MatterSlice
 					{
 						int insetCount = CountInsetsToPrint(insetToolPaths);
 
-
 						bool foundAnyPath = true;
 						bool liftOnTravel = false;
 						// if we are printing top layers and going to do z-lifting make sure we don't cross over the top layer while moving between islands
@@ -1239,7 +1238,8 @@ namespace MatterHackers.MatterSlice
 												if (found.polyIndex != -1
 													&& found.pointIndex != -1)
 												{
-													if (AvailableToPrint(insetToolPaths[findInsetIndex][found.polyIndex]))
+													if (findInsetIndex == insetIndex
+														&& AvailableToPrint(insetToolPaths[findInsetIndex][found.polyIndex]))
 													{
 														break;
 													}
