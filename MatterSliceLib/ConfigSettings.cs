@@ -411,7 +411,7 @@ namespace MatterHackers.MatterSlice
 		
 		public double AvoidCrossingMaxRatio { get; set; } = 2;
 
-		public long TreatAsBridge_um => ExtrusionWidth_um * 20;
+		public long TreatAsBridge_um => ExtrusionWidth_um * 30;
 
 		// .4 mm for .4 mm nozzle
 		public void DumpSettings(string fileName)
