@@ -224,6 +224,25 @@ namespace MatterHackers.MatterSlice
 						extrusionWidth_um,
 						negativeGroup,
 						delta => delta < -extrusionWidth_um / 8);
+
+					if (seamPlacement == SEAM_PLACEMENT.RANDOMIZED)
+					{
+						// look for very small concave turns
+						DiscoverAndAddTurns(inputPolygon,
+							extrusionWidth_um,
+							negativeGroup,
+							delta => delta < -extrusionWidth_um / 32);
+
+						// choose at random which point to pick
+						if (negativeGroup.Count > 1)
+						{
+							var selectedPoint = (int)(inputPolygon.GetLongHashCode() % (ulong)negativeGroup.Count);
+							var singlePoint = negativeGroup[selectedPoint];
+							// remove every point except the random one we want
+							negativeGroup.Clear();
+							negativeGroup.Add(singlePoint);
+						}
+					}
 				}
 			}
 
@@ -269,8 +288,7 @@ namespace MatterHackers.MatterSlice
 						return bestAngleIndexIndex;
 
 					case SEAM_PLACEMENT.RANDOMIZED:
-						var hash = inputPolygon.GetLongHashCode();
-						return (int)(hash % (ulong)inputPolygon.Count);
+						return (int)(inputPolygon.GetLongHashCode() % (ulong)inputPolygon.Count);
 
 					case SEAM_PLACEMENT.FURTHEST_BACK:
 					default:
@@ -295,7 +313,7 @@ namespace MatterHackers.MatterSlice
 						// If can't find good candidate go with vertex most in a single direction
 						return furthestBackIndex;
 
-					case SEAM_PLACEMENT.CLOSEST:
+					case SEAM_PLACEMENT.FASTEST:
 						if (startPosition != null)
 						{
 							return inputPolygon.FindClosestIndex(startPosition.Value);
