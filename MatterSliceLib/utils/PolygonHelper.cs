@@ -22,8 +22,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System.Collections.Generic;
 using System.IO;
 using MSClipperLib;
+using MatterHackers.Agg;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
+using MatterHackers.VectorMath;
+using System;
+using static MSClipperLib.CLPolygonExtensions;
+using System.Linq;
 
 namespace MatterHackers.MatterSlice
 {
@@ -46,6 +51,273 @@ namespace MatterHackers.MatterSlice
 			return new Polygon(GrahamScan.GetConvexHull(inPolygon));
 		}
 
+		private static void DiscoverAndAddTurns(Polygon inputPolygon,
+			long neighborhood,
+			CandidateGroup candidateGroup,
+			Func<double, bool> validDelta)
+		{
+			var polygon2 = inputPolygon.Select(i => new Vector2(i.X, i.Y)).ToList();
+			var count = inputPolygon.Count;
+			for (var i = 0; i < count; i++)
+			{
+				var position = polygon2[i];
+				var prevPosition = polygon2[(count + i - 1) % count];
+				var nextPosition = polygon2[(count + i + 1) % count];
+				var angle = position.GetTurnAmount(prevPosition, nextPosition);
+				var lengthToPoint = polygon2.LengthTo(i);
+
+				var leftPosition = polygon2.GetPositionAt(lengthToPoint - neighborhood);
+				var rightPosition = polygon2.GetPositionAt(lengthToPoint + neighborhood);
+				var nearAngle = position.GetTurnAmount(leftPosition, rightPosition);
+				var directionNormal = (rightPosition - leftPosition).GetNormal().GetPerpendicularRight();
+				var delta = Vector2.Dot(directionNormal, position - leftPosition);
+
+				var currentPoint = inputPolygon[i];
+				if (validDelta(delta))
+				{
+					candidateGroup.ConditionalAdd(new CandidatePoint(delta, i, currentPoint));
+				}
+			}
+		}
+
+		public struct CandidatePoint
+		{
+			internal IntPoint position;
+			internal double neighborDelta;
+			internal int turnIndex;
+
+			internal CandidatePoint(double neighborDelta, int turnIndex, IntPoint position)
+			{
+				this.turnIndex = turnIndex;
+				this.neighborDelta = neighborDelta;
+				this.position = position;
+			}
+		}
+
+		public class CandidateGroup : List<CandidatePoint>
+		{
+			public double SameDelta { get; set; }
+
+			public CandidateGroup(double sameDelta)
+			{
+				this.SameDelta = sameDelta;
+			}
+
+			/// <summary>
+			/// Get the best turn for this polygon.
+			/// </summary>
+			/// <param name="startPosition">If two or more points are similar, choose the one closest to start</param>
+			/// <returns></returns>
+			public int GetBestIndex(IntPoint? startPosition)
+			{
+				bool outsideEdge = this[this.Count - 1].neighborDelta > 0;
+
+				if (startPosition == null)
+				{
+					// sort to the back
+					this.Sort((a, b) =>
+					{
+						if (a.position.Y == b.position.Y)
+						{
+							return b.position.X.CompareTo(a.position.X);
+						}
+						else
+						{
+							return a.position.Y.CompareTo(b.position.Y);
+						}
+					});
+				}
+				else // sort them by distance from start
+				{
+					this.Sort((a, b) =>
+					{
+						var distToA = (a.position - startPosition.Value).LengthSquared();
+						var distToB = (b.position - startPosition.Value).LengthSquared();
+						return distToB.CompareTo(distToA);
+					});
+				}
+
+				return this[this.Count - 1].turnIndex;
+			}
+
+			public void ConditionalAdd(CandidatePoint point)
+			{
+				// If this is better than our worst point
+				// or it is within sameTurn of our best point
+				if (Count == 0
+					|| Math.Abs(point.neighborDelta) >= Math.Abs(this[Count - 1].neighborDelta)
+					|| Math.Abs(point.neighborDelta) >= Math.Abs(this[0].neighborDelta) - SameDelta)
+				{
+					// remove all points that are worse than the new one
+					for (int i = Count - 1; i >= 0; i--)
+					{
+						if (Math.Abs(this[i].neighborDelta) + SameDelta < Math.Abs(point.neighborDelta))
+						{
+							RemoveAt(i);
+						}
+						else
+						{
+							break;
+						}
+					}
+
+					if (Count > 0)
+					{
+						for (int i = 0; i < Count; i++)
+						{
+							if (Math.Abs(point.neighborDelta) >= Math.Abs(this[i].neighborDelta))
+							{
+								// insert it sorted
+								Insert(i, point);
+								return;
+							}
+						}
+
+						// still insert it at the end
+						Add(point);
+					}
+					else
+					{
+						Add(point);
+					}
+				}
+			}
+		}
+
+		/// <summary>
+		/// This will find the largest turn in a given models. It prefers concave turns to convex turns.
+		/// If turn amount is the same, bias towards the smallest y position.
+		/// </summary>
+		/// <param name="inputPolygon">The polygon to analyze</param>
+		/// <param name="considerAsSameY">Range to treat y positions as the same value.</param>
+		/// <param name="startPosition">If two or more angles are similar, choose the one close to the start</param>
+		/// <returns>The position that has the largest turn angle</returns>
+		public static int FindGreatestTurnIndex(this Polygon inputPolygon,
+			long extrusionWidth_um = 3,
+			SEAM_PLACEMENT seamPlacement = SEAM_PLACEMENT.FURTHEST_BACK,
+			IntPoint? startPosition = null)
+		{
+			var count = inputPolygon.Count;
+
+			var positiveGroup = new CandidateGroup(extrusionWidth_um);
+			var negativeGroup = new CandidateGroup(extrusionWidth_um / 4);
+
+			// look for relatively big concave turns
+			DiscoverAndAddTurns(inputPolygon,
+				extrusionWidth_um * 4,
+				negativeGroup,
+				delta => delta < -extrusionWidth_um / 2);
+
+			if (negativeGroup.Count == 0)
+			{
+				// look for relatively big convex turns
+				DiscoverAndAddTurns(inputPolygon,
+					extrusionWidth_um * 4,
+					positiveGroup,
+					delta => delta > extrusionWidth_um * 2);
+
+				if (positiveGroup.Count == 0)
+				{
+					negativeGroup.SameDelta = extrusionWidth_um / 16;
+					// look for small concave turns
+					DiscoverAndAddTurns(inputPolygon,
+						extrusionWidth_um,
+						negativeGroup,
+						delta => delta < -extrusionWidth_um / 8);
+				}
+			}
+
+			if (negativeGroup.Count > 0)
+			{
+				return negativeGroup.GetBestIndex(startPosition);
+			}
+			else if (positiveGroup.Count > 0)
+			{
+				return positiveGroup.GetBestIndex(startPosition);
+			}
+			else // there is not really good candidate
+			{
+				switch (seamPlacement)
+				{
+					case SEAM_PLACEMENT.CENTERED_IN_BACK:
+						// find the point that is most directly behind the center point of this path
+						var center = default(IntPoint);
+						foreach (var point in inputPolygon)
+						{
+							center += point;
+						}
+
+						center /= count;
+
+						// start with forward
+						var bestDeltaAngle = double.MaxValue;
+						int bestAngleIndexIndex = 0;
+						// get the furthest back index
+						for (var i = 0; i < count; i++)
+						{
+							var direction = inputPolygon[i] - center;
+							var deltaAngle = MathHelper.GetDeltaAngle(MathHelper.Range0ToTau(Math.Atan2(direction.Y, direction.X)), Math.PI * .5);
+
+							if (Math.Abs(deltaAngle) < bestDeltaAngle)
+							{
+								bestAngleIndexIndex = i;
+								bestDeltaAngle = Math.Abs(deltaAngle);
+							}
+						}
+
+						// If can't find good candidate go with vertex most in a single direction
+						return bestAngleIndexIndex;
+
+					case SEAM_PLACEMENT.RANDOMIZED:
+						var hash = inputPolygon.GetLongHashCode();
+						return (int)(hash % (ulong)inputPolygon.Count);
+
+					case SEAM_PLACEMENT.FURTHEST_BACK:
+					default:
+						var currentFurthestBack = new IntPoint(long.MaxValue, long.MinValue);
+						int furthestBackIndex = 0;
+						// get the furthest back index
+						for (var i = 0; i < count; i++)
+						{
+							var currentPoint = inputPolygon[i];
+
+							if (currentPoint.Y >= currentFurthestBack.Y)
+							{
+								if (currentPoint.Y > currentFurthestBack.Y
+									|| currentPoint.X < currentFurthestBack.X)
+								{
+									furthestBackIndex = i;
+									currentFurthestBack = currentPoint;
+								}
+							}
+						}
+
+						// If can't find good candidate go with vertex most in a single direction
+						return furthestBackIndex;
+
+					case SEAM_PLACEMENT.CLOSEST:
+						if (startPosition != null)
+						{
+							return inputPolygon.FindClosestIndex(startPosition.Value);
+						}
+						return 0;
+				}
+			}
+		}
+
+		public static ulong GetLongHashCode(this Polygon polygon)
+		{
+			ulong hash = polygon.Count.GetLongHashCode();
+			for (int pointIndex = 0; pointIndex < polygon.Count; pointIndex++)
+			{
+				var point = polygon[pointIndex];
+				hash = point.X.GetLongHashCode(hash);
+				hash = Agg.agg_basics.GetLongHashCode(point.X, hash);
+				hash = Agg.agg_basics.GetLongHashCode(point.Y, hash);
+			}
+
+			return hash;
+		}
 		public static void SetSpeed(this Polygon polygon, long speed)
 		{
 			for (int pointIndex = 0; pointIndex < polygon.Count; pointIndex++)
