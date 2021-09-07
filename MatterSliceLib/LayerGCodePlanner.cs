@@ -801,7 +801,6 @@ namespace MatterHackers.MatterSlice
 							&& config.CoastAtEndDistance_um > 0
 							&& length > config.CoastAtEndDistance_um)
 						{
-							// gcodeExport.WriteRetraction
 							var wipePoly = new Polygon(new IntPoint[] { loopStart });
 							wipePoly.AddRange(path.Polygon);
 							// then drive down it just a bit more to make sure we have a clean overlap

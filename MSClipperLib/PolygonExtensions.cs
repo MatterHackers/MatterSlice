@@ -41,7 +41,7 @@ namespace MSClipperLib
 		FURTHEST_BACK,
 		CENTERED_IN_BACK,
 		RANDOMIZED,
-		CLOSEST
+		FASTEST
 	}
 
 	public static class CLPolygonExtensions
