@@ -337,7 +337,7 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				string[] layerGCode = TestUtilities.GetLayer(gcodeContents, layerIndex);
 				int movementIndex = 0;
-				foreach (MovementInfo movement in TestUtilities.Movements(layerGCode, lastMovement))
+				foreach (MovementInfo movement in TestUtilities.GetLayerMovements(layerGCode, lastMovement))
 				{
 					if (!firstPosition)
 					{
@@ -721,7 +721,7 @@ namespace MatterHackers.MatterSlice.Tests
 				string[] layerInfo = TestUtilities.GetLayer(gCodeContent, i);
 
 				// check that all layers move up continuously
-				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo, lastMovement, onlyG1s: true))
+				foreach (MovementInfo movement in TestUtilities.GetLayerMovements(layerInfo, lastMovement, onlyG1s: true))
 				{
 					if (i > 2)
 					{
@@ -859,7 +859,7 @@ namespace MatterHackers.MatterSlice.Tests
 				string[] layerInfo = TestUtilities.GetLayer(risingLayersGCodeContent, layerIndex);
 				int movementIndex = 0;
 				// check that all layers move up
-				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo, startingPosition))
+				foreach (MovementInfo movement in TestUtilities.GetLayerMovements(layerInfo, startingPosition))
 				{
 					if (movement.line.Contains("X")
 						|| movement.line.Contains("Y")
@@ -917,7 +917,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				// check that all layers move up continuously
 				var lastMovement = default(MovementInfo);
-				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo))
+				foreach (MovementInfo movement in TestUtilities.GetLayerMovements(layerInfo))
 				{
 #if __ANDROID__
 					Assert.IsTrue(movement.position.z > lastMovement.position.z);
@@ -932,7 +932,7 @@ namespace MatterHackers.MatterSlice.Tests
 				bool first = true;
 				lastMovement = default(MovementInfo);
 				// check that all moves are on the outside of the cylinder (not crossing to a new point)
-				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo))
+				foreach (MovementInfo movement in TestUtilities.GetLayerMovements(layerInfo))
 				{
 					if (!first)
 					{
@@ -983,7 +983,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				// check that all layers move up continuously
 				var lastMovement = default(MovementInfo);
-				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo))
+				foreach (MovementInfo movement in TestUtilities.GetLayerMovements(layerInfo))
 				{
 					Assert.IsTrue(movement.position.z > lastMovement.position.z);
 
@@ -993,7 +993,7 @@ namespace MatterHackers.MatterSlice.Tests
 				bool first = true;
 				lastMovement = default(MovementInfo);
 				// check that all moves are on the outside of the cylinder (not crossing to a new point)
-				foreach (MovementInfo movement in TestUtilities.Movements(layerInfo))
+				foreach (MovementInfo movement in TestUtilities.GetLayerMovements(layerInfo))
 				{
 					if (!first)
 					{

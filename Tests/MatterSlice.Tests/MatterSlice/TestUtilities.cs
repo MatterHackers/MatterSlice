@@ -42,7 +42,7 @@ using Polygons = System.Collections.Generic.List<System.Collections.Generic.List
 
 namespace MatterHackers.MatterSlice.Tests
 {
-	public struct MovementInfo
+	public struct MovementInfo : IEquatable<MovementInfo>
 	{
 		public double extrusion;
 
@@ -51,6 +51,18 @@ namespace MatterHackers.MatterSlice.Tests
 		public string line;
 
 		public Vector3 position;
+
+		public bool Equals(MovementInfo other)
+		{
+			if (extrusion == other.extrusion
+				&& feedRate == other.feedRate
+				&& position == other.position)
+			{
+				return true;
+			}
+
+			return false;
+		}
 
 		public override string ToString()
 		{
@@ -135,7 +147,7 @@ namespace MatterHackers.MatterSlice.Tests
 			var layerMovements = new List<IEnumerable<MovementInfo>>(layerCount);
 			for (int i = 0; i < layerCount; i++)
 			{
-				layerMovements.Add(TestUtilities.Movements(loadedGCode.GetLayer(i)));
+				layerMovements.Add(TestUtilities.GetLayerMovements(loadedGCode.GetLayer(i)));
 			}
 
 			return layerMovements;
@@ -196,7 +208,7 @@ namespace MatterHackers.MatterSlice.Tests
 			double movementAmount = double.MaxValue / 2; // always add a new extrusion the first time
 			MovementInfo lastMovement = movementInfo;
 			MovementInfo lastLastMovement = movementInfo;
-			foreach (MovementInfo currentMovement in TestUtilities.Movements(layerGCode, lastMovement))
+			foreach (MovementInfo currentMovement in TestUtilities.GetLayerMovements(layerGCode, lastMovement))
 			{
 				bool isRetraction = currentMovement.extrusion != lastMovement.extrusion && (currentMovement.position == lastLastMovement.position);
 				bool isZLift = currentMovement.position.x == lastLastMovement.position.x && currentMovement.position.y == lastLastMovement.position.y && currentMovement.position.z != lastLastMovement.position.z;
@@ -413,7 +425,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			bool traveling = false;
 			MovementInfo lastMovement = movementInfo;
-			foreach (MovementInfo currentMovement in TestUtilities.Movements(layerGCode, lastMovement))
+			foreach (MovementInfo currentMovement in TestUtilities.GetLayerMovements(layerGCode, lastMovement))
 			{
 				bool isTravel = currentMovement.extrusion == lastMovement.extrusion;
 
@@ -525,7 +537,7 @@ namespace MatterHackers.MatterSlice.Tests
 			return -1;
 		}
 
-		public static IEnumerable<MovementInfo> Movements(this string[] gcodeContents, Nullable<MovementInfo> startingMovement = null, bool onlyG1s = false)
+		public static IEnumerable<MovementInfo> GetLayerMovements(this string[] gcodeContents, Nullable<MovementInfo> startingMovement = null, bool onlyG1s = false)
 		{
 			var currentPosition = default(MovementInfo);
 			if (startingMovement != null)
@@ -555,6 +567,86 @@ namespace MatterHackers.MatterSlice.Tests
 					yield return currentPosition;
 				}
 			}
+		}
+
+		public enum PolygonTypes
+		{
+			Unknown,
+			Travel,
+			Retraction,
+			Extrusion
+		}
+
+		public static List<(Polygon polygon, PolygonTypes type)> GetLayerPolygons(IEnumerable<MovementInfo> layerMovements)
+		{
+			var layerPolygons = new List<(Polygon polygon, PolygonTypes type)>();
+			Polygon currentPolygon = null;
+			var lastMovement = new MovementInfo();
+			var lastPolygonType = PolygonTypes.Unknown;
+			var pointsAdded = -1;
+			foreach (var movement in layerMovements)
+			{
+				if (pointsAdded == -1)
+				{
+					pointsAdded++;
+					lastMovement = movement;
+				}
+				else
+				{
+					PolygonTypes segmentType = PolygonTypes.Unknown;
+					// if the next movement is changed
+					if(!movement.Equals(lastMovement))
+					{
+						// figure out what type of movement it is
+						if (movement.extrusion != lastMovement.extrusion)
+						{
+							// a retraction or an extrusion
+							if (lastMovement.position.x == movement.position.x
+								&& lastMovement.position.y == movement.position.y)
+							{
+								// retraction
+								segmentType = PolygonTypes.Retraction;
+							}
+							else
+							{
+								// extrusion
+								segmentType = PolygonTypes.Extrusion;
+							}
+						}
+						else
+						{
+							// a travel
+							segmentType = PolygonTypes.Travel;
+						}
+
+						// if we have a change in movement type add a polygon
+						if (segmentType != lastPolygonType)
+						{
+							currentPolygon = new Polygon();
+							layerPolygons.Add((currentPolygon, segmentType));
+							lastPolygonType = segmentType;
+							if (pointsAdded++ == 0)
+							{
+								currentPolygon.Add(new IntPoint(lastMovement.position.x, lastMovement.position.y, lastMovement.position.z)
+								{
+									Speed = (long)lastMovement.feedRate
+								});
+							}
+						}
+
+						// and add to the current polygon
+						currentPolygon.Add(new IntPoint(movement.position.x, movement.position.y, movement.position.z)
+						{
+							Speed = (long)movement.feedRate
+						});
+						pointsAdded++;
+					}
+
+					lastMovement = movement;
+				}
+			}
+
+			return layerPolygons;
 		}
 
 		public static string ResolveProjectPath(this TestContext context, int stepsToProjectRoot, params string[] relativePathSteps)

@@ -139,7 +139,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				for (int i = 0; i < layerCount; i++)
 				{
-					var movements = loadedGCode.GetLayer(i).Movements().ToList();
+					var movements = loadedGCode.GetLayer(i).GetLayerMovements().ToList();
 
 					int longMoveCount = 0;
 					for (var j = 1; j < movements.Count - 2; j++)
@@ -180,7 +180,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				for (int i = 0; i < 100; i++)
 				{
-					var movements = loadedGCode.GetLayer(i).Movements().ToList();
+					var movements = loadedGCode.GetLayer(i).GetLayerMovements().ToList();
 					Assert.GreaterOrEqual(movements.Count, 100, $"Layer {i} should have more than 100 extrusions.");
 				}
 			}
@@ -645,7 +645,7 @@ namespace MatterHackers.MatterSlice.Tests
 					var topLayerIndex = layers.Count - 1;
 					var topLayer = loadedGCode.GetLayer(topLayerIndex);
 
-					var topMovements = topLayer.Movements().ToList();
+					var topMovements = topLayer.GetLayerMovements().ToList();
 					var lastMovement = default(MovementInfo);
 					var topTravels = topLayer.GetTravelPolygonsForLayer(ref lastMovement);
 					foreach (var travel in topTravels)
@@ -694,6 +694,39 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					// this will check for overlapping segments
 					TestUtilities.GetExtrusionPolygonsForLayer(layers[i]);
+				}
+			}
+		}
+
+		[Test]
+		public void Perimeter0CloseTo1()
+		{
+			string stlPath = TestUtilities.GetStlPath("perimeter_0_close_to_1");
+			string validateGCode = TestUtilities.GetTempGCodePath("perimeter_0_close_to_1.gcode");
+			{
+				// load a model that is (or was) having many erroneous travels
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "perimeter_0_close_to_1.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(validateGCode);
+				processor.LoadStlFile(stlPath);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Dispose();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(validateGCode);
+
+				var layers = loadedGCode.GetAllLayers();
+
+				// validate that all perimeters render as groups
+				for (int i = 1; i < layers.Count; i++)
+				{
+					// find each polygon that has a speed of 25 (the outer perimeters)
+					// make sure there are at least 2
+					// make sure the travel polygon to each is sorter than 3 mm
+					var layerMovements = TestUtilities.GetLayerMovements(layers[i]);
+					var layerPolygons = TestUtilities.GetLayerPolygons(layerMovements);
 				}
 			}
 		}
