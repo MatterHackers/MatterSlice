@@ -699,6 +699,65 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void ParseLayerPolygonsCorrectly()
+		{
+			var gcode = @"; Layer Change GCode
+; LAYER:11
+; LAYER_HEIGHT:0.25
+; TYPE:FILL
+G0 F12000 X5.678 Y6.736 Z3
+; TYPE:WALL-OUTER
+G1 F1200 X-13.92 Y6.736 E105.83318
+G1 X-13.92 Y-12.862 E106.66692
+G1 X5.678 Y-12.862 E107.50066
+G1 X5.678 Y6.336 E108.31738
+G0 X5.678 Y6.736
+G0 F12000 X5.278 Y6.336
+; TYPE:WALL-INNER
+G1 F1200 X-13.52 Y6.336 E109.11708
+G1 X-13.52 Y-12.462 E109.91679
+G1 X5.278 Y-12.462 E110.71649
+G1 X5.278 Y5.936 E111.49918
+G0 X5.278 Y6.336
+G0 F12000 X4.878 Y5.936
+G1 F1200 X-13.12 Y5.936 E112.26485
+G1 X-13.12 Y-12.062 E113.03052
+G1 X4.878 Y-12.062 E113.79619
+G1 X4.878 Y5.536 E114.54485
+G0 X4.878 Y5.936
+";
+
+			var layerMovements = TestUtilities.GetLayerMovements(gcode.Split('\n')).ToList();
+			var lastPosition = new MovementInfo();
+			var layerPolygons = TestUtilities.GetLayerPolygons(layerMovements, ref lastPosition);
+			Assert.AreEqual(7, layerPolygons.Count);
+			for (int i=1; i<layerPolygons.Count; i++)
+			{
+				var speed = 0L;
+				var foundSpeed = false;
+				// all points have same speed
+				foreach(var point in layerPolygons[i].polygon)
+				{
+					if (speed == 0)
+					{
+						Assert.False(foundSpeed);
+						speed = point.Speed;
+						foundSpeed = true;
+					}
+					else
+					{
+						if (layerPolygons[i].type == TestUtilities.PolygonTypes.Extrusion)
+						{
+							Assert.AreEqual(speed, point.Speed);
+						}
+					}
+				}
+
+				Assert.True(foundSpeed);
+			}
+		}
+
+		[Test]
 		public void Perimeter0CloseTo1()
 		{
 			string stlPath = TestUtilities.GetStlPath("perimeter_0_close_to_1");
@@ -719,14 +778,30 @@ namespace MatterHackers.MatterSlice.Tests
 
 				var layers = loadedGCode.GetAllLayers();
 
+				var lastPosition = new MovementInfo();
+				var outerPerimeterSpeed = 1500;
 				// validate that all perimeters render as groups
-				for (int i = 1; i < layers.Count; i++)
+				for (int layerIndex = 1; layerIndex < layers.Count; layerIndex++)
 				{
-					// find each polygon that has a speed of 25 (the outer perimeters)
+					// find each polygon that has a speed of outerPerimeterSpeed
+					var layerMovements = TestUtilities.GetLayerMovements(layers[layerIndex]);
+					var layerPolygons = TestUtilities.GetLayerPolygons(layerMovements, ref lastPosition);
+					var outerPerimeterCount = 0;
+					for(int polygonIndex = 0; polygonIndex < layerPolygons.Count; polygonIndex ++)
+					{
+						var polygon = layerPolygons[polygonIndex].polygon;
+						if(polygon[polygon.Count - 1].Speed == outerPerimeterSpeed)
+						{
+							outerPerimeterCount++;
+							// make sure the previous polygon is a travel
+							Assert.AreEqual(TestUtilities.PolygonTypes.Travel, layerPolygons[polygonIndex - 1].type);
+							// make sure the travel polygon to each is sorter than 3 mm
+							Assert.Less(layerPolygons[polygonIndex - 1].polygon.PolygonLength(), 3000);
+						}
+					}
+
 					// make sure there are at least 2
-					// make sure the travel polygon to each is sorter than 3 mm
-					var layerMovements = TestUtilities.GetLayerMovements(layers[i]);
-					var layerPolygons = TestUtilities.GetLayerPolygons(layerMovements);
+					Assert.AreEqual(2, outerPerimeterCount);
 				}
 			}
 		}
