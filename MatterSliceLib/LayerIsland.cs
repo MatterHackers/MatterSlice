@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using MatterHackers.Pathfinding;
+using MatterHackers.QuadTree;
 using MSClipperLib;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
@@ -125,6 +126,34 @@ namespace MatterHackers.MatterSlice
 					// check that we have actual paths
 					if (currentInset.Count > 0)
 					{
+						if (config.SeamPlacement == SEAM_PLACEMENT.ALWAYS_CENTERED_IN_BACK)
+						{
+							foreach (var polygon in currentInset)
+							{
+								if (polygon.Count > 2)
+								{
+									// if we are going to center the seam in the back make sure there is a vertex to center on that is exactly in back
+									var centeredIndex = polygon.GetCenteredInBackIndex(out IntPoint center);
+									if (polygon[centeredIndex].X < -10)
+									{
+										int a = 0;
+									}
+									else if (polygon[centeredIndex].X > 10)
+									{
+										if (polygon.GetWindingDirection() > 0)
+										{
+											var nextIndex = (centeredIndex + 1) % polygon.Count;
+											polygon.Insert(centeredIndex + 1, (polygon[centeredIndex] + polygon[nextIndex]) / 2);
+										}
+										else
+										{
+											int a = 0;
+										}
+									}
+								}
+							}
+						}
+
 						part.InsetToolPaths.Add(currentInset);
 
 						// Increment by the second half

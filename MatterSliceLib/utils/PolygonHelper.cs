@@ -184,6 +184,39 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
+		public static int GetCenteredInBackIndex(this Polygon inputPolygon, out IntPoint polygonCenter)
+		{
+			// find the point that is most directly behind the center point of this path
+			polygonCenter = default(IntPoint);
+			foreach (var point in inputPolygon)
+			{
+				polygonCenter += point;
+			}
+
+			var count = inputPolygon.Count;
+			polygonCenter /= count;
+
+			// start with forward
+			var bestDeltaAngle = double.MaxValue;
+			int bestAngleIndexIndex = 0;
+			// get the furthest back index
+			for (var i = 0; i < count; i++)
+			{
+				var direction = inputPolygon[i] - polygonCenter;
+				var deltaAngle = MathHelper.GetDeltaAngle(MathHelper.Range0ToTau(Math.Atan2(direction.Y, direction.X)), Math.PI * .5);
+
+				if (Math.Abs(deltaAngle) < bestDeltaAngle)
+				{
+					bestAngleIndexIndex = i;
+					bestDeltaAngle = Math.Abs(deltaAngle);
+				}
+			}
+
+			// If can't find good candidate go with vertex most in a single direction
+			return bestAngleIndexIndex;
+		}
+
+
 		/// <summary>
 		/// This will find the largest turn in a given models. It prefers concave turns to convex turns.
 		/// If turn amount is the same, bias towards the smallest y position.
@@ -199,40 +232,9 @@ namespace MatterHackers.MatterSlice
 		{
 			var count = inputPolygon.Count;
 
-			int CenteredInBack()
-			{
-				// find the point that is most directly behind the center point of this path
-				var center = default(IntPoint);
-				foreach (var point in inputPolygon)
-				{
-					center += point;
-				}
-
-				center /= count;
-
-				// start with forward
-				var bestDeltaAngle = double.MaxValue;
-				int bestAngleIndexIndex = 0;
-				// get the furthest back index
-				for (var i = 0; i < count; i++)
-				{
-					var direction = inputPolygon[i] - center;
-					var deltaAngle = MathHelper.GetDeltaAngle(MathHelper.Range0ToTau(Math.Atan2(direction.Y, direction.X)), Math.PI * .5);
-
-					if (Math.Abs(deltaAngle) < bestDeltaAngle)
-					{
-						bestAngleIndexIndex = i;
-						bestDeltaAngle = Math.Abs(deltaAngle);
-					}
-				}
-
-				// If can't find good candidate go with vertex most in a single direction
-				return bestAngleIndexIndex;
-			}
-
 			if (seamPlacement == SEAM_PLACEMENT.ALWAYS_CENTERED_IN_BACK)
 			{
-				return CenteredInBack();
+				return inputPolygon.GetCenteredInBackIndex(out _);
 			}
 
 			var positiveGroup = new CandidateGroup(extrusionWidth_um);
@@ -295,7 +297,7 @@ namespace MatterHackers.MatterSlice
 				switch (seamPlacement)
 				{
 					case SEAM_PLACEMENT.CENTERED_IN_BACK:
-						return CenteredInBack();
+						return inputPolygon.GetCenteredInBackIndex(out _);
 
 					case SEAM_PLACEMENT.RANDOMIZED:
 						return (int)(inputPolygon.GetLongHashCode() % (ulong)inputPolygon.Count);
