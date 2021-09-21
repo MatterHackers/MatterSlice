@@ -793,7 +793,7 @@ G0 X4.878 Y5.936
 			}
 		}
 
-		[Test]
+		[Test, Ignore("WorkInProgress")]
 		public void Perimeter0CloseTo1()
 		{
 			string stlPath = TestUtilities.GetStlPath("perimeter_0_close_to_1");

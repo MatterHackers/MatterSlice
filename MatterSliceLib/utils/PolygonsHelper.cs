@@ -226,7 +226,19 @@ namespace MatterHackers.MatterSlice
 
 			return stitched;
 		}
-		
+
+		public static Polygons ReversePolygons(this Polygons polygonsToReverse)
+		{
+			var reversed = new Polygons(polygonsToReverse);
+			reversed.Reverse();
+			foreach(var polygon in reversed)
+			{
+				polygon.ReversePolygon();
+			}
+
+			return reversed;
+		}
+
 		public static Polygons GetCorrectedWinding(this Polygons polygonsToFix)
 		{
 			polygonsToFix = Clipper.CleanPolygons(polygonsToFix);

@@ -1371,9 +1371,7 @@ namespace MatterHackers.MatterSlice
 				// sparse fill
 				QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, sparseFillPolygons, sparseFillConfig, SupportWriteType.UnsupportedAreas);
 
-				var monotonic = true;
-
-				if (monotonic)
+				if (config.MonotonicSolidInfill)
 				{
 					// solid fill
 					layerGcodePlanner.QueuePolygonsMonotonic(solidFillPolygons, island.PathFinder, solidFillConfig);
@@ -1397,7 +1395,7 @@ namespace MatterHackers.MatterSlice
 					layerGcodePlanner.QueueFanCommand(fanSpeedAtLayerStart, sparseFillConfig);
 				}
 
-				if (monotonic)
+				if (config.MonotonicSolidInfill)
 				{
 					layerGcodePlanner.QueuePolygonsMonotonic(topFillPolygons, island.PathFinder, topFillConfig);
 				}
