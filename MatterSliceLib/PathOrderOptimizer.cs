@@ -318,26 +318,7 @@ namespace MatterHackers.MatterSlice
 
 			if (connectedPolygon.GetWindingDirection() == -1)
 			{
-				// reverse it
-				connectedPolygon.Reverse();
-				var copy = new Polygon(connectedPolygon);
-
-				// and fix any speed or width problem (they are expressed on the segment start and need to be moved)
-				var count = connectedPolygon.Count;
-				for (int i = 1; i < count; i++)
-				{
-					connectedPolygon[i] = new IntPoint(connectedPolygon[i])
-					{
-						Width = copy[i - 1].Width,
-						Speed = copy[i - 1].Speed,
-					};
-				}
-
-				connectedPolygon[0] = new IntPoint(connectedPolygon[0])
-				{
-					Width = copy[count - 1].Width,
-					Speed = copy[count - 1].Speed,
-				};
+				connectedPolygon = connectedPolygon.ReversePolygon();
 			}
 
 			return connectedPolygon;

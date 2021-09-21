@@ -199,6 +199,42 @@ namespace MatterHackers.MatterSlice
 		{
 			var count = inputPolygon.Count;
 
+			int CenteredInBack()
+			{
+				// find the point that is most directly behind the center point of this path
+				var center = default(IntPoint);
+				foreach (var point in inputPolygon)
+				{
+					center += point;
+				}
+
+				center /= count;
+
+				// start with forward
+				var bestDeltaAngle = double.MaxValue;
+				int bestAngleIndexIndex = 0;
+				// get the furthest back index
+				for (var i = 0; i < count; i++)
+				{
+					var direction = inputPolygon[i] - center;
+					var deltaAngle = MathHelper.GetDeltaAngle(MathHelper.Range0ToTau(Math.Atan2(direction.Y, direction.X)), Math.PI * .5);
+
+					if (Math.Abs(deltaAngle) < bestDeltaAngle)
+					{
+						bestAngleIndexIndex = i;
+						bestDeltaAngle = Math.Abs(deltaAngle);
+					}
+				}
+
+				// If can't find good candidate go with vertex most in a single direction
+				return bestAngleIndexIndex;
+			}
+
+			if (seamPlacement == SEAM_PLACEMENT.ALWAYS_CENTERED_IN_BACK)
+			{
+				return CenteredInBack();
+			}
+
 			var positiveGroup = new CandidateGroup(extrusionWidth_um);
 			var negativeGroup = new CandidateGroup(extrusionWidth_um / 4);
 
@@ -259,33 +295,7 @@ namespace MatterHackers.MatterSlice
 				switch (seamPlacement)
 				{
 					case SEAM_PLACEMENT.CENTERED_IN_BACK:
-						// find the point that is most directly behind the center point of this path
-						var center = default(IntPoint);
-						foreach (var point in inputPolygon)
-						{
-							center += point;
-						}
-
-						center /= count;
-
-						// start with forward
-						var bestDeltaAngle = double.MaxValue;
-						int bestAngleIndexIndex = 0;
-						// get the furthest back index
-						for (var i = 0; i < count; i++)
-						{
-							var direction = inputPolygon[i] - center;
-							var deltaAngle = MathHelper.GetDeltaAngle(MathHelper.Range0ToTau(Math.Atan2(direction.Y, direction.X)), Math.PI * .5);
-
-							if (Math.Abs(deltaAngle) < bestDeltaAngle)
-							{
-								bestAngleIndexIndex = i;
-								bestDeltaAngle = Math.Abs(deltaAngle);
-							}
-						}
-
-						// If can't find good candidate go with vertex most in a single direction
-						return bestAngleIndexIndex;
+						return CenteredInBack();
 
 					case SEAM_PLACEMENT.RANDOMIZED:
 						return (int)(inputPolygon.GetLongHashCode() % (ulong)inputPolygon.Count);

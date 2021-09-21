@@ -68,6 +68,8 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("Avoid crossing any of the perimeters of a shape while printing its parts.")]
 		public bool AvoidCrossingPerimeters { get; set; }
 
+		public bool MonotonicSolidInfill { get; set; }
+
 		public string BooleanOperations { get; set; } = "";
 
 		public string AdditionalArgsToProcess { get; set; } = "";

@@ -577,73 +577,59 @@ namespace MatterHackers.MatterSlice.Tests
 			Extrusion
 		}
 
-		public static List<(Polygon polygon, PolygonTypes type)> GetLayerPolygons(IEnumerable<MovementInfo> layerMovements)
+		public static List<(Polygon polygon, PolygonTypes type)> GetLayerPolygons(IEnumerable<MovementInfo> layerMovements, ref MovementInfo lastMovement)
 		{
 			var layerPolygons = new List<(Polygon polygon, PolygonTypes type)>();
 			Polygon currentPolygon = null;
-			var lastMovement = new MovementInfo();
 			var lastPolygonType = PolygonTypes.Unknown;
-			var pointsAdded = -1;
 			foreach (var movement in layerMovements)
 			{
-				if (pointsAdded == -1)
+				PolygonTypes segmentType = PolygonTypes.Unknown;
+				// if the next movement is changed
+				if (!movement.Equals(lastMovement))
 				{
-					pointsAdded++;
-					lastMovement = movement;
-				}
-				else
-				{
-					PolygonTypes segmentType = PolygonTypes.Unknown;
-					// if the next movement is changed
-					if(!movement.Equals(lastMovement))
+					// figure out what type of movement it is
+					if (movement.extrusion != lastMovement.extrusion)
 					{
-						// figure out what type of movement it is
-						if (movement.extrusion != lastMovement.extrusion)
+						// a retraction or an extrusion
+						if (lastMovement.position.x == movement.position.x
+							&& lastMovement.position.y == movement.position.y)
 						{
-							// a retraction or an extrusion
-							if (lastMovement.position.x == movement.position.x
-								&& lastMovement.position.y == movement.position.y)
-							{
-								// retraction
-								segmentType = PolygonTypes.Retraction;
-							}
-							else
-							{
-								// extrusion
-								segmentType = PolygonTypes.Extrusion;
-							}
+							// retraction
+							segmentType = PolygonTypes.Retraction;
 						}
 						else
 						{
-							// a travel
-							segmentType = PolygonTypes.Travel;
+							// extrusion
+							segmentType = PolygonTypes.Extrusion;
 						}
+					}
+					else
+					{
+						// a travel
+						segmentType = PolygonTypes.Travel;
+					}
 
-						// if we have a change in movement type add a polygon
-						if (segmentType != lastPolygonType)
-						{
-							currentPolygon = new Polygon();
-							layerPolygons.Add((currentPolygon, segmentType));
-							lastPolygonType = segmentType;
-							if (pointsAdded++ == 0)
-							{
-								currentPolygon.Add(new IntPoint(lastMovement.position.x, lastMovement.position.y, lastMovement.position.z)
-								{
-									Speed = (long)lastMovement.feedRate
-								});
-							}
-						}
-
-						// and add to the current polygon
-						currentPolygon.Add(new IntPoint(movement.position.x, movement.position.y, movement.position.z)
+					// if we have a change in movement type add a polygon
+					if (segmentType != lastPolygonType)
+					{
+						currentPolygon = new Polygon();
+						layerPolygons.Add((currentPolygon, segmentType));
+						lastPolygonType = segmentType;
+						currentPolygon.Add(new IntPoint(lastMovement.position.x * 1000, lastMovement.position.y * 1000, lastMovement.position.z * 1000)
 						{
 							Speed = (long)movement.feedRate
 						});
-						pointsAdded++;
 					}
 
-					lastMovement = movement;
+					// and add to the current polygon
+					currentPolygon.Add(new IntPoint(movement.position.x * 1000, movement.position.y * 1000, movement.position.z * 1000)
+					{
+						Speed = (long)movement.feedRate
+					});
 				}
+
+				lastMovement = movement;
 			}
 
 			return layerPolygons;

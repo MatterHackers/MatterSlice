@@ -40,6 +40,7 @@ namespace MSClipperLib
 	{
 		FURTHEST_BACK,
 		CENTERED_IN_BACK,
+		ALWAYS_CENTERED_IN_BACK,
 		RANDOMIZED,
 		FASTEST
 	}
@@ -243,6 +244,36 @@ namespace MSClipperLib
 			}
 
 			return length;
+		}
+
+		public static Polygon ReversePolygon(this Polygon polygonToReverse)
+		{
+			var reversed = new Polygon(polygonToReverse);
+
+			// reverse it
+			reversed.Reverse();
+
+			var count = reversed.Count;
+			var holdWidth = reversed[0].Width;
+			var holdSpeed = reversed[0].Speed;
+
+			// and fix any speed or width problem (they are expressed on the segment start and need to be moved)
+			for (int i = 0; i < count - 1; i++)
+			{
+				reversed[i] = new IntPoint(reversed[i])
+				{
+					Width = reversed[i + 1].Width,
+					Speed = reversed[i + 1].Speed,
+				};
+			}
+
+			reversed[count - 1] = new IntPoint(reversed[count - 1])
+			{
+				Width = holdWidth,
+				Speed = holdSpeed,
+			};
+
+			return reversed;
 		}
 
 		public static double PolygonLengthSquared(this Polygon polygon, bool isClosed = true)

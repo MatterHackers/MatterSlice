@@ -1350,7 +1350,7 @@ namespace MatterHackers.MatterSlice
 							solidFillPolygons.Add(bottomFillPolygons[i]);
 							bottomFillPolygons.RemoveAt(i);
 						}
-						else
+						else if (layerIndex > 0)
 						{
 							bottomFillPolygons[i].SetSpeed(config.BridgeSpeed);
 						}
@@ -1360,7 +1360,8 @@ namespace MatterHackers.MatterSlice
 				{
 					foreach (var polygon in bottomFillPolygons)
 					{
-						if (polygon.PolygonLength() > config.TreatAsBridge_um)
+						if (polygon.PolygonLength() > config.TreatAsBridge_um
+							&& layerIndex > 0)
 						{
 							polygon.SetSpeed(config.BridgeSpeed);
 						}
@@ -1370,9 +1371,7 @@ namespace MatterHackers.MatterSlice
 				// sparse fill
 				QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, sparseFillPolygons, sparseFillConfig, SupportWriteType.UnsupportedAreas);
 
-				var monotonic = true;
-
-				if (monotonic)
+				if (config.MonotonicSolidInfill)
 				{
 					// solid fill
 					layerGcodePlanner.QueuePolygonsMonotonic(solidFillPolygons, island.PathFinder, solidFillConfig);
@@ -1396,7 +1395,7 @@ namespace MatterHackers.MatterSlice
 					layerGcodePlanner.QueueFanCommand(fanSpeedAtLayerStart, sparseFillConfig);
 				}
 
-				if (monotonic)
+				if (config.MonotonicSolidInfill)
 				{
 					layerGcodePlanner.QueuePolygonsMonotonic(topFillPolygons, island.PathFinder, topFillConfig);
 				}
