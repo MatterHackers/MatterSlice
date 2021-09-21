@@ -402,6 +402,42 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void FirstLayerIsFirstLayerSpeed()
+		{
+			string infillSTL = TestUtilities.GetStlPath("PerimeterLoops");
+			string infillGCode = TestUtilities.GetTempGCodePath("first_layer_speed.gcode");
+			{
+				// load a model that was showing unaligned perimeters
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "first_layer_speed.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(infillGCode);
+				processor.LoadStlFile(infillSTL);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Dispose();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
+				var layers = loadedGCode.GetAllLayers();
+				var layerMovements = TestUtilities.GetLayerMovements(layers[0]);
+				var lastPosition = new MovementInfo();
+				var layerPolygons = TestUtilities.GetLayerPolygons(layerMovements, ref lastPosition);
+
+				foreach(var polygon in layerPolygons)
+				{
+					if (polygon.type == TestUtilities.PolygonTypes.Extrusion)
+					{
+						foreach(var point in polygon.polygon)
+						{
+							Assert.AreEqual(config.FirstLayerSpeed * 60, point.Speed);
+						}
+					}
+				}
+			}
+		}
+
+		[Test]
 		public void ThinRingHasNoCrossingSegments2()
 		{
 			string infillSTL = TestUtilities.GetStlPath("thin_gap_fill_ring");
