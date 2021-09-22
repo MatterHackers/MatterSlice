@@ -188,13 +188,9 @@ namespace MatterHackers.MatterSlice
 		{
 			// find the point that is most directly behind the center point of this path
 			polygonCenter = default(IntPoint);
-			foreach (var point in inputPolygon)
-			{
-				polygonCenter += point;
-			}
+			polygonCenter = inputPolygon.GetBounds().Center;
 
 			var count = inputPolygon.Count;
-			polygonCenter /= count;
 
 			// start with forward
 			var bestDeltaAngle = double.MaxValue;
