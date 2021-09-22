@@ -37,6 +37,7 @@ namespace MatterHackers.MatterSlice.Tests
 	using System;
 	using Pathfinding;
 	using Polygon = List<IntPoint>;
+	using Polygons = List<List<IntPoint>>;
 
 	[TestFixture, Category("MatterSlice.PolygonHelpers")]
 	public class PolygonHelperTests
@@ -166,6 +167,143 @@ namespace MatterHackers.MatterSlice.Tests
 			Assert.AreEqual(2, polyCrossings.Count);
 			Assert.IsTrue(polyCrossings[0].Item1 == expectedStartIndex);
 			Assert.IsTrue(polyCrossings[1].Item1 == expectedEndIndex);
+		}
+
+		[Test]
+		public void MergeLinesWorks()
+		{
+			// connected up
+			{
+				var lineSegments = new Polygons()
+				{
+					new Polygon() { new IntPoint(0, 0), new IntPoint(0, 200) },
+					new Polygon() { new IntPoint(0, 205), new IntPoint(0, 300) },
+				};
+
+				var merged = lineSegments.MergeTouchingLineSegments();
+				Assert.AreEqual(1, merged.Count);
+				Assert.AreEqual(2, merged[0].Count);
+				Assert.AreEqual(new IntPoint(0, 0), merged[0][0]);
+				Assert.AreEqual(new IntPoint(0, 300), merged[0][1]);
+			}
+
+			// connected up swapped
+			{
+				var lineSegments = new Polygons()
+				{
+					new Polygon() { new IntPoint(0, 0), new IntPoint(0, 200) },
+					new Polygon() { new IntPoint(0, 300), new IntPoint(0, 205) },
+				};
+
+				var merged = lineSegments.MergeTouchingLineSegments();
+				Assert.AreEqual(1, merged.Count);
+				Assert.AreEqual(2, merged[0].Count);
+				Assert.AreEqual(new IntPoint(0, 0), merged[0][0]);
+				Assert.AreEqual(new IntPoint(0, 300), merged[0][1]);
+			}
+
+			// connected down
+			{
+				var lineSegments = new Polygons()
+				{
+					new Polygon() { new IntPoint(0, 200), new IntPoint(0, 0) },
+					new Polygon() { new IntPoint(0, 205), new IntPoint(0, 300) },
+				};
+
+				var merged = lineSegments.MergeTouchingLineSegments();
+				Assert.AreEqual(1, merged.Count);
+				Assert.AreEqual(2, merged[0].Count);
+				Assert.AreEqual(new IntPoint(0, 300), merged[0][0]);
+				Assert.AreEqual(new IntPoint(0, 0), merged[0][1]);
+			}
+
+			// connected down swapped
+			{
+				var lineSegments = new Polygons()
+				{
+					new Polygon() { new IntPoint(0, 200), new IntPoint(0, 0) },
+					new Polygon() { new IntPoint(0, 300), new IntPoint(0, 205) },
+				};
+
+				var merged = lineSegments.MergeTouchingLineSegments();
+				Assert.AreEqual(1, merged.Count);
+				Assert.AreEqual(2, merged[0].Count);
+				Assert.AreEqual(new IntPoint(0, 300), merged[0][0]);
+				Assert.AreEqual(new IntPoint(0, 0), merged[0][1]);
+			}
+
+			// connected down swapped
+			{
+				var lineSegments = new Polygons()
+				{
+					new Polygon() { new IntPoint(0, 100), new IntPoint(0, 0) },
+					new Polygon() { new IntPoint(0, 200), new IntPoint(0, 300) },
+					new Polygon() { new IntPoint(0, 500), new IntPoint(0, 600) },
+					new Polygon() { new IntPoint(0, 300), new IntPoint(0, 400) },
+					new Polygon() { new IntPoint(0, 500), new IntPoint(0, 400) },
+					new Polygon() { new IntPoint(0, 100), new IntPoint(0, 200) },
+				};
+
+				var merged = lineSegments.MergeTouchingLineSegments();
+				Assert.AreEqual(1, merged.Count);
+				Assert.AreEqual(2, merged[0].Count);
+				Assert.AreEqual(new IntPoint(0, 600), merged[0][0]);
+				Assert.AreEqual(new IntPoint(0, 0), merged[0][1]);
+			}
+
+			{
+				var lineSegments = new Polygons()
+				{
+					new Polygon() { new IntPoint(0, 100), new IntPoint(0, 0) },
+					new Polygon() { new IntPoint(0, 200), new IntPoint(0, 300) },
+					new Polygon() { new IntPoint(0, 500), new IntPoint(0, 600) },
+					new Polygon() { new IntPoint(0, 300), new IntPoint(0, 400) },
+					new Polygon() { new IntPoint(0, 500), new IntPoint(0, 400) },
+					new Polygon() { new IntPoint(0, 100), new IntPoint(0, 200) },
+					new Polygon() { new IntPoint(30, 100), new IntPoint(30, 0) },
+					new Polygon() { new IntPoint(30, 200), new IntPoint(30, 300) },
+					new Polygon() { new IntPoint(30, 500), new IntPoint(30, 600) },
+					new Polygon() { new IntPoint(30, 300), new IntPoint(30, 400) },
+					new Polygon() { new IntPoint(30, 500), new IntPoint(30, 400) },
+					new Polygon() { new IntPoint(30, 100), new IntPoint(30, 200) },
+				};
+
+				var merged = lineSegments.MergeTouchingLineSegments();
+				Assert.AreEqual(2, merged.Count);
+				Assert.AreEqual(2, merged[0].Count);
+				Assert.AreEqual(new IntPoint(0, 600), merged[0][0]);
+				Assert.AreEqual(new IntPoint(0, 0), merged[0][1]);
+				Assert.AreEqual(2, merged[1].Count);
+				Assert.AreEqual(new IntPoint(30, 600), merged[1][0]);
+				Assert.AreEqual(new IntPoint(30, 0), merged[1][1]);
+			}
+
+			{
+				var lineSegments = new Polygons()
+				{
+					new Polygon() { new IntPoint(0, 100), new IntPoint(0, 0) },
+					new Polygon() { new IntPoint(30, 500), new IntPoint(30, 600) },
+					new Polygon() { new IntPoint(0, 500), new IntPoint(0, 600) },
+					new Polygon() { new IntPoint(30, 200), new IntPoint(30, 300) },
+					new Polygon() { new IntPoint(0, 100), new IntPoint(0, 200) },
+					new Polygon() { new IntPoint(30, 100), new IntPoint(30, 200) },
+					new Polygon() { new IntPoint(0, 300), new IntPoint(0, 400) },
+					new Polygon() { new IntPoint(0, 200), new IntPoint(0, 300) },
+					new Polygon() { new IntPoint(30, 500), new IntPoint(30, 400) },
+					new Polygon() { new IntPoint(0, 500), new IntPoint(0, 400) },
+					new Polygon() { new IntPoint(30, 100), new IntPoint(30, 0) },
+					new Polygon() { new IntPoint(30, 300), new IntPoint(30, 400) },
+				};
+
+				var merged = lineSegments.MergeTouchingLineSegments();
+				Assert.AreEqual(2, merged.Count);
+				Assert.AreEqual(2, merged[0].Count);
+				Assert.AreEqual(new IntPoint(0, 600), merged[0][0]);
+				Assert.AreEqual(new IntPoint(0, 0), merged[0][1]);
+				Assert.AreEqual(2, merged[1].Count);
+				Assert.AreEqual(new IntPoint(30, 0), merged[1][0]);
+				Assert.AreEqual(new IntPoint(30, 600), merged[1][1]);
+			}
 		}
 
 		private void TestDistance(Polygon test, int startEdgeIndex, IntPoint startPosition, int endEdgeIndex, IntPoint endPosition, int expectedDistance)

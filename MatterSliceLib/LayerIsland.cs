@@ -126,8 +126,9 @@ namespace MatterHackers.MatterSlice
 					// check that we have actual paths
 					if (currentInset.Count > 0)
 					{
+						var addPointAtCenter = false;
 						// if we are centering the seam put a point exactly in back
-						if (config.SeamPlacement == SEAM_PLACEMENT.ALWAYS_CENTERED_IN_BACK)
+						if (addPointAtCenter && config.SeamPlacement == SEAM_PLACEMENT.ALWAYS_CENTERED_IN_BACK)
 						{
 							foreach (var polygon in currentInset)
 							{
@@ -136,54 +137,51 @@ namespace MatterHackers.MatterSlice
 								{
 									// if we are going to center the seam in the back make sure there is a vertex to center on that is exactly in back
 									var centeredIndex = polygon.GetCenteredInBackIndex(out IntPoint center);
-									if (polygon[centeredIndex].X < center.X)
-									{
-										// we are to the left of center
-										// figure out which point is to the right of center
-										var nextIndex = (centeredIndex + 1) % count;
-										var insert = nextIndex;
-										if (polygon[nextIndex].X < center.X)
-										{
-											// next is also right of center, switch to the other side
-											nextIndex = (centeredIndex + count - 1) % count;
-											insert = centeredIndex;
-											if (polygon[nextIndex].X < center.X)
-											{
-												continue;
-												//throw new Exception("We should be on the right of center");
-											}
-										}
+									var start = -1;
+									var end = -1;
 
-										// find the y intercept
-										var delta = polygon[centeredIndex] - polygon[nextIndex];
-										if (delta.X != 0)
+									if (polygon[centeredIndex].X <= center.X)
+									{
+										// start should always be left of center
+										start = centeredIndex;
+										// is the next point right of center
+										end = (centeredIndex + 1) % count;
+										if (polygon[end].X < center.X)
 										{
-											var ratio = (polygon[centeredIndex].X - center.X) / (double)delta.X;
-											polygon.Insert(insert, new IntPoint(center.X, polygon[centeredIndex].Y + (polygon[centeredIndex].Y - polygon[nextIndex].Y) * ratio));
+											// no it is left of center
+											// is the previous point right of center
+											end = (centeredIndex + count - 1) % count;
+											if (polygon[end].X < center.X)
+											{
+												// it is still left of center (so no crossing)
+												continue; // skip placing a seam at this point
+											}
 										}
 									}
-									else if (polygon[centeredIndex].X > center.X)
+									else if (polygon[centeredIndex].X >= center.X)
 									{
-										// we are to the right of center
-										// figure out which point is to the left of center
-										var nextIndex = (centeredIndex + 1) % count;
-										if (polygon[nextIndex].X > center.X)
+										// we are to the right of center so this is the end
+										end = centeredIndex;
+										// set start to the left of center
+										start = (centeredIndex + 1) % count;
+										if (polygon[start].X > center.X)
 										{
-											// next is also right of center, switch to the other side
-											nextIndex = (centeredIndex + count - 1) % count;
-											if (polygon[nextIndex].X > center.X)
+											// start is also right of center it need to be left
+											start = (centeredIndex + count - 1) % count;
+											if (polygon[start].X > center.X)
 											{
+												// it is still right of center skip this point
 												continue;
 											}
 										}
+									}
 
-										// find the y intercept
-										var delta = polygon[centeredIndex] - polygon[nextIndex];
-										if (delta.X > 0)
-										{
-											var ratio = (polygon[centeredIndex].X - center.X) / (double)delta.X;
-											polygon.Insert(nextIndex, new IntPoint(center.X, polygon[centeredIndex].Y + (polygon[centeredIndex].Y - polygon[nextIndex].Y) * ratio));
-										}
+									// find the y intercept
+									var delta = polygon[end] - polygon[start];
+									if (delta.X != 0)
+									{
+										var ratio = (polygon[start].X - center.X) / (double)delta.X;
+										polygon.Insert(start, new IntPoint(center.X, polygon[start].Y + (polygon[end].Y - polygon[start].Y) * ratio));
 									}
 								}
 							}

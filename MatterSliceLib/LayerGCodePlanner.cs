@@ -389,8 +389,9 @@ namespace MatterHackers.MatterSlice
 			config.ClosedLoop = oldValue;
 		}
 
-		public void QueuePolygonsMonotonic(Polygons polygons, PathFinder pathFinder, GCodePathConfig pathConfig)
+		public void QueuePolygonsMonotonic(Polygons polygonsIn, PathFinder pathFinder, GCodePathConfig pathConfig)
 		{
+			var polygons = polygonsIn.MergeTouchingLineSegments();
 			var monotonicSorter = new MonotonicSorter(polygons, LastPosition_um, pathConfig.LineWidth_um);
 
 			foreach (var polygon in monotonicSorter.Ordered)
