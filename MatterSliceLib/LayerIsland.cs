@@ -126,9 +126,9 @@ namespace MatterHackers.MatterSlice
 					// check that we have actual paths
 					if (currentInset.Count > 0)
 					{
-						var addPointAtCenter = false;
 						// if we are centering the seam put a point exactly in back
-						if (addPointAtCenter && config.SeamPlacement == SEAM_PLACEMENT.ALWAYS_CENTERED_IN_BACK)
+						if (config.SeamPlacement == SEAM_PLACEMENT.ALWAYS_CENTERED_IN_BACK
+							|| config.SeamPlacement == SEAM_PLACEMENT.CENTERED_IN_BACK)
 						{
 							foreach (var polygon in currentInset)
 							{
@@ -180,7 +180,7 @@ namespace MatterHackers.MatterSlice
 									var delta = polygon[end] - polygon[start];
 									if (delta.X != 0)
 									{
-										var ratio = (polygon[start].X - center.X) / (double)delta.X;
+										var ratio = (center.X - polygon[start].X) / (double)delta.X;
 										polygon.Insert(start, new IntPoint(center.X, polygon[start].Y + (polygon[end].Y - polygon[start].Y) * ratio));
 									}
 								}
