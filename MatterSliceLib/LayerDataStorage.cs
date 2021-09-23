@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using MatterHackers.Agg;
 using MatterHackers.Pathfinding;
 using MSClipperLib;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
@@ -127,6 +128,191 @@ namespace MatterHackers.MatterSlice
 			for (int layerIndex = totalLayers - 1; layerIndex > 0; layerIndex--)
 			{
 				this.WipeShield[layerIndex - 1] = this.WipeShield[layerIndex - 1].CreateUnion(this.WipeShield[layerIndex].Offset(-offsetAngle_um));
+			}
+		}
+
+		public void CreateRequiredInsets(ConfigSettings config, int outputLayerIndex, int extruderIndex)
+		{
+			if (extruderIndex < this.Extruders.Count)
+			{
+				var startIndex = Math.Max(0, outputLayerIndex - config.NumberOfBottomLayers - 1);
+				// figure out how many layers we need to calculate
+				var endIndex = outputLayerIndex + config.NumberOfTopLayers + 1;
+				var threadExtra = 10;
+				endIndex = (endIndex / threadExtra) * threadExtra + threadExtra;
+
+				// now bias more in to help multi threading
+				// and clamp to the number there are to make sure we can do it
+				endIndex = Math.Min(endIndex, this.Extruders[extruderIndex].Layers.Count);
+
+				// free up the insets from the previous layer
+				if (startIndex > config.NumberOfBottomLayers + 1)
+				{
+					SliceLayer previousLayer = this.Extruders[extruderIndex].Layers[startIndex - 2];
+					previousLayer.FreeIslandMemory();
+				}
+
+				using (new QuickTimer2("GenerateInsets"))
+				{
+					for (int layerIndex = startIndex; layerIndex < endIndex; layerIndex++)
+					{
+						SliceLayer layer = this.Extruders[extruderIndex].Layers[layerIndex];
+
+						if (layer.Islands.Count > 0
+							&& !layer.CreatedInsets)
+						{
+							layer.CreatedInsets = true;
+							int insetCount = config.GetNumberOfPerimeters();
+							if (config.ContinuousSpiralOuterPerimeter && (int)layerIndex < config.NumberOfBottomLayers && layerIndex % 2 == 1)
+							{
+								// Add extra insets every 2 layers when spiralizing, this makes bottoms of cups watertight.
+								insetCount += 1;
+							}
+
+							if (layerIndex == 0)
+							{
+								layer.GenerateInsets(config, config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, insetCount);
+							}
+							else
+							{
+								layer.GenerateInsets(config, config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, insetCount);
+							}
+						}
+					}
+				}
+
+				using (new QuickTimer2("GenerateTopAndBottoms"))
+				{
+					// Only generate bottom and top layers and infill for the first X layers when spiralize is chosen.
+					if (!config.ContinuousSpiralOuterPerimeter || (int)outputLayerIndex < config.NumberOfBottomLayers)
+					{
+						if (outputLayerIndex == 0)
+						{
+							this.Extruders[extruderIndex].GenerateTopAndBottoms(config, outputLayerIndex, config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, config.NumberOfBottomLayers, config.NumberOfTopLayers, config.InfillExtendIntoPerimeter_um);
+						}
+						else
+						{
+							this.Extruders[extruderIndex].GenerateTopAndBottoms(config, outputLayerIndex, config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, config.NumberOfBottomLayers, config.NumberOfTopLayers, config.InfillExtendIntoPerimeter_um);
+						}
+					}
+				}
+			}
+		}
+
+		public void CalculateInfillData(ConfigSettings config,
+			int extruderIndex,
+			int layerIndex,
+			LayerIsland part,
+			Polygons bottomFillLines,
+			Polygons sparseFillPolygons = null,
+			Polygons solidFillPolygons = null,
+			Polygons firstTopFillPolygons = null,
+			Polygons topFillPolygons = null,
+			Polygons bridgePolygons = null,
+			Polygons bridgeAreas = null)
+		{
+			double alternatingInfillAngle = config.InfillStartingAngle;
+			if ((layerIndex % 2) == 0)
+			{
+				alternatingInfillAngle += 90;
+			}
+
+			// generate infill for the bottom layer including bridging
+			foreach (Polygons bottomFillIsland in part.BottomPaths.ProcessIntoSeparateIslands())
+			{
+				if (layerIndex > 0)
+				{
+					if (this.Support != null)
+					{
+						double infillAngle = config.SupportInterfaceLayers > 0 ? config.InfillStartingAngle : config.InfillStartingAngle + 90;
+						Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, infillAngle);
+					}
+					else
+					{
+						SliceLayer previousLayer = this.Extruders[extruderIndex].Layers[layerIndex - 1];
+
+						if (bridgePolygons != null
+							&& previousLayer.BridgeAngle(bottomFillIsland, config.GetNumberOfPerimeters() * config.ExtrusionWidth_um, out double bridgeAngle, bridgeAreas))
+						{
+							// TODO: Make this code handle very complex pathing between different sizes or layouts of support under the island to fill.
+							Infill.GenerateLinePaths(bottomFillIsland, bridgePolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, bridgeAngle);
+						}
+						else // we still need to extrude at bridging speed
+						{
+							Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, alternatingInfillAngle, 0, config.BridgeSpeed);
+						}
+					}
+				}
+				else
+				{
+					Infill.GenerateLinePaths(bottomFillIsland, bottomFillLines, config.FirstLayerExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, alternatingInfillAngle);
+				}
+			}
+
+			// generate infill for the top most layer
+			if (topFillPolygons != null)
+			{
+				foreach (Polygons outline in part.TopPaths.ProcessIntoSeparateIslands())
+				{
+					// the top layer always draws the infill in the same direction (for aesthetics)
+					Infill.GenerateLinePaths(outline, topFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, config.InfillStartingAngle);
+				}
+			}
+
+			// generate infill for the top layers (but not the top most)
+			if (firstTopFillPolygons != null)
+			{
+				foreach (Polygons outline in part.FirstTopPaths.ProcessIntoSeparateIslands())
+				{
+					Infill.GenerateLinePaths(outline, firstTopFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, alternatingInfillAngle);
+				}
+			}
+
+			// generate infill intermediate layers
+			if (solidFillPolygons != null)
+			{
+				foreach (Polygons outline in part.SolidInfillPaths.ProcessIntoSeparateIslands())
+				{
+					Infill.GenerateLinePaths(outline, solidFillPolygons, config.ExtrusionWidth_um, config.InfillExtendIntoPerimeter_um, alternatingInfillAngle);
+				}
+			}
+
+			// generate infill intermediate layers
+			if (sparseFillPolygons != null)
+			{
+				// generate the sparse infill for this part on this layer
+				if (config.InfillPercent > 0)
+				{
+					switch (config.InfillType)
+					{
+						case INFILL_TYPE.LINES:
+							Infill.GenerateLineInfill(config, part.SparseInfillPaths, sparseFillPolygons, alternatingInfillAngle);
+							break;
+
+						case INFILL_TYPE.GRID:
+							Infill.GenerateGridInfill(config, part.SparseInfillPaths, sparseFillPolygons, config.InfillStartingAngle);
+							break;
+
+						case INFILL_TYPE.TRIANGLES:
+							Infill.GenerateTriangleInfill(config, part.SparseInfillPaths, sparseFillPolygons, config.InfillStartingAngle);
+							break;
+
+						case INFILL_TYPE.GYROID:
+							GyroidInfill.Generate(config, part.SparseInfillPaths, sparseFillPolygons, true, layerIndex);
+							break;
+
+						case INFILL_TYPE.HEXAGON:
+							Infill.GenerateHexagonInfill(config, part.SparseInfillPaths, sparseFillPolygons, config.InfillStartingAngle, layerIndex);
+							break;
+
+						case INFILL_TYPE.CONCENTRIC:
+							Infill.GenerateConcentricInfill(config, part.SparseInfillPaths, sparseFillPolygons);
+							break;
+
+						default:
+							throw new NotImplementedException();
+					}
+				}
 			}
 		}
 

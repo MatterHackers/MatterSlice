@@ -46,6 +46,64 @@ namespace MatterHackers.MatterSlice
 				polygons.Add(other[n]);
 			}
 		}
+		public static Polygons MergeTouchingLineSegments(this Polygons polygonsIn)
+		{
+			bool Touching(IntPoint a, IntPoint b)
+			{
+				return (a - b).LengthSquared() < 100;
+			}
+
+			var remaining = new Polygons(polygonsIn);
+			var output = new Polygons();
+			while (remaining.Count > 0)
+			{
+				// add the next polygon to output
+				var poly = new Polygon(remaining[0]);
+				remaining.RemoveAt(0);
+				output.Add(poly);
+				bool addedPoint;
+				do
+				{
+					addedPoint = false;
+					// connect every segment (adding them) to the polygon that can be added
+					for (int i = remaining.Count - 1; i >= 0; i--)
+					{
+						var endIndex = poly.Count - 1;
+						if (Touching(remaining[i][0], poly[0]))
+						{
+							// the start is touching the start, add to the start
+							poly[0] = remaining[i][1];
+							remaining.RemoveAt(i);
+							addedPoint = true;
+						}
+						else if (Touching(remaining[i][1], poly[0]))
+						{
+							// the end is touching the start add to the start
+							poly[0] = remaining[i][0];
+							remaining.RemoveAt(i);
+							addedPoint = true;
+						}
+						else if (Touching(remaining[i][0], poly[endIndex]))
+						{
+							// the start is touching the end add to the end
+							poly[endIndex] = remaining[i][1];
+							remaining.RemoveAt(i);
+							addedPoint = true;
+						}
+						else if (Touching(remaining[i][1], poly[endIndex]))
+						{
+							// the start is touching the end add to the end
+							poly[endIndex] = remaining[i][0];
+							remaining.RemoveAt(i);
+							addedPoint = true;
+						}
+					}
+				}
+				while (addedPoint);
+			}
+
+			return output;
+		}
 
 		public static void ApplyMatrix(this Polygons polygons, PointMatrix matrix)
 		{

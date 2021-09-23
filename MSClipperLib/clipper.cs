@@ -495,6 +495,14 @@ namespace MSClipperLib
 			this.maxX = ir.maxX; this.maxY = ir.maxY;
 		}
 
+		public IntPoint Center
+		{
+			get
+			{
+				return new IntPoint((minX + maxX) / 2, (minY + maxY) / 2);
+			}
+		}
+
 		public void Inflate(long expandDist)
 		{
 			minX -= expandDist;

@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using MatterHackers.Pathfinding;
+using MatterHackers.QuadTree;
 using MSClipperLib;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
@@ -125,6 +126,73 @@ namespace MatterHackers.MatterSlice
 					// check that we have actual paths
 					if (currentInset.Count > 0)
 					{
+						var run = true;
+						// if we are centering the seam put a point exactly in back
+						if (run && (config.SeamPlacement == SEAM_PLACEMENT.ALWAYS_CENTERED_IN_BACK
+							|| config.SeamPlacement == SEAM_PLACEMENT.CENTERED_IN_BACK))
+						{
+							foreach (var polygon in currentInset)
+							{
+								var count = polygon.Count;
+								if (count > 2)
+								{
+									// if we are going to center the seam in the back make sure there is a vertex to center on that is exactly in back
+									var centeredIndex = polygon.GetCenteredInBackIndex(out IntPoint center);
+									var start = -1;
+									var end = -1;
+
+									if (polygon[centeredIndex].X <= center.X)
+									{
+										// start should always be left of center
+										start = centeredIndex;
+										// is the next point right of center
+										end = (centeredIndex + 1) % count;
+										if (polygon[end].X < center.X)
+										{
+											// no it is left of center
+											// is the previous point right of center
+											end = (centeredIndex + count - 1) % count;
+											if (polygon[end].X < center.X)
+											{
+												// it is still left of center (so no crossing)
+												continue; // skip placing a seam at this point
+											}
+										}
+									}
+									else if (polygon[centeredIndex].X >= center.X)
+									{
+										// we are to the right of center so this is the end
+										end = centeredIndex;
+										// set start to the left of center
+										start = (centeredIndex + 1) % count;
+										if (polygon[start].X > center.X)
+										{
+											// start is also right of center it need to be left
+											start = (centeredIndex + count - 1) % count;
+											if (polygon[start].X > center.X)
+											{
+												// it is still right of center skip this point
+												continue;
+											}
+										}
+									}
+
+									// find the y intercept
+									var delta = polygon[end] - polygon[start];
+									if (delta.X != 0)
+									{
+										var insert = Math.Max(start, end);
+										if (insert == count -1 && (start == 0 || end == 0))
+										{
+											insert = count;
+										}
+										var ratio = (center.X - polygon[start].X) / (double)delta.X;
+										polygon.Insert(insert, new IntPoint(center.X, polygon[start].Y + (polygon[end].Y - polygon[start].Y) * ratio));
+									}
+								}
+							}
+						}
+
 						part.InsetToolPaths.Add(currentInset);
 
 						// Increment by the second half
