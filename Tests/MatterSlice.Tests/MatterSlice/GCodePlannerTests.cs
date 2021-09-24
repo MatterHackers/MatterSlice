@@ -228,7 +228,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				var perimeter = new Polygon() { new IntPoint(0, 0, 0), new IntPoint(5000, 0, 0), new IntPoint(5000, 5000, 0), new IntPoint(0, 5000, 0) };
 				Assert.IsTrue(perimeter.Count == 4);
-				perimeter.MergePerimeterOverlaps(400 / 4, out Polygons thinLines);
+				var thinLines = perimeter.MergePerimeterOverlaps(400 / 4);
 				Assert.IsTrue(thinLines.Count == 1);
 				Assert.IsTrue(thinLines[0].Count == 5); // it is 5 because we return a closed path (points = 0, 1, 2, 3, 0)
 				for (int i = 0; i < perimeter.Count; i++)
@@ -243,7 +243,7 @@ namespace MatterHackers.MatterSlice.Tests
 				// s|__________|	  very simple  -> ----------
 
 				var perimeter = new Polygon() { new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50) };
-				perimeter.MergePerimeterOverlaps(400, out Polygons correctedPath);
+				var correctedPath = perimeter.MergePerimeterOverlaps(400);
 				Assert.IsTrue(correctedPath.Count == 1);
 				Assert.IsTrue(correctedPath[0].Count == 2);
 				Assert.IsTrue(correctedPath[0][0].Width == 450);
@@ -257,7 +257,7 @@ namespace MatterHackers.MatterSlice.Tests
 				//  |__________|	  very simple  -> ----------
 
 				var perimeter = new Polygon() { new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50) };
-				perimeter.MergePerimeterOverlaps(200, out Polygons correctedPath);
+				var correctedPath = perimeter.MergePerimeterOverlaps(200);
 				Assert.IsTrue(correctedPath.Count == 1);
 				Assert.IsTrue(correctedPath[0].Count == 2);
 				Assert.IsTrue(correctedPath[0][0].Width == 250);
@@ -269,7 +269,7 @@ namespace MatterHackers.MatterSlice.Tests
 				//  |__________|	  very simple  -> ----------
 
 				var perimeter = new Polygon() { new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(5000, 0), new IntPoint(5000, 50) };
-				perimeter.MergePerimeterOverlaps(400, out Polygons correctedPath);
+				var correctedPath = perimeter.MergePerimeterOverlaps(400);
 				Assert.IsTrue(correctedPath.Count == 1);
 				Assert.IsTrue(correctedPath[0].Count == 2);
 				Assert.IsTrue(correctedPath[0][0].Width == 450);
@@ -281,7 +281,7 @@ namespace MatterHackers.MatterSlice.Tests
 				//  |__________|s	  very simple  -> ----------
 
 				var perimeter = new Polygon() { new IntPoint(5000, 0), new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0) };
-				perimeter.MergePerimeterOverlaps(400 / 4, out Polygons correctedPath);
+				var correctedPath = perimeter.MergePerimeterOverlaps(400 / 4);
 				Assert.IsTrue(correctedPath.Count == 1);
 				Assert.IsTrue(correctedPath[0].Count == 2);
 			}
@@ -292,8 +292,7 @@ namespace MatterHackers.MatterSlice.Tests
 				//  |_________	  goes to  -> ----------
 
 				var perimeter = new Polygon() { new IntPoint(5000, 50), new IntPoint(0, 50), new IntPoint(0, 0), new IntPoint(4500, 0) };
-				bool removedLines = perimeter.MergePerimeterOverlaps(400, out Polygons correctedPath, false);
-				Assert.IsTrue(removedLines);
+				var correctedPath = perimeter.MergePerimeterOverlaps(400, false);
 				Assert.IsTrue(correctedPath.Count == 2);
 				Assert.IsTrue(correctedPath[0].Count == 2);
 				Assert.IsTrue(correctedPath[0][0].Width == 400);
@@ -320,7 +319,7 @@ namespace MatterHackers.MatterSlice.Tests
 					new IntPoint(15000, 10000),
 					new IntPoint(10000, 50),
 				};
-				perimeter.MergePerimeterOverlaps(400, out Polygons correctedPath);
+				var correctedPath = perimeter.MergePerimeterOverlaps(400);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Count == 4);
 				Assert.IsTrue(correctedPath[1].Count == 2);
@@ -347,7 +346,7 @@ namespace MatterHackers.MatterSlice.Tests
 					// left leg
 					new IntPoint(1000, 5000), new IntPoint(0, 5000), new IntPoint(0, 0), new IntPoint(1000, 0),
 				};
-				perimeter.MergePerimeterOverlaps(400, out Polygons correctedPath);
+				var correctedPath = perimeter.MergePerimeterOverlaps(400);
 				Assert.IsTrue(correctedPath.Count == 3);
 				Assert.IsTrue(correctedPath[0].Count == 2);
 				Assert.IsTrue(correctedPath[1].Count == 6);
@@ -357,7 +356,7 @@ namespace MatterHackers.MatterSlice.Tests
 			// Test case from slicer
 			{
 				var perimeter = new Polygon() { new IntPoint(94, 7300), new IntPoint(-93, 7300), new IntPoint(-93, -7299), new IntPoint(94, -7299) };
-				perimeter.MergePerimeterOverlaps(400, out Polygons correctedPath);
+				var correctedPath = perimeter.MergePerimeterOverlaps(400);
 				Assert.IsTrue(correctedPath.Count == 1);
 				Assert.IsTrue(correctedPath[0].Count == 2);
 				Assert.IsTrue(correctedPath[0][0].Width == 587);
@@ -368,7 +367,7 @@ namespace MatterHackers.MatterSlice.Tests
 			// Test case from slicer
 			{
 				var perimeter = new Polygon() { new IntPoint(92, 7300), new IntPoint(-91, 7300), new IntPoint(-91, -7299), new IntPoint(92, -7299) };
-				perimeter.MergePerimeterOverlaps(400, out Polygons correctedPath);
+				var correctedPath = perimeter.MergePerimeterOverlaps(400);
 				Assert.IsTrue(correctedPath.Count == 1);
 				Assert.IsTrue(correctedPath[0].Count == 2);
 				Assert.IsTrue(correctedPath[0][0].Width == 583);
@@ -493,10 +492,8 @@ namespace MatterHackers.MatterSlice.Tests
 
 			bool pathIsClosed = false;
 
-			bool pathHadOverlaps = path.Polygon.MergePerimeterOverlaps(path.Config.LineWidth_um, out Polygons pathsWithOverlapsRemoved, pathIsClosed)
-				&& pathsWithOverlapsRemoved.Count > 0;
-
-			Assert.IsFalse(pathHadOverlaps);
+			var pathsWithOverlapsRemoved = path.Polygon.MergePerimeterOverlaps(path.Config.LineWidth_um, pathIsClosed);
+			Assert.IsFalse(pathsWithOverlapsRemoved == null);
 		}
 	}
 }

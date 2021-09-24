@@ -769,40 +769,6 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		private bool QueuePerimeterWithMergeOverlaps(Polygons perimetersToCheckForMerge,
-			PathFinder pathFinder,
-			int layerIndex,
-			LayerGCodePlanner gcodeLayer,
-			GCodePathConfig config,
-			Polygons bridgeAreas)
-		{
-			bool pathIsClosed = true;
-
-			bool pathHadOverlaps = perimetersToCheckForMerge.MergePerimeterOverlaps(config.LineWidth_um, out Polygons pathsWithOverlapsRemoved, pathIsClosed)
-				&& pathsWithOverlapsRemoved.Count > 0;
-
-			if (pathHadOverlaps)
-			{
-				var hide = config.DoSeamHiding;
-				var closed = config.ClosedLoop;
-				config.DoSeamHiding = false;
-				config.ClosedLoop = false;
-				QueuePolygonsConsideringSupport(layerIndex,
-					pathFinder,
-					gcodeLayer,
-					pathsWithOverlapsRemoved.ConvertToLines(false, config.LineWidth_um),
-					config,
-					SupportWriteType.UnsupportedAreas,
-					bridgeAreas);
-				config.ClosedLoop = closed;
-				config.DoSeamHiding = hide;
-
-				return true;
-			}
-
-			return false;
-		}
-
 		private void QueueSkirtToGCode(LayerDataStorage layerDataStorage, PathFinder layerPathFinder, LayerGCodePlanner gcodeLayer, int layerIndex, int extruderIndex)
 		{
 			var extrudersInLayer0 = this.ExtrudersUsedInLayer0(config, layerDataStorage).Count();
@@ -1073,6 +1039,8 @@ namespace MatterHackers.MatterSlice
 								bool limitDistance = false;
 								if (insetToolPaths.Count > 0)
 								{
+									lastPosition_um = FindBestPoint(insetToolPaths[0], insetAccelerators[0], lastPosition_um, layerIndex, (poly) => !insetsThatHaveBeenAdded.Contains(poly));
+
 									AddClosestInset(insetOrder,
 										ref lastPosition_um,
 										insetToolPaths[0],
@@ -1155,26 +1123,19 @@ namespace MatterHackers.MatterSlice
 									var pointIndex = insetOrder[i].pointIndex;
 									var polygon = insetToolPaths[perimeterIndex][polygonIndex];
 
-									if (!QueuePerimeterWithMergeOverlaps(new Polygons() { polygon }, island.PathFinder, layerIndex, layerGcodePlanner, pathConfig, bridgeAreas))
+									var perimetersToCheckForMerge = polygon.MergePerimeterOverlaps(pathConfig.LineWidth_um, false);
+
+									var splitAtIndex = polygon.SplitAtIndex(pointIndex);
+
+									// there were no merged overlaps
+									bool closedLoop = pathConfig.ClosedLoop;
+									pathConfig.ClosedLoop = false;
+									QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, new Polygons() { splitAtIndex }, pathConfig, SupportWriteType.UnsupportedAreas, bridgeAreas);
+									pathConfig.ClosedLoop = closedLoop;
+
+									if (printInsideOut && perimeterIndex == 0)
 									{
-										// break the polygon at the tracked position
-										var count = polygon.Count;
-										var splitAtSeam = new Polygon(count);
-										for (int j = 0; j < polygon.Count; j++)
-										{
-											splitAtSeam.Add(polygon[(pointIndex + j) % count]);
-										}
-
-										// there were no merged overlaps
-										bool closedLoop = pathConfig.ClosedLoop;
-										pathConfig.ClosedLoop = false;
-										QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, new Polygons() { polygon }, pathConfig, SupportWriteType.UnsupportedAreas, bridgeAreas);
-										pathConfig.ClosedLoop = closedLoop;
-
-										if (printInsideOut && perimeterIndex == 0)
-										{
-											// MoveInFromEdge(polygon);
-										}
+										// MoveInFromEdge(polygon);
 									}
 								}
 							}
@@ -1451,16 +1412,6 @@ namespace MatterHackers.MatterSlice
 			return polyPointPosition;
 		}
 
-		public IntPoint FindBestPoint(Polygon boundaryPolygon, IntPoint position, int layerIndex, Func<Polygon, bool> evaluatePolygon = null)
-		{
-			var closestIndex = boundaryPolygon.FindGreatestTurnIndex(layerIndex,
-				config.ExtrusionWidth_um,
-				config.SeamPlacement,
-				position);
-
-			return boundaryPolygon[closestIndex];
-		}
-
 		private bool AddClosestInset(List<(int perimeterIndex, int polyIndex, int pointIndex)> insetOrder,
 			ref IntPoint lastPosition_um,
 			Polygons insetsToConsider,
@@ -1524,101 +1475,6 @@ namespace MatterHackers.MatterSlice
 			}
 
 			foundAPath = maxDist_um != long.MaxValue;
-
-			// Return the original limitDistance value if we didn't match a polygon
-			return limitDistance;
-		}
-
-		private bool QueueClosestInset(Polygons insetsToConsider,
-			QuadTree<int> accelerator,
-			HashSet<Polygon> insetsThatHaveBeenPrinted,
-			PathFinder islandPathFinder,
-			bool limitDistance,
-			GCodePathConfig pathConfig,
-			int layerIndex,
-			LayerGCodePlanner gcodeLayer,
-			Polygons bridgeAreas,
-			out bool foundAPath)
-		{
-			foundAPath = false;
-
-			var didMergeOverlappingLines = false;
-			if (config.MergeOverlappingLines)
-			{
-				var availableMergePolygons = new Polygons();
-				foreach (var polygon in insetsToConsider)
-				{
-					if (!insetsThatHaveBeenPrinted.Contains(polygon))
-					{
-						availableMergePolygons.Add(polygon);
-					}
-				}
-
-				if (availableMergePolygons.Count > 0
-					&& QueuePerimeterWithMergeOverlaps(availableMergePolygons, islandPathFinder, layerIndex, gcodeLayer, pathConfig, bridgeAreas))
-				{
-					foreach (var path in availableMergePolygons)
-					{
-						insetsThatHaveBeenPrinted.Add(path);
-					}
-
-					foundAPath = true;
-					didMergeOverlappingLines = true;
-				}
-			}
-
-			if (!didMergeOverlappingLines) // there were no merged overlaps
-			{
-				// This is the furthest away we will accept a new starting point
-				long maxDist_um = long.MaxValue;
-				if (limitDistance)
-				{
-					// Make it relative to the size of the nozzle
-					maxDist_um = config.ExtrusionWidth_um * 4;
-				}
-
-				int polygonPrintedIndex = -1;
-
-				// for (int polygonIndex = 0; polygonIndex < insetsToConsider.Count; polygonIndex++)
-				foreach (var closest in accelerator.IterateClosest(gcodeLayer.LastPosition_um, () => maxDist_um))
-				{
-					Polygon currentPolygon = insetsToConsider[closest.Item1];
-					if (insetsThatHaveBeenPrinted.Contains(currentPolygon))
-					{
-						continue;
-					}
-
-					int bestPoint = currentPolygon.FindClosestPositionIndex(gcodeLayer.LastPosition_um);
-					if (bestPoint > -1)
-					{
-						long distance = (currentPolygon[bestPoint] - gcodeLayer.LastPosition_um).Length();
-						if (distance < maxDist_um)
-						{
-							maxDist_um = distance;
-							polygonPrintedIndex = closest.Item1;
-							if (distance == 0)
-							{
-								break;
-							}
-						}
-					}
-					else
-					{
-						insetsThatHaveBeenPrinted.Add(currentPolygon);
-					}
-				}
-
-				if (polygonPrintedIndex > -1)
-				{
-					QueuePolygonsConsideringSupport(layerIndex, islandPathFinder, gcodeLayer, new Polygons() { insetsToConsider[polygonPrintedIndex] }, pathConfig, SupportWriteType.UnsupportedAreas, bridgeAreas);
-
-					insetsThatHaveBeenPrinted.Add(insetsToConsider[polygonPrintedIndex]);
-					foundAPath = maxDist_um != long.MaxValue;
-					return false;
-				}
-
-				foundAPath = maxDist_um != long.MaxValue;
-			}
 
 			// Return the original limitDistance value if we didn't match a polygon
 			return limitDistance;

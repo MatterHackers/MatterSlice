@@ -468,15 +468,35 @@ namespace MatterHackers.QuadTree
 			return segmentedPolygon;
 		}
 
-		public static bool MergePerimeterOverlaps(this Polygon perimeter, long overlapMergeAmount_um, out Polygons separatedPolygons, bool pathIsClosed = true)
+		public static Polygons MergePerimeterOverlaps(this Polygon perimeter, long overlapMergeAmount_um, bool pathIsClosed = true)
 		{
-			return MergePerimeterOverlaps(new Polygons { perimeter }, overlapMergeAmount_um, out separatedPolygons, pathIsClosed);
+			return MergePerimeterOverlaps(new Polygons { perimeter }, overlapMergeAmount_um, pathIsClosed);
 		}
-		
-		public static bool MergePerimeterOverlaps(this Polygons perimetersIn, long overlapMergeAmount_um, out Polygons separatedPolygons, bool pathIsClosed = true)
+
+		/// <summary>
+		/// Split the given (closed) polygon at the specified index
+		/// </summary>
+		/// <param name="polygon">The polygon to split</param>
+		/// <param name="index">The index to split at</param>
+		/// <returns>A new poly line that starts at the split index and travels back around to it</returns>
+		public static Polygon SplitAtIndex(this Polygon polygon, int index)
+		{
+			// break the polygon at the tracked position
+			var count = polygon.Count;
+			var splitAtIndex = new Polygon(count);
+			// make sure we add the first point again (the less than or equal to)
+			for (int j = 0; j <= polygon.Count; j++)
+			{
+				splitAtIndex.Add(polygon[(index + j) % count]);
+			}
+
+			return splitAtIndex;
+		}
+
+		public static Polygons MergePerimeterOverlaps(this Polygons perimetersIn, long overlapMergeAmount_um, bool pathIsClosed = true)
 		{
 			// if the path is wound CW
-			separatedPolygons = new Polygons();
+			var separatedPolygons = new Polygons();
 
 			long cleanDistance_um = overlapMergeAmount_um / 40;
 
@@ -490,7 +510,7 @@ namespace MatterHackers.QuadTree
 
 			if (perimeters.Count == 0)
 			{
-				return false;
+				return null;
 			}
 
 			bool pathWasOptimized = false;
@@ -623,10 +643,10 @@ namespace MatterHackers.QuadTree
 			if (pathWasOptimized
 				&& Math.Abs(perimeters.PolygonLength() - separatedPolygons.PolygonLength(false)) < overlapMergeAmount_um * 2)
 			{
-				return false;
+				return null;
 			}
 
-			return pathWasOptimized;
+			return separatedPolygons;
 		}
 
 		public static bool OnSegment(IntPoint start, IntPoint testPosition, IntPoint end)
