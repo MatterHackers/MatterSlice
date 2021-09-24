@@ -696,6 +696,10 @@ namespace MatterHackers.MatterSlice.Tests
 							for (int i = 1; i < 7; i++)
 							{
 								hadRetraction |= topMovements[moveIndex - i].line.IsRetraction();
+								if (hadRetraction)
+								{
+									break;
+								}
 							}
 							Assert.IsTrue(hadRetraction);
 						}
