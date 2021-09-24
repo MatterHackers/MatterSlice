@@ -1036,6 +1036,7 @@ namespace MatterHackers.MatterSlice
 							while (insetsThatHaveBeenAdded.Count < CountInsetsToPrint(insetToolPaths)
 								&& foundAnyPath)
 							{
+								foundAnyPath = false;
 								bool limitDistance = false;
 								if (insetToolPaths.Count > 0)
 								{
@@ -1125,13 +1126,9 @@ namespace MatterHackers.MatterSlice
 
 									var perimetersToCheckForMerge = polygon.MergePerimeterOverlaps(pathConfig.LineWidth_um, false);
 
-									var splitAtIndex = polygon.SplitAtIndex(pointIndex);
-
+									layerGcodePlanner.QueueTravel(polygon[pointIndex], island.PathFinder, pathConfig.LiftOnTravel);
 									// there were no merged overlaps
-									bool closedLoop = pathConfig.ClosedLoop;
-									pathConfig.ClosedLoop = false;
-									QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, new Polygons() { splitAtIndex }, pathConfig, SupportWriteType.UnsupportedAreas, bridgeAreas);
-									pathConfig.ClosedLoop = closedLoop;
+									QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, new Polygons() { polygon }, pathConfig, SupportWriteType.UnsupportedAreas, bridgeAreas);
 
 									if (printInsideOut && perimeterIndex == 0)
 									{
@@ -1409,7 +1406,12 @@ namespace MatterHackers.MatterSlice
 				}
 			}
 
-			return polyPointPosition;
+			if (bestDist < long.MaxValue)
+			{
+				return polyPointPosition;
+			}
+
+			return position;
 		}
 
 		private bool AddClosestInset(List<(int perimeterIndex, int polyIndex, int pointIndex)> insetOrder,
