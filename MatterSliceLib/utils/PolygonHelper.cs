@@ -205,6 +205,10 @@ namespace MatterHackers.MatterSlice
 				{
 					bestAngleIndexIndex = i;
 					bestDeltaAngle = Math.Abs(deltaAngle);
+					if (deltaAngle == 0)
+					{
+						break;
+					}
 				}
 			}
 
@@ -222,6 +226,7 @@ namespace MatterHackers.MatterSlice
 		/// <param name="startPosition">If two or more angles are similar, choose the one close to the start</param>
 		/// <returns>The position that has the largest turn angle</returns>
 		public static int FindGreatestTurnIndex(this Polygon inputPolygon,
+			int layerIndex = 0,
 			long extrusionWidth_um = 3,
 			SEAM_PLACEMENT seamPlacement = SEAM_PLACEMENT.FURTHEST_BACK,
 			IntPoint? startPosition = null)
@@ -270,7 +275,7 @@ namespace MatterHackers.MatterSlice
 						// choose at random which point to pick
 						if (negativeGroup.Count > 1)
 						{
-							var selectedPoint = (int)(inputPolygon.GetLongHashCode() % (ulong)negativeGroup.Count);
+							var selectedPoint = (int)(inputPolygon.GetLongHashCode(layerIndex.GetLongHashCode()) % (ulong)negativeGroup.Count);
 							var singlePoint = negativeGroup[selectedPoint];
 							// remove every point except the random one we want
 							negativeGroup.Clear();
@@ -296,7 +301,7 @@ namespace MatterHackers.MatterSlice
 						return inputPolygon.GetCenteredInBackIndex(out _);
 
 					case SEAM_PLACEMENT.RANDOMIZED:
-						return (int)(inputPolygon.GetLongHashCode() % (ulong)inputPolygon.Count);
+						return (int)(inputPolygon.GetLongHashCode(layerIndex.GetLongHashCode()) % (ulong)inputPolygon.Count);
 
 					case SEAM_PLACEMENT.FURTHEST_BACK:
 					default:
@@ -331,15 +336,13 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public static ulong GetLongHashCode(this Polygon polygon)
+		public static ulong GetLongHashCode(this Polygon polygon, ulong hash = 14695981039346656037)
 		{
-			ulong hash = polygon.Count.GetLongHashCode();
 			for (int pointIndex = 0; pointIndex < polygon.Count; pointIndex++)
 			{
 				var point = polygon[pointIndex];
 				hash = point.X.GetLongHashCode(hash);
-				hash = Agg.agg_basics.GetLongHashCode(point.X, hash);
-				hash = Agg.agg_basics.GetLongHashCode(point.Y, hash);
+				hash = point.Y.GetLongHashCode(hash);
 			}
 
 			return hash;
