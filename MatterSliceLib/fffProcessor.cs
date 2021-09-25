@@ -1040,7 +1040,23 @@ namespace MatterHackers.MatterSlice
 								bool limitDistance = false;
 								if (insetToolPaths.Count > 0)
 								{
-									lastPosition_um = FindBestPoint(insetToolPaths[0], insetAccelerators[0], lastPosition_um, layerIndex, (poly) => !insetsThatHaveBeenAdded.Contains(poly));
+									var nextOuterStart = FindBestPoint(insetToolPaths[0], insetAccelerators[0], lastPosition_um, layerIndex, (poly) => !insetsThatHaveBeenAdded.Contains(poly));
+									
+									if (!CloseToUnprintedPerimeter1(insetToolPaths, insetsThatHaveBeenAdded, nextOuterStart))
+									{
+										foreach(var poly in insetToolPaths[1].Where(p => !insetsThatHaveBeenAdded.Contains(p)))
+										{
+											// try a spot along a 1 perimeter
+											var nextOuterStart2 = FindBestPoint(insetToolPaths[0], insetAccelerators[0], poly[poly.Count / 2], layerIndex, (poly2) => !insetsThatHaveBeenAdded.Contains(poly2));
+											if (CloseToUnprintedPerimeter1(insetToolPaths, insetsThatHaveBeenAdded, nextOuterStart2))
+											{
+												nextOuterStart = nextOuterStart2;
+												break;
+											}
+										}
+									}
+
+									lastPosition_um = nextOuterStart;
 
 									AddClosestInset(insetOrder,
 										ref lastPosition_um,
@@ -1121,13 +1137,12 @@ namespace MatterHackers.MatterSlice
 									var perimeterIndex = insetOrder[i].perimeterIndex;
 									var pathConfig = perimeterIndex == 0 ? inset0Config : insetXConfig;
 									var polygonIndex = insetOrder[i].polyIndex;
-									var pointIndex = insetOrder[i].pointIndex;
 									var polygon = insetToolPaths[perimeterIndex][polygonIndex];
+									var pointIndex = insetOrder[i].pointIndex;
 
 									var perimetersToCheckForMerge = polygon.MergePerimeterOverlaps(pathConfig.LineWidth_um, false);
 
 									layerGcodePlanner.QueueTravel(polygon[pointIndex], island.PathFinder, pathConfig.LiftOnTravel);
-									// there were no merged overlaps
 									QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, new Polygons() { polygon }, pathConfig, SupportWriteType.UnsupportedAreas, bridgeAreas);
 
 									if (printInsideOut && perimeterIndex == 0)
@@ -1143,6 +1158,9 @@ namespace MatterHackers.MatterSlice
 									var perimeterIndex = insetOrder[i].perimeterIndex;
 									var pathConfig = perimeterIndex == 0 ? inset0Config : insetXConfig;
 									var polygon = insetToolPaths[perimeterIndex][insetOrder[i].polyIndex];
+									var pointIndex = insetOrder[i].pointIndex;
+
+									layerGcodePlanner.QueueTravel(polygon[pointIndex], island.PathFinder, pathConfig.LiftOnTravel);
 									QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, new Polygons() { polygon }, pathConfig, SupportWriteType.UnsupportedAreas, bridgeAreas);
 
 									if (printInsideOut && perimeterIndex == 0)
@@ -1484,7 +1502,7 @@ namespace MatterHackers.MatterSlice
 
 		private int CountInsetsToPrint(List<Polygons> insetsToPrint)
 		{
-			int total = 0;
+			var total = 0;
 			foreach (Polygons polygons in insetsToPrint)
 			{
 				total += polygons.Count;
@@ -1492,6 +1510,27 @@ namespace MatterHackers.MatterSlice
 
 			return total;
 		}
+
+		private bool CloseToUnprintedPerimeter1(List<Polygons> insetsToPrint, HashSet<Polygon> printed, IntPoint testPosition)
+		{
+			if (insetsToPrint.Count > 1)
+			{
+				foreach (Polygon polygon in insetsToPrint[1])
+				{
+					if (!printed.Contains(polygon))
+					{
+						var closest = polygon.FindClosestPoint(testPosition);
+						if ((closest.position - testPosition).Length() < config.ExtrusionWidth_um * 4)
+						{
+							return true;
+						}
+					}
+				}
+			}
+
+			return false;
+		}
+	
 
 		// Add a single layer from a single extruder to the GCode
 		private void QueueAirGappedExtruderLayerToGCode(LayerDataStorage layerDataStorage, PathFinder layerPathFinder, LayerGCodePlanner layerGcodePlanner, int extruderIndex, int layerIndex, long extrusionWidth_um, long currentZ_um)

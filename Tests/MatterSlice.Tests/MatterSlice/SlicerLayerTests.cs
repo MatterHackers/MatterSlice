@@ -830,7 +830,8 @@ G0 X4.878 Y5.936
 					for(int polygonIndex = 0; polygonIndex < layerPolygons.Count; polygonIndex ++)
 					{
 						var polygon = layerPolygons[polygonIndex].polygon;
-						if(polygon[polygon.Count - 1].Speed == outerPerimeterSpeed)
+						if(polygon[polygon.Count - 1].Speed == outerPerimeterSpeed
+							&& layerPolygons[polygonIndex].type == TestUtilities.PolygonTypes.Extrusion)
 						{
 							outerPerimeterCount++;
 							// make sure the previous polygon is a travel
