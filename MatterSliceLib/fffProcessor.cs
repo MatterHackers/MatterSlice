@@ -1044,14 +1044,20 @@ namespace MatterHackers.MatterSlice
 									
 									if (!CloseToUnprintedPerimeter1(insetToolPaths, insetsThatHaveBeenAdded, nextOuterStart))
 									{
-										foreach(var poly in insetToolPaths[1].Where(p => !insetsThatHaveBeenAdded.Contains(p)))
+										if (insetToolPaths.Count > 1)
 										{
-											// try a spot along a 1 perimeter
-											var nextOuterStart2 = FindBestPoint(insetToolPaths[0], insetAccelerators[0], poly[poly.Count / 2], layerIndex, (poly2) => !insetsThatHaveBeenAdded.Contains(poly2));
-											if (CloseToUnprintedPerimeter1(insetToolPaths, insetsThatHaveBeenAdded, nextOuterStart2))
+											foreach (var poly in insetToolPaths[1].Where(p => !insetsThatHaveBeenAdded.Contains(p)))
 											{
-												nextOuterStart = nextOuterStart2;
-												break;
+												if (poly.Count > 2)
+												{
+													// try a spot along a 1 perimeter
+													var nextOuterStart2 = FindBestPoint(insetToolPaths[0], insetAccelerators[0], poly[poly.Count / 2], layerIndex, (poly2) => !insetsThatHaveBeenAdded.Contains(poly2));
+													if (CloseToUnprintedPerimeter1(insetToolPaths, insetsThatHaveBeenAdded, nextOuterStart2))
+													{
+														nextOuterStart = nextOuterStart2;
+														break;
+													}
+												}
 											}
 										}
 									}
