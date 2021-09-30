@@ -684,18 +684,17 @@ namespace MatterHackers.MatterSlice.Tests
 					var topMovements = topLayer.GetLayerMovements().ToList();
 					var lastMovement = default(MovementInfo);
 					var topTravels = topLayer.GetTravelPolygonsForLayer(ref lastMovement);
-					foreach (var travel in topTravels)
+					for (int i=1; i < topTravels.Count; i++)
 					{
+						var travel = topTravels[i];
 						// if we go more than 2 mm
 						if (travel.PolygonLength() > 3000)
 						{
-							// find the instruction before
-							var moveIndex = topMovements.FindMoveIndex(new Vector3(travel[0]));
 							// we are going to move a lot, we need to retract
 							var hadRetraction = false;
-							for (int i = 1; i < 7; i++)
+							for (int j = i - 1; j > Math.Max(0, i - 7); j++)
 							{
-								hadRetraction |= topMovements[moveIndex - i].line.IsRetraction();
+								hadRetraction |= topMovements[j].line.IsRetraction();
 								if (hadRetraction)
 								{
 									break;
@@ -834,10 +833,14 @@ G0 X4.878 Y5.936
 							&& layerPolygons[polygonIndex].type == TestUtilities.PolygonTypes.Extrusion)
 						{
 							outerPerimeterCount++;
-							// make sure the previous polygon is a travel
-							Assert.AreEqual(TestUtilities.PolygonTypes.Travel, layerPolygons[polygonIndex - 1].type);
-							// make sure the travel polygon to each is sorter than 3 mm
-							Assert.Less(layerPolygons[polygonIndex - 1].polygon.PolygonLength(), 3000);
+							// we only care about the retraction on the outer perimeter
+							if (polygonIndex > layerPolygons.Count / 2)
+							{
+								// make sure the previous polygon is a travel
+								Assert.AreEqual(TestUtilities.PolygonTypes.Travel, layerPolygons[polygonIndex - 1].type);
+								// make sure the travel polygon to each is sorter than 3 mm
+								Assert.Less(layerPolygons[polygonIndex - 1].polygon.PolygonLength(), 3200);
+							}
 						}
 					}
 
