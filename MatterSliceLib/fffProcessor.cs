@@ -1033,6 +1033,7 @@ namespace MatterHackers.MatterSlice
 							var insetOrder = new List<(int perimeterIndex, int polyIndex, int pointIndex)>();
 							bool foundAnyPath = true;
 							var lastPosition_um = layerGcodePlanner.LastPosition_um;
+							var first = true;
 							while (insetsThatHaveBeenAdded.Count < CountInsetsToPrint(insetToolPaths)
 								&& foundAnyPath)
 							{
@@ -1040,7 +1041,28 @@ namespace MatterHackers.MatterSlice
 								bool limitDistance = false;
 								if (insetToolPaths.Count > 0)
 								{
-									var nextOuterStart = FindBestPoint(insetToolPaths[0], insetAccelerators[0], lastPosition_um, layerIndex, (poly) => !insetsThatHaveBeenAdded.Contains(poly));
+									IntPoint nextOuterStart;
+									if (first)
+									{
+										var firstInsetAccelerator = new List<QuadTree<int>>();
+										foreach (var inset in insetToolPaths)
+										{
+											insetAccelerators.Add(inset.GetQuadTree());
+										}
+
+										// only consider the actual outer polygon
+										var firstPerimeter = new Polygons() { insetToolPaths[0][0] };
+										nextOuterStart = FindBestPoint(firstPerimeter,
+											firstPerimeter.GetQuadTree(),
+											lastPosition_um,
+											layerIndex,
+											(poly) => !insetsThatHaveBeenAdded.Contains(poly));
+										first = false;
+									}
+									else
+									{
+										nextOuterStart = FindBestPoint(insetToolPaths[0], insetAccelerators[0], lastPosition_um, layerIndex, (poly) => !insetsThatHaveBeenAdded.Contains(poly));
+									}
 									
 									if (!CloseToUnprintedPerimeter1(insetToolPaths, insetsThatHaveBeenAdded, nextOuterStart))
 									{
@@ -1136,43 +1158,59 @@ namespace MatterHackers.MatterSlice
 							}
 
 							// queue the paths in order
-							if (config.MergeOverlappingLines)
+							for (int i = 0; i < insetOrder.Count; i++)
 							{
-								for (int i = 0; i < insetOrder.Count; i++)
+								var perimeterIndex = insetOrder[i].perimeterIndex;
+								var pathConfig = perimeterIndex == 0 ? inset0Config : insetXConfig;
+								var polygonIndex = insetOrder[i].polyIndex;
+								var polygon = insetToolPaths[perimeterIndex][polygonIndex];
+								var pointIndex = insetOrder[i].pointIndex;
+
+								bool printedMerged = false;
+								if (config.MergeOverlappingLines)
 								{
-									var perimeterIndex = insetOrder[i].perimeterIndex;
-									var pathConfig = perimeterIndex == 0 ? inset0Config : insetXConfig;
-									var polygonIndex = insetOrder[i].polyIndex;
-									var polygon = insetToolPaths[perimeterIndex][polygonIndex];
-									var pointIndex = insetOrder[i].pointIndex;
-
-									var perimetersToCheckForMerge = polygon.MergePerimeterOverlaps(pathConfig.LineWidth_um, false);
-
-									layerGcodePlanner.QueueTravel(polygon[pointIndex], island.PathFinder, pathConfig.LiftOnTravel);
-									QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, new Polygons() { polygon }, pathConfig, SupportWriteType.UnsupportedAreas, bridgeAreas);
-
-									if (printInsideOut && perimeterIndex == 0)
+									var polygonsToMerge = new Polygons() { polygon };
+									// while the next perimeter is also part of our perimeter set
+									while (i < insetOrder.Count - 1 
+										&& insetOrder[i + 1].perimeterIndex == perimeterIndex)
 									{
-										// MoveInFromEdge(polygon);
+										i++;
+										polygonsToMerge.Add(insetToolPaths[perimeterIndex][insetOrder[i].polyIndex]);
+									}
+
+									var mergedPerimeters = polygonsToMerge.MergePerimeterOverlaps(pathConfig.LineWidth_um, true);
+									if (mergedPerimeters?.Count > 1)
+									{
+										layerGcodePlanner.QueueTravel(polygon[pointIndex], island.PathFinder, pathConfig.LiftOnTravel);
+										var closed = pathConfig.ClosedLoop;
+										var hide = pathConfig.DoSeamHiding;
+										pathConfig.ClosedLoop = false;
+										pathConfig.DoSeamHiding = false;
+										var singlePerimeters = new Polygons();
+										foreach (var merged in mergedPerimeters)
+										{
+											for (int j = 1; j < merged.Count; j++)
+											{
+												singlePerimeters.Add(new Polygon() { merged[j - 1], merged[j] });
+											}
+										}
+
+										QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, singlePerimeters, pathConfig, SupportWriteType.UnsupportedAreas, bridgeAreas);
+										pathConfig.ClosedLoop = closed;
+										pathConfig.DoSeamHiding = hide;
+										printedMerged = true;
 									}
 								}
-							}
-							else
-							{
-								for (int i = 0; i < insetOrder.Count; i++)
-								{
-									var perimeterIndex = insetOrder[i].perimeterIndex;
-									var pathConfig = perimeterIndex == 0 ? inset0Config : insetXConfig;
-									var polygon = insetToolPaths[perimeterIndex][insetOrder[i].polyIndex];
-									var pointIndex = insetOrder[i].pointIndex;
 
+								if (!printedMerged)
+								{
 									layerGcodePlanner.QueueTravel(polygon[pointIndex], island.PathFinder, pathConfig.LiftOnTravel);
 									QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, new Polygons() { polygon }, pathConfig, SupportWriteType.UnsupportedAreas, bridgeAreas);
+								}
 
-									if (printInsideOut && perimeterIndex == 0)
-									{
-										MoveInFromEdge(polygon);
-									}
+								if (printInsideOut && perimeterIndex == 0)
+								{
+									MoveInFromEdge(polygon);
 								}
 							}
 
