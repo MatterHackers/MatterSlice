@@ -271,7 +271,7 @@ namespace MatterHackers.MatterSlice
 			{
 				if (doSeamHiding)
 				{
-					bestPoint = polygon.FindGreatestTurnIndex(lineWidth_um, seamPlacement, currentPosition);
+					bestPoint = polygon.FindGreatestTurnIndex(layerIndex, lineWidth_um, seamPlacement, currentPosition);
 				}
 				else
 				{
