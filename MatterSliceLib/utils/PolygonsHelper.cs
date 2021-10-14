@@ -46,11 +46,12 @@ namespace MatterHackers.MatterSlice
 				polygons.Add(other[n]);
 			}
 		}
-		public static Polygons MergeTouchingLineSegments(this Polygons polygonsIn)
+		public static Polygons MergeTouchingLineSegments(this Polygons polygonsIn, long touchingDistance_um = 100)
 		{
+			var touchingDistanceSquared_um = touchingDistance_um* touchingDistance_um;
 			bool Touching(IntPoint a, IntPoint b)
 			{
-				return (a - b).LengthSquared() < 100;
+				return (a - b).LengthSquared() < touchingDistanceSquared_um;
 			}
 
 			var remaining = new Polygons(polygonsIn);

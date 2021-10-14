@@ -293,7 +293,7 @@ namespace MatterHackers.MatterSlice
 			{
 				return positiveGroup.GetBestIndex(startPosition);
 			}
-			else // there is not really good candidate
+			else // there is no really good candidate
 			{
 				switch (seamPlacement)
 				{
