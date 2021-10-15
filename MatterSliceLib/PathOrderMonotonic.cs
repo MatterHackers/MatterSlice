@@ -34,7 +34,7 @@ namespace MatterHackers.MatterSlice
 		private Polygons sorted;
         private List<bool> linePrinted;
 		private Vector2 perpendicular;
-		private double lineWidth;
+		private double lineWidth_um;
 
         private Vector2 AsVector2(IntPoint intPoint)
         {
@@ -95,7 +95,7 @@ namespace MatterHackers.MatterSlice
                 || PointWithinB(endA))
 			{
                 var distance = Math.Abs(Vector2.Dot(perpendicular, startB - startA));
-                if (Math.Abs(distance - lineWidth) < 1)
+                if (Math.Abs(distance - lineWidth_um) < 1)
                 {
                     return true;
                 }
@@ -115,7 +115,7 @@ namespace MatterHackers.MatterSlice
                     var startA = AsVector2(sorted[checkIndex][0]);
                     var startB = AsVector2(sorted[i][0]);
                     var distance = Math.Abs(Vector2.Dot(perpendicular, startB - startA));
-                    if (Math.Abs(distance) > lineWidth * 2)
+                    if (Math.Abs(distance) > lineWidth_um * 2)
                     {
                         // the tested line is too far back to be touching so stop checking, we are good.
                         return true;
@@ -132,6 +132,16 @@ namespace MatterHackers.MatterSlice
             return true;
         }
 
+        private long MinDistSquared(int indexA, int indexB)
+		{
+            var a0tob0 = (sorted[indexA][0] - sorted[indexB][0]).LengthSquared();
+            var a0tob1 = (sorted[indexA][0] - sorted[indexB][1]).LengthSquared();
+            var a1tob0 = (sorted[indexA][1] - sorted[indexB][0]).LengthSquared();
+            var a1tob1 = (sorted[indexA][1] - sorted[indexB][1]).LengthSquared();
+
+            return Math.Min(a0tob0, Math.Min(a0tob1, Math.Min(a1tob0, a1tob1)));
+        }
+
         private int AdvanceToNextRightSegment(int lastIndex)
         {
             for (int i = lastIndex + 1; i < sorted.Count; i++)
@@ -140,10 +150,31 @@ namespace MatterHackers.MatterSlice
                 {
                     return i;
                 }
-                else
-				{
-                    int a = 0;
-				}
+            }
+
+            // we did not find a segment that is touch our segment
+            // find the next segment in front of us that has nothing to the left and is the closest to us
+            var closestNextSegment = -1;
+            // we set the best distance we are willing to consider to be 20 times the extrusion width (8 mm for a .4 nozzle)
+            var bestDist = lineWidth_um * 1000 * 200;
+            var bestDistSquared = bestDist * bestDist;
+            for (int i = lastIndex + 1; i < sorted.Count; i++)
+            {
+                if (EverythingLeftHasBeenPrinted(i))
+                {
+                    var minDistSquared = MinDistSquared(lastIndex, i);
+                    if (minDistSquared < bestDistSquared)
+					{
+                        // keep track of closest to our segment
+                        bestDistSquared = minDistSquared;
+                        closestNextSegment = i;
+					}
+                }
+            }
+
+            if (closestNextSegment > lastIndex)
+			{
+                return closestNextSegment;
             }
 
             return sorted.Count;
@@ -216,7 +247,7 @@ namespace MatterHackers.MatterSlice
         /// <param name="polygons"></param>
         public MonotonicSorter(Polygons polygons, IntPoint lastPosition, long lineWidth_um)
         {
-            this.lineWidth = lineWidth_um / 1000.0;
+            this.lineWidth_um = lineWidth_um / 1000.0;
             if (polygons.Count > 0)
             {
                 this.lastPosition = lastPosition;

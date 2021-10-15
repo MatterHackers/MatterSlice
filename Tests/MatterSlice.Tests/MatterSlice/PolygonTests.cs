@@ -268,7 +268,7 @@ namespace MatterHackers.MatterSlice.Tests
 					new Polygon() { new IntPoint(30, 100), new IntPoint(30, 200) },
 				};
 
-				var merged = lineSegments.MergeTouchingLineSegments();
+				var merged = lineSegments.MergeTouchingLineSegments(20);
 				Assert.AreEqual(2, merged.Count);
 				Assert.AreEqual(2, merged[0].Count);
 				Assert.AreEqual(new IntPoint(0, 600), merged[0][0]);
@@ -295,7 +295,7 @@ namespace MatterHackers.MatterSlice.Tests
 					new Polygon() { new IntPoint(30, 300), new IntPoint(30, 400) },
 				};
 
-				var merged = lineSegments.MergeTouchingLineSegments();
+				var merged = lineSegments.MergeTouchingLineSegments(20);
 				Assert.AreEqual(2, merged.Count);
 				Assert.AreEqual(2, merged[0].Count);
 				Assert.AreEqual(new IntPoint(0, 600), merged[0][0]);
