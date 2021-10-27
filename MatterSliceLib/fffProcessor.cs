@@ -1256,29 +1256,31 @@ namespace MatterHackers.MatterSlice
 					topFillPolygons.Clear();
 				}
 
-				if (bottomFillConfig.Speed == solidFillConfig.Speed)
+				if (layerIndex > 0)
 				{
-					for (int i = bottomFillPolygons.Count - 1; i >= 0; i--)
+					if (bottomFillConfig.Speed == solidFillConfig.Speed)
 					{
-						if (bottomFillPolygons[i].PolygonLength() < config.TreatAsBridge_um)
+						for (int i = bottomFillPolygons.Count - 1; i >= 0; i--)
 						{
-							solidFillPolygons.Add(bottomFillPolygons[i]);
-							bottomFillPolygons.RemoveAt(i);
-						}
-						else if (layerIndex > 0)
-						{
-							bottomFillPolygons[i].SetSpeed(config.BridgeSpeed);
+							if (bottomFillPolygons[i].PolygonLength() < config.TreatAsBridge_um)
+							{
+								solidFillPolygons.Add(bottomFillPolygons[i]);
+								bottomFillPolygons.RemoveAt(i);
+							}
+							else
+							{
+								bottomFillPolygons[i].SetSpeed(config.BridgeSpeed);
+							}
 						}
 					}
-				}
-				else
-				{
-					foreach (var polygon in bottomFillPolygons)
+					else
 					{
-						if (polygon.PolygonLength() > config.TreatAsBridge_um
-							&& layerIndex > 0)
+						foreach (var polygon in bottomFillPolygons)
 						{
-							polygon.SetSpeed(config.BridgeSpeed);
+							if (polygon.PolygonLength() > config.TreatAsBridge_um)
+							{
+								polygon.SetSpeed(config.BridgeSpeed);
+							}
 						}
 					}
 				}
