@@ -132,52 +132,48 @@ namespace MatterHackers.MatterSlice
             return true;
         }
 
-        private long MinDistSquared(int indexA, int indexB)
+        private long MinDistSquared(int indexA)
 		{
-            var a0tob0 = (sorted[indexA][0] - sorted[indexB][0]).LengthSquared();
-            var a0tob1 = (sorted[indexA][0] - sorted[indexB][1]).LengthSquared();
-            var a1tob0 = (sorted[indexA][1] - sorted[indexB][0]).LengthSquared();
-            var a1tob1 = (sorted[indexA][1] - sorted[indexB][1]).LengthSquared();
+            var a0tob0 = (sorted[indexA][0] - lastPosition).LengthSquared();
+            var a0tob1 = (sorted[indexA][0] - lastPosition).LengthSquared();
 
-            return Math.Min(a0tob0, Math.Min(a0tob1, Math.Min(a1tob0, a1tob1)));
+            return Math.Min(a0tob0, a0tob1);
         }
 
         private int AdvanceToNextRightSegment(int lastIndex)
         {
-            for (int i = lastIndex + 1; i < sorted.Count; i++)
+            var nextIndex = lastIndex + 1;
+            if (nextIndex < sorted.Count
+                && !linePrinted[nextIndex]
+                && LinesAreTouching(lastIndex, nextIndex))
             {
-                if (!linePrinted[i] && LinesAreTouching(lastIndex, i))
-                {
-                    return i;
-                }
-            }
-
-            // we did not find a segment that is touch our segment
-            // find the next segment in front of us that has nothing to the left and is the closest to us
-            var closestNextSegment = -1;
-            // we set the best distance we are willing to consider to be 20 times the extrusion width (8 mm for a .4 nozzle)
-            var bestDist = lineWidth_um * 1000 * 200;
-            var bestDistSquared = bestDist * bestDist;
-            for (int i = lastIndex + 1; i < sorted.Count; i++)
-            {
-                if (EverythingLeftHasBeenPrinted(i))
-                {
-                    var minDistSquared = MinDistSquared(lastIndex, i);
-                    if (minDistSquared < bestDistSquared)
-					{
-                        // keep track of closest to our segment
-                        bestDistSquared = minDistSquared;
-                        closestNextSegment = i;
-					}
-                }
-            }
-
-            if (closestNextSegment > lastIndex)
-			{
-                return closestNextSegment;
+                return nextIndex;
             }
 
             return sorted.Count;
+        }
+
+        int ClosestAvailableUnprintedSegment()
+        {
+            // find the best segment that has nothing to the left and is the closest to last position
+            var closestNextSegment = sorted.Count;
+            var bestDistSquared = long.MaxValue;
+            for (int i = 0; i < sorted.Count; i++)
+            {
+                if (!linePrinted[i]
+                    && EverythingLeftHasBeenPrinted(i))
+                {
+                    var minDistSquared = MinDistSquared(i);
+                    if (minDistSquared < bestDistSquared)
+                    {
+                        // keep track of closest to our segment
+                        bestDistSquared = minDistSquared;
+                        closestNextSegment = i;
+                    }
+                }
+            }
+
+            return closestNextSegment;
         }
 
         private IEnumerable<int> NextIndex
@@ -188,7 +184,7 @@ namespace MatterHackers.MatterSlice
                 while (printedCount < linePrinted.Count)
                 {
                     var first = true;
-                    int i = 0;
+                    int i = ClosestAvailableUnprintedSegment();
                     var leftError = false;
                     while (i < sorted.Count)
                     {
@@ -307,7 +303,6 @@ namespace MatterHackers.MatterSlice
                 sorted.Sort((a, b) =>
                 {
                     return perpendicularIntPoint.Dot(a[0]).CompareTo(perpendicularIntPoint.Dot(b[0]));
-
                 });
 
                 // reverse the list if the end is closer to the lastPosition
