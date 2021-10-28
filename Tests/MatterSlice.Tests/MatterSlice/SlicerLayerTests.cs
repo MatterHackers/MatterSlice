@@ -738,6 +738,75 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void MaintainPerimeterCount()
+		{
+			// the error this was showing was that the perimeter count did not stay at 3 for the left bottom part of the model when merge overlapping lines is turned on
+
+			// first prove that we get the right result with merge overlapping lines turned off
+			{
+				string twoHoleSTL = TestUtilities.GetStlPath("bad_perimeter_count");
+				string validatePerimetersGCode = TestUtilities.GetTempGCodePath("bad_perimeter_count_1.gcode");
+				{
+					// load a model that is (or was) having the wrong number of perimeters on part of the layers
+					var config = new ConfigSettings();
+					string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "bad_perimeter_count.ini");
+					config.ReadSettings(settingsPath);
+					Assert.IsTrue(config.MergeOverlappingLines);
+					config.MergeOverlappingLines = false;
+					var processor = new FffProcessor(config);
+					processor.SetTargetFile(validatePerimetersGCode);
+					processor.LoadStlFile(twoHoleSTL);
+					// slice and save it
+					processor.DoProcessing();
+					processor.Dispose();
+
+					string[] loadedGCode = TestUtilities.LoadGCodeFile(validatePerimetersGCode);
+
+					var layers = loadedGCode.GetAllLayers();
+
+					// validate that all perimeters render as groups
+					for (int i = 0; i < layers.Count - 1; i++)
+					{
+						// this will check for overlapping segments
+						var perimeters = TestUtilities.GetExtrusionPolygonsForLayer(layers[i]);
+						Assert.AreEqual(4, perimeters.Count, "There should be 4 perimeters on every level");
+					}
+				}
+			}
+
+			// than that we get the same result with it turned on
+			{
+				string twoHoleSTL = TestUtilities.GetStlPath("bad_perimeter_count");
+				string validatePerimetersGCode = TestUtilities.GetTempGCodePath("bad_perimeter_count_2.gcode");
+				{
+					// load a model that is (or was) having the wrong number of perimeters on part of the layers
+					var config = new ConfigSettings();
+					string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "bad_perimeter_count.ini");
+					config.ReadSettings(settingsPath);
+					Assert.IsTrue(config.MergeOverlappingLines);
+					var processor = new FffProcessor(config);
+					processor.SetTargetFile(validatePerimetersGCode);
+					processor.LoadStlFile(twoHoleSTL);
+					// slice and save it
+					processor.DoProcessing();
+					processor.Dispose();
+
+					string[] loadedGCode = TestUtilities.LoadGCodeFile(validatePerimetersGCode);
+
+					var layers = loadedGCode.GetAllLayers();
+
+					// validate that all perimeters render as groups
+					for (int i = 0; i < layers.Count - 1; i++)
+					{
+						// this will check for overlapping segments
+						var perimeters = TestUtilities.GetExtrusionPolygonsForLayer(layers[i]);
+						Assert.AreEqual(4, perimeters.Count, "There should be 4 perimeters on every level");
+					}
+				}
+			}
+		}
+
+		[Test]
 		public void ParseLayerPolygonsCorrectly()
 		{
 			var gcode = @"; Layer Change GCode
