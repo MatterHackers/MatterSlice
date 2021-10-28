@@ -772,7 +772,6 @@ namespace MatterHackers.MatterSlice.Tests
 						Assert.AreEqual(4, perimeters.Count, "There should be 4 perimeters on every level");
 					}
 				}
-
 			}
 
 			// than that we get the same result with it turned on

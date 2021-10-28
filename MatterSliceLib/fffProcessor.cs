@@ -1171,12 +1171,14 @@ namespace MatterHackers.MatterSlice
 								bool printedMerged = false;
 								if (config.MergeOverlappingLines)
 								{
+									var mergedCount = 0;
 									var polygonsToMerge = new Polygons() { polygon };
 									// while the next perimeter is also part of our perimeter set
 									while (i < insetOrder.Count - 1 
 										&& insetOrder[i + 1].perimeterIndex == perimeterIndex)
 									{
 										i++;
+										mergedCount++;
 										polygonsToMerge.Add(insetToolPaths[perimeterIndex][insetOrder[i].polyIndex]);
 									}
 
@@ -1201,6 +1203,10 @@ namespace MatterHackers.MatterSlice
 										pathConfig.ClosedLoop = closed;
 										pathConfig.DoSeamHiding = hide;
 										printedMerged = true;
+									}
+									else
+									{
+										i -= mergedCount;
 									}
 								}
 
