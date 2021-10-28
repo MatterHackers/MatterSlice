@@ -252,13 +252,15 @@ namespace MatterHackers.MatterSlice
 				config.InfillPercent = 0;
 			}
 
-			LogOutput.Log("Processing support regions");
-
+			LogOutput.Log("Fixing touching surfaces");
 			layerDataStorage.Extruders = MultiExtruders.ProcessBooleans(layerDataStorage.Extruders, config.BooleanOperations);
+			LogOutput.Log("Touching surfaces fixed: {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
+			timeKeeper.Restart();
 
-			LogOutput.Log("Processed support regions: {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
-
+			LogOutput.Log("Removing extruder intersections");
 			MultiExtruders.RemoveExtruderIntersections(layerDataStorage.Extruders);
+			LogOutput.Log("Extruder intersections removed: {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
+			timeKeeper.Restart();
 
 			// Is the last extruder data actually wipe tower definitions?
 			bool userGeneratedWipeTower = config.BooleanOperations.Contains("W");

@@ -249,7 +249,7 @@ namespace MatterHackers.MatterSlice
 
 			foreach (Polygons supportIsland in supportIslands)
 			{
-				Polygons allSupport = new Polygons();
+				var allSupport = new Polygons();
 				
 				// force a retract if changing islands
 				if (config.RetractWhenChangingIslands)
@@ -297,7 +297,7 @@ namespace MatterHackers.MatterSlice
 
 				foreach (Polygons interfaceIsland in interfaceIslands)
 				{
-					Polygons allSupport = new Polygons();
+					var allSupport = new Polygons();
 					
 					// force a retract if changing islands
 					if (config.RetractWhenChangingIslands)
@@ -350,7 +350,7 @@ namespace MatterHackers.MatterSlice
 
 			for (int i = 0; i < supportIslands.Count; i++)
 			{
-				Polygons allSupport = new Polygons();
+				var allSupport = new Polygons();
 				
 				var supportIsland = supportIslands[i];
 

@@ -190,9 +190,6 @@ namespace MatterHackers.MatterSlice
 			Intersection
 		}
 
-;
-
-
 		private static void DoLayerBooleans(SliceLayer layersA, SliceLayer layersB, BooleanType booleanType)
 		{
 			switch (booleanType)
