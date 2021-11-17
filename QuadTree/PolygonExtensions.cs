@@ -750,23 +750,40 @@ namespace MatterHackers.QuadTree
 		/// </summary>
 		/// <param name="polygon"></param>
 		/// <returns></returns>
-		public static int GetWindingDirection(this Polygon polygon)
+		public static int GetWindingDirectionOld(this Polygon polygon)
 		{
 			int pointCount = polygon.Count;
 			double totalTurns = 0;
 			for (int pointIndex = 0; pointIndex < pointCount; pointIndex++)
 			{
-				IntPoint currentPoint = polygon[pointIndex];
+				int prevIndex = (pointIndex + pointCount - 1) % pointCount;
 				int nextIndex = (pointIndex + 1) % pointCount;
+				IntPoint prevPoint = polygon[prevIndex];
+				IntPoint currentPoint = polygon[pointIndex];
 				IntPoint nextPoint = polygon[nextIndex];
 
-				// sum  (x2 − x1)(y2 + y1)
-				double turnAmount = (nextPoint.X + currentPoint.X)*(nextPoint.Y + currentPoint.Y);
+				double turnAmount = currentPoint.GetTurnAmount(prevPoint, nextPoint);
 
 				totalTurns += turnAmount;
 			}
 
 			return totalTurns > 0 ? 1 : -1;
+		}
+
+		public static int GetWindingDirection(this Polygon polygon)
+        {
+			// var old = polygon.GetWindingDirectionOld();
+			var clipper = Clipper.Area(polygon);
+			if (clipper > 0)
+            {
+				return 1;
+            }
+			else if (clipper < 0 -1)
+			{
+				return -1;
+			}
+
+			return 0;
 		}
 	}
 }
