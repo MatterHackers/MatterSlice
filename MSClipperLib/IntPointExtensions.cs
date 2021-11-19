@@ -101,7 +101,6 @@ namespace MSClipperLib
 				nextPoint -= currentPoint;
 
 				double prevAngle = Math.Atan2(prevPoint.Y, prevPoint.X);
-				IntPoint rotatedPrev = prevPoint.GetRotated(-prevAngle);
 
 				// undo the rotation
 				nextPoint = nextPoint.GetRotated(-prevAngle);

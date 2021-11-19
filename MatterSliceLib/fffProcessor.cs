@@ -1752,10 +1752,19 @@ namespace MatterHackers.MatterSlice
 					// We have some bridging happening trim our outlines against this and slow down the one that are
 					// crossing the bridge areas.
 					var polygonsWithBridgeSlowdowns = ChangeSpeedOverBridgedAreas(polygonsToWrite, bridgeAreas, fillConfig.ClosedLoop);
-					bool oldValue = fillConfig.ClosedLoop;
-					fillConfig.ClosedLoop = false;
-					polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsWithBridgeSlowdowns, pathFinder, fillConfig, layerIndex);
-					fillConfig.ClosedLoop = oldValue;
+					// convert this back into a closed loop
+					var stitched = polygonsWithBridgeSlowdowns.StitchPolygonsTogether();
+					if (stitched.Count == 1)
+					{
+						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(stitched, pathFinder, fillConfig, layerIndex);
+					}
+					else
+					{
+						bool oldValue = fillConfig.ClosedLoop;
+						fillConfig.ClosedLoop = false;
+						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsWithBridgeSlowdowns, pathFinder, fillConfig, layerIndex);
+						fillConfig.ClosedLoop = oldValue;
+					}
 				}
 				else // there is no bridging so we do not need to slow anything down to cross gaps
 				{

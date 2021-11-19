@@ -750,7 +750,7 @@ namespace MatterHackers.QuadTree
 		/// </summary>
 		/// <param name="polygon"></param>
 		/// <returns></returns>
-		public static int GetWindingDirection(this Polygon polygon)
+		public static int GetWindingDirectionOld(this Polygon polygon)
 		{
 			int pointCount = polygon.Count;
 			double totalTurns = 0;
@@ -768,6 +768,22 @@ namespace MatterHackers.QuadTree
 			}
 
 			return totalTurns > 0 ? 1 : -1;
+		}
+
+		public static int GetWindingDirection(this Polygon polygon)
+        {
+			// var old = polygon.GetWindingDirectionOld();
+			var clipper = Clipper.Area(polygon);
+			if (clipper > 0)
+            {
+				return 1;
+            }
+			else if (clipper < 0 -1)
+			{
+				return -1;
+			}
+
+			return 0;
 		}
 	}
 }
