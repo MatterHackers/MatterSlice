@@ -1266,7 +1266,8 @@ namespace MatterHackers.MatterSlice
 
 				if (layerIndex > 0)
 				{
-					if (bottomFillConfig.Speed == solidFillConfig.Speed)
+					if (bottomFillConfig.Speed == solidFillConfig.Speed
+						&& !config.MonotonicSolidInfill)
 					{
 						for (int i = bottomFillPolygons.Count - 1; i >= 0; i--)
 						{

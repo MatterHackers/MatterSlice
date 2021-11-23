@@ -48,7 +48,7 @@ namespace MatterHackers.MatterSlice
 		}
 		public static Polygons MergeTouchingLineSegments(this Polygons polygonsIn, long touchingDistance_um = 100)
 		{
-			var touchingDistanceSquared_um = touchingDistance_um* touchingDistance_um;
+			var touchingDistanceSquared_um = touchingDistance_um * touchingDistance_um;
 			bool Touching(IntPoint a, IntPoint b)
 			{
 				return (a - b).LengthSquared() < touchingDistanceSquared_um;

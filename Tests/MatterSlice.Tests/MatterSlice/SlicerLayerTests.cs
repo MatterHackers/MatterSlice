@@ -807,6 +807,46 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void MonotonicHasMinimalTravels()
+		{
+			// when monotonic is on for this part there were too many travels
+			string twoHoleSTL = TestUtilities.GetStlPath("bad_monotonic");
+			string badMonotonicGcode = TestUtilities.GetTempGCodePath("bad_monotonic.gcode");
+			// load a model that is (or was) having the wrong number of perimeters on part of the layers
+			var config = new ConfigSettings();
+			string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "bad_monotonic.ini");
+			config.ReadSettings(settingsPath);
+			Assert.IsTrue(config.MonotonicSolidInfill);
+			var processor = new FffProcessor(config);
+			processor.SetTargetFile(badMonotonicGcode);
+			processor.LoadStlFile(twoHoleSTL);
+			// slice and save it
+			processor.DoProcessing();
+			processor.Dispose();
+
+			string[] loadedGCode = TestUtilities.LoadGCodeFile(badMonotonicGcode);
+
+			var layers = loadedGCode.GetAllLayers();
+
+			// validate that all layers have limited travels
+			for (int i = 0; i < layers.Count - 1; i++)
+			{
+				// this will check for overlapping segments
+				var movementInfo = new MovementInfo();
+				var travels = TestUtilities.GetTravelPolygonsForLayer(layers[i], ref movementInfo);
+				var longTravels = 0;
+				foreach(var travel in travels)
+                {
+					if (travel.PolygonLength() > 3)
+                    {
+						longTravels++;
+                    }
+                }
+				Assert.LessOrEqual(longTravels, 10, "There should be less than 10 travels on every level");
+			}
+		}
+
+		[Test]
 		public void ParseLayerPolygonsCorrectly()
 		{
 			var gcode = @"; Layer Change GCode
