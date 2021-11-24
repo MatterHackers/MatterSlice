@@ -252,31 +252,7 @@ namespace MatterHackers.MatterSlice
                 sorted = new Polygons(count);
                 linePrinted = new List<bool>(count);
 
-                // find the longest segment (or at least a long segment)
-                var maxLengthSquared = 0.0;
-                var maxIndex = 0;
-                for (var i = 0; i < polygons.Count; i++)
-                {
-                    var polygon = polygons[i];
-
-                    var lengthSquared = polygon.PolygonLengthSquared(false);
-                    if (lengthSquared > maxLengthSquared)
-                    {
-                        maxLengthSquared = lengthSquared;
-                        maxIndex = i;
-
-                        if (lengthSquared > 100000)
-                        {
-                            // long enough to get a good perpendicular
-                            break;
-                        }
-                    }
-                }
-
-                // get the perpendicular
-                var perpendicularIntPoint = (polygons[maxIndex][1] - polygons[maxIndex][0]).GetPerpendicularLeft();
-
-                perpendicular = Vector2.Normalize(AsVector2(perpendicularIntPoint));
+                var (_, perpendicularIntPoint) = polygons.GetPerpendicular();
 
                 // find the point minimum point in this direction
                 var minDistance = double.MaxValue;
@@ -292,11 +268,11 @@ namespace MatterHackers.MatterSlice
                     linePrinted.Add(false);
 
                     var distance = perpendicularIntPoint.Dot(polygon[0]);
-                    if(distance < minDistance)
-					{
+                    if (distance < minDistance)
+                    {
                         minDistance = distance;
                         minIndex = i;
-					}
+                    }
                 }
 
                 // sort the polygons based on the distance from the minimum
@@ -309,12 +285,12 @@ namespace MatterHackers.MatterSlice
                 var minStart = Math.Min((sorted[0][0] - lastPosition).LengthSquared(), (sorted[0][1] - lastPosition).LengthSquared());
                 var minEnd = Math.Min((sorted[count - 1][0] - lastPosition).LengthSquared(), (sorted[count - 1][1] - lastPosition).LengthSquared());
                 if (minEnd < minStart)
-				{
+                {
                     sorted.Reverse();
                     // and make sure we understand the positive direction
                     perpendicularIntPoint *= -1;
-				}
+                }
             }
         }
-   }
+    }
 }

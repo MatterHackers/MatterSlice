@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using MatterHackers.QuadTree;
+using MatterHackers.VectorMath;
 using MSClipperLib;
 using static System.Math;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
@@ -46,20 +47,82 @@ namespace MatterHackers.MatterSlice
 				polygons.Add(other[n]);
 			}
 		}
-		public static Polygons MergeTouchingLineSegments(this Polygons polygonsIn, long touchingDistance_um = 100)
+
+		public static (IntPoint, IntPoint) GetPerpendicular(this Polygons polygons)
 		{
-			var touchingDistanceSquared_um = touchingDistance_um* touchingDistance_um;
-			bool Touching(IntPoint a, IntPoint b)
+			// find the longest segment (or at least a long segment)
+			var maxLengthSquared = 0.0;
+			var maxIndex = 0;
+			for (var i = 0; i < polygons.Count; i++)
 			{
-				return (a - b).LengthSquared() < touchingDistanceSquared_um;
+				var polygon = polygons[i];
+
+				var lengthSquared = polygon.PolygonLengthSquared(false);
+				if (lengthSquared > maxLengthSquared)
+				{
+					maxLengthSquared = lengthSquared;
+					maxIndex = i;
+
+					if (lengthSquared > 100000)
+					{
+						// long enough to get a good perpendicular
+						break;
+					}
+				}
 			}
 
-			var remaining = new Polygons(polygonsIn);
+			// get the perpendicular
+			var delta = polygons[maxIndex][1] - polygons[maxIndex][0];
+			return (delta, delta.GetPerpendicularLeft());
+		}
+
+		public static Polygons MergeColinearLineSegments(this Polygons polygons, long alongLineOverlap_um = 100, long perpendicularOverlap = 100)
+		{
+			Vector2 Ip2V2(IntPoint a)
+			{
+				return new Vector2(a.X, a.Y);
+			}
+
+			if (polygons.Count == 0)
+            {
+				return polygons;
+            }
+
+			var (delta, perpendicularIntPoint) = polygons.GetPerpendicular();
+			var perpendicularNormal = Ip2V2(perpendicularIntPoint).GetNormal();
+
+			bool CoLinear(Polygon a, Polygon b)
+			{
+				// check that they are next to eachother by the perpendicular
+				var distToA = perpendicularNormal.Dot(Ip2V2(a[0]));
+				var distToB = perpendicularNormal.Dot(Ip2V2(b[0]));
+				if (distToA > distToB - perpendicularOverlap
+					&& distToA < distToB + perpendicularOverlap)
+                {
+					// check that they are going in the same direction (currently not checked as it is guaranteed by monotonic)
+					// they are colinear
+					return true;
+                }
+
+				return false;
+			}
+
+			var remaining = new Polygons(polygons);
+			foreach(var a in remaining)
+            {
+				if ((a[1] - a[0]).Dot(delta) < 0)
+                {
+					var hold = a[1];
+					a[1] = a[0];
+					a[0] = hold;
+                }
+            }
 			var output = new Polygons();
 			while (remaining.Count > 0)
 			{
 				// add the next polygon to output
 				var poly = new Polygon(remaining[0]);
+
 				remaining.RemoveAt(0);
 				output.Add(poly);
 				bool addedPoint;
@@ -70,33 +133,45 @@ namespace MatterHackers.MatterSlice
 					for (int i = remaining.Count - 1; i >= 0; i--)
 					{
 						var endIndex = poly.Count - 1;
-						if (Touching(remaining[i][0], poly[0]))
+						if (CoLinear(remaining[i], poly))
 						{
-							// the start is touching the start, add to the start
-							poly[0] = remaining[i][1];
-							remaining.RemoveAt(i);
-							addedPoint = true;
-						}
-						else if (Touching(remaining[i][1], poly[0]))
-						{
-							// the end is touching the start add to the start
-							poly[0] = remaining[i][0];
-							remaining.RemoveAt(i);
-							addedPoint = true;
-						}
-						else if (Touching(remaining[i][0], poly[endIndex]))
-						{
-							// the start is touching the end add to the end
-							poly[endIndex] = remaining[i][1];
-							remaining.RemoveAt(i);
-							addedPoint = true;
-						}
-						else if (Touching(remaining[i][1], poly[endIndex]))
-						{
-							// the start is touching the end add to the end
-							poly[endIndex] = remaining[i][0];
-							remaining.RemoveAt(i);
-							addedPoint = true;
+							var normalInt = poly[endIndex] - poly[0];
+							var normal = new Vector2(normalInt.X, normalInt.Y).GetNormal();
+							// set the start to the minimum along the line normal
+							// set the end to the maximum along the line normal
+							var expandedPoly = false;
+							// check the start of the new line is to the left of the existing line
+							var delta0RelStart = Ip2V2(remaining[i][0] - poly[0]);
+							var delta1RelStart = Ip2V2(remaining[i][1] - poly[0]);
+							// if the 0 point is left of start
+							if (normal.Dot(delta0RelStart) < 0
+								// and the 1 point is right of start (including the overlap amount)
+								&& normal.Dot(delta1RelStart) + alongLineOverlap_um > 0)
+							{
+								// expand the left side to inclued the segment
+								addedPoint = true;
+								expandedPoly = true;
+								poly[0] = remaining[i][0];
+							}
+
+							// check the end of the new line is to the right of the existing line
+							var delta0RelEnd = Ip2V2(remaining[i][0] - poly[endIndex]);
+							var delta1RelEnd = Ip2V2(remaining[i][1] - poly[endIndex]);
+							// if the 1 point is right of end
+							if (normal.Dot(delta1RelEnd) > 0
+								// and the 0 point is left of end (including the overlap amount)
+								&& normal.Dot(delta0RelEnd) - alongLineOverlap_um < 0)
+							{
+								// expand the right side to inclued the segment
+								addedPoint = true;
+								expandedPoly = true;
+								poly[endIndex] = remaining[i][1];
+							}
+
+							if (expandedPoly)
+							{
+								remaining.RemoveAt(i);
+							}
 						}
 					}
 				}
