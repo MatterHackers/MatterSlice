@@ -43,10 +43,10 @@ namespace MatterHackers.MatterSlice
 		{
 		}
 
-		public OptimizedPath(int poly, int point, bool isExtrude, bool foundPath)
+		public OptimizedPath(int polyIndex, int pointIndex, bool isExtrude, bool foundPath)
 		{
-			this.SourcePolyIndex = poly;
-			this.PointIndex = point;
+			this.SourcePolyIndex = polyIndex;
+			this.PointIndex = pointIndex;
 			this.IsExtrude = isExtrude;
 			this.FoundPath = foundPath;
 		}
@@ -190,6 +190,36 @@ namespace MatterHackers.MatterSlice
 				completedPolygons.Add(closestPolyPoint.SourcePolyIndex);
 
 				currentPosition = endPosition;
+			}
+
+			if (pathConfig?.Name.Contains("inset") == true
+				&& Polygons.Count > 1)
+			{
+				// we have a subdivided perimeter make sure it is wound in the right direction
+				// create a polygon that is all the points in the output order
+				var polygon = new Polygon();
+				foreach (var optimizedPath in OptimizedPaths)
+				{
+					var sourcePoly = Polygons[optimizedPath.SourcePolyIndex];
+					polygon.Add(sourcePoly[optimizedPath.PointIndex]);
+					var endIndex = (optimizedPath.PointIndex - 1 + sourcePoly.Count) % sourcePoly.Count;
+					polygon.Add(sourcePoly[endIndex]);
+				}
+
+				// find the winding of all ponits
+				if (polygon.GetWindingDirection() == -1)
+				{
+					var newPaths = new List<OptimizedPath>();
+					// if -1 reverse the order so they will be ccw
+					foreach (var optimizedPath in ((IEnumerable<OptimizedPath>)OptimizedPaths).Reverse())
+					{
+						var sourcePoly = Polygons[optimizedPath.SourcePolyIndex];
+						var endIndex = optimizedPath.PointIndex == 0 ? sourcePoly.Count - 1 : 0;
+						newPaths.Add(new OptimizedPath(optimizedPath.SourcePolyIndex, endIndex, optimizedPath.IsExtrude, optimizedPath.FoundPath));
+					}
+
+					OptimizedPaths = newPaths;
+				}
 			}
 		}
 

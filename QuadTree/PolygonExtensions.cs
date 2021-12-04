@@ -770,9 +770,13 @@ namespace MatterHackers.QuadTree
 			return totalTurns > 0 ? 1 : -1;
 		}
 
+		/// <summary>
+		/// Return 1 if ccw -1 if cw
+		/// </summary>
+		/// <param name="polygon"></param>
+		/// <returns></returns>
 		public static int GetWindingDirection(this Polygon polygon)
         {
-			// var old = polygon.GetWindingDirectionOld();
 			var clipper = Clipper.Area(polygon);
 			if (clipper > 0)
             {
