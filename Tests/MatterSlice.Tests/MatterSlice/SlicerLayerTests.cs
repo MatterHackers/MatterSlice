@@ -118,6 +118,40 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void AllPerimetersGoCCW()
+		{
+			string badWindingStl = TestUtilities.GetStlPath("merg_winding_cw");
+			string badWindingGCode = TestUtilities.GetTempGCodePath("merg_winding_cw.gcode");
+			{
+				// load a model that is correctly manifold
+				var config = new ConfigSettings();
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "merg_winding_cw.ini");
+				config.ReadSettings(settingsPath);
+				var processor = new FffProcessor(config);
+				processor.SetTargetFile(badWindingGCode);
+				processor.LoadStlFile(badWindingStl);
+				// slice and save it
+				processor.DoProcessing();
+				processor.Dispose();
+
+				string[] loadedGCode = TestUtilities.LoadGCodeFile(badWindingGCode);
+				int layerCount = TestUtilities.LayerCount(loadedGCode);
+
+				var layerPolygons = loadedGCode.GetAllLayersExtrusionPolygons();
+
+				for (int i = 0; i < layerCount - 1; i++)
+				{
+					var loops = layerPolygons[i].Where(p => p.Count > 5);
+					// Assert.LessOrEqual(loops.Count(), 2, "We should always only have 2 loops");
+					foreach (var polygon in loops)
+					{
+						Assert.AreEqual(1, polygon.GetWindingDirection());
+					}
+				}
+			}
+		}
+
+		[Test]
 		public void SupportConnectedOptimaly()
 		{
 			string thinWallsSTL = TestUtilities.GetStlPath("two disks");
