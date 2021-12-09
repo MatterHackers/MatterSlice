@@ -35,7 +35,8 @@ using NUnit.Framework;
 namespace MatterHackers.MatterSlice.Tests
 {
 	using System;
-	using Pathfinding;
+    using System.Linq;
+    using Pathfinding;
 	using Polygon = List<IntPoint>;
 	using Polygons = List<List<IntPoint>>;
 
@@ -180,7 +181,7 @@ namespace MatterHackers.MatterSlice.Tests
 					new Polygon() { new IntPoint(0, 205), new IntPoint(0, 300) },
 				};
 
-				var merged = lineSegments.MergeColinearLineSegments();
+				var merged = lineSegments.MergeColinearLineSegments(6);
 				Assert.AreEqual(1, merged.Count);
 				Assert.AreEqual(2, merged[0].Count);
 				Assert.AreEqual(new IntPoint(0, 0), merged[0][0]);
@@ -318,6 +319,16 @@ namespace MatterHackers.MatterSlice.Tests
 				// reversed, but don't know why
 				Assert.AreEqual(new IntPoint(30, 600), merged[1][0]);
 				Assert.AreEqual(new IntPoint(30, 0), merged[1][1]);
+			}
+
+            {
+				var polygonString = @"x:10753, y:3599,x:11186, y:3599,|x:10746, y:3199,x:11182, y:3199,|x:11042, y:3999,x:11135, y:3999,|x:10738, y:2799,x:10938, y:2799,|x:7119, y:2399,x:9111, y:2399,|x:7120, y:1999,x:9111, y:1999,|x:7120, y:1599,x:9111, y:1599,|x:31710, y:3599,x:32138, y:3599,|x:31711, y:3199,x:32138, y:3199,|x:31768, y:3999,x:31855, y:3999,|x:33788, y:2399,x:35779, y:2399,|x:33788, y:1999,x:35779, y:1999,|x:33788, y:1599,x:35779, y:1599,|x:2887, y:1599,x:4879, y:1599,|x:2887, y:1999,x:4879, y:1999,|x:2887, y:2399,x:4878, y:2399,|x:38020, y:1599,x:40011, y:1599,|x:38020, y:1999,x:40011, y:1999,|x:38020, y:2399,x:40011, y:2399,|x:38000, y:2693,x:38000, y:1302,|x:37600, y:2694,x:37600, y:1302,|x:37200, y:2694,x:37200, y:1303,|x:36800, y:2695,x:36800, y:1303,|x:36400, y:2695,x:36400, y:1303,|x:36000, y:2696,x:36000, y:1304,|x:6800, y:2696,x:6800, y:1307,|x:6400, y:2695,x:6400, y:1307,|x:6000, y:2695,x:6000, y:1307,|x:5600, y:2695,x:5600, y:1307,|x:5200, y:2694,x:5200, y:1307,|";
+				var polygons = CLPolygonsExtensions.CreateFromString(polygonString);
+				var merged = polygons.MergeColinearLineSegments(400, 100);
+				
+				var longMerges = merged.Where(p => p.PolygonLength() > 20000);
+				Assert.AreEqual(0, longMerges.Count());
+				Assert.AreEqual(polygons.Count(), merged.Count());
 			}
 		}
 
