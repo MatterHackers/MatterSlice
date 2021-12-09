@@ -86,33 +86,18 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void AllPerimetersGoInPolgonDirection()
 		{
-			string thinWallsSTL = TestUtilities.GetStlPath("ThinWallsRect");
-			string thinWallsGCode = TestUtilities.GetTempGCodePath("ThinWallsRect.gcode");
+			var loadedGCode = SliceMeshWithProfile("ThinWallsRect", out _);
 
+			int layerCount = TestUtilities.LayerCount(loadedGCode);
+
+			var layerPolygons = loadedGCode.GetAllLayersExtrusionPolygons();
+
+			for (int i = 2; i < layerCount - 2; i++)
 			{
-				// load a model that is correctly manifold
-				var config = new ConfigSettings();
-				config.ExpandThinWalls = true;
-				config.MergeOverlappingLines = false;
-				var processor = new FffProcessor(config);
-				processor.SetTargetFile(thinWallsGCode);
-				processor.LoadStlFile(thinWallsSTL);
-				// slice and save it
-				processor.DoProcessing();
-				processor.Dispose();
-
-				string[] loadedGCode = TestUtilities.LoadGCodeFile(thinWallsGCode);
-				int layerCount = TestUtilities.LayerCount(loadedGCode);
-
-				var layerPolygons = loadedGCode.GetAllLayersExtrusionPolygons();
-
-				for (int i = 2; i < layerCount - 2; i++)
+				Assert.LessOrEqual(layerPolygons[i].Count, 4, "We should not have added more than the 4 sides");
+				foreach (var polygon in layerPolygons[i])
 				{
-					Assert.LessOrEqual(layerPolygons[i].Count, 4, "We should not have added more than the 4 sides");
-					foreach (var polygon in layerPolygons[i])
-					{
-						Assert.AreEqual(1, polygon.GetWindingDirection());
-					}
+					Assert.AreEqual(1, polygon.GetWindingDirection());
 				}
 			}
 		}
@@ -151,123 +136,119 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
+		private string[] SliceMeshWithProfile(string rootName, out ConfigSettings config, string overrideSTL = null)
+        {
+			string stlFileName = TestUtilities.GetStlPath(string.IsNullOrEmpty(overrideSTL) ? rootName : overrideSTL);
+			string gcodeFileName = TestUtilities.GetTempGCodePath(rootName + ".gcode");
+			// load a model that is correctly manifold
+			config = new ConfigSettings();
+			string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", rootName + ".ini");
+			config.ReadSettings(settingsPath);
+
+			// and clear the settings that we are overriding
+			config.BooleanOperations = "";
+			config.AdditionalArgsToProcess = "";
+
+			var processor = new FffProcessor(config);
+			processor.SetTargetFile(gcodeFileName);
+			processor.LoadStlFile(stlFileName);
+			// slice and save it
+			processor.DoProcessing();
+			processor.Dispose();
+
+			return TestUtilities.LoadGCodeFile(gcodeFileName);
+		}
+
+		[Test]
+		public void MonotonicOnlyInIsland()
+		{
+			var loadedGCode = SliceMeshWithProfile("monotonic_bad_extrusion", out _);
+
+			int layerCount = TestUtilities.LayerCount(loadedGCode);
+
+			var layerPolygons = loadedGCode.GetAllLayersExtrusionPolygons();
+
+			for (int i = 1; i < layerCount - 1; i++)
+			{
+				var infillLines = layerPolygons[i].Where(p => p.Count == 2);
+				// Assert.LessOrEqual(loops.Count(), 2, "We should always only have 2 loops");
+				foreach (var infillLine in infillLines)
+				{
+					Assert.LessOrEqual(infillLine.PolygonLength(), 30000);
+				}
+			}
+		}
+
 		[Test]
 		public void SupportConnectedOptimaly()
 		{
-			string thinWallsSTL = TestUtilities.GetStlPath("two disks");
-			string thinWallsGCode = TestUtilities.GetTempGCodePath("two disks.gcode");
+			var loadedGCode = SliceMeshWithProfile("two disks", out _);
+			int layerCount = TestUtilities.LayerCount(loadedGCode);
 
+			for (int i = 0; i < layerCount; i++)
 			{
-				// load a model that is correctly manifold
-				var config = new ConfigSettings();
-				config.GenerateSupport = true;
-				var processor = new FffProcessor(config);
-				processor.SetTargetFile(thinWallsGCode);
-				processor.LoadStlFile(thinWallsSTL);
-				// slice and save it
-				processor.DoProcessing();
-				processor.Dispose();
+				var movements = loadedGCode.GetLayer(i).GetLayerMovements().ToList();
 
-				string[] loadedGCode = TestUtilities.LoadGCodeFile(thinWallsGCode);
-				int layerCount = TestUtilities.LayerCount(loadedGCode);
-
-				for (int i = 0; i < layerCount; i++)
+				int longMoveCount = 0;
+				for (var j = 1; j < movements.Count - 2; j++)
 				{
-					var movements = loadedGCode.GetLayer(i).GetLayerMovements().ToList();
-
-					int longMoveCount = 0;
-					for (var j = 1; j < movements.Count - 2; j++)
+					var start = movements[j - 1];
+					var end = movements[j];
+					if (end.extrusion - start.extrusion == 0
+						&& (end.position - start.position).Length > 5)
 					{
-						var start = movements[j - 1];
-						var end = movements[j];
-						if (end.extrusion - start.extrusion == 0
-							&& (end.position - start.position).Length > 5)
-						{
-							longMoveCount++;
-						}
+						longMoveCount++;
 					}
-
-					Assert.LessOrEqual(longMoveCount, 8);
 				}
+
+				Assert.LessOrEqual(longMoveCount, 8);
 			}
 		}
 
 		[Test]
 		public void CreatingInfill()
 		{
-			string infillSTL = TestUtilities.GetStlPath("has_infill");
-			string infillGCode = TestUtilities.GetTempGCodePath("has_infill.gcode");
+			var loadedGCode = SliceMeshWithProfile("has_infill", out _);
+
+			for (int i = 0; i < 100; i++)
 			{
-				// load a model that is correctly manifold
-				var config = new ConfigSettings();
-				config.ExpandThinWalls = true;
-				config.NumberOfPerimeters = 1;
-				config.AvoidCrossingPerimeters = false;
-				var processor = new FffProcessor(config);
-				processor.SetTargetFile(infillGCode);
-				processor.LoadStlFile(infillSTL);
-				// slice and save it
-				processor.DoProcessing();
-				processor.Dispose();
-
-				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
-
-				for (int i = 0; i < 100; i++)
-				{
-					var movements = loadedGCode.GetLayer(i).GetLayerMovements().ToList();
-					Assert.GreaterOrEqual(movements.Count, 100, $"Layer {i} should have more than 100 extrusions.");
-				}
+				var movements = loadedGCode.GetLayer(i).GetLayerMovements().ToList();
+				Assert.GreaterOrEqual(movements.Count, 100, $"Layer {i} should have more than 100 extrusions.");
 			}
 		}
 
 		[Test]
 		public void ThinRingHasNoCrossingSegments()
 		{
-			string infillSTL = TestUtilities.GetStlPath("thin_ring");
-			string infillGCode = TestUtilities.GetTempGCodePath("thin_ring.gcode");
+			var loadedGCode = SliceMeshWithProfile("thin_ring", out ConfigSettings config);
+
+			double LongestMove(Polygons polys)
 			{
-				// load a model that is correctly manifold
-				var config = new ConfigSettings();
-				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "thin_ring_config.ini");
-				config.ReadSettings(settingsPath);
-				config.SkirtDistanceFromObject = 7.5;
-				var processor = new FffProcessor(config);
-				processor.SetTargetFile(infillGCode);
-				processor.LoadStlFile(infillSTL);
-				// slice and save it
-				processor.DoProcessing();
-				processor.Dispose();
-
-				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
-
-				double LongestMove(Polygons polys)
+				double longest = 0;
+				for (int i = 0; i < polys.Count - 1; i++)
 				{
-					double longest = 0;
-					for (int i = 0; i < polys.Count - 1; i++)
-					{
-						var poly = polys[i];
-						var next = polys[i + 1];
-						var length = (poly[poly.Count - 1] - next[0]).Length();
-						longest = Math.Max(longest, length);
-					}
-
-					return longest;
+					var poly = polys[i];
+					var next = polys[i + 1];
+					var length = (poly[poly.Count - 1] - next[0]).Length();
+					longest = Math.Max(longest, length);
 				}
 
-				var layers = loadedGCode.GetAllLayersExtrusionPolygons();
-				for (int i = 0; i < 15; i++)
+				return longest;
+			}
+
+			var layers = loadedGCode.GetAllLayersExtrusionPolygons();
+			for (int i = 0; i < 15; i++)
+			{
+				if (i == 0)
 				{
-					if (i == 0)
-					{
-						// on the first layer we are looking for a single move that is the right length from the skirt to the part
-						var longest = LongestMove(layers[i]);
-						Assert.AreEqual(config.SkirtDistance_um + config.ExtrusionWidth_um, longest, 500, "The skirt must be the correct distance from the outside of the part");
-					}
-					else // check that there are no 
-					{
-						var longest = LongestMove(layers[i]);
-						Assert.Less(longest, 3000, $"Segment length was: {longest}, should be smaller.");
-					}
+					// on the first layer we are looking for a single move that is the right length from the skirt to the part
+					var longest = LongestMove(layers[i]);
+					Assert.AreEqual(config.SkirtDistance_um + config.ExtrusionWidth_um, longest, 500, "The skirt must be the correct distance from the outside of the part");
+				}
+				else // check that there are no 
+				{
+					var longest = LongestMove(layers[i]);
+					Assert.Less(longest, 3000, $"Segment length was: {longest}, should be smaller.");
 				}
 			}
 		}
@@ -275,34 +256,19 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test, Ignore("WIP")]
 		public void ThinFeaturesFillAndCenter()
 		{
-			string infillSTL = TestUtilities.GetStlPath("thin_wall");
-			string infillGCode = TestUtilities.GetTempGCodePath("thin_wall.gcode");
+			var loadedGCode = SliceMeshWithProfile("monotonic_bad_extrusion", out _);
+
+			var layers = loadedGCode.GetAllLayersExtrusionPolygons();
+			for (int i = 1; i < 163; i++)
 			{
-				// load a model that was showing unwanted holes 
-				var config = new ConfigSettings();
-				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "thin_wall.ini");
-				config.ReadSettings(settingsPath);
-				var processor = new FffProcessor(config);
-				processor.SetTargetFile(infillGCode);
-				processor.LoadStlFile(infillSTL);
-				// slice and save it
-				processor.DoProcessing();
-				processor.Dispose();
-
-				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
-
-				var layers = loadedGCode.GetAllLayersExtrusionPolygons();
-				for (int i = 1; i < 163; i++)
+				var layer = layers[i];
+				Assert.AreEqual(1, layer.Count, "There is one polygon on every layer (up to 163)");
+				foreach (var poly in layer)
 				{
-					var layer = layers[i];
-					Assert.AreEqual(1, layer.Count, "There is one polygon on every layer (up to 163)");
-					foreach (var poly in layer)
-					{
-						var cleaned = Clipper.CleanPolygons(new Polygons() { poly }, 10);
-						Assert.AreEqual(2, poly.Count, "Each polygon should only be a line");
-						Assert.AreEqual(0, poly[0].X, "The points should be centered on 0");
-						Assert.AreEqual(0, poly[1].X, "The points should be centered on 0");
-					}
+					var cleaned = Clipper.CleanPolygons(new Polygons() { poly }, 10);
+					Assert.AreEqual(2, poly.Count, "Each polygon should only be a line");
+					Assert.AreEqual(0, poly[0].X, "The points should be centered on 0");
+					Assert.AreEqual(0, poly[1].X, "The points should be centered on 0");
 				}
 			}
 		}
@@ -322,47 +288,17 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test, Ignore("WIP")]
 		public void ThinGapsOnRosePetal()
 		{
-			string infillSTL = TestUtilities.GetStlPath("petal_holes");
-			string infillGCode = TestUtilities.GetTempGCodePath("petal_holes.gcode");
-			{
-				// load a model that was showing unwanted holes 
-				var config = new ConfigSettings();
-				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "petal_holes.ini");
-				config.ReadSettings(settingsPath);
-				var processor = new FffProcessor(config);
-				processor.SetTargetFile(infillGCode);
-				processor.LoadStlFile(infillSTL);
-				// slice and save it
-				processor.DoProcessing();
-				processor.Dispose();
+			var loadedGCode = SliceMeshWithProfile("monotonic_bad_extrusion", out _);
 
-				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
-
-				AllLayersHaveSinglExtrusionLine(loadedGCode, 3);
-			}
+			AllLayersHaveSinglExtrusionLine(loadedGCode, 3);
 		}
 
 		[Test, Ignore("WIP")]
 		public void LoopsOnRosePetal()
 		{
-			string infillSTL = TestUtilities.GetStlPath("petal_loops");
-			string infillGCode = TestUtilities.GetTempGCodePath("petal_loops.gcode");
-			{
-				// load a model that was showing unwanted holes 
-				var config = new ConfigSettings();
-				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "petal_loops.ini");
-				config.ReadSettings(settingsPath);
-				var processor = new FffProcessor(config);
-				processor.SetTargetFile(infillGCode);
-				processor.LoadStlFile(infillSTL);
-				// slice and save it
-				processor.DoProcessing();
-				processor.Dispose();
+			var loadedGCode = SliceMeshWithProfile("monotonic_bad_extrusion", out _);
 
-				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
-
-				AllLayersHaveSinglExtrusionLine(loadedGCode, 5);
-			}
+			AllLayersHaveSinglExtrusionLine(loadedGCode, 5);
 		}
 
 		void LoopsAreTouching(Polygons polygons)
@@ -399,38 +335,22 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void RingLoopsSeamAligned()
 		{
-			string infillSTL = TestUtilities.GetStlPath("ring_loops");
-			string infillGCode = TestUtilities.GetTempGCodePath("ring_loops.gcode");
+			var loadedGCode = SliceMeshWithProfile("ring_loops", out _);
+			var extrusionLayers = TestUtilities.GetAllLayersExtrusionPolygons(loadedGCode);
+			for (int i = 0; i < extrusionLayers.Count; i++)
 			{
-				// load a model that was showing unaligned perimeters
-				var config = new ConfigSettings();
-				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "ring_loops.ini");
-				config.ReadSettings(settingsPath);
-				var processor = new FffProcessor(config);
-				processor.SetTargetFile(infillGCode);
-				processor.LoadStlFile(infillSTL);
-				// slice and save it
-				processor.DoProcessing();
-				processor.Dispose();
+				var extrusions = extrusionLayers[i];
+				Assert.LessOrEqual(extrusions.Count, 6);
 
-				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
+				LoopsAreTouching(extrusions);
+			}
 
-				var extrusionLayers = TestUtilities.GetAllLayersExtrusionPolygons(loadedGCode);
-				for (int i = 0; i < extrusionLayers.Count; i++)
+			var movementLayers = TestUtilities.GetAllLayersMovements(loadedGCode);
+			for (int i = 2; i < 25; i++)
+			{
+				foreach (var movement in movementLayers[i])
 				{
-					var extrusions = extrusionLayers[i];
-					Assert.LessOrEqual(extrusions.Count, 6);
-
-					LoopsAreTouching(extrusions);
-				}
-
-				var movementLayers = TestUtilities.GetAllLayersMovements(loadedGCode);
-				for (int i = 2; i < 25; i++)
-				{
-					foreach (var movement in movementLayers[i])
-					{
-						Assert.AreEqual((i + 1) * .25, movement.position.z);
-					}
+					Assert.AreEqual((i + 1) * .25, movement.position.z);
 				}
 			}
 		}
@@ -438,34 +358,19 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void FirstLayerIsFirstLayerSpeed()
 		{
-			string infillSTL = TestUtilities.GetStlPath("PerimeterLoops");
-			string infillGCode = TestUtilities.GetTempGCodePath("first_layer_speed.gcode");
+			var loadedGCode = SliceMeshWithProfile("monotonic_bad_extrusion", out ConfigSettings config, "PerimeterLoops");
+			var layers = loadedGCode.GetAllLayers();
+			var layerMovements = TestUtilities.GetLayerMovements(layers[0]);
+			var lastPosition = new MovementInfo();
+			var layerPolygons = TestUtilities.GetLayerPolygons(layerMovements, ref lastPosition);
+
+			foreach (var polygon in layerPolygons)
 			{
-				// load a model that was showing unaligned perimeters
-				var config = new ConfigSettings();
-				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "first_layer_speed.ini");
-				config.ReadSettings(settingsPath);
-				var processor = new FffProcessor(config);
-				processor.SetTargetFile(infillGCode);
-				processor.LoadStlFile(infillSTL);
-				// slice and save it
-				processor.DoProcessing();
-				processor.Dispose();
-
-				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
-				var layers = loadedGCode.GetAllLayers();
-				var layerMovements = TestUtilities.GetLayerMovements(layers[0]);
-				var lastPosition = new MovementInfo();
-				var layerPolygons = TestUtilities.GetLayerPolygons(layerMovements, ref lastPosition);
-
-				foreach(var polygon in layerPolygons)
+				if (polygon.type == TestUtilities.PolygonTypes.Extrusion)
 				{
-					if (polygon.type == TestUtilities.PolygonTypes.Extrusion)
+					foreach (var point in polygon.polygon)
 					{
-						foreach(var point in polygon.polygon)
-						{
-							Assert.AreEqual(config.FirstLayerSpeed * 60, point.Speed);
-						}
+						Assert.AreEqual(config.FirstLayerSpeed * 60, point.Speed);
 					}
 				}
 			}
@@ -474,51 +379,35 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void ThinRingHasNoCrossingSegments2()
 		{
-			string infillSTL = TestUtilities.GetStlPath("thin_gap_fill_ring");
-			string infillGCode = TestUtilities.GetTempGCodePath("thin_gap_fill_ring.gcode");
+			var loadedGCode = SliceMeshWithProfile("thin_gap_fill_ring", out _);
+
+			double LongestMove(Polygons polys)
 			{
-				// load a model that is correctly manifold
-				var config = new ConfigSettings();
-				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "thin_gap_fill.ini");
-				config.ReadSettings(settingsPath);
-				config.SkirtDistanceFromObject = 7.5;
-				var processor = new FffProcessor(config);
-				processor.SetTargetFile(infillGCode);
-				processor.LoadStlFile(infillSTL);
-				// slice and save it
-				processor.DoProcessing();
-				processor.Dispose();
-
-				string[] loadedGCode = TestUtilities.LoadGCodeFile(infillGCode);
-
-				double LongestMove(Polygons polys)
+				double longest = 0;
+				var last = polys[0][0];
+				foreach (var poly in polys)
 				{
-					double longest = 0;
-					var last = polys[0][0];
-					foreach (var poly in polys)
+					for (int j = 0; j < poly.Count; j++)
 					{
-						for (int j = 0; j < poly.Count; j++)
+						var length = (poly[j] - last).Length();
+						if (length > 3000)
 						{
-							var length = (poly[j] - last).Length();
-							if (length > 3000)
-							{
-								int a = 0;
-							}
-							longest = Math.Max(longest, length);
-							last = poly[j];
+							int a = 0;
 						}
+						longest = Math.Max(longest, length);
+						last = poly[j];
 					}
-
-					return longest;
 				}
 
-				var layers = loadedGCode.GetAllLayersExtrusionPolygons();
-				// start at 6 to skip the bottom layers (only care about the ring)
-				for (int i = 6; i < layers.Count - 1; i++)
-				{
-					var longest = LongestMove(layers[i]);
-					Assert.Less(longest, 3000, $"Segment length was: {longest}, should be smaller.");
-				}
+				return longest;
+			}
+
+			var layers = loadedGCode.GetAllLayersExtrusionPolygons();
+			// start at 6 to skip the bottom layers (only care about the ring)
+			for (int i = 6; i < layers.Count - 1; i++)
+			{
+				var longest = LongestMove(layers[i]);
+				Assert.Less(longest, 3000, $"Segment length was: {longest}, should be smaller.");
 			}
 		}
 
@@ -531,7 +420,7 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				// load a model that is correctly manifold
 				var config = new ConfigSettings();
-				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "thin_ring_config.ini");
+				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "thin_ring.ini");
 				config.ReadSettings(settingsPath);
 				var processor = new FffProcessor(config);
 				processor.SetTargetFile(infillGCode);
@@ -639,37 +528,22 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void CheckForExcesiveTravels()
 		{
-			string badTravelSTL = TestUtilities.GetStlPath("bad_travel");
-			string badTravelGCode = TestUtilities.GetTempGCodePath("bad_travel.gcode");
+			var loadedGCode = SliceMeshWithProfile("bad_travel", out _);
+
+			// the radius of the loop we are planning around
+			// var stlRadius = 127;
+			var layers = loadedGCode.GetAllTravelPolygons();
+			for (int i = 0; i < layers.Count; i++)
 			{
-				// load a model that is (or was) having many erroneous travels
-				var config = new ConfigSettings();
-				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "bad_travel_settings.ini");
-				config.ReadSettings(settingsPath);
-				var processor = new FffProcessor(config);
-				processor.SetTargetFile(badTravelGCode);
-				processor.LoadStlFile(badTravelSTL);
-				// slice and save it
-				processor.DoProcessing();
-				processor.Dispose();
-
-				string[] loadedGCode = TestUtilities.LoadGCodeFile(badTravelGCode);
-
-				// the radius of the loop we are planning around
-				// var stlRadius = 127;
-				var layers = loadedGCode.GetAllTravelPolygons();
-				for (int i = 0; i < layers.Count; i++)
+				var polys = layers[i];
+				// skip the first move (the one getting to the part)
+				for (int j = 1; j < polys.Count; j++)
 				{
-					var polys = layers[i];
-					// skip the first move (the one getting to the part)
-					for (int j = 1; j < polys.Count; j++)
-					{
-						var poly = polys[j];
-						var startToEnd = (poly[poly.Count - 1] - poly[0]).Length();
-						var length = poly.PolygonLength();
-						var ratio = length / (double)startToEnd;
-						Assert.Less(ratio, 4, $"No travel should be more than 2x the direct distance, was: {ratio}");
-					}
+					var poly = polys[j];
+					var startToEnd = (poly[poly.Count - 1] - poly[0]).Length();
+					var length = poly.PolygonLength();
+					var ratio = length / (double)startToEnd;
+					Assert.Less(ratio, 4, $"No travel should be more than 2x the direct distance, was: {ratio}");
 				}
 			}
 		}
@@ -844,21 +718,7 @@ namespace MatterHackers.MatterSlice.Tests
 		public void MonotonicHasMinimalTravels()
 		{
 			// when monotonic is on for this part there were too many travels
-			string twoHoleSTL = TestUtilities.GetStlPath("bad_monotonic");
-			string badMonotonicGcode = TestUtilities.GetTempGCodePath("bad_monotonic.gcode");
-			// load a model that is (or was) having the wrong number of perimeters on part of the layers
-			var config = new ConfigSettings();
-			string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "bad_monotonic.ini");
-			config.ReadSettings(settingsPath);
-			Assert.IsTrue(config.MonotonicSolidInfill);
-			var processor = new FffProcessor(config);
-			processor.SetTargetFile(badMonotonicGcode);
-			processor.LoadStlFile(twoHoleSTL);
-			// slice and save it
-			processor.DoProcessing();
-			processor.Dispose();
-
-			string[] loadedGCode = TestUtilities.LoadGCodeFile(badMonotonicGcode);
+			var loadedGCode = SliceMeshWithProfile("bad_monotonic", out _);
 
 			var layers = loadedGCode.GetAllLayers();
 

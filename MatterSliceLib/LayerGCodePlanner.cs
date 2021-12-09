@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using MatterHackers.Pathfinding;
 using MatterHackers.QuadTree;
 using MatterHackers.VectorMath;
@@ -392,6 +393,9 @@ namespace MatterHackers.MatterSlice
 		public void QueuePolygonsMonotonic(Polygons polygonsIn, PathFinder pathFinder, GCodePathConfig pathConfig)
 		{
 			var polygons = polygonsIn.MergeColinearLineSegments();
+
+			var xxx = polygons.Where(p => p.PolygonLength() > 20000);
+
 			var monotonicSorter = new MonotonicSorter(polygons, LastPosition_um, pathConfig.LineWidth_um);
 
 			foreach (var polygon in monotonicSorter.Ordered)

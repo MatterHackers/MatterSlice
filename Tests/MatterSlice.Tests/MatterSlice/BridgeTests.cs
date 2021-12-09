@@ -181,7 +181,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 		private static double GetAngleForData(string islandToFillString, string layerSupportingIslandString, string debugName)
 		{
-			Polygons islandToFill = CLPolygonsExtensions.CreateFromString(islandToFillString);
+			var islandToFill = CLPolygonsExtensions.CreateFromString(islandToFillString);
 
 			var prevLayer = new SliceLayer
 			{
