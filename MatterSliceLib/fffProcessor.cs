@@ -1030,10 +1030,11 @@ namespace MatterHackers.MatterSlice
                                 insetAccelerators.Add(inset.GetQuadTree());
                             }
 
-                            var insetsThatHaveBeenAdded = new HashSet<Polygon>();
+							var printInsideOut = NeedToPrintInsideOut(layerIndex);
+							var insetsThatHaveBeenAdded = new HashSet<Polygon>();
 
                             var insetOrder = new List<(int perimeterIndex, int polyIndex, int pointIndex)>();
-                            bool foundAnyPath = true;
+                            var foundAnyPath = true;
                             var lastPosition_um = layerGcodePlanner.LastPosition_um;
                             var first = true;
                             while (insetsThatHaveBeenAdded.Count < CountInsetsToPrint(insetToolPaths)
@@ -1046,27 +1047,36 @@ namespace MatterHackers.MatterSlice
                                     IntPoint nextOuterStart;
                                     if (first)
                                     {
-                                        var firstInsetAccelerator = new List<QuadTree<int>>();
-                                        foreach (var inset in insetToolPaths)
-                                        {
-                                            insetAccelerators.Add(inset.GetQuadTree());
-                                        }
-
                                         // only consider the actual outer polygon
                                         var firstPerimeter = new Polygons() { insetToolPaths[0][0] };
-                                        nextOuterStart = FindBestPoint(firstPerimeter,
-                                            firstPerimeter.GetQuadTree(),
-                                            lastPosition_um,
-                                            layerIndex,
-                                            (poly) => !insetsThatHaveBeenAdded.Contains(poly));
-                                        first = false;
+										nextOuterStart = FindBestPoint(firstPerimeter,
+											firstPerimeter.GetQuadTree(),
+											lastPosition_um,
+											layerIndex,
+											(poly) => !insetsThatHaveBeenAdded.Contains(poly));
+
+										var lastInestIndex = insetToolPaths.Count - 1;
+										// check if we should prime before printing the outside perimeter
+										if (!printInsideOut && lastInestIndex > 2)
+                                        {
+											AddClosestInset(insetOrder,
+												ref nextOuterStart,
+												insetToolPaths[lastInestIndex],
+												insetAccelerators[lastInestIndex],
+												lastInestIndex,
+												insetsThatHaveBeenAdded,
+												limitDistance,
+												out bool foundAPath2);
+										}
+
+										first = false;
                                     }
                                     else
                                     {
                                         nextOuterStart = FindBestPoint(insetToolPaths[0], insetAccelerators[0], lastPosition_um, layerIndex, (poly) => !insetsThatHaveBeenAdded.Contains(poly));
                                     }
 
-                                    if (!CloseToUnprintedPerimeter1(insetToolPaths, insetsThatHaveBeenAdded, nextOuterStart))
+                                    if (!CloseToUnprintedPerimeter(insetToolPaths, insetsThatHaveBeenAdded, nextOuterStart))
                                     {
                                         if (insetToolPaths.Count > 1)
                                         {
@@ -1076,7 +1086,7 @@ namespace MatterHackers.MatterSlice
                                                 {
                                                     // try a spot along a 1 perimeter
                                                     var nextOuterStart2 = FindBestPoint(insetToolPaths[0], insetAccelerators[0], poly[poly.Count / 2], layerIndex, (poly2) => !insetsThatHaveBeenAdded.Contains(poly2));
-                                                    if (CloseToUnprintedPerimeter1(insetToolPaths, insetsThatHaveBeenAdded, nextOuterStart2))
+                                                    if (CloseToUnprintedPerimeter(insetToolPaths, insetsThatHaveBeenAdded, nextOuterStart2))
                                                     {
                                                         nextOuterStart = nextOuterStart2;
                                                         break;
@@ -1153,7 +1163,6 @@ namespace MatterHackers.MatterSlice
                             }
 
                             // if we are printing from the inside out
-                            bool printInsideOut = NeedToPrintInsideOut(layerIndex);
                             if (printInsideOut)
                             {
                                 insetOrder.Reverse();
@@ -1600,7 +1609,7 @@ namespace MatterHackers.MatterSlice
 			return total;
 		}
 
-		private bool CloseToUnprintedPerimeter1(List<Polygons> insetsToPrint, HashSet<Polygon> printed, IntPoint testPosition)
+		private bool CloseToUnprintedPerimeter(List<Polygons> insetsToPrint, HashSet<Polygon> printed, IntPoint testPosition)
 		{
 			if (insetsToPrint.Count > 1)
 			{
