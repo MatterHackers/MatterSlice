@@ -1055,15 +1055,15 @@ namespace MatterHackers.MatterSlice
 											layerIndex,
 											(poly) => !insetsThatHaveBeenAdded.Contains(poly));
 
-										var lastInestIndex = insetToolPaths.Count - 1;
-										// check if we should prime before printing the outside perimeter
-										if (!printInsideOut && lastInestIndex > 2)
+										// check if we should prime before printing the outside perimeter (user 2 to be close but not touching)
+										var primingLoop = 2;
+										if (!printInsideOut && insetToolPaths.Count > primingLoop)
                                         {
 											AddClosestInset(insetOrder,
 												ref nextOuterStart,
-												insetToolPaths[lastInestIndex],
-												insetAccelerators[lastInestIndex],
-												lastInestIndex,
+												insetToolPaths[primingLoop],
+												insetAccelerators[primingLoop],
+												primingLoop,
 												insetsThatHaveBeenAdded,
 												limitDistance,
 												out bool foundAPath2);
