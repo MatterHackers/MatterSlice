@@ -208,26 +208,34 @@ namespace MatterHackers.MatterSlice.Tests
 
 			string[] gcode = TestUtilities.LoadGCodeFile(boxGCodeFile);
 
+			var outerPerimeterIndex = 1;
+			var secondPerimeterIndex = 2;
+			var thirdPerimeterIndex = 0;
+
 			var movement = default(MovementInfo);
 			{
 				// check layer 1
-				string[] layer1Info = TestUtilities.GetLayer(gcode, 1);
-				Polygons layer1Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
+				var layer1Info = TestUtilities.GetLayer(gcode, 1);
+				var layerPolygons = TestUtilities.GetExtrusionPolygonsForLayer(layer1Info, ref movement);
 				// make sure there are 3
-				Assert.IsTrue(layer1Polygons.Count == 3);
-				// make sure they are in the right order (first layer is outside in)
-				Assert.IsTrue(layer1Polygons[0].MinX() < layer1Polygons[1].MinX());
+				Assert.IsTrue(layerPolygons.Count == 3);
+				// perimeters should be in 3 1 2 order so that we have priming happening before the outer perimeter
+				Assert.IsTrue(layerPolygons[outerPerimeterIndex].MinX() < layerPolygons[secondPerimeterIndex].MinX());
+				Assert.IsTrue(layerPolygons[outerPerimeterIndex].MinX() < layerPolygons[thirdPerimeterIndex].MinX());
+				Assert.IsTrue(layerPolygons[secondPerimeterIndex].MinX() < layerPolygons[thirdPerimeterIndex].MinX());
 			}
 
 			{
 				// check layer 2
-				string[] layer2Info = TestUtilities.GetLayer(gcode, 2);
-				Polygons layer2Polygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
+				var layer2Info = TestUtilities.GetLayer(gcode, 2);
+				var layerPolygons = TestUtilities.GetExtrusionPolygonsForLayer(layer2Info, ref movement);
 
 				// make sure there are 3
-				Assert.IsTrue(layer2Polygons.Count == 3);
+				Assert.IsTrue(layerPolygons.Count == 3);
 				// make sure they are in the right order (other layers are inside out)
-				Assert.IsTrue(layer2Polygons[0].MinX() < layer2Polygons[1].MinX());
+				Assert.IsTrue(layerPolygons[outerPerimeterIndex].MinX() < layerPolygons[secondPerimeterIndex].MinX());
+				Assert.IsTrue(layerPolygons[outerPerimeterIndex].MinX() < layerPolygons[thirdPerimeterIndex].MinX());
+				Assert.IsTrue(layerPolygons[secondPerimeterIndex].MinX() < layerPolygons[thirdPerimeterIndex].MinX());
 			}
 		}
 
