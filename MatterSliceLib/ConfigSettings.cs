@@ -51,7 +51,7 @@ namespace MatterHackers.MatterSlice
 	public class ConfigConstants
 	{
 		public const int MAX_EXTRUDERS = 4;
-		public const string VERSION = "2.21.12";
+		public const string VERSION = "2.22.02";
 	}
 
 	// all the variables in this class will be saved and loaded from settings files
