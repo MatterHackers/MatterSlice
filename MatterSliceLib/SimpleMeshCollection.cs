@@ -51,7 +51,7 @@ namespace MatterHackers.MatterSlice
 			{
 				// check for "SOLID"
 
-				var vertex = default(MatterHackers.VectorMath.Vector3);
+				var vertex = default(VectorMath.Vector3);
 				int n = 0;
 				var v0 = new IntPoint(0, 0, 0);
 				var v1 = new IntPoint(0, 0, 0);
@@ -79,17 +79,17 @@ namespace MatterHackers.MatterSlice
 						switch (n)
 						{
 							case 1:
-								var new0 = VectorMath.Vector3Ex.Transform(vertex, matrix) * 1000;
+								var new0 = Vector3Ex.Transform(vertex, matrix) * 1000;
 								v0 = new IntPoint(new0.X, new0.Y, new0.Z);
 								break;
 
 							case 2:
-								var new1 = VectorMath.Vector3Ex.Transform(vertex, matrix) * 1000;
+								var new1 = Vector3Ex.Transform(vertex, matrix) * 1000;
 								v1 = new IntPoint(new1.X, new1.Y, new1.Z);
 								break;
 
 							case 3:
-								var new2 = VectorMath.Vector3Ex.Transform(vertex, matrix) * 1000;
+								var new2 = Vector3Ex.Transform(vertex, matrix) * 1000;
 								v2 = new IntPoint(new2.X, new2.Y, new2.Z);
 								vol.AddFaceTriangle(v0, v1, v2);
 								n = 0;
@@ -171,7 +171,7 @@ namespace MatterHackers.MatterSlice
 					return false;
 				}
 
-				uint numTriangles = System.BitConverter.ToUInt32(fileContents, currentPosition);
+				uint numTriangles = BitConverter.ToUInt32(fileContents, currentPosition);
 				long bytesForNormals = numTriangles * 3 * 4;
 				long bytesForVertices = numTriangles * 3 * 4;
 				long bytesForAttributs = numTriangles * 2;
@@ -190,12 +190,12 @@ namespace MatterHackers.MatterSlice
 					currentPosition += 3 * 4;
 					for (int j = 0; j < 3; j++)
 					{
-						var vertex = new MatterHackers.VectorMath.Vector3(
-							System.BitConverter.ToSingle(fileContents, currentPosition + 0 * 4),
-							System.BitConverter.ToSingle(fileContents, currentPosition + 1 * 4),
-							System.BitConverter.ToSingle(fileContents, currentPosition + 2 * 4));
+						var vertex = new VectorMath.Vector3(
+                            BitConverter.ToSingle(fileContents, currentPosition + 0 * 4),
+                            BitConverter.ToSingle(fileContents, currentPosition + 1 * 4),
+                            BitConverter.ToSingle(fileContents, currentPosition + 2 * 4));
 
-						var new0 = VectorMath.Vector3Ex.Transform(vertex, matrix);
+						var new0 = Vector3Ex.Transform(vertex, matrix);
 						vector[j] = new IntPoint(new0.X * 1000, new0.Y * 1000, new0.Z * 1000);
 						currentPosition += 3 * 4;
 					}
