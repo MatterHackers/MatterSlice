@@ -565,7 +565,7 @@ namespace MatterHackers.MatterSlice
 						{
 							QueueExtruderLayerToGCode(layerDataStorage, layerPlanner, extruderIndex, layerIndex, config.FirstLayerExtrusionWidth_um);
 						}
-						else
+						else 
 						{
 							QueueExtruderLayerToGCode(layerDataStorage, layerPlanner, extruderIndex, layerIndex, config.ExtrusionWidth_um);
 						}
@@ -579,7 +579,7 @@ namespace MatterHackers.MatterSlice
 							if ((supportExturderIndex2 <= 0 && extruderIndex == 0)
 								|| supportExturderIndex2 == extruderIndex)
 							{
-								if (layerDataStorage.Support.QueueNormalSupportLayer(config, layerPlanner, layerIndex, supportNormalConfig, layerPathFinder))
+								if (layerDataStorage.Support.QueueNormalSupportLayer(config, layerPlanner, layerIndex, supportNormalConfig))
 								{
 									// we move out of the island so we aren't in it.
 									islandCurrentlyInside = null;
@@ -589,7 +589,7 @@ namespace MatterHackers.MatterSlice
 							if ((interfaceExturderIndex <= 0 && extruderIndex == 0)
 								|| interfaceExturderIndex == extruderIndex)
 							{
-								if (layerDataStorage.Support.QueueInterfaceSupportLayer(config, layerPlanner, layerIndex, supportInterfaceConfig, layerPathFinder))
+								if (layerDataStorage.Support.QueueInterfaceSupportLayer(config, layerPlanner, layerIndex, supportInterfaceConfig))
 								{
 									// we move out of the island so we aren't in it.
 									islandCurrentlyInside = null;
@@ -1212,7 +1212,14 @@ namespace MatterHackers.MatterSlice
                                             }
                                         }
 
-                                        QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, singlePerimeters, pathConfig, SupportWriteType.UnsupportedAreas, bridgeAreas);
+                                        QueuePolygonsConsideringSupport(layerIndex,
+											island.PathFinder,
+											layerGcodePlanner,
+											singlePerimeters,
+											pathConfig,
+											SupportWriteType.UnsupportedAreas,
+											layerGcodePlanner.QueuePolygonsByOptimizer,
+											bridgeAreas);
                                         pathConfig.ClosedLoop = closed;
                                         pathConfig.DoSeamHiding = hide;
                                         printedMerged = true;
@@ -1226,7 +1233,14 @@ namespace MatterHackers.MatterSlice
                                 if (!printedMerged)
                                 {
                                     layerGcodePlanner.QueueTravel(polygon[pointIndex], island.PathFinder, pathConfig.LiftOnTravel);
-                                    QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, new Polygons() { polygon }, pathConfig, SupportWriteType.UnsupportedAreas, bridgeAreas);
+                                    QueuePolygonsConsideringSupport(layerIndex,
+										island.PathFinder,
+										layerGcodePlanner,
+										new Polygons() { polygon },
+										pathConfig,
+										SupportWriteType.UnsupportedAreas,
+										layerGcodePlanner.QueuePolygonsByOptimizer,
+										bridgeAreas);
                                 }
 
                                 if (printInsideOut && perimeterIndex == 0)
@@ -1264,7 +1278,13 @@ namespace MatterHackers.MatterSlice
 				// It would be even better to slow down the perimeters that are part of bridges but that is for later.
 				if (bridgePolygons.Count > 0)
 				{
-					QueuePolygonsConsideringSupport(layerIndex, null, layerGcodePlanner, bridgePolygons, bridgeConfig, SupportWriteType.UnsupportedAreas);
+					QueuePolygonsConsideringSupport(layerIndex,
+						null,
+						layerGcodePlanner,
+						bridgePolygons,
+						bridgeConfig,
+						SupportWriteType.UnsupportedAreas,
+						layerGcodePlanner.QueuePolygonsByOptimizer);
 					// Set it back to what it was
 					layerGcodePlanner.QueueFanCommand(fanSpeedAtLayerStart, sparseFillConfig);
 				}
@@ -1308,21 +1328,53 @@ namespace MatterHackers.MatterSlice
 				}
 
 				// sparse fill
-				QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, sparseFillPolygons, sparseFillConfig, SupportWriteType.UnsupportedAreas);
+				QueuePolygonsConsideringSupport(layerIndex,
+					island.PathFinder,
+					layerGcodePlanner,
+					sparseFillPolygons,
+					sparseFillConfig,
+					SupportWriteType.UnsupportedAreas,
+					layerGcodePlanner.QueuePolygonsByOptimizer);
 
 				if (config.MonotonicSolidInfill)
 				{
 					// solid fill
-					layerGcodePlanner.QueuePolygonsMonotonic(solidFillPolygons, island.PathFinder, solidFillConfig);
+					QueuePolygonsConsideringSupport(layerIndex,
+						island.PathFinder,
+						layerGcodePlanner,
+						solidFillPolygons,
+						solidFillConfig,
+						SupportWriteType.UnsupportedAreas,
+						layerGcodePlanner.QueuePolygonsMonotonic);
+
 					// bottom layers
-					layerGcodePlanner.QueuePolygonsMonotonic(bottomFillPolygons, island.PathFinder, bottomFillConfig);
+					QueuePolygonsConsideringSupport(layerIndex,
+						island.PathFinder,
+						layerGcodePlanner,
+						bottomFillPolygons,
+						bottomFillConfig,
+						SupportWriteType.UnsupportedAreas,
+						layerGcodePlanner.QueuePolygonsMonotonic);
 				}
 				else
 				{
 					// solid fill
-					QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, solidFillPolygons, solidFillConfig, SupportWriteType.UnsupportedAreas);
+					QueuePolygonsConsideringSupport(layerIndex,
+						island.PathFinder,
+						layerGcodePlanner,
+						solidFillPolygons,
+						solidFillConfig,
+						SupportWriteType.UnsupportedAreas,
+						layerGcodePlanner.QueuePolygonsByOptimizer);
+
 					// bottom layers
-					QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, bottomFillPolygons, bottomFillConfig, SupportWriteType.UnsupportedAreas);
+					QueuePolygonsConsideringSupport(layerIndex,
+						island.PathFinder,
+						layerGcodePlanner,
+						bottomFillPolygons,
+						bottomFillConfig,
+						SupportWriteType.UnsupportedAreas,
+						layerGcodePlanner.QueuePolygonsByOptimizer);
 				}
 
 				if (firstTopFillPolygons.Count > 0)
@@ -1336,11 +1388,23 @@ namespace MatterHackers.MatterSlice
 
 				if (config.MonotonicSolidInfill)
 				{
-					layerGcodePlanner.QueuePolygonsMonotonic(topFillPolygons, island.PathFinder, topFillConfig);
+					QueuePolygonsConsideringSupport(layerIndex,
+						island.PathFinder,
+						layerGcodePlanner,
+						topFillPolygons,
+						topFillConfig,
+						SupportWriteType.UnsupportedAreas,
+						layerGcodePlanner.QueuePolygonsMonotonic);
 				}
 				else
 				{
-					layerGcodePlanner.QueuePolygonsByOptimizer(topFillPolygons, island.PathFinder, topFillConfig, layerIndex);
+					QueuePolygonsConsideringSupport(layerIndex,
+						island.PathFinder,
+						layerGcodePlanner,
+						topFillPolygons,
+						topFillConfig,
+						SupportWriteType.UnsupportedAreas,
+						layerGcodePlanner.QueuePolygonsByOptimizer);
 				}
 			}
 
@@ -1382,7 +1446,13 @@ namespace MatterHackers.MatterSlice
 						$"layer {layerIndex}");
 
 					inset0Config.ClosedLoop = false;
-					QueuePolygonsConsideringSupport(layerIndex, pathFinder, layerGcodePlanner, thinLines, inset0Config, SupportWriteType.UnsupportedAreas);
+					QueuePolygonsConsideringSupport(layerIndex,
+						pathFinder,
+						layerGcodePlanner,
+						thinLines,
+						inset0Config,
+						SupportWriteType.UnsupportedAreas,
+						layerGcodePlanner.QueuePolygonsByOptimizer);
 					inset0Config.ClosedLoop = true;
 				}
 			}
@@ -1663,16 +1733,34 @@ namespace MatterHackers.MatterSlice
 					// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
 					for (int insetIndex = 1; insetIndex < island.InsetToolPaths.Count; insetIndex++)
 					{
-						outputDataForIsland |= QueuePolygonsConsideringSupport(layerIndex, null, layerGcodePlanner, island.InsetToolPaths[insetIndex], airGappedBottomInsetConfig, SupportWriteType.SupportedAreasCheckOnly);
+						outputDataForIsland |= QueuePolygonsConsideringSupport(layerIndex,
+							null,
+							layerGcodePlanner,
+							island.InsetToolPaths[insetIndex],
+							airGappedBottomInsetConfig,
+							SupportWriteType.SupportedAreasCheckOnly,
+							layerGcodePlanner.QueuePolygonsByOptimizer);
 					}
 
 					// then 0
 					if (island.InsetToolPaths.Count > 0)
 					{
-						outputDataForIsland |= QueuePolygonsConsideringSupport(layerIndex, null, layerGcodePlanner, island.InsetToolPaths[0], airGappedBottomInsetConfig, SupportWriteType.SupportedAreasCheckOnly);
+						outputDataForIsland |= QueuePolygonsConsideringSupport(layerIndex,
+							null,
+							layerGcodePlanner,
+							island.InsetToolPaths[0],
+							airGappedBottomInsetConfig,
+							SupportWriteType.SupportedAreasCheckOnly,
+							layerGcodePlanner.QueuePolygonsByOptimizer);
 					}
 
-					outputDataForIsland |= QueuePolygonsConsideringSupport(layerIndex, null, layerGcodePlanner, bottomFillPolygons, airGappedBottomConfig, SupportWriteType.SupportedAreasCheckOnly);
+					outputDataForIsland |= QueuePolygonsConsideringSupport(layerIndex,
+						null,
+						layerGcodePlanner,
+						bottomFillPolygons,
+						airGappedBottomConfig,
+						SupportWriteType.SupportedAreasCheckOnly,
+						layerGcodePlanner.QueuePolygonsByOptimizer);
 
 					if (outputDataForIsland)
 					{
@@ -1690,16 +1778,34 @@ namespace MatterHackers.MatterSlice
 						// Print everything but the first perimeter from the outside in so the little parts have more to stick to.
 						for (int insetIndex = 1; insetIndex < island.InsetToolPaths.Count; insetIndex++)
 						{
-							QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, island.InsetToolPaths[insetIndex], airGappedBottomInsetConfig, SupportWriteType.SupportedAreas);
+							QueuePolygonsConsideringSupport(layerIndex,
+								island.PathFinder,
+								layerGcodePlanner,
+								island.InsetToolPaths[insetIndex],
+								airGappedBottomInsetConfig,
+								SupportWriteType.SupportedAreas,
+								layerGcodePlanner.QueuePolygonsByOptimizer);
 						}
 
 						// then 0
 						if (island.InsetToolPaths.Count > 0)
 						{
-							QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, island.InsetToolPaths[0], airGappedBottomInsetConfig, SupportWriteType.SupportedAreas);
+							QueuePolygonsConsideringSupport(layerIndex,
+								island.PathFinder,
+								layerGcodePlanner,
+								island.InsetToolPaths[0],
+								airGappedBottomInsetConfig,
+								SupportWriteType.SupportedAreas,
+								layerGcodePlanner.QueuePolygonsByOptimizer);
 						}
 
-						QueuePolygonsConsideringSupport(layerIndex, island.PathFinder, layerGcodePlanner, bottomFillPolygons, airGappedBottomConfig, SupportWriteType.SupportedAreas);
+						QueuePolygonsConsideringSupport(layerIndex,
+							island.PathFinder,
+							layerGcodePlanner,
+							bottomFillPolygons,
+							airGappedBottomConfig,
+							SupportWriteType.SupportedAreas,
+							layerGcodePlanner.QueuePolygonsByOptimizer);
 					}
 				}
 			}
@@ -1729,6 +1835,7 @@ namespace MatterHackers.MatterSlice
 			Polygons polygonsToWrite,
 			GCodePathConfig fillConfig,
 			SupportWriteType supportWriteType,
+			Func<Polygons, PathFinder, GCodePathConfig, int, bool> queueMethod,
 			Polygons bridgeAreas = null)
 		{
 			bool polygonsWereOutput = false;
@@ -1757,17 +1864,17 @@ namespace MatterHackers.MatterSlice
 							var polygonsWithBridgeSlowdowns = ChangeSpeedOverBridgedAreas(polygonsToWrite, bridgeAreas, fillConfig.ClosedLoop);
 							bool oldValue = fillConfig.ClosedLoop;
 							fillConfig.ClosedLoop = false;
-							polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsWithBridgeSlowdowns, pathFinder, fillConfig, layerIndex);
+							polygonsWereOutput |= queueMethod(polygonsWithBridgeSlowdowns, pathFinder, fillConfig, layerIndex);
 							fillConfig.ClosedLoop = oldValue;
 						}
 						else // there is no bridging so we do not need to slow anything down to cross gaps
 						{
-							polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtNormalHeight, pathFinder, fillConfig, layerIndex);
+							polygonsWereOutput |= queueMethod(polysToWriteAtNormalHeight, pathFinder, fillConfig, layerIndex);
 						}
 					}
 					else
 					{
-						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, pathFinder, fillConfig, layerIndex);
+						polygonsWereOutput |= queueMethod(polygonsToWrite, pathFinder, fillConfig, layerIndex);
 					}
 				}
 				else if (supportOutlines.Count > 0) // we are checking the supported areas
@@ -1784,7 +1891,7 @@ namespace MatterHackers.MatterSlice
 					}
 					else
 					{
-						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polysToWriteAtAirGapHeight, pathFinder, fillConfig, layerIndex);
+						polygonsWereOutput |= queueMethod(polysToWriteAtAirGapHeight, pathFinder, fillConfig, layerIndex);
 					}
 				}
 			}
@@ -1800,19 +1907,19 @@ namespace MatterHackers.MatterSlice
 					var stitched = polygonsWithBridgeSlowdowns.StitchPolygonsTogether();
 					if (stitched.Count == 1)
 					{
-						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(stitched, pathFinder, fillConfig, layerIndex);
+						polygonsWereOutput |= queueMethod(stitched, pathFinder, fillConfig, layerIndex);
 					}
 					else
 					{
 						bool oldValue = fillConfig.ClosedLoop;
 						fillConfig.ClosedLoop = false;
-						polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsWithBridgeSlowdowns, pathFinder, fillConfig, layerIndex);
+						polygonsWereOutput |= queueMethod(polygonsWithBridgeSlowdowns, pathFinder, fillConfig, layerIndex);
 						fillConfig.ClosedLoop = oldValue;
 					}
 				}
 				else // there is no bridging so we do not need to slow anything down to cross gaps
 				{
-					polygonsWereOutput |= gcodeLayer.QueuePolygonsByOptimizer(polygonsToWrite, pathFinder, fillConfig, layerIndex);
+					polygonsWereOutput |= queueMethod(polygonsToWrite, pathFinder, fillConfig, layerIndex);
 				}
 			}
 
