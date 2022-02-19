@@ -285,7 +285,10 @@ namespace MatterHackers.MatterSlice
 			}
 		}
 
-		public bool QueueInterfaceSupportLayer(ConfigSettings config, LayerGCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportInterfaceConfig, PathFinder pathFinder)
+		public bool QueueInterfaceSupportLayer(ConfigSettings config,
+			LayerGCodePlanner gcodeLayer,
+			int layerIndex,
+			GCodePathConfig supportInterfaceConfig)
 		{
 			var foundSupport = false;
 			
@@ -308,7 +311,8 @@ namespace MatterHackers.MatterSlice
 					var infillOffset = -config.ExtrusionWidth_um + config.InfillExtendIntoPerimeter_um;
 
 					// make a border if layer 0
-					if (layerIndex == 0)
+					// make a border if layer 0
+					if (config.GenerateSupportPerimeter || layerIndex == 0)
 					{
 						allSupport.AddRange(interfaceIsland.Offset(config.ExtrusionWidth_um / 2));
 					}
@@ -316,6 +320,8 @@ namespace MatterHackers.MatterSlice
 					var supportLines = new Polygons();
 					Infill.GenerateLineInfill(config, interfaceIsland.Offset(infillOffset), supportLines, config.InfillStartingAngle + 90, config.ExtrusionWidth_um);
 					allSupport.AddRange(supportLines);
+
+					var pathFinder = new PathFinder(interfaceIsland, config.ExtrusionWidth_um * 3 / 2);
 
 					if (gcodeLayer.QueuePolygonsByOptimizer(allSupport, pathFinder, supportInterfaceConfig, 0))
 					{
@@ -327,7 +333,10 @@ namespace MatterHackers.MatterSlice
 			return foundSupport;
 		}
 
-		public bool QueueNormalSupportLayer(ConfigSettings config, LayerGCodePlanner gcodeLayer, int layerIndex, GCodePathConfig supportNormalConfig, PathFinder pathFinder)
+		public bool QueueNormalSupportLayer(ConfigSettings config,
+			LayerGCodePlanner gcodeLayer,
+			int layerIndex,
+			GCodePathConfig supportNormalConfig)
 		{
 			var foundSupport = false;
 
@@ -360,7 +369,7 @@ namespace MatterHackers.MatterSlice
 					gcodeLayer.ForceRetract();
 				}
 
-				// make a border if layer 0
+				// make a border if required
 				if (config.GenerateSupportPerimeter || layerIndex == 0)
 				{
 					allSupport.AddRange(supportIsland.Offset(config.ExtrusionWidth_um / 2));
@@ -387,6 +396,8 @@ namespace MatterHackers.MatterSlice
 				}
 
 				allSupport.AddRange(islandInfillLines);
+
+				var pathFinder = new PathFinder(supportIsland, config.ExtrusionWidth_um * 3 / 2);
 
 				if (gcodeLayer.QueuePolygonsByOptimizer(allSupport, pathFinder, supportNormalConfig, 0))
 				{

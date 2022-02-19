@@ -390,8 +390,9 @@ namespace MatterHackers.MatterSlice
 			config.ClosedLoop = oldValue;
 		}
 
-		public void QueuePolygonsMonotonic(Polygons polygonsIn, PathFinder pathFinder, GCodePathConfig pathConfig)
+		public bool QueuePolygonsMonotonic(Polygons polygonsIn, PathFinder pathFinder, GCodePathConfig pathConfig, int layerIndex)
 		{
+			var hadPolygons = false;
 			var polygons = polygonsIn.MergeColinearLineSegments();
 
 			var xxx = polygons.Where(p => p.PolygonLength() > 20000);
@@ -404,6 +405,7 @@ namespace MatterHackers.MatterSlice
 				// so pass a null for the path finder (don't re-plan them).
 				if (polygon.Count > 0 && polygon[0].Width > 0)
 				{
+					hadPolygons = true;
 					QueuePolygon(polygon, pathFinder, 0, pathConfig);
 				}
 				else
@@ -418,6 +420,8 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 			}
+
+			return hadPolygons;
 		}
 
 		public bool QueuePolygonByOptimizer(Polygon polygon, PathFinder pathFinder, GCodePathConfig pathConfig, int layerIndex)

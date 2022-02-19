@@ -35,6 +35,7 @@ using System.Threading;
 using MatterHackers.QuadTree;
 using MSClipperLib;
 using NUnit.Framework;
+using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
 
 namespace MatterHackers.MatterSlice.Tests
@@ -136,7 +137,7 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		private string[] SliceMeshWithProfile(string rootName, out ConfigSettings config, string overrideSTL = null)
+		private string[] SliceMeshWithProfile(string rootName, out ConfigSettings config, string overrideSTL = null, Action<ConfigSettings> overrideSettings = null)
         {
 			string stlFileName = TestUtilities.GetStlPath(string.IsNullOrEmpty(overrideSTL) ? rootName : overrideSTL);
 			string gcodeFileName = TestUtilities.GetTempGCodePath(rootName + ".gcode");
@@ -144,6 +145,7 @@ namespace MatterHackers.MatterSlice.Tests
 			config = new ConfigSettings();
 			string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", rootName + ".ini");
 			config.ReadSettings(settingsPath);
+			overrideSettings?.Invoke(config);
 
 			// and clear the settings that we are overriding
 			config.BooleanOperations = "";
@@ -546,6 +548,103 @@ namespace MatterHackers.MatterSlice.Tests
 					Assert.Less(ratio, 4, $"No travel should be more than 2x the direct distance, was: {ratio}");
 				}
 			}
+		}
+
+		private void PointsAtHeight(Polygon poly, double height)
+		{
+			foreach (var point in poly)
+			{
+				Assert.AreEqual(height, point.Z, "All heights should be at the expected height");
+			}
+		}
+
+		[Test]
+		public void CheckForCorrectSupportOffsetMonotonic()
+		{
+			var loadedGCode = SliceMeshWithProfile("bad_support", out _);
+
+			// We had a bug with this profile that made infill not at the air gap height
+			// This test proves that the infill is at the air gap height.
+			// Specifically that no material is below the air gap height on the first part layer
+			var layersTravels = loadedGCode.GetAllTravelPolygons();
+			var layersExtrusions = loadedGCode.GetAllLayersExtrusionPolygons();
+
+			// assert there is a perimeter
+			Assert.IsTrue(layersExtrusions[21].Where(e => e.Count > 3).Any(), "There is a perimeter");
+
+			// assert all extrusion at correct height for last support layer
+			foreach (var poly in layersExtrusions[21])
+            {
+				PointsAtHeight(poly, 5500);
+			}
+
+
+			// assert all extrusion at correct height for first bottom layer
+			foreach (var poly in layersExtrusions[22])
+			{
+				PointsAtHeight(poly, 6350);
+			}
+
+			// assert all travels at correct height
+			var polysAboveLayer = 0;
+			foreach (var poly in layersTravels[21])
+			{
+				foreach (var point in poly)
+				{
+					if (point.Z > 5500)
+					{
+						polysAboveLayer++;
+					}
+				}
+			}
+
+			Assert.Less(polysAboveLayer, 5, "There should be very few z-hop travels");
+		}
+
+		[Test]
+		public void CheckForCorrectSupportOffsetNormal()
+		{
+			// turn off monotonic infill
+			var loadedGCode = SliceMeshWithProfile("bad_support", out _, null, (settings) =>
+            {
+				settings.MonotonicSolidInfill = false;
+            });
+
+			// We had a bug with this profile that made infill not at the air gap height
+			// This test proves that the infill is at the air gap height.
+			// Specifically that no material is below the air gap height on the first part layer
+			var layersTravels = loadedGCode.GetAllTravelPolygons();
+			var layersExtrusions = loadedGCode.GetAllLayersExtrusionPolygons();
+
+			// assert there is a perimeter
+			Assert.IsTrue(layersExtrusions[21].Where(e => e.Count > 3).Any(), "There is a perimeter");
+
+			// assert all extrusion at correct height for last support layer
+			foreach (var poly in layersExtrusions[21])
+			{
+				PointsAtHeight(poly, 5500);
+			}
+
+			// assert all extrusion at correct height for first bottom layer
+			foreach (var poly in layersExtrusions[22])
+			{
+				PointsAtHeight(poly, 6350);
+			}
+
+			// assert all travels at correct height
+			var polysAboveLayer = 0;
+			foreach (var poly in layersTravels[21])
+			{
+				foreach (var point in poly)
+				{
+					if (point.Z > 5500)
+					{
+						polysAboveLayer++;
+					}
+				}
+			}
+
+			Assert.Less(polysAboveLayer, 5, "There should be very few z-hop travels");
 		}
 
 		[Test]
