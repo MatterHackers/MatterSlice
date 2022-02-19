@@ -1196,9 +1196,21 @@ namespace MatterHackers.MatterSlice
                                     }
 
                                     var mergedPerimeters = polygonsToMerge.MergePerimeterOverlaps(pathConfig.LineWidth_um, true);
-                                    if (mergedPerimeters?.Count > 1)
-                                    {
-                                        layerGcodePlanner.QueueTravel(polygon[pointIndex], island.PathFinder, pathConfig.LiftOnTravel);
+									if (mergedPerimeters?.Count > 1)
+									{
+										// delete any tiny segments
+										for (int j = mergedPerimeters.Count - 1; j >= 0; j--)
+										{
+											if (mergedPerimeters[j].PolygonLength() < extrusionWidth_um * 2)
+                                            {
+												mergedPerimeters.RemoveAt(j);
+                                            }
+										}
+									}
+									
+									if (mergedPerimeters?.Count > 1)
+									{
+										layerGcodePlanner.QueueTravel(polygon[pointIndex], island.PathFinder, pathConfig.LiftOnTravel);
                                         var closed = pathConfig.ClosedLoop;
                                         var hide = pathConfig.DoSeamHiding;
                                         pathConfig.ClosedLoop = false;
