@@ -246,6 +246,12 @@ namespace MatterHackers.MatterSlice.Tests
 						{
 							// starting a new extrusion
 							foundPolygons.Add(new Polygon());
+
+							// add in the last position
+							foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
+								(long)(lastMovement.position.x * 1000),
+								(long)(lastMovement.position.y * 1000),
+								(long)(lastMovement.position.z * 1000)));
 						}
 
 						foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
@@ -451,10 +457,19 @@ namespace MatterHackers.MatterSlice.Tests
 						// starting a new travel
 						foundPolygons.Add(new Polygon());
 
+						if (lastMovement.position != currentMovement.position)
+						{
+							foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
+								(long)(lastMovement.position.x * 1000),
+								(long)(lastMovement.position.y * 1000),
+								(long)(lastMovement.position.z * 1000)));
+						}
+
 						foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
 							(long)(currentMovement.position.x * 1000),
 							(long)(currentMovement.position.y * 1000),
 							(long)(currentMovement.position.z * 1000)));
+
 						traveling = true;
 					}
 				}
