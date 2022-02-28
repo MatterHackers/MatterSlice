@@ -138,7 +138,7 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		private string[] SliceMeshWithProfile(string rootName, out ConfigSettings config, string overrideSTL = null, Action<ConfigSettings> overrideSettings = null)
-        {
+		{
 			string stlFileName = TestUtilities.GetStlPath(string.IsNullOrEmpty(overrideSTL) ? rootName : overrideSTL);
 			string gcodeFileName = TestUtilities.GetTempGCodePath(rootName + ".gcode");
 			// load a model that is correctly manifold
@@ -517,9 +517,9 @@ namespace MatterHackers.MatterSlice.Tests
 						for (int i = 0; i < polygon.Count - 1; i++)
 						{
 							var start = new Vector3(polygon[i]) / 1000.0;
-							var end = new Vector3(polygon[i+1]) / 1000.0;
+							var end = new Vector3(polygon[i + 1]) / 1000.0;
 							var distFromLine = checkCenter.DistanceToSegment(start, end);
-	                        // assert that no line gets closer than 5mm to 100,100 (this is a hole and should be avoided)
+							// assert that no line gets closer than 5mm to 100,100 (this is a hole and should be avoided)
 							Assert.Greater(distFromLine, 5);
 						}
 					}
@@ -574,7 +574,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// assert all extrusion at correct height for last support layer
 			foreach (var poly in layersExtrusions[21])
-            {
+			{
 				PointsAtHeight(poly, 5500);
 			}
 
@@ -652,7 +652,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 		[Test]
 		public void LayerPolygonsParsedCorrectly()
-        {
+		{
 			// a single extrusion
 			Validate(new string[] { "G1 X0Y0Z0", "G1 X1Y0Z0E1" },
 				2,
@@ -717,7 +717,7 @@ namespace MatterHackers.MatterSlice.Tests
 			null);
 
 			// a series of loops
-			Validate(new string[] 
+			Validate(new string[]
 			{
 				// first loop
 				"G1 X10Y0Z0E2", "G1 X5Y10Z0E3", "G1 X0Y0Z0E4",
@@ -743,7 +743,34 @@ namespace MatterHackers.MatterSlice.Tests
 				new Polygon() { new IntPoint(1000, 1000, 0), new IntPoint(2000, 2000, 0) }
 			});
 
-			var polygons = CLPolygonsExtensions.CreateFromString("x:105.43, y:94.61,x:105.05, y:95.09,x:102.55, y:97.25,x:99.98, y:98.72,x:97.44, y:99.61,x:95.14, y:100,x:92.27, y:100.06,x:89.6, y:99.58,x:87.67, y:98.92,x:85.43, y:97.77,x:85.64, y:86.3,x:107.58, y:91.49,|x:106.4, y:92.76,x:105.44, y:93.96,x:104.76, y:94.81,x:102.32, y:96.93,x:99.82, y:98.35,x:97.34, y:99.22,x:95.09, y:99.6,x:92.3, y:99.66,x:89.7, y:99.19,x:87.83, y:98.56,x:85.84, y:97.53,x:86.03, y:86.78,x:107.22, y:91.31,|x:107.07, y:93.21,x:105.43, y:95.25,x:105.34, y:95.37,x:102.78, y:97.58,x:100.15, y:99.08,x:97.54, y:100,x:95.17, y:100.4,x:92.24, y:100.46,x:89.5, y:99.96,x:87.51, y:99.29,x:85.03, y:98.01,x:85.24, y:86.08,x:107.94, y:91.67,|");
+			// check that we get the rigt number of extrusion moves
+			{
+				string pathToData = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "three_extrusion_loops.gcode");
+				string[] gcode = File.ReadAllLines(pathToData);
+				var movementInfo = default(MovementInfo);
+				var extrusions = TestUtilities.GetExtrusionPolygonsForLayer(gcode, ref movementInfo);
+
+				Assert.AreEqual(3, extrusions.Count);
+				Assert.IsTrue(SegmentLongerThan(extrusions[0], 20000));
+				Assert.AreEqual(14, extrusions[0].Count);
+				Assert.AreEqual(14, extrusions[1].Count);
+				Assert.AreEqual(14, extrusions[2].Count);
+			}
+		}
+
+		bool SegmentLongerThan(Polygon polygon, double length)
+        {
+			// check that all the segments are shorter than 20mm
+			for (int j = 1; j < polygon.Count; j++)
+			{
+				var segmentLength = (polygon[j] - polygon[j - 1]).Length();
+				if(segmentLength > length)
+                {
+					return true;
+                }
+			}
+
+			return false;
 		}
 
 
@@ -770,13 +797,7 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					foundAirGap = true;
 
-					// check that all the segments are shorter than 20mm
-					for (int j = 1; j < polygon.Count - 1; j++)
-					{
-						var length = (polygon[j] - polygon[j - 1]).Length();
-						// make sure that there is no segment larger than 15
-						Assert.Less(length, 20000, "The air gap layer should not cross outside the island perimeter");
-					}
+					Assert.IsFalse(SegmentLongerThan(polygon, 20000));
 				}
 			}
 
