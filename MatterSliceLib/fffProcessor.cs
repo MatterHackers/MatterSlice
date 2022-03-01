@@ -1903,7 +1903,10 @@ namespace MatterHackers.MatterSlice
 					}
 					else
 					{
+						var closedLoop = fillConfig.ClosedLoop;
+						fillConfig.ClosedLoop = false;
 						polygonsWereOutput |= queueMethod(polysToWriteAtAirGapHeight, pathFinder, fillConfig, layerIndex);
+						fillConfig.ClosedLoop = closedLoop;
 					}
 				}
 			}

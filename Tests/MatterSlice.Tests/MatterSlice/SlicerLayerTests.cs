@@ -792,7 +792,7 @@ namespace MatterHackers.MatterSlice.Tests
             {
 				var polygon = zGapLayer[i];
 				
-				// find all polygons that have a speed of 5 (the air gapped speed) 
+				// find all polygons that are at the air height
 				if (polygon[0].Z == 1450)
 				{
 					foundAirGap = true;
