@@ -99,7 +99,8 @@ namespace MatterHackers.MatterSlice
 			{
 				value.Z = 0;
 #if DEBUG
-				if (value.X >= -TestingDistanceFromOrigin && value.X <= TestingDistanceFromOrigin
+				if (GCodeExport.CheckForZeroPositions
+					&& value.X >= -TestingDistanceFromOrigin && value.X <= TestingDistanceFromOrigin
 					&& value.Y >= -TestingDistanceFromOrigin && value.Y <= TestingDistanceFromOrigin)
 				{
 					throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
@@ -220,7 +221,8 @@ namespace MatterHackers.MatterSlice
 		{
 			GetLatestPathWithConfig(config).Polygon.Add(new IntPoint(destination, CurrentZ));
 #if DEBUG
-			if (destination.X >= -TestingDistanceFromOrigin && destination.X <= TestingDistanceFromOrigin
+			if (GCodeExport.CheckForZeroPositions
+				&& destination.X >= -TestingDistanceFromOrigin && destination.X <= TestingDistanceFromOrigin
 				&& destination.Y >= -TestingDistanceFromOrigin && destination.Y <= TestingDistanceFromOrigin)
 			{
 				throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
@@ -543,7 +545,8 @@ namespace MatterHackers.MatterSlice
 #if DEBUG
 			foreach (var point in pathPolygon)
 			{
-				if (point.X >= -TestingDistanceFromOrigin && point.X <= TestingDistanceFromOrigin
+				if (GCodeExport.CheckForZeroPositions
+					&& point.X >= -TestingDistanceFromOrigin && point.X <= TestingDistanceFromOrigin
 					&& point.Y >= -TestingDistanceFromOrigin && point.Y <= TestingDistanceFromOrigin)
 				{
 					throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");

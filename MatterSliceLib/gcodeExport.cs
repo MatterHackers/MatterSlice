@@ -125,8 +125,9 @@ namespace MatterHackers.MatterSlice
 		public int LayerIndex { get; set; } = 0;
 
 		private bool ExtrusionHasBeenWriten { get; set; }
+		public static bool CheckForZeroPositions { get; set; } = true;
 
-		public void Close()
+        public void Close()
 		{
 			gcodeFileStream.Close();
 		}
@@ -378,7 +379,10 @@ namespace MatterHackers.MatterSlice
 			double yWritePosition = (double)movePosition_um.Y / 1000.0;
 
 #if DEBUG
-			if (xWritePosition == 0 && yWritePosition == 0)
+			if (GCodeExport.CheckForZeroPositions
+				&& CheckForZeroPositions
+				&& xWritePosition == 0
+				&& yWritePosition == 0)
 			{
 				throw new Exception("We should never go explicitly to 0,0 (mostly true on a cartesian machine).");
 			}

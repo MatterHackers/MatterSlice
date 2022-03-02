@@ -909,6 +909,7 @@ namespace MatterHackers.MatterSlice
 			if (layer.AllOutlines.Count == 0
 				&& config.WipeShieldDistanceFromObject == 0)
 			{
+				layerGcodePlanner.QueueTravel(layerGcodePlanner.LastPosition_um, null, false);
 				// don't do anything on this layer
 				return;
 			}
@@ -1903,7 +1904,10 @@ namespace MatterHackers.MatterSlice
 					}
 					else
 					{
+						var closedLoop = fillConfig.ClosedLoop;
+						fillConfig.ClosedLoop = false;
 						polygonsWereOutput |= queueMethod(polysToWriteAtAirGapHeight, pathFinder, fillConfig, layerIndex);
+						fillConfig.ClosedLoop = closedLoop;
 					}
 				}
 			}

@@ -298,6 +298,7 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void AllMovesRequiringRetractionDoRetraction()
 		{
+			GCodeExport.CheckForZeroPositions = false;
 			AllMovesRequiringRetractionDoRetraction("ab retraction test");
 			AllMovesRequiringRetractionDoRetraction("MH Coin In Shadow");
 
@@ -766,6 +767,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 		public void DualMaterialNoRetraction(int material)
 		{
+			GCodeExport.CheckForZeroPositions = false;
 			string shortCubeName = "CubePoint2High";
 			string shortCube = TestUtilities.GetStlPath(shortCubeName);
 

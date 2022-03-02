@@ -138,7 +138,7 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		private string[] SliceMeshWithProfile(string rootName, out ConfigSettings config, string overrideSTL = null, Action<ConfigSettings> overrideSettings = null)
-        {
+		{
 			string stlFileName = TestUtilities.GetStlPath(string.IsNullOrEmpty(overrideSTL) ? rootName : overrideSTL);
 			string gcodeFileName = TestUtilities.GetTempGCodePath(rootName + ".gcode");
 			// load a model that is correctly manifold
@@ -184,6 +184,7 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void SupportConnectedOptimaly()
 		{
+			GCodeExport.CheckForZeroPositions = false;
 			var loadedGCode = SliceMeshWithProfile("two disks", out _);
 			int layerCount = TestUtilities.LayerCount(loadedGCode);
 
@@ -517,9 +518,9 @@ namespace MatterHackers.MatterSlice.Tests
 						for (int i = 0; i < polygon.Count - 1; i++)
 						{
 							var start = new Vector3(polygon[i]) / 1000.0;
-							var end = new Vector3(polygon[i+1]) / 1000.0;
+							var end = new Vector3(polygon[i + 1]) / 1000.0;
 							var distFromLine = checkCenter.DistanceToSegment(start, end);
-	                        // assert that no line gets closer than 5mm to 100,100 (this is a hole and should be avoided)
+							// assert that no line gets closer than 5mm to 100,100 (this is a hole and should be avoided)
 							Assert.Greater(distFromLine, 5);
 						}
 					}
@@ -561,6 +562,7 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void CheckForCorrectSupportOffsetMonotonic()
 		{
+			GCodeExport.CheckForZeroPositions = false;
 			var loadedGCode = SliceMeshWithProfile("bad_support", out _);
 
 			// We had a bug with this profile that made infill not at the air gap height
@@ -569,13 +571,17 @@ namespace MatterHackers.MatterSlice.Tests
 			var layersTravels = loadedGCode.GetAllTravelPolygons();
 			var layersExtrusions = loadedGCode.GetAllLayersExtrusionPolygons();
 
-			// assert there is a perimeter
-			Assert.IsTrue(layersExtrusions[21].Where(e => e.Count > 3).Any(), "There is a perimeter");
-
 			// assert all extrusion at correct height for last support layer
-			foreach (var poly in layersExtrusions[21])
-            {
-				PointsAtHeight(poly, 5500);
+			for (int i = 0; i < 22; i++)
+			{
+				var layerPolygons = layersExtrusions[i];
+				// assert there is a perimeter
+				Assert.IsTrue(layerPolygons.Where(e => e.Count > 3).Any(), "There is a perimeter");
+
+				for (int j = 0; j < layerPolygons.Count; j++)
+				{
+					PointsAtHeight(layerPolygons[j], 250 + 250 * i);
+				}
 			}
 
 
@@ -601,9 +607,225 @@ namespace MatterHackers.MatterSlice.Tests
 			Assert.Less(polysAboveLayer, 5, "There should be very few z-hop travels");
 		}
 
+		void ValidatePolygons(Polygons polygons, Polygons expectedPolygons)
+		{
+			Assert.AreEqual(expectedPolygons.Count, polygons.Count);
+
+			if (expectedPolygons != null)
+			{
+				for (int i = 0; i < expectedPolygons.Count; i++)
+				{
+					for (int j = 0; j < expectedPolygons[i].Count; j++)
+					{
+						Assert.AreEqual(expectedPolygons[i][j], polygons[i][j]);
+					}
+				}
+			}
+		}
+
+		void Validate(string[] gcode, int expectedPoints, Polygons expectedExtrusions, Polygons expectedTravels)
+		{
+			var movements = TestUtilities.GetLayerMovements(gcode, default(MovementInfo)).ToList();
+			Assert.AreEqual(expectedPoints, movements.Count);
+
+			{
+				var movementInfo = default(MovementInfo);
+				var extrusions = TestUtilities.GetExtrusionPolygonsForLayer(gcode, ref movementInfo);
+				if (expectedExtrusions == null)
+				{
+					Assert.AreEqual(0, extrusions.Count);
+				}
+				else
+				{
+					ValidatePolygons(extrusions, expectedExtrusions);
+				}
+			}
+
+			{
+				var movementInfo = default(MovementInfo); // reset the movement info
+				var travels = TestUtilities.GetTravelPolygonsForLayer(gcode, ref movementInfo);
+
+				if (expectedTravels == null)
+				{
+					Assert.AreEqual(0, travels.Count);
+				}
+				else
+				{
+					ValidatePolygons(travels, expectedTravels);
+				}
+			}
+		}
+
+		[Test]
+		public void LayerPolygonsParsedCorrectly()
+		{
+			// a single extrusion
+			Validate(new string[] { "G1 X0Y0Z0", "G1 X1Y0Z0E1" },
+				2,
+				new Polygons { new Polygon() { new IntPoint(0, 0, 0), new IntPoint(1000, 0, 0) } },
+				null);
+
+			// a single travel
+			Validate(new string[] { "G1 X0Y0Z0", "G1 X1Y0Z0" },
+				2,
+				null,
+				new Polygons { new Polygon() { new IntPoint(0, 0, 0), new IntPoint(1000, 0, 0) } });
+
+			// a travel then an extrusion
+			Validate(new string[] { "G1 X0Y0Z0", "G1 X1Y0Z0", "G1 X2Y0Z0E1" },
+				3,
+				new Polygons { new Polygon() { new IntPoint(1000, 0, 0), new IntPoint(2000, 0, 0) } },
+				new Polygons { new Polygon() { new IntPoint(0, 0, 0), new IntPoint(1000, 0, 0) } });
+
+			// an extrusion then a travel
+			Validate(new string[] { "G1 X0Y0Z0", "G1 X1Y0Z0E1", "G1 X2Y0Z0" },
+				3,
+				new Polygons { new Polygon() { new IntPoint(0, 0, 0), new IntPoint(1000, 0, 0) } },
+				new Polygons { new Polygon() { new IntPoint(1000, 0, 0), new IntPoint(2000, 0, 0) } });
+
+			// a travel then an extrusion then a travel
+			Validate(new string[] { "G1 X0Y0Z0", "G1 X1Y0Z0", "G1 X2Y0Z0E1", "G1 X3Y0Z0" },
+				4,
+				new Polygons
+				{
+					new Polygon() { new IntPoint(1000, 0, 0), new IntPoint(2000, 0, 0) }
+				},
+				new Polygons
+				{
+					new Polygon() { new IntPoint(0, 0, 0), new IntPoint(1000, 0, 0) },
+					new Polygon() { new IntPoint(2000, 0, 0), new IntPoint(3000, 0, 0) },
+				});
+
+			// an extrusion then a travel then and extrusion
+			Validate(new string[] { "G1 X0Y0Z0", "G1 X1Y0Z0E1", "G1 X2Y0Z0", "G1 X3Y0Z0E2" },
+				4,
+				new Polygons
+				{
+					new Polygon() { new IntPoint(0, 0, 0), new IntPoint(1000, 0, 0) },
+					new Polygon() { new IntPoint(2000, 0, 0), new IntPoint(3000, 0, 0) }
+				},
+				new Polygons
+				{
+					new Polygon() { new IntPoint(1000, 0, 0), new IntPoint(2000, 0, 0) }
+				});
+
+			// a single extrusion then a retraction
+			Validate(new string[] { "G1 X0Y0Z0", "G1 X1Y0Z0E1", "G1 X1Y0Z0E2" },
+				3,
+				new Polygons { new Polygon() { new IntPoint(0, 0, 0), new IntPoint(1000, 0, 0) } },
+				null);
+
+			// a retraction than an extrusion then a retraction
+			Validate(new string[] { "G1 X0Y0Z0", "G1 X0Y0Z0E1", "G1 X1Y0Z0E2", "G1 X1Y0Z0E3" },
+				4,
+				new Polygons { new Polygon() { new IntPoint(0, 0, 0), new IntPoint(1000, 0, 0) } },
+				null);
+
+			// a single loop
+			Validate(new string[]
+			{
+				// loop
+				"G1 X10Y0Z0E2", "G1 X5Y10Z0E3", "G1 X0Y0Z0E4",
+			},
+			3,
+			new Polygons
+			{
+				new Polygon() { new IntPoint(0, 0, 0), new IntPoint(10000, 0, 0), new IntPoint(5000, 10000, 0), new IntPoint(0, 0, 0) },
+			},
+			null);
+
+			// a series of loops
+			Validate(new string[]
+			{
+				// first loop
+				"G1 X10Y0Z0E2", "G1 X5Y10Z0E3", "G1 X0Y0Z0E4",
+				// travel
+				"G1 X1Y1Z0",
+				// second loop
+				"G1 X9Y1Z0E5", "G1 X5Y9Z0E6", "G1 X1Y1Z0E7",
+				// travel
+				"G1 X2Y2Z0",
+				// third loop
+				"G1 X8Y2Z0E5", "G1 X5Y8Z0E6", "G1 X2Y2Z0E7",
+			},
+			11,
+			new Polygons
+			{
+				new Polygon() { new IntPoint(0, 0, 0), new IntPoint(10000, 0, 0), new IntPoint(5000, 10000, 0), new IntPoint(0, 0, 0) },
+				new Polygon() { new IntPoint(1000, 1000, 0), new IntPoint(9000, 1000, 0), new IntPoint(5000, 9000, 0), new IntPoint(1000, 1000, 0) },
+				new Polygon() { new IntPoint(2000, 2000, 0), new IntPoint(8000, 2000, 0), new IntPoint(5000, 8000, 0), new IntPoint(2000, 2000, 0) },
+			},
+			new Polygons
+			{
+				new Polygon() { new IntPoint(0, 0, 0), new IntPoint(1000, 1000, 0) },
+				new Polygon() { new IntPoint(1000, 1000, 0), new IntPoint(2000, 2000, 0) }
+			});
+
+			// check that we get the rigt number of extrusion moves
+			{
+				string pathToData = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "three_extrusion_loops.gcode");
+				string[] gcode = File.ReadAllLines(pathToData);
+				var movementInfo = default(MovementInfo);
+				var extrusions = TestUtilities.GetExtrusionPolygonsForLayer(gcode, ref movementInfo);
+
+				Assert.AreEqual(3, extrusions.Count);
+				Assert.IsTrue(SegmentLongerThan(extrusions[0], 20000));
+				Assert.AreEqual(13, extrusions[0].Count);
+				Assert.AreEqual(14, extrusions[1].Count);
+				Assert.AreEqual(14, extrusions[2].Count);
+			}
+		}
+
+		bool SegmentLongerThan(Polygon polygon, double length)
+        {
+			// check that all the segments are shorter than 20mm
+			for (int j = 1; j < polygon.Count; j++)
+			{
+				var segmentLength = (polygon[j] - polygon[j - 1]).Length();
+				if(segmentLength > length)
+                {
+					return true;
+                }
+			}
+
+			return false;
+		}
+
+
+		[Test]
+		public void CheckForCorrectZGapHeight()
+		{
+			var loadedGCode = SliceMeshWithProfile("bad_zgap_layer", out _);
+			var layersExtrusions = loadedGCode.GetAllLayersExtrusionPolygons();
+
+			// layer 4 is the z-gap layer
+			var movementInfo = default(MovementInfo);
+			var layer4 = loadedGCode.GetLayer(4);
+			var zGapLayer = TestUtilities.GetExtrusionPolygonsForLayer(layer4, ref movementInfo, false);
+
+			var lengths = zGapLayer.Where(i => i[0].Z == 1450).Select(i => i.PolygonLength());
+
+			var foundAirGap = false;
+			for(int i=0; i < zGapLayer.Count; i++)
+            {
+				var polygon = zGapLayer[i];
+				
+				// find all polygons that are at the air height
+				if (polygon[0].Z == 1450)
+				{
+					foundAirGap = true;
+
+					Assert.IsFalse(SegmentLongerThan(polygon, 20000));
+				}
+			}
+
+			Assert.IsTrue(foundAirGap, "There must be some bottom air-gap layer polygons");
+		}
+
 		[Test]
 		public void CheckForCorrectSupportOffsetNormal()
 		{
+			GCodeExport.CheckForZeroPositions = false;
 			// turn off monotonic infill
 			var loadedGCode = SliceMeshWithProfile("bad_support", out _, null, (settings) =>
             {
@@ -830,7 +1052,7 @@ namespace MatterHackers.MatterSlice.Tests
 				var longTravels = 0;
 				foreach(var travel in travels)
                 {
-					if (travel.PolygonLength() > 3)
+					if (travel.PolygonLength() > 3000)
                     {
 						longTravels++;
                     }
@@ -972,19 +1194,25 @@ G0 X4.878 Y5.936
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(moveToOriginGCode);
 
+				var first = true;
 				// the radius of the loop we ore planning around
 				// var stlRadius = 127;
 				var layers = loadedGCode.GetAllTravelPolygons();
 				for (int i = 0; i < layers.Count; i++)
 				{
 					var polys = layers[i];
-					// skip the first move (the one getting to the part)
 					foreach (var poly in polys)
 					{
 						foreach (var point in poly)
 						{
-							Assert.Greater(point.X, 1000, $"No travel should have an X less than 1000 (1 mm), was: {point.X}");
-							Assert.Greater(point.Y, 1000, $"No travel should have an Y less than 1000 (1 mm), was: {point.Y}");
+							// skip the first move (the one getting to the part)
+							if (!first)
+							{
+								Assert.Greater(point.X, 1000, $"No travel should have an X less than 1000 (1 mm), was: {point.X}");
+								Assert.Greater(point.Y, 1000, $"No travel should have an Y less than 1000 (1 mm), was: {point.Y}");
+							}
+
+							first = false;
 						}
 					}
 				}
