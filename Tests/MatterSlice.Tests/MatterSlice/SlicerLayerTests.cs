@@ -184,6 +184,7 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void SupportConnectedOptimaly()
 		{
+			GCodeExport.CheckForZeroPositions = false;
 			var loadedGCode = SliceMeshWithProfile("two disks", out _);
 			int layerCount = TestUtilities.LayerCount(loadedGCode);
 
@@ -561,6 +562,7 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void CheckForCorrectSupportOffsetMonotonic()
 		{
+			GCodeExport.CheckForZeroPositions = false;
 			var loadedGCode = SliceMeshWithProfile("bad_support", out _);
 
 			// We had a bug with this profile that made infill not at the air gap height
@@ -569,13 +571,17 @@ namespace MatterHackers.MatterSlice.Tests
 			var layersTravels = loadedGCode.GetAllTravelPolygons();
 			var layersExtrusions = loadedGCode.GetAllLayersExtrusionPolygons();
 
-			// assert there is a perimeter
-			Assert.IsTrue(layersExtrusions[21].Where(e => e.Count > 3).Any(), "There is a perimeter");
-
 			// assert all extrusion at correct height for last support layer
-			foreach (var poly in layersExtrusions[21])
+			for (int i = 0; i < 22; i++)
 			{
-				PointsAtHeight(poly, 5500);
+				var layerPolygons = layersExtrusions[i];
+				// assert there is a perimeter
+				Assert.IsTrue(layerPolygons.Where(e => e.Count > 3).Any(), "There is a perimeter");
+
+				for (int j = 0; j < layerPolygons.Count; j++)
+				{
+					PointsAtHeight(layerPolygons[j], 250 + 250 * i);
+				}
 			}
 
 
@@ -703,6 +709,18 @@ namespace MatterHackers.MatterSlice.Tests
 					new Polygon() { new IntPoint(1000, 0, 0), new IntPoint(2000, 0, 0) }
 				});
 
+			// a single extrusion then a retraction
+			Validate(new string[] { "G1 X0Y0Z0", "G1 X1Y0Z0E1", "G1 X1Y0Z0E2" },
+				3,
+				new Polygons { new Polygon() { new IntPoint(0, 0, 0), new IntPoint(1000, 0, 0) } },
+				null);
+
+			// a retraction than an extrusion then a retraction
+			Validate(new string[] { "G1 X0Y0Z0", "G1 X0Y0Z0E1", "G1 X1Y0Z0E2", "G1 X1Y0Z0E3" },
+				4,
+				new Polygons { new Polygon() { new IntPoint(0, 0, 0), new IntPoint(1000, 0, 0) } },
+				null);
+
 			// a single loop
 			Validate(new string[]
 			{
@@ -752,7 +770,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 				Assert.AreEqual(3, extrusions.Count);
 				Assert.IsTrue(SegmentLongerThan(extrusions[0], 20000));
-				Assert.AreEqual(14, extrusions[0].Count);
+				Assert.AreEqual(13, extrusions[0].Count);
 				Assert.AreEqual(14, extrusions[1].Count);
 				Assert.AreEqual(14, extrusions[2].Count);
 			}
@@ -807,6 +825,7 @@ namespace MatterHackers.MatterSlice.Tests
 		[Test]
 		public void CheckForCorrectSupportOffsetNormal()
 		{
+			GCodeExport.CheckForZeroPositions = false;
 			// turn off monotonic infill
 			var loadedGCode = SliceMeshWithProfile("bad_support", out _, null, (settings) =>
             {
@@ -1033,7 +1052,7 @@ namespace MatterHackers.MatterSlice.Tests
 				var longTravels = 0;
 				foreach(var travel in travels)
                 {
-					if (travel.PolygonLength() > 3)
+					if (travel.PolygonLength() > 3000)
                     {
 						longTravels++;
                     }
@@ -1175,19 +1194,25 @@ G0 X4.878 Y5.936
 
 				string[] loadedGCode = TestUtilities.LoadGCodeFile(moveToOriginGCode);
 
+				var first = true;
 				// the radius of the loop we ore planning around
 				// var stlRadius = 127;
 				var layers = loadedGCode.GetAllTravelPolygons();
 				for (int i = 0; i < layers.Count; i++)
 				{
 					var polys = layers[i];
-					// skip the first move (the one getting to the part)
 					foreach (var poly in polys)
 					{
 						foreach (var point in poly)
 						{
-							Assert.Greater(point.X, 1000, $"No travel should have an X less than 1000 (1 mm), was: {point.X}");
-							Assert.Greater(point.Y, 1000, $"No travel should have an Y less than 1000 (1 mm), was: {point.Y}");
+							// skip the first move (the one getting to the part)
+							if (!first)
+							{
+								Assert.Greater(point.X, 1000, $"No travel should have an X less than 1000 (1 mm), was: {point.X}");
+								Assert.Greater(point.Y, 1000, $"No travel should have an Y less than 1000 (1 mm), was: {point.Y}");
+							}
+
+							first = false;
 						}
 					}
 				}

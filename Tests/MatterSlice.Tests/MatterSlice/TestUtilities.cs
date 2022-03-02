@@ -206,12 +206,12 @@ namespace MatterHackers.MatterSlice.Tests
 			bool extruding = false;
 			int movementCount = 0;
 			double movementAmount = double.MaxValue / 2; // always add a new extrusion the first time
-			MovementInfo lastMovement = movementInfo;
-			MovementInfo lastLastMovement = movementInfo;
+			var lastMovement = movementInfo;
+			var lastLastMovement = movementInfo;
 			foreach (MovementInfo currentMovement in TestUtilities.GetLayerMovements(layerGCode, lastMovement))
 			{
-				bool isRetraction = currentMovement.extrusion != lastMovement.extrusion && (currentMovement.position == lastLastMovement.position);
-				bool isZLift = currentMovement.position.x == lastLastMovement.position.x && currentMovement.position.y == lastLastMovement.position.y && currentMovement.position.z != lastLastMovement.position.z;
+				bool isRetraction = currentMovement.extrusion != lastMovement.extrusion && (currentMovement.position == lastMovement.position);
+				bool isZLift = currentMovement.position.x == lastMovement.position.x && currentMovement.position.y == lastMovement.position.y && currentMovement.position.z != lastMovement.position.z;
 				bool isExtrude = !isRetraction && ! isZLift && currentMovement.extrusion != lastMovement.extrusion;
 
 				if (extruding)
@@ -232,9 +232,9 @@ namespace MatterHackers.MatterSlice.Tests
 						if (foundPolygons[foundPolygons.Count - 1].Count == 1)
 						{
 							foundPolygons[foundPolygons.Count - 1].Add(new IntPoint(
-							(long)(lastLastMovement.position.x * 1000),
-							(long)(lastLastMovement.position.y * 1000),
-							(long)(lastLastMovement.position.z * 1000)));
+							(long)(lastMovement.position.x * 1000),
+							(long)(lastMovement.position.y * 1000),
+							(long)(lastMovement.position.z * 1000)));
 						}
 					}
 				}
