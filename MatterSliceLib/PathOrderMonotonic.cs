@@ -132,7 +132,7 @@ namespace MatterHackers.MatterSlice
             return true;
         }
 
-        private long MinDistSquared(int indexA)
+        private long DistFromLastPositionSquared(int indexA)
 		{
             var a0tob0 = (sorted[indexA][0] - lastPosition).LengthSquared();
             var a0tob1 = (sorted[indexA][0] - lastPosition).LengthSquared();
@@ -163,7 +163,7 @@ namespace MatterHackers.MatterSlice
                 if (!linePrinted[i]
                     && EverythingLeftHasBeenPrinted(i))
                 {
-                    var minDistSquared = MinDistSquared(i);
+                    var minDistSquared = DistFromLastPositionSquared(i);
                     if (minDistSquared < bestDistSquared)
                     {
                         // keep track of closest to our segment
@@ -253,6 +253,7 @@ namespace MatterHackers.MatterSlice
                 linePrinted = new List<bool>(count);
 
                 var (_, perpendicularIntPoint) = polygons.GetPerpendicular();
+                perpendicular = new Vector2(perpendicularIntPoint.X, perpendicularIntPoint.Y).GetNormal();
 
                 // find the point minimum point in this direction
                 var minDistance = double.MaxValue;
