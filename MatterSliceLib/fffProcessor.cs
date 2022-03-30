@@ -26,6 +26,7 @@ using System.Linq;
 using MatterHackers.Agg;
 using MatterHackers.Pathfinding;
 using MatterHackers.QuadTree;
+using MatterHackers.VectorMath;
 using MSClipperLib;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;
 using Polygons = System.Collections.Generic.List<System.Collections.Generic.List<MSClipperLib.IntPoint>>;
@@ -1302,12 +1303,44 @@ namespace MatterHackers.MatterSlice
 					layerGcodePlanner.QueueFanCommand(fanSpeedAtLayerStart, sparseFillConfig);
 				}
 
+				bool FillInSameDirection(Polygons existing, Polygons adding)
+                {
+					if (adding.Count > 0)
+					{
+						if (existing.Count > 0)
+						{
+							// check if they go in the same direction
+							var ep_um = existing.GetPerpendicular().perpendicular;
+							var ep = new Vector2(ep_um.X, ep_um.Y).GetNormal();
+							var ap_um = adding.GetPerpendicular().perpendicular;
+							var ap = new Vector2(ap_um.X, ap_um.Y).GetNormal();
+
+							if (Math.Abs(ep.Dot(ap)) < .1)
+                            {
+								return false;
+                            }
+						}
+
+						// there is only adding polygons, so we can add them
+						return true;
+					}
+
+					// there are no polygons to add so don't
+					return false;
+				}
+
 				// Put all of these segments into a list that can be queued together and still preserve their individual config settings.
 				// This makes the total amount of travel while printing infill much less.
 				if (topFillConfig.Speed == solidFillConfig.Speed)
 				{
-					solidFillPolygons.AddRange(topFillPolygons);
-					topFillPolygons.Clear();
+					// check that the lines go in the same direction before combining
+					if (!config.MonotonicSolidInfill
+						|| FillInSameDirection(solidFillPolygons, topFillPolygons))
+					{
+						// they are good to combine
+						solidFillPolygons.AddRange(topFillPolygons);
+						topFillPolygons.Clear();
+					}
 				}
 
 				if (layerIndex > 0)
@@ -1319,8 +1352,15 @@ namespace MatterHackers.MatterSlice
 						{
 							if (bottomFillPolygons[i].PolygonLength() < config.TreatAsBridge_um)
 							{
-								solidFillPolygons.Add(bottomFillPolygons[i]);
-								bottomFillPolygons.RemoveAt(i);
+								if (config.MonotonicSolidInfill)
+								{
+									// check that the lines go in the same direction before combining
+								}
+								else // they are good to combine
+								{
+									solidFillPolygons.Add(bottomFillPolygons[i]);
+									bottomFillPolygons.RemoveAt(i);
+								}
 							}
 							else
 							{

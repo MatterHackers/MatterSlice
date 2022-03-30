@@ -53,7 +53,7 @@ namespace MatterHackers.MatterSlice
 		/// </summary>
 		/// <param name="polygons"></param>
 		/// <returns>A tuple of the Normal and Perpendicular</returns>
-		public static (IntPoint, IntPoint) GetPerpendicular(this Polygons polygons)
+		public static (IntPoint normal, IntPoint perpendicular) GetPerpendicular(this Polygons polygons)
 		{
 			// find the longest segment (or at least a long segment)
 			var maxLengthSquared = 0.0;
