@@ -397,8 +397,6 @@ namespace MatterHackers.MatterSlice
 			var hadPolygons = false;
 			var polygons = polygonsIn.MergeColinearLineSegments();
 
-			var xxx = polygons.Where(p => p.PolygonLength() > 20000);
-
 			var monotonicSorter = new MonotonicSorter(polygons, LastPosition_um, pathConfig.LineWidth_um);
 
 			foreach (var polygon in monotonicSorter.Ordered)

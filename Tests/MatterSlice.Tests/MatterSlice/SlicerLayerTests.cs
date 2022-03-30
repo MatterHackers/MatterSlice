@@ -1062,6 +1062,32 @@ namespace MatterHackers.MatterSlice.Tests
 		}
 
 		[Test]
+		public void MonotonicHasMinimalTravels2()
+		{
+			// when monotonic is on for this part there were too many travels
+			var loadedGCode = SliceMeshWithProfile("bad_monotonic2", out _);
+
+			var layers = loadedGCode.GetAllLayers();
+
+			// validate that all layers have limited travels
+			for (int i = 0; i < layers.Count - 1; i++)
+			{
+				// this will check for overlapping segments
+				var movementInfo = new MovementInfo();
+				var travels = TestUtilities.GetTravelPolygonsForLayer(layers[i], ref movementInfo);
+				var longTravels = 0;
+				foreach (var travel in travels)
+				{
+					if (travel.PolygonLength() > 10000)
+					{
+						longTravels++;
+					}
+				}
+				Assert.LessOrEqual(longTravels, 20, "There should be less than 10 travels on every level");
+			}
+		}
+
+		[Test]
 		public void ParseLayerPolygonsCorrectly()
 		{
 			var gcode = @"; Layer Change GCode
