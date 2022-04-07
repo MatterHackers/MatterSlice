@@ -104,8 +104,8 @@ namespace MatterHackers.MatterSlice
         public double FuzzyThickness { get; set; } = 0.2;
         public long FuzzyThickness_um => (long)(FuzzyThickness * 1000);
 
-        public double FuzzyPointDist { get; set; } = 0.5;
-        public long FuzzyPointDist_um => (long)(FuzzyPointDist * 1000);
+        public double FuzzyFrequency { get; set; } = 0.5;
+        public long FuzzyFrequency_um => (long)(FuzzyFrequency * 1000);
 
 		[SettingDescription("Lets you adjust how much material to extrude.")]
 		public double ExtrusionMultiplier { get; set; }
