@@ -301,7 +301,6 @@ namespace MatterHackers.QuadTree
 		{
 			Intersection bestIntersection = Intersection.None;
 
-			IntPoint segmentDelta = end - start;
 			var edgeIterator = new PolygonEdgeIterator(polygon, 1, edgeQuadTree);
 			foreach (var i in edgeIterator.GetTouching(new Quad(start, end)))
 			{

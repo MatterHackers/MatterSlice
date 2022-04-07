@@ -272,14 +272,13 @@ namespace MatterHackers.MatterSlice
 			// string islandsString = islandsToRestOn.WriteToString();
 		}
 
-		public void CreateIslandData()
+        public void CreateIslandData()
 		{
 			// Build Islands from outlines
-			this.Islands = (from outline in this.AllOutlines.ProcessIntoSeparateIslands()
-							select new LayerIsland(outline)).ToList();
+			this.Islands = this.AllOutlines.ProcessIntoSeparateIslands().Select(o => new LayerIsland(o)).ToList();
 		}
 
-		public void GenerateInsets(ConfigSettings config, long extrusionWidth_um, long outerExtrusionWidth_um, int insetCount)
+		public void GenerateInsets(ConfigSettings config, Polygons fuzzyBounds, long extrusionWidth_um, long outerExtrusionWidth_um, int insetCount)
 		{
 			var expandThinWalls = config.ExpandThinWalls && !config.ContinuousSpiralOuterPerimeter;
 			var avoidCrossingPerimeters = config.AvoidCrossingPerimeters;
@@ -287,7 +286,7 @@ namespace MatterHackers.MatterSlice
 			SliceLayer layer = this;
 			for (int islandIndex = 0; islandIndex < layer.Islands.Count; islandIndex++)
 			{
-				layer.Islands[islandIndex].GenerateInsets(config, extrusionWidth_um, outerExtrusionWidth_um, insetCount, avoidCrossingPerimeters);
+				layer.Islands[islandIndex].GenerateInsets(config, fuzzyBounds, extrusionWidth_um, outerExtrusionWidth_um, insetCount, avoidCrossingPerimeters);
 			}
 
 			if (!expandThinWalls)

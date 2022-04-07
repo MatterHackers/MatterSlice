@@ -62,10 +62,16 @@ namespace MatterHackers.MatterSlice
 			return BooleanProcessing.Process(allPartsLayers, booleanOperations);
 		}
 
-		public static void RemoveExtruderIntersections(List<ExtruderLayers> extruders)
+		public static void RemoveExtruderIntersections(List<ExtruderLayers> extruders, ConfigSettings config)
 		{
+			var start = extruders.Count - 1;
+			if (config.BooleanOperations.Contains("F"))
+            {
+				start--;
+            }
+
 			// Go trough all the extruders, and remove the previous extruders outlines from our own outline, so we never have overlapped areas.
-			for (int extruderIndex = extruders.Count - 1; extruderIndex >= 0; extruderIndex--)
+			for (int extruderIndex = start; extruderIndex >= 0; extruderIndex--)
 			{
 				for (int otherExtruderIndex = extruderIndex - 1; otherExtruderIndex >= 0; otherExtruderIndex--)
 				{
@@ -123,11 +129,9 @@ namespace MatterHackers.MatterSlice
 						parseIndex++;
 						break;
 
-					case 'S':
-						parseIndex++;
-						break;
-
-					case 'W':
+					case 'S': // support
+					case 'W': // wipe tower
+					case 'F': // fuzzy boundary
 						parseIndex++;
 						break;
 

@@ -23,7 +23,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using MatterHackers.Agg;
 using MatterHackers.Pathfinding;
 using MSClipperLib;
@@ -32,7 +31,7 @@ using Polygons = System.Collections.Generic.List<System.Collections.Generic.List
 
 namespace MatterHackers.MatterSlice
 {
-	public class LayerDataStorage
+    public class LayerDataStorage
 	{
 		private int lastLayerWithChange = -1;
 		private bool calculatedLastLayer = false;
@@ -52,6 +51,8 @@ namespace MatterHackers.MatterSlice
 		public IntPoint WipeCenter_um { get; private set; }
 
 		public List<Polygons> WipeTower { get; private set; } = new List<Polygons>();
+
+		public List<Polygons> FuzzyLayerBounds { get; private set; } = new List<Polygons>();
 
 		public Polygons WipeLayer(int layerIndex)
 		{
@@ -169,13 +170,21 @@ namespace MatterHackers.MatterSlice
 								insetCount += 1;
 							}
 
+							Polygons fuzzyBounds = null;
+							if (config.NumberOfBrimLayers > 0
+								&& FuzzyLayerBounds != null
+								&& FuzzyLayerBounds.Count > layerIndex)
+							{
+								fuzzyBounds = FuzzyLayerBounds[layerIndex];
+							}
+
 							if (layerIndex == 0)
 							{
-								layer.GenerateInsets(config, config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, insetCount);
+								layer.GenerateInsets(config, fuzzyBounds, config.FirstLayerExtrusionWidth_um, config.FirstLayerExtrusionWidth_um, insetCount);
 							}
 							else
 							{
-								layer.GenerateInsets(config, config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, insetCount);
+								layer.GenerateInsets(config, fuzzyBounds, config.ExtrusionWidth_um, config.OutsideExtrusionWidth_um, insetCount);
 							}
 						}
 					}
@@ -364,6 +373,24 @@ namespace MatterHackers.MatterSlice
 			WipeCenter_um = new IntPoint(
 				wipeTowerBounds.minX + (wipeTowerBounds.maxX - wipeTowerBounds.minX) / 2,
 				wipeTowerBounds.minY + (wipeTowerBounds.maxY - wipeTowerBounds.minY) / 2);
+		}
+
+		public void CreateFuzzyBoundaries(ConfigSettings config, ExtruderLayers fuzzyLayers)
+		{
+			if (fuzzyLayers != null
+				&& fuzzyLayers.Layers.Count > 0
+				&& fuzzyLayers.Layers[0].AllOutlines.Count > 0)
+			{
+				for (int i = 0; i < fuzzyLayers.Layers.Count; i++)
+				{
+					var layer = fuzzyLayers.Layers[i];
+
+					if (layer.AllOutlines.PolygonLength() > 0)
+					{
+						this.FuzzyLayerBounds.Add(layer.AllOutlines);
+					}
+				}
+			}
 		}
 
 		public void DumpLayerparts(string filename)

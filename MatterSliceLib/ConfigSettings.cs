@@ -101,6 +101,12 @@ namespace MatterHackers.MatterSlice
 		[SettingDescription("Detect and output walls than are less than the nozzle diameter. Output width will be nozzle diameter.")]
 		public bool ExpandThinWalls { get; set; } = false;
 
+        public double FuzzyThickness { get; set; } = 0.2;
+        public long FuzzyThickness_um => (long)(FuzzyThickness * 1000);
+
+        public double FuzzyPointDist { get; set; } = 0.5;
+        public long FuzzyPointDist_um => (long)(FuzzyPointDist * 1000);
+
 		[SettingDescription("Lets you adjust how much material to extrude.")]
 		public double ExtrusionMultiplier { get; set; }
 
