@@ -259,26 +259,36 @@ namespace MatterHackers.MatterSlice
 			timeKeeper.Restart();
 
 			LogOutput.Log("Removing extruder intersections");
-			MultiExtruders.RemoveExtruderIntersections(layerDataStorage.Extruders);
+			MultiExtruders.RemoveExtruderIntersections(layerDataStorage.Extruders, config);
 			LogOutput.Log("Extruder intersections removed: {0:0.0}s\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			timeKeeper.Restart();
 
+			// Is the last extruder data actually fuzzy boundary definitions?
+			bool fuzzyBoundary = config.BooleanOperations.Contains("F");
+			if (fuzzyBoundary)
+			{
+				var fuzzyLayers = layerDataStorage.Extruders[layerDataStorage.Extruders.Count - 1];
+				// Last extruder was support material, remove it from the list.
+				layerDataStorage.Extruders.RemoveAt(layerDataStorage.Extruders.Count - 1);
+				layerDataStorage.CreateFuzzyBoundaries(config, fuzzyLayers);
+			}
+
 			// Is the last extruder data actually wipe tower definitions?
 			bool userGeneratedWipeTower = config.BooleanOperations.Contains("W");
-			ExtruderLayers wipeTowerOutlines = null;
+			ExtruderLayers wipeTowerLayers = null;
 			if (userGeneratedWipeTower)
 			{
-				wipeTowerOutlines = layerDataStorage.Extruders[layerDataStorage.Extruders.Count - 1];
+				wipeTowerLayers = layerDataStorage.Extruders[layerDataStorage.Extruders.Count - 1];
 				// Last extruder was support material, remove it from the list.
 				layerDataStorage.Extruders.RemoveAt(layerDataStorage.Extruders.Count - 1);
 			}
 
 			// Is the last extruder data actually support definitions?
 			bool userGeneratedSupport = config.BooleanOperations.Contains("S");
-			ExtruderLayers supportOutlines = null;
+			ExtruderLayers supportLayers = null;
 			if (userGeneratedSupport)
 			{
-				supportOutlines = layerDataStorage.Extruders[layerDataStorage.Extruders.Count - 1];
+				supportLayers = layerDataStorage.Extruders[layerDataStorage.Extruders.Count - 1];
 				// Last extruder was support material, remove it from the list.
 				layerDataStorage.Extruders.RemoveAt(layerDataStorage.Extruders.Count - 1);
 			}
@@ -288,12 +298,12 @@ namespace MatterHackers.MatterSlice
 			LayerPart.dumpLayerparts(layerDataStorage, "output.html");
 #endif
 
-			if ((config.GenerateSupport || supportOutlines != null)
+			if ((config.GenerateSupport || supportLayers != null)
 				&& !config.ContinuousSpiralOuterPerimeter)
 			{
 				LogOutput.Log("Generating supports\n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 				timeKeeper.Restart();
-				layerDataStorage.Support = new SupportLayers(config, layerDataStorage.Extruders, supportOutlines);
+				layerDataStorage.Support = new SupportLayers(config, layerDataStorage.Extruders, supportLayers);
 				LogOutput.Log("Generated supports: {0:0.0}s \n".FormatWith(timeKeeper.Elapsed.TotalSeconds));
 			}
 
@@ -318,7 +328,7 @@ namespace MatterHackers.MatterSlice
 
 			timeKeeper.Restart();
 
-			layerDataStorage.CreateWipeTower(config, wipeTowerOutlines);
+			layerDataStorage.CreateWipeTower(config, wipeTowerLayers);
 
 			int extrudersUsedInLayer0 = this.ExtrudersUsedInLayer0(config, layerDataStorage).Count();
 

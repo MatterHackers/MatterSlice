@@ -83,7 +83,124 @@ namespace MatterHackers.MatterSlice
 
 		public Polygons TopPaths { get; set; } = new Polygons();
 
-		public void GenerateInsets(ConfigSettings config, long extrusionWidth_um, long outerExtrusionWidth_um, int insetCount, bool avoidCrossingPerimeters)
+		private static Random rand = new Random();
+
+		private Polygons MakeFuzzy(Polygons polygons, Polygons fuzzyBounds, ConfigSettings config)
+		{
+			if (polygons.Count < 1
+				|| fuzzyBounds?.Count > 0 != true)
+			{
+				return polygons;
+			}
+
+			var fuzziness = config.FuzzyThickness_um;
+			var fuzzyFrequency = config.FuzzyFrequency_um;
+			// min 3/4 max 5/4
+			var minDist = fuzzyFrequency * 3 / 4;
+			var variance = fuzzyFrequency / 2;
+
+			var fuzzyPolygons = new Polygons();
+			foreach (var polygon in polygons)
+			{
+				var fuzzyPolygon = new Polygon();
+				fuzzyPolygons.Add(fuzzyPolygon);
+
+				// get every line segment including the last
+				for (int pointIndex = 0; pointIndex < polygon.Count; pointIndex++)
+				{
+					var nextIndex = (pointIndex + 1) % polygon.Count;
+					// create the line segment
+					var start = polygon[pointIndex];
+					var line = new Polygon() { start, polygon[nextIndex] };
+					var outsideLines = fuzzyBounds.CreateLineDifference(new Polygons() { line });
+					if (outsideLines.Count == 1
+						&& ((outsideLines[0][0] == line[0]
+						&& outsideLines[0][1] == line[1])
+						|| (outsideLines[0][0] == line[1]
+						&& outsideLines[0][1] == line[0])))
+					{
+						// it is not in the area needing fuzzing, add it directly
+						fuzzyPolygon.Add(line[0]);
+						fuzzyPolygon.Add(line[1]);
+					}
+					else
+					{
+						Polygon SortPoints(Polygon poly)
+						{
+							if ((poly[0] - start).LengthSquared() > (poly[1] - start).LengthSquared())
+							{
+								var hold = poly[0];
+								poly[0] = poly[1];
+								poly[1] = hold;
+							}
+
+							return poly;
+						}
+
+						var allLines = new List<(Polygon poly, bool outside)>();
+						foreach (var outside in outsideLines)
+						{
+							allLines.Add((SortPoints(outside), true));
+						}
+						var insideLines = fuzzyBounds.CreateLineIntersections(new Polygons() { line });
+						foreach (var inside in insideLines)
+						{
+							allLines.Add((SortPoints(inside), false));
+						}
+
+
+						// sort the segments along the line direction
+						allLines.Sort((a, b) =>
+						{
+							var distToA = (a.poly[0] - start).LengthSquared();
+							var distToB = (b.poly[0] - start).LengthSquared();
+							return distToA.CompareTo(distToB);
+						});
+
+						// iterate over all the sorted segments
+						foreach (var (poly, outside) in allLines)
+						{
+							if (outside)
+							{
+								// just add it
+								fuzzyPolygon.Add(poly[0]);
+								fuzzyPolygon.Add(poly[1]);
+							}
+							else
+							{
+								// if it does not need fuzzing add it to the output
+								// else fuzz the segments and add all the fuzzed pieces
+
+								// generate points in between p0 and p1
+								var dist_left_over = (minDist / 4) + rand.Next() % (minDist / 4); // the distance to be traversed on the line before making the first new point
+								var p0 = poly[0];
+								var p1 = poly[1];
+
+								var p0p1 = p1 - p0;
+								var p0p1_size = p0p1.Length();
+								var p0pa_dist = dist_left_over;
+								if (p0pa_dist >= p0p1_size)
+								{
+									fuzzyPolygon.Add(p1 - (p0p1 / 2));
+								}
+
+								for (; p0pa_dist < p0p1_size; p0pa_dist += minDist + rand.Next() % variance)
+								{
+									var r = rand.Next() % (fuzziness * 2) - fuzziness;
+									var perp_to_p0p1 = p0p1.GetPerpendicularLeftXY();
+									var fuzz = perp_to_p0p1.Normal(r);
+									fuzzyPolygon.Add(p0 + p0p1.Normal(p0pa_dist) + fuzz);
+								}
+							}
+						}
+					}
+				}
+			}
+
+			return fuzzyPolygons;
+		}
+
+		public void GenerateInsets(ConfigSettings config, Polygons fuzzyBounds, long extrusionWidth_um, long outerExtrusionWidth_um, int insetCount, bool avoidCrossingPerimeters)
 		{
 			LayerIsland part = this;
 			part.BoundingBox.Calculate(part.IslandOutline);
@@ -111,6 +228,13 @@ namespace MatterHackers.MatterSlice
 					currentOffset += offsetBy;
 
 					Polygons currentInset = part.IslandOutline.Offset(-currentOffset);
+
+					// make the outer perimeter fuzzy if needed
+					if (i == 0)
+					{
+						currentInset = MakeFuzzy(currentInset, fuzzyBounds, config);
+					}
+                    
 					// make sure our polygon data is reasonable
 					if (config.MergeOverlappingLines)
 					{
