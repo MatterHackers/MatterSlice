@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using MatterHackers.Agg;
 using MatterHackers.Pathfinding;
 using MSClipperLib;
@@ -171,7 +172,7 @@ namespace MatterHackers.MatterSlice
 							}
 
 							Polygons fuzzyBounds = null;
-							if (config.NumberOfBrimLayers > 0
+							if ((config.NumberOfBrimLayers == 0 || layerIndex > 0)
 								&& FuzzyLayerBounds != null
 								&& FuzzyLayerBounds.Count > layerIndex)
 							{
@@ -379,7 +380,7 @@ namespace MatterHackers.MatterSlice
 		{
 			if (fuzzyLayers != null
 				&& fuzzyLayers.Layers.Count > 0
-				&& fuzzyLayers.Layers[0].AllOutlines.Count > 0)
+				&& fuzzyLayers.Layers.Any(l => l.AllOutlines.Count > 0))
 			{
 				for (int i = 0; i < fuzzyLayers.Layers.Count; i++)
 				{
