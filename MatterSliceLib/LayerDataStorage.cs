@@ -172,7 +172,7 @@ namespace MatterHackers.MatterSlice
 							}
 
 							Polygons fuzzyBounds = null;
-							if ((config.NumberOfBrimLayers == 0 || layerIndex > 0)
+							if (layerIndex > 0
 								&& FuzzyLayerBounds != null
 								&& FuzzyLayerBounds.Count > layerIndex)
 							{
