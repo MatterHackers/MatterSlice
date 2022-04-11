@@ -384,12 +384,7 @@ namespace MatterHackers.MatterSlice
 			{
 				for (int i = 0; i < fuzzyLayers.Layers.Count; i++)
 				{
-					var layer = fuzzyLayers.Layers[i];
-
-					if (layer.AllOutlines.PolygonLength() > 0)
-					{
-						this.FuzzyLayerBounds.Add(layer.AllOutlines);
-					}
+					this.FuzzyLayerBounds.Add(fuzzyLayers.Layers[i].AllOutlines);
 				}
 			}
 		}
