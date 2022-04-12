@@ -302,7 +302,7 @@ namespace MatterHackers.MatterSlice.Tests
 			AllMovesRequiringRetractionDoRetraction("ab retraction test");
 			AllMovesRequiringRetractionDoRetraction("MH Coin In Shadow");
 
-			string settingsIniFile = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "MH Coin Settings.ini");
+			string settingsIniFile = Path.Combine(TestUtilities.MatterSliceBaseDirectory, "Tests", "TestData", "MH Coin Settings.ini");
 			AllMovesRequiringRetractionDoRetraction("MH Coin In Shadow", settingsIniFile);
 		}
 
