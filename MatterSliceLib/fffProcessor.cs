@@ -1067,7 +1067,8 @@ namespace MatterHackers.MatterSlice
 											layerIndex,
 											(poly) => !insetsThatHaveBeenAdded.Contains(poly));
 
-										// check if we should prime before printing the outside perimeter (user 2 to be close but not touching)
+										// check if we should prime before printing the outside perimeter (use 2 to be close but not touching)
+										// TODO: remove this when we have close priming working
 										var primingLoop = 2;
 										if (!printInsideOut && insetToolPaths.Count > primingLoop)
                                         {

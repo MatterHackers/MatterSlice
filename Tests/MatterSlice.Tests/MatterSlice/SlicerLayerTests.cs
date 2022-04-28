@@ -358,6 +358,27 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
+		[Test, Ignore("WorkIProgress")]
+		public void PerimetersOutsideToIn()
+		{
+			var loadedGCode = SliceMeshWithProfile("perimeters_outside_in", out _);
+			var extrusionLayers = TestUtilities.GetAllLayersExtrusionPolygons(loadedGCode);
+			for (int layerIndex = 0; layerIndex < extrusionLayers.Count; layerIndex++)
+			{
+				var extrusions = extrusionLayers[layerIndex];
+				// three should be 3 loops per layer
+				Assert.AreEqual(3, extrusions.Count);
+
+				// make sure every perimeter in inside the previous one (printing outside in)
+				for (int perimeterIndex = 1; perimeterIndex < 3; perimeterIndex++)
+				{
+					var distanceToPrev = extrusions[perimeterIndex - 1][0].Length();
+					var distanceToCurrent = extrusions[perimeterIndex][0].Length();
+					Assert.Greater(distanceToPrev, distanceToCurrent, $"Perimeter {perimeterIndex} shoud be insed perimeter {perimeterIndex-1}, loops need to be in order");
+				}
+			}
+		}
+
 		[Test]
 		public void FirstLayerIsFirstLayerSpeed()
 		{
