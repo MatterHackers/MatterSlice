@@ -358,7 +358,7 @@ namespace MatterHackers.MatterSlice.Tests
 			}
 		}
 
-		[Test]
+		[Test, Ignore("WorkIProgress")]
 		public void PerimetersOutsideToIn()
 		{
 			var loadedGCode = SliceMeshWithProfile("perimeters_outside_in", out _);
