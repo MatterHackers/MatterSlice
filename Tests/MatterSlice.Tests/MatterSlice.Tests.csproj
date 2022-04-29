@@ -21,10 +21,7 @@
     <None Include="MatterSlice\OutputTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\MatterControl.csproj" />
-    <ProjectReference Include="..\..\..\..\MatterControl.Winforms\MatterControl.Winforms.csproj" />
     <ProjectReference Include="..\..\..\agg-sharp\agg\Agg.csproj" />
-    <ProjectReference Include="..\..\..\agg-sharp\DataConverters2D\DataConverters2D.csproj" />
     <ProjectReference Include="..\..\..\agg-sharp\VectorMath\VectorMath.csproj" />
     <ProjectReference Include="..\..\MatterSliceLib\MatterSliceLib.csproj" />
     <ProjectReference Include="..\..\MSClipperLib\MSClipperLib.csproj" />
