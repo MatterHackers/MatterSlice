@@ -497,6 +497,7 @@ namespace MatterHackers.MatterSlice
 					case "SUPPORT_TYPE":
 					case "OUTPUT_TYPE":
 					case "INFILL_TYPE":
+					case "SEAM_PLACEMENT":
 						// all the enums can be output by this function
 						lines.Add("{0}={1} # {2}{3}".FormatWith(name, value, GetEnumHelpText(property.PropertyType, property.PropertyType.Name), fieldDescription));
 						break;
