@@ -544,7 +544,7 @@ namespace MatterHackers.MatterSlice
 					}
 
 					// start out with the fan off for this layer (the minimum layer fan speed will be applied later as the gcode is output)
-					layerPlanner.QueueFanCommand(0, sparseFillConfig);
+					layerPlanner.QueueFanCommand(0, sparseFillConfig, true);
 
 					// hold the current layer path finder
 					PathFinder layerPathFinder = null;
@@ -999,8 +999,6 @@ namespace MatterHackers.MatterSlice
 					bridgePolygons,
 					bridgeAreas);
 
-				int fanSpeedAtLayerStart = gcodeExport.LastWrittenFanSpeed;
-
 				if (config.GetNumberOfPerimeters() > 0)
 				{
 					if (config.ContinuousSpiralOuterPerimeter
@@ -1012,7 +1010,7 @@ namespace MatterHackers.MatterSlice
 					if (bridgePolygons.Count > 0)
 					{
 						// turn it on for bridge (or keep it on)
-						layerGcodePlanner.QueueFanCommand(config.BridgeFanSpeedPercent, bridgeConfig);
+						layerGcodePlanner.QueueFanCommand(config.BridgeFanSpeedPercent, bridgeConfig, false);
 					}
 
 					var insetToolPaths = island.InsetToolPaths;
@@ -1311,7 +1309,7 @@ namespace MatterHackers.MatterSlice
 						SupportWriteType.UnsupportedAreas,
 						layerGcodePlanner.QueuePolygonsByOptimizer);
 					// Set it back to what it was
-					layerGcodePlanner.QueueFanCommand(fanSpeedAtLayerStart, sparseFillConfig);
+					layerGcodePlanner.RestoreNormalFanSpeed(sparseFillConfig);
 				}
 
 				bool FillInSameDirection(Polygons existing, Polygons adding)
@@ -1443,11 +1441,15 @@ namespace MatterHackers.MatterSlice
 
 				if (firstTopFillPolygons.Count > 0)
 				{
-					// turn it on for bridge (or keep it on)
-					layerGcodePlanner.QueueFanCommand(Math.Max(fanSpeedAtLayerStart, config.BridgeFanSpeedPercent), bridgeConfig);
+					if (config.BridgeOverInfill)
+					{
+						// turn it on for bridge (or keep it on)
+						var topLayerBridgeSpeed = Math.Max(layerGcodePlanner.LastNormalFanPercent, config.BridgeFanSpeedPercent);
+						layerGcodePlanner.QueueFanCommand(topLayerBridgeSpeed, bridgeConfig, false);
+					}
 					layerGcodePlanner.QueuePolygonsByOptimizer(firstTopFillPolygons, island.PathFinder, firstTopFillConfig, layerIndex);
 					// Set it back to what it was
-					layerGcodePlanner.QueueFanCommand(fanSpeedAtLayerStart, sparseFillConfig);
+					layerGcodePlanner.RestoreNormalFanSpeed(sparseFillConfig);
 				}
 
 				if (config.MonotonicSolidInfill)
