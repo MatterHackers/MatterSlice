@@ -362,13 +362,25 @@ namespace MatterHackers.MatterSlice
 		// go back to every queued fan speed and adjust it
 		private readonly List<GCodePath> queuedFanSpeeds = new List<GCodePath>();
 
-		public void QueueFanCommand(int fanSpeedPercent, GCodePathConfig config)
+		public int LastNormalFanPercent { get; private set; }
+
+		public void QueueFanCommand(int fanSpeedPercent, GCodePathConfig config, bool normalPrinting)
 		{
 			var path = GetNewPath(config);
 			path.FanPercent = fanSpeedPercent;
 
+			if (normalPrinting)
+			{
+				LastNormalFanPercent = fanSpeedPercent;
+			}
+
 			queuedFanSpeeds.Add(path);
 		}
+
+		public void RestoreNormalFanSpeed(GCodePathConfig config)
+        {
+			QueueFanCommand(LastNormalFanPercent, config, true);
+        }
 
 		Random wipeTowerRandom = new Random();
 		public void QueueWipeTowerPolygons(Polygons polygons, GCodePathConfig config)
