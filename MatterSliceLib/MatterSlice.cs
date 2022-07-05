@@ -82,7 +82,7 @@ namespace MatterHackers.MatterSlice
 
 			if (!Canceled)
 			{
-				using (new QuickTimer2("DoProcessing"))
+				using (new QuickTimer2Report("DoProcessing"))
 				{
 					processor.DoProcessing();
 				}
@@ -207,7 +207,7 @@ namespace MatterHackers.MatterSlice
 				}
 				else
 				{
-					using (new QuickTimer2("LoadStlFile"))
+					using (new QuickTimer2Report("LoadStlFile"))
 					{
 						processor.LoadStlFile(args[argn]);
 					}
