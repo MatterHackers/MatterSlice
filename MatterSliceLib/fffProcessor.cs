@@ -441,7 +441,7 @@ namespace MatterHackers.MatterSlice
 			supportNormalConfig = new GCodePathConfig("supportNormalConfig", "SUPPORT", config.DefaultAcceleration);
 			supportInterfaceConfig = new GCodePathConfig("supportInterfaceConfig", "SUPPORT-INTERFACE", config.DefaultAcceleration);
 
-			using (new QuickTimer2("All Layers"))
+			using (new QuickTimer2Report("All Layers"))
 			{
 				for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 				{
@@ -566,7 +566,7 @@ namespace MatterHackers.MatterSlice
 
 						ChangeExtruderIfRequired(layerDataStorage, layerPathFinder, layerIndex, layerPlanner, extruderIndex, false);
 
-						using (new QuickTimer2("CreateRequiredInsets"))
+						using (new QuickTimer2Report("CreateRequiredInsets"))
 						{
 							// create the insets required by this extruder layer
 							layerDataStorage.CreateRequiredInsets(config, layerIndex, extruderIndex);
@@ -653,7 +653,7 @@ namespace MatterHackers.MatterSlice
 					}
 
 					layerPlanner.FinalizeLayerFanSpeeds(layerIndex);
-					using (new QuickTimer2("WriteQueuedGCode"))
+					using (new QuickTimer2Report("WriteQueuedGCode"))
 					{
 						layerPlanner.WriteQueuedGCode(currentLayerThickness_um);
 					}
@@ -674,7 +674,7 @@ namespace MatterHackers.MatterSlice
 			// Store the object height for when we are printing multiple objects, as we need to clear every one of them when moving to the next position.
 			maxObjectHeight = Math.Max(maxObjectHeight, layerDataStorage.modelSize.Z);
 
-			QuickTimer2.Report();
+			QuickTimer2Report.Report();
 		}
 
 		private void ChangeExtruderIfRequired(LayerDataStorage layerDataStorage,
