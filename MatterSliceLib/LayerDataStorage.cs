@@ -154,7 +154,7 @@ namespace MatterHackers.MatterSlice
 					previousLayer.FreeIslandMemory();
 				}
 
-				using (new QuickTimer2("GenerateInsets"))
+				using (new QuickTimer2Report("GenerateInsets"))
 				{
 					for (int layerIndex = startIndex; layerIndex < endIndex; layerIndex++)
 					{
@@ -191,7 +191,7 @@ namespace MatterHackers.MatterSlice
 					}
 				}
 
-				using (new QuickTimer2("GenerateTopAndBottoms"))
+				using (new QuickTimer2Report("GenerateTopAndBottoms"))
 				{
 					// Only generate bottom and top layers and infill for the first X layers when spiralize is chosen.
 					if (!config.ContinuousSpiralOuterPerimeter || (int)outputLayerIndex < config.NumberOfBottomLayers)

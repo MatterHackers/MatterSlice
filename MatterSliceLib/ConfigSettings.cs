@@ -301,11 +301,25 @@ namespace MatterHackers.MatterSlice
 
 		public long RaftSurfaceExtrusionWidth_um => ExtrusionWidth_um * 400 / 400;
 
-		public int RaftSurfaceLayers => 2;
+		public int RaftSurfaceLayers { get; set; } = 2;
 
 		public long RaftSurfaceLineSpacing_um => ExtrusionWidth_um * 400 / 400;
 
-		public int RaftSurfacePrintSpeed => RaftPrintSpeed;
+		private int _raftSurfacePrintSpeed = 0;
+		public int RaftSurfacePrintSpeed
+		{
+			get
+			{
+                if (_raftSurfacePrintSpeed == 0)
+                {
+					return RaftPrintSpeed;
+                }
+
+                return _raftSurfacePrintSpeed;
+            }
+            
+            set => _raftSurfacePrintSpeed = value;
+		}
 
 		public long RaftSurfaceThickness_um => ExtrusionWidth_um * 250 / 400;
 
@@ -421,6 +435,18 @@ namespace MatterHackers.MatterSlice
 
 		public long TreatAsBridge_um => ExtrusionWidth_um * 30;
 
+		private bool IsSettable(PropertyInfo property)
+		{
+			string name = property.Name;
+			MethodInfo[] mi = property.GetAccessors();
+			foreach (MethodInfo info in mi)
+			{
+				if (info.Name.Contains("set_"))
+					return true;
+			}
+			return false;
+		}       
+		
 		// .4 mm for .4 mm nozzle
 		public void DumpSettings(string fileName)
 		{
@@ -439,6 +465,12 @@ namespace MatterHackers.MatterSlice
 
 				string name = property.Name;
 				object value = property.GetValue(this);
+
+				// JGS 5/23/22 Changed to remove settings that cannot be read in later
+				if (IsSettable(property) == false)
+				{
+					continue;
+				}
 
 				switch (property.PropertyType.Name)
 				{
@@ -549,6 +581,13 @@ namespace MatterHackers.MatterSlice
 			{
 				// Drop quotes from all other settings
 				valueToSetTo = valueToSetTo.Replace("\"", "").Trim();
+
+				// JGS 5/23/22 Added to strip comments from values
+				// Drop all comments for the setting value
+				if (valueToSetTo.Contains("# ") == true)
+				{
+					valueToSetTo = valueToSetTo.Substring(0, valueToSetTo.IndexOf('#'));
+				}
 			}
 
 			foreach (PropertyInfo property in allProperties)
@@ -590,6 +629,17 @@ namespace MatterHackers.MatterSlice
 								property.SetValue(this, new DMatrix3x3(valueToSetTo));
 							}
 
+							break;
+
+						// JGS 5/23/22 - Added to satisy the ModelMatrix setting value
+						case "Matrix4X4":
+							{
+								string[] setVars = valueToSetTo.Split(',');
+								double[] setVals = new double[setVars.Length];
+								for (int i = 0; i < setVars.Length; i++)
+									Double.TryParse(setVars[i], out setVals[i]);
+								property.SetValue(this, new Matrix4X4(setVals));
+							}
 							break;
 
 						case "DoublePoint":
