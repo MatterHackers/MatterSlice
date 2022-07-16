@@ -111,7 +111,7 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				// load a model that is correctly manifold
 				var config = new ConfigSettings();
-				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "merg_winding_cw.ini");
+				string settingsPath = Path.Combine(TestUtilities.MatterSliceBaseDirectory, "Tests", "TestData", "merg_winding_cw.ini");
 				config.ReadSettings(settingsPath);
 				var processor = new FffProcessor(config);
 				processor.SetTargetFile(badWindingGCode);
@@ -143,7 +143,7 @@ namespace MatterHackers.MatterSlice.Tests
 			string gcodeFileName = TestUtilities.GetTempGCodePath(rootName + ".gcode");
 			// load a model that is correctly manifold
 			config = new ConfigSettings();
-			string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", rootName + ".ini");
+			string settingsPath = Path.Combine(TestUtilities.MatterSliceBaseDirectory, "Tests", "TestData", rootName + ".ini");
 			config.ReadSettings(settingsPath);
 			overrideSettings?.Invoke(config);
 
@@ -444,7 +444,7 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				// load a model that is correctly manifold
 				var config = new ConfigSettings();
-				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "thin_ring.ini");
+				string settingsPath = Path.Combine(TestUtilities.MatterSliceBaseDirectory, "Tests", "TestData", "thin_ring.ini");
 				config.ReadSettings(settingsPath);
 				var processor = new FffProcessor(config);
 				processor.SetTargetFile(infillGCode);
@@ -482,7 +482,7 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				// load a model that is correctly manifold
 				var config = new ConfigSettings();
-				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "no_retractions_config.ini");
+				string settingsPath = Path.Combine(TestUtilities.MatterSliceBaseDirectory, "Tests", "TestData", "no_retractions_config.ini");
 				config.ReadSettings(settingsPath);
 				var processor = new FffProcessor(config);
 				processor.SetTargetFile(infillGCode);
@@ -517,7 +517,7 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				// load a model that is correctly manifold
 				var config = new ConfigSettings();
-				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "Avoid Crossing With Support.ini");
+				string settingsPath = Path.Combine(TestUtilities.MatterSliceBaseDirectory, "Tests", "TestData", "Avoid Crossing With Support.ini");
 				config.ReadSettings(settingsPath);
 				var processor = new FffProcessor(config);
 				processor.SetTargetFile(infillGCode);
@@ -784,7 +784,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 			// check that we get the rigt number of extrusion moves
 			{
-				string pathToData = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "three_extrusion_loops.gcode");
+				string pathToData = Path.Combine(TestUtilities.MatterSliceBaseDirectory, "Tests", "TestData", "three_extrusion_loops.gcode");
 				string[] gcode = File.ReadAllLines(pathToData);
 				var movementInfo = default(MovementInfo);
 				var extrusions = TestUtilities.GetExtrusionPolygonsForLayer(gcode, ref movementInfo);
@@ -898,7 +898,7 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				// load a model that is (or was) having many erroneous travels
 				var config = new ConfigSettings();
-				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "validate_perimeters_and_top_layer.ini");
+				string settingsPath = Path.Combine(TestUtilities.MatterSliceBaseDirectory, "Tests", "TestData", "validate_perimeters_and_top_layer.ini");
 				config.ReadSettings(settingsPath);
 				var processor = new FffProcessor(config);
 				processor.SetTargetFile(validatePerimetersGCode);
@@ -965,7 +965,7 @@ namespace MatterHackers.MatterSlice.Tests
 			{
 				// load a model that is (or was) having many erroneous travels
 				var config = new ConfigSettings();
-				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "double_perimeter_error.ini");
+				string settingsPath = Path.Combine(TestUtilities.MatterSliceBaseDirectory, "Tests", "TestData", "double_perimeter_error.ini");
 				config.ReadSettings(settingsPath);
 				var processor = new FffProcessor(config);
 				processor.SetTargetFile(validatePerimetersGCode);
@@ -999,7 +999,7 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					// load a model that is (or was) having the wrong number of perimeters on part of the layers
 					var config = new ConfigSettings();
-					string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "bad_perimeter_count.ini");
+					string settingsPath = Path.Combine(TestUtilities.MatterSliceBaseDirectory, "Tests", "TestData", "bad_perimeter_count.ini");
 					config.ReadSettings(settingsPath);
 					Assert.IsTrue(config.MergeOverlappingLines);
 					config.MergeOverlappingLines = false;
@@ -1031,7 +1031,7 @@ namespace MatterHackers.MatterSlice.Tests
 				{
 					// load a model that is (or was) having the wrong number of perimeters on part of the layers
 					var config = new ConfigSettings();
-					string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "bad_perimeter_count.ini");
+					string settingsPath = Path.Combine(TestUtilities.MatterSliceBaseDirectory, "Tests", "TestData", "bad_perimeter_count.ini");
 					config.ReadSettings(settingsPath);
 					Assert.IsTrue(config.MergeOverlappingLines);
 					var processor = new FffProcessor(config);
@@ -1175,7 +1175,7 @@ G0 X4.878 Y5.936
 			{
 				// load a model that is (or was) having many erroneous travels
 				var config = new ConfigSettings();
-				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "perimeter_0_close_to_1.ini");
+				string settingsPath = Path.Combine(TestUtilities.MatterSliceBaseDirectory, "Tests", "TestData", "perimeter_0_close_to_1.ini");
 				config.ReadSettings(settingsPath);
 				var processor = new FffProcessor(config);
 				processor.SetTargetFile(validateGCode);
@@ -1230,7 +1230,7 @@ G0 X4.878 Y5.936
 			{
 				// load a model that is (or was) having many erroneous travels
 				var config = new ConfigSettings();
-				string settingsPath = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "move_to_origin_settings.ini");
+				string settingsPath = Path.Combine(TestUtilities.MatterSliceBaseDirectory, "Tests", "TestData", "move_to_origin_settings.ini");
 				config.ReadSettings(settingsPath);
 				var processor = new FffProcessor(config);
 				processor.SetTargetFile(moveToOriginGCode);
@@ -1459,7 +1459,7 @@ G0 X4.878 Y5.936
 
 			// lots from an actual file
 			{
-				string pathToData = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "CubeSegmentsX2.txt");
+				string pathToData = Path.Combine(TestUtilities.MatterSliceBaseDirectory, "Tests", "TestData", "CubeSegmentsX2.txt");
 
 				string[] segmentsToCheck = File.ReadAllLines(pathToData);
 				LayersHaveCorrectPolygonCount(segmentsToCheck);
@@ -1529,7 +1529,7 @@ G0 X4.878 Y5.936
 		{
 			// lots from an actual file
 			{
-				string pathToData = TestContext.CurrentContext.ResolveProjectPath(4, "Tests", "TestData", "TwoRingSegmentsTestData.txt");
+				string pathToData = Path.Combine(TestUtilities.MatterSliceBaseDirectory, "Tests", "TestData", "TwoRingSegmentsTestData.txt");
 
 				string[] segmentsToCheck = File.ReadAllLines(pathToData);
 				LayersHaveCorrectPolygonCount(segmentsToCheck, 2);

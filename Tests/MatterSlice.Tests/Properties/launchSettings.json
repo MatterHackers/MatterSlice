@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "MatterSlice.Tests": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

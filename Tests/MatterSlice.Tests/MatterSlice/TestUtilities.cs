@@ -72,11 +72,13 @@ namespace MatterHackers.MatterSlice.Tests
 
 	public static class TestUtilities
 	{
-		private static string matterSliceBaseDirectory = TestContext.CurrentContext.ResolveProjectPath(4);
+		public static string MatterSliceBaseDirectory = ResolveProjectPath(new string[] { "..", ".." });
 
 		private static Regex numberRegex = new Regex(@"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?");
 
-		private static string tempGCodePath = Path.Combine(matterSliceBaseDirectory, "GCode_Test");
+		private static string tempGCodePath = Path.Combine(MatterSliceBaseDirectory, "GCode_Test");
+
+		
 
 		public static bool CheckForRaft(string[] gcodefile)
 		{
@@ -187,7 +189,7 @@ namespace MatterHackers.MatterSlice.Tests
 
 		public static string GetControlGCodePath(string testName)
 		{
-			string directory = Path.Combine(matterSliceBaseDirectory, "GCode_Control");
+			string directory = Path.Combine(MatterSliceBaseDirectory, "GCode_Control");
 			Directory.CreateDirectory(directory);
 
 			return Path.Combine(directory, testName + ".gcode");
@@ -414,12 +416,12 @@ namespace MatterHackers.MatterSlice.Tests
 
 		public static string GetStlPath(string file)
 		{
-			return Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "SampleSTLs", file), "stl");
+			return Path.ChangeExtension(Path.Combine(MatterSliceBaseDirectory, "SampleSTLs", file), "stl");
 		}
 
 		public static string GetTempGCodePath(string file)
 		{
-			string fullPath = Path.ChangeExtension(Path.Combine(matterSliceBaseDirectory, "Tests", "TestData", "Temp", file), "gcode");
+			string fullPath = Path.ChangeExtension(Path.Combine(MatterSliceBaseDirectory, "Tests", "TestData", "Temp", file), "gcode");
 			// Make sure the output directory exists
 			Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
 			return fullPath;
@@ -650,19 +652,9 @@ namespace MatterHackers.MatterSlice.Tests
 			return layerPolygons;
 		}
 
-		public static string ResolveProjectPath(this TestContext context, int stepsToProjectRoot, params string[] relativePathSteps)
+		private static string ResolveProjectPath(string[] relativePathPieces, [System.Runtime.CompilerServices.CallerFilePath] string sourceFilePath = null)
 		{
-			string assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-			var allPathSteps = new List<string> { assemblyPath };
-			allPathSteps.AddRange(Enumerable.Repeat("..", stepsToProjectRoot));
-
-			if (relativePathSteps.Any())
-			{
-				allPathSteps.AddRange(relativePathSteps);
-			}
-
-			return Path.GetFullPath(Path.Combine(allPathSteps.ToArray()));
+			return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(sourceFilePath), "..", Path.Combine(relativePathPieces)));
 		}
 
 		public static string[] SliceAndGetGCode(string stlName, Action<ConfigSettings> action = null)
