@@ -157,7 +157,7 @@ namespace MatterHackers.MatterSlice.Tests
 		{
 			var graphicsAndTransform = ImageWithPolygonOutline(polygon, width);
 			render?.Invoke(graphicsAndTransform.graphics, graphicsAndTransform.transform);
-			ImageIO.SaveImageData(fileName, graphicsAndTransform.graphics.DestImage);
+			// ImageIO.SaveImageData(fileName, graphicsAndTransform.graphics.DestImage);
 		}
 
 		[Test]
