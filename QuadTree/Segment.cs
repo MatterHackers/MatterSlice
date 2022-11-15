@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2014, Lars Brubaker
+Copyright (c) 2022, Lars Brubaker
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -190,7 +190,7 @@ namespace MatterHackers.QuadTree
 			IntPoint direction = (end2D - start2D);
 			long length = direction.Length();
 			long lengthSquared = length * length;
-			IntPoint rightDirection = direction.GetPerpendicularRightXY();
+			IntPoint rightDirection = direction.GetPerpendicularRight();
 			long maxDistanceNormalized = touchingEnumerator.OverlapAmount * length;
 
 			// for every vertex
