@@ -31,280 +31,282 @@ using System.Collections.Generic;
 
 namespace MSClipperLib
 {
-	using MatterHackers.VectorMath;
-	using System;
-	using System.Linq;
-	using Polygon = List<IntPoint>;
+    using System.Linq;
+    using Polygon = List<IntPoint>;
 
-	public enum SEAM_PLACEMENT
-	{
-		FURTHEST_BACK,
-		CENTERED_IN_BACK,
-		ALWAYS_CENTERED_IN_BACK,
-		RANDOMIZED,
-		FASTEST
-	}
+    public enum SEAM_PLACEMENT
+    {
+        FURTHEST_BACK,
 
-	public static class CLPolygonExtensions
-	{
-		public static int FindClosestIndex(this Polygon polygon, IntPoint position)
-		{
-			var bestIndex = -1;
+        CENTERED_IN_BACK,
 
-			long bestDist = long.MaxValue;
-			for (int pointIndex = 0; pointIndex < polygon.Count; pointIndex++)
-			{
-				var point = polygon[pointIndex];
-				long length = (point - position).Length();
-				if (length < bestDist)
-				{
-					bestDist = length;
-					bestIndex = pointIndex;
-				}
-			}
+        ALWAYS_CENTERED_IN_BACK,
 
-			return bestIndex;
-		}
+        RANDOMIZED,
 
-		public static Polygon CreateFromString(string polygonString, double scale = 1)
-		{
-			var output = new Polygon();
-			string[] intPointData = polygonString.Split(',');
-			int increment = 2;
-			if (polygonString.Contains("width"))
-			{
-				increment = 4;
-			}
-			for (int i = 0; i < intPointData.Length - 1; i += increment)
-			{
-				string elementX = intPointData[i];
-				string elementY = intPointData[i + 1];
-				var nextIntPoint = new IntPoint(double.Parse(elementX.Substring(elementX.IndexOf(':') + 1)) * scale,
-					double.Parse(elementY.Substring(3)) * scale);
-				output.Add(nextIntPoint);
-			}
+        FASTEST
+    }
 
-			return output;
-		}
+    public static class CLPolygonExtensions
+    {
+        public static Polygon CleanClosedPolygon(this Polygon polygon, double distance = 1.415)
+        {
+            if (polygon.Count == 0)
+            {
+                return new Polygon();
+            }
 
-		public static double DegreesToRadians(double degrees)
-		{
-			const double degToRad = System.Math.PI / 180.0f;
-			return degrees * degToRad;
-		}
+            var result = new Polygon(polygon);
 
-		public static IntRect GetBounds(this Polygon inPolygon)
-		{
-			if (inPolygon.Count == 0)
-			{
-				return new IntRect(0, 0, 0, 0);
-			}
+            var distSqrd = distance * distance;
 
-			var result = new IntRect
-			{
-				minX = inPolygon[0].X
-			};
-			result.maxX = result.minX;
-			result.minY = inPolygon[0].Y;
-			result.maxY = result.minY;
-			for (int pointIndex = 1; pointIndex < inPolygon.Count; pointIndex++)
-			{
-				if (inPolygon[pointIndex].X < result.minX)
-				{
-					result.minX = inPolygon[pointIndex].X;
-				}
-				else if (inPolygon[pointIndex].X > result.maxX)
-				{
-					result.maxX = inPolygon[pointIndex].X;
-				}
+            var removeIndices = new HashSet<int>();
 
-				if (inPolygon[pointIndex].Y > result.maxY)
-				{
-					result.maxY = inPolygon[pointIndex].Y;
-				}
-				else if (inPolygon[pointIndex].Y < result.minY)
-				{
-					result.minY = inPolygon[pointIndex].Y;
-				}
-			}
+            // loop over all points starting at the front
+            for (int startIndex = 0; startIndex < result.Count - 2; startIndex++)
+            {
+                var startPosition = result[startIndex];
 
-			return result;
-		}
+                // accumulate all the collinear points from this point
+                for (int endIndex = startIndex + 2; endIndex < result.Count; endIndex++)
+                {
+                    var endPosition = result[endIndex];
 
-		public static Polygon CleanClosedPolygon(this Polygon polygon, double distance = 1.415)
-		{
-			if (polygon.Count == 0)
-			{
-				return new Polygon();
-			}
+                    bool allInbetweenIsCollinear = true;
 
-			var result = new Polygon(polygon);
+                    // check that every point between start and end is collinear
+                    for (int testIndex = startIndex + 1; testIndex < endIndex; testIndex++)
+                    {
+                        var testPosition = result[testIndex];
+                        if (!Clipper.SlopesNearCollinear(startPosition, testPosition, endPosition, distSqrd))
+                        {
+                            allInbetweenIsCollinear = false;
+                            break;
+                        }
+                    }
 
-			var distSqrd = distance * distance;
+                    if (allInbetweenIsCollinear)
+                    {
+                        for (int testIndex = startIndex + 1; testIndex < endIndex; testIndex++)
+                        {
+                            removeIndices.Add(testIndex);
+                        }
+                    }
+                    else
+                    {
+                        startIndex = endIndex - 2;
+                        // move on to next start
+                        break;
+                    }
+                }
+            }
 
-			var removeIndices = new HashSet<int>();
+            var removeList = removeIndices.ToList();
+            removeList.Sort();
+            for (int i = removeList.Count - 1; i >= 0; i--)
+            {
+                result.RemoveAt(removeList[i]);
+            }
 
-			// loop over all points starting at the front
-			for (int startIndex = 0; startIndex < result.Count - 2; startIndex++)
-			{
-				var startPosition = result[startIndex];
+            return result;
+        }
 
-				// accumulate all the collinear points from this point
-				for (int endIndex = startIndex+2; endIndex < result.Count; endIndex++)
-				{
-					var endPosition = result[endIndex];
+        public static Polygon CreateFromString(string polygonString, double scale = 1)
+        {
+            var output = new Polygon();
+            string[] intPointData = polygonString.Split(',');
+            int increment = 2;
+            if (polygonString.Contains("width"))
+            {
+                increment = 4;
+            }
+            for (int i = 0; i < intPointData.Length - 1; i += increment)
+            {
+                string elementX = intPointData[i];
+                string elementY = intPointData[i + 1];
+                var nextIntPoint = new IntPoint(double.Parse(elementX.Substring(elementX.IndexOf(':') + 1)) * scale,
+                    double.Parse(elementY.Substring(3)) * scale);
+                output.Add(nextIntPoint);
+            }
 
-					bool allInbetweenIsCollinear = true;
+            return output;
+        }
 
-					// check that every point between start and end is collinear
-					for (int testIndex = startIndex+1; testIndex < endIndex; testIndex++)
-					{
-						var testPosition = result[testIndex];
-						if (!Clipper.SlopesNearCollinear(startPosition, testPosition, endPosition, distSqrd))
-						{
-							allInbetweenIsCollinear = false;
-							break;
-						}
-					}
+        public static double DegreesToRadians(double degrees)
+        {
+            const double degToRad = System.Math.PI / 180.0f;
+            return degrees * degToRad;
+        }
 
-					if (allInbetweenIsCollinear)
-					{
-						for (int testIndex = startIndex + 1; testIndex < endIndex; testIndex++)
-						{
-							removeIndices.Add(testIndex);
-						}
-					}
-					else
-					{
-						startIndex = endIndex - 2;
-						// move on to next start
-						break;
-					}
-				}
-			}
+        public static int FindClosestIndex(this Polygon polygon, IntPoint position)
+        {
+            var bestIndex = -1;
 
-			var removeList = removeIndices.ToList();
-			removeList.Sort();
-			for(int i= removeList.Count-1; i>=0; i--)
-			{
-				result.RemoveAt(removeList[i]);
-			}
+            long bestDist = long.MaxValue;
+            for (int pointIndex = 0; pointIndex < polygon.Count; pointIndex++)
+            {
+                var point = polygon[pointIndex];
+                long length = (point - position).Length();
+                if (length < bestDist)
+                {
+                    bestDist = length;
+                    bestIndex = pointIndex;
+                }
+            }
 
-			return result;
-		}
+            return bestIndex;
+        }
 
-		public static IntPoint GetPositionAllongPath(this Polygon polygon, double ratioAlongPath, bool isClosed = true)
-		{
-			var position = new IntPoint();
-			var totalLength = polygon.PolygonLength(isClosed);
-			var distanceToGoal = (long)(totalLength * ratioAlongPath + .5);
-			long length = 0;
-			if (polygon.Count > 1)
-			{
-				position = polygon[0];
-				IntPoint currentPoint = polygon[0];
+        public static IntRect GetBounds(this Polygon inPolygon)
+        {
+            if (inPolygon.Count == 0)
+            {
+                return new IntRect(0, 0, 0, 0);
+            }
 
-				int polygonCount = polygon.Count;
-				for (int i = 1; i < (isClosed ? polygonCount + 1 : polygonCount); i++)
-				{
-					IntPoint nextPoint = polygon[i % polygonCount];
-					var segmentLength = (nextPoint - currentPoint).Length();
-					if(length + segmentLength > distanceToGoal)
-					{
-						// return the distance along this segment
-						var distanceAlongThisSegment = distanceToGoal - length;
-						var delteFromCurrent = (nextPoint - currentPoint) * distanceAlongThisSegment / segmentLength;
-						return currentPoint + delteFromCurrent;
-					}
-					position = nextPoint;
-					length += segmentLength;
-					currentPoint = nextPoint;
-				}
-			}
+            var result = new IntRect
+            {
+                minX = inPolygon[0].X
+            };
+            result.maxX = result.minX;
+            result.minY = inPolygon[0].Y;
+            result.maxY = result.minY;
+            for (int pointIndex = 1; pointIndex < inPolygon.Count; pointIndex++)
+            {
+                if (inPolygon[pointIndex].X < result.minX)
+                {
+                    result.minX = inPolygon[pointIndex].X;
+                }
+                else if (inPolygon[pointIndex].X > result.maxX)
+                {
+                    result.maxX = inPolygon[pointIndex].X;
+                }
 
-			return position;
-		}
+                if (inPolygon[pointIndex].Y > result.maxY)
+                {
+                    result.maxY = inPolygon[pointIndex].Y;
+                }
+                else if (inPolygon[pointIndex].Y < result.minY)
+                {
+                    result.minY = inPolygon[pointIndex].Y;
+                }
+            }
 
-		public static long PolygonLength(this Polygon polygon, bool isClosed = true)
-		{
-			long length = 0;
-			if (polygon.Count > 1)
-			{
-				IntPoint previousPoint = polygon[0];
-				if (isClosed)
-				{
-					previousPoint = polygon[polygon.Count - 1];
-				}
-				for (int i = isClosed ? 0 : 1; i < polygon.Count; i++)
-				{
-					IntPoint currentPoint = polygon[i];
-					length += (previousPoint - currentPoint).Length();
-					previousPoint = currentPoint;
-				}
-			}
+            return result;
+        }
 
-			return length;
-		}
+        public static IntPoint GetPositionAllongPath(this Polygon polygon, double ratioAlongPath, bool isClosed = true)
+        {
+            var position = new IntPoint();
+            var totalLength = polygon.PolygonLength(isClosed);
+            var distanceToGoal = (long)(totalLength * ratioAlongPath + .5);
+            long length = 0;
+            if (polygon.Count > 1)
+            {
+                position = polygon[0];
+                IntPoint currentPoint = polygon[0];
 
-		public static Polygon ReversePolygon(this Polygon polygonToReverse)
-		{
-			var reversed = new Polygon(polygonToReverse);
+                int polygonCount = polygon.Count;
+                for (int i = 1; i < (isClosed ? polygonCount + 1 : polygonCount); i++)
+                {
+                    IntPoint nextPoint = polygon[i % polygonCount];
+                    var segmentLength = (nextPoint - currentPoint).Length();
+                    if (length + segmentLength > distanceToGoal)
+                    {
+                        // return the distance along this segment
+                        var distanceAlongThisSegment = distanceToGoal - length;
+                        var delteFromCurrent = (nextPoint - currentPoint) * distanceAlongThisSegment / segmentLength;
+                        return currentPoint + delteFromCurrent;
+                    }
+                    position = nextPoint;
+                    length += segmentLength;
+                    currentPoint = nextPoint;
+                }
+            }
 
-			// reverse it
-			reversed.Reverse();
+            return position;
+        }
 
-			var count = reversed.Count;
-			var holdWidth = reversed[0].Width;
-			var holdSpeed = reversed[0].Speed;
+        public static long PolygonLength(this Polygon polygon, bool isClosed = true)
+        {
+            long length = 0;
+            if (polygon.Count > 1)
+            {
+                IntPoint previousPoint = polygon[0];
+                if (isClosed)
+                {
+                    previousPoint = polygon[polygon.Count - 1];
+                }
+                for (int i = isClosed ? 0 : 1; i < polygon.Count; i++)
+                {
+                    IntPoint currentPoint = polygon[i];
+                    length += (previousPoint - currentPoint).Length();
+                    previousPoint = currentPoint;
+                }
+            }
 
-			// and fix any speed or width problem (they are expressed on the segment start and need to be moved)
-			for (int i = 0; i < count - 1; i++)
-			{
-				reversed[i] = new IntPoint(reversed[i])
-				{
-					Width = reversed[i + 1].Width,
-					Speed = reversed[i + 1].Speed,
-				};
-			}
+            return length;
+        }
 
-			reversed[count - 1] = new IntPoint(reversed[count - 1])
-			{
-				Width = holdWidth,
-				Speed = holdSpeed,
-			};
+        public static double PolygonLengthSquared(this Polygon polygon, bool isClosed = true)
+        {
+            double length = 0;
+            if (polygon.Count > 1)
+            {
+                IntPoint previousPoint = polygon[0];
+                if (isClosed)
+                {
+                    previousPoint = polygon[polygon.Count - 1];
+                }
+                for (int i = isClosed ? 0 : 1; i < polygon.Count; i++)
+                {
+                    IntPoint currentPoint = polygon[i];
+                    length += (previousPoint - currentPoint).LengthSquared();
+                    previousPoint = currentPoint;
+                }
+            }
 
-			return reversed;
-		}
+            return length;
+        }
 
-		public static double PolygonLengthSquared(this Polygon polygon, bool isClosed = true)
-		{
-			double length = 0;
-			if (polygon.Count > 1)
-			{
-				IntPoint previousPoint = polygon[0];
-				if (isClosed)
-				{
-					previousPoint = polygon[polygon.Count - 1];
-				}
-				for (int i = isClosed ? 0 : 1; i < polygon.Count; i++)
-				{
-					IntPoint currentPoint = polygon[i];
-					length += (previousPoint - currentPoint).LengthSquared();
-					previousPoint = currentPoint;
-				}
-			}
+        public static Polygon ReversePolygon(this Polygon polygonToReverse)
+        {
+            var reversed = new Polygon(polygonToReverse);
 
-			return length;
-		}
+            // reverse it
+            reversed.Reverse();
 
-		public static string WriteToString(this Polygon polygon)
-		{
-			string total = "";
-			foreach (IntPoint point in polygon)
-			{
-				total += point.ToString() + ",";
-			}
-			return total;
-		}
-	}
+            var count = reversed.Count;
+            var holdWidth = reversed[0].Width;
+            var holdSpeed = reversed[0].Speed;
+
+            // and fix any speed or width problem (they are expressed on the segment start and need to be moved)
+            for (int i = 0; i < count - 1; i++)
+            {
+                reversed[i] = new IntPoint(reversed[i])
+                {
+                    Width = reversed[i + 1].Width,
+                    Speed = reversed[i + 1].Speed,
+                };
+            }
+
+            reversed[count - 1] = new IntPoint(reversed[count - 1])
+            {
+                Width = holdWidth,
+                Speed = holdSpeed,
+            };
+
+            return reversed;
+        }
+
+        public static string WriteToString(this Polygon polygon)
+        {
+            string total = "";
+            foreach (IntPoint point in polygon)
+            {
+                total += point.ToString() + ",";
+            }
+            return total;
+        }
+    }
 }
