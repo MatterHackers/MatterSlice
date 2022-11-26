@@ -23,7 +23,7 @@
 using System;
 using MSClipperLib;
 
-namespace MatterHackers.QuadTree
+namespace MatterHackers.MatterSlice.QuadTree
 {
 	/// <summary>
 	/// Used by the QuadTree to represent a rectangular area.

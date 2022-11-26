@@ -35,7 +35,7 @@ using MatterHackers.Agg.Platform;
 using MatterHackers.Agg.Transform;
 using MatterHackers.Agg.VertexSource;
 using MatterHackers.Pathfinding;
-using MatterHackers.QuadTree;
+using MatterHackers.MatterSlice.QuadTree;
 using MSClipperLib;
 using NUnit.Framework;
 
