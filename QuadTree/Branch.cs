@@ -24,7 +24,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MatterHackers.QuadTree
+namespace MatterHackers.MatterSlice.QuadTree
 {
 	public class Branch<T>
 	{

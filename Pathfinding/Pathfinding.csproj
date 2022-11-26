@@ -28,7 +28,7 @@
     <ProjectReference Include="..\..\agg-sharp\ImageProcessing\ImageProcessing.csproj" />
     <ProjectReference Include="..\..\agg-sharp\VectorMath\VectorMath.csproj" />
     <ProjectReference Include="..\MSClipperLib\MSClipperLib.csproj" />
-    <ProjectReference Include="..\QuadTree\QuadTree.csproj" />
+    <ProjectReference Include="..\QuadTree\QuadTreeMS.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -23,7 +23,7 @@
 using System.Collections.Generic;
 using MSClipperLib;
 
-namespace MatterHackers.QuadTree
+namespace MatterHackers.MatterSlice.QuadTree
 {
 	public interface INearestNeighbours<T>
 	{

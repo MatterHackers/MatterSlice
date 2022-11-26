@@ -28,7 +28,7 @@ either expressed or implied, of the FreeBSD Project.
 */
 
 using System.Collections.Generic;
-using MatterHackers.QuadTree;
+using MatterHackers.MatterSlice.QuadTree;
 using MSClipperLib;
 using NUnit.Framework;
 

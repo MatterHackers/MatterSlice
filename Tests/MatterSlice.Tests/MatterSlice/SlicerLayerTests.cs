@@ -32,7 +32,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using MatterHackers.QuadTree;
+using MatterHackers.MatterSlice.QuadTree;
 using MSClipperLib;
 using NUnit.Framework;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;

@@ -30,7 +30,7 @@ either expressed or implied, of the FreeBSD Project.
 using System.Collections.Generic;
 using MSClipperLib;
 
-namespace MatterHackers.QuadTree
+namespace MatterHackers.MatterSlice.QuadTree
 {
 	public class CloseSegmentsIterator
 	{

@@ -25,7 +25,7 @@ using System.Diagnostics;
 using System.Linq;
 using MatterHackers.Agg;
 using MatterHackers.Pathfinding;
-using MatterHackers.QuadTree;
+using MatterHackers.MatterSlice.QuadTree;
 using MatterHackers.VectorMath;
 using MSClipperLib;
 using Polygon = System.Collections.Generic.List<MSClipperLib.IntPoint>;

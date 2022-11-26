@@ -23,7 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using MatterHackers.QuadTree;
+using MatterHackers.MatterSlice.QuadTree;
 using MatterHackers.VectorMath;
 using MSClipperLib;
 using static System.Math;
