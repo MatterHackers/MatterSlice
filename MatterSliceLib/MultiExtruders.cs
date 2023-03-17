@@ -97,7 +97,14 @@ namespace MatterHackers.MatterSlice
 			int totalLayers = loadedMeshes[0].Layers.Count;
 			Stack<int> meshesToProcess = new Stack<int>();
 			var meshIndexsToRemove = new List<int>();
-			while (parseIndex < booleanOperations.Length)
+
+            Polygons[] accumulatedUnionPolygons = new Polygons[totalLayers];
+			for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
+			{
+				accumulatedUnionPolygons[layerIndex] = new Polygons();
+			}
+
+            while (parseIndex < booleanOperations.Length)
 			{
 				BooleanType typeToDo = BooleanType.None;
 
@@ -123,9 +130,23 @@ namespace MatterHackers.MatterSlice
 						break;
 
 					case 'E':
-						parseIndex++;
-						extruders.Add(loadedMeshes[meshesToProcess.Pop()]);
-						meshesToProcess.Clear();
+						{
+							parseIndex++;
+                            var meshAIndex = meshesToProcess.Pop();
+                            if (accumulatedUnionPolygons.Where(i => i.Count > 0).Any())
+                            {
+                                for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
+                                {
+                                    var layerA = loadedMeshes[meshAIndex].Layers[layerIndex];
+
+                                    // finish the union
+                                    var allLayerB = accumulatedUnionPolygons[layerIndex];
+                                    DoLayerBooleans(layerA, allLayerB, BooleanType.Union);
+                                }
+                            }
+                            extruders.Add(loadedMeshes[meshAIndex]);
+							meshesToProcess.Clear();
+						}
 						break;
 
 					case 'S': // support
@@ -157,17 +178,47 @@ namespace MatterHackers.MatterSlice
 
 					for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
 					{
-						SliceLayer layerA = loadedMeshes[meshAIndex].Layers[layerIndex];
-						SliceLayer layerB = loadedMeshes[meshBIndex].Layers[layerIndex];
-						DoLayerBooleans(layerA, layerB, typeToDo);
-					}
+						if (typeToDo == BooleanType.Union)
+						{
+							accumulatedUnionPolygons[layerIndex].AddRange(loadedMeshes[meshBIndex].Layers[layerIndex].AllOutlines);
+						}
+						else
+						{
+                            var layerA = loadedMeshes[meshAIndex].Layers[layerIndex];
+                            
+							if (accumulatedUnionPolygons[layerIndex].Count > 0)
+							{
+                                // finish the union
+                                var allLayerB = accumulatedUnionPolygons[layerIndex];
+                                DoLayerBooleans(layerA, allLayerB, typeToDo);
+                            }
 
+                            // do the opperation
+                            var layerB = loadedMeshes[meshBIndex].Layers[layerIndex];
+                            DoLayerBooleans(layerA, layerB.AllOutlines, typeToDo);
+                        }
+                    }
+                
 					meshesToProcess.Push(meshAIndex);
-					meshIndexsToRemove.Add(meshBIndex);
-				}
-			}
+                    meshIndexsToRemove.Add(meshBIndex);
+                }
+            }
 
-			meshIndexsToRemove.Sort();
+			if (accumulatedUnionPolygons.Where(i => i.Count > 0).Any())
+			{
+				var meshAIndex = meshesToProcess.Pop();
+
+                for (int layerIndex = 0; layerIndex < totalLayers; layerIndex++)
+				{
+                    var layerA = loadedMeshes[meshAIndex].Layers[layerIndex];
+
+                    // finish the union
+                    var allLayerB = accumulatedUnionPolygons[layerIndex];
+                    DoLayerBooleans(layerA, allLayerB, BooleanType.Union);
+                }
+            }
+
+            meshIndexsToRemove.Sort();
 			for (int i=meshIndexsToRemove.Count-1; i>=0; i--)
             {
 				loadedMeshes.RemoveAt(meshIndexsToRemove[i]);
@@ -189,38 +240,34 @@ namespace MatterHackers.MatterSlice
 			Intersection
 		}
 
-		private static void DoLayerBooleans(SliceLayer layersA, SliceLayer layersB, BooleanType booleanType)
+		private static void DoLayerBooleans(SliceLayer layersA, Polygons layersB, BooleanType booleanType)
 		{
 			switch (booleanType)
 			{
 				case BooleanType.Union:
-					if (layersB.AllOutlines.Count == 0)
+					if (layersB.Count == 0)
 					{
 						// do nothing we will keep the content of A
 					}
 					else if (layersA.AllOutlines.Count == 0)
 					{
 						// there is nothing in A so set it to the content of B
-						layersA.AllOutlines = layersB.AllOutlines;
+						layersA.AllOutlines = layersB;
 					}
 					else
 					{
-						layersA.AllOutlines = layersA.AllOutlines.CreateUnion(layersB.AllOutlines);
+						layersA.AllOutlines = layersA.AllOutlines.CreateUnion(layersB);
 						// remove tiny gaps between parts
-						// first grow the outlines so they will combine if very close together
-						layersA.AllOutlines = layersA.AllOutlines.Offset(20);
-						// then shrink them back down so they are the same size as when we started
-						layersA.AllOutlines = layersA.AllOutlines.Offset(-20);
 					}
 
 					break;
 
 				case BooleanType.Difference:
-					layersA.AllOutlines = layersA.AllOutlines.CreateDifference(layersB.AllOutlines);
+					layersA.AllOutlines = layersA.AllOutlines.CreateDifference(layersB);
 					break;
 
 				case BooleanType.Intersection:
-					layersA.AllOutlines = layersA.AllOutlines.CreateIntersection(layersB.AllOutlines);
+					layersA.AllOutlines = layersA.AllOutlines.CreateIntersection(layersB);
 					break;
 			}
 		}
