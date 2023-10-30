@@ -154,7 +154,7 @@ namespace MatterHackers.Pathfinding
 				// check each direction to see if we can increase our InsetMap value
 				double x = result.X;
 				double y = result.Y;
-				polygonsToImageTransform.transform(ref x, ref y);
+				polygonsToImageTransform.Transform(ref x, ref y);
 				int xi = (int)Round(x);
 				int yi = (int)Round(y);
 
@@ -246,7 +246,7 @@ namespace MatterHackers.Pathfinding
 			// translate the test point to the image coordinates
 			double xd = testPoint.X;
 			double yd = testPoint.Y;
-			polygonsToImageTransform.transform(ref xd, ref yd);
+			polygonsToImageTransform.Transform(ref xd, ref yd);
 			int xi = (int)Round(xd);
 			int yi = (int)Round(yd);
 
